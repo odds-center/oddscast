@@ -1,4 +1,3 @@
-
 # 인증 (Authentication)
 
 본 앱은 Google 소셜 로그인을 사용하여 사용자를 인증합니다.

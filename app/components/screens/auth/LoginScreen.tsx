@@ -1,14 +1,10 @@
 import React from 'react';
 import { useRouter } from 'expo-router';
-import { StyleSheet, Button, Alert } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import {
-  GoogleSignin,
-  SignInResponse,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
+import { StyleSheet, Alert, TouchableOpacity, ImageBackground, View, Text } from 'react-native';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { useAuth } from '@/hooks/useAuth';
+import { theme } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -16,56 +12,80 @@ export default function LoginScreen() {
 
   React.useEffect(() => {
     GoogleSignin.configure({
-      // webClientId is required for offline access
-      webClientId: '297222267377-husiseemja8abddjujt78g5bhlnne2do.apps.googleusercontent.com', // Replace with your actual web client ID
-      // You can add more configuration options here if needed
+      webClientId: '297222267377-husiseemja8abddjujt78g5bhlnne2do.apps.googleusercontent.com',
     });
   }, []);
 
   const signIn = async () => {
     try {
       await GoogleSignin.hasPlayServices();
-      const userInfo: SignInResponse = await GoogleSignin.signIn();
-      // You can now use userInfo to access user data and tokens
-      Alert.alert('로그인 성공', `환영합니다, ${userInfo?.data?.user?.name}님`);
-      await authSignIn('dummy-token'); // Store a dummy token
+      const userInfo = await GoogleSignin.signIn();
+      await authSignIn(userInfo?.data.idToken!);
       router.replace('/(app)/races');
     } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
-        // user cancelled the login flow
-        Alert.alert('로그인 취소', '로그인 과정이 사용자에 의해 취소되었습니다.');
-      } else if (error.code === statusCodes.IN_PROGRESS) {
-        // operation (e.g. sign in) is in progress already
-        Alert.alert('로그인 진행 중', '로그인 절차가 이미 진행 중입니다.');
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
-        // play services not available or outdated
-        Alert.alert('오류', 'Google Play 서비스를 사용할 수 없거나 버전이 낮습니다.');
-      } else {
-        // some other error happened
-        Alert.alert('로그인 오류', error.toString());
-        console.error(error);
+      if (error.code !== statusCodes.SIGN_IN_CANCELLED) {
+        Alert.alert('Login Error', error.message);
       }
     }
   };
 
   return (
-    <ThemedView style={styles.container}>
-      <ThemedText type='title' style={styles.title}>
-        경마 예측 앱
-      </ThemedText>
-      <Button title='Google로 로그인' onPress={signIn} />
-    </ThemedView>
+    <ImageBackground source={require('@/assets/images/background.png')} style={styles.background}>
+      <View style={styles.overlay} />
+      <View style={styles.content}>
+        <Text style={styles.title}>Golden Race</Text>
+        <Text style={styles.subtitle}>The ultimate horse racing experience.</Text>
+        <TouchableOpacity style={styles.googleButton} onPress={signIn}>
+          <Ionicons name='logo-google' size={24} color={theme.colors.text} />
+          <Text style={styles.buttonText}>Sign in with Google</Text>
+        </TouchableOpacity>
+      </View>
+    </ImageBackground>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 16,
+  },
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+  },
+  content: {
+    alignItems: 'center',
+    padding: theme.spacing.l,
   },
   title: {
-    marginBottom: 48,
+    fontFamily: theme.fonts.heading,
+    fontSize: 48,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.s,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontFamily: theme.fonts.body,
+    fontSize: 18,
+    color: theme.colors.text,
+    marginBottom: theme.spacing.xl,
+    textAlign: 'center',
+  },
+  googleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    paddingHorizontal: theme.spacing.l,
+    paddingVertical: theme.spacing.m,
+    borderRadius: theme.radii.l,
+    borderWidth: 1,
+    borderColor: theme.colors.primary,
+  },
+  buttonText: {
+    fontFamily: theme.fonts.bold,
+    color: theme.colors.text,
+    marginLeft: theme.spacing.m,
+    fontSize: 16,
   },
 });

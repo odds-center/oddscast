@@ -1,4 +1,3 @@
-
 # Google Sign-In 설정 가이드 (`@react-native-google-signin`)
 
 본 문서는 `@react-native-google-signin/google-signin` 라이브러리를 사용하여 Google 로그인을 설정하는 과정을 안내합니다.
@@ -47,31 +46,31 @@ GoogleSignin.configure({
 1.  Google Cloud Console에서 생성한 **웹 클라이언트 ID**가 필요합니다.
 2.  `app.json` 파일에 `android.googleServicesFile` 항목을 직접 추가하는 대신, Expo의 플러그인 시스템을 활용합니다.
 
-   `app.json` 파일에 다음 `plugins` 설정을 추가하세요.
+`app.json` 파일에 다음 `plugins` 설정을 추가하세요.
 
-   ```json
-   {
-     "expo": {
-       // ... 기존 expo 설정
-       "plugins": [
-         [
-           "@react-native-google-signin/google-signin",
-           {
-             "iosUrlScheme": "com.googleusercontent.apps.YOUR_REVERSED_IOS_CLIENT_ID"
-           }
-         ]
-       ],
-       "android": {
-         "package": "com.yourcompany.yourappname"
-         // ... 기존 android 설정
-       },
-       "ios": {
-         "bundleIdentifier": "com.yourcompany.yourappname"
-         // ... 기존 ios 설정
-       }
-     }
-   }
-   ```
+```json
+{
+  "expo": {
+    // ... 기존 expo 설정
+    "plugins": [
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.YOUR_REVERSED_IOS_CLIENT_ID"
+        }
+      ]
+    ],
+    "android": {
+      "package": "com.yourcompany.yourappname"
+      // ... 기존 android 설정
+    },
+    "ios": {
+      "bundleIdentifier": "com.yourcompany.yourappname"
+      // ... 기존 ios 설정
+    }
+  }
+}
+```
 
 ### iOS 설정
 

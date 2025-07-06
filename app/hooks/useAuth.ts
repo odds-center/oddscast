@@ -3,23 +3,38 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [hasStoredToken, setHasStoredToken] = useState<boolean>(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    const checkStoredToken = async () => {
       try {
         const token = await AsyncStorage.getItem('userToken');
-        setIsAuthenticated(!!token);
+        setHasStoredToken(!!token);
       } catch (error) {
         console.error('Failed to load token from AsyncStorage', error);
-        setIsAuthenticated(false);
+        setHasStoredToken(false);
       } finally {
         setIsLoading(false);
       }
     };
 
-    checkAuth();
+    checkStoredToken();
   }, []);
+
+  const autoSignIn = async () => {
+    try {
+      const token = await AsyncStorage.getItem('userToken');
+      if (token) {
+        setIsAuthenticated(true);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to auto sign in', error);
+      return false;
+    }
+  };
 
   const signIn = async (token: string) => {
     try {
@@ -39,5 +54,5 @@ export function useAuth() {
     }
   };
 
-  return { isAuthenticated, isLoading, signIn, signOut };
+  return { isAuthenticated, isLoading, hasStoredToken, signIn, signOut, autoSignIn };
 }

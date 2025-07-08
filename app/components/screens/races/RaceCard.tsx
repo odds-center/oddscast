@@ -1,109 +1,117 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { Race } from '@/constants/mockData';
 import { theme } from '@/constants/theme';
+import { useRouter } from 'expo-router';
 
 interface RaceCardProps {
   race: Race;
   onPress?: () => void;
 }
 
-const RaceCard = ({ race, onPress }: RaceCardProps) => (
-  <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
-    <LinearGradient colors={theme.colors.gradient.card as [string, string]} style={styles.card}>
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.raceInfo}>
-          <View style={styles.raceNumberContainer}>
-            <Text style={styles.raceNumber}>{race.raceNumber}</Text>
-          </View>
-          <View style={styles.raceDetails}>
-            <Text style={styles.raceName}>{race.raceName}</Text>
-            <View style={styles.venueTimeContainer}>
-              <View style={styles.venueContainer}>
-                <Ionicons name='location' size={14} color={theme.colors.primary} />
-                <Text style={styles.venue}>{race.venue}</Text>
-              </View>
-              <View style={styles.timeContainer}>
-                <Ionicons name='time' size={14} color={theme.colors.accent} />
-                <Text style={styles.time}>{race.date.split(' ')[1]}</Text>
-              </View>
+const RaceCard = ({ race, onPress }: RaceCardProps) => {
+  const router = useRouter();
+  return (
+    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.8}>
+      <LinearGradient colors={theme.colors.gradient.card as [string, string]} style={styles.card}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.raceInfo}>
+            <View style={styles.raceNumberContainer}>
+              <Text style={styles.raceNumber}>{race.raceNumber}</Text>
             </View>
-          </View>
-        </View>
-        <View style={styles.statusContainer}>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>진행중</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Horses List */}
-      <View style={styles.horsesContainer}>
-        {race.horses.map((horse, index) => (
-          <View key={horse.id} style={styles.horseRow}>
-            <View style={styles.horseInfo}>
-              <View style={styles.gateNumberContainer}>
-                <Text style={styles.gateNumber}>{horse.gateNumber}</Text>
-              </View>
-              <View style={styles.horseDetails}>
-                <Text style={styles.horseName}>{horse.horseName}</Text>
-                <View style={styles.jockeyTrainerContainer}>
-                  <View style={styles.jockeyContainer}>
-                    <Ionicons name='person' size={12} color={theme.colors.textSecondary} />
-                    <Text style={styles.jockey}>{horse.jockey}</Text>
-                  </View>
-                  <View style={styles.trainerContainer}>
-                    <Ionicons name='briefcase' size={12} color={theme.colors.textSecondary} />
-                    <Text style={styles.trainer}>{horse.trainer}</Text>
-                  </View>
+            <View style={styles.raceDetails}>
+              <Text style={styles.raceName}>{race.raceName}</Text>
+              <View style={styles.venueTimeContainer}>
+                <View style={styles.venueContainer}>
+                  <Ionicons name='location' size={14} color={theme.colors.primary} />
+                  <Text style={styles.venue}>{race.venue}</Text>
+                </View>
+                <View style={styles.timeContainer}>
+                  <Ionicons name='time' size={14} color={theme.colors.accent} />
+                  <Text style={styles.time}>{race.date.split(' ')[1]}</Text>
                 </View>
               </View>
             </View>
-
-            <View style={styles.predictionContainer}>
-              <View style={styles.predictionBarContainer}>
-                <View
-                  style={[
-                    styles.predictionBar,
-                    { width: `${Math.min(horse.predictionRate, 100)}%` },
-                  ]}
-                />
-              </View>
-              <Text style={styles.predictionText}>{horse.predictionRate}%</Text>
+          </View>
+          <View style={styles.statusContainer}>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>진행중</Text>
             </View>
           </View>
-        ))}
-      </View>
-
-      {/* Footer */}
-      <View style={styles.footer}>
-        <View style={styles.footerStats}>
-          <View style={styles.statItem}>
-            <Ionicons name='people' size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.statText}>{race.horses.length}마 출전</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Ionicons name='trending-up' size={16} color={theme.colors.textSecondary} />
-            <Text style={styles.statText}>
-              평균{' '}
-              {Math.round(
-                race.horses.reduce((sum, h) => sum + h.predictionRate, 0) / race.horses.length
-              )}
-              %
-            </Text>
-          </View>
         </View>
-        <TouchableOpacity style={styles.detailButton}>
-          <Text style={styles.detailButtonText}>상세보기</Text>
-          <Ionicons name='chevron-forward' size={16} color={theme.colors.primary} />
-        </TouchableOpacity>
-      </View>
-    </LinearGradient>
-  </TouchableOpacity>
-);
+
+        {/* Horses List */}
+        <View style={styles.horsesContainer}>
+          {race.horses.map((horse, index) => (
+            <View key={horse.id} style={styles.horseRow}>
+              <View style={styles.horseInfo}>
+                <View style={styles.gateNumberContainer}>
+                  <Text style={styles.gateNumber}>{horse.gateNumber}</Text>
+                </View>
+                <View style={styles.horseDetails}>
+                  <Text style={styles.horseName}>{horse.horseName}</Text>
+                  <View style={styles.jockeyTrainerContainer}>
+                    <View style={styles.jockeyContainer}>
+                      <Ionicons name='person' size={12} color={theme.colors.textSecondary} />
+                      <Text style={styles.jockey}>{horse.jockey}</Text>
+                    </View>
+                    <View style={styles.trainerContainer}>
+                      <Ionicons name='briefcase' size={12} color={theme.colors.textSecondary} />
+                      <Text style={styles.trainer}>{horse.trainer}</Text>
+                    </View>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.predictionContainer}>
+                <View style={styles.predictionBarContainer}>
+                  <View
+                    style={[
+                      styles.predictionBar,
+                      { width: `${Math.min(horse.predictionRate, 100)}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.predictionText}>{horse.predictionRate}%</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        {/* Footer */}
+        <View style={styles.footer}>
+          <View style={styles.footerStats}>
+            <View style={styles.statItem}>
+              <Ionicons name='people' size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.statText}>{race.horses.length}마 출전</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Ionicons name='trending-up' size={16} color={theme.colors.textSecondary} />
+              <Text style={styles.statText}>
+                평균{' '}
+                {Math.round(
+                  race.horses.reduce((sum, h) => sum + h.predictionRate, 0) / race.horses.length
+                )}
+                %
+              </Text>
+            </View>
+          </View>
+          <TouchableOpacity
+            style={styles.detailButton}
+            onPress={() => router.push(`/races/${race.id}` as any)}
+          >
+            <Text style={styles.detailButtonText}>상세보기</Text>
+            <Ionicons name='chevron-forward' size={16} color={theme.colors.primary} />
+          </TouchableOpacity>
+        </View>
+      </LinearGradient>
+    </TouchableOpacity>
+  );
+};
 
 const styles = StyleSheet.create({
   container: {

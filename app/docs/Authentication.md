@@ -1,42 +1,125 @@
 # 인증 (Authentication)
 
-본 앱은 Google 소셜 로그인을 사용하여 사용자를 인증합니다.
+본 앱은 Supabase와 `@react-native-google-signin/google-signin` 라이브러리를 사용하여 Google 소셜 로그인을 통해 사용자를 인증합니다.
 
 ## 1. Google Cloud Console 설정
 
-Google 로그인을 연동하기 위해서는 Google Cloud Platform(GCP)에서 OAuth 2.0 클라이언트 ID를 발급받아야 합니다. 이 과정은 수동으로 진행해야 합니다.
+Google 로그인을 연동하기 위해서는 Google Cloud Platform(GCP)에서 OAuth 2.0 클라이언트 ID를 발급받아야 합니다.
 
 1.  **Google Cloud Console**에 접속하여 새 프로젝트를 생성하거나 기존 프로젝트를 선택합니다.
 2.  **API 및 서비스 > 사용자 인증 정보** 메뉴로 이동합니다.
 3.  **사용자 인증 정보 만들기 > OAuth 클라이언트 ID**를 선택합니다.
-4.  애플리케이션 유형을 선택합니다.
-    - **iOS**: 앱의 `Bundle Identifier`를 입력하여 iOS용 클라이언트 ID를 생성합니다.
-    - **Android**: 앱의 `Package Name`과 `SHA-1 인증서 지문`을 입력하여 Android용 클라이언트 ID를 생성합니다.
-5.  생성된 **iOS 클라이언트 ID**와 **Android 클라이언트 ID**를 복사하여 안전한 곳에 보관합니다.
+4.  다음 세 가지 유형의 클라이언트 ID를 생성합니다:
+    *   **웹 애플리케이션**: Supabase와 연동하기 위한 `webClientId`로 사용됩니다. **승인된 리디렉션 URI**에 Supabase 대시보드에서 확인한 `https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback` 형태의 URL을 추가해야 합니다.
+    *   **iOS**: 앱의 `Bundle Identifier`를 입력하여 iOS용 클라이언트 ID를 생성합니다. 이 ID는 `iosClientId`로 사용됩니다.
+    *   **Android**: 앱의 `Package Name`과 `SHA-1 인증서 지문`을 입력하여 Android용 클라이언트 ID를 생성합니다. 이 ID는 `androidClientId`로 사용됩니다.
+5.  생성된 각 클라이언트 ID를 복사하여 안전한 곳에 보관합니다.
 
-> **참고:** `Package Name`은 `app.json` 파일의 `android.package` 필드에서 확인할 수 있습니다. `SHA-1` 지문은 `eas build`를 실행하거나 다음 명령어로 얻을 수 있습니다: `keytool -list -v -keystore <keystore_path> -alias <alias_name>`
+> **참고:** `Package Name`은 `app.json` 파일의 `android.package` 필드에서 확인할 수 있습니다. `SHA-1` 지문은 `eas build`를 실행하거나 Android Studio에서 얻을 수 있습니다.
 
-## 2. 클라이언트 ID 적용
+## 2. Supabase 설정
 
-발급받은 클라이언트 ID는 코드에 직접 적용해야 합니다.
+1.  Supabase 프로젝트 대시보드에서 **Authentication > Providers**로 이동합니다.
+2.  **Google**을 활성화하고, GCP에서 생성한 **웹 애플리케이션** 유형의 OAuth 클라이언트 ID의 **Client ID**와 **Client Secret**을 입력합니다.
+3.  **Redirect URIs**에 `https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback`이 올바르게 등록되어 있는지 확인합니다.
 
-- **파일 위치**: `/screens/auth/LoginScreen.tsx`
+## 3. 환경 변수 설정
 
-아래 코드의 `YOUR_IOS_CLIENT_ID`와 `YOUR_ANDROID_CLIENT_ID` 부분을 실제 발급받은 값으로 교체해야 합니다.
+프로젝트 루트에 `.env` 파일을 생성하고, GCP에서 발급받은 클라이언트 ID들을 추가합니다. `EXPO_PUBLIC_` 접두사를 사용해야 합니다.
 
-```typescript
-// /screens/auth/LoginScreen.tsx
-
-const [request, response, promptAsync] = Google.useAuthRequest({
-  iosClientId: 'YOUR_IOS_CLIENT_ID', // 여기에 iOS 클라이언트 ID 붙여넣기
-  androidClientId: 'YOUR_ANDROID_CLIENT_ID', // 여기에 Android 클라이언트 ID 붙여넣기
-  // ...
-});
+```dotenv
+EXPO_PUBLIC_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID
+EXPO_PUBLIC_IOS_CLIENT_ID=YOUR_IOS_CLIENT_ID
+EXPO_PUBLIC_ANDROID_CLIENT_ID=YOUR_ANDROID_CLIENT_ID
 ```
 
-## 3. 인증 흐름
+## 4. 코드 적용
 
-1.  사용자가 "Google로 로그인" 버튼을 누르면 `promptAsync()` 함수가 호출됩니다.
-2.  `expo-web-browser`를 통해 Google 로그인 웹페이지가 열립니다.
-3.  사용자가 로그인을 완료하면 `response` 객체에 인증 결과가 담겨 돌아옵니다.
-4.  `response.type`이 `success`일 경우, `response.authentication` 객체에 포함된 `accessToken`을 사용하여 백엔드 서버와 통신하거나 사용자 정보를 가져올 수 있습니다.
+`@react-native-google-signin/google-signin` 라이브러리를 사용하여 Google 로그인을 구현합니다.
+
+- **파일 위치**: `components/screens/auth/LoginScreen.tsx`
+
+```typescript
+// components/screens/auth/LoginScreen.tsx
+
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { supabase } from '@/lib/supabase';
+
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_WEB_CLIENT_ID;
+const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_IOS_CLIENT_ID;
+const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID;
+
+// ...
+
+useEffect(() => {
+  GoogleSignin.configure({
+    webClientId: WEB_CLIENT_ID,
+    iosClientId: IOS_CLIENT_ID,
+    androidClientId: ANDROID_CLIENT_ID,
+    offlineAccess: true,
+  });
+}, []);
+
+const handleGoogleSignIn = async () => {
+  try {
+    await GoogleSignin.hasPlayServices();
+    const userInfo = await GoogleSignin.signIn();
+
+    if (userInfo.idToken) {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: userInfo.idToken,
+      });
+
+      if (error) {
+        // Supabase 로그인 오류 처리
+      } else {
+        // 로그인 성공 후 라우팅
+      }
+    } else {
+      throw new Error('Google ID Token이 없습니다.');
+    }
+  } catch (error: any) {
+    // Google 로그인 오류 처리
+  }
+};
+```
+
+## 5. 인증 흐름
+
+1.  사용자가 "Google로 로그인" 버튼을 누르면 `handleGoogleSignIn` 함수가 호출됩니다.
+2.  `GoogleSignin.signIn()`을 통해 Google 로그인 절차가 시작됩니다.
+3.  로그인 성공 시 반환되는 `idToken`을 `supabase.auth.signInWithIdToken`에 전달하여 Supabase에 사용자를 인증합니다.
+4.  Supabase 인증 성공 시, 앱의 메인 화면으로 리디렉션됩니다.
+
+## 6. 사용자 프로필 관리
+
+새로운 사용자가 Google 로그인을 통해 인증되면, Supabase의 `auth.users` 테이블에 사용자 정보가 생성됩니다. 이와 동시에 `profiles` 테이블에 해당 사용자의 기본 프로필 정보(ID, 이메일)가 자동으로 생성됩니다.
+
+*   **`profiles` 테이블 스키마**:
+    ```sql
+    CREATE TABLE public.profiles (
+      id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+      email text UNIQUE,
+      username text,
+      created_at timestamp with time zone DEFAULT now()
+    );
+    ```
+
+*   **프로필 자동 생성 트리거**:
+    ```sql
+    CREATE FUNCTION public.handle_new_user()
+    RETURNS TRIGGER AS $$
+    BEGIN
+      INSERT INTO public.profiles (id, email)
+      VALUES (NEW.id, NEW.email);
+      RETURN NEW;
+    END;
+    $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+    ```
+
+사용자는 마이페이지에서 자신의 프로필 정보를 조회하고, 사용자 이름을 업데이트할 수 있습니다. 이메일은 Google 계정에서 가져오므로 직접 수정할 수 없습니다.

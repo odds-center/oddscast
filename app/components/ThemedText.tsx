@@ -1,11 +1,12 @@
 import { StyleSheet, Text, type TextProps } from 'react-native';
 
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { theme } from '@/constants/theme';
 
 export type ThemedTextProps = TextProps & {
   lightColor?: string;
   darkColor?: string;
-  type?: 'default' | 'title' | 'defaultSemiBold' | 'subtitle' | 'link';
+  type?: 'default' | 'title' | 'subtitle' | 'defaultSemiBold' | 'link' | 'stat' | 'caption';
 };
 
 export function ThemedText({
@@ -17,15 +18,26 @@ export function ThemedText({
 }: ThemedTextProps) {
   const color = useThemeColor({ light: lightColor, dark: darkColor }, 'text');
 
+  // type별 색상 직접 지정
+  let textColor = color;
+  if (type === 'subtitle' || type === 'caption') {
+    textColor = theme.colors.textSecondary;
+  } else if (type === 'link') {
+    textColor = '#0a7ea4';
+  }
+
   return (
     <Text
       style={[
-        { color },
+        theme.globalTextStyle as any,
+        { color: textColor, flexShrink: 1 },
         type === 'default' ? styles.default : undefined,
         type === 'title' ? styles.title : undefined,
-        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
+        type === 'defaultSemiBold' ? styles.defaultSemiBold : undefined,
         type === 'link' ? styles.link : undefined,
+        type === 'stat' ? styles.stat : undefined,
+        type === 'caption' ? styles.caption : undefined,
         style,
       ]}
       {...rest}
@@ -35,26 +47,38 @@ export function ThemedText({
 
 const styles = StyleSheet.create({
   default: {
+    fontFamily: theme.fonts.body,
     fontSize: 16,
     lineHeight: 24,
   },
   defaultSemiBold: {
-    fontSize: 16,
-    lineHeight: 24,
-    fontWeight: '600',
+    fontFamily: theme.fonts.bold,
+    fontSize: 14,
+    lineHeight: 20,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    lineHeight: 32,
+    fontFamily: theme.fonts.heading,
+    fontSize: 28,
+    lineHeight: 36,
   },
   subtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontFamily: theme.fonts.body,
+    fontSize: 14,
+    lineHeight: 20,
   },
   link: {
-    lineHeight: 30,
+    fontFamily: theme.fonts.body,
     fontSize: 16,
-    color: '#0a7ea4',
+    lineHeight: 24,
+  },
+  stat: {
+    fontFamily: theme.fonts.bold,
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  caption: {
+    fontFamily: theme.fonts.body,
+    fontSize: 12,
+    lineHeight: 16,
   },
 });

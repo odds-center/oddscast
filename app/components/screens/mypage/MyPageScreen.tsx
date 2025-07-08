@@ -1,20 +1,84 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '@/hooks/useAuth';
 import { theme } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import { useAuth } from '@/context/AuthProvider';
+import { supabase } from '@/lib/supabase';
+
+type MyPageRoute =
+  | '/mypage/profile'
+  | '/mypage/history'
+  | '/mypage/favorites'
+  | '/mypage/notifications'
+  | '/mypage/settings'
+  | '/mypage/help';
+
+type MenuItem = {
+  id: string;
+  title: string;
+  subtitle: string;
+  icon: string;
+  color: string;
+  route: MyPageRoute;
+};
+
+interface Profile {
+  username: string | null;
+  email: string | null;
+}
 
 export default function MyPageScreen() {
-  const { signOut } = useAuth();
+  const router = useRouter();
+  const { session, signOut } = useAuth();
+  const [profile, setProfile] = useState<Profile | null>(null);
 
-  const menuItems = [
+  useEffect(() => {
+    if (session) {
+      getProfile();
+    }
+  }, [session]);
+
+  async function getProfile() {
+    try {
+      if (!session?.user) throw new Error('No user on the session!');
+
+      const { data, error, status } = await supabase
+        .from('profiles')
+        .select('username, email')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error && status !== 406) {
+        throw error;
+      }
+
+      if (data) {
+        setProfile(data);
+      }
+    } catch (error: any) {
+      Alert.alert(error.message);
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch (error: any) {
+      Alert.alert('로그아웃 오류', error.message);
+    }
+  };
+
+  const menuItems: MenuItem[] = [
     {
       id: 'profile',
       title: '프로필 관리',
       subtitle: '개인정보 수정',
       icon: 'person-outline',
       color: theme.colors.primary,
+      route: '/mypage/profile',
     },
     {
       id: 'history',
@@ -22,6 +86,7 @@ export default function MyPageScreen() {
       subtitle: '나의 베팅 기록',
       icon: 'time-outline',
       color: theme.colors.accent,
+      route: '/mypage/history',
     },
     {
       id: 'favorites',
@@ -29,6 +94,7 @@ export default function MyPageScreen() {
       subtitle: '관심 말 관리',
       icon: 'heart-outline',
       color: theme.colors.error,
+      route: '/mypage/favorites',
     },
     {
       id: 'notifications',
@@ -36,6 +102,7 @@ export default function MyPageScreen() {
       subtitle: '푸시 알림 관리',
       icon: 'notifications-outline',
       color: theme.colors.success,
+      route: '/mypage/notifications',
     },
     {
       id: 'settings',
@@ -43,6 +110,7 @@ export default function MyPageScreen() {
       subtitle: '앱 설정',
       icon: 'settings-outline',
       color: theme.colors.textSecondary,
+      route: '/mypage/settings',
     },
     {
       id: 'help',
@@ -50,6 +118,7 @@ export default function MyPageScreen() {
       subtitle: '문의 및 도움말',
       icon: 'help-circle-outline',
       color: theme.colors.warning,
+      route: '/mypage/help',
     },
   ];
 
@@ -70,10 +139,17 @@ export default function MyPageScreen() {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <View>
-            <Text style={styles.title}>마이페이지</Text>
-            <Text style={styles.subtitle}>내 정보와 설정을 관리하세요</Text>
+            <Text type='title' style={styles.title}>
+              마이페이지
+            </Text>
+            <Text type='subtitle' style={styles.subtitle}>
+              내 정보와 설정을 관리하세요
+            </Text>
           </View>
-          <TouchableOpacity style={styles.editButton}>
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('/mypage/profile')}
+          >
             <Ionicons name='create-outline' size={24} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
@@ -98,11 +174,17 @@ export default function MyPageScreen() {
                 <View style={styles.onlineIndicator} />
               </View>
               <View style={styles.profileInfo}>
-                <Text style={styles.userName}>김경마</Text>
-                <Text style={styles.userEmail}>user@example.com</Text>
+                <Text type='defaultSemiBold' style={styles.userName}>
+                  {profile?.username || '사용자'}
+                </Text>
+                <Text type='caption' style={styles.userEmail}>
+                  {profile?.email || session?.user?.email || '이메일 없음'}
+                </Text>
                 <View style={styles.memberBadge}>
                   <Ionicons name='star' size={12} color={theme.colors.primary} />
-                  <Text style={styles.memberText}>골드 멤버</Text>
+                  <Text type='caption' style={styles.memberText}>
+                    골드 멤버
+                  </Text>
                 </View>
               </View>
             </View>
@@ -117,8 +199,12 @@ export default function MyPageScreen() {
                 <Ionicons name={stat.icon as any} size={20} color={theme.colors.primary} />
               </View>
               <View>
-                <Text style={styles.statValue}>{stat.value}</Text>
-                <Text style={styles.statLabel}>{stat.label}</Text>
+                <Text type='stat' style={styles.statValue}>
+                  {stat.value}
+                </Text>
+                <Text type='caption' style={styles.statLabel}>
+                  {stat.label}
+                </Text>
               </View>
             </View>
           ))}
@@ -126,9 +212,16 @@ export default function MyPageScreen() {
 
         {/* Menu Section */}
         <View style={styles.menuSection}>
-          <Text style={styles.sectionTitle}>메뉴</Text>
+          <Text type='defaultSemiBold' style={styles.sectionTitle}>
+            메뉴
+          </Text>
           {menuItems.map((item) => (
-            <TouchableOpacity key={item.id} style={styles.menuItem} activeOpacity={0.7}>
+            <TouchableOpacity
+              key={item.id}
+              style={styles.menuItem}
+              activeOpacity={0.7}
+              onPress={() => router.push(item.route)}
+            >
               <LinearGradient
                 colors={theme.colors.gradient.card as [string, string]}
                 style={styles.menuCard}
@@ -137,8 +230,12 @@ export default function MyPageScreen() {
                   <Ionicons name={item.icon as any} size={24} color={item.color} />
                 </View>
                 <View style={styles.menuContent}>
-                  <Text style={styles.menuTitle}>{item.title}</Text>
-                  <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                  <Text type='defaultSemiBold' style={styles.menuTitle}>
+                    {item.title}
+                  </Text>
+                  <Text type='caption' style={styles.menuSubtitle}>
+                    {item.subtitle}
+                  </Text>
                 </View>
                 <Ionicons name='chevron-forward' size={20} color={theme.colors.textSecondary} />
               </LinearGradient>
@@ -148,21 +245,27 @@ export default function MyPageScreen() {
 
         {/* Logout Section */}
         <View style={styles.logoutSection}>
-          <TouchableOpacity style={styles.logoutButton} onPress={signOut} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
             <LinearGradient
               colors={[theme.colors.error, theme.colors.error + '80'] as [string, string]}
               style={styles.logoutGradient}
             >
               <Ionicons name='log-out-outline' size={20} color={theme.colors.text} />
-              <Text style={styles.logoutText}>로그아웃</Text>
+              <Text type='defaultSemiBold' style={styles.logoutText}>
+                로그아웃
+              </Text>
             </LinearGradient>
           </TouchableOpacity>
         </View>
 
         {/* App Info */}
         <View style={styles.appInfoSection}>
-          <Text style={styles.appVersion}>Golden Race v1.0.0</Text>
-          <Text style={styles.appCopyright}>© 2025 Golden Race. All rights reserved.</Text>
+          <Text type='caption' style={styles.appVersion}>
+            Golden Race v1.0.0
+          </Text>
+          <Text type='caption' style={styles.appCopyright}>
+            © 2025 Golden Race. All rights reserved.
+          </Text>
         </View>
       </ScrollView>
     </LinearGradient>
@@ -184,15 +287,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontFamily: theme.fonts.heading,
-    fontSize: 28,
-    color: theme.colors.text,
+    // fontFamily: theme.fonts.heading, // Handled by ThemedText type
+    // fontSize: 28, // Handled by ThemedText type
+    // color: theme.colors.text, // Handled by ThemedText type
     marginBottom: theme.spacing.xs,
   },
   subtitle: {
-    fontFamily: theme.fonts.body,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    // fontFamily: theme.fonts.body, // Handled by ThemedText type
+    // fontSize: 14, // Handled by ThemedText type
+    // color: theme.colors.textSecondary, // Handled by ThemedText type
   },
   editButton: {
     width: 44,
@@ -251,15 +354,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   userName: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   userEmail: {
-    fontFamily: theme.fonts.body,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.s,
   },
   memberBadge: {
@@ -272,9 +369,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
   },
   memberText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 12,
-    color: theme.colors.primary,
     marginLeft: theme.spacing.xs,
   },
   statsSection: {
@@ -301,22 +395,15 @@ const styles = StyleSheet.create({
     marginRight: theme.spacing.s,
   },
   statValue: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.text,
+    // Handled by ThemedText type
   },
   statLabel: {
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
+    // Handled by ThemedText type
   },
   menuSection: {
     marginBottom: theme.spacing.l,
   },
   sectionTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 18,
-    color: theme.colors.text,
     marginBottom: theme.spacing.m,
   },
   menuItem: {
@@ -342,17 +429,13 @@ const styles = StyleSheet.create({
   },
   menuContent: {
     flex: 1,
+    justifyContent: 'center',
   },
   menuTitle: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.text,
     marginBottom: theme.spacing.xs,
   },
   menuSubtitle: {
-    fontFamily: theme.fonts.body,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
+    // Handled by ThemedText type
   },
   logoutSection: {
     marginBottom: theme.spacing.l,
@@ -370,9 +453,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: theme.spacing.l,
   },
   logoutText: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.text,
     marginLeft: theme.spacing.s,
   },
   appInfoSection: {
@@ -380,15 +460,9 @@ const styles = StyleSheet.create({
     paddingTop: theme.spacing.l,
   },
   appVersion: {
-    fontFamily: theme.fonts.body,
-    fontSize: 14,
-    color: theme.colors.textSecondary,
     marginBottom: theme.spacing.xs,
   },
   appCopyright: {
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    color: theme.colors.textTertiary,
     textAlign: 'center',
   },
 });

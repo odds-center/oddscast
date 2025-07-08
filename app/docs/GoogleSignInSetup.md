@@ -12,39 +12,79 @@ npm install @react-native-google-signin/google-signin
 
 ## 2. Google Cloud Console 설정
 
-Google 로그인을 위해서는 Google Cloud Platform(GCP)에서 **웹 애플리케이션** 유형의 OAuth 2.0 클라이언트 ID가 필요합니다. 이 ID는 안드로이드와 iOS 양쪽에서 모두 사용됩니다.
+Google 로그인을 위해서는 Google Cloud Platform(GCP)에서 다음 세 가지 유형의 OAuth 2.0 클라이언트 ID가 필요합니다.
 
 1.  **Google Cloud Console**에 접속하여 프로젝트를 선택합니다.
 2.  **API 및 서비스 > 사용자 인증 정보** 메뉴로 이동합니다.
 3.  **사용자 인증 정보 만들기 > OAuth 클라이언트 ID**를 선택합니다.
-4.  애플리케이션 유형을 **웹 애플리케이션**으로 선택합니다.
-5.  이름을 지정하고 **만들기**를 클릭합니다. (승인된 리디렉션 URI는 설정할 필요 없습니다.)
-6.  생성된 **클라이언트 ID**를 복사하여 보관합니다. 이 ID가 코드에서 `webClientId`로 사용됩니다.
+4.  다음 세 가지 유형의 클라이언트 ID를 생성합니다:
+    *   **웹 애플리케이션**: Supabase와 연동하기 위한 `webClientId`로 사용됩니다. **승인된 리디렉션 URI**에 Supabase 대시보드에서 확인한 `https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co/auth/v1/callback` 형태의 URL을 추가해야 합니다.
+    *   **iOS**: 앱의 `Bundle Identifier`를 입력하여 iOS용 클라이언트 ID를 생성합니다. 이 ID는 `iosClientId`로 사용됩니다.
+    *   **Android**: 앱의 `Package Name`과 `SHA-1 인증서 지문`을 입력하여 Android용 클라이언트 ID를 생성합니다. 이 ID는 `androidClientId`로 사용됩니다.
+5.  생성된 각 클라이언트 ID를 복사하여 안전한 곳에 보관합니다.
 
-## 3. 코드 적용
+> **참고:** `Package Name`은 `app.json` 파일의 `android.package` 필드에서 확인할 수 있습니다. `SHA-1` 지문은 `eas build`를 실행하거나 Android Studio에서 얻을 수 있습니다.
 
-발급받은 `webClientId`를 로그인 화면 코드에 적용합니다.
+## 3. 환경 변수 설정
 
-- **파일 위치**: `/screens/auth/LoginScreen.tsx`
+프로젝트 루트에 `.env` 파일을 생성하고, GCP에서 발급받은 클라이언트 ID들을 추가합니다. `EXPO_PUBLIC_` 접두사를 사용해야 합니다.
 
-아래 코드의 `YOUR_WEB_CLIENT_ID` 부분을 실제 발급받은 값으로 교체해야 합니다.
-
-```typescript
-// /screens/auth/LoginScreen.tsx
-
-GoogleSignin.configure({
-  webClientId: 'YOUR_WEB_CLIENT_ID', // 여기에 Web Client ID 붙여넣기
-});
+```dotenv
+EXPO_PUBLIC_WEB_CLIENT_ID=YOUR_WEB_CLIENT_ID
+EXPO_PUBLIC_IOS_CLIENT_ID=YOUR_IOS_CLIENT_ID
+EXPO_PUBLIC_ANDROID_CLIENT_ID=YOUR_ANDROID_CLIENT_ID
 ```
 
-## 4. 네이티브 프로젝트 설정 (중요)
+## 4. 코드 적용
+
+`LoginScreen.tsx` 파일에서 `GoogleSignin.configure`를 사용하여 클라이언트 ID를 설정하고, `GoogleSignin.signIn()`을 통해 로그인 흐름을 시작합니다.
+
+- **파일 위치**: `components/screens/auth/LoginScreen.tsx`
+
+```typescript
+// components/screens/auth/LoginScreen.tsx
+
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { useAuth } from '@/context/AuthProvider';
+
+const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_WEB_CLIENT_ID;
+const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_IOS_CLIENT_ID;
+const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID;
+
+export default function LoginScreen() {
+  const { signIn: authSignIn } = useAuth();
+
+  useEffect(() => {
+    GoogleSignin.configure({
+      webClientId: WEB_CLIENT_ID,
+      iosClientId: IOS_CLIENT_ID,
+      androidClientId: ANDROID_CLIENT_ID,
+      offlineAccess: true,
+    });
+  }, []);
+
+  const handleGoogleSignIn = async () => {
+    try {
+      await GoogleSignin.hasPlayServices();
+      const userInfo = await GoogleSignin.signIn();
+
+      if (userInfo.idToken) {
+        await authSignIn(userInfo.idToken); // Supabase와 연동
+      } else {
+        throw new Error('Google ID Token이 없습니다.');
+      }
+    } catch (error: any) {
+      // 에러 처리
+    }
+  };
+
+  // ... (렌더링 부분)
+}
+```
+
+## 5. 네이티브 프로젝트 설정 (Expo `app.json`)
 
 `@react-native-google-signin/google-signin`는 네이티브 설정이 필요합니다. Expo 앱에서는 `app.json` (또는 `app.config.js`) 파일을 통해 이 설정을 추가할 수 있습니다.
-
-### Android 설정
-
-1.  Google Cloud Console에서 생성한 **웹 클라이언트 ID**가 필요합니다.
-2.  `app.json` 파일에 `android.googleServicesFile` 항목을 직접 추가하는 대신, Expo의 플러그인 시스템을 활용합니다.
 
 `app.json` 파일에 다음 `plugins` 설정을 추가하세요.
 
@@ -61,35 +101,19 @@ GoogleSignin.configure({
       ]
     ],
     "android": {
-      "package": "com.yourcompany.yourappname"
+      "package": "com.goldenrace.app"
       // ... 기존 android 설정
     },
     "ios": {
-      "bundleIdentifier": "com.yourcompany.yourappname"
+      "bundleIdentifier": "com.goldenrace.app"
       // ... 기존 ios 설정
     }
   }
 }
 ```
 
-### iOS 설정
+> **주의**: `iosUrlScheme` 값은 GCP에서 생성한 iOS 클라이언트 ID의 **역방향 클라이언트 ID**와 일치해야 합니다. (예: `com.googleusercontent.apps.123456-abcdefg`의 역방향은 `apps.abcdefg-123456.googleusercontent.com`)
 
-1.  Google Cloud Console에서 **iOS** 유형의 OAuth 클라이언트 ID를 별도로 생성해야 합니다.
-2.  생성된 iOS 클라이언트 ID를 뒤집은 형태의 **Reversed iOS Client ID**가 필요합니다. (예: `com.googleusercontent.apps.123456-abcdefg`)
-3.  `app.json`의 `plugins` 설정에 위 예시처럼 `iosUrlScheme` 값을 추가합니다.
+## 6. 사용법
 
-## 5. 사용법
-
-설정이 완료되면 코드에서 `GoogleSignin.signIn()` 메소드를 호출하여 로그인 흐름을 시작할 수 있습니다. 성공 시 `userInfo` 객체를 통해 사용자 정보를 얻을 수 있습니다.
-
-```typescript
-const signIn = async () => {
-  try {
-    await GoogleSignin.hasPlayServices();
-    const userInfo = await GoogleSignin.signIn();
-    // 로그인 성공 처리
-  } catch (error) {
-    // 에러 처리
-  }
-};
-```
+설정이 완료되면 코드에서 `handleGoogleSignIn` 함수를 호출하여 로그인 흐름을 시작할 수 있습니다. 성공 시 `useAuth` 훅을 통해 사용자 세션 정보에 접근할 수 있습니다.

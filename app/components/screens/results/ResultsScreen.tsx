@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { theme } from '@/constants/theme';
+import { ThemedText as Text } from '@/components/ThemedText';
 
 interface RaceResult {
   id: string;
@@ -15,14 +16,14 @@ interface RaceResult {
     gateNumber: number;
     odds: number;
   };
-  results: Array<{
+  results: {
     position: number;
     horseName: string;
     jockey: string;
     gateNumber: number;
     odds: number;
     time: string;
-  }>;
+  }[];
 }
 
 const MOCK_RESULTS: RaceResult[] = [

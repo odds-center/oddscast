@@ -1,7 +1,7 @@
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
 
-export const loadFonts = () => {
+export const useLoadFonts = () => {
   return useFonts({
     PlayfairDisplay_700Bold,
     Lato_400Regular,
@@ -10,6 +10,11 @@ export const loadFonts = () => {
 };
 
 export const theme = {
+  globalTextStyle: {
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    allowFontScaling: false,
+  },
   colors: {
     background: '#0A0A0A',
     primary: '#FFD700', // Gold
@@ -75,6 +80,26 @@ export const theme = {
       shadowOpacity: 0.4,
       shadowRadius: 8.84,
       elevation: 12,
+    },
+  },
+  commonStyles: {
+    container: {
+      flex: 1,
+      padding: 16,
+    },
+    centered: {
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    spaceBetween: {
+      justifyContent: 'space-between',
+    },
+    flex1: {
+      flex: 1,
     },
   },
 };

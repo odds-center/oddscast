@@ -94,7 +94,7 @@ const handleGoogleSignIn = async () => {
 
 ## 6. 사용자 프로필 관리
 
-새로운 사용자가 Google 로그인을 통해 인증되면, Supabase의 `auth.users` 테이블에 사용자 정보가 생성됩니다. 이와 동시에 `profiles` 테이블에 해당 사용자의 기본 프로필 정보(ID, 이메일)가 자동으로 생성됩니다.
+새로운 사용자가 Google 로그인을 통해 인증되면, Supabase의 `auth.users` 테이블에 사용자 정보가 생성됩니다. 이와 동시에 `profiles` 테이블에 해당 사용자의 프로필 정보가 자동으로 생성되도록 트리거를 설정합니다.
 
 *   **`profiles` 테이블 스키마**:
     ```sql
@@ -102,24 +102,57 @@ const handleGoogleSignIn = async () => {
       id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
       email text UNIQUE,
       username text,
-      created_at timestamp with time zone DEFAULT now()
+      created_at timestamp with time zone DEFAULT now(),
+      updated_at timestamp with time zone
     );
     ```
 
-*   **프로필 자동 생성 트리거**:
+*   **프로필 자동 생성 함수 및 트리거**:
+    새로운 사용자가 가입할 때 `auth.users` 테이블의 `raw_user_meta_data`에서 사용자 이름을 포함한 정보를 가져와 `profiles` 테이블에 자동으로 삽입합니다.
+
     ```sql
+    -- Creates a public.profiles table for public user data
     CREATE FUNCTION public.handle_new_user()
-    RETURNS TRIGGER AS $$
+    RETURNS TRIGGER AS $
     BEGIN
-      INSERT INTO public.profiles (id, email)
-      VALUES (NEW.id, NEW.email);
+      INSERT INTO public.profiles (id, email, username)
+      VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data ->> 'name');
       RETURN NEW;
     END;
-    $$ LANGUAGE plpgsql SECURITY DEFINER;
+    $ LANGUAGE plpgsql SECURITY DEFINER;
 
+    -- Triggers handle_new_user function on new user creation
     CREATE TRIGGER on_auth_user_created
       AFTER INSERT ON auth.users
       FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+    ```
+
+*   **프로필 자동 업데이트 함수 및 트리거**:
+    `profiles` 테이블의 행이 업데이트될 때마다 `updated_at` 필드를 현재 시간으로 자동 갱신합니다.
+
+    ```sql
+    -- Function to update the updated_at timestamp
+    CREATE OR REPLACE FUNCTION public.handle_profile_update()
+    RETURNS TRIGGER AS $
+    BEGIN
+      NEW.updated_at = now();
+      RETURN NEW;
+    END;
+    $ LANGUAGE plpgsql SECURITY DEFINER;
+
+    -- Trigger to run the function on profile update
+    CREATE TRIGGER on_profile_updated
+      BEFORE UPDATE ON public.profiles
+      FOR EACH ROW EXECUTE FUNCTION public.handle_profile_update();
+    ```
+
+*   **기존 사용자 데이터 채우기**:
+    만약 트리거를 설정하기 전에 이미 가입한 사용자가 있다면, 아래 쿼리를 실행하여 `auth.users` 테이블에서 `profiles` 테이블로 데이터를 마이그레이션할 수 있습니다.
+
+    ```sql
+    INSERT INTO public.profiles (id, email)
+    SELECT id, email FROM auth.users
+    ON CONFLICT (id) DO NOTHING;
     ```
 
 사용자는 마이페이지에서 자신의 프로필 정보를 조회하고, 사용자 이름을 업데이트할 수 있습니다. 이메일은 Google 계정에서 가져오므로 직접 수정할 수 없습니다.

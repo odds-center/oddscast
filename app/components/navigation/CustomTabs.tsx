@@ -1,19 +1,20 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
 import { LinearGradient } from 'expo-linear-gradient';
 
 export function CustomTabs() {
+  const { colors, fonts } = useAppTheme();
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: theme.colors.primary,
-        tabBarInactiveTintColor: theme.colors.textTertiary,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.textTertiary,
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: theme.colors.card,
-          borderTopColor: theme.colors.border,
+          backgroundColor: colors.card,
+          borderTopColor: colors.border,
           borderTopWidth: 1,
           height: 80,
           paddingBottom: 10,
@@ -21,12 +22,12 @@ export function CustomTabs() {
         },
         tabBarBackground: () => (
           <LinearGradient
-            colors={theme.colors.gradient.card as [string, string]}
+            colors={colors.gradient.card as [string, string]}
             style={{ flex: 1 }}
           />
         ),
         tabBarLabelStyle: {
-          fontFamily: theme.fonts.bold,
+          fontFamily: fonts.bold,
           fontSize: 12,
           marginTop: 4,
         },
@@ -74,6 +75,7 @@ export function CustomTabs() {
           ),
         }}
       />
+      <Tabs.Screen name='races/[raceId]' options={{ href: null }} />
     </Tabs>
   );
 }

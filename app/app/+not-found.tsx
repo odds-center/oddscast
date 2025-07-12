@@ -3,13 +3,14 @@ import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import React from 'react';
+import { Title } from '@/components/ui';
 
 export default function NotFoundScreen() {
   return (
     <>
       <Stack.Screen options={{ title: 'Oops!' }} />
       <ThemedView style={styles.container}>
-        <ThemedText type='title'>존재하지 않는 화면입니다.</ThemedText>
+        <Title>존재하지 않는 화면입니다.</Title>
         <Link href='/login' style={styles.link}>
           <ThemedText type='link'>로그인 화면으로 이동</ThemedText>
         </Link>

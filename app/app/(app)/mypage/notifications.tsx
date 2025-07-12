@@ -1,88 +1,115 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, Switch, Alert } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
-import { useRouter } from 'expo-router';
+import { useAppTheme } from '@/constants/theme';
+import { PageHeader } from '@/components/common';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/context/AuthProvider';
 
 export default function NotificationSettingsScreen() {
-  const router = useRouter();
-  const [pushEnabled, setPushEnabled] = useState(true);
-  const [raceAlert, setRaceAlert] = useState(true);
-  const [resultAlert, setResultAlert] = useState(false);
+  const { session } = useAuth();
+  const { colors, spacing, radii, fonts } = useAppTheme();
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (session) {
+      fetchNotificationSetting();
+    }
+  }, [session]);
+
+  const fetchNotificationSetting = async () => {
+    try {
+      setLoading(true);
+      if (!session?.user) throw new Error('No user on the session!');
+
+      const { data, error, status } = await supabase
+        .from('profiles')
+        .select('notifications_enabled')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error && status !== 406) {
+        throw error;
+      }
+
+      if (data) {
+        setNotificationsEnabled(data.notifications_enabled);
+      }
+    } catch (error: any) {
+      Alert.alert('알림 설정 불러오기 오류', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateNotificationSetting = async (newValue: boolean) => {
+    try {
+      setNotificationsEnabled(newValue);
+      if (!session?.user) throw new Error('No user on the session!');
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ notifications_enabled: newValue })
+        .eq('id', session.user.id);
+
+      if (error) {
+        throw error;
+      }
+    } catch (error: any) {
+      Alert.alert('알림 설정 업데이트 오류', error.message);
+      setNotificationsEnabled(!newValue); // Revert on error
+    }
+  };
+
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    section: { padding: spacing.l },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginBottom: spacing.s,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    label: {
+      fontFamily: fonts.body,
+      fontSize: 16,
+      color: colors.text,
+    },
+  });
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Text>설정 불러오는 중...</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name='chevron-back' size={28} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>알림 설정</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <PageHeader
+        title="알림 설정"
+        subtitle="푸시 알림을 관리하세요"
+        showNotificationButton={false}
+      />
       <View style={styles.section}>
         <View style={styles.row}>
-          <Text style={styles.label}>푸시 알림 전체</Text>
+          <Text style={styles.label}>푸시 알림</Text>
           <Switch
-            value={pushEnabled}
-            onValueChange={setPushEnabled}
-            thumbColor={pushEnabled ? theme.colors.primary : theme.colors.border}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>경주 시작 알림</Text>
-          <Switch
-            value={raceAlert}
-            onValueChange={setRaceAlert}
-            thumbColor={raceAlert ? theme.colors.primary : theme.colors.border}
-          />
-        </View>
-        <View style={styles.row}>
-          <Text style={styles.label}>결과 알림</Text>
-          <Switch
-            value={resultAlert}
-            onValueChange={setResultAlert}
-            thumbColor={resultAlert ? theme.colors.primary : theme.colors.border}
+            value={notificationsEnabled}
+            onValueChange={updateNotificationSetting}
+            thumbColor={notificationsEnabled ? colors.primary : colors.border}
+            trackColor={{ false: colors.border, true: colors.primary + '80' }}
           />
         </View>
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: theme.spacing.l,
-    backgroundColor: theme.colors.background,
-  },
-  backBtn: { padding: 4, marginRight: 8 },
-  headerTitle: {
-    flex: 1,
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  section: { padding: theme.spacing.l },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  label: {
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-});

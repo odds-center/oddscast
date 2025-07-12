@@ -1,31 +1,67 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
+import { PageHeader } from '@/components/common';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { colors, spacing, radii, fonts } = useAppTheme();
   const [darkMode, setDarkMode] = useState(false);
   const [language, setLanguage] = useState('ko');
 
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    section: { padding: spacing.l },
+    row: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginBottom: spacing.s,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    label: {
+      fontFamily: fonts.body,
+      fontSize: 16,
+      color: colors.text,
+    },
+    languageBtn: {
+      backgroundColor: colors.primary + '20',
+      borderRadius: radii.s,
+      paddingHorizontal: spacing.m,
+      paddingVertical: spacing.s,
+    },
+    languageText: {
+      fontFamily: fonts.bold,
+      color: colors.primary,
+      fontSize: 16,
+    },
+  });
+
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name='chevron-back' size={28} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>설정</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <PageHeader
+        title="설정"
+        subtitle="앱 설정을 관리하세요"
+        showNotificationButton={false}
+        onNotificationPress={() => router.back()}
+        notificationIconName="chevron-back"
+        notificationIconColor={colors.text}
+      />
       <View style={styles.section}>
         <View style={styles.row}>
           <Text style={styles.label}>다크 모드</Text>
           <Switch
             value={darkMode}
             onValueChange={setDarkMode}
-            thumbColor={darkMode ? theme.colors.primary : theme.colors.border}
+            thumbColor={darkMode ? colors.primary : colors.border}
+            trackColor={{ false: colors.border, true: colors.primary + '80' }}
           />
         </View>
         <View style={styles.row}>
@@ -41,51 +77,3 @@ export default function SettingsScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: theme.spacing.l,
-    backgroundColor: theme.colors.background,
-  },
-  backBtn: { padding: 4, marginRight: 8 },
-  headerTitle: {
-    flex: 1,
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  section: { padding: theme.spacing.l },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  label: {
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  languageBtn: {
-    backgroundColor: theme.colors.primary + '20',
-    borderRadius: theme.radii.s,
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-  },
-  languageText: {
-    fontFamily: theme.fonts.bold,
-    color: theme.colors.primary,
-    fontSize: 16,
-  },
-});

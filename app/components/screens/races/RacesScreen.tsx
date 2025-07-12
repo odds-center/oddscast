@@ -4,16 +4,17 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  StatusBar,
   ActivityIndicator,
 } from 'react-native';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
 import RaceCard from './RaceCard';
 import { supabase } from '@/lib/supabase';
 import { Race } from '@/constants/mockData';
+import { Subtitle } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 
 export default function RacesScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
@@ -21,6 +22,7 @@ export default function RacesScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const venues = ['all', '서울', '부산', '제주', '광주'];
+  const { colors, spacing, radii, shadows, fonts } = useAppTheme();
 
   useEffect(() => {
     const fetchRaces = async () => {
@@ -49,11 +51,108 @@ export default function RacesScreen() {
     fetchRaces();
   }, [selectedVenue]);
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      paddingTop: 60,
+      paddingHorizontal: spacing.l,
+      paddingBottom: spacing.m,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    notificationButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...shadows.small,
+    },
+    filterContainer: {
+      paddingHorizontal: spacing.l,
+      marginBottom: spacing.m,
+    },
+    filterScroll: {
+      paddingRight: spacing.l,
+    },
+    filterButton: {
+      paddingHorizontal: spacing.m,
+      paddingVertical: spacing.s,
+      borderRadius: radii.round,
+      backgroundColor: colors.card,
+      marginRight: spacing.s,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    filterButtonActive: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    filterText: {
+      color: colors.textSecondary,
+    },
+    filterTextActive: {
+      color: colors.text,
+    },
+    statsContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: spacing.l,
+      marginBottom: spacing.l,
+    },
+    statCard: {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginRight: spacing.s,
+      ...shadows.small,
+    },
+    statIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.cardSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: spacing.s,
+    },
+    racesContainer: {
+      flex: 1,
+    },
+    racesContent: {
+      paddingHorizontal: spacing.l,
+      paddingBottom: spacing.xl,
+    },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      marginTop: spacing.m,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      marginTop: spacing.s,
+      textAlign: 'center',
+    },
+  });
+
   if (loading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <ActivityIndicator size='large' color={theme.colors.primary} />
-        <Text style={{ marginTop: theme.spacing.m }}>경주 정보를 불러오는 중...</Text>
+        <ActivityIndicator size='large' color={colors.primary} />
+        <Text style={{ marginTop: spacing.m }}>경주 정보를 불러오는 중...</Text>
       </View>
     );
   }
@@ -61,8 +160,8 @@ export default function RacesScreen() {
   if (error) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-        <Ionicons name='alert-circle-outline' size={64} color={theme.colors.error} />
-        <Text style={{ marginTop: theme.spacing.m, color: theme.colors.error }}>
+        <Ionicons name='alert-circle-outline' size={64} color={colors.error} />
+        <Text style={{ marginTop: spacing.m, color: colors.error }}>
           오류가 발생했습니다: {error}
         </Text>
       </View>
@@ -71,27 +170,15 @@ export default function RacesScreen() {
 
   return (
     <LinearGradient
-      colors={theme.colors.gradient.background as [string, string]}
+      colors={colors.gradient.background as [string, string]}
       style={styles.container}
     >
-      <StatusBar barStyle='light-content' backgroundColor='transparent' translucent />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text type='title' style={{ color: theme.colors.text }}>
-              경주 일정
-            </Text>
-            <Text type='subtitle' style={{ color: theme.colors.text }}>
-              오늘의 경마 일정을 확인하세요
-            </Text>
-          </View>
-          <TouchableOpacity style={styles.notificationButton}>
-            <Ionicons name='notifications-outline' size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader
+        title="경주 일정"
+        subtitle="오늘의 경마 일정을 확인하세요"
+        showNotificationButton={true}
+        onNotificationPress={() => console.log('Notification button pressed')}
+      />
 
       {/* Venue Filter */}
       <View style={styles.filterContainer}>
@@ -121,7 +208,7 @@ export default function RacesScreen() {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <View style={styles.statIcon}>
-            <Ionicons name='calendar' size={20} color={theme.colors.primary} />
+            <Ionicons name='calendar' size={20} color={colors.primary} />
           </View>
           <View>
             <Text type='stat'>{races.length}</Text>
@@ -130,7 +217,7 @@ export default function RacesScreen() {
         </View>
         <View style={styles.statCard}>
           <View style={styles.statIcon}>
-            <Ionicons name='trophy' size={20} color={theme.colors.accent} />
+            <Ionicons name='trophy' size={20} color={colors.accent} />
           </View>
           <View>
             <Text type='stat'>12</Text>
@@ -139,7 +226,7 @@ export default function RacesScreen() {
         </View>
         <View style={styles.statCard}>
           <View style={styles.statIcon}>
-            <Ionicons name='trending-up' size={20} color={theme.colors.success} />
+            <Ionicons name='trending-up' size={20} color={colors.success} />
           </View>
           <View>
             <Text type='stat'>85%</Text>
@@ -158,13 +245,11 @@ export default function RacesScreen() {
           races.map((race) => <RaceCard key={race.id} race={race} />)
         ) : (
           <View style={styles.emptyContainer}>
-            <Ionicons name='calendar-outline' size={64} color={theme.colors.textTertiary} />
+            <Ionicons name='calendar-outline' size={64} color={colors.textTertiary} />
             <Text type='defaultSemiBold' style={styles.emptyText}>
               선택한 지역의 경주가 없습니다
             </Text>
-            <Text type='subtitle' style={styles.emptySubtext}>
-              다른 지역을 선택해보세요
-            </Text>
+            <Subtitle style={styles.emptySubtext}>다른 지역을 선택해보세요</Subtitle>
           </View>
         )}
       </ScrollView>
@@ -172,99 +257,3 @@ export default function RacesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.m,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  notificationButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...theme.shadows.small,
-  },
-  filterContainer: {
-    paddingHorizontal: theme.spacing.l,
-    marginBottom: theme.spacing.m,
-  },
-  filterScroll: {
-    paddingRight: theme.spacing.l,
-  },
-  filterButton: {
-    paddingHorizontal: theme.spacing.m,
-    paddingVertical: theme.spacing.s,
-    borderRadius: theme.radii.round,
-    backgroundColor: theme.colors.card,
-    marginRight: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  filterButtonActive: {
-    backgroundColor: theme.colors.primary,
-    borderColor: theme.colors.primary,
-  },
-  filterText: {
-    color: theme.colors.textSecondary,
-  },
-  filterTextActive: {
-    color: theme.colors.text,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: theme.spacing.l,
-    marginBottom: theme.spacing.l,
-  },
-  statCard: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginRight: theme.spacing.s,
-    ...theme.shadows.small,
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.cardSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: theme.spacing.s,
-  },
-  racesContainer: {
-    flex: 1,
-  },
-  racesContent: {
-    paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.xl,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: theme.spacing.xxl,
-  },
-  emptyText: {
-    marginTop: theme.spacing.m,
-    textAlign: 'center',
-  },
-  emptySubtext: {
-    marginTop: theme.spacing.s,
-    textAlign: 'center',
-  },
-});

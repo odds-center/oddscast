@@ -1,5 +1,6 @@
 import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
+import { useColorScheme } from '@/hooks/useColorScheme';
 
 export const useLoadFonts = () => {
   return useFonts({
@@ -9,13 +10,34 @@ export const useLoadFonts = () => {
   });
 };
 
-export const theme = {
-  globalTextStyle: {
-    includeFontPadding: false,
-    textAlignVertical: 'center',
-    allowFontScaling: false,
+const tintColorLight = '#FFD700'; // Gold
+const tintColorDark = '#FFD700'; // Gold
+
+const Colors = {
+  light: {
+    background: '#FFFFFF',
+    primary: '#FFD700', // Gold
+    secondary: '#E0E0E0', // Light Gray
+    accent: '#FF6B35', // Orange
+    success: '#4CAF50', // Green
+    warning: '#FF9800', // Orange
+    error: '#F44336', // Red
+    text: '#1A1A1A', // Dark Gray for text on light background
+    textSecondary: '#666666',
+    textTertiary: '#999999',
+    card: '#F0F0F0',
+    cardSecondary: '#E8E8E8',
+    border: '#D0D0D0',
+    borderLight: '#E0E0E0',
+    overlay: 'rgba(255, 255, 255, 0.7)',
+    gradient: {
+      primary: ['#FFD700', '#FFA500'],
+      secondary: ['#E0E0E0', '#D0D0D0'],
+      card: ['#F0F0F0', '#E8E8E8'],
+      background: ['#FFFFFF', '#F8F8F8'],
+    },
   },
-  colors: {
+  dark: {
     background: '#0A0A0A',
     primary: '#FFD700', // Gold
     secondary: '#1E3A2F', // Dark Green
@@ -38,6 +60,15 @@ export const theme = {
       background: ['#0A0A0A', '#1A1A1A'],
     },
   },
+};
+
+export const theme = {
+  globalTextStyle: {
+    includeFontPadding: false,
+    textAlignVertical: 'center',
+    allowFontScaling: false,
+  },
+  colors: Colors.light, // Default to light mode colors
   fonts: {
     heading: 'PlayfairDisplay_700Bold',
     body: 'Lato_400Regular',
@@ -102,4 +133,13 @@ export const theme = {
       flex: 1,
     },
   },
+};
+
+// Dynamically set colors based on current color scheme
+export const useAppTheme = () => {
+  const colorScheme = useColorScheme();
+  return {
+    ...theme,
+    colors: Colors[colorScheme ?? 'light'],
+  };
 };

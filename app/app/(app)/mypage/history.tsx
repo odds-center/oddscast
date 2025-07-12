@@ -1,7 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
+import { PageHeader } from '@/components/common';
 import { useRouter } from 'expo-router';
 
 const mockHistory = [
@@ -12,16 +14,65 @@ const mockHistory = [
 
 export default function BettingHistoryScreen() {
   const router = useRouter();
+  const { colors, spacing, radii, fonts } = useAppTheme();
+
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    listContent: { padding: spacing.l },
+    item: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginBottom: spacing.s,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    itemLeft: {},
+    race: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    date: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    itemRight: { alignItems: 'flex-end' },
+    odds: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      color: colors.primary,
+    },
+    result: {
+      fontFamily: fonts.bold,
+      fontSize: 14,
+      marginTop: 2,
+    },
+    hit: { color: colors.success },
+    miss: { color: colors.error },
+    empty: {
+      textAlign: 'center',
+      color: colors.textTertiary,
+      marginTop: 40,
+      fontFamily: fonts.body,
+    },
+  });
+
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name='chevron-back' size={28} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>베팅 내역</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <PageHeader
+        title="베팅 내역"
+        subtitle="나의 베팅 기록"
+        showNotificationButton={false}
+        onNotificationPress={() => router.back()}
+        notificationIconName="chevron-back"
+        notificationIconColor={colors.text}
+      />
       <FlatList
         data={mockHistory}
         keyExtractor={(item) => item.id}
@@ -45,66 +96,3 @@ export default function BettingHistoryScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: theme.spacing.l,
-    backgroundColor: theme.colors.background,
-  },
-  backBtn: { padding: 4, marginRight: 8 },
-  headerTitle: {
-    flex: 1,
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  listContent: { padding: theme.spacing.l },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  itemLeft: {},
-  race: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  date: {
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-  itemRight: { alignItems: 'flex-end' },
-  odds: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 14,
-    color: theme.colors.primary,
-  },
-  result: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 14,
-    marginTop: 2,
-  },
-  hit: { color: theme.colors.success },
-  miss: { color: theme.colors.error },
-  empty: {
-    textAlign: 'center',
-    color: theme.colors.textTertiary,
-    marginTop: 40,
-    fontFamily: theme.fonts.body,
-  },
-});

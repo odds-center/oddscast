@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
+import { ThemedText as Text } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
+import { PageHeader } from '@/components/common';
 import { useRouter } from 'expo-router';
 
 const mockFavorites = [
@@ -11,22 +13,56 @@ const mockFavorites = [
 
 export default function FavoritesScreen() {
   const router = useRouter();
+  const { colors, spacing, radii, fonts } = useAppTheme();
   const [favorites, setFavorites] = useState(mockFavorites);
 
   const removeFavorite = (id: string) => {
     setFavorites(favorites.filter((f) => f.id !== id));
   };
 
+  const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    listContent: { padding: spacing.l },
+    item: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginBottom: spacing.s,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    name: {
+      fontFamily: fonts.bold,
+      fontSize: 16,
+      color: colors.text,
+    },
+    recent: {
+      fontFamily: fonts.body,
+      fontSize: 12,
+      color: colors.textSecondary,
+      marginTop: 2,
+    },
+    empty: {
+      textAlign: 'center',
+      color: colors.textTertiary,
+      marginTop: 40,
+      fontFamily: fonts.body,
+    },
+  });
+
   return (
     <View style={styles.container}>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name='chevron-back' size={28} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>즐겨찾기</Text>
-        <View style={{ width: 28 }} />
-      </View>
+      <PageHeader
+        title="즐겨찾기"
+        subtitle="관심 말 관리"
+        showNotificationButton={false}
+        onNotificationPress={() => router.back()}
+        notificationIconName="chevron-back"
+        notificationIconColor={colors.text}
+      />
       <FlatList
         data={favorites}
         keyExtractor={(item) => item.id}
@@ -38,7 +74,7 @@ export default function FavoritesScreen() {
               <Text style={styles.recent}>최근 성적: {item.recent}</Text>
             </View>
             <TouchableOpacity onPress={() => removeFavorite(item.id)}>
-              <Ionicons name='trash' size={22} color={theme.colors.error} />
+              <Ionicons name='trash' size={22} color={colors.error} />
             </TouchableOpacity>
           </View>
         )}
@@ -47,52 +83,3 @@ export default function FavoritesScreen() {
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: theme.spacing.l,
-    backgroundColor: theme.colors.background,
-  },
-  backBtn: { padding: 4, marginRight: 8 },
-  headerTitle: {
-    flex: 1,
-    fontFamily: theme.fonts.bold,
-    fontSize: 20,
-    color: theme.colors.text,
-    textAlign: 'center',
-  },
-  listContent: { padding: theme.spacing.l },
-  item: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  name: {
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-    color: theme.colors.text,
-  },
-  recent: {
-    fontFamily: theme.fonts.body,
-    fontSize: 12,
-    color: theme.colors.textSecondary,
-    marginTop: 2,
-  },
-  empty: {
-    textAlign: 'center',
-    color: theme.colors.textTertiary,
-    marginTop: 40,
-    fontFamily: theme.fonts.body,
-  },
-});

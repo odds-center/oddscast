@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
 import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthProvider';
 import { supabase } from '@/lib/supabase';
+import { Title, Subtitle } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 
 type MyPageRoute =
   | '/mypage/profile'
@@ -33,6 +35,7 @@ interface Profile {
 export default function MyPageScreen() {
   const router = useRouter();
   const { session, signOut } = useAuth();
+  const { colors, spacing, radii, shadows, fonts } = useAppTheme();
   const [profile, setProfile] = useState<Profile | null>(null);
 
   useEffect(() => {
@@ -77,7 +80,7 @@ export default function MyPageScreen() {
       title: '프로필 관리',
       subtitle: '개인정보 수정',
       icon: 'person-outline',
-      color: theme.colors.primary,
+      color: colors.primary,
       route: '/mypage/profile',
     },
     {
@@ -85,7 +88,7 @@ export default function MyPageScreen() {
       title: '베팅 내역',
       subtitle: '나의 베팅 기록',
       icon: 'time-outline',
-      color: theme.colors.accent,
+      color: colors.accent,
       route: '/mypage/history',
     },
     {
@@ -93,7 +96,7 @@ export default function MyPageScreen() {
       title: '즐겨찾기',
       subtitle: '관심 말 관리',
       icon: 'heart-outline',
-      color: theme.colors.error,
+      color: colors.error,
       route: '/mypage/favorites',
     },
     {
@@ -101,7 +104,7 @@ export default function MyPageScreen() {
       title: '알림 설정',
       subtitle: '푸시 알림 관리',
       icon: 'notifications-outline',
-      color: theme.colors.success,
+      color: colors.success,
       route: '/mypage/notifications',
     },
     {
@@ -109,7 +112,7 @@ export default function MyPageScreen() {
       title: '설정',
       subtitle: '앱 설정',
       icon: 'settings-outline',
-      color: theme.colors.textSecondary,
+      color: colors.textSecondary,
       route: '/mypage/settings',
     },
     {
@@ -117,7 +120,7 @@ export default function MyPageScreen() {
       title: '고객센터',
       subtitle: '문의 및 도움말',
       icon: 'help-circle-outline',
-      color: theme.colors.warning,
+      color: colors.warning,
       route: '/mypage/help',
     },
   ];
@@ -128,32 +131,202 @@ export default function MyPageScreen() {
     { label: '수익률', value: '+23%', icon: 'wallet' },
   ];
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      paddingTop: 60,
+      paddingHorizontal: spacing.l,
+      paddingBottom: spacing.m,
+    },
+    headerContent: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    },
+    editButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      backgroundColor: colors.card,
+      justifyContent: 'center',
+      alignItems: 'center',
+      ...shadows.small,
+    },
+    content: {
+      flex: 1,
+    },
+    contentContainer: {
+      paddingHorizontal: spacing.l,
+      paddingBottom: spacing.xl,
+    },
+    profileSection: {
+      marginBottom: spacing.l,
+    },
+    profileCard: {
+      borderRadius: radii.l,
+      padding: spacing.m,
+      borderWidth: 1,
+      borderColor: colors.border,
+      ...shadows.medium,
+    },
+    profileHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    avatarContainer: {
+      position: 'relative',
+      marginRight: spacing.m,
+    },
+    avatar: {
+      width: 60,
+      height: 60,
+      borderRadius: 30,
+      backgroundColor: colors.cardSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    onlineIndicator: {
+      position: 'absolute',
+      bottom: 2,
+      right: 2,
+      width: 16,
+      height: 16,
+      borderRadius: 8,
+      backgroundColor: colors.success,
+      borderWidth: 2,
+      borderColor: colors.card,
+    },
+    profileInfo: {
+      flex: 1,
+    },
+    userName: {
+      marginBottom: spacing.xs,
+    },
+    userEmail: {
+      marginBottom: spacing.s,
+    },
+    memberBadge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: colors.primary + '20',
+      paddingHorizontal: spacing.s,
+      paddingVertical: spacing.xs,
+      borderRadius: radii.s,
+      alignSelf: 'flex-start',
+    },
+    memberText: {
+      marginLeft: spacing.xs,
+    },
+    statsSection: {
+      flexDirection: 'row',
+      marginBottom: spacing.l,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      padding: spacing.m,
+      marginRight: spacing.s,
+      flexDirection: 'row',
+      alignItems: 'center',
+      ...shadows.small,
+    },
+    statIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.cardSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: spacing.s,
+    },
+    statValue: {
+      // Handled by ThemedText type
+    },
+    statLabel: {
+      // Handled by ThemedText type
+    },
+    menuSection: {
+      marginBottom: spacing.l,
+    },
+    sectionTitle: {
+      marginBottom: spacing.m,
+    },
+    menuItem: {
+      marginBottom: spacing.s,
+    },
+    menuCard: {
+      borderRadius: radii.m,
+      padding: spacing.m,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: 'row',
+      alignItems: 'center',
+      ...shadows.small,
+    },
+    menuIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: colors.cardSecondary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: spacing.m,
+    },
+    menuContent: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    menuTitle: {
+      marginBottom: spacing.xs,
+    },
+    menuSubtitle: {
+      // Handled by ThemedText type
+    },
+    logoutSection: {
+      marginBottom: spacing.l,
+    },
+    logoutButton: {
+      borderRadius: radii.m,
+      overflow: 'hidden',
+      ...shadows.medium,
+    },
+    logoutGradient: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: spacing.m,
+      paddingHorizontal: spacing.l,
+    },
+    logoutText: {
+      marginLeft: spacing.s,
+    },
+    appInfoSection: {
+      alignItems: 'center',
+      paddingTop: spacing.l,
+    },
+    appVersion: {
+      marginBottom: spacing.xs,
+    },
+    appCopyright: {
+      textAlign: 'center',
+    },
+  });
+
   return (
     <LinearGradient
-      colors={theme.colors.gradient.background as [string, string]}
+      colors={colors.gradient.background as [string, string]}
       style={styles.container}
     >
-      <StatusBar barStyle='light-content' backgroundColor='transparent' translucent />
-
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerContent}>
-          <View>
-            <Text type='title' style={styles.title}>
-              마이페이지
-            </Text>
-            <Text type='subtitle' style={styles.subtitle}>
-              내 정보와 설정을 관리하세요
-            </Text>
-          </View>
-          <TouchableOpacity
-            style={styles.editButton}
-            onPress={() => router.push('/mypage/profile')}
-          >
-            <Ionicons name='create-outline' size={24} color={theme.colors.primary} />
-          </TouchableOpacity>
-        </View>
-      </View>
+      <PageHeader
+        title="마이페이지"
+        subtitle="내 정보와 설정을 관리하세요"
+        showNotificationButton={true}
+        onNotificationPress={() => router.push('/mypage/profile')}
+        notificationIconName="create-outline"
+      />
 
       <ScrollView
         style={styles.content}
@@ -163,13 +336,13 @@ export default function MyPageScreen() {
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <LinearGradient
-            colors={theme.colors.gradient.card as [string, string]}
+            colors={colors.gradient.card as [string, string]}
             style={styles.profileCard}
           >
             <View style={styles.profileHeader}>
               <View style={styles.avatarContainer}>
                 <View style={styles.avatar}>
-                  <Ionicons name='person' size={32} color={theme.colors.text} />
+                  <Ionicons name='person' size={32} color={colors.text} />
                 </View>
                 <View style={styles.onlineIndicator} />
               </View>
@@ -181,7 +354,7 @@ export default function MyPageScreen() {
                   {profile?.email || session?.user?.email || '이메일 없음'}
                 </Text>
                 <View style={styles.memberBadge}>
-                  <Ionicons name='star' size={12} color={theme.colors.primary} />
+                  <Ionicons name='star' size={12} color={colors.primary} />
                   <Text type='caption' style={styles.memberText}>
                     골드 멤버
                   </Text>
@@ -196,7 +369,7 @@ export default function MyPageScreen() {
           {stats.map((stat, index) => (
             <View key={index} style={styles.statCard}>
               <View style={styles.statIcon}>
-                <Ionicons name={stat.icon as any} size={20} color={theme.colors.primary} />
+                <Ionicons name={stat.icon as any} size={20} color={colors.primary} />
               </View>
               <View>
                 <Text type='stat' style={styles.statValue}>
@@ -223,7 +396,7 @@ export default function MyPageScreen() {
               onPress={() => router.push(item.route)}
             >
               <LinearGradient
-                colors={theme.colors.gradient.card as [string, string]}
+                colors={colors.gradient.card as [string, string]}
                 style={styles.menuCard}
               >
                 <View style={styles.menuIcon}>
@@ -237,7 +410,7 @@ export default function MyPageScreen() {
                     {item.subtitle}
                   </Text>
                 </View>
-                <Ionicons name='chevron-forward' size={20} color={theme.colors.textSecondary} />
+                <Ionicons name='chevron-forward' size={20} color={colors.textSecondary} />
               </LinearGradient>
             </TouchableOpacity>
           ))}
@@ -247,10 +420,10 @@ export default function MyPageScreen() {
         <View style={styles.logoutSection}>
           <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.7}>
             <LinearGradient
-              colors={[theme.colors.error, theme.colors.error + '80'] as [string, string]}
+              colors={[colors.error, colors.error + '80'] as [string, string]}
               style={styles.logoutGradient}
             >
-              <Ionicons name='log-out-outline' size={20} color={theme.colors.text} />
+              <Ionicons name='log-out-outline' size={20} color={colors.text} />
               <Text type='defaultSemiBold' style={styles.logoutText}>
                 로그아웃
               </Text>
@@ -272,197 +445,3 @@ export default function MyPageScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.m,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  title: {
-    // fontFamily: theme.fonts.heading, // Handled by ThemedText type
-    // fontSize: 28, // Handled by ThemedText type
-    // color: theme.colors.text, // Handled by ThemedText type
-    marginBottom: theme.spacing.xs,
-  },
-  subtitle: {
-    // fontFamily: theme.fonts.body, // Handled by ThemedText type
-    // fontSize: 14, // Handled by ThemedText type
-    // color: theme.colors.textSecondary, // Handled by ThemedText type
-  },
-  editButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: theme.colors.card,
-    justifyContent: 'center',
-    alignItems: 'center',
-    ...theme.shadows.small,
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.xl,
-  },
-  profileSection: {
-    marginBottom: theme.spacing.l,
-  },
-  profileCard: {
-    borderRadius: theme.radii.l,
-    padding: theme.spacing.m,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    ...theme.shadows.medium,
-  },
-  profileHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarContainer: {
-    position: 'relative',
-    marginRight: theme.spacing.m,
-  },
-  avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: theme.colors.cardSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  onlineIndicator: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: theme.colors.success,
-    borderWidth: 2,
-    borderColor: theme.colors.card,
-  },
-  profileInfo: {
-    flex: 1,
-  },
-  userName: {
-    marginBottom: theme.spacing.xs,
-  },
-  userEmail: {
-    marginBottom: theme.spacing.s,
-  },
-  memberBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: theme.colors.primary + '20',
-    paddingHorizontal: theme.spacing.s,
-    paddingVertical: theme.spacing.xs,
-    borderRadius: theme.radii.s,
-    alignSelf: 'flex-start',
-  },
-  memberText: {
-    marginLeft: theme.spacing.xs,
-  },
-  statsSection: {
-    flexDirection: 'row',
-    marginBottom: theme.spacing.l,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    marginRight: theme.spacing.s,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...theme.shadows.small,
-  },
-  statIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: theme.colors.cardSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: theme.spacing.s,
-  },
-  statValue: {
-    // Handled by ThemedText type
-  },
-  statLabel: {
-    // Handled by ThemedText type
-  },
-  menuSection: {
-    marginBottom: theme.spacing.l,
-  },
-  sectionTitle: {
-    marginBottom: theme.spacing.m,
-  },
-  menuItem: {
-    marginBottom: theme.spacing.s,
-  },
-  menuCard: {
-    borderRadius: theme.radii.m,
-    padding: theme.spacing.m,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    flexDirection: 'row',
-    alignItems: 'center',
-    ...theme.shadows.small,
-  },
-  menuIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: theme.colors.cardSecondary,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: theme.spacing.m,
-  },
-  menuContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  menuTitle: {
-    marginBottom: theme.spacing.xs,
-  },
-  menuSubtitle: {
-    // Handled by ThemedText type
-  },
-  logoutSection: {
-    marginBottom: theme.spacing.l,
-  },
-  logoutButton: {
-    borderRadius: theme.radii.m,
-    overflow: 'hidden',
-    ...theme.shadows.medium,
-  },
-  logoutGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: theme.spacing.m,
-    paddingHorizontal: theme.spacing.l,
-  },
-  logoutText: {
-    marginLeft: theme.spacing.s,
-  },
-  appInfoSection: {
-    alignItems: 'center',
-    paddingTop: theme.spacing.l,
-  },
-  appVersion: {
-    marginBottom: theme.spacing.xs,
-  },
-  appCopyright: {
-    textAlign: 'center',
-  },
-});

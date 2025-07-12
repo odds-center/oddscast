@@ -3,12 +3,15 @@ import { View, StyleSheet, Alert, TextInput, TouchableOpacity } from 'react-nati
 import { ThemedText as Text } from '@/components/ThemedText';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { theme } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthProvider';
+import { Title } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 
 export default function ProfileScreen() {
   const { session } = useAuth();
+  const { colors, spacing, radii, fonts, shadows } = useAppTheme();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -66,16 +69,69 @@ export default function ProfileScreen() {
     }
   }
 
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      paddingTop: 60,
+      paddingHorizontal: spacing.l,
+      paddingBottom: spacing.m,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    headerTitle: {
+      color: colors.text,
+    },
+    content: {
+      flex: 1,
+      padding: spacing.l,
+    },
+    inputGroup: {
+      marginBottom: spacing.m,
+    },
+    label: {
+      color: colors.textSecondary,
+      marginBottom: spacing.s,
+    },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: radii.m,
+      paddingHorizontal: spacing.m,
+      height: 50,
+      color: colors.text,
+      fontFamily: fonts.body,
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    button: {
+      backgroundColor: colors.primary,
+      borderRadius: radii.m,
+      paddingVertical: spacing.m,
+      alignItems: 'center',
+      marginTop: spacing.l,
+    },
+    buttonText: {
+      color: colors.text,
+      fontFamily: fonts.bold,
+      fontSize: 16,
+    },
+  });
+
   return (
     <LinearGradient
-      colors={theme.colors.gradient.background as [string, string]}
+      colors={colors.gradient.background as [string, string]}
       style={styles.container}
     >
-      <View style={styles.header}>
-        <Text type='title' style={styles.headerTitle}>
-          프로필 관리
-        </Text>
-      </View>
+      <PageHeader
+        title="프로필 관리"
+        subtitle="개인 정보를 관리하세요"
+        showNotificationButton={false}
+        onNotificationPress={() => console.log('Back button pressed')}
+        notificationIconName="chevron-back"
+        notificationIconColor={colors.text}
+      />
 
       <View style={styles.content}>
         <View style={styles.inputGroup}>
@@ -86,7 +142,7 @@ export default function ProfileScreen() {
             style={styles.input}
             value={email || ''}
             editable={false} // Email is not editable
-            placeholderTextColor={theme.colors.textTertiary}
+            placeholderTextColor={colors.text}
           />
         </View>
 
@@ -99,7 +155,7 @@ export default function ProfileScreen() {
             value={username || ''}
             onChangeText={setUsername}
             placeholder='사용자 이름을 입력하세요'
-            placeholderTextColor={theme.colors.textTertiary}
+            placeholderTextColor={colors.text}
           />
         </View>
 
@@ -110,53 +166,3 @@ export default function ProfileScreen() {
     </LinearGradient>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: theme.spacing.l,
-    paddingBottom: theme.spacing.m,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  headerTitle: {
-    color: theme.colors.text,
-  },
-  content: {
-    flex: 1,
-    padding: theme.spacing.l,
-  },
-  inputGroup: {
-    marginBottom: theme.spacing.m,
-  },
-  label: {
-    color: theme.colors.textSecondary,
-    marginBottom: theme.spacing.s,
-  },
-  input: {
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.radii.m,
-    paddingHorizontal: theme.spacing.m,
-    height: 50,
-    color: theme.colors.text,
-    fontFamily: theme.fonts.body,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  button: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.radii.m,
-    paddingVertical: theme.spacing.m,
-    alignItems: 'center',
-    marginTop: theme.spacing.l,
-  },
-  buttonText: {
-    color: theme.colors.text,
-    fontFamily: theme.fonts.bold,
-    fontSize: 16,
-  },
-});

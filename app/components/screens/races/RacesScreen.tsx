@@ -1,20 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
-import { ThemedText as Text } from '@/components/ThemedText';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/constants/theme';
-import RaceCard from './RaceCard';
-import { supabase } from '@/lib/supabase';
-import { Race } from '@/constants/mockData';
-import { Subtitle } from '@/components/ui';
 import { PageHeader } from '@/components/common';
+import { ThemedText as Text } from '@/components/ThemedText';
+import { Subtitle } from '@/components/ui';
+import { Race } from '@/constants/mockData';
+import { useAppTheme } from '@/constants/theme';
+import { supabase } from '@/lib/supabase';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import RaceCard from './RaceCard';
 
 export default function RacesScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
@@ -54,6 +48,7 @@ export default function RacesScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     header: {
       paddingTop: 60,
@@ -169,15 +164,18 @@ export default function RacesScreen() {
   }
 
   return (
-    <LinearGradient
-      colors={colors.gradient.background as [string, string]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <PageHeader
-        title="경주 일정"
-        subtitle="오늘의 경마 일정을 확인하세요"
-        showNotificationButton={true}
-        onNotificationPress={() => console.log('Notification button pressed')}
+        title='경주 일정'
+        subtitle='오늘의 경마 일정을 확인하세요'
+        rightComponent={
+          <TouchableOpacity
+            style={styles.notificationButton}
+            onPress={() => console.log('Notification button pressed')}
+          >
+            <Ionicons name='notifications-outline' size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
       />
 
       {/* Venue Filter */}
@@ -253,7 +251,6 @@ export default function RacesScreen() {
           </View>
         )}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
-

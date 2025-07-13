@@ -103,7 +103,8 @@ const handleGoogleSignIn = async () => {
       email text UNIQUE,
       username text,
       created_at timestamp with time zone DEFAULT now(),
-      updated_at timestamp with time zone
+      updated_at timestamp with time zone,
+      notifications_enabled BOOLEAN DEFAULT TRUE
     );
     ```
 
@@ -154,5 +155,8 @@ const handleGoogleSignIn = async () => {
     SELECT id, email FROM auth.users
     ON CONFLICT (id) DO NOTHING;
     ```
+
+*   **JWT 만료 기간 설정:**
+    사용자 로그인 유지 기간을 설정하려면 Supabase 대시보드에서 JWT 만료 기간을 조정해야 합니다. `Authentication` -> `Settings` (또는 `Configuration` 등) 섹션에서 `JWT expiry` 필드를 찾아 원하는 기간(예: 30일 = 2,592,000초)으로 설정합니다.
 
 사용자는 마이페이지에서 자신의 프로필 정보를 조회하고, 사용자 이름을 업데이트할 수 있습니다. 이메일은 Google 계정에서 가져오므로 직접 수정할 수 없습니다.

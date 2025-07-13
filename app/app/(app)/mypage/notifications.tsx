@@ -97,7 +97,8 @@ export default function NotificationSettingsScreen() {
       <PageHeader
         title="알림 설정"
         subtitle="푸시 알림을 관리하세요"
-        showNotificationButton={false}
+        showBackButton={true}
+        onBackPress={() => router.back()}
       />
       <View style={styles.section}>
         <View style={styles.row}>

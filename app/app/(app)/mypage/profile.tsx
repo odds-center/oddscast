@@ -8,10 +8,12 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthProvider';
 import { Title } from '@/components/ui';
 import { PageHeader } from '@/components/common';
+import { useRouter } from 'expo-router';
 
 export default function ProfileScreen() {
   const { session } = useAuth();
   const { colors, spacing, radii, fonts, shadows } = useAppTheme();
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState<string | null>(null);
   const [email, setEmail] = useState<string | null>(null);
@@ -73,16 +75,6 @@ export default function ProfileScreen() {
     container: {
       flex: 1,
     },
-    header: {
-      paddingTop: 60,
-      paddingHorizontal: spacing.l,
-      paddingBottom: spacing.m,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-    },
-    headerTitle: {
-      color: colors.text,
-    },
     content: {
       flex: 1,
       padding: spacing.l,
@@ -127,10 +119,8 @@ export default function ProfileScreen() {
       <PageHeader
         title="프로필 관리"
         subtitle="개인 정보를 관리하세요"
-        showNotificationButton={false}
-        onNotificationPress={() => console.log('Back button pressed')}
-        notificationIconName="chevron-back"
-        notificationIconColor={colors.text}
+        showBackButton={true}
+        onBackPress={() => router.back()}
       />
 
       <View style={styles.content}>

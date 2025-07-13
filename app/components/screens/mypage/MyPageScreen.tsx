@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { PageHeader } from '@/components/common';
 import { ThemedText as Text } from '@/components/ThemedText';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/constants/theme';
-import { useRouter } from 'expo-router';
 import { useAuth } from '@/context/AuthProvider';
 import { supabase } from '@/lib/supabase';
-import { Title, Subtitle } from '@/components/ui';
-import { PageHeader } from '@/components/common';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 type MyPageRoute =
   | '/mypage/profile'
@@ -134,6 +133,7 @@ export default function MyPageScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     header: {
       paddingTop: 60,
@@ -316,16 +316,18 @@ export default function MyPageScreen() {
   });
 
   return (
-    <LinearGradient
-      colors={colors.gradient.background as [string, string]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <PageHeader
-        title="마이페이지"
-        subtitle="내 정보와 설정을 관리하세요"
-        showNotificationButton={true}
-        onNotificationPress={() => router.push('/mypage/profile')}
-        notificationIconName="create-outline"
+        title='마이페이지'
+        subtitle='내 정보와 설정을 관리하세요'
+        rightComponent={
+          <TouchableOpacity
+            style={styles.editButton}
+            onPress={() => router.push('/mypage/profile')}
+          >
+            <Ionicons name='create-outline' size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
       />
 
       <ScrollView
@@ -441,7 +443,6 @@ export default function MyPageScreen() {
           </Text>
         </View>
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }
-

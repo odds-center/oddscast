@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { RACES } from '@/constants/mockData';
 import { useAppTheme } from '@/constants/theme';
 import { Title, Subtitle } from '@/components/ui';
+import { PageHeader } from '@/components/common';
 
 export default function RaceDetailScreen() {
   const { raceId } = useLocalSearchParams();
@@ -33,10 +34,6 @@ export default function RaceDetailScreen() {
     contentContainer: {
       padding: spacing.l,
       paddingBottom: spacing.xl,
-    },
-    header: {
-      alignItems: 'center',
-      marginBottom: spacing.l,
     },
     statusBadge: {
       backgroundColor: colors.success,
@@ -143,16 +140,17 @@ export default function RaceDetailScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* 상단 경주 정보 */}
-      <View style={styles.header}>
-        <Title>{race.raceName}</Title>
-        <Subtitle>
-          {race.venue} | {race.date}
-        </Subtitle>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>진행중</Text>
-        </View>
-      </View>
+      <PageHeader
+        title={race.raceName}
+        subtitle={`${race.venue} | ${race.date}`}
+        showBackButton={true}
+        onBackPress={() => router.back()}
+        rightComponent={
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>진행중</Text>
+          </View>
+        }
+      />
       {/* 주요 정보 카드 */}
       <View style={styles.infoRow}>
         <View style={styles.infoCard}>

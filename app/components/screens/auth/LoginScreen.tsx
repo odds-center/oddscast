@@ -1,19 +1,15 @@
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'expo-router';
-import { StyleSheet, Alert, TouchableOpacity, View, Dimensions, StatusBar } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
-import { useAuth } from '@/context/AuthProvider'; // Updated import path
-import { useAppTheme } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText as Text } from '@/components/ThemedText';
-import { Title, Subtitle } from '@/components/ui';
-
-const { width, height } = Dimensions.get('window');
+import { Subtitle, Title } from '@/components/ui';
+import { useAppTheme } from '@/constants/theme';
+import { useAuth } from '@/context/AuthProvider'; // Updated import path
+import { Ionicons } from '@expo/vector-icons';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
+import React, { useEffect, useState } from 'react';
+import { Alert, StatusBar, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const WEB_CLIENT_ID = process.env.EXPO_PUBLIC_WEB_CLIENT_ID;
-const IOS_CLIENT_ID = process.env.EXPO_PUBLIC_IOS_CLIENT_ID;
-const ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID;
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -101,7 +97,7 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <StatusBar
-        barStyle={colors.background === '#FFFFFF' ? 'dark-content' : 'light-content'}
+        barStyle={colors.background === '#F5F5F5' ? 'dark-content' : 'light-content'}
         backgroundColor='transparent'
         translucent
       />

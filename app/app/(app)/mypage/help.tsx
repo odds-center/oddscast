@@ -74,10 +74,8 @@ export default function HelpCenterScreen() {
       <PageHeader
         title="고객센터"
         subtitle="문의 및 도움말"
-        showNotificationButton={false}
-        onNotificationPress={() => router.back()}
-        notificationIconName="chevron-back"
-        notificationIconColor={colors.text}
+        showBackButton={true}
+        onBackPress={() => router.back()}
       />
       <FlatList
         data={faqs}

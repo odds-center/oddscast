@@ -58,10 +58,8 @@ export default function FavoritesScreen() {
       <PageHeader
         title="즐겨찾기"
         subtitle="관심 말 관리"
-        showNotificationButton={false}
-        onNotificationPress={() => router.back()}
-        notificationIconName="chevron-back"
-        notificationIconColor={colors.text}
+        showBackButton={true}
+        onBackPress={() => router.back()}
       />
       <FlatList
         data={favorites}

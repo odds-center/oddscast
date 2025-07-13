@@ -9,10 +9,7 @@ export const Title = (props: ThemedTextProps) => {
     <ThemedText
       type='title'
       style={
-        [
-          { color: colors.text, marginBottom: spacing.xs },
-          props.style,
-        ] as StyleProp<TextStyle>
+        [{ color: colors.text, marginBottom: spacing.xs }, props.style] as StyleProp<TextStyle>
       }
       {...props}
     />

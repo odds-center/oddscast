@@ -1,6 +1,6 @@
-import { useFonts, PlayfairDisplay_700Bold } from '@expo-google-fonts/playfair-display';
-import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
+import { PlayfairDisplay_700Bold, useFonts } from '@expo-google-fonts/playfair-display';
 
 export const useLoadFonts = () => {
   return useFonts({
@@ -10,54 +10,51 @@ export const useLoadFonts = () => {
   });
 };
 
-const tintColorLight = '#FFD700'; // Gold
-const tintColorDark = '#FFD700'; // Gold
-
 const Colors = {
   light: {
-    background: '#FFFFFF',
-    primary: '#FFD700', // Gold
+    background: '#F5F5F5',
+    primary: '#B48A3C', // Gold
     secondary: '#E0E0E0', // Light Gray
     accent: '#FF6B35', // Orange
     success: '#4CAF50', // Green
     warning: '#FF9800', // Orange
     error: '#F44336', // Red
-    text: '#1A1A1A', // Dark Gray for text on light background
-    textSecondary: '#666666',
-    textTertiary: '#999999',
-    card: '#F0F0F0',
-    cardSecondary: '#E8E8E8',
-    border: '#D0D0D0',
-    borderLight: '#E0E0E0',
+    text: '#11181C', // Dark Gray for text on light background
+    textSecondary: '#687076',
+    textTertiary: '#9BA1A6',
+    card: '#FFFFFF',
+    cardSecondary: '#F8F8F8',
+    border: '#E0E0E0',
+    borderLight: '#F0F0F0',
     overlay: 'rgba(255, 255, 255, 0.7)',
     gradient: {
-      primary: ['#FFD700', '#FFA500'],
+      primary: ['#B48A3C', '#E5C99C'],
       secondary: ['#E0E0E0', '#D0D0D0'],
-      card: ['#F0F0F0', '#E8E8E8'],
-      background: ['#FFFFFF', '#F8F8F8'],
+      card: ['#FFFFFF', '#F8F8F8'],
+      background: ['#F5F5F5', '#FFFFFF'],
     },
   },
   dark: {
-    background: '#0A0A0A',
-    primary: '#FFD700', // Gold
-    secondary: '#1E3A2F', // Dark Green
+    background: '#0C2A1E',
+    primary: '#E5C99C', // Gold
+    secondary: '#000000FF', // Dark Green
     accent: '#FF6B35', // Orange
     success: '#4CAF50', // Green
     warning: '#FF9800', // Orange
     error: '#F44336', // Red
     text: '#FFFFFF',
-    textSecondary: '#B0B0B0',
-    textTertiary: '#808080',
+    textSecondary: '#9BA1A6',
+    textTertiary: '#687076',
     card: '#1A1A1A',
     cardSecondary: '#2A2A2A',
     border: '#333333',
     borderLight: '#404040',
     overlay: 'rgba(0, 0, 0, 0.7)',
     gradient: {
-      primary: ['#FFD700', '#FFA500'],
+      primary: ['#E5C99C', '#B48A3C'],
       secondary: ['#1E3A2F', '#2D5A3F'],
       card: ['#1A1A1A', '#2A2A2A'],
-      background: ['#0A0A0A', '#1A1A1A'],
+      background: ['#0C2A1E', '#1A1A1A'],
     },
   },
 };
@@ -68,7 +65,6 @@ export const theme = {
     textAlignVertical: 'center',
     allowFontScaling: false,
   },
-  colors: Colors.light, // Default to light mode colors
   fonts: {
     heading: 'PlayfairDisplay_700Bold',
     body: 'Lato_400Regular',
@@ -137,9 +133,34 @@ export const theme = {
 
 // Dynamically set colors based on current color scheme
 export const useAppTheme = () => {
-  const colorScheme = useColorScheme();
-  return {
+  // Safe fallback theme
+  const fallbackTheme = {
     ...theme,
-    colors: Colors[colorScheme ?? 'light'],
+    colors: Colors.dark,
   };
+
+  try {
+    const colorSchemeResult = useColorScheme();
+
+    // Ensure we have a valid result
+    if (!colorSchemeResult) {
+      console.warn('useColorScheme returned undefined, using fallback theme');
+      return fallbackTheme;
+    }
+
+    const { colorScheme, loading } = colorSchemeResult;
+
+    // Always use a valid color scheme, defaulting to dark if invalid
+    // Don't wait for loading to complete, use current colorScheme immediately
+    const currentColorScheme =
+      colorScheme === 'light' || colorScheme === 'dark' ? colorScheme : 'dark';
+
+    return {
+      ...theme, // Spread the static theme properties
+      colors: Colors[currentColorScheme], // Dynamically assign the correct colors
+    };
+  } catch (error) {
+    console.warn('Error in useAppTheme:', error);
+    return fallbackTheme;
+  }
 };

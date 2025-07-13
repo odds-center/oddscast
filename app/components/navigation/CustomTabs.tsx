@@ -1,8 +1,8 @@
+import { useAppTheme } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/constants/theme';
-import { LinearGradient } from 'expo-linear-gradient';
 
 export function CustomTabs() {
   const { colors, fonts } = useAppTheme();
@@ -17,14 +17,11 @@ export function CustomTabs() {
           borderTopColor: colors.border,
           borderTopWidth: 1,
           height: 80,
-          paddingBottom: 10,
+          paddingBottom: 14,
           paddingTop: 10,
         },
         tabBarBackground: () => (
-          <LinearGradient
-            colors={colors.gradient.card as [string, string]}
-            style={{ flex: 1 }}
-          />
+          <LinearGradient colors={colors.gradient.card as [string, string]} style={{ flex: 1 }} />
         ),
         tabBarLabelStyle: {
           fontFamily: fonts.bold,

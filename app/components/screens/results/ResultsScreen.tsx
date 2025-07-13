@@ -146,6 +146,7 @@ export default function ResultsScreen() {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
+      backgroundColor: colors.background,
     },
     header: {
       paddingTop: 60,
@@ -428,16 +429,18 @@ export default function ResultsScreen() {
   });
 
   return (
-    <LinearGradient
-      colors={colors.gradient.background as [string, string]}
-      style={styles.container}
-    >
+    <View style={styles.container}>
       <PageHeader
-        title="경주 결과"
-        subtitle="최근 경마 결과를 확인하세요"
-        showNotificationButton={true}
-        onNotificationPress={() => console.log('Share button pressed')}
-        notificationIconName="share-outline"
+        title='경주 결과'
+        subtitle='최근 경마 결과를 확인하세요'
+        rightComponent={
+          <TouchableOpacity
+            style={styles.shareButton}
+            onPress={() => console.log('Share button pressed')}
+          >
+            <Ionicons name='share-outline' size={24} color={colors.primary} />
+          </TouchableOpacity>
+        }
       />
 
       {/* Venue Filter */}
@@ -571,6 +574,6 @@ export default function ResultsScreen() {
           </View>
         ))}
       </ScrollView>
-    </LinearGradient>
+    </View>
   );
 }

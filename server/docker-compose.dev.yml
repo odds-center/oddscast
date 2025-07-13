@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  goldenrace-server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: goldenrace-server-dev
+    ports:
+      - '3000:3000'
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+    volumes:
+      - ./logs:/app/logs
+      - ./src:/app/src
+      - ./.env:/app/.env
+    command: npm run dev
+    restart: unless-stopped
+    networks:
+      - goldenrace-network
+
+  # 개발용 데이터베이스 (선택사항)
+  # postgres-dev:
+  #   image: postgres:15-alpine
+  #   container_name: goldenrace-postgres-dev
+  #   environment:
+  #     POSTGRES_DB: goldenrace_dev
+  #     POSTGRES_USER: goldenrace
+  #     POSTGRES_PASSWORD: password
+  #   ports:
+  #     - "5432:5432"
+  #   volumes:
+  #     - postgres_dev_data:/var/lib/postgresql/data
+  #   networks:
+  #     - goldenrace-network
+
+networks:
+  goldenrace-network:
+    driver: bridge
+# volumes:
+#   postgres_dev_data:

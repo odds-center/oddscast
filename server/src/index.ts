@@ -1,16 +1,18 @@
-import express, { Request, Response, NextFunction } from 'express';
+import compression from 'compression';
 import cors from 'cors';
+import 'dotenv/config';
+import express, { NextFunction, Request, Response } from 'express';
+import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import morgan from 'morgan';
-import compression from 'compression';
-import rateLimit from 'express-rate-limit';
-import { logger } from './utils/logger';
 import apiRoutes from './api/routes';
 import {
   CURRENT_CONFIG,
   getEnvironmentInfo,
   isDevelopment,
+  isLocal,
 } from './constants/environment';
+import { logger } from './utils/logger';
 
 const app = express();
 const PORT = process.env['PORT'] || 3000;
@@ -42,7 +44,7 @@ app.use(
       callback: (err: Error | null, allow?: boolean) => void
     ) => {
       // 개발 환경에서는 origin이 없는 요청도 허용 (Postman, curl 등)
-      if (isDevelopment() && !origin) {
+      if ((isDevelopment() || isLocal()) && !origin) {
         return callback(null, true);
       }
 
@@ -53,7 +55,7 @@ app.use(
 
       // 개발 환경에서는 localhost 관련 origin들을 추가로 허용
       if (
-        isDevelopment() &&
+        (isDevelopment() || isLocal()) &&
         origin &&
         (origin.startsWith('http://localhost:') ||
           origin.startsWith('exp://localhost:'))

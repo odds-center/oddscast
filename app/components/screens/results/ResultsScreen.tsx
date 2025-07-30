@@ -1,13 +1,15 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '@/constants/theme';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { Title, Subtitle } from '@/components/ui';
 import { PageHeader } from '@/components/common';
+import { useResults } from '@/lib/hooks';
 
-interface RaceResult {
+// 실제 API 데이터 타입 정의
+interface RaceResultData {
   id: string;
   raceName: string;
   venue: string;
@@ -28,94 +30,49 @@ interface RaceResult {
   }[];
 }
 
-const MOCK_RESULTS: RaceResult[] = [
-  {
-    id: '1',
-    raceName: '제주 1경주',
-    venue: '제주',
-    date: '2025-07-06',
-    winner: {
-      horseName: '금빛질주',
-      jockey: '김기수',
-      gateNumber: 1,
-      odds: 2.5,
-    },
-    results: [
-      {
-        position: 1,
-        horseName: '금빛질주',
-        jockey: '김기수',
-        gateNumber: 1,
-        odds: 2.5,
-        time: '1:23.45',
-      },
-      {
-        position: 2,
-        horseName: '천리마',
-        jockey: '박태종',
-        gateNumber: 3,
-        odds: 3.2,
-        time: '1:23.67',
-      },
-      {
-        position: 3,
-        horseName: '바람의아들',
-        jockey: '이성현',
-        gateNumber: 2,
-        odds: 4.1,
-        time: '1:24.12',
-      },
-    ],
-  },
-  {
-    id: '2',
-    raceName: '서울 5경주',
-    venue: '서울',
-    date: '2025-07-06',
-    winner: {
-      horseName: '돌콩',
-      jockey: '문세영',
-      gateNumber: 1,
-      odds: 1.8,
-    },
-    results: [
-      {
-        position: 1,
-        horseName: '돌콩',
-        jockey: '문세영',
-        gateNumber: 1,
-        odds: 1.8,
-        time: '1:22.34',
-      },
-      {
-        position: 2,
-        horseName: '실버울프',
-        jockey: '유현명',
-        gateNumber: 3,
-        odds: 5.2,
-        time: '1:22.89',
-      },
-      {
-        position: 3,
-        horseName: '클린업조이',
-        jockey: '함완식',
-        gateNumber: 2,
-        odds: 6.5,
-        time: '1:23.45',
-      },
-    ],
-  },
-];
-
 export default function ResultsScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
   const venues = ['all', '서울', '부산', '제주', '광주'];
   const { colors, spacing, radii, fonts, shadows } = useAppTheme();
 
+  // TanStack Query 훅 사용 - 실제 API 데이터만 사용
+  const {
+    data: results = [],
+    isLoading,
+    error,
+  } = useResults({
+    limit: 50,
+    offset: 0,
+  });
+
+  // 실제 API 데이터를 표시용 데이터로 변환
+  const displayResults: RaceResultData[] = results.map((result: any) => ({
+    id: result.id,
+    raceName: result.raceName || '경주',
+    venue: result.venue || '알 수 없음',
+    date: result.date || new Date().toISOString().split('T')[0],
+    winner: {
+      horseName: result.horseName || '알 수 없음',
+      jockey: result.jockey || '알 수 없음',
+      gateNumber: result.gateNumber || 0,
+      odds: result.odds || 0,
+    },
+    results: [
+      {
+        position: 1,
+        horseName: result.horseName || '알 수 없음',
+        jockey: result.jockey || '알 수 없음',
+        gateNumber: result.gateNumber || 0,
+        odds: result.odds || 0,
+        time: result.finishTime || '00:00.00',
+      },
+    ],
+  }));
+
   const filteredResults =
     selectedVenue === 'all'
-      ? MOCK_RESULTS
-      : MOCK_RESULTS.filter((result) => result.venue === selectedVenue);
+      ? displayResults
+      : displayResults.filter((result) => result.venue === selectedVenue);
 
   const getPositionColor = (position: number) => {
     switch (position) {
@@ -426,7 +383,41 @@ export default function ResultsScreen() {
       flex: 1,
       textAlign: 'center',
     },
+    emptyContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingVertical: spacing.xxl,
+    },
+    emptyText: {
+      marginTop: spacing.m,
+      textAlign: 'center',
+    },
+    emptySubtext: {
+      marginTop: spacing.s,
+      textAlign: 'center',
+    },
   });
+
+  if (isLoading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size='large' color={colors.primary} />
+        <Text style={{ marginTop: spacing.m }}>경주 결과를 불러오는 중...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name='alert-circle-outline' size={64} color={colors.error} />
+        <Text style={{ marginTop: spacing.m, color: colors.error }}>
+          오류가 발생했습니다: {error.message}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -481,11 +472,13 @@ export default function ResultsScreen() {
           </View>
           <View>
             <Text style={styles.summaryNumber}>
-              {Math.round(
-                (filteredResults.reduce((sum, result) => sum + result.winner.odds, 0) /
-                  filteredResults.length) *
-                  10
-              ) / 10}
+              {filteredResults.length > 0
+                ? Math.round(
+                    (filteredResults.reduce((sum, result) => sum + result.winner.odds, 0) /
+                      filteredResults.length) *
+                      10
+                  ) / 10
+                : 0}
             </Text>
             <Text style={styles.summaryLabel}>평균 배당률</Text>
           </View>
@@ -498,81 +491,93 @@ export default function ResultsScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.resultsContent}
       >
-        {filteredResults.map((result) => (
-          <View key={result.id} style={styles.resultCard}>
-            <LinearGradient
-              colors={colors.gradient.card as [string, string]}
-              style={styles.cardContent}
-            >
-              {/* Race Header */}
-              <View style={styles.raceHeader}>
-                <View style={styles.raceInfo}>
-                  <Text style={styles.raceName}>{result.raceName}</Text>
-                  <View style={styles.raceDetails}>
-                    <View style={styles.venueContainer}>
-                      <Ionicons name='location' size={14} color={colors.primary} />
-                      <Text style={styles.venue}>{result.venue}</Text>
-                    </View>
-                    <View style={styles.dateContainer}>
-                      <Ionicons name='calendar' size={14} color={colors.accent} />
-                      <Text style={styles.date}>{result.date}</Text>
+        {filteredResults.length > 0 ? (
+          filteredResults.map((result: RaceResultData) => (
+            <View key={result.id} style={styles.resultCard}>
+              <LinearGradient
+                colors={colors.gradient.card as [string, string]}
+                style={styles.cardContent}
+              >
+                {/* Race Header */}
+                <View style={styles.raceHeader}>
+                  <View style={styles.raceInfo}>
+                    <Text style={styles.raceName}>{result.raceName}</Text>
+                    <View style={styles.raceDetails}>
+                      <View style={styles.venueContainer}>
+                        <Ionicons name='location' size={14} color={colors.primary} />
+                        <Text style={styles.venue}>{result.venue}</Text>
+                      </View>
+                      <View style={styles.dateContainer}>
+                        <Ionicons name='calendar' size={14} color={colors.accent} />
+                        <Text style={styles.date}>{result.date}</Text>
+                      </View>
                     </View>
                   </View>
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusText}>완료</Text>
+                  </View>
                 </View>
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusText}>완료</Text>
-                </View>
-              </View>
 
-              {/* Winner Highlight */}
-              <View style={styles.winnerContainer}>
-                <View style={styles.winnerBadge}>
-                  <Ionicons name='trophy' size={20} color={colors.primary} />
-                  <Text style={styles.winnerText}>우승</Text>
-                </View>
-                <View style={styles.winnerInfo}>
-                  <Text style={styles.winnerHorseName}>{result.winner.horseName}</Text>
-                  <View style={styles.winnerDetails}>
-                    <Text style={styles.winnerJockey}>{result.winner.jockey}</Text>
-                    <Text style={styles.winnerGate}>• {result.winner.gateNumber}번</Text>
-                    <Text style={styles.winnerOdds}>• {result.winner.odds}배</Text>
+                {/* Winner Highlight */}
+                <View style={styles.winnerContainer}>
+                  <View style={styles.winnerBadge}>
+                    <Ionicons name='trophy' size={20} color={colors.primary} />
+                    <Text style={styles.winnerText}>우승</Text>
                   </View>
-                </View>
-              </View>
-
-              {/* Results Table */}
-              <View style={styles.resultsTable}>
-                <View style={styles.tableHeader}>
-                  <Text style={styles.headerText}>순위</Text>
-                  <Text style={styles.headerText}>말 이름</Text>
-                  <Text style={styles.headerText}>기수</Text>
-                  <Text style={styles.headerText}>시간</Text>
-                  <Text style={styles.headerText}>배당</Text>
-                </View>
-                {result.results.map((item) => (
-                  <View key={item.position} style={styles.tableRow}>
-                    <View style={styles.positionContainer}>
-                      <Ionicons
-                        name={getPositionIcon(item.position) as any}
-                        size={16}
-                        color={getPositionColor(item.position)}
-                      />
-                      <Text
-                        style={[styles.positionText, { color: getPositionColor(item.position) }]}
-                      >
-                        {item.position}
-                      </Text>
+                  <View style={styles.winnerInfo}>
+                    <Text style={styles.winnerHorseName}>{result.winner.horseName}</Text>
+                    <View style={styles.winnerDetails}>
+                      <Text style={styles.winnerJockey}>{result.winner.jockey}</Text>
+                      <Text style={styles.winnerGate}>• {result.winner.gateNumber}번</Text>
+                      <Text style={styles.winnerOdds}>• {result.winner.odds}배</Text>
                     </View>
-                    <Text style={styles.horseName}>{item.horseName}</Text>
-                    <Text style={styles.jockey}>{item.jockey}</Text>
-                    <Text style={styles.time}>{item.time}</Text>
-                    <Text style={styles.odds}>{item.odds}배</Text>
                   </View>
-                ))}
-              </View>
-            </LinearGradient>
+                </View>
+
+                {/* Results Table */}
+                <View style={styles.resultsTable}>
+                  <View style={styles.tableHeader}>
+                    <Text style={styles.headerText}>순위</Text>
+                    <Text style={styles.headerText}>말 이름</Text>
+                    <Text style={styles.headerText}>기수</Text>
+                    <Text style={styles.headerText}>시간</Text>
+                    <Text style={styles.headerText}>배당</Text>
+                  </View>
+                  {result.results.map((item: RaceResultData['results'][0]) => (
+                    <View key={item.position} style={styles.tableRow}>
+                      <View style={styles.positionContainer}>
+                        <Ionicons
+                          name={getPositionIcon(item.position) as any}
+                          size={16}
+                          color={getPositionColor(item.position)}
+                        />
+                        <Text
+                          style={[styles.positionText, { color: getPositionColor(item.position) }]}
+                        >
+                          {item.position}
+                        </Text>
+                      </View>
+                      <Text style={styles.horseName}>{item.horseName}</Text>
+                      <Text style={styles.jockey}>{item.jockey}</Text>
+                      <Text style={styles.time}>{item.time}</Text>
+                      <Text style={styles.odds}>{item.odds}배</Text>
+                    </View>
+                  ))}
+                </View>
+              </LinearGradient>
+            </View>
+          ))
+        ) : (
+          <View style={styles.emptyContainer}>
+            <Ionicons name='trophy-outline' size={64} color={colors.textTertiary} />
+            <Text type='title' style={[styles.emptyText, { color: colors.textTertiary }]}>
+              경주 결과가 없습니다
+            </Text>
+            <Text type='caption' style={[styles.emptySubtext, { color: colors.textTertiary }]}>
+              선택한 지역에 완료된 경주가 없습니다
+            </Text>
           </View>
-        ))}
+        )}
       </ScrollView>
     </View>
   );

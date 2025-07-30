@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { logger } from '../../../utils/logger';
-import { DataSyncService } from '../../../services/dataSyncService';
+import { logger } from '@/utils/logger';
+import { DataSyncService } from '@/services/dataSyncService';
 
 const router = Router();
 const dataSyncService = new DataSyncService();

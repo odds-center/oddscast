@@ -3,6 +3,7 @@ import healthRouter from './health';
 import racesRouter from './races';
 import resultsRouter from './results';
 import racePlansRouter from './racePlans';
+import kraRouter from './kra';
 
 const router = Router();
 
@@ -10,6 +11,7 @@ router.use('/health', healthRouter);
 router.use('/races', racesRouter);
 router.use('/results', resultsRouter);
 router.use('/race-plans', racePlansRouter);
+router.use('/kra', kraRouter);
 
 // API 루트 엔드포인트
 router.get('/', (_req, res) => {
@@ -23,6 +25,7 @@ router.get('/', (_req, res) => {
       races: '/api/races',
       results: '/api/results',
       racePlans: '/api/race-plans',
+      kra: '/api/kra',
       documentation: '/api/docs',
     },
   });

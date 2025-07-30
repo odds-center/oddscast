@@ -14,18 +14,6 @@ export default function RaceDetailScreen() {
   const { colors, spacing, radii, fonts } = useAppTheme();
   const race = RACES.find((r) => String(r.id) === String(raceId));
 
-  if (!race) {
-    return (
-      <View style={styles.centered}>
-        <Title>경주 정보를 찾을 수 없습니다</Title>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name='arrow-back' size={20} color={colors.primary} />
-          <Text style={styles.backButtonText}>뒤로가기</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -137,6 +125,18 @@ export default function RaceDetailScreen() {
       marginLeft: spacing.xs,
     },
   });
+
+  if (!race) {
+    return (
+      <View style={styles.centered}>
+        <Title>경주 정보를 찾을 수 없습니다</Title>
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+          <Ionicons name='arrow-back' size={20} color={colors.primary} />
+          <Text style={styles.backButtonText}>뒤로가기</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>

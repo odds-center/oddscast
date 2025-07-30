@@ -2,28 +2,7 @@ import { logger } from '../utils/logger';
 import { KraApiService } from './kraApiService';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { createClient } from '../config/supabase';
-
-interface QueryOptions {
-  date?: string;
-  raceId?: string;
-  limit?: number;
-  offset?: number;
-}
-
-interface SyncResult {
-  success: boolean;
-  message: string;
-  data?: any;
-  error?: string;
-}
-
-interface SyncStatus {
-  lastSync: string | null;
-  racesCount: number;
-  resultsCount: number;
-  racePlansCount: number;
-  isUpToDate: boolean;
-}
+import { QueryOptions, SyncResult, SyncStatus } from '@/types';
 
 export class DataSyncService {
   private supabase: SupabaseClient;
@@ -99,7 +78,7 @@ export class DataSyncService {
       const { error: deleteError } = await this.supabase
         .from('races')
         .delete()
-        .eq('race_date', syncDate);
+        .eq('date', syncDate);
 
       if (deleteError) {
         logger.error('Failed to delete existing races', { error: deleteError });
@@ -281,11 +260,10 @@ export class DataSyncService {
       let query = this.supabase
         .from('races')
         .select('*')
-        .order('race_date', { ascending: false })
-        .order('race_number', { ascending: true });
+        .order('date', { ascending: false });
 
       if (options.date) {
-        query = query.eq('race_date', options.date);
+        query = query.eq('date', options.date);
       }
 
       if (options.limit) {

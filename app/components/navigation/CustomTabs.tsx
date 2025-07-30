@@ -16,20 +16,21 @@ export function CustomTabs() {
           backgroundColor: colors.card,
           borderTopColor: colors.border,
           borderTopWidth: 1,
-          height: 80,
-          paddingBottom: 14,
-          paddingTop: 10,
+          height: 100,
+          paddingBottom: 12,
+          paddingTop: 8,
         },
         tabBarBackground: () => (
-          <LinearGradient colors={colors.gradient.card as [string, string]} style={{ flex: 1 }} />
+          <LinearGradient colors={colors.gradient.card as any} style={{ flex: 1 }} />
         ),
         tabBarLabelStyle: {
           fontFamily: fonts.bold,
           fontSize: 12,
-          marginTop: 4,
+          marginTop: 6,
+          lineHeight: 18,
         },
         tabBarIconStyle: {
-          marginTop: 4,
+          marginTop: 6,
         },
       }}
     >

@@ -27,6 +27,8 @@
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
     "@supabase/supabase-js": "^2.50.3",
+    "@tanstack/react-query": "^5.83.0",
+    "axios": "^1.11.0",
     "expo": "~53.0.17",
     "expo-auth-session": "^6.2.1",
     "expo-blur": "~14.1.5",

@@ -1,35 +1,18 @@
 import axios, { AxiosResponse } from 'axios';
 import { logger } from '../utils/logger';
-
-interface KraApiResponse {
-  response: {
-    header: {
-      resultCode: string;
-      resultMsg: string;
-    };
-    body: {
-      items: any[];
-      numOfRows: number;
-      pageNo: number;
-      totalCount: number;
-    };
-  };
-}
-
-interface ApiStatus {
-  isAvailable: boolean;
-  lastCheck: string;
-  responseTime?: number;
-  error?: string;
-}
+import { KraApiResponse, ApiStatus } from '@/types';
 
 export class KraApiService {
-  private baseUrl: string;
+  private recordsBaseUrl: string;
+  private plansBaseUrl: string;
   private apiKey: string;
 
   constructor() {
-    this.baseUrl = 'http://apis.data.go.kr/B551011/KorService';
-    this.apiKey = process.env['KRA_API_KEY'] || '';
+    this.recordsBaseUrl = 'https://apis.data.go.kr/B551015/API4_3';
+    this.plansBaseUrl = 'https://apis.data.go.kr/B551015/API72_2';
+    this.apiKey =
+      process.env['KRA_API_KEY'] ||
+      'yyRDa%2FaXc9SsDdY67IqkdXJmZgZXOzsKqnf%2BR%2FSZjR6iAxYLzKiq%2BgXTmdUj%2FFe%2BFtEsMXnMYrLaiX6PZ%2FemsQ%3D%3D';
 
     if (!this.apiKey) {
       logger.warn('KRA API key not found in environment variables');
@@ -43,9 +26,9 @@ export class KraApiService {
     const startTime = Date.now();
 
     try {
-      const response = await axios.get(`${this.baseUrl}/getRaceSchedule`, {
+      const response = await axios.get(`${this.recordsBaseUrl}`, {
         params: {
-          serviceKey: this.apiKey,
+          ServiceKey: this.apiKey,
           pageNo: 1,
           numOfRows: 1,
           _type: 'json',
@@ -92,44 +75,75 @@ export class KraApiService {
       const targetDate = date || this.getCurrentDate();
       logger.info('Fetching races data from KRA API', { date: targetDate });
 
+      // 날짜 파싱
+      const dateObj = new Date(targetDate);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const dateStr = `${year}${month}${day}`;
+
       const response: AxiosResponse<KraApiResponse> = await axios.get(
-        `${this.baseUrl}/getRaceSchedule`,
+        `${this.recordsBaseUrl}/raceResult_3`,
         {
           params: {
-            serviceKey: this.apiKey,
+            ServiceKey: this.apiKey,
             pageNo: 1,
             numOfRows: 1000,
             _type: 'json',
             meet: 1, // 서울
-            rc_date: targetDate,
+            rc_year: year,
+            rc_month: `${year}${month}`,
+            rc_date: dateStr,
+            rc_no: 1, // 1경주부터 시작
           },
           timeout: 30000,
         }
       );
 
-      if (response.data.response.header.resultCode !== '00') {
+      logger.info('KRA API response structure:', {
+        hasResponse: !!response.data.response,
+        hasHeader: !!response.data.response?.header,
+        hasBody: !!response.data.response?.body,
+        responseKeys: Object.keys(response.data),
+        responseData: JSON.stringify(response.data, null, 2),
+      });
+
+      if (!response.data.response) {
+        throw new Error('Invalid API response structure');
+      }
+
+      if (
+        response.data.response.header &&
+        response.data.response.header.resultCode !== '00'
+      ) {
         throw new Error(
           `API Error: ${response.data.response.header.resultMsg}`
         );
       }
 
-      const races = response.data.response.body.items || [];
+      // 응답 구조 안전하게 처리
+      const body = response.data.response.body;
+      let races: any[] = [];
 
-      // 데이터 정제 및 변환
-      const processedRaces = races.map(race => ({
-        race_id: `${race.meet}_${race.rc_date}_${race.rc_no}`,
-        meet: race.meet,
-        meet_name: this.getMeetName(race.meet),
-        rc_date: race.rc_date,
-        rc_no: race.rc_no,
-        rc_name: race.rc_name,
-        rc_dist: race.rc_dist,
-        rc_grade: race.rc_grade,
-        rc_prize: race.rc_prize,
-        rc_condition: race.rc_condition,
-        rc_weather: race.rc_weather,
-        rc_track: race.rc_track,
-        rc_track_condition: race.rc_track_condition,
+      if (body && body.items) {
+        if (Array.isArray(body.items)) {
+          races = body.items;
+        } else if (typeof body.items === 'object' && 'item' in body.items) {
+          const items = (body.items as any).item;
+          races = Array.isArray(items) ? items : [items];
+        } else if (body.items === '') {
+          // 빈 문자열인 경우 데이터가 없음
+          races = [];
+        }
+      }
+
+      // 데이터 정제 및 변환 - 데이터베이스 스키마에 맞게 변환
+      const processedRaces = races.map((race: any) => ({
+        id: `${race.meet}_${race.rc_date}_${race.rc_no}`,
+        race_number: parseInt(race.rc_no) || 1,
+        race_name: race.rc_name || '경주',
+        date: new Date(race.rc_date).toISOString(),
+        venue: this.getMeetName(race.meet),
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       }));
@@ -159,16 +173,26 @@ export class KraApiService {
       const targetDate = date || this.getCurrentDate();
       logger.info('Fetching results data from KRA API', { date: targetDate });
 
+      // 날짜 파싱
+      const dateObj = new Date(targetDate);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      const dateStr = `${year}${month}${day}`;
+
       const response: AxiosResponse<KraApiResponse> = await axios.get(
-        `${this.baseUrl}/getRaceResult`,
+        `${this.recordsBaseUrl}/raceResult_3`,
         {
           params: {
-            serviceKey: this.apiKey,
+            ServiceKey: this.apiKey,
             pageNo: 1,
             numOfRows: 1000,
             _type: 'json',
             meet: 1, // 서울
-            rc_date: targetDate,
+            rc_year: year,
+            rc_month: `${year}${month}`,
+            rc_date: dateStr,
+            rc_no: 1, // 1경주부터 시작
           },
           timeout: 30000,
         }
@@ -180,7 +204,9 @@ export class KraApiService {
         );
       }
 
-      const results = response.data.response.body.items || [];
+      const results = Array.isArray(response.data.response.body.items)
+        ? response.data.response.body.items
+        : [];
 
       // 데이터 정제 및 변환
       const processedResults = results.map(result => ({
@@ -234,16 +260,24 @@ export class KraApiService {
         date: targetDate,
       });
 
+      // 날짜 파싱
+      const dateObj = new Date(targetDate);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+
       const response: AxiosResponse<KraApiResponse> = await axios.get(
-        `${this.baseUrl}/getRacePlan`,
+        `${this.plansBaseUrl}`,
         {
           params: {
-            serviceKey: this.apiKey,
+            ServiceKey: this.apiKey,
             pageNo: 1,
             numOfRows: 1000,
             _type: 'json',
             meet: 1, // 서울
-            rc_date: targetDate,
+            rc_year: year,
+            rc_month: `${year}${month}`,
+            rc_day: day,
           },
           timeout: 30000,
         }
@@ -255,7 +289,9 @@ export class KraApiService {
         );
       }
 
-      const racePlans = response.data.response.body.items || [];
+      const racePlans = Array.isArray(response.data.response.body.items)
+        ? response.data.response.body.items
+        : [];
 
       // 데이터 정제 및 변환
       const processedRacePlans = racePlans.map(plan => ({

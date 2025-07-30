@@ -54,7 +54,8 @@
       "router": {},
       "eas": {
         "projectId": "df66e1e3-4e6f-4415-bb26-006a1c34fba0"
-      }
+      },
+      "apiUrl": "http://10.0.2.2:3002"
     },
     "owner": "risingcore"
   }

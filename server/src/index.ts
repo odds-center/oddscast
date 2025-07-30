@@ -15,7 +15,7 @@ import {
 import { logger } from './utils/logger';
 
 const app = express();
-const PORT = process.env['PORT'] || 3000;
+const PORT = process.env['PORT'] || 3002;
 
 // 환경 정보 로깅
 logger.info('서버 시작', getEnvironmentInfo());

@@ -12,49 +12,49 @@ export const useLoadFonts = () => {
 
 const Colors = {
   light: {
-    background: '#F5F5F5',
-    primary: '#B48A3C', // Gold
-    secondary: '#E0E0E0', // Light Gray
-    accent: '#FF6B35', // Orange
-    success: '#4CAF50', // Green
-    warning: '#FF9800', // Orange
-    error: '#F44336', // Red
-    text: '#11181C', // Dark Gray for text on light background
-    textSecondary: '#687076',
-    textTertiary: '#9BA1A6',
+    background: '#F8F6F0', // Warm cream background
+    primary: '#D4AF37', // Rich gold
+    secondary: '#E8E0D0', // Warm light gray
+    accent: '#B8860B', // Dark goldenrod accent
+    success: '#7FB069', // Muted green
+    warning: '#E6A23C', // Warm orange
+    error: '#E74C3C', // Muted red
+    text: '#2C2C2C', // Dark charcoal for better contrast
+    textSecondary: '#5A5A5A', // Medium gray
+    textTertiary: '#8A8A8A', // Light gray
     card: '#FFFFFF',
-    cardSecondary: '#F8F8F8',
-    border: '#E0E0E0',
-    borderLight: '#F0F0F0',
-    overlay: 'rgba(255, 255, 255, 0.7)',
+    cardSecondary: '#F5F2ED', // Warm off-white
+    border: '#D4C8B8', // Warm border
+    borderLight: '#E8E0D0', // Light warm border
+    overlay: 'rgba(248, 246, 240, 0.8)', // Warm overlay
     gradient: {
-      primary: ['#B48A3C', '#E5C99C'],
-      secondary: ['#E0E0E0', '#D0D0D0'],
-      card: ['#FFFFFF', '#F8F8F8'],
-      background: ['#F5F5F5', '#FFFFFF'],
+      primary: ['#D4AF37', '#B8860B'],
+      secondary: ['#E8E0D0', '#D4C8B8'],
+      card: ['#FFFFFF', '#F5F2ED'],
+      background: ['#F8F6F0', '#F0ECE0'],
     },
   },
   dark: {
-    background: '#0C2A1E',
-    primary: '#E5C99C', // Gold
-    secondary: '#000000FF', // Dark Green
-    accent: '#FF6B35', // Orange
-    success: '#4CAF50', // Green
-    warning: '#FF9800', // Orange
-    error: '#F44336', // Red
-    text: '#FFFFFF',
-    textSecondary: '#9BA1A6',
-    textTertiary: '#687076',
-    card: '#1A1A1A',
-    cardSecondary: '#2A2A2A',
-    border: '#333333',
-    borderLight: '#404040',
-    overlay: 'rgba(0, 0, 0, 0.7)',
+    background: '#1A1A1A', // Dark charcoal
+    primary: '#FFD700', // Bright gold
+    secondary: '#2A2A2A', // Dark gray
+    accent: '#DAA520', // Goldenrod accent
+    success: '#7FB069', // Muted green
+    warning: '#E6A23C', // Warm orange
+    error: '#E74C3C', // Muted red
+    text: '#F5F5F5', // Off-white for better readability
+    textSecondary: '#C0C0C0', // Light gray
+    textTertiary: '#A0A0A0', // Medium gray
+    card: '#2A2A2A',
+    cardSecondary: '#333333',
+    border: '#404040',
+    borderLight: '#505050',
+    overlay: 'rgba(26, 26, 26, 0.8)', // Dark overlay
     gradient: {
-      primary: ['#E5C99C', '#B48A3C'],
-      secondary: ['#1E3A2F', '#2D5A3F'],
-      card: ['#1A1A1A', '#2A2A2A'],
-      background: ['#0C2A1E', '#1A1A1A'],
+      primary: ['#FFD700', '#DAA520'],
+      secondary: ['#2A2A2A', '#333333'],
+      card: ['#2A2A2A', '#333333'],
+      background: ['#1A1A1A', '#2A2A2A'],
     },
   },
 };

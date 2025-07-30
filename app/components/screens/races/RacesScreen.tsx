@@ -1,49 +1,65 @@
 import { PageHeader } from '@/components/common';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { Subtitle } from '@/components/ui';
-import { Race } from '@/constants/mockData';
 import { useAppTheme } from '@/constants/theme';
-import { supabase } from '@/lib/supabase';
+import { useRaces, useKRARaceRecords, useKRARacePlans } from '@/lib/hooks';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import RaceCard from './RaceCard';
 
 export default function RacesScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
-  const [races, setRaces] = useState<Race[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const venues = ['all', '서울', '부산', '제주', '광주'];
   const { colors, spacing, radii, shadows, fonts } = useAppTheme();
 
-  useEffect(() => {
-    const fetchRaces = async () => {
-      try {
-        setLoading(true);
-        let query = supabase.from('races').select('*');
+  // TanStack Query 훅 사용 - 실제 API 데이터만 사용
+  const {
+    data: races = [],
+    isLoading,
+    error,
+  } = useRaces({
+    limit: 50,
+    offset: 0,
+  });
 
-        if (selectedVenue !== 'all') {
-          query = query.eq('venue', selectedVenue);
-        }
+  // KRA API 테스트 훅
+  const { refetch: refetchKRARecords } = useKRARaceRecords({
+    date: '20240730',
+    venue: '1',
+    pageNo: 1,
+    numOfRows: 10,
+  });
 
-        const { data, error } = await query.order('date', { ascending: true });
+  const { refetch: refetchKRAPlans } = useKRARacePlans({
+    year: '2024',
+    month: '07',
+    day: '30',
+    venue: '1',
+    pageNo: 1,
+    numOfRows: 10,
+  });
 
-        if (error) {
-          throw error;
-        }
+  // KRA API 테스트 함수
+  const testKraApi = async () => {
+    try {
+      console.log('Testing KRA API...');
 
-        setRaces(data || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
+      // KRA 경주기록 API 테스트
+      const recordsResult = await refetchKRARecords();
+      console.log('KRA Records:', recordsResult.data);
 
-    fetchRaces();
-  }, [selectedVenue]);
+      // KRA 경주계획표 API 테스트
+      const plansResult = await refetchKRAPlans();
+      console.log('KRA Plans:', plansResult.data);
+    } catch (err: any) {
+      console.error('KRA API test failed:', err);
+    }
+  };
+
+  // 선택된 지역에 따라 필터링
+  const filteredRaces =
+    selectedVenue === 'all' ? races : races.filter((race: any) => race.venue === selectedVenue);
 
   const styles = StyleSheet.create({
     container: {
@@ -93,11 +109,10 @@ export default function RacesScreen() {
       color: colors.textSecondary,
     },
     filterTextActive: {
-      color: colors.text,
+      color: '#1A1A1A', // Dark text for better contrast on gold background
     },
     statsContainer: {
       flexDirection: 'row',
-      alignItems: 'center',
       paddingHorizontal: spacing.l,
       marginBottom: spacing.l,
     },
@@ -106,8 +121,8 @@ export default function RacesScreen() {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: colors.card,
-      borderRadius: radii.m,
       padding: spacing.m,
+      borderRadius: radii.m,
       marginRight: spacing.s,
       ...shadows.small,
     },
@@ -143,7 +158,7 @@ export default function RacesScreen() {
     },
   });
 
-  if (loading) {
+  if (isLoading) {
     return (
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size='large' color={colors.primary} />
@@ -157,7 +172,7 @@ export default function RacesScreen() {
       <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
         <Ionicons name='alert-circle-outline' size={64} color={colors.error} />
         <Text style={{ marginTop: spacing.m, color: colors.error }}>
-          오류가 발생했습니다: {error}
+          오류가 발생했습니다: {error.message}
         </Text>
       </View>
     );
@@ -169,12 +184,17 @@ export default function RacesScreen() {
         title='경주 일정'
         subtitle='오늘의 경마 일정을 확인하세요'
         rightComponent={
-          <TouchableOpacity
-            style={styles.notificationButton}
-            onPress={() => console.log('Notification button pressed')}
-          >
-            <Ionicons name='notifications-outline' size={24} color={colors.primary} />
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: spacing.s }}>
+            <TouchableOpacity style={styles.notificationButton} onPress={testKraApi}>
+              <Ionicons name='refresh' size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.notificationButton}
+              onPress={() => console.log('Notification button pressed')}
+            >
+              <Ionicons name='notifications-outline' size={24} color={colors.primary} />
+            </TouchableOpacity>
+          </View>
         }
       />
 
@@ -209,48 +229,51 @@ export default function RacesScreen() {
             <Ionicons name='calendar' size={20} color={colors.primary} />
           </View>
           <View>
-            <Text type='stat'>{races.length}</Text>
-            <Text type='caption'>오늘 경주</Text>
+            <Text type='defaultSemiBold' style={{ color: colors.text }}>
+              {filteredRaces.length}
+            </Text>
+            <Text type='caption' style={{ color: colors.textSecondary }}>
+              오늘의 경주
+            </Text>
           </View>
         </View>
+
         <View style={styles.statCard}>
           <View style={styles.statIcon}>
-            <Ionicons name='trophy' size={20} color={colors.accent} />
+            <Ionicons name='trophy' size={20} color={colors.primary} />
           </View>
           <View>
-            <Text type='stat'>12</Text>
-            <Text type='caption'>총 말 수</Text>
-          </View>
-        </View>
-        <View style={styles.statCard}>
-          <View style={styles.statIcon}>
-            <Ionicons name='trending-up' size={20} color={colors.success} />
-          </View>
-          <View>
-            <Text type='stat'>85%</Text>
-            <Text type='caption'>예측률</Text>
+            <Text type='defaultSemiBold' style={{ color: colors.text }}>
+              {filteredRaces.filter((race: any) => race.grade === 'G1').length}
+            </Text>
+            <Text type='caption' style={{ color: colors.textSecondary }}>
+              G1 경주
+            </Text>
           </View>
         </View>
       </View>
 
       {/* Races List */}
-      <ScrollView
-        style={styles.racesContainer}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.racesContent}
-      >
-        {races.length > 0 ? (
-          races.map((race) => <RaceCard key={race.id} race={race} />)
-        ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name='calendar-outline' size={64} color={colors.textTertiary} />
-            <Text type='defaultSemiBold' style={styles.emptyText}>
-              선택한 지역의 경주가 없습니다
-            </Text>
-            <Subtitle style={styles.emptySubtext}>다른 지역을 선택해보세요</Subtitle>
-          </View>
-        )}
-      </ScrollView>
+      <View style={styles.racesContainer}>
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.racesContent}
+        >
+          {filteredRaces.length > 0 ? (
+            filteredRaces.map((race: any) => <RaceCard key={race.id} race={race} />)
+          ) : (
+            <View style={styles.emptyContainer}>
+              <Ionicons name='calendar-outline' size={64} color={colors.textTertiary} />
+              <Text type='title' style={[styles.emptyText, { color: colors.textTertiary }]}>
+                경주 정보가 없습니다
+              </Text>
+              <Text type='caption' style={[styles.emptySubtext, { color: colors.textTertiary }]}>
+                선택한 지역에 오늘의 경주가 없습니다
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      </View>
     </View>
   );
 }

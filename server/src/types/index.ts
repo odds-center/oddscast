@@ -46,8 +46,6 @@ export interface EnvironmentConfig {
   NODE_ENV: string;
   PORT: number;
   DATABASE_URL: string;
-  SUPABASE_URL: string;
-  SUPABASE_ANON_KEY: string;
   KRA_API_KEY: string;
   JWT_SECRET: string;
   CORS_ORIGINS: string[];

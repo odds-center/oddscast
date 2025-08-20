@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "943058036301",
+    "project_id": "goldenrace-477a4",
+    "storage_bucket": "goldenrace-477a4.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943058036301:android:56a634195e4166af8e1e04",
+        "android_client_info": {
+          "package_name": "com.goldenrace.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANKy0THS_7v3r1JIEnAHQXTbyjfaI578w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:943058036301:android:0bf1cd8b666389488e1e04",
+        "android_client_info": {
+          "package_name": "com.goldenrace.app.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyANKy0THS_7v3r1JIEnAHQXTbyjfaI578w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

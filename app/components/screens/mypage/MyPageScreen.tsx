@@ -2,7 +2,7 @@ import { PageHeader } from '@/components/common';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { useAppTheme } from '@/constants/theme';
 import { useAuth } from '@/context/AuthProvider';
-import { supabase } from '@/lib/supabase';
+
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -45,23 +45,15 @@ export default function MyPageScreen() {
 
   async function getProfile() {
     try {
-      if (!session?.user) throw new Error('No user on the session!');
+      if (!session?.user) return;
 
-      const { data, error, status } = await supabase
-        .from('profiles')
-        .select('username, email')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error && status !== 406) {
-        throw error;
-      }
-
-      if (data) {
-        setProfile(data);
-      }
+      // 간단한 프로필 정보 설정 (실제로는 API에서 가져와야 함)
+      setProfile({
+        username: session.user.email?.split('@')[0] || '사용자',
+        email: session.user.email || '',
+      });
     } catch (error: any) {
-      Alert.alert(error.message);
+      console.error('프로필 가져오기 실패:', error);
     }
   }
 

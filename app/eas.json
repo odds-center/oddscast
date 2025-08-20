@@ -1,24 +1,77 @@
 {
   "cli": {
-    "version": ">= 16.13.4",
-    "appVersionSource": "remote"
+    "version": ">= 3.13.3",
+    "appVersionSource": "local"
   },
   "build": {
     "development": {
       "developmentClient": true,
       "distribution": "internal",
+      "env": {
+        "APP_ENV": "development",
+        "NODE_ENV": "development"
+      },
       "android": {
-        "buildType": "apk"
+        "buildType": "apk",
+        "withoutCredentials": true,
+        "gradleCommand": ":app:assembleDebug"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Debug",
+        "developmentClient": true,
+        "scheme": "goldenrace"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "APP_ENV": "preview",
+        "NODE_ENV": "production"
+      },
+      "android": {
+        "buildType": "apk",
+        "gradleCommand": ":app:assembleRelease"
+      },
+      "ios": {
+        "simulator": false,
+        "buildConfiguration": "Debug",
+        "developmentClient": true,
+        "scheme": "goldenrace"
+      }
     },
     "production": {
-      "autoIncrement": true
+      "distribution": "store",
+      "env": {
+        "APP_ENV": "production",
+        "NODE_ENV": "production"
+      },
+      "android": {
+        "buildType": "app-bundle",
+        "credentialsSource": "remote",
+        "gradleCommand": ":app:bundleRelease",
+        "withoutCredentials": false,
+        "autoIncrement": true
+      },
+      "ios": {
+        "autoIncrement": true,
+        "simulator": false,
+        "buildConfiguration": "Release",
+        "scheme": "goldenrace"
+      }
     }
   },
   "submit": {
-    "production": {}
+    "production": {
+      "ios": {
+        "appleId": "your-apple-id@example.com",
+        "ascAppId": "your-app-store-connect-app-id",
+        "appleTeamId": "your-apple-team-id"
+      },
+      "android": {
+        "track": "production",
+        "releaseStatus": "completed"
+      }
+    }
   }
 }

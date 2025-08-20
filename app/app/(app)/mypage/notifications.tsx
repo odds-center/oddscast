@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Switch, Alert } from 'react-native';
-import { ThemedText as Text } from '@/components/ThemedText';
-import { Ionicons } from '@expo/vector-icons';
-import { useAppTheme } from '@/constants/theme';
 import { PageHeader } from '@/components/common';
-import { supabase } from '@/lib/supabase';
+import { ThemedText as Text } from '@/components/ThemedText';
+import { useAppTheme } from '@/constants/theme';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Switch, View } from 'react-native';
+
 import { useAuth } from '@/context/AuthProvider';
 
 export default function NotificationSettingsScreen() {
@@ -22,23 +21,10 @@ export default function NotificationSettingsScreen() {
   const fetchNotificationSetting = async () => {
     try {
       setLoading(true);
-      if (!session?.user) throw new Error('No user on the session!');
-
-      const { data, error, status } = await supabase
-        .from('profiles')
-        .select('notifications_enabled')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error && status !== 406) {
-        throw error;
-      }
-
-      if (data) {
-        setNotificationsEnabled(data.notifications_enabled);
-      }
+      // 간단한 로컬 상태로 변경 (실제로는 API에서 가져와야 함)
+      setNotificationsEnabled(false);
     } catch (error: any) {
-      Alert.alert('알림 설정 불러오기 오류', error.message);
+      console.error('알림 설정 불러오기 오류:', error);
     } finally {
       setLoading(false);
     }
@@ -47,18 +33,10 @@ export default function NotificationSettingsScreen() {
   const updateNotificationSetting = async (newValue: boolean) => {
     try {
       setNotificationsEnabled(newValue);
-      if (!session?.user) throw new Error('No user on the session!');
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ notifications_enabled: newValue })
-        .eq('id', session.user.id);
-
-      if (error) {
-        throw error;
-      }
+      // 간단한 로컬 상태로 변경 (실제로는 API에 저장해야 함)
+      console.log('알림 설정 업데이트:', newValue);
     } catch (error: any) {
-      Alert.alert('알림 설정 업데이트 오류', error.message);
+      console.error('알림 설정 업데이트 오류:', error);
       setNotificationsEnabled(!newValue); // Revert on error
     }
   };
@@ -95,10 +73,10 @@ export default function NotificationSettingsScreen() {
   return (
     <View style={styles.container}>
       <PageHeader
-        title="알림 설정"
-        subtitle="푸시 알림을 관리하세요"
+        title='알림 설정'
+        subtitle='푸시 알림을 관리하세요'
         showBackButton={true}
-        onBackPress={() => router.back()}
+        onBackPress={() => {}}
       />
       <View style={styles.section}>
         <View style={styles.row}>

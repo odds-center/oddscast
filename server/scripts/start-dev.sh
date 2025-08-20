@@ -10,8 +10,7 @@ if [ ! -f ".env" ]; then
     echo ""
     echo "NODE_ENV=development"
     echo "PORT=3000"
-    echo "SUPABASE_URL=your_supabase_url"
-    echo "SUPABASE_ANON_KEY=your_supabase_anon_key"
+    
     echo "KRA_API_KEY=your_kra_api_key"
     echo ""
     exit 1

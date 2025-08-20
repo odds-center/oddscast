@@ -64,8 +64,11 @@ export const useUpdateNotificationSettings = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (settings: { enabled: boolean; types: string[] }) =>
-      notificationsApi.updateNotificationSettings(settings),
+    mutationFn: (settings: {
+      raceNotifications: boolean;
+      resultNotifications: boolean;
+      systemNotifications: boolean;
+    }) => notificationsApi.updateNotificationSettings(settings),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
     },

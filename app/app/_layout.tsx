@@ -1,14 +1,14 @@
 import { useLoadFonts } from '@/constants/theme';
-import { AuthProvider, useAuth } from '@/context/AuthProvider';
 import { AppThemeProvider } from '@/context/AppThemeProvider';
+import { AuthProvider, useAuth } from '@/context/AuthProvider';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { queryClient } from '@/lib/queryClient';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import 'react-native-reanimated';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -16,7 +16,7 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const { colorScheme, loading: colorSchemeLoading } = useColorScheme();
   const [loaded] = useLoadFonts();
-  const { session, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   useEffect(() => {
     if (loaded && !authLoading && !colorSchemeLoading) {
@@ -32,7 +32,7 @@ function RootLayoutNav() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AppThemeProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          {session ? (
+          {user ? (
             <Stack.Screen name='(app)' options={{ headerShown: false }} />
           ) : (
             <Stack.Screen name='(auth)' options={{ headerShown: false }} />

@@ -1,122 +1,162 @@
 # 데이터베이스 (Database)
 
-본 문서는 Golden Race 앱에서 사용되는 Supabase 데이터베이스의 스키마, 테이블 관계, 주요 함수 및 트리거에 대해 설명합니다.
+본 문서는 Golden Race 앱에서 사용되는 데이터베이스의 스키마, 테이블 관계, 주요 함수 및 트리거에 대해 설명합니다.
 
-## 1. `public.profiles` 테이블
+## 1. 데이터베이스 개요
 
-사용자 프로필 정보를 저장하는 테이블입니다. `auth.users` 테이블과 1:1 관계를 가집니다.
+Golden Race 앱은 MySQL 데이터베이스를 사용하여 사용자 정보, 경주 데이터, 베팅 내역 등을 관리합니다.
 
-### 1.1. 스키마 정의
+## 2. 주요 테이블 구조
 
-```sql
-CREATE TABLE public.profiles (
-  id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-  email text UNIQUE,
-  username text,
-  created_at timestamp with time zone DEFAULT now(),
-  updated_at timestamp with time zone,
-  notifications_enabled BOOLEAN DEFAULT TRUE
-);
+### 2.1. 사용자 관련 테이블
+
+#### `users` 테이블
+
+- **목적**: 사용자 기본 정보 저장
+- **주요 필드**:
+  - `id`: 사용자 고유 식별자 (UUID)
+  - `email`: 이메일 주소 (Google 계정에서 가져옴)
+  - `name`: 사용자 이름
+  - `avatar`: 프로필 이미지 URL
+  - `googleId`: Google 계정 ID
+  - `isActive`: 계정 활성화 상태
+  - `createdAt`: 계정 생성일시
+  - `updatedAt`: 정보 수정일시
+
+#### `user_profiles` 테이블
+
+- **목적**: 사용자 추가 프로필 정보 저장
+- **주요 필드**:
+  - `userId`: 사용자 ID (users 테이블 참조)
+  - `username`: 사용자명
+  - `notificationsEnabled`: 알림 설정
+  - `preferences`: 사용자 선호도 설정
+  - `createdAt`: 생성일시
+  - `updatedAt`: 수정일시
+
+### 2.2. 경마 관련 테이블
+
+#### `races` 테이블
+
+- **목적**: 경주 정보 저장
+- **주요 필드**:
+  - `id`: 경주 고유 식별자
+  - `raceDate`: 경주 날짜
+  - `raceTime`: 경주 시간
+  - `venue`: 경주장
+  - `raceNumber`: 경주 번호
+  - `distance`: 거리
+  - `surface`: 경주로 타입
+  - `status`: 경주 상태
+  - `createdAt`: 생성일시
+
+#### `horses` 테이블
+
+- **목적**: 말 정보 저장
+- **주요 필드**:
+  - `id`: 말 고유 식별자
+  - `name`: 말 이름
+  - `age`: 나이
+  - `gender`: 성별
+  - `trainer`: 조교사
+  - `jockey`: 기수
+  - `weight`: 체중
+  - `odds`: 배당률
+
+#### `race_results` 테이블
+
+- **목적**: 경주 결과 저장
+- **주요 필드**:
+  - `id`: 결과 고유 식별자
+  - `raceId`: 경주 ID
+  - `horseId`: 말 ID
+  - `finishPosition`: 순위
+  - `finishTime`: 완주 시간
+  - `prizeMoney`: 상금
+
+### 2.3. 베팅 관련 테이블
+
+#### `bets` 테이블
+
+- **목적**: 사용자 베팅 내역 저장
+- **주요 필드**:
+  - `id`: 베팅 고유 식별자
+  - `userId`: 사용자 ID
+  - `raceId`: 경주 ID
+  - `horseId`: 말 ID
+  - `betAmount`: 베팅 금액
+  - `betType`: 베팅 유형
+  - `odds`: 베팅 시 배당률
+  - `status`: 베팅 상태
+  - `createdAt`: 베팅일시
+
+## 3. 테이블 관계
+
+### 3.1. 주요 관계
+
+- `users` ↔ `user_profiles`: 1:1 관계
+- `races` ↔ `race_results`: 1:N 관계
+- `horses` ↔ `race_results`: 1:N 관계
+- `users` ↔ `bets`: 1:N 관계
+- `races` ↔ `bets`: 1:N 관계
+
+### 3.2. 외래 키 제약 조건
+
+모든 테이블은 적절한 외래 키 제약 조건을 통해 데이터 무결성을 보장합니다.
+
+## 4. 데이터베이스 설정
+
+### 4.1. 환경 변수
+
+데이터베이스 연결을 위한 환경 변수 설정이 필요합니다:
+
+```env
+DATABASE_URL=mysql://username:password@host:port/database_name
 ```
 
-### 1.2. `handle_new_user` 함수 및 `on_auth_user_created` 트리거
+### 4.2. 연결 풀 설정
 
-새로운 사용자가 `auth.users` 테이블에 생성될 때, 해당 사용자의 기본 프로필 정보를 `public.profiles` 테이블에 자동으로 삽입합니다. Google 로그인 시 `raw_user_meta_data`에서 사용자 이름을 추출하여 `username` 필드에 저장합니다.
+데이터베이스 성능 최적화를 위한 연결 풀 설정:
 
-```sql
--- Creates a public.profiles table for public user data
-CREATE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, username)
-  VALUES (NEW.id, NEW.email, NEW.raw_user_meta_data ->> 'name');
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Triggers handle_new_user function on new user creation
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+```typescript
+const dbConfig = {
+  host: process.env.DB_HOST,
+  port: parseInt(process.env.DB_PORT || '3306'),
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
+  connectionLimit: 10,
+  acquireTimeout: 60000,
+  timeout: 60000,
+};
 ```
 
-### 1.3. `handle_profile_update` 함수 및 `on_profile_updated` 트리거
+## 5. 데이터 마이그레이션
 
-`public.profiles` 테이블의 행이 업데이트될 때마다 `updated_at` 필드를 현재 시간으로 자동 갱신합니다.
+### 5.1. 스키마 변경
 
-```sql
--- Function to update the updated_at timestamp
-CREATE OR REPLACE FUNCTION public.handle_profile_update()
-RETURNS TRIGGER AS $$
-BEGIN
-  NEW.updated_at = now();
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger to run the function on profile update
-CREATE TRIGGER on_profile_updated
-  BEFORE UPDATE ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.handle_profile_update();
-```
-
-### 1.4. 기존 사용자 데이터 마이그레이션
-
-`profiles` 테이블 및 관련 트리거 설정 이전에 가입한 기존 사용자들의 프로필 데이터를 `auth.users` 테이블에서 `profiles` 테이블로 마이그레이션하는 쿼리입니다. 이미 존재하는 `id`에 대해서는 충돌을 무시합니다.
+데이터베이스 스키마 변경 시 마이그레이션 스크립트를 사용합니다:
 
 ```sql
-INSERT INTO public.profiles (id, email)
-SELECT id, email FROM auth.users
-ON CONFLICT (id) DO NOTHING;
+-- 예시: 새로운 컬럼 추가
+ALTER TABLE users ADD COLUMN phone VARCHAR(20);
 ```
 
-## 2. `public.races` 테이블
+### 5.2. 데이터 백업
 
-경주 정보를 저장하는 테이블입니다.
+정기적인 데이터 백업을 통해 데이터 손실을 방지합니다.
 
-### 2.1. 스키마 정의 (예시)
+## 6. 성능 최적화
+
+### 6.1. 인덱스
+
+자주 조회되는 컬럼에 인덱스를 생성하여 쿼리 성능을 향상시킵니다:
 
 ```sql
-CREATE TABLE public.races (
-  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
-  race_number INT NOT NULL,
-  race_name TEXT NOT NULL,
-  venue TEXT NOT NULL,
-  race_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  status TEXT DEFAULT '예정',
-  -- horses JSONB, -- 말 정보는 별도 테이블 또는 상세 JSON으로 관리 가능
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT now()
-);
+CREATE INDEX idx_races_date ON races(raceDate);
+CREATE INDEX idx_bets_user ON bets(userId);
 ```
 
-## 3. RLS (Row Level Security) 정책
+### 6.2. 쿼리 최적화
 
-Supabase의 RLS는 데이터베이스 행 수준에서 접근 권한을 제어합니다. 예를 들어, `profiles` 테이블의 경우 사용자가 자신의 프로필만 조회하고 업데이트할 수 있도록 정책이 설정되어야 합니다.
-
-### 3.1. `profiles` 테이블 RLS 정책 (예시)
-
-*   **SELECT 정책 (모든 사용자 자신의 프로필 조회 허용):**
-    ```sql
-    CREATE POLICY "Users can view their own profile" ON public.profiles
-    FOR SELECT USING (auth.uid() = id);
-    ```
-*   **INSERT 정책 (새로운 사용자 프로필 생성 허용 - 트리거에 의해):**
-    ```sql
-    CREATE POLICY "Users can create their own profile" ON public.profiles
-    FOR INSERT WITH CHECK (auth.uid() = id);
-    ```
-*   **UPDATE 정책 (사용자 자신의 프로필 업데이트 허용):**
-    ```sql
-    CREATE POLICY "Users can update their own profile" ON public.profiles
-    FOR UPDATE USING (auth.uid() = id);
-    ```
-
-## 4. Supabase 설정
-
-### 4.1. JWT 만료 기간 설정
-
-사용자 세션의 유지 기간을 설정합니다. Supabase 대시보드의 `Authentication` -> `Settings` (또는 `Configuration`) 섹션에서 `JWT expiry` 필드를 찾아 원하는 기간(예: 30일 = 2,592,000초)으로 설정할 수 있습니다.
-
-### 4.2. Google OAuth 설정
-
-Google 로그인을 위한 OAuth 클라이언트 ID 설정은 Supabase 대시보드의 `Authentication` -> `Providers` 섹션에서 이루어집니다.
+복잡한 쿼리는 JOIN을 최소화하고 적절한 WHERE 절을 사용하여 최적화합니다.

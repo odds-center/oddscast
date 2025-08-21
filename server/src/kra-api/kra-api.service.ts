@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
-import { KraApiResponse, ApiStatus } from '../types';
+import { ApiStatus, KraApiResponse } from '../types';
+import { getKraApiConfig } from './config/kra-api.config';
 
 @Injectable()
 export class KraApiService {
@@ -13,17 +14,27 @@ export class KraApiService {
   private readonly apiKey: string;
 
   constructor(private configService: ConfigService) {
-    this.recordsBaseUrl = 'https://apis.data.go.kr/B551015/API4_3';
-    this.plansBaseUrl = 'https://apis.data.go.kr/B551015/API72_2';
-    this.dividendBaseUrl = 'https://apis.data.go.kr/B551015/API160_1';
-    this.entryBaseUrl = 'https://apis.data.go.kr/B551015/API26_2';
     this.apiKey =
       this.configService.get<string>('KRA_API_KEY') ||
       'yyRDa%2FaXc9SsDdY67IqkdXJmZgZXOzsKqnf%2BR%2FSZjR6iAxYLzKiq%2BgXTmdUj%2FFe%2BFtEsMXnMYrLaiX6PZ%2FemsQ%3D%3D';
 
+    const config = getKraApiConfig(this.apiKey);
+
+    // 기존 URL들을 설정에서 가져오도록 변경
+    this.recordsBaseUrl = config.baseUrls.RACE_RECORDS.url;
+    this.plansBaseUrl = config.baseUrls.RACE_PLANS.url;
+    this.dividendBaseUrl = config.baseUrls.DIVIDEND_RATES.url;
+    this.entryBaseUrl = config.baseUrls.ENTRY_DETAILS.url;
+
     if (!this.apiKey) {
       this.logger.warn('KRA API key not found in environment variables');
     }
+
+    this.logger.log('KRA API Service initialized with configuration', {
+      endpoints: Object.keys(config.baseUrls),
+      timeout: config.timeout,
+      maxRetries: config.maxRetries,
+    });
   }
 
   /**

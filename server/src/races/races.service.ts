@@ -14,7 +14,7 @@ export class RacesService {
 
   async findAll(): Promise<Race[]> {
     return this.racesRepository.find({
-      order: { date: 'DESC' },
+      order: { rcDate: 'DESC' },
     });
   }
 
@@ -31,9 +31,12 @@ export class RacesService {
 
     return this.racesRepository.find({
       where: {
-        date: Between(startDate, endDate),
+        rcDate: Between(
+          startDate.toISOString().split('T')[0].replace(/-/g, ''),
+          endDate.toISOString().split('T')[0].replace(/-/g, '')
+        ),
       },
-      order: { raceNumber: 'ASC' },
+      order: { rcNo: 'ASC' },
     });
   }
 

@@ -1,13 +1,14 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ScheduleModule } from '@nestjs/schedule';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
 import { RacesModule } from './races/races.module';
 import { ResultsModule } from './results/results.module';
 import { RacePlansModule } from './race-plans/race-plans.module';
-import { KraApiModule } from './kra-api/kra-api.module';
+import { KraApiModule } from './external-apis/kra/kra-api.module';
 
 @Module({
   imports: [
@@ -16,6 +17,9 @@ import { KraApiModule } from './kra-api/kra-api.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+
+    // 스케줄러 모듈
+    ScheduleModule.forRoot(),
 
     // TypeORM 설정
     TypeOrmModule.forRootAsync({

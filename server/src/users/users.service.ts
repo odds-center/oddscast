@@ -12,22 +12,24 @@ export interface CreateUserDto {
   email: string;
   name?: string;
   avatar?: string;
-  firstName?: string;
-  lastName?: string;
-  googleId: string;
+  providerId?: string;
+  authProvider?: string;
+  isActive?: boolean;
+  isVerified?: boolean;
+  role?: string;
   refreshToken?: string;
-  locale?: string;
-  timezone?: string;
 }
 
 export interface UpdateUserDto {
   name?: string;
   avatar?: string;
-  firstName?: string;
-  lastName?: string;
+  providerId?: string;
+  authProvider?: string;
+  isActive?: boolean;
+  isVerified?: boolean;
+  role?: string;
+  lastLogin?: Date;
   refreshToken?: string;
-  locale?: string;
-  timezone?: string;
 }
 
 @Injectable()
@@ -59,7 +61,7 @@ export class UsersService {
 
   async findByGoogleId(googleId: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { googleId },
+      where: { providerId: googleId },
     });
   }
 
@@ -71,67 +73,113 @@ export class UsersService {
   }
 
   async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
-    await this.usersRepository.update(id, updateUserDto);
-    return this.findById(id);
+    try {
+      await this.usersRepository.update(id, updateUserDto);
+      return this.findById(id);
+    } catch (error) {
+      this.logger.error(`사용자 업데이트 실패: ${error.message}`);
+      throw error;
+    }
   }
 
   async updateLastLogin(id: string): Promise<void> {
-    await this.usersRepository.update(id, {
-      lastLoginAt: new Date(),
-    });
+    try {
+      await this.usersRepository.update(id, {
+        lastLogin: new Date(),
+      });
+    } catch (error) {
+      this.logger.error(`마지막 로그인 시간 업데이트 실패: ${error.message}`);
+      throw error;
+    }
   }
 
   async deactivate(id: string): Promise<void> {
-    await this.usersRepository.update(id, {
-      isActive: false,
-    });
+    try {
+      await this.usersRepository.update(id, {
+        isActive: false,
+      });
+      this.logger.log(`사용자 비활성화: ${id}`);
+    } catch (error) {
+      this.logger.error(`사용자 비활성화 실패: ${error.message}`);
+      throw error;
+    }
   }
 
   async activate(id: string): Promise<void> {
-    await this.usersRepository.update(id, {
-      isActive: true,
-    });
+    try {
+      await this.usersRepository.update(id, {
+        isActive: true,
+      });
+      this.logger.log(`사용자 활성화: ${id}`);
+    } catch (error) {
+      this.logger.error(`사용자 활성화 실패: ${error.message}`);
+      throw error;
+    }
   }
 
   async delete(id: string): Promise<void> {
-    const user = await this.findById(id);
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
+    try {
+      const user = await this.findById(id);
+      if (!user) {
+        throw new NotFoundException('사용자를 찾을 수 없습니다.');
+      }
+      await this.usersRepository.remove(user);
+      this.logger.log(`사용자 삭제: ${id}`);
+    } catch (error) {
+      this.logger.error(`사용자 삭제 실패: ${error.message}`);
+      throw error;
     }
-    await this.usersRepository.remove(user);
   }
 
   async findOrCreateByGoogle(googleUser: any): Promise<User> {
-    let user = await this.findByGoogleId(googleUser.sub);
+    try {
+      let user = await this.findByGoogleId(googleUser.sub);
 
-    if (!user) {
-      // 새 사용자 생성
-      const createUserDto: CreateUserDto = {
-        email: googleUser.email,
-        name: googleUser.name,
-        avatar: googleUser.picture,
-        firstName: googleUser.given_name,
-        lastName: googleUser.family_name,
-        googleId: googleUser.sub,
-        locale: googleUser.locale,
-      };
+      if (!user) {
+        // 새 사용자 생성
+        const createUserDto: CreateUserDto = {
+          email: googleUser.email,
+          name: googleUser.name,
+          avatar: googleUser.picture,
+          providerId: googleUser.sub,
+          authProvider: 'google',
+          isActive: true,
+          isVerified: true,
+          role: 'user',
+        };
 
-      user = await this.create(createUserDto);
-      this.logger.log(`새 사용자 생성: ${user.email}`);
-    } else {
-      // 기존 사용자 정보 업데이트
-      await this.update(user.id, {
-        name: googleUser.name,
-        avatar: googleUser.picture,
-        firstName: googleUser.given_name,
-        lastName: googleUser.family_name,
-        locale: googleUser.locale,
-      });
+        user = await this.create(createUserDto);
+        this.logger.log(`새 사용자 생성: ${user.email}`);
+      } else {
+        // 기존 사용자 정보 업데이트
+        await this.update(user.id, {
+          name: googleUser.name,
+          avatar: googleUser.picture,
+          providerId: googleUser.sub,
+          authProvider: 'google',
+          isVerified: true,
+        });
+        this.logger.log(`기존 사용자 정보 업데이트: ${user.email}`);
+      }
+
+      // 마지막 로그인 시간 업데이트
+      await this.updateLastLogin(user.id);
+
+      return user;
+    } catch (error) {
+      this.logger.error(`구글 사용자 찾기/생성 실패: ${error.message}`);
+      throw error;
     }
+  }
 
-    // 마지막 로그인 시간 업데이트
-    await this.updateLastLogin(user.id);
-
-    return user;
+  async findByRefreshToken(refreshToken: string): Promise<User | null> {
+    try {
+      return this.usersRepository.findOne({
+        where: { refreshToken: refreshToken },
+      });
+    } catch (error) {
+      this.logger.error(`리프레시 토큰으로 사용자 찾기 실패: ${error.message}`);
+      return null;
+    }
   }
 }

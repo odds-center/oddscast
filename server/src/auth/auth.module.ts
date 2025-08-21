@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { JwtStrategy } from './jwt.strategy';
 import { GoogleStrategy } from './google.strategy';
+import { GoogleTokenService } from './google-token.service';
+import { SocialAuthService } from './social-auth.service';
+import { JwtStrategy } from './jwt.strategy';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
@@ -15,21 +17,43 @@ import { GoogleStrategy } from './google.strategy';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get(
-          'JWT_SECRET',
-          'your-super-secret-jwt-key-here'
-        ),
+        secret: configService.get('JWT_SECRET'),
         signOptions: {
-          expiresIn: '7d',
-          issuer: 'goldenrace',
-          audience: 'goldenrace-users',
+          expiresIn: configService.get('JWT_EXPIRES_IN', '1h'),
         },
       }),
       inject: [ConfigService],
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, GoogleStrategy],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    {
+      provide: GoogleStrategy,
+      useFactory: (configService: ConfigService) => {
+        const clientId = configService.get('GOOGLE_CLIENT_ID');
+        const clientSecret = configService.get('GOOGLE_CLIENT_SECRET');
+
+        if (!clientId || !clientSecret) {
+          console.warn(
+            'Google OAuth 설정이 없습니다. GoogleStrategy를 비활성화합니다.'
+          );
+          return null;
+        }
+
+        try {
+          return new GoogleStrategy(configService);
+        } catch (error) {
+          console.warn('GoogleStrategy 초기화 실패:', error.message);
+          return null;
+        }
+      },
+      inject: [ConfigService],
+    },
+    GoogleTokenService,
+    SocialAuthService,
+    JwtStrategy,
+  ].filter(Boolean),
+  exports: [AuthService, GoogleTokenService, SocialAuthService],
 })
 export class AuthModule {}

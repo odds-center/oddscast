@@ -1,19 +1,25 @@
 import {
   Entity,
-  PrimaryColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   OneToOne,
   JoinColumn,
   Index,
+  BeforeInsert,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEntity } from '../../shared/entities/base.entity';
+import { User } from '../../users/entities/user.entity';
 
 @Entity('user_point_balances')
-export class UserPointBalance {
-  @PrimaryColumn({ type: 'varchar', length: 36, name: 'user_id' })
-  userId!: string;
+export class UserPointBalance extends BaseEntity {
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   // 현재 포인트 잔액
   @Column({
@@ -116,16 +122,19 @@ export class UserPointBalance {
 
   @Column({
     type: 'varchar',
-    length: 20,
+    length: 50,
     name: 'data_source',
     default: 'INTERNAL',
   })
   dataSource!: string; // 데이터 출처
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ type: 'varchar', length: 36, name: 'user_id' })
+  userId!: string;
+
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 
   // 관계 설정

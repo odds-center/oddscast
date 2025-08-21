@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Result } from './entities/result.entity';
 import { Repository } from 'typeorm';
-import { Result } from '../entities/result.entity';
 
 @Injectable()
 export class ResultsService {

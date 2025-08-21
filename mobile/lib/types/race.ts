@@ -3,7 +3,7 @@ export interface Race {
   id: string;
   meet: string;
   meetName: string;
-  rcDate: string;
+  rcDate: string; // KRA API 응답 - string
   rcNo: string;
   rcName: string;
   rcDist: string;
@@ -14,8 +14,8 @@ export interface Race {
   rcRatingMax?: string;
   rcAgeCondition?: string;
   rcSexCondition?: string;
-  rcStartTime?: string;
-  rcEndTime?: string;
+  rcStartTime?: string; // KRA API 응답 - string
+  rcEndTime?: string; // KRA API 응답 - string
   rcDay?: string;
   rcWeekday?: string;
   rcWeather?: string;
@@ -32,8 +32,8 @@ export interface Race {
   apiVersion: string;
   dataSource: string;
   createdBy?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // 직접 만든 스키마 - Date
   totalPrize?: number;
   totalEntries?: number;
   raceStatus: string;
@@ -212,22 +212,22 @@ export interface RaceAnalysis {
   raceId: string;
   totalEntries: number;
   averageRating: number;
-  favoriteHorses: Array<{
+  favoriteHorses: {
     hrNo: string;
     hrName: string;
     odds: number;
     confidence: number;
-  }>;
+  }[];
   trackAnalysis: {
     trackType: string;
     trackCondition: string;
     weatherImpact: string;
-    historicalPerformance: Array<{
+    historicalPerformance: {
       date: string;
       winner: string;
       time: string;
       trackCondition: string;
-    }>;
+    }[];
   };
   bettingTrends: {
     mostPopularBetType: string;
@@ -241,7 +241,7 @@ export interface RaceSchedule {
   meet: string;
   meetName: string;
   date: string;
-  races: Array<{
+  races: {
     rcNo: string;
     rcName: string;
     rcDist: string;
@@ -249,21 +249,21 @@ export interface RaceSchedule {
     rcStartTime: string;
     totalEntries: number;
     raceStatus: string;
-  }>;
+  }[];
 }
 
 export interface RaceCalendar {
   year: number;
   month?: number;
-  meets: Array<{
+  meets: {
     meet: string;
     meetName: string;
-    dates: Array<{
+    dates: {
       date: string;
       raceCount: number;
       totalPrize: number;
-    }>;
-  }>;
+    }[];
+  }[];
 }
 
 export interface RaceSearchFilters {

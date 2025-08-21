@@ -1,17 +1,68 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { usePointTransactions, useUserPointBalance } from '@/lib/hooks/usePoints';
-import { showPointSuccessMessage } from '@/utils/alert';
-import React from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useAuth } from '@/context';
+import { usePointTransactions, useUserPointBalance, useAddPoints } from '@/lib/hooks/usePoints';
+import { showPointSuccessMessage, showErrorMessage } from '@/utils/alert';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View, TextInput, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function PointsScreen() {
-  const { data: pointBalance, isLoading: balanceLoading } = useUserPointBalance();
-  const { data: transactions, isLoading: transactionsLoading } = usePointTransactions();
+  const { user } = useAuth();
+  const {
+    data: pointBalance,
+    isLoading: balanceLoading,
+    refetch: refetchBalance,
+  } = useUserPointBalance(user?.id || '');
+  const {
+    data: transactions,
+    isLoading: transactionsLoading,
+    refetch: refetchTransactions,
+  } = usePointTransactions(user?.id || '');
+  const addPointsMutation = useAddPoints();
+
+  const [isAddModalVisible, setIsAddModalVisible] = useState(false);
+  const [addAmount, setAddAmount] = useState('');
+  const [addDescription, setAddDescription] = useState('');
 
   const handleAddPoints = () => {
-    showPointSuccessMessage('포인트 추가 기능이 곧 추가될 예정입니다.');
+    setIsAddModalVisible(true);
+  };
+
+  const handleConfirmAddPoints = async () => {
+    if (!addAmount || !addDescription) {
+      showErrorMessage('오류', '금액과 설명을 입력해주세요.');
+      return;
+    }
+
+    const amount = parseInt(addAmount);
+    if (isNaN(amount) || amount <= 0) {
+      showErrorMessage('오류', '올바른 금액을 입력해주세요.');
+      return;
+    }
+
+    try {
+      await addPointsMutation.mutateAsync({
+        userId: user?.id!,
+        transactionData: {
+          amount,
+          type: 'EARNED' as any,
+          description: addDescription,
+        },
+      });
+
+      showPointSuccessMessage(`${amount}P가 추가되었습니다.`);
+      setIsAddModalVisible(false);
+      setAddAmount('');
+      setAddDescription('');
+
+      // 데이터 새로고침
+      refetchBalance();
+      refetchTransactions();
+    } catch (error) {
+      showErrorMessage('오류', '포인트 추가에 실패했습니다.');
+      console.error('Add points error:', error);
+    }
   };
 
   const handleTransferPoints = () => {
@@ -20,15 +71,17 @@ export default function PointsScreen() {
 
   const getTransactionTypeText = (type: string): string => {
     switch (type) {
-      case 'EARNED':
-        return '획득';
-      case 'SPENT':
+      case 'ADMIN_ADJUSTMENT':
+        return '적립';
+      case 'BET_PLACED':
         return '사용';
-      case 'REFUNDED':
-        return '환불';
-      case 'BONUS':
+      case 'BET_WON':
+        return '당첨';
+      case 'BET_LOST':
+        return '미당첨';
+      case 'EVENT_BONUS':
         return '보너스';
-      case 'EXPIRED':
+      case 'EXPIRY':
         return '만료';
       default:
         return type;
@@ -37,101 +90,191 @@ export default function PointsScreen() {
 
   const getTransactionTypeColor = (type: string): string => {
     switch (type) {
-      case 'EARNED':
-      case 'BONUS':
+      case 'ADMIN_ADJUSTMENT':
+      case 'BET_WON':
+      case 'EVENT_BONUS':
         return '#4CAF50';
-      case 'SPENT':
+      case 'BET_PLACED':
+      case 'BET_LOST':
+      case 'EXPIRY':
         return '#F44336';
-      case 'REFUNDED':
-        return '#2196F3';
-      case 'EXPIRED':
-        return '#9E9E9E';
       default:
         return '#666';
     }
   };
 
+  const formatAmount = (amount: number): string => {
+    return amount > 0 ? `+${amount}` : `${amount}`;
+  };
+
+  if (balanceLoading || transactionsLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ThemedView style={styles.loadingContainer}>
+          <ThemedText type='body'>로딩 중...</ThemedText>
+        </ThemedView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         {/* 헤더 */}
-        <View style={styles.header}>
-          <ThemedText style={styles.title}>포인트</ThemedText>
-          <ThemedText style={styles.subtitle}>포인트를 관리하고 사용하세요</ThemedText>
-        </View>
+        <ThemedView style={styles.header}>
+          <ThemedText type='title'>포인트</ThemedText>
+          <ThemedText type='subtitle'>포인트 잔액과 내역을 확인하세요</ThemedText>
+        </ThemedView>
 
         {/* 포인트 잔액 */}
         <ThemedView style={styles.balanceContainer}>
-          <ThemedText style={styles.balanceTitle}>현재 포인트</ThemedText>
-          <ThemedText style={styles.balanceAmount}>
-            {balanceLoading
-              ? '로딩 중...'
-              : `${pointBalance?.currentPoints?.toLocaleString() || 0}P`}
+          <ThemedText type='subtitle' style={styles.balanceTitle}>
+            현재 포인트
           </ThemedText>
-
+          <ThemedText
+            type='largeTitle'
+            lightColor='#B48A3C'
+            darkColor='#E5C99C'
+            style={styles.balanceAmount}
+          >
+            {pointBalance?.currentPoints || 0}P
+          </ThemedText>
           <View style={styles.balanceStats}>
             <View style={styles.balanceStat}>
-              <ThemedText style={styles.balanceStatLabel}>총 획득</ThemedText>
-              <ThemedText style={styles.balanceStatValue}>
-                {pointBalance?.totalPointsEarned?.toLocaleString() || 0}P
+              <ThemedText type='caption' style={styles.balanceStatLabel}>
+                총 적립
+              </ThemedText>
+              <ThemedText type='stat' style={styles.balanceStatValue}>
+                {pointBalance?.totalPointsEarned || 0}P
               </ThemedText>
             </View>
             <View style={styles.balanceStat}>
-              <ThemedText style={styles.balanceStatLabel}>총 사용</ThemedText>
-              <ThemedText style={styles.balanceStatValue}>
-                {pointBalance?.totalPointsSpent?.toLocaleString() || 0}P
+              <ThemedText type='caption' style={styles.balanceStatLabel}>
+                총 사용
+              </ThemedText>
+              <ThemedText type='stat' style={styles.balanceStatValue}>
+                {pointBalance?.totalPointsSpent || 0}P
               </ThemedText>
             </View>
           </View>
         </ThemedView>
 
-        {/* 포인트 액션 버튼들 */}
+        {/* 액션 버튼들 */}
         <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton} onPress={handleAddPoints}>
-            <ThemedText style={styles.actionButtonText}>포인트 추가</ThemedText>
+            <ThemedText type='defaultSemiBold' style={styles.actionButtonText}>
+              포인트 추가
+            </ThemedText>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={handleTransferPoints}>
-            <ThemedText style={styles.actionButtonText}>포인트 이체</ThemedText>
+            <ThemedText type='defaultSemiBold' style={styles.actionButtonText}>
+              포인트 이체
+            </ThemedText>
           </TouchableOpacity>
         </View>
 
         {/* 포인트 내역 */}
         <ThemedView style={styles.transactionsContainer}>
-          <ThemedText style={styles.sectionTitle}>포인트 내역</ThemedText>
-          {transactionsLoading ? (
-            <ThemedText>로딩 중...</ThemedText>
-          ) : transactions?.transactions && transactions.transactions.length > 0 ? (
-            transactions.transactions.slice(0, 10).map((transaction) => (
+          <ThemedText type='subtitle' style={styles.transactionsTitle}>
+            포인트 내역
+          </ThemedText>
+          {transactions?.transactions && transactions.transactions.length > 0 ? (
+            transactions.transactions.map((transaction) => (
               <View key={transaction.id} style={styles.transactionItem}>
-                <View style={styles.transactionHeader}>
-                  <ThemedText style={styles.transactionType}>
-                    {getTransactionTypeText(transaction.type)}
-                  </ThemedText>
-                  <ThemedText style={styles.transactionAmount}>
-                    {transaction.type === 'SPENT' ? '-' : '+'}
-                    {transaction.amount.toLocaleString()}P
-                  </ThemedText>
-                </View>
-                <View style={styles.transactionDetails}>
-                  <ThemedText style={styles.transactionDescription}>
+                <View style={styles.transactionInfo}>
+                  <ThemedText type='defaultSemiBold' style={styles.transactionDescription}>
                     {transaction.description}
                   </ThemedText>
-                  <ThemedText style={styles.transactionDate}>
-                    {new Date(transaction.createdAt).toLocaleDateString()}
+                  <ThemedText type='caption' style={styles.transactionType}>
+                    {getTransactionTypeText(transaction.transactionType)}
                   </ThemedText>
                 </View>
-                <View style={styles.transactionBalance}>
-                  <ThemedText style={styles.transactionBalanceText}>
-                    잔액: {transaction.balanceAfter.toLocaleString()}P
+                <View style={styles.transactionAmount}>
+                  <ThemedText
+                    type='stat'
+                    style={[
+                      styles.transactionAmountText,
+                      { color: getTransactionTypeColor(transaction.transactionType) },
+                    ]}
+                  >
+                    {formatAmount(transaction.amount)}
+                  </ThemedText>
+                  <ThemedText type='small' style={styles.transactionTime}>
+                    {new Date(transaction.transactionTime).toLocaleDateString('ko-KR')}
                   </ThemedText>
                 </View>
               </View>
             ))
           ) : (
-            <ThemedText style={styles.noTransactionsText}>포인트 내역이 없습니다.</ThemedText>
+            <ThemedText type='body' style={styles.noTransactionsText}>
+              포인트 내역이 없습니다.
+            </ThemedText>
           )}
         </ThemedView>
       </ScrollView>
+
+      {/* 포인트 추가 모달 */}
+      <Modal
+        visible={isAddModalVisible}
+        animationType='slide'
+        transparent={true}
+        onRequestClose={() => setIsAddModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <ThemedText type='title' style={styles.modalTitle}>
+              포인트 추가
+            </ThemedText>
+
+            <View style={styles.inputContainer}>
+              <ThemedText type='defaultSemiBold' style={styles.inputLabel}>
+                금액
+              </ThemedText>
+              <TextInput
+                style={styles.textInput}
+                value={addAmount}
+                onChangeText={setAddAmount}
+                placeholder='추가할 포인트 금액'
+                keyboardType='numeric'
+                placeholderTextColor='#999'
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <ThemedText type='defaultSemiBold' style={styles.inputLabel}>
+                설명
+              </ThemedText>
+              <TextInput
+                style={styles.textInput}
+                value={addDescription}
+                onChangeText={setAddDescription}
+                placeholder='포인트 추가 사유'
+                placeholderTextColor='#999'
+              />
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.cancelButton]}
+                onPress={() => setIsAddModalVisible(false)}
+              >
+                <ThemedText type='defaultSemiBold' style={styles.cancelButtonText}>
+                  취소
+                </ThemedText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalButton, styles.confirmButton]}
+                onPress={handleConfirmAddPoints}
+                disabled={addPointsMutation.isPending}
+              >
+                <ThemedText type='defaultSemiBold' style={styles.confirmButtonText}>
+                  {addPointsMutation.isPending ? '추가 중...' : '추가'}
+                </ThemedText>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -139,31 +282,23 @@ export default function PointsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   scrollView: {
     flex: 1,
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   header: {
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 8,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: '#666',
+    padding: 20,
+    paddingBottom: 16,
   },
   balanceContainer: {
-    margin: 16,
-    padding: 20,
-    backgroundColor: '#ffffff',
+    margin: 20,
+    marginTop: 0,
+    padding: 24,
     borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -172,15 +307,12 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   balanceTitle: {
-    fontSize: 18,
-    color: '#666',
     marginBottom: 8,
+    opacity: 0.8,
   },
   balanceAmount: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#2196F3',
     marginBottom: 20,
+    textAlign: 'center',
   },
   balanceStats: {
     flexDirection: 'row',
@@ -190,102 +322,139 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   balanceStatLabel: {
-    fontSize: 12,
-    color: '#666',
     marginBottom: 4,
+    opacity: 0.7,
   },
   balanceStatValue: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
+    opacity: 0.9,
   },
   actionButtons: {
     flexDirection: 'row',
-    margin: 16,
+    paddingHorizontal: 20,
+    marginBottom: 20,
     gap: 12,
   },
   actionButton: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#2196F3',
+    backgroundColor: '#B48A3C',
+    paddingVertical: 14,
+    paddingHorizontal: 20,
     borderRadius: 12,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
   actionButtonText: {
-    color: '#ffffff',
-    fontSize: 16,
-    fontWeight: '600',
+    color: '#FFFFFF',
   },
   transactionsContainer: {
-    margin: 16,
-    padding: 16,
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
+    margin: 20,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+  transactionsTitle: {
     marginBottom: 16,
-    color: '#333',
+    opacity: 0.9,
   },
   transactionItem: {
-    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: 'rgba(0,0,0,0.1)',
   },
-  transactionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  transactionType: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2196F3',
-  },
-  transactionDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+  transactionInfo: {
+    flex: 1,
+    marginRight: 16,
   },
   transactionDescription: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
+    marginBottom: 4,
   },
-  transactionDate: {
-    fontSize: 12,
-    color: '#999',
+  transactionType: {
+    opacity: 0.7,
   },
-  transactionBalance: {
+  transactionAmount: {
     alignItems: 'flex-end',
   },
-  transactionBalanceText: {
-    fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
+  transactionAmountText: {
+    marginBottom: 4,
+  },
+  transactionTime: {
+    opacity: 0.6,
   },
   noTransactionsText: {
     textAlign: 'center',
+    paddingVertical: 40,
+    opacity: 0.6,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 24,
+    width: '90%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalTitle: {
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  inputLabel: {
+    marginBottom: 8,
+    opacity: 0.8,
+  },
+  textInput: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    fontSize: 16,
+    backgroundColor: '#FFFFFF',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#F5F5F5',
+  },
+  cancelButtonText: {
     color: '#666',
-    fontStyle: 'italic',
-    paddingVertical: 20,
+  },
+  confirmButton: {
+    backgroundColor: '#B48A3C',
+  },
+  confirmButtonText: {
+    color: '#FFFFFF',
   },
 });

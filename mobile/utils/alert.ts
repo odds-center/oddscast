@@ -1,5 +1,24 @@
 import { Alert, Platform } from 'react-native';
 
+// 전역 Alert 참조를 위한 변수
+let globalAlertRef: {
+  showAlert: (
+    title: string,
+    message: string,
+    buttons?: {
+      text: string;
+      onPress?: () => void;
+      style?: 'default' | 'cancel' | 'destructive';
+    }[],
+    type?: 'success' | 'error' | 'warning' | 'info'
+  ) => void;
+} | null = null;
+
+// Alert Provider에서 참조를 설정하는 함수
+export const setGlobalAlertRef = (ref: typeof globalAlertRef) => {
+  globalAlertRef = ref;
+};
+
 /**
  * OS별로 적절한 Alert 스타일을 적용합니다.
  */
@@ -14,25 +33,60 @@ const getAlertStyle = () => {
 };
 
 /**
+ * 커스텀 Alert 또는 네이티브 Alert을 표시합니다.
+ */
+const showCustomAlert = (
+  title: string,
+  message: string,
+  buttons: {
+    text: string;
+    onPress?: () => void;
+    style?: 'default' | 'cancel' | 'destructive';
+  }[] = [{ text: '확인' }],
+  type: 'success' | 'error' | 'warning' | 'info' = 'info'
+) => {
+  // 모든 플랫폼에서 커스텀 Alert 사용 (일관된 UI 제공)
+  if (globalAlertRef) {
+    globalAlertRef.showAlert(title, message, buttons, type);
+    return;
+  }
+
+  // 폴백: 네이티브 Alert 사용 (AlertProvider가 없는 경우)
+  const nativeButtons = buttons.map((button) => ({
+    text: button.text,
+    onPress: button.onPress,
+    style: button.style as any,
+  }));
+
+  Alert.alert(title, message, nativeButtons);
+};
+
+/**
  * 성공 메시지를 표시합니다.
  */
 export const showSuccessMessage = (message: string, title: string = '성공') => {
-  if (Platform.OS === 'android') {
-    Alert.alert(title, message, [{ text: '확인' }], getAlertStyle());
-  } else {
-    Alert.alert(title, message, [{ text: '확인' }]);
-  }
+  showCustomAlert(title, message, [{ text: '확인' }], 'success');
 };
 
 /**
  * 에러 메시지를 표시합니다.
  */
 export const showErrorMessage = (message: string, title: string = '오류') => {
-  if (Platform.OS === 'android') {
-    Alert.alert(title, message, [{ text: '확인' }], getAlertStyle());
-  } else {
-    Alert.alert(title, message, [{ text: '확인' }]);
-  }
+  showCustomAlert(title, message, [{ text: '확인' }], 'error');
+};
+
+/**
+ * 경고 메시지를 표시합니다.
+ */
+export const showWarningMessage = (message: string, title: string = '경고') => {
+  showCustomAlert(title, message, [{ text: '확인' }], 'warning');
+};
+
+/**
+ * 정보 메시지를 표시합니다.
+ */
+export const showInfoMessage = (message: string, title: string = '알림') => {
+  showCustomAlert(title, message, [{ text: '확인' }], 'info');
 };
 
 /**
@@ -49,11 +103,7 @@ export const showConfirmMessage = (
     { text: '확인', onPress: onConfirm },
   ];
 
-  if (Platform.OS === 'android') {
-    Alert.alert(title, message, buttons, getAlertStyle());
-  } else {
-    Alert.alert(title, message, buttons);
-  }
+  showCustomAlert(title, message, buttons, 'warning');
 };
 
 /**
@@ -62,17 +112,14 @@ export const showConfirmMessage = (
 export const showCustomMessage = (
   message: string,
   title: string = '알림',
-  buttons: Array<{
+  buttons: {
     text: string;
     onPress?: () => void;
     style?: 'default' | 'cancel' | 'destructive';
-  }>
+  }[],
+  type: 'success' | 'error' | 'warning' | 'info' = 'info'
 ) => {
-  if (Platform.OS === 'android') {
-    Alert.alert(title, message, buttons, getAlertStyle());
-  } else {
-    Alert.alert(title, message, buttons);
-  }
+  showCustomAlert(title, message, buttons, type);
 };
 
 /**
@@ -123,10 +170,21 @@ export const showBetErrorMessage = (message: string) => {
 };
 
 /**
+ * 베팅 확인 메시지를 표시합니다.
+ */
+export const showBetConfirmMessage = (
+  message: string,
+  onConfirm: () => void,
+  onCancel?: () => void
+) => {
+  showConfirmMessage(message, '베팅 확인', onConfirm, onCancel);
+};
+
+/**
  * 포인트 관련 성공 메시지를 표시합니다.
  */
 export const showPointSuccessMessage = (message: string) => {
-  showSuccessMessage(message, '포인트 성공');
+  showSuccessMessage(message, '포인트');
 };
 
 /**
@@ -140,7 +198,7 @@ export const showPointErrorMessage = (message: string) => {
  * 경마 관련 성공 메시지를 표시합니다.
  */
 export const showRaceSuccessMessage = (message: string) => {
-  showSuccessMessage(message, '경마 성공');
+  showSuccessMessage(message, '경마');
 };
 
 /**
@@ -154,7 +212,7 @@ export const showRaceErrorMessage = (message: string) => {
  * 사용자 관련 성공 메시지를 표시합니다.
  */
 export const showUserSuccessMessage = (message: string) => {
-  showSuccessMessage(message, '사용자 성공');
+  showSuccessMessage(message, '사용자');
 };
 
 /**
@@ -162,4 +220,38 @@ export const showUserSuccessMessage = (message: string) => {
  */
 export const showUserErrorMessage = (message: string) => {
   showErrorMessage(message, '사용자 오류');
+};
+
+/**
+ * 삭제 확인 메시지를 표시합니다.
+ */
+export const showDeleteConfirmMessage = (
+  itemName: string,
+  onConfirm: () => void,
+  onCancel?: () => void
+) => {
+  showCustomAlert(
+    '삭제 확인',
+    `${itemName}을(를) 정말 삭제하시겠습니까?`,
+    [
+      { text: '취소', style: 'cancel', onPress: onCancel },
+      { text: '삭제', style: 'destructive', onPress: onConfirm },
+    ],
+    'warning'
+  );
+};
+
+/**
+ * 로그아웃 확인 메시지를 표시합니다.
+ */
+export const showLogoutConfirmMessage = (onConfirm: () => void, onCancel?: () => void) => {
+  showCustomAlert(
+    '로그아웃',
+    '정말 로그아웃하시겠습니까?',
+    [
+      { text: '취소', style: 'cancel', onPress: onCancel },
+      { text: '로그아웃', style: 'destructive', onPress: onConfirm },
+    ],
+    'warning'
+  );
 };

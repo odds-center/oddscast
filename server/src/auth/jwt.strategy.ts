@@ -2,36 +2,27 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
-import { UsersService } from '../users/users.service';
+import { JwtPayload } from './jwt.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private configService: ConfigService,
-    private usersService: UsersService
-  ) {
+  constructor(private readonly configService: ConfigService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get(
-        'JWT_SECRET',
-        'your-super-secret-jwt-key-here'
-      ),
+      secretOrKey: configService.get('JWT_SECRET'),
     });
   }
 
-  async validate(payload: any) {
-    const user = await this.usersService.findById(payload.sub);
-
-    if (!user || !user.isActive) {
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+  async validate(payload: JwtPayload) {
+    if (!payload.sub || !payload.email) {
+      throw new UnauthorizedException('토큰 페이로드가 유효하지 않습니다.');
     }
 
     return {
-      id: user.id,
-      email: user.email,
-      name: user.name,
-      providerId: user.providerId,
+      id: payload.sub,
+      email: payload.email,
+      name: payload.name,
     };
   }
 }

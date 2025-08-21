@@ -1,32 +1,23 @@
-import {
-  GetTokensResponse,
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
-import Constants from 'expo-constants';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
+import { GOOGLE_WEB_CLIENT_ID } from './Constants';
+import { getCurrentConfig } from '../config/environment';
 
 // Google Sign-In 설정
 GoogleSignin.configure({
-  webClientId:
-    Constants.expoConfig?.extra?.googleWebClientId ||
-    'your-web-client-id.apps.googleusercontent.com',
-  iosClientId:
-    Constants.expoConfig?.extra?.googleIosClientId ||
-    'your-ios-client-id.apps.googleusercontent.com',
+  webClientId: GOOGLE_WEB_CLIENT_ID,
   offlineAccess: true,
-  forceCodeForRefreshToken: true,
 });
 
 export interface GoogleUserInfo {
   idToken: string;
-  serverAuthCode: string;
+  serverAuthCode?: string;
   user: {
     id: string;
     name: string;
     email: string;
-    photo: string;
-    familyName: string;
-    givenName: string;
+    photo?: string;
+    familyName?: string;
+    givenName?: string;
   };
 }
 
@@ -35,70 +26,107 @@ export interface GoogleSignInResult {
   data?: GoogleUserInfo;
   error?: string;
   idToken?: string;
+  serverAuthCode?: string; // 추가
 }
 
 class GoogleAuthService {
+  public config = getCurrentConfig();
+
   /**
    * 구글 로그인을 시작합니다.
    */
   async signIn(): Promise<GoogleSignInResult> {
     try {
-      // 기존 로그인 상태 확인
-      await GoogleSignin.hasPlayServices();
+      console.log('Starting Google Sign-In...');
 
-      // 기존 로그인 해제
-      await GoogleSignin.signOut();
+      // Play Services 확인
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-      // 구글 로그인 실행
+      // 기존 로그인 상태 확인 및 정리
+      try {
+        const currentUser = await GoogleSignin.getCurrentUser();
+        if (currentUser) {
+          console.log('User already signed in, signing out first...');
+          await GoogleSignin.signOut();
+        }
+      } catch (error) {
+        // 로그인되어 있지 않은 경우 무시
+      }
+
+      // 새로운 로그인 시도
+      console.log('Attempting Google Sign-In...');
       const userInfo = await GoogleSignin.signIn();
 
-      // Google Sign-In의 실제 응답 구조에 맞춰 처리
-      // 타입 단언을 사용하여 타입 문제 해결
-      const typedUserInfo = userInfo as any;
+      console.log('Google Sign-In raw response:', JSON.stringify(userInfo, null, 2));
 
-      if (typedUserInfo && typedUserInfo.user) {
-        const googleUserInfo: GoogleUserInfo = {
-          idToken: typedUserInfo.idToken || '',
-          serverAuthCode: typedUserInfo.serverAuthCode || '',
-          user: {
-            id: typedUserInfo.user.id,
-            name: typedUserInfo.user.name || '',
-            email: typedUserInfo.user.email,
-            photo: typedUserInfo.user.photo || '',
-            familyName: typedUserInfo.user.familyName || '',
-            givenName: typedUserInfo.user.givenName || '',
-          },
-        };
-
-        return {
-          type: 'success',
-          data: googleUserInfo,
-          idToken: typedUserInfo.idToken || '',
-        };
-      } else {
-        throw new Error('사용자 정보를 가져올 수 없습니다.');
+      // 사용자 정보 검증
+      if (!userInfo) {
+        throw new Error('Google Sign-In returned null');
       }
+
+      // 타입 캐스팅으로 처리
+      const userInfoAny = userInfo as any;
+
+      // data 객체에서 실제 데이터 추출
+      const actualData = userInfoAny.data || userInfoAny;
+
+      // idToken 확인
+      const idToken = actualData.idToken;
+      if (!idToken) {
+        console.error('No idToken in response:', userInfo);
+        throw new Error('ID Token을 받지 못했습니다.');
+      }
+
+      // 사용자 정보 확인
+      const user = actualData.user;
+      if (!user || !user.email) {
+        console.error('No user data in response:', userInfo);
+        throw new Error('사용자 정보가 없습니다.');
+      }
+
+      const googleUserInfo: GoogleUserInfo = {
+        idToken,
+        serverAuthCode: actualData.serverAuthCode || undefined,
+        user: {
+          id: user.id,
+          name: user.name || user.email || 'Unknown',
+          email: user.email,
+          photo: user.photo || undefined,
+          familyName: user.familyName || undefined,
+          givenName: user.givenName || undefined,
+        },
+      };
+
+      console.log('Processed Google user info:', googleUserInfo);
+
+      return {
+        type: 'success',
+        data: googleUserInfo,
+        idToken,
+        serverAuthCode: actualData.serverAuthCode, // 추가
+      };
     } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+      console.error('Google Sign-In Error Details:', error);
+
+      if (error.code === 'SIGN_IN_CANCELLED') {
         return {
           type: 'cancelled',
           error: '사용자가 로그인을 취소했습니다.',
         };
-      } else if (error.code === statusCodes.IN_PROGRESS) {
+      } else if (error.code === 'IN_PROGRESS') {
         return {
           type: 'error',
-          error: '로그인이 이미 진행 중입니다.',
+          error: '이미 로그인이 진행 중입니다. 잠시 후 다시 시도해주세요.',
         };
-      } else if (error.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+      } else if (error.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
         return {
           type: 'error',
-          error: 'Google Play Services를 사용할 수 없습니다.',
+          error: 'Google Play 서비스가 필요합니다.',
         };
       } else {
-        console.error('Google Sign-In Error:', error);
         return {
           type: 'error',
-          error: error.message || '알 수 없는 오류가 발생했습니다.',
+          error: error.message || '구글 로그인 중 오류가 발생했습니다.',
         };
       }
     }
@@ -109,26 +137,23 @@ class GoogleAuthService {
    */
   async getCurrentUser(): Promise<GoogleUserInfo | null> {
     try {
-      // GoogleSignin.isSignedIn() 메서드가 없는 경우 직접 확인
-      const user = await GoogleSignin.getCurrentUser();
-      if (user && (user as any).idToken) {
-        const typedUser = user as any;
-        return {
-          idToken: typedUser.idToken,
-          serverAuthCode: typedUser.serverAuthCode || '',
-          user: {
-            id: typedUser.user.id,
-            name: typedUser.user.name || '',
-            email: typedUser.user.email,
-            photo: typedUser.user.photo || '',
-            familyName: typedUser.user.familyName || '',
-            givenName: typedUser.user.givenName || '',
-          },
-        };
-      }
-      return null;
+      const userInfo = await GoogleSignin.getCurrentUser();
+      if (!userInfo) return null;
+
+      return {
+        idToken: (userInfo as any).idToken || '',
+        serverAuthCode: (userInfo as any).serverAuthCode,
+        user: {
+          id: userInfo.user.id,
+          name: userInfo.user.name || userInfo.user.email || 'Unknown',
+          email: userInfo.user.email,
+          photo: userInfo.user.photo || undefined,
+          familyName: userInfo.user.familyName || undefined,
+          givenName: userInfo.user.givenName || undefined,
+        },
+      };
     } catch (error) {
-      console.error('Get current user error:', error);
+      console.error('Error getting current user:', error);
       return null;
     }
   }
@@ -139,73 +164,62 @@ class GoogleAuthService {
   async signOut(): Promise<void> {
     try {
       await GoogleSignin.signOut();
+      console.log('Google Sign-Out successful');
     } catch (error) {
-      console.error('Google sign out error:', error);
+      console.error('Google Sign-Out error:', error);
       throw error;
     }
   }
 
   /**
-   * 구글 계정 연결을 해제합니다.
-   */
-  async revokeAccess(): Promise<void> {
-    try {
-      await GoogleSignin.revokeAccess();
-    } catch (error) {
-      console.error('Google revoke access error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 구글 로그인 상태를 확인합니다.
+   * 현재 로그인 상태를 확인합니다.
    */
   async isSignedIn(): Promise<boolean> {
     try {
-      // isSignedIn 메서드가 없는 경우 getCurrentUser로 확인
       const user = await GoogleSignin.getCurrentUser();
-      return !!user && !!(user as any).idToken;
+      return !!user;
     } catch (error) {
-      console.error('Check sign in status error:', error);
+      console.error('Error checking sign-in status:', error);
       return false;
     }
   }
 
   /**
-   * 액세스 토큰을 가져옵니다.
+   * 서버에 ID 토큰을 전송하여 JWT를 발급받습니다.
    */
-  async getAccessToken(): Promise<string | null> {
+  async authenticateWithServer(idToken: string): Promise<any> {
     try {
-      const tokens = await GoogleSignin.getTokens();
-      return tokens.accessToken;
-    } catch (error) {
-      console.error('Get access token error:', error);
-      return null;
-    }
-  }
+      console.log('Authenticating with server...');
+      console.log(
+        'Server URL:',
+        `${this.config.api.server.baseURL}/api/auth/google/verify-id-token`
+      );
+      console.log('ID Token length:', idToken.length);
 
-  /**
-   * 리프레시 토큰을 가져옵니다.
-   */
-  async getRefreshToken(): Promise<string | null> {
-    try {
-      const tokens = await GoogleSignin.getTokens();
-      // refreshToken이 없는 경우 null 반환
-      return (tokens as any).refreshToken || null;
-    } catch (error) {
-      console.error('Get refresh token error:', error);
-      return null;
-    }
-  }
+      const response = await fetch(
+        `${this.config.api.server.baseURL}/api/auth/google/verify-id-token`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ idToken }),
+        }
+      );
 
-  /**
-   * 토큰을 가져옵니다 (getTokens 메서드 추가).
-   */
-  async getTokens(): Promise<GetTokensResponse> {
-    try {
-      return await GoogleSignin.getTokens();
+      console.log('Server response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Server authentication failed:', errorText);
+        throw new Error(`서버 인증 실패: ${response.status} - ${errorText}`);
+      }
+
+      const result = await response.json();
+      console.log('Server authentication successful:', result);
+      return result;
     } catch (error) {
-      console.error('Get tokens error:', error);
+      console.error('Server authentication error:', error);
       throw error;
     }
   }

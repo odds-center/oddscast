@@ -60,12 +60,12 @@ export interface Notification {
     [key: string]: any;
   };
   isRead: boolean;
-  readAt?: string;
-  expiresAt?: string;
-  scheduledAt?: string;
-  sentAt?: string;
-  createdAt: string;
-  updatedAt: string;
+  readAt?: Date; // 직접 만든 스키마 - Date
+  expiresAt?: Date; // 직접 만든 스키마 - Date
+  scheduledAt?: Date; // 직접 만든 스키마 - Date
+  sentAt?: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // 직접 만든 스키마 - Date
 }
 
 export interface CreateNotificationRequest {
@@ -75,8 +75,8 @@ export interface CreateNotificationRequest {
   priority?: NotificationPriority;
   category?: NotificationCategory;
   metadata?: Notification['metadata'];
-  scheduledAt?: string;
-  expiresAt?: string;
+  scheduledAt?: Date; // 직접 만든 스키마 - Date
+  expiresAt?: Date; // 직접 만든 스키마 - Date
 }
 
 export interface UpdateNotificationRequest {
@@ -93,8 +93,8 @@ export interface NotificationFilters {
   priority?: NotificationPriority;
   category?: NotificationCategory;
   isRead?: boolean;
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: Date; // 필터용 - Date
+  dateTo?: Date; // 필터용 - Date
   page?: number;
   limit?: number;
 }

@@ -2,18 +2,22 @@ import { Module } from '@nestjs/common';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { GoogleStrategy } from './google.strategy';
 import { GoogleTokenService } from './google-token.service';
 import { SocialAuthService } from './social-auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { JwtService } from './jwt.service';
+import { RefreshToken } from './entities/refresh-token.entity';
 import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     UsersModule,
     PassportModule,
+    TypeOrmModule.forFeature([RefreshToken]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -28,6 +32,7 @@ import { UsersModule } from '../users/users.module';
   controllers: [AuthController],
   providers: [
     AuthService,
+    JwtService,
     {
       provide: GoogleStrategy,
       useFactory: (configService: ConfigService) => {
@@ -54,6 +59,6 @@ import { UsersModule } from '../users/users.module';
     SocialAuthService,
     JwtStrategy,
   ].filter(Boolean),
-  exports: [AuthService, GoogleTokenService, SocialAuthService],
+  exports: [AuthService, GoogleTokenService, SocialAuthService, JwtService],
 })
 export class AuthModule {}

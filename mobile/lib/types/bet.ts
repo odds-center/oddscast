@@ -43,9 +43,9 @@ export interface Bet {
   };
   betStatus: BetStatus;
   betResult: BetResult;
-  betTime: string;
-  raceTime?: string;
-  resultTime?: string;
+  betTime: Date; // 직접 만든 스키마 - Date
+  raceTime?: Date; // 직접 만든 스키마 - Date
+  resultTime?: Date; // 직접 만든 스키마 - Date
   raceResult?: {
     winner: string;
     second: string;
@@ -68,8 +68,8 @@ export interface Bet {
   dataSource: string;
   ipAddress?: string;
   userAgent?: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // 직접 만든 스키마 - Date
   roi?: number;
   riskLevel?: string;
   isFavorite?: boolean;
@@ -140,7 +140,7 @@ export interface BetAnalysis {
 export interface BetSlip {
   id: string;
   raceId: string;
-  bets: Array<{
+  bets: {
     betType: BetType;
     amount: number;
     selections: {
@@ -148,7 +148,7 @@ export interface BetSlip {
       positions?: number[];
       combinations?: string[][];
     };
-  }>;
+  }[];
   totalAmount: number;
   status: 'DRAFT' | 'CONFIRMED' | 'CANCELLED';
   createdAt: string;

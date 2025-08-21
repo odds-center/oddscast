@@ -8,7 +8,7 @@ import {
   ManyToOne,
   JoinColumn,
 } from 'typeorm';
-import { Race } from './race.entity';
+import { Race } from '../../races/entities/race.entity';
 
 @Entity('dividend_rates')
 export class DividendRate {

@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { useAuth } from '@/context/AuthProvider';
 import { useUserProfile } from '@/lib/hooks/useUsers';
 import { UserProfile } from '@/lib/types/user';
 import { showConfirmMessage } from '@/utils/alert';
+import { ThemedText } from '@/components/ThemedText';
+import { PageLayout, Section, Button } from '@/components/common';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
@@ -48,9 +50,11 @@ const MyPageScreen = () => {
 
   if (profileLoading) {
     return (
-      <View style={styles.container}>
-        <Text>로딩 중...</Text>
-      </View>
+      <PageLayout showHeader={false}>
+        <View style={styles.loadingContainer}>
+          <ThemedText type='body'>로딩 중...</ThemedText>
+        </View>
+      </PageLayout>
     );
   }
 
@@ -60,88 +64,126 @@ const MyPageScreen = () => {
   const email = profile?.email || user.email || '';
 
   return (
-    <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>마이페이지</Text>
-      </View>
-
-      <View style={styles.profileSection}>
-        <View style={styles.avatarContainer}>
-          <View style={styles.avatar}>
-            <Text style={styles.avatarText}>{username.charAt(0).toUpperCase()}</Text>
+    <PageLayout title='마이페이지' subtitle='내 정보와 설정을 관리하세요'>
+      {/* 프로필 섹션 */}
+      <Section variant='elevated'>
+        <View style={styles.profileContent}>
+          <View style={styles.avatarContainer}>
+            <View style={styles.avatar}>
+              <ThemedText type='largeTitle' style={styles.avatarText}>
+                {username.charAt(0).toUpperCase()}
+              </ThemedText>
+            </View>
           </View>
+          <ThemedText type='title' style={styles.username}>
+            {username}
+          </ThemedText>
+          <ThemedText type='body' lightColor='#687076' darkColor='#9BA1A6'>
+            {email}
+          </ThemedText>
         </View>
-        <Text style={styles.username}>{username}</Text>
-        <Text style={styles.email}>{email}</Text>
-      </View>
+      </Section>
 
-      <View style={styles.menuSection}>
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>프로필 편집</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
+      {/* 메뉴 섹션 */}
+      <Section variant='elevated'>
+        <View style={styles.menuList}>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              프로필 편집
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>즐겨찾기</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              즐겨찾기
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>알림 설정</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              알림 설정
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>개인정보 처리방침</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              개인정보 처리방침
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.menuItem}>
-          <Text style={styles.menuText}>이용약관</Text>
-          <Text style={styles.menuArrow}>›</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              이용약관
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-      <View style={styles.actionSection}>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Text style={styles.signOutButtonText}>로그아웃</Text>
-        </TouchableOpacity>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              고객센터
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              ›
+            </ThemedText>
+          </TouchableOpacity>
 
-        <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
-          <Text style={styles.deleteAccountButtonText}>계정 삭제</Text>
-        </TouchableOpacity>
-      </View>
+          <TouchableOpacity style={styles.menuItem}>
+            <ThemedText type='body' style={styles.menuText}>
+              앱 버전
+            </ThemedText>
+            <ThemedText type='body' style={styles.menuArrow}>
+              1.0.0
+            </ThemedText>
+          </TouchableOpacity>
+        </View>
+      </Section>
 
-      <View style={styles.infoSection}>
-        <Text style={styles.infoText}>{profile?.email || user?.email || '이메일 없음'}</Text>
-        <Text style={styles.versionText}>버전 1.0.0</Text>
-      </View>
-    </ScrollView>
+      {/* 계정 관리 섹션 */}
+      <Section title='계정 관리' variant='outlined'>
+        <View style={styles.accountButtons}>
+          <Button
+            title='로그아웃'
+            onPress={handleSignOut}
+            variant='danger'
+            size='large'
+            fullWidth
+          />
+          <Button
+            title='계정 삭제'
+            onPress={handleDeleteAccount}
+            variant='danger'
+            size='large'
+            fullWidth
+          />
+        </View>
+      </Section>
+    </PageLayout>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  profileSection: {
-    backgroundColor: '#fff',
-    padding: 20,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    padding: 20,
+  },
+  profileContent: {
+    alignItems: 'center',
   },
   avatarContainer: {
     marginBottom: 16,
@@ -150,85 +192,48 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#007AFF',
+    backgroundColor: '#B48A3C',
     justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#B48A3C',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
   },
   avatarText: {
-    fontSize: 32,
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    color: '#fff',
   },
   username: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#333',
     marginBottom: 8,
+    opacity: 0.9,
   },
-  email: {
-    fontSize: 16,
-    color: '#666',
-  },
-  menuSection: {
-    backgroundColor: '#fff',
-    marginTop: 20,
+  menuList: {
+    // Menu list styles
   },
   menuItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: 'rgba(180, 138, 60, 0.1)',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    marginBottom: 8,
+    borderRadius: 8,
   },
   menuText: {
-    fontSize: 16,
-    color: '#333',
+    opacity: 0.9,
+    flex: 1,
   },
   menuArrow: {
-    fontSize: 18,
-    color: '#999',
+    opacity: 0.6,
+    marginLeft: 16,
   },
-  actionSection: {
-    marginTop: 20,
-    paddingHorizontal: 20,
-  },
-  signOutButton: {
-    backgroundColor: '#FF9500',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  signOutButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteAccountButton: {
-    backgroundColor: '#FF3B30',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  deleteAccountButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  infoSection: {
-    marginTop: 40,
-    paddingHorizontal: 20,
-    alignItems: 'center',
-  },
-  infoText: {
-    fontSize: 14,
-    color: '#999',
-    marginBottom: 8,
-  },
-  versionText: {
-    fontSize: 12,
-    color: '#ccc',
+  accountButtons: {
+    gap: 12,
   },
 });
 

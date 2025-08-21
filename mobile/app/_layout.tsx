@@ -1,6 +1,7 @@
 import { useLoadFonts } from '@/constants/theme';
 import { AppThemeProvider } from '@/context/AppThemeProvider';
 import { AuthProvider, useAuth } from '@/context/AuthProvider';
+import { AlertProvider } from '@/context/AlertProvider';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { queryClient } from '@/lib/queryClient';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
@@ -31,15 +32,17 @@ function RootLayoutNav() {
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AppThemeProvider>
-        <Stack screenOptions={{ headerShown: false }}>
-          {user ? (
-            <Stack.Screen name='(app)' options={{ headerShown: false }} />
-          ) : (
-            <Stack.Screen name='(auth)' options={{ headerShown: false }} />
-          )}
-          <Stack.Screen name='+not-found' />
-        </Stack>
-        <StatusBar style='auto' />
+        <AlertProvider>
+          <Stack screenOptions={{ headerShown: false }}>
+            {user ? (
+              <Stack.Screen name='(app)' options={{ headerShown: false }} />
+            ) : (
+              <Stack.Screen name='(auth)' options={{ headerShown: false }} />
+            )}
+            <Stack.Screen name='+not-found' />
+          </Stack>
+          <StatusBar style='auto' />
+        </AlertProvider>
       </AppThemeProvider>
     </ThemeProvider>
   );

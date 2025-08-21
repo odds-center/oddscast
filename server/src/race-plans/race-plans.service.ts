@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RacePlan } from '../entities/race-plan.entity';
+import { RacePlan } from '../races/entities/race-plan.entity';
 
 @Injectable()
 export class RacePlansService {

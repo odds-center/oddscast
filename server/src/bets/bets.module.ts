@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { UserPoints } from '../points/entities/user-points.entity';
+import { PointsModule } from '../points/points.module';
+import { Race } from '../races/entities/race.entity';
+import { DividendRate } from '../results/entities/dividend-rate.entity';
+import { User } from '../users/entities/user.entity';
 import { BetsController } from './bets.controller';
 import { BetsService } from './bets.service';
-import { Bet } from '../entities/bet.entity';
-import { UserPoints } from '../entities/user-points.entity';
-import { User } from '../entities/user.entity';
-import { Race } from '../entities/race.entity';
-import { DividendRate } from '../entities/dividend-rate.entity';
-import { PointsModule } from '../points/points.module';
+import { Bet } from './entities/bet.entity';
 
 @Module({
   imports: [

@@ -1,29 +1,30 @@
 import {
-  Controller,
-  Get,
-  Post,
-  Put,
-  Delete,
   Body,
-  Param,
-  Query,
-  UseGuards,
-  Request,
+  Controller,
+  Delete,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  Put,
+  Query,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
   ApiBearerAuth,
   ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
 } from '@nestjs/swagger';
-import { BetsService, CreateBetDto, UpdateBetDto } from './bets.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { Bet, BetType, BetStatus, BetResult } from '../entities/bet.entity';
+import { BetsService } from './bets.service';
+import { CreateBetDto, UpdateBetDto } from './dto';
+import { Bet, BetResult, BetStatus, BetType } from './entities/bet.entity';
 
 @ApiTags('마권')
 @Controller('bets')

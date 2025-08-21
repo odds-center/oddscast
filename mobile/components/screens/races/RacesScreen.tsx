@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  ActivityIndicator,
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { ThemedText } from '@/components/ThemedText';
+import { PageLayout, Section, Button } from '@/components/common';
 import { useRaces } from '@/lib/hooks/useRaces';
 import { RaceCard } from './RaceCard';
 
@@ -32,155 +27,139 @@ export default function RacesScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#007AFF' />
-        <Text style={styles.loadingText}>레이스 정보를 불러오는 중...</Text>
-      </View>
+      <PageLayout showHeader={false}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color='#E5C99C' />
+          <ThemedText type='body' style={styles.loadingText}>
+            레이스 정보를 불러오는 중...
+          </ThemedText>
+        </View>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>레이스 정보를 불러오는데 실패했습니다.</Text>
-        <TouchableOpacity style={styles.retryButton}>
-          <Text style={styles.retryButtonText}>다시 시도</Text>
-        </TouchableOpacity>
-      </View>
+      <PageLayout showHeader={false}>
+        <View style={styles.errorContainer}>
+          <ThemedText type='body' style={styles.errorText}>
+            레이스 정보를 불러오는데 실패했습니다.
+          </ThemedText>
+          <Button title='다시 시도' onPress={() => {}} variant='primary' size='medium' />
+        </View>
+      </PageLayout>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <Text style={styles.title}>레이스</Text>
-      </View>
-
-      <View style={styles.filterContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+    <PageLayout title='경주 일정' subtitle='오늘의 경주 정보를 확인하세요'>
+      {/* 지역 필터 */}
+      <Section variant='outlined'>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterScrollContent}
+        >
           {venues.map((venue) => (
             <TouchableOpacity
               key={venue}
               style={[styles.filterButton, selectedVenue === venue && styles.filterButtonActive]}
               onPress={() => setSelectedVenue(venue)}
             >
-              <Text
+              <ThemedText
+                type='defaultSemiBold'
                 style={[
                   styles.filterButtonText,
                   selectedVenue === venue && styles.filterButtonTextActive,
                 ]}
               >
                 {venue === 'all' ? '전체' : venue}
-              </Text>
+              </ThemedText>
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </View>
+      </Section>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {filteredRaces.length > 0 ? (
-          filteredRaces.map((race) => <RaceCard key={race.id} race={race} />)
-        ) : (
+      {/* 경주 목록 */}
+      {filteredRaces.length > 0 ? (
+        <Section variant='elevated'>
+          {filteredRaces.map((race) => (
+            <RaceCard
+              key={race.id}
+              race={race}
+              onPress={() => {
+                // 경주 상세 페이지로 이동
+                console.log('Race selected:', race.id);
+              }}
+            />
+          ))}
+        </Section>
+      ) : (
+        <Section variant='elevated'>
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>해당 지역의 레이스가 없습니다.</Text>
+            <ThemedText type='body' style={styles.emptyText}>
+              {selectedVenue === 'all'
+                ? '등록된 경주가 없습니다.'
+                : `${selectedVenue}에 등록된 경주가 없습니다.`}
+            </ThemedText>
           </View>
-        )}
-      </ScrollView>
-    </View>
+        </Section>
+      )}
+    </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  filterContainer: {
-    backgroundColor: '#fff',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  filterScroll: {
-    paddingHorizontal: 20,
+  filterScrollContent: {
+    paddingHorizontal: 4,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: '#f0f0f0',
-    marginRight: 12,
+    marginHorizontal: 4,
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.3)',
   },
   filterButtonActive: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#B48A3C',
   },
   filterButtonText: {
-    fontSize: 14,
-    color: '#666',
+    color: '#B48A3C',
   },
   filterButtonTextActive: {
-    color: '#fff',
-    fontWeight: '600',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
+    color: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    padding: 20,
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    opacity: 0.8,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
     marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    textAlign: 'center',
+    opacity: 0.8,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    padding: 40,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#666',
     textAlign: 'center',
+    opacity: 0.6,
   },
 });

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { RacePlan } from '../entities/race-plan.entity';
+import { RacePlan } from '../races/entities/race-plan.entity';
 import { RacePlansController } from './race-plans.controller';
 import { RacePlansService } from './race-plans.service';
 

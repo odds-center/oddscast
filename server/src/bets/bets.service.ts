@@ -1,17 +1,12 @@
-import {
-  Injectable,
-  Logger,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { Bet, BetType, BetStatus, BetResult } from '../entities/bet.entity';
-import { User } from '../entities/user.entity';
-import { Race } from '../entities/race.entity';
-import { DividendRate } from '../entities/dividend-rate.entity';
+import { clamp, compact, inRange, mean, round, sum, uniq } from 'es-toolkit';
+import { DataSource, Repository } from 'typeorm';
 import { PointsService } from '../points/points.service';
-import { clamp, round, sum, mean, inRange, compact, uniq } from 'es-toolkit';
+import { Race } from '../races/entities/race.entity';
+import { DividendRate } from '../results/entities/dividend-rate.entity';
+import { User } from '../users/entities/user.entity';
+import { Bet, BetResult, BetStatus, BetType } from './entities/bet.entity';
 
 export interface CreateBetDto {
   userId: string;
@@ -102,8 +97,12 @@ export class BetsService {
 
       const savedBet = await queryRunner.manager.save(bet);
 
-      // 포인트 차감 (새로운 포인트 서비스 사용)
-      await this.pointsService.deductPoints(userId, betAmount, savedBet.id);
+      // 포인트 차감
+      await this.pointsService.usePoints(
+        createBetDto.userId,
+        createBetDto.betAmount,
+        `베팅: ${bet.id}`
+      );
 
       // 마권 통계 업데이트
       user.totalBets += 1;
@@ -238,8 +237,12 @@ export class BetsService {
       bet.updatedAt = new Date();
       await queryRunner.manager.save(bet);
 
-      // 포인트 환불 (새로운 포인트 서비스 사용)
-      await this.pointsService.refundPoints(bet.userId, bet.betAmount, bet.id);
+      // 포인트 환불
+      await this.pointsService.addPoints(bet.userId, {
+        amount: bet.betAmount,
+        type: 'REFUNDED',
+        description: `베팅 취소 환불: ${bet.id}`,
+      });
 
       // 마권 통계 업데이트
       const user = await queryRunner.manager.findOne(User, {
@@ -458,7 +461,11 @@ export class BetsService {
     try {
       if (result === BetResult.WIN && actualWin && actualWin > 0) {
         // 당첨 처리 - 새로운 포인트 서비스 사용
-        await this.pointsService.awardPoints(bet.userId, actualWin, bet.id);
+        await this.pointsService.addPoints(bet.userId, {
+          amount: actualWin,
+          type: 'EARNED',
+          description: `베팅 당첨: ${bet.id}`,
+        });
 
         // 마권 통계 업데이트
         user.totalWinnings += actualWin;

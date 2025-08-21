@@ -17,7 +17,7 @@ const Colors = {
   },
   dark: {
     text: '#FFFFFF',
-    background: '#0C2A1E',
+    background: '#1A3A2E', // 더 밝은 다크 배경색으로 변경
     tint: '#E5C99C',
     icon: '#9BA1A6',
     tabIconDefault: '#9BA1A6',

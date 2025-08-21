@@ -1,15 +1,15 @@
 import {
+  Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Put,
-  Delete,
-  Param,
-  Body,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RacePlan } from '../races/entities/race-plan.entity';
 import { RacePlansService } from './race-plans.service';
-import { RacePlan } from '../entities/race-plan.entity';
 
 @ApiTags('race-plans')
 @Controller('race-plans')

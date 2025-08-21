@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useCallback, useState } from 'react';
-import { AuthState, User } from '../lib/types/auth';
+import { AuthState } from '../lib/types/auth';
+import { User } from '../lib/types/user';
 import { JWT_TOKEN_NAME } from '../utils/Constants';
 
 // 간단한 상태 관리 훅
@@ -10,6 +11,8 @@ export const useAuthState = () => {
     user: null,
     isAuthenticated: false,
     isLoading: false,
+    refreshToken: null,
+    error: null,
   });
 
   const setToken = useCallback((tokenData: { accessToken: string; user: User }) => {
@@ -54,16 +57,20 @@ export const useAuthState = () => {
               email: payload.email,
               name: payload.name,
               avatar: payload.avatar,
-              firstName: payload.firstName,
-              lastName: payload.lastName,
-              provider: payload.provider || 'google',
-              googleId: payload.googleId || payload.sub,
-              refreshToken: payload.refreshToken,
-              lastLoginAt: payload.lastLoginAt ? new Date(payload.lastLoginAt) : undefined,
+              authProvider: 'google',
+              providerId: payload.googleId || payload.sub,
               isActive: payload.isActive !== false,
-              emailVerified: payload.emailVerified || false,
-              locale: payload.locale || 'ko',
-              timezone: payload.timezone,
+              isVerified: payload.emailVerified || false,
+              lastLogin: payload.lastLoginAt ? new Date(payload.lastLoginAt) : undefined,
+              refreshToken: payload.refreshToken,
+              role: 'user',
+              totalBets: 0,
+              wonBets: 0,
+              lostBets: 0,
+              winRate: 0,
+              totalWinnings: 0,
+              totalLosses: 0,
+              roi: 0,
               createdAt: payload.createdAt ? new Date(payload.createdAt) : new Date(),
               updatedAt: payload.updatedAt ? new Date(payload.updatedAt) : new Date(),
             };

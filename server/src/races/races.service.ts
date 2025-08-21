@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Race } from './entities/race.entity';
 import { Repository, Between } from 'typeorm';
-import { Race } from '../entities/race.entity';
 
 @Injectable()
 export class RacesService {

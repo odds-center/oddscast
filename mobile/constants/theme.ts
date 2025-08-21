@@ -22,6 +22,7 @@ const Colors = {
     text: '#2C2C2C', // Dark charcoal for better contrast
     textSecondary: '#5A5A5A', // Medium gray
     textTertiary: '#8A8A8A', // Light gray
+    white: '#FFFFFF',
     card: '#FFFFFF',
     cardSecondary: '#F5F2ED', // Warm off-white
     border: '#D4C8B8', // Warm border
@@ -45,6 +46,7 @@ const Colors = {
     text: '#F5F5F5', // Off-white for better readability
     textSecondary: '#C0C0C0', // Light gray
     textTertiary: '#A0A0A0', // Medium gray
+    white: '#FFFFFF',
     card: '#2A2A2A',
     cardSecondary: '#333333',
     border: '#404040',

@@ -1,6 +1,9 @@
 # 개발용 Dockerfile
 FROM node:18-alpine
 
+# Node.js 18에서 crypto 모듈 문제 해결
+ENV NODE_OPTIONS="--openssl-legacy-provider"
+
 # 작업 디렉토리 설정
 WORKDIR /app
 

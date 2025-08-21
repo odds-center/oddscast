@@ -166,38 +166,28 @@ export class AuthController {
   }
 
   @Post('google/signin')
-  @ApiOperation({ summary: 'Google 로그인 완료' })
+  @ApiOperation({ summary: 'Google 로그인 및 JWT 발급' })
   @ApiBody({
     schema: {
       type: 'object',
       properties: {
         socialId: {
           type: 'string',
-          description: 'Google 사용자 ID',
+          description: 'Google Social ID',
           example: '123456789',
         },
         socialEmail: {
           type: 'string',
-          description: 'Google 이메일',
+          description: '사용자 이메일',
           example: 'user@example.com',
         },
-        phoneNumber: {
+        socialName: {
           type: 'string',
-          description: '전화번호 (선택사항)',
-          example: '010-1234-5678',
-        },
-        referralCode: {
-          type: 'string',
-          description: '추천인 코드 (선택사항)',
-          example: 'REF123',
-        },
-        companyName: {
-          type: 'string',
-          description: '회사명 (선택사항)',
-          example: 'Golden Race',
+          description: '사용자 이름',
+          example: '홍길동',
         },
       },
-      required: ['socialId', 'socialEmail'],
+      required: ['socialId', 'socialEmail', 'socialName'],
     },
   })
   @ApiResponse({
@@ -206,49 +196,41 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        jwt: { type: 'string' },
-        userId: { type: 'string' },
-        isFirst: { type: 'boolean' },
+        jwt: { type: 'string', description: 'JWT 토큰' },
+        userId: { type: 'string', description: '사용자 ID' },
         user: {
           type: 'object',
           properties: {
             id: { type: 'string' },
             email: { type: 'string' },
             name: { type: 'string' },
-            avatar: { type: 'string' },
-            firstName: { type: 'string' },
-            lastName: { type: 'string' },
-            locale: { type: 'string' },
           },
         },
+        isFirst: { type: 'boolean', description: '첫 로그인 여부' },
       },
     },
   })
   async googleSignin(
-    @Body()
-    body: {
-      socialId: string;
-      socialEmail: string;
-      phoneNumber?: string;
-      referralCode?: string;
-      companyName?: string;
-    }
+    @Body() body: { socialId: string; socialEmail: string; socialName: string }
   ) {
     try {
-      if (!body.socialId || !body.socialEmail) {
-        throw new HttpException(
-          '소셜 ID와 이메일이 필요합니다.',
-          HttpStatus.BAD_REQUEST
-        );
-      }
-
       this.logger.log('Google 로그인 시도');
 
-      const result = await this.socialAuthService.googleSignin(body);
+      // 사용자 로그인/회원가입 처리
+      const loginResult = await this.socialAuthService.googleSigninWithIdToken({
+        socialId: body.socialId,
+        socialEmail: body.socialEmail,
+        socialName: body.socialName,
+      });
 
-      this.logger.log('Google 로그인 성공');
+      this.logger.log('Google 로그인 성공 및 JWT 발급 완료');
 
-      return result;
+      return {
+        jwt: loginResult.jwt,
+        userId: loginResult.userId,
+        user: loginResult.user,
+        isFirst: loginResult.isFirst,
+      };
     } catch (error) {
       this.logger.error(`Google 로그인 실패: ${error.message}`);
 
@@ -284,10 +266,10 @@ export class AuthController {
     schema: {
       type: 'object',
       properties: {
-        socialEmail: { type: 'string' },
-        socialName: { type: 'string' },
-        exist: { type: 'boolean' },
-        socialId: { type: 'string' },
+        socialEmail: { type: 'string', description: '사용자 이메일' },
+        socialName: { type: 'string', description: '사용자 이름' },
+        exist: { type: 'boolean', description: '기존 사용자 여부' },
+        socialId: { type: 'string', description: 'Google Social ID' },
       },
     },
   })
@@ -302,13 +284,18 @@ export class AuthController {
 
       this.logger.log('Google ID 토큰 검증 시도');
 
-      const result = await this.socialAuthService.verifyGoogleIdToken(
-        body.idToken
-      );
+      // Google ID 토큰 검증만 수행
+      const verificationResult =
+        await this.socialAuthService.verifyGoogleIdToken(body.idToken);
 
       this.logger.log('Google ID 토큰 검증 성공');
 
-      return result;
+      return {
+        socialEmail: verificationResult.socialEmail,
+        socialName: verificationResult.socialName,
+        exist: verificationResult.exist,
+        socialId: verificationResult.socialId,
+      };
     } catch (error) {
       this.logger.error(`Google ID 토큰 검증 실패: ${error.message}`);
 
@@ -398,61 +385,17 @@ export class AuthController {
 
       // 프론트엔드로 리다이렉트 (토큰 포함)
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
-      const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}&refresh_token=${result.refresh_token}`;
+      const redirectUrl = `${frontendUrl}/auth/callback?token=${result.access_token}`;
 
-      this.logger.log(`프론트엔드 리다이렉트: ${frontendUrl}`);
-      res.redirect(redirectUrl);
+      this.logger.log('Google OAuth 콜백 처리 완료');
+
+      return res.redirect(redirectUrl);
     } catch (error) {
       this.logger.error(`구글 OAuth 콜백 처리 실패: ${error.message}`);
 
       const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
       const errorUrl = `${frontendUrl}/auth/error?message=${encodeURIComponent(error.message)}`;
       res.redirect(errorUrl);
-    }
-  }
-
-  @Post('refresh')
-  @ApiOperation({ summary: '토큰 갱신' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        refreshToken: {
-          type: 'string',
-          description: '갱신할 리프레시 토큰',
-          example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-        },
-      },
-      required: ['refreshToken'],
-    },
-  })
-  @ApiResponse({ status: 200, description: '토큰 갱신 성공' })
-  @ApiResponse({ status: 401, description: '유효하지 않은 토큰' })
-  async refreshToken(@Body() body: { refreshToken: string }) {
-    try {
-      if (!body.refreshToken) {
-        throw new HttpException(
-          '리프레시 토큰이 필요합니다.',
-          HttpStatus.BAD_REQUEST
-        );
-      }
-
-      this.logger.log('토큰 갱신 시도');
-      const result = await this.authService.refreshToken(body.refreshToken);
-      this.logger.log('토큰 갱신 성공');
-
-      return result;
-    } catch (error) {
-      this.logger.error(`토큰 갱신 실패: ${error.message}`);
-
-      if (error instanceof HttpException) {
-        throw error;
-      }
-
-      throw new HttpException(
-        '토큰 갱신에 실패했습니다.',
-        HttpStatus.INTERNAL_SERVER_ERROR
-      );
     }
   }
 
@@ -464,20 +407,15 @@ export class AuthController {
       properties: {
         userId: {
           type: 'string',
-          description: '로그아웃할 사용자 ID',
-          example: 'user-123',
-        },
-        accessToken: {
-          type: 'string',
-          description: '무효화할 구글 액세스 토큰 (선택사항)',
-          example: 'ya29.a0AfH6SMC...',
+          description: '사용자 ID',
+          example: '123e4567-e89b-12d3-a456-426614174000',
         },
       },
       required: ['userId'],
     },
   })
   @ApiResponse({ status: 200, description: '로그아웃 성공' })
-  async logout(@Body() body: { userId: string; accessToken?: string }) {
+  async logout(@Body() body: { userId: string }) {
     try {
       if (!body.userId) {
         throw new HttpException(
@@ -486,17 +424,10 @@ export class AuthController {
         );
       }
 
-      this.logger.log(`사용자 로그아웃 시도: ${body.userId}`);
+      this.logger.log(`사용자 로그아웃: ${body.userId}`);
 
-      // 구글 액세스 토큰이 있으면 무효화
-      if (body.accessToken) {
-        await this.socialAuthService.revokeGoogleAccess(body.accessToken);
-      }
-
-      const result = await this.authService.logout(body.userId);
-      this.logger.log(`사용자 로그아웃 성공: ${body.userId}`);
-
-      return result;
+      // JWT는 상태가 없으므로 클라이언트에서 토큰을 삭제하면 됨
+      return { message: '로그아웃되었습니다.' };
     } catch (error) {
       this.logger.error(`로그아웃 실패: ${error.message}`);
 

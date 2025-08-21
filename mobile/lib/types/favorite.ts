@@ -9,8 +9,8 @@ export interface Favorite {
   notes?: string;
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   tags?: string[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // 직접 만든 스키마 - Date
 }
 
 export interface CreateFavoriteRequest {
@@ -36,8 +36,8 @@ export interface FavoriteFilters {
   type?: 'RACE' | 'HORSE' | 'JOCKEY' | 'TRAINER' | 'MEET';
   priority?: 'LOW' | 'MEDIUM' | 'HIGH';
   tags?: string[];
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: Date; // 필터용 - Date
+  dateTo?: Date; // 필터용 - Date
   page?: number;
   limit?: number;
 }
@@ -66,12 +66,12 @@ export interface FavoriteStatistics {
     }
   >;
   recentAdditions: Favorite[];
-  mostFavorited: Array<{
+  mostFavorited: {
     targetId: string;
     targetName: string;
     type: string;
     count: number;
-  }>;
+  }[];
 }
 
 export interface FavoriteRace extends Favorite {
@@ -182,24 +182,24 @@ export interface FavoriteGroupListResponse {
 
 export interface FavoriteSyncRequest {
   deviceId: string;
-  favorites: Array<{
+  favorites: {
     type: string;
     targetId: string;
     targetName: string;
     targetData?: any;
     notes?: string;
     lastModified: string;
-  }>;
+  }[];
 }
 
 export interface FavoriteSyncResponse {
   synced: number;
-  conflicts: Array<{
+  conflicts: {
     localId: string;
     serverId: string;
     conflictType: 'MODIFIED' | 'DELETED' | 'ADDED';
     resolution: 'KEEP_LOCAL' | 'KEEP_SERVER' | 'MERGE';
-  }>;
+  }[];
   serverFavorites: Favorite[];
   lastSync: string;
 }
@@ -218,16 +218,16 @@ export interface FavoriteImport {
   importDate: string;
   importedFavorites: Favorite[];
   importedGroups: FavoriteGroup[];
-  duplicates: Array<{
+  duplicates: {
     existing: Favorite;
     imported: Favorite;
     action: 'SKIP' | 'REPLACE' | 'RENAME';
-  }>;
-  errors: Array<{
+  }[];
+  errors: {
     line: number;
     error: string;
     data: any;
-  }>;
+  }[];
   summary: {
     total: number;
     imported: number;

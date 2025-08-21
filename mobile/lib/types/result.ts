@@ -58,8 +58,8 @@ export interface RaceResultFilters {
   jkName?: string;
   trName?: string;
   rcRank?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: Date; // 필터용 - Date
+  dateTo?: Date; // 필터용 - Date
   page?: number;
   limit?: number;
 }
@@ -119,16 +119,16 @@ export interface RaceResultAnalysis {
   raceId: string;
   totalEntries: number;
   averageTime: string;
-  timeDistribution: Array<{
+  timeDistribution: {
     timeRange: string;
     count: number;
     percentage: number;
-  }>;
-  rankDistribution: Array<{
+  }[];
+  rankDistribution: {
     rank: string;
     count: number;
     percentage: number;
-  }>;
+  }[];
   performanceFactors: {
     trackCondition: string;
     weather: string;
@@ -174,69 +174,69 @@ export interface RaceResultComparison {
     date: string;
     results: RaceResultDetail[];
   };
-  similarities: Array<{
+  similarities: {
     factor: string;
     value1: string;
     value2: string;
     difference: string;
-  }>;
-  differences: Array<{
+  }[];
+  differences: {
     factor: string;
     value1: string;
     value2: string;
     impact: string;
-  }>;
+  }[];
 }
 
 export interface RaceResultTrend {
   period: 'daily' | 'weekly' | 'monthly' | 'yearly';
   startDate: string;
   endDate: string;
-  trends: Array<{
+  trends: {
     date: string;
     totalRaces: number;
     averageTime: string;
     totalPrize: number;
     winRate: number;
-  }>;
+  }[];
   topPerformers: {
-    horses: Array<{
+    horses: {
       hrNo: string;
       hrName: string;
       wins: number;
       winRate: number;
       totalPrize: number;
-    }>;
-    jockeys: Array<{
+    }[];
+    jockeys: {
       name: string;
       wins: number;
       winRate: number;
       totalPrize: number;
-    }>;
-    trainers: Array<{
+    }[];
+    trainers: {
       name: string;
       wins: number;
       winRate: number;
       totalPrize: number;
-    }>;
+    }[];
   };
 }
 
 export interface RaceResultValidation {
   raceId: string;
   results: RaceResultDetail[];
-  validationErrors: Array<{
+  validationErrors: {
     type: 'MISSING_DATA' | 'INVALID_DATA' | 'CONSISTENCY_ERROR' | 'BUSINESS_RULE_VIOLATION';
     field: string;
     message: string;
     severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     suggestedFix?: string;
-  }>;
-  warnings: Array<{
+  }[];
+  warnings: {
     field: string;
     message: string;
     suggestion: string;
-  }>;
+  }[];
   isValid: boolean;
   canProceed: boolean;
 }

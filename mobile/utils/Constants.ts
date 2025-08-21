@@ -66,3 +66,14 @@ export const ANIMATION_CONFIG = {
     stiffness: 150,
   },
 } as const;
+
+export const GOOGLE_ANDROID_CLIENT_ID =
+  '297222267377-esub3cahnjsaqfml8f9mai2ag6o9s78l.apps.googleusercontent.com';
+export const GOOGLE_IOS_CLIENT_ID =
+  '297222267377-fa5gmt47asoodmngekdvbbdm7cl0mubh.apps.googleusercontent.com';
+export const GOOGLE_WEB_CLIENT_ID =
+  '297222267377-husiseemja8abddjujt78g5bhlnne2do.apps.googleusercontent.com';
+export const KRA_OPENAPI_KEY_ENCODING =
+  'yyRDa%2FaXc9SsDdY67IqkdXJmZgZXOzsKqnf%2BR%2FSZjR6iAxYLzKiq%2BgXTmdUj%2FFe%2BFtEsMXnMYrLaiX6PZ%2FemsQ%3D%3D';
+export const KRA_OPENAPI_KEY_DECODING =
+  'yyRDa/aXc9SsDdY67IqkdXJmZgZXOzsKqnf+R/SZjR6iAxYLzKiq+gXTmdUj/Fe+FtEsMXnMYrLaiX6PZ/emsQ==';

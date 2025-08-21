@@ -4,24 +4,34 @@ import {
   Index,
   OneToMany,
   OneToOne,
-  PrimaryColumn,
+  BeforeInsert,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { Bet } from './bet.entity';
-import { Race } from './race.entity';
-import { UserPointBalance } from './user-point-balance.entity';
-import { UserPoints } from './user-points.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEntity } from '../../shared/entities/base.entity';
+import { Bet } from '../../bets/entities/bet.entity';
+import { UserPointBalance } from '../../points/entities/user-point-balance.entity';
+import { UserPoints } from '../../points/entities/user-points.entity';
+import { Race } from '../../races/entities/race.entity';
+import { UserSocialAuth } from './user-social-auth.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 @Entity('users')
-export class User {
-  @PrimaryColumn({ type: 'varchar', length: 36 })
-  id!: string;
+export class User extends BaseEntity {
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   @Column({ type: 'varchar', length: 100, unique: true })
   @Index()
   email!: string;
 
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  name?: string;
+  @Column({ type: 'varchar', length: 100 })
+  name!: string;
 
   @Column({ type: 'varchar', length: 255, nullable: true })
   avatar?: string;
@@ -46,14 +56,6 @@ export class User {
   @Column({ type: 'datetime', name: 'last_login', nullable: true })
   lastLogin?: Date;
 
-  @Column({
-    type: 'varchar',
-    length: 500,
-    name: 'refresh_token',
-    nullable: true,
-  })
-  refreshToken?: string;
-
   @Column({ type: 'varchar', length: 20, name: 'role', default: 'user' })
   role!: string;
 
@@ -70,73 +72,46 @@ export class User {
     };
   };
 
-  // 마권 통계
+  // 베팅 통계
   @Column({ type: 'int', name: 'total_bets', default: 0 })
-  totalBets!: number; // 총 마권 구매 수
+  totalBets!: number;
 
   @Column({ type: 'int', name: 'won_bets', default: 0 })
-  wonBets!: number; // 당첨 마권 수
+  wonBets!: number;
 
   @Column({ type: 'int', name: 'lost_bets', default: 0 })
-  lostBets!: number; // 미당첨 마권 수
+  lostBets!: number;
 
   @Column({
     type: 'decimal',
-    precision: 10,
-    scale: 2,
     name: 'win_rate',
-    default: 0,
-  })
-  winRate!: number; // 단승률
-
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 0,
-    name: 'total_winnings',
-    default: 0,
-  })
-  totalWinnings!: number; // 총 당첨금
-
-  @Column({
-    type: 'decimal',
-    precision: 15,
-    scale: 0,
-    name: 'total_losses',
-    default: 0,
-  })
-  totalLosses!: number; // 총 손실
-
-  @Column({
-    type: 'decimal',
     precision: 10,
     scale: 2,
-    name: 'roi',
     default: 0,
   })
-  roi!: number; // 투자수익률
+  winRate!: number;
 
-  // 계정 정보
-  @Column({ type: 'datetime', name: 'created_at' })
-  createdAt!: Date;
+  @Column({
+    type: 'decimal',
+    name: 'total_winnings',
+    precision: 15,
+    scale: 0,
+    default: 0,
+  })
+  totalWinnings!: number;
 
-  @Column({ type: 'datetime', name: 'updated_at' })
-  updatedAt!: Date;
+  @Column({
+    type: 'decimal',
+    name: 'total_losses',
+    precision: 15,
+    scale: 0,
+    default: 0,
+  })
+  totalLosses!: number;
 
-  // 관계 설정
-  @OneToMany(() => Race, race => race.user)
-  createdRaces?: Race[];
+  @Column({ type: 'decimal', name: 'roi', precision: 10, scale: 2, default: 0 })
+  roi!: number;
 
-  @OneToMany(() => Bet, bet => bet.user)
-  bets?: Bet[];
-
-  @OneToMany(() => UserPoints, pointTransaction => pointTransaction.user)
-  pointTransactions?: UserPoints[];
-
-  @OneToOne(() => UserPointBalance, pointBalance => pointBalance.user)
-  pointBalance?: UserPointBalance;
-
-  // 가상 컬럼 (계산된 값)
   @Column({
     type: 'varchar',
     length: 20,
@@ -159,6 +134,31 @@ export class User {
     hundredBets?: Date; // 100개 마권 구매
     perfectBet?: Date; // 완벽한 마권
     streakWins?: number; // 연속 당첨
-    totalEarnings?: number; // 총 수익
+    totalWinnings?: number; // 총 상금
+    bettingStreak?: number; // 연속 베팅
+    specialEvents?: string[]; // 특별 이벤트 참여
   };
+
+  // 계정 정보
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+
+  // 관계 설정
+  @OneToMany(() => Bet, bet => bet.user)
+  bets?: Bet[];
+
+  @OneToMany(() => UserPoints, pointTransaction => pointTransaction.user)
+  pointTransactions?: UserPoints[];
+
+  @OneToOne(() => UserPointBalance, pointBalance => pointBalance.user)
+  pointBalance?: UserPointBalance;
+
+  @OneToMany(() => UserSocialAuth, socialAuth => socialAuth.user)
+  socialAuths?: UserSocialAuth[];
+
+  @OneToMany(() => RefreshToken, refreshToken => refreshToken.user)
+  refreshTokens?: RefreshToken[];
 }

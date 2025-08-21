@@ -8,7 +8,7 @@ export interface User {
   providerId?: string;
   isActive: boolean;
   isVerified: boolean;
-  lastLogin?: string;
+  lastLogin?: Date; // 직접 만든 스키마 - Date
   refreshToken?: string;
   role: string;
   preferences?: {
@@ -32,23 +32,103 @@ export interface User {
   totalLosses: number;
   roi: number;
 
-  // 계정 정보
-  createdAt: string;
-  updatedAt: string;
+  // 계정 정보 (직접 만든 스키마)
+  createdAt: Date; // Date 타입
+  updatedAt: Date; // Date 타입
 
   // 가상 컬럼
   bettingLevel?: string;
   status?: string;
   profileBio?: string;
   achievements?: {
-    firstBet?: string;
-    firstWin?: string;
-    tenBets?: string;
-    hundredBets?: string;
-    perfectBet?: string;
+    firstBet?: Date; // 직접 만든 스키마 - Date
+    firstWin?: Date; // 직접 만든 스키마 - Date
+    tenBets?: Date; // 직접 만든 스키마 - Date
+    hundredBets?: Date; // 직접 만든 스키마 - Date
+    perfectBet?: Date; // 직접 만든 스키마 - Date
     streakWins?: number;
     totalEarnings?: number;
+    level?: number;
+    experience?: number;
   };
+
+  // 소셜 계정 정보
+  socialAccounts?: {
+    google?: {
+      id: string;
+      email: string;
+      name: string;
+      picture?: string;
+    };
+    kakao?: {
+      id: string;
+      email?: string;
+      nickname?: string;
+      profileImage?: string;
+    };
+    naver?: {
+      id: string;
+      email?: string;
+      nickname?: string;
+      profileImage?: string;
+    };
+  };
+
+  // 보안 설정
+  twoFactorEnabled?: boolean;
+  lastPasswordChange?: Date; // 직접 만든 스키마 - Date
+  failedLoginAttempts?: number;
+  accountLockedUntil?: Date; // 직접 만든 스키마 - Date
+
+  // 알림 설정
+  notificationSettings?: {
+    email: boolean;
+    push: boolean;
+    sms: boolean;
+    bettingResults: boolean;
+    promotions: boolean;
+    news: boolean;
+  };
+
+  // 언어 및 지역 설정
+  locale?: string;
+  timezone?: string;
+  currency?: string;
+
+  // 프로필 정보
+  phoneNumber?: string;
+  dateOfBirth?: Date; // 직접 만든 스키마 - Date
+  gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
+  address?: {
+    country?: string;
+    state?: string;
+    city?: string;
+    postalCode?: string;
+    addressLine1?: string;
+    addressLine2?: string;
+  };
+
+  // 계정 상태
+  accountStatus?: 'active' | 'suspended' | 'banned' | 'pending_verification';
+  verificationStatus?: {
+    email: boolean;
+    phone: boolean;
+    identity: boolean;
+    address: boolean;
+  };
+
+  // 마지막 활동 (직접 만든 스키마)
+  lastActivity?: Date; // Date 타입
+  lastBetTime?: Date; // Date 타입
+  lastLoginTime?: Date; // Date 타입
+
+  // 통계 정보
+  totalDeposits?: number;
+  totalWithdrawals?: number;
+  accountBalance?: number;
+  loyaltyPoints?: number;
+  memberSince?: Date; // 직접 만든 스키마 - Date
+  vipLevel?: number;
 }
 
 export interface CreateUserRequest {
@@ -92,12 +172,12 @@ export interface UserStatistics {
   streakWins: number;
   averageBetAmount: number;
   favoriteBetTypes: string[];
-  recentPerformance: Array<{
+  recentPerformance: {
     date: string;
     bets: number;
     wins: number;
     amount: number;
-  }>;
+  }[];
 }
 
 export interface UserAchievement {
@@ -117,8 +197,8 @@ export interface UserFilters {
   isVerified?: boolean;
   role?: string;
   status?: string;
-  dateFrom?: string;
-  dateTo?: string;
+  dateFrom?: Date; // 필터용 - Date
+  dateTo?: Date; // 필터용 - Date
   page?: number;
   limit?: number;
 }
@@ -166,7 +246,7 @@ export interface UserActivity {
     betAmount?: number;
     [key: string]: any;
   };
-  createdAt: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
 }
 
 export interface UserNotification {
@@ -182,8 +262,8 @@ export interface UserNotification {
     promotionId?: string;
     [key: string]: any;
   };
-  createdAt: string;
-  readAt?: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
+  readAt?: Date; // 직접 만든 스키마 - Date
 }
 
 export interface UserPreferences {
@@ -208,6 +288,6 @@ export interface UserPreferences {
     maxBetAmount: number;
   };
   favoriteMeets: string[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // 직접 만든 스키마 - Date
 }

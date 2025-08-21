@@ -4,10 +4,25 @@ import { useThemeColor } from '../hooks/useThemeColor';
 export type ThemedViewProps = ViewProps & {
   lightColor?: string;
   darkColor?: string;
+  variant?: 'background' | 'card' | 'border';
 };
 
-export function ThemedView({ style, lightColor, darkColor, ...otherProps }: ThemedViewProps) {
-  const backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
-  // View의 drop-in replacement로, backgroundColor만 theme에서 가져오고 나머지는 그대로 전달
+export function ThemedView({
+  style,
+  lightColor,
+  darkColor,
+  variant = 'background',
+  ...otherProps
+}: ThemedViewProps) {
+  let backgroundColor;
+
+  if (variant === 'card') {
+    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
+  } else if (variant === 'border') {
+    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'icon');
+  } else {
+    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
+  }
+
   return <View style={[{ backgroundColor }, style]} {...otherProps} />;
 }

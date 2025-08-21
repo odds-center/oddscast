@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import { useResults } from '@/lib/hooks/useResults';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+import { PageLayout, Section, Button } from '@/components/common';
 import type { RaceResult } from '@/lib/api/resultApi';
 
 export default function ResultsScreen() {
@@ -12,179 +12,146 @@ export default function ResultsScreen() {
 
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#007AFF' />
-        <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
-      </View>
+      <PageLayout showHeader={false}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' color='#E5C99C' />
+          <ThemedText type='body' style={styles.loadingText}>
+            결과를 불러오는 중...
+          </ThemedText>
+        </View>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.errorContainer}>
-        <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
-        <TouchableOpacity style={styles.retryButton}>
-          <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
-        </TouchableOpacity>
-      </View>
+      <PageLayout showHeader={false}>
+        <View style={styles.errorContainer}>
+          <ThemedText type='body' style={styles.errorText}>
+            결과를 불러오는데 실패했습니다.
+          </ThemedText>
+          <Button title='다시 시도' onPress={() => {}} variant='primary' size='medium' />
+        </View>
+      </PageLayout>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.header}>
-        <ThemedText style={styles.title}>레이스 결과</ThemedText>
-      </View>
-
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {results && results.length > 0 ? (
-          results.map((result: RaceResult) => (
-            <ThemedView key={result.id} style={styles.resultCard}>
+    <PageLayout title='레이스 결과' subtitle='오늘의 경주 결과를 확인하세요'>
+      {/* 결과 목록 */}
+      {results && results.length > 0 ? (
+        <Section variant='elevated'>
+          {results.map((result: RaceResult) => (
+            <View key={result.id} style={styles.resultCard}>
               <View style={styles.positionContainer}>
-                <ThemedText style={styles.position}>{result.rcRank}</ThemedText>
+                <ThemedText type='largeTitle' style={styles.position}>
+                  {result.rcRank}
+                </ThemedText>
               </View>
               <View style={styles.horseInfo}>
-                <ThemedText style={styles.horseName}>{result.hrName}</ThemedText>
-                <ThemedText style={styles.jockeyName}>기수: {result.jkName}</ThemedText>
+                <ThemedText type='defaultSemiBold' style={styles.horseName}>
+                  {result.hrName}
+                </ThemedText>
+                <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+                  기수: {result.jkName}
+                </ThemedText>
               </View>
               <View style={styles.resultDetails}>
-                <ThemedText style={styles.finishTime}>{result.rcTime}</ThemedText>
-                <ThemedText style={styles.odds}>
+                <ThemedText type='caption' style={styles.finishTime}>
+                  {result.rcTime}
+                </ThemedText>
+                <ThemedText type='defaultSemiBold' lightColor='#B48A3C' darkColor='#E5C99C'>
                   상금: {result.rcPrize?.toLocaleString() || 0}원
                 </ThemedText>
               </View>
-            </ThemedView>
-          ))
-        ) : (
+            </View>
+          ))}
+        </Section>
+      ) : (
+        <Section variant='elevated'>
           <View style={styles.emptyContainer}>
-            <ThemedText style={styles.emptyText}>결과가 없습니다.</ThemedText>
+            <ThemedText type='body' style={styles.emptyText}>
+              결과가 없습니다.
+            </ThemedText>
           </View>
-        )}
-      </ScrollView>
-    </View>
+        </Section>
+      )}
+    </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-  },
   resultCard: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
+    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
   },
   positionContainer: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#007AFF',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#B48A3C',
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
+    shadowColor: '#B48A3C',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
   },
   position: {
-    fontSize: 20,
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    color: '#fff',
   },
   horseInfo: {
     flex: 1,
+    marginRight: 16,
   },
   horseName: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
-  },
-  jockeyName: {
-    fontSize: 14,
-    color: '#666',
+    opacity: 0.9,
   },
   resultDetails: {
     alignItems: 'flex-end',
   },
   finishTime: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#333',
     marginBottom: 4,
-  },
-  odds: {
-    fontSize: 14,
-    color: '#666',
+    opacity: 0.8,
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
+    padding: 20,
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 16,
-    color: '#666',
+    opacity: 0.8,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f5f5f5',
     padding: 20,
   },
   errorText: {
-    fontSize: 16,
-    color: '#666',
-    textAlign: 'center',
     marginBottom: 20,
-  },
-  retryButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 8,
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
+    textAlign: 'center',
+    opacity: 0.8,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 60,
+    padding: 40,
   },
   emptyText: {
-    fontSize: 16,
-    color: '#666',
     textAlign: 'center',
+    opacity: 0.6,
   },
 });

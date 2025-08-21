@@ -55,8 +55,12 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
       <ThemedView style={styles.card}>
         <View style={styles.header}>
           <View style={styles.raceInfo}>
-            <ThemedText style={styles.raceName}>{race.rcName}</ThemedText>
-            <ThemedText style={styles.raceNumber}>제{race.rcNo}경주</ThemedText>
+            <ThemedText type='defaultSemiBold' style={styles.raceName}>
+              {race.rcName}
+            </ThemedText>
+            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+              제{race.rcNo}경주
+            </ThemedText>
           </View>
           <View style={styles.statusContainer}>
             <View
@@ -65,7 +69,7 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
                 { backgroundColor: getStatusColor(race.raceStatus || 'UPCOMING') },
               ]}
             >
-              <ThemedText style={styles.statusText}>
+              <ThemedText type='small' style={styles.statusText}>
                 {getStatusText(race.raceStatus || 'UPCOMING')}
               </ThemedText>
             </View>
@@ -74,31 +78,43 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
 
         <View style={styles.details}>
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>경주장:</ThemedText>
-            <ThemedText style={styles.detailValue}>{race.meetName}</ThemedText>
+            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+              경주장:
+            </ThemedText>
+            <ThemedText type='caption'>{race.meetName}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>거리:</ThemedText>
-            <ThemedText style={styles.detailValue}>{race.rcDist}m</ThemedText>
+            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+              거리:
+            </ThemedText>
+            <ThemedText type='caption'>{race.rcDist}m</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>등급:</ThemedText>
-            <ThemedText style={styles.detailValue}>{race.rcGrade}</ThemedText>
+            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+              등급:
+            </ThemedText>
+            <ThemedText type='caption'>{race.rcGrade}</ThemedText>
           </View>
 
           <View style={styles.detailRow}>
-            <ThemedText style={styles.detailLabel}>시간:</ThemedText>
-            <ThemedText style={styles.detailValue}>
+            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+              시간:
+            </ThemedText>
+            <ThemedText type='caption'>
               {race.rcStartTime ? formatTime(race.rcStartTime) : '미정'}
             </ThemedText>
           </View>
         </View>
 
         <View style={styles.footer}>
-          <ThemedText style={styles.prizeText}>상금: {race.rcPrize?.toLocaleString()}원</ThemedText>
-          <ThemedText style={styles.entriesText}>출마마: {race.totalEntries || 0}마</ThemedText>
+          <ThemedText type='defaultSemiBold' lightColor='#B48A3C' darkColor='#E5C99C'>
+            상금: {race.rcPrize?.toLocaleString()}원
+          </ThemedText>
+          <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+            출마마: {race.totalEntries || 0}마
+          </ThemedText>
         </View>
       </ThemedView>
     </TouchableOpacity>
@@ -107,48 +123,39 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
   card: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 8,
+    elevation: 4,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: 16,
   },
   raceInfo: {
     flex: 1,
   },
   raceName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
     marginBottom: 4,
   },
-  raceNumber: {
-    fontSize: 14,
-    color: '#666',
-  },
   statusContainer: {
-    marginLeft: 12,
+    marginLeft: 16,
   },
   statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
   statusText: {
-    color: '#ffffff',
-    fontSize: 12,
+    color: '#FFFFFF',
     fontWeight: '600',
   },
   details: {
@@ -159,31 +166,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  detailLabel: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#333',
-    fontWeight: '600',
-  },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 12,
+    paddingTop: 16,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-  },
-  prizeText: {
-    fontSize: 14,
-    color: '#FF9800',
-    fontWeight: '600',
-  },
-  entriesText: {
-    fontSize: 14,
-    color: '#666',
+    borderTopColor: 'rgba(180, 138, 60, 0.2)',
   },
 });

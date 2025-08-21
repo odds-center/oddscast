@@ -43,7 +43,7 @@ export const useGoogleLogin = () => {
             updatedAt: new Date().toISOString(),
           },
           accessToken: result.data.idToken,
-          refreshToken: result.data.serverAuthCode,
+          refreshToken: result.data.serverAuthCode || '',
           expiresIn: 3600,
           tokenType: 'Bearer',
         };

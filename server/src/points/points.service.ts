@@ -1,37 +1,18 @@
 import {
   Injectable,
   Logger,
-  BadRequestException,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource } from 'typeorm';
-import { UserPointBalance } from '../entities/user-point-balance.entity';
+import { Repository } from 'typeorm';
 import {
+  UserPointBalance,
   UserPoints,
-  PointTransactionType,
-  PointStatus,
-} from '../entities/user-points.entity';
-import { User } from '../entities/user.entity';
-
-export interface CreatePointTransactionDto {
-  userId: string;
-  transactionType: PointTransactionType;
-  amount: number;
-  description: string;
-  details?: string;
-  metadata?: any;
-  isExpirable?: boolean;
-  expiryDate?: Date;
-}
-
-export interface UpdatePointBalanceDto {
-  currentPoints?: number;
-  totalPointsEarned?: number;
-  totalPointsSpent?: number;
-  bonusPoints?: number;
-  regularPoints?: number;
-}
+  TransactionType,
+  TransactionStatus,
+} from './entities';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class PointsService {
@@ -41,278 +22,136 @@ export class PointsService {
     @InjectRepository(UserPointBalance)
     private readonly pointBalanceRepository: Repository<UserPointBalance>,
     @InjectRepository(UserPoints)
-    private readonly pointTransactionRepository: Repository<UserPoints>,
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    private readonly dataSource: DataSource
+    private readonly pointsRepository: Repository<UserPoints>
   ) {}
 
   /**
-   * 사용자 포인트 잔액 조회
+   * 사용자의 포인트 잔액을 조회합니다.
    */
   async getUserPointBalance(userId: string): Promise<UserPointBalance> {
-    let pointBalance = await this.pointBalanceRepository.findOne({
+    const balance = await this.pointBalanceRepository.findOne({
       where: { userId },
     });
 
-    if (!pointBalance) {
-      // 포인트 잔액이 없으면 생성
-      pointBalance = this.pointBalanceRepository.create({
-        userId,
-        currentPoints: 0,
-        totalPointsEarned: 0,
-        totalPointsSpent: 0,
-        bonusPoints: 0,
-        regularPoints: 0,
-        totalTransactions: 0,
-        bonusTransactions: 0,
-        regularTransactions: 0,
-        lockedPoints: 0,
-        pointStatus: 'ACTIVE',
-      });
-      await this.pointBalanceRepository.save(pointBalance);
+    if (!balance) {
+      throw new NotFoundException(
+        `사용자 포인트 잔액을 찾을 수 없습니다: ${userId}`
+      );
     }
 
-    return pointBalance;
+    return balance;
   }
 
   /**
-   * 포인트 거래 생성
+   * 사용자의 포인트 거래 내역을 조회합니다.
    */
-  async createPointTransaction(
-    createTransactionDto: CreatePointTransactionDto
-  ): Promise<UserPoints> {
-    const { userId, amount, transactionType } = createTransactionDto;
-
-    // 사용자 확인
-    const user = await this.userRepository.findOne({ where: { id: userId } });
-    if (!user) {
-      throw new NotFoundException('사용자를 찾을 수 없습니다.');
-    }
-
-    // 포인트 잔액 조회 또는 생성
-    let pointBalance = await this.getUserPointBalance(userId);
-
-    // 거래 금액 검증
-    if (transactionType === PointTransactionType.BET_PLACED) {
-      if (pointBalance.currentPoints < Math.abs(amount)) {
-        throw new BadRequestException('포인트가 부족합니다.');
-      }
-    }
-
-    // 트랜잭션 시작
-    const queryRunner = this.dataSource.createQueryRunner();
-    await queryRunner.connect();
-    await queryRunner.startTransaction();
-
-    try {
-      // 포인트 거래 기록 생성
-      const transaction = this.pointTransactionRepository.create({
-        ...createTransactionDto,
-        balanceAfter: pointBalance.currentPoints + amount,
-        transactionTime: new Date(),
-        isExpirable: createTransactionDto.isExpirable || false,
-        expiryDate: createTransactionDto.expiryDate,
-        isBonus: [
-          PointTransactionType.SIGNUP_BONUS,
-          PointTransactionType.DAILY_LOGIN,
-          PointTransactionType.REFERRAL_BONUS,
-          PointTransactionType.EVENT_BONUS,
-        ].includes(transactionType),
-      });
-
-      const savedTransaction = await queryRunner.manager.save(transaction);
-
-      // 포인트 잔액 업데이트
-      pointBalance.currentPoints += amount;
-
-      if (amount > 0) {
-        pointBalance.totalPointsEarned += amount;
-        if (transaction.isBonus) {
-          pointBalance.bonusPoints += amount;
-          pointBalance.bonusTransactions += 1;
-        } else {
-          pointBalance.regularPoints += amount;
-          pointBalance.regularTransactions += 1;
-        }
-      } else {
-        pointBalance.totalPointsSpent += Math.abs(amount);
-        pointBalance.regularTransactions += 1;
-      }
-
-      pointBalance.totalTransactions += 1;
-      pointBalance.lastTransactionTime = new Date();
-      pointBalance.lastTransactionType = transactionType;
-      pointBalance.lastTransactionAmount = amount;
-
-      // 만료 정보 업데이트
-      if (transaction.isExpirable && transaction.expiryDate) {
-        if (
-          !pointBalance.nextExpiryDate ||
-          transaction.expiryDate < pointBalance.nextExpiryDate
-        ) {
-          pointBalance.nextExpiryDate = transaction.expiryDate;
-        }
-        pointBalance.expiringPoints += amount;
-      }
-
-      // 사용 가능한 포인트 계산
-      pointBalance.availablePoints =
-        pointBalance.currentPoints - pointBalance.lockedPoints;
-
-      await queryRunner.manager.save(pointBalance);
-
-      await queryRunner.commitTransaction();
-      this.logger.log(`포인트 거래 생성 완료: ${savedTransaction.id}`);
-
-      return savedTransaction;
-    } catch (error) {
-      await queryRunner.rollbackTransaction();
-      this.logger.error('포인트 거래 생성 실패:', error);
-      throw error;
-    } finally {
-      await queryRunner.release();
-    }
+  async getUserPointHistory(userId: string): Promise<UserPoints[]> {
+    return await this.pointsRepository.find({
+      where: { userId },
+      order: { transactionTime: 'DESC' },
+    });
   }
 
   /**
-   * 포인트 잔액 업데이트
+   * 포인트를 적립합니다.
    */
-  async updatePointBalance(
+  async addPoints(
     userId: string,
-    updateDto: UpdatePointBalanceDto
-  ): Promise<UserPointBalance> {
-    const pointBalance = await this.getUserPointBalance(userId);
+    transactionData: {
+      amount: number;
+      type: string;
+      description: string;
+      referenceId?: string;
+      referenceType?: string;
+    }
+  ): Promise<UserPoints> {
+    const { amount, type, description, referenceId, referenceType } =
+      transactionData;
 
-    Object.assign(pointBalance, updateDto);
-    pointBalance.updatedAt = new Date();
+    // 포인트 거래 내역 생성
+    const pointTransaction = this.pointsRepository.create({
+      userId,
+      amount,
+      transactionType: this.mapTransactionType(type),
+      description,
+      balanceAfter: amount,
+      transactionTime: new Date(),
+      status: TransactionStatus.ACTIVE,
+      metadata: {
+        betId: referenceType === 'BET' ? referenceId : undefined,
+        raceId: referenceType === 'RACE' ? referenceId : undefined,
+        adminNote: referenceType === 'ADMIN' ? referenceId : undefined,
+      },
+    });
 
-    // 사용 가능한 포인트 재계산
-    pointBalance.availablePoints =
-      pointBalance.currentPoints - pointBalance.lockedPoints;
+    const savedTransaction = await this.pointsRepository.save(pointTransaction);
 
-    return this.pointBalanceRepository.save(pointBalance);
+    // 포인트 잔액 업데이트
+    await this.updatePointBalance(userId, amount);
+
+    this.logger.log(
+      `포인트 적립: 사용자 ${userId}, 금액 ${amount}, 사유 ${description}`
+    );
+    return savedTransaction;
   }
 
   /**
-   * 포인트 차감 (베팅 시)
+   * 포인트를 사용합니다.
    */
-  async deductPoints(
+  async usePoints(
     userId: string,
     amount: number,
-    betId: string
+    reason: string
   ): Promise<UserPoints> {
-    const pointBalance = await this.getUserPointBalance(userId);
+    const balance = await this.getUserPointBalance(userId);
 
-    if (pointBalance.currentPoints < amount) {
-      throw new BadRequestException('포인트가 부족합니다.');
+    if (balance.currentPoints < amount) {
+      throw new Error('포인트가 부족합니다.');
     }
 
-    // 베팅 중인 포인트로 잠금
-    pointBalance.lockedPoints += amount;
-    pointBalance.availablePoints =
-      pointBalance.currentPoints - pointBalance.lockedPoints;
-
-    await this.pointBalanceRepository.save(pointBalance);
-
-    // 포인트 거래 기록
-    return this.createPointTransaction({
+    // 포인트 거래 내역 생성
+    const pointTransaction = this.pointsRepository.create({
       userId,
-      transactionType: PointTransactionType.BET_PLACED,
       amount: -amount,
-      description: `베팅: ${amount} 포인트 차감`,
-      details: `베팅 ID: ${betId}`,
-      metadata: { betId },
+      transactionType: TransactionType.BET_PLACED,
+      description: reason,
+      balanceAfter: balance.currentPoints - amount,
     });
+
+    const savedTransaction = await this.pointsRepository.save(pointTransaction);
+
+    // 포인트 잔액 업데이트
+    await this.updatePointBalance(userId, -amount);
+
+    this.logger.log(
+      `포인트 사용: 사용자 ${userId}, 금액 ${amount}, 사유 ${reason}`
+    );
+    return savedTransaction;
   }
 
   /**
-   * 포인트 환불 (베팅 취소 시)
-   */
-  async refundPoints(
-    userId: string,
-    amount: number,
-    betId: string
-  ): Promise<UserPoints> {
-    const pointBalance = await this.getUserPointBalance(userId);
-
-    // 베팅 중인 포인트 잠금 해제
-    pointBalance.lockedPoints = Math.max(0, pointBalance.lockedPoints - amount);
-    pointBalance.availablePoints =
-      pointBalance.currentPoints - pointBalance.lockedPoints;
-
-    await this.pointBalanceRepository.save(pointBalance);
-
-    // 포인트 거래 기록
-    return this.createPointTransaction({
-      userId,
-      transactionType: PointTransactionType.BET_PLACED,
-      amount: amount,
-      description: `베팅 취소 환불: ${amount} 포인트`,
-      details: `베팅 ID: ${betId}`,
-      metadata: { betId },
-    });
-  }
-
-  /**
-   * 포인트 지급 (베팅 당첨 시)
-   */
-  async awardPoints(
-    userId: string,
-    amount: number,
-    betId: string
-  ): Promise<UserPoints> {
-    const pointBalance = await this.getUserPointBalance(userId);
-
-    // 베팅 중인 포인트 잠금 해제
-    pointBalance.lockedPoints = Math.max(0, pointBalance.lockedPoints - amount);
-    pointBalance.availablePoints =
-      pointBalance.currentPoints - pointBalance.lockedPoints;
-
-    await this.pointBalanceRepository.save(pointBalance);
-
-    // 포인트 거래 기록
-    return this.createPointTransaction({
-      userId,
-      transactionType: PointTransactionType.BET_WON,
-      amount: amount,
-      description: `베팅 당첨: ${amount} 포인트`,
-      details: `베팅 ID: ${betId}`,
-      metadata: { betId },
-    });
-  }
-
-  /**
-   * 사용자 포인트 거래 내역 조회
+   * 사용자 포인트 거래 내역을 조회합니다.
    */
   async getUserPointTransactions(
     userId: string,
     page: number = 1,
     limit: number = 20,
-    transactionType?: PointTransactionType
-  ): Promise<{
-    transactions: UserPoints[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    const queryBuilder = this.pointTransactionRepository
-      .createQueryBuilder('transaction')
-      .where('transaction.userId = :userId', { userId });
+    type?: string
+  ) {
+    const skip = (page - 1) * limit;
 
-    if (transactionType) {
-      queryBuilder.andWhere('transaction.transactionType = :transactionType', {
-        transactionType,
-      });
+    const queryBuilder = this.pointsRepository
+      .createQueryBuilder('transaction')
+      .where('transaction.userId = :userId', { userId })
+      .orderBy('transaction.transactionTime', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (type) {
+      queryBuilder.andWhere('transaction.transactionType = :type', { type });
     }
 
-    queryBuilder.orderBy('transaction.transactionTime', 'DESC');
-
-    const total = await queryBuilder.getCount();
-    const transactions = await queryBuilder
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getMany();
+    const [transactions, total] = await queryBuilder.getManyAndCount();
 
     return {
       transactions,
@@ -323,113 +162,88 @@ export class PointsService {
   }
 
   /**
-   * 포인트 통계 조회
+   * 사용자 포인트 통계를 조회합니다.
    */
-  async getPointStatistics(userId: string): Promise<{
-    currentPoints: number;
-    totalEarned: number;
-    totalSpent: number;
-    bonusPoints: number;
-    regularPoints: number;
-    totalTransactions: number;
-    averageTransactionAmount: number;
-    monthlyEarnings: number;
-    monthlySpending: number;
-  }> {
-    const pointBalance = await this.getUserPointBalance(userId);
-    const transactions = await this.pointTransactionRepository.find({
+  async getUserPointStatistics(userId: string) {
+    const balance = await this.getUserPointBalance(userId);
+    const transactions = await this.pointsRepository.find({
       where: { userId },
-      order: { transactionTime: 'DESC' },
     });
 
     const totalTransactions = transactions.length;
-    const totalAmount = transactions.reduce(
-      (sum, t) => sum + Math.abs(t.amount),
-      0
-    );
-    const averageTransactionAmount =
-      totalTransactions > 0 ? totalAmount / totalTransactions : 0;
-
-    // 이번 달 통계
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const monthlyTransactions = transactions.filter(
-      t => t.transactionTime >= startOfMonth
-    );
-
-    const monthlyEarnings = monthlyTransactions
+    const totalEarned = transactions
       .filter(t => t.amount > 0)
       .reduce((sum, t) => sum + t.amount, 0);
-
-    const monthlySpending = monthlyTransactions
-      .filter(t => t.amount < 0)
-      .reduce((sum, t) => sum + Math.abs(t.amount), 0);
+    const totalSpent = Math.abs(
+      transactions
+        .filter(t => t.amount < 0)
+        .reduce((sum, t) => sum + t.amount, 0)
+    );
+    const averageTransaction =
+      totalTransactions > 0
+        ? (totalEarned + totalSpent) / totalTransactions
+        : 0;
+    const lastTransaction = transactions[0]; // 이미 DESC로 정렬되어 있음
 
     return {
-      currentPoints: pointBalance.currentPoints,
-      totalEarned: pointBalance.totalPointsEarned,
-      totalSpent: pointBalance.totalPointsSpent,
-      bonusPoints: pointBalance.bonusPoints,
-      regularPoints: pointBalance.regularPoints,
-      totalTransactions: pointBalance.totalTransactions,
-      averageTransactionAmount,
-      monthlyEarnings,
-      monthlySpending,
+      totalTransactions,
+      totalEarned,
+      totalSpent,
+      currentBalance: balance.currentPoints,
+      averageTransaction,
+      lastTransactionDate: lastTransaction?.transactionTime || null,
     };
   }
 
   /**
-   * 포인트 만료 처리
+   * 거래 타입을 매핑합니다.
    */
-  async processExpiringPoints(): Promise<void> {
-    const now = new Date();
-
-    // 만료 예정인 포인트 조회
-    const expiringTransactions = await this.pointTransactionRepository.find({
-      where: {
-        isExpirable: true,
-        expiryDate: now,
-        status: PointStatus.ACTIVE,
-      },
-    });
-
-    for (const transaction of expiringTransactions) {
-      try {
-        // 포인트 만료 처리
-        await this.createPointTransaction({
-          userId: transaction.userId,
-          transactionType: PointTransactionType.EXPIRY,
-          amount: -transaction.amount,
-          description: `포인트 만료: ${transaction.amount} 포인트`,
-          details: `만료된 거래 ID: ${transaction.id}`,
-          metadata: { expiredTransactionId: transaction.id },
-        });
-
-        // 원래 거래 상태 변경
-        transaction.status = PointStatus.EXPIRED;
-        await this.pointTransactionRepository.save(transaction);
-
-        this.logger.log(`포인트 만료 처리 완료: ${transaction.id}`);
-      } catch (error) {
-        this.logger.error(`포인트 만료 처리 실패: ${transaction.id}`, error);
-      }
+  private mapTransactionType(type: string): TransactionType {
+    switch (type.toUpperCase()) {
+      case 'EARNED':
+        return TransactionType.ADMIN_ADJUSTMENT;
+      case 'SPENT':
+        return TransactionType.BET_PLACED;
+      case 'REFUNDED':
+        return TransactionType.BET_WON; // 환불은 당첨으로 처리
+      case 'BONUS':
+        return TransactionType.EVENT_BONUS; // 보너스는 이벤트 보너스로 처리
+      case 'EXPIRED':
+        return TransactionType.EXPIRY; // 만료는 EXPIRY로 처리
+      default:
+        return TransactionType.ADMIN_ADJUSTMENT;
     }
   }
 
   /**
-   * 신규 사용자 포인트 초기화
+   * 포인트 잔액을 업데이트합니다.
    */
-  async initializeUserPoints(userId: string): Promise<UserPointBalance> {
-    // 가입 보너스 지급
-    await this.createPointTransaction({
-      userId,
-      transactionType: PointTransactionType.SIGNUP_BONUS,
-      amount: 10000, // 10,000 포인트 가입 보너스
-      description: '가입 보너스',
-      details: '신규 가입 축하 포인트',
-      isExpirable: false,
+  private async updatePointBalance(
+    userId: string,
+    amount: number
+  ): Promise<void> {
+    let balance = await this.pointBalanceRepository.findOne({
+      where: { userId },
     });
 
-    return this.getUserPointBalance(userId);
+    if (!balance) {
+      // 새 포인트 잔액 생성
+      balance = this.pointBalanceRepository.create({
+        userId,
+        currentPoints: amount,
+        totalPointsEarned: amount > 0 ? amount : 0,
+        totalPointsSpent: amount < 0 ? Math.abs(amount) : 0,
+      });
+    } else {
+      // 기존 잔액 업데이트
+      balance.currentPoints += amount;
+      if (amount > 0) {
+        balance.totalPointsEarned += amount;
+      } else {
+        balance.totalPointsSpent += Math.abs(amount);
+      }
+    }
+
+    await this.pointBalanceRepository.save(balance);
   }
 }

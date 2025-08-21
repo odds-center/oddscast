@@ -1,36 +1,8 @@
-import {
-  Injectable,
-  Logger,
-  ConflictException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { User } from '../entities/user.entity';
-
-export interface CreateUserDto {
-  email: string;
-  name?: string;
-  avatar?: string;
-  providerId?: string;
-  authProvider?: string;
-  isActive?: boolean;
-  isVerified?: boolean;
-  role?: string;
-  refreshToken?: string;
-}
-
-export interface UpdateUserDto {
-  name?: string;
-  avatar?: string;
-  providerId?: string;
-  authProvider?: string;
-  isActive?: boolean;
-  isVerified?: boolean;
-  role?: string;
-  lastLogin?: Date;
-  refreshToken?: string;
-}
+import { User } from './entities/user.entity';
+import { UserSocialAuth } from './entities/user-social-auth.entity';
 
 @Injectable()
 export class UsersService {
@@ -38,148 +10,251 @@ export class UsersService {
 
   constructor(
     @InjectRepository(User)
-    private usersRepository: Repository<User>
+    private readonly userRepository: Repository<User>,
+    @InjectRepository(UserSocialAuth)
+    private readonly userSocialAuthRepository: Repository<UserSocialAuth>
   ) {}
 
-  async create(createUserDto: CreateUserDto): Promise<User> {
-    try {
-      const user = this.usersRepository.create(createUserDto);
-      return await this.usersRepository.save(user);
-    } catch (error) {
-      if (error.code === 'ER_DUP_ENTRY') {
-        throw new ConflictException('사용자가 이미 존재합니다.');
-      }
-      throw error;
+  /**
+   * ID로 사용자를 찾습니다.
+   */
+  async findById(id: string): Promise<User> {
+    const user = await this.userRepository.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException(`사용자를 찾을 수 없습니다: ${id}`);
     }
+    return user;
   }
 
+  /**
+   * 이메일로 사용자를 찾습니다.
+   */
   async findByEmail(email: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { email },
-    });
+    return await this.userRepository.findOne({ where: { email } });
   }
 
+  /**
+   * Google ID로 사용자를 찾습니다.
+   */
   async findByGoogleId(googleId: string): Promise<User | null> {
-    return this.usersRepository.findOne({
+    return await this.userRepository.findOne({
       where: { providerId: googleId },
     });
   }
 
-  async findById(id: string): Promise<User | null> {
-    return this.usersRepository.findOne({
-      where: { id },
-      relations: ['createdRaces'],
-    });
+  /**
+   * 새 사용자를 생성합니다.
+   */
+  async create(createUserDto: Partial<User>): Promise<User> {
+    const user = this.userRepository.create(createUserDto);
+    const savedUser = await this.userRepository.save(user);
+    this.logger.log(`새 사용자 생성: ${savedUser.email}`);
+    return savedUser;
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto): Promise<User | null> {
-    try {
-      await this.usersRepository.update(id, updateUserDto);
-      return this.findById(id);
-    } catch (error) {
-      this.logger.error(`사용자 업데이트 실패: ${error.message}`);
-      throw error;
-    }
+  /**
+   * 사용자 정보를 업데이트합니다.
+   */
+  async update(id: string, updateUserDto: Partial<User>): Promise<User> {
+    await this.userRepository.update(id, updateUserDto);
+    return this.findById(id);
   }
 
-  async updateLastLogin(id: string): Promise<void> {
-    try {
-      await this.usersRepository.update(id, {
-        lastLogin: new Date(),
-      });
-    } catch (error) {
-      this.logger.error(`마지막 로그인 시간 업데이트 실패: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async deactivate(id: string): Promise<void> {
-    try {
-      await this.usersRepository.update(id, {
-        isActive: false,
-      });
-      this.logger.log(`사용자 비활성화: ${id}`);
-    } catch (error) {
-      this.logger.error(`사용자 비활성화 실패: ${error.message}`);
-      throw error;
-    }
-  }
-
-  async activate(id: string): Promise<void> {
-    try {
-      await this.usersRepository.update(id, {
-        isActive: true,
-      });
-      this.logger.log(`사용자 활성화: ${id}`);
-    } catch (error) {
-      this.logger.error(`사용자 활성화 실패: ${error.message}`);
-      throw error;
-    }
-  }
-
+  /**
+   * 사용자를 삭제합니다.
+   */
   async delete(id: string): Promise<void> {
-    try {
-      const user = await this.findById(id);
-      if (!user) {
-        throw new NotFoundException('사용자를 찾을 수 없습니다.');
-      }
-      await this.usersRepository.remove(user);
-      this.logger.log(`사용자 삭제: ${id}`);
-    } catch (error) {
-      this.logger.error(`사용자 삭제 실패: ${error.message}`);
-      throw error;
+    const result = await this.userRepository.delete(id);
+    if (result.affected === 0) {
+      throw new NotFoundException(`사용자를 찾을 수 없습니다: ${id}`);
     }
+    this.logger.log(`사용자 삭제: ${id}`);
   }
 
-  async findOrCreateByGoogle(googleUser: any): Promise<User> {
-    try {
-      let user = await this.findByGoogleId(googleUser.sub);
+  /**
+   * 사용자를 비활성화합니다.
+   */
+  async deactivate(id: string): Promise<void> {
+    await this.userRepository.update(id, { isActive: false });
+    this.logger.log(`사용자 비활성화: ${id}`);
+  }
 
-      if (!user) {
+  /**
+   * 사용자를 활성화합니다.
+   */
+  async activate(id: string): Promise<void> {
+    await this.userRepository.update(id, { isActive: true });
+    this.logger.log(`사용자 활성화: ${id}`);
+  }
+
+  /**
+   * 모든 사용자를 조회합니다.
+   */
+  async findAll(): Promise<User[]> {
+    return await this.userRepository.find();
+  }
+
+  /**
+   * Google ID로 사용자를 찾거나 생성합니다.
+   */
+  async findOrCreateByGoogle(googleUser: any): Promise<User> {
+    let user = await this.findByGoogleId(googleUser.sub);
+
+    if (!user) {
+      // 이메일로 기존 사용자 확인
+      user = await this.findByEmail(googleUser.email);
+
+      if (user) {
+        // 기존 사용자에 Google ID 추가
+        user.providerId = googleUser.sub;
+        user = await this.update(user.id, { providerId: googleUser.sub });
+      } else {
         // 새 사용자 생성
-        const createUserDto: CreateUserDto = {
+        user = await this.create({
           email: googleUser.email,
           name: googleUser.name,
           avatar: googleUser.picture,
           providerId: googleUser.sub,
           authProvider: 'google',
           isActive: true,
-          isVerified: true,
-          role: 'user',
-        };
-
-        user = await this.create(createUserDto);
-        this.logger.log(`새 사용자 생성: ${user.email}`);
-      } else {
-        // 기존 사용자 정보 업데이트
-        await this.update(user.id, {
-          name: googleUser.name,
-          avatar: googleUser.picture,
-          providerId: googleUser.sub,
-          authProvider: 'google',
-          isVerified: true,
+          isVerified: googleUser.email_verified,
         });
-        this.logger.log(`기존 사용자 정보 업데이트: ${user.email}`);
       }
+    }
 
-      // 마지막 로그인 시간 업데이트
-      await this.updateLastLogin(user.id);
+    return user;
+  }
 
-      return user;
-    } catch (error) {
-      this.logger.error(`구글 사용자 찾기/생성 실패: ${error.message}`);
-      throw error;
+  /**
+   * Google OAuth 정보를 저장하거나 업데이트합니다.
+   */
+  async saveOrUpdateGoogleAuth(params: {
+    userId: string;
+    providerId: string;
+    email: string;
+    name?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    idToken?: string;
+    tokenExpiresAt?: Date;
+    rawData?: any;
+  }): Promise<UserSocialAuth> {
+    // 사용자당 각 provider는 하나씩만 존재
+    const existingAuth = await this.userSocialAuthRepository.findOne({
+      where: { userId: params.userId, provider: 'google' },
+    });
+
+    if (existingAuth) {
+      // 기존 OAuth 정보 업데이트
+      Object.assign(existingAuth, {
+        ...params,
+        updatedAt: new Date(),
+      });
+      return await this.userSocialAuthRepository.save(existingAuth);
+    } else {
+      // 새 OAuth 정보 생성
+      const newAuth = this.userSocialAuthRepository.create({
+        ...params,
+        provider: 'google',
+      });
+      return await this.userSocialAuthRepository.save(newAuth);
     }
   }
 
-  async findByRefreshToken(refreshToken: string): Promise<User | null> {
-    try {
-      return this.usersRepository.findOne({
-        where: { refreshToken: refreshToken },
+  /**
+   * Google OAuth 정보를 조회합니다.
+   */
+  async findGoogleAuth(userId: string): Promise<UserSocialAuth | null> {
+    return await this.userSocialAuthRepository.findOne({
+      where: { userId, provider: 'google' },
+    });
+  }
+
+  /**
+   * Google OAuth 정보를 삭제합니다.
+   */
+  async removeGoogleAuth(userId: string): Promise<void> {
+    await this.userSocialAuthRepository.delete({
+      userId,
+      provider: 'google',
+    });
+    this.logger.log(`Google OAuth 정보 삭제: ${userId}`);
+  }
+
+  /**
+   * 소셜 OAuth 정보를 저장하거나 업데이트합니다.
+   */
+  async saveOrUpdateSocialAuth(params: {
+    userId: string;
+    provider: string; // 'google', 'facebook', 'apple' 등
+    providerId: string;
+    email: string;
+    name?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    idToken?: string;
+    tokenExpiresAt?: Date;
+    rawData?: any;
+  }): Promise<UserSocialAuth> {
+    // 사용자당 각 provider는 하나씩만 존재
+    const existingAuth = await this.userSocialAuthRepository.findOne({
+      where: { userId: params.userId, provider: params.provider },
+    });
+
+    if (existingAuth) {
+      // 기존 OAuth 정보 업데이트
+      Object.assign(existingAuth, {
+        ...params,
+        updatedAt: new Date(),
       });
-    } catch (error) {
-      this.logger.error(`리프레시 토큰으로 사용자 찾기 실패: ${error.message}`);
-      return null;
+      return await this.userSocialAuthRepository.save(existingAuth);
+    } else {
+      // 새 OAuth 정보 생성
+      const newAuth = this.userSocialAuthRepository.create(params);
+      return await this.userSocialAuthRepository.save(newAuth);
     }
+  }
+
+  /**
+   * 특정 provider의 OAuth 정보를 조회합니다.
+   */
+  async findSocialAuth(
+    userId: string,
+    provider: string
+  ): Promise<UserSocialAuth | null> {
+    return await this.userSocialAuthRepository.findOne({
+      where: { userId, provider },
+    });
+  }
+
+  /**
+   * 사용자의 모든 소셜 OAuth 정보를 조회합니다.
+   */
+  async findAllSocialAuth(userId: string): Promise<UserSocialAuth[]> {
+    return await this.userSocialAuthRepository.find({
+      where: { userId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  /**
+   * 특정 provider의 OAuth 정보를 삭제합니다.
+   */
+  async removeSocialAuth(userId: string, provider: string): Promise<void> {
+    await this.userSocialAuthRepository.delete({
+      userId,
+      provider,
+    });
+    this.logger.log(`${provider} OAuth 정보 삭제: ${userId}`);
+  }
+
+  /**
+   * 사용자의 모든 소셜 OAuth 정보를 삭제합니다.
+   */
+  async removeAllSocialAuth(userId: string): Promise<void> {
+    await this.userSocialAuthRepository.delete({
+      userId,
+    });
+    this.logger.log(`모든 소셜 OAuth 정보 삭제: ${userId}`);
   }
 }

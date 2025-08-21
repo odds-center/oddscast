@@ -1,16 +1,19 @@
 import {
   Entity,
-  PrimaryGeneratedColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
+  BeforeInsert,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Race } from './race.entity';
-import { DividendRate } from './dividend-rate.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEntity } from '../../shared/entities/base.entity';
+import { User } from '../../users/entities/user.entity';
+import { Race } from '../../races/entities/race.entity';
+import { DividendRate } from '../../results/entities/dividend-rate.entity';
 
 export enum BetType {
   WIN = 'WIN', // 단승식
@@ -40,9 +43,13 @@ export enum BetResult {
 }
 
 @Entity('bets')
-export class Bet {
-  @PrimaryGeneratedColumn('uuid')
-  id!: string;
+export class Bet extends BaseEntity {
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   // 사용자 정보 (외래키)
   @Column({ type: 'varchar', length: 36, name: 'user_id' })
@@ -187,10 +194,13 @@ export class Bet {
   @Column({ type: 'varchar', length: 100, name: 'user_agent', nullable: true })
   userAgent?: string; // 사용자 에이전트
 
-  @CreateDateColumn({ name: 'created_at' })
+  @Column({ type: 'text', name: 'notes', nullable: true })
+  notes?: string; // 메모
+
+  @CreateDateColumn()
   createdAt!: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' })
+  @UpdateDateColumn()
   updatedAt!: Date;
 
   // 관계 설정
@@ -217,7 +227,4 @@ export class Bet {
 
   @Column({ type: 'boolean', name: 'is_favorite', default: false })
   isFavorite?: boolean; // 즐겨찾기 여부
-
-  @Column({ type: 'text', name: 'notes', nullable: true })
-  notes?: string; // 사용자 메모
 }

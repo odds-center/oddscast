@@ -1,24 +1,30 @@
 import {
   Entity,
-  PrimaryColumn,
   Column,
-  CreateDateColumn,
-  UpdateDateColumn,
   ManyToOne,
+  OneToMany,
   JoinColumn,
   Index,
-  OneToMany,
+  BeforeInsert,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
-import { User } from './user.entity';
-import { Result } from './result.entity';
-import { DividendRate } from './dividend-rate.entity';
+import { v4 as uuidv4 } from 'uuid';
+import { BaseEntity } from '../../shared/entities/base.entity';
+import { User } from '../../users/entities/user.entity';
+import { Bet } from '../../bets/entities/bet.entity';
 import { EntryDetail } from './entry-detail.entity';
-import { Bet } from './bet.entity';
+import { DividendRate } from '../../results/entities/dividend-rate.entity';
+import { Result } from '../../results/entities/result.entity';
 
 @Entity('races')
-export class Race {
-  @PrimaryColumn({ type: 'varchar', length: 50 })
-  id!: string;
+export class Race extends BaseEntity {
+  @BeforeInsert()
+  generateId() {
+    if (!this.id) {
+      this.id = uuidv4();
+    }
+  }
 
   // 경주 기본 정보
   @Column({ type: 'varchar', length: 10 })
@@ -196,10 +202,6 @@ export class Race {
   @Column({ type: 'varchar', length: 20, name: 'data_source', default: 'KRA' })
   dataSource!: string; // 데이터 출처
 
-  // 사용자 정보
-  @Column({ type: 'varchar', length: 36, name: 'created_by', nullable: true })
-  createdBy?: string;
-
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;
 
@@ -207,10 +209,6 @@ export class Race {
   updatedAt!: Date;
 
   // 관계 설정
-  @ManyToOne(() => User, user => user.createdRaces)
-  @JoinColumn({ name: 'created_by' })
-  user?: User;
-
   @OneToMany(() => Result, result => result.race)
   results?: Result[];
 

@@ -38,9 +38,9 @@ services:
       DB_PASSWORD: goldenrace_password
       DB_DATABASE: goldenrace
       KRA_API_KEY: yyRDa%2FaXc9SsDdY67IqkdXJmZgZXOzsKqnf%2BR%2FSZjR6iAXYLzKiq%2BgXTmdUj%2FFe%2BFtEsMXnMYrLaiX6PZ%2FemsQ%3D%3D
-      JWT_SECRET: goldenrace-super-secret-jwt-key-2024
-      JWT_EXPIRES_IN: 1h
-      JWT_REFRESH_EXPIRES_IN: 7d
+      JWT_SECRET: goldenrace-super-secret-jwt-key-2024-production-ready
+      JWT_EXPIRES_IN: 30d
+      JWT_REFRESH_EXPIRES_IN: 90d
       GOOGLE_CLIENT_ID: 297222267377-husiseemja8abddjujt78g5bhlnne2do.apps.googleusercontent.com
       GOOGLE_CLIENT_SECRET: GOCSPX-your-google-client-secret-here
       GOOGLE_CALLBACK_URL: http://localhost:3002/api/auth/google/callback

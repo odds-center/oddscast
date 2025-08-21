@@ -17,16 +17,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
   const { authState, setToken, clearToken, setLoading } = useAuthState();
   const [localLoading, setLocalLoading] = useState(false);
 
-  // 앱 시작 시 저장된 토큰과 사용자 정보 복원
+  // 앱 시작 시 저장된 인증 정보 복원
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('Initializing authentication...');
+        setLoading(true);
+        console.log('Initializing auth from storage...');
 
-        // 토큰 매니저에서 인증 데이터 복원
+        // TokenManager에서 인증 정보 복원
         const restoredAuth = await tokenManager.restoreAuth();
-
-        if (restoredAuth) {
+        if (restoredAuth && restoredAuth.accessToken && restoredAuth.user) {
           console.log('Found stored auth data, restoring...');
           setToken({
             accessToken: restoredAuth.accessToken,
@@ -149,7 +149,16 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
 
       // JWT 토큰과 사용자 정보 저장
       console.log('Saving JWT token and user data...');
+
+      // 1. 로컬 상태 업데이트
       setToken({
+        accessToken,
+        user: serverUser,
+      });
+
+      // 2. TokenManager에 직접 저장 (중요!)
+      console.log('Saving to TokenManager...');
+      await tokenManager.setToken({
         accessToken,
         user: serverUser,
       });

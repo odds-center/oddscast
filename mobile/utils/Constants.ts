@@ -1,6 +1,21 @@
 // JWT 토큰 저장 키
 export const JWT_TOKEN_NAME = 'jwt_token';
 
+// JWT 설정
+export const JWT_CONFIG = {
+  SECRET: 'goldenrace-super-secret-jwt-key-2024-production-ready',
+  EXPIRES_IN: '30d',
+  REFRESH_EXPIRES_IN: '90d',
+} as const;
+
+// 서버 설정
+export const SERVER_CONFIG = {
+  BASE_URL: 'http://10.0.2.2:3002', // Android 에뮬레이터용
+  LOCAL_URL: 'http://localhost:3002', // iOS 시뮬레이터용
+  API_VERSION: 'v1',
+  TIMEOUT: 10000,
+} as const;
+
 // 앱 설정
 export const APP_NAME = 'Golden Race';
 export const APP_VERSION = '1.0.0';

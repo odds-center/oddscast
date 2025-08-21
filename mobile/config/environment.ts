@@ -4,6 +4,7 @@ import {
   GOOGLE_IOS_CLIENT_ID,
   GOOGLE_WEB_CLIENT_ID,
   KRA_OPENAPI_KEY_ENCODING,
+  SERVER_CONFIG,
 } from '../utils/Constants';
 
 // 환경 타입 정의
@@ -26,8 +27,8 @@ export const ENV_CONFIG = {
         timeout: 15000,
       },
       server: {
-        baseURL: Platform.OS === 'android' ? 'http://10.0.2.2:3002' : 'http://localhost:3002',
-        timeout: 10000,
+        baseURL: Platform.OS === 'android' ? SERVER_CONFIG.BASE_URL : SERVER_CONFIG.LOCAL_URL,
+        timeout: SERVER_CONFIG.TIMEOUT,
       },
     },
 

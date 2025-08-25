@@ -1,6 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,46 +23,25 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   showSafeArea = true,
   showBackButton = false,
   onBackPress,
-}) => {
-  const router = useRouter();
-
-  const handleBackPress = () => {
-    if (onBackPress) {
-      onBackPress();
-    } else {
-      router.back();
-    }
-  };
-
-  const headerContent = (
-    <ThemedView style={styles.header}>
-      <View style={styles.leftSection}>
-        {showBackButton ? (
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButton}>
-            <Ionicons name='arrow-back' size={24} color='#B48A3C' />
-          </TouchableOpacity>
-        ) : (
-          leftComponent
-        )}
-      </View>
-
-      <View style={styles.centerSection}>
-        <ThemedText type='largeTitle' lightColor='#B48A3C' darkColor='#E5C99C' style={styles.title}>
+}: PageHeaderProps) {
+  return (
+    <ThemedView style={styles.container}>
+      {showBackButton && onBackPress && (
+        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
+          <Ionicons name='arrow-back' size={24} color='transparent' />
+        </TouchableOpacity>
+      )}
+      <ThemedView style={styles.textContainer}>
+        <ThemedText type='title' style={styles.title}>
           {title}
         </ThemedText>
         {subtitle && (
-          <ThemedText
-            type='subtitle'
-            lightColor='#687076'
-            darkColor='#9BA1A6'
-            style={styles.subtitle}
-          >
+          <ThemedText type='subtitle' style={styles.subtitle}>
             {subtitle}
           </ThemedText>
         )}
-      </View>
-
-      <View style={styles.rightSection}>{rightComponent}</View>
+      </ThemedView>
+      {rightComponent && <ThemedView style={styles.rightContainer}>{rightComponent}</ThemedView>}
     </ThemedView>
   );
 
@@ -85,9 +63,8 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    minHeight: 80,
+    padding: 16,
+    borderBottomWidth: 1,
   },
   leftSection: {
     width: 60,
@@ -102,12 +79,10 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   title: {
-    textAlign: 'center',
     marginBottom: 4,
   },
   subtitle: {
-    textAlign: 'center',
-    opacity: 0.8,
+    fontSize: 16,
   },
   backButton: {
     padding: 8,

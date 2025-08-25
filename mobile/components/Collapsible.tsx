@@ -1,45 +1,98 @@
-import { PropsWithChildren, useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { IconSymbol } from '@/components/ui/IconSymbol';
-import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
-export function Collapsible({ children, title }: PropsWithChildren & { title: string }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const { colorScheme } = useColorScheme();
-
-  return (
-    <ThemedView>
-      <TouchableOpacity
-        style={styles.heading}
-        onPress={() => setIsOpen((value) => !value)}
-        activeOpacity={0.8}
-      >
-        <IconSymbol
-          name='chevron.right'
-          size={18}
-          weight='medium'
-          color={colorScheme === 'light' ? Colors.light.text : Colors.dark.text}
-          style={{ transform: [{ rotate: isOpen ? '90deg' : '0deg' }] }}
-        />
-
-        <ThemedText type='defaultSemiBold'>{title}</ThemedText>
-      </TouchableOpacity>
-      {isOpen && <ThemedView style={styles.content}>{children}</ThemedView>}
-    </ThemedView>
-  );
+interface CollapsibleProps {
+  title: string;
+  children: React.ReactNode;
+  initiallyExpanded?: boolean;
 }
 
+export const Collapsible: React.FC<CollapsibleProps> = ({
+  title,
+  children,
+  initiallyExpanded = false,
+}) => {
+  const [isExpanded, setIsExpanded] = useState(initiallyExpanded);
+  const [animation] = useState(new Animated.Value(initiallyExpanded ? 1 : 0));
+  const colorScheme = useColorScheme();
+
+  const toggleExpanded = () => {
+    const toValue = isExpanded ? 0 : 1;
+    setIsExpanded(!isExpanded);
+
+    Animated.timing(animation, {
+      toValue,
+      duration: 300,
+      useNativeDriver: false,
+    }).start();
+  };
+
+  return (
+    <ThemedView style={styles.container}>
+      <TouchableOpacity style={styles.header} onPress={toggleExpanded} activeOpacity={0.7}>
+        <ThemedText type='defaultSemiBold' style={styles.title}>
+          {title}
+        </ThemedText>
+        <Animated.View
+          style={[
+            styles.icon,
+            {
+              transform: [
+                {
+                  rotate: animation.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: ['0deg', '180deg'],
+                  }),
+                },
+              ],
+            },
+          ]}
+        >
+          <Ionicons name='chevron-down' size={20} color='transparent' />
+        </Animated.View>
+      </TouchableOpacity>
+
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            maxHeight: animation.interpolate({
+              inputRange: [0, 1],
+              outputRange: [0, 1000],
+            }),
+            opacity: animation,
+          },
+        ]}
+      >
+        {children}
+      </Animated.View>
+    </ThemedView>
+  );
+};
+
 const styles = StyleSheet.create({
-  heading: {
+  container: {
+    marginBottom: 10,
+    borderBottomWidth: 1,
+  },
+  header: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 5,
+  },
+  title: {
+    fontSize: 16,
+  },
+  icon: {
+    transform: [{ rotate: '0deg' }],
   },
   content: {
-    marginTop: 6,
-    marginLeft: 24,
+    overflow: 'hidden',
   },
 });

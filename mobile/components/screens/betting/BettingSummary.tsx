@@ -2,7 +2,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Bet, BetStatus } from '@/lib/types/bet';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 
 interface BettingSummaryProps {
   totalBets: number;
@@ -24,38 +24,61 @@ export function BettingSummary({ totalBets, recentBets, isLoading }: BettingSumm
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText style={styles.title}>마권 현황</ThemedText>
+      <ThemedText type='subtitle' style={styles.title}>
+        마권 현황
+      </ThemedText>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <ThemedText style={styles.statValue}>{totalBets}</ThemedText>
-          <ThemedText style={styles.statLabel}>총 마권</ThemedText>
-        </View>
+      <ThemedView style={styles.statsContainer}>
+        <ThemedView style={styles.statItem}>
+          <ThemedText type='stat' style={styles.statValue}>
+            {totalBets}
+          </ThemedText>
+          <ThemedText type='caption' style={styles.statLabel}>
+            총 마권
+          </ThemedText>
+        </ThemedView>
 
-        <View style={styles.statItem}>
-          <ThemedText style={styles.statValue}>{totalAmount.toLocaleString()}</ThemedText>
-          <ThemedText style={styles.statLabel}>총 마권금</ThemedText>
-        </View>
+        <ThemedView style={styles.statItem}>
+          <ThemedText type='stat' style={styles.statValue}>
+            {totalAmount.toLocaleString()}
+          </ThemedText>
+          <ThemedText type='caption' style={styles.statLabel}>
+            총 마권금
+          </ThemedText>
+        </ThemedView>
 
-        <View style={styles.statItem}>
-          <ThemedText style={styles.statValue}>{totalPayout.toLocaleString()}</ThemedText>
-          <ThemedText style={styles.statLabel}>총 상금</ThemedText>
-        </View>
-      </View>
+        <ThemedView style={styles.statItem}>
+          <ThemedText type='stat' style={styles.statValue}>
+            {totalPayout.toLocaleString()}
+          </ThemedText>
+          <ThemedText type='caption' style={styles.statLabel}>
+            총 상금
+          </ThemedText>
+        </ThemedView>
+      </ThemedView>
 
       {recentBets.length > 0 && (
-        <View style={styles.recentBets}>
-          <ThemedText style={styles.recentTitle}>최근 마권</ThemedText>
+        <ThemedView style={styles.recentBets}>
+          <ThemedText type='subtitle' style={styles.recentTitle}>
+            최근 마권
+          </ThemedText>
           {recentBets.map((bet) => (
-            <View key={bet.id} style={styles.betItem}>
-              <ThemedText style={styles.betType}>{bet.betType}</ThemedText>
-              <ThemedText style={styles.betAmount}>{bet.betAmount.toLocaleString()}P</ThemedText>
-              <ThemedText style={[styles.betStatus, { color: getStatusColor(bet.betStatus) }]}>
+            <ThemedView key={bet.id} style={styles.betItem}>
+              <ThemedText type='default' style={styles.betType}>
+                {bet.betType}
+              </ThemedText>
+              <ThemedText type='default' style={styles.betAmount}>
+                {bet.betAmount.toLocaleString()}P
+              </ThemedText>
+              <ThemedText
+                type='caption'
+                style={[styles.betStatus, { color: getStatusColor(bet.betStatus) }]}
+              >
                 {getStatusText(bet.betStatus)}
               </ThemedText>
-            </View>
+            </ThemedView>
           ))}
-        </View>
+        </ThemedView>
       )}
     </ThemedView>
   );
@@ -100,7 +123,6 @@ const styles = StyleSheet.create({
     margin: 16,
     padding: 16,
     borderRadius: 12,
-    backgroundColor: '#ffffff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -108,10 +130,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   title: {
-    fontSize: 18,
-    fontWeight: 'bold',
     marginBottom: 16,
-    color: '#333',
   },
   statsContainer: {
     flexDirection: 'row',
@@ -123,24 +142,17 @@ const styles = StyleSheet.create({
   },
   statValue: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2196F3',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 12,
-    color: '#666',
   },
   recentBets: {
     borderTopWidth: 1,
-    borderTopColor: '#eee',
     paddingTop: 16,
   },
   recentTitle: {
-    fontSize: 16,
-    fontWeight: '600',
     marginBottom: 12,
-    color: '#333',
   },
   betItem: {
     flexDirection: 'row',
@@ -148,17 +160,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
   },
   betType: {
     fontSize: 14,
-    color: '#333',
     flex: 1,
   },
   betAmount: {
     fontSize: 14,
     fontWeight: '600',
-    color: '#2196F3',
     marginRight: 16,
   },
   betStatus: {

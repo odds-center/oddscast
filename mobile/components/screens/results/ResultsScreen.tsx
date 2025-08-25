@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useResults } from '@/lib/hooks/useResults';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout, Section, Button } from '@/components/common';
@@ -12,77 +12,89 @@ export default function ResultsScreen() {
 
   if (isLoading) {
     return (
-      <PageLayout showHeader={false}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#E5C99C' />
-          <ThemedText type='body' style={styles.loadingText}>
-            결과를 불러오는 중...
-          </ThemedText>
-        </View>
-      </PageLayout>
+      <ThemedView style={styles.loadingContainer}>
+        <ActivityIndicator size='large' color='transparent' />
+        <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
+      </ThemedView>
     );
   }
 
   if (error) {
     return (
-      <PageLayout showHeader={false}>
-        <View style={styles.errorContainer}>
-          <ThemedText type='body' style={styles.errorText}>
-            결과를 불러오는데 실패했습니다.
-          </ThemedText>
-          <Button title='다시 시도' onPress={() => {}} variant='primary' size='medium' />
-        </View>
-      </PageLayout>
+      <ThemedView style={styles.errorContainer}>
+        <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
+        <TouchableOpacity style={styles.retryButton}>
+          <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
     );
   }
 
   return (
-    <PageLayout title='레이스 결과' subtitle='오늘의 경주 결과를 확인하세요'>
-      {/* 결과 목록 */}
-      {results && results.length > 0 ? (
-        <Section variant='elevated'>
-          {results.map((result: RaceResult) => (
-            <View key={result.id} style={styles.resultCard}>
-              <View style={styles.positionContainer}>
-                <ThemedText type='largeTitle' style={styles.position}>
+    <ThemedView style={styles.container}>
+      <ThemedView style={styles.header}>
+        <ThemedText type='title' style={styles.title}>
+          레이스 결과
+        </ThemedText>
+      </ThemedView>
+
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        {results && results.length > 0 ? (
+          results.map((result: RaceResult) => (
+            <ThemedView key={result.id} style={styles.resultCard}>
+              <ThemedView style={styles.positionContainer}>
+                <ThemedText type='stat' style={styles.position}>
                   {result.rcRank}
                 </ThemedText>
-              </View>
-              <View style={styles.horseInfo}>
-                <ThemedText type='defaultSemiBold' style={styles.horseName}>
+              </ThemedView>
+              <ThemedView style={styles.horseInfo}>
+                <ThemedText type='subtitle' style={styles.horseName}>
                   {result.hrName}
                 </ThemedText>
-                <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
+                <ThemedText type='caption' style={styles.jockeyName}>
                   기수: {result.jkName}
                 </ThemedText>
-              </View>
-              <View style={styles.resultDetails}>
-                <ThemedText type='caption' style={styles.finishTime}>
+              </ThemedView>
+              <ThemedView style={styles.resultDetails}>
+                <ThemedText type='default' style={styles.finishTime}>
                   {result.rcTime}
                 </ThemedText>
-                <ThemedText type='defaultSemiBold' lightColor='#B48A3C' darkColor='#E5C99C'>
+                <ThemedText type='caption' style={styles.odds}>
                   상금: {result.rcPrize?.toLocaleString() || 0}원
                 </ThemedText>
-              </View>
-            </View>
-          ))}
-        </Section>
-      ) : (
-        <Section variant='elevated'>
-          <View style={styles.emptyContainer}>
-            <ThemedText type='body' style={styles.emptyText}>
+              </ThemedView>
+            </ThemedView>
+          ))
+        ) : (
+          <ThemedView style={styles.emptyContainer}>
+            <ThemedText type='subtitle' style={styles.emptyText}>
               결과가 없습니다.
             </ThemedText>
-          </View>
-        </Section>
-      )}
-    </PageLayout>
+          </ThemedView>
+        )}
+      </ScrollView>
+    </ThemedView>
   );
 }
 
 const styles = StyleSheet.create({
-  resultCard: {
+  container: {
+    flex: 1,
+  },
+  header: {
     padding: 20,
+    borderBottomWidth: 1,
+  },
+  title: {
+    marginBottom: 4,
+  },
+  content: {
+    flex: 1,
+    padding: 20,
+  },
+  resultCard: {
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
     borderRadius: 16,
     flexDirection: 'row',

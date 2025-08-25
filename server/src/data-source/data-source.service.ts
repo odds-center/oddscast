@@ -2,11 +2,13 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KraApiService } from '../external-apis/kra/kra-api.service';
-import { RacePlan } from '../entities/race-plan.entity';
-import { RaceHorseResult } from '../entities/race-horse-result.entity';
-import { DividendRate } from '../entities/dividend-rate.entity';
-import { EntryDetail } from '../entities/entry-detail.entity';
+import { RacePlan } from '../races/entities/race-plan.entity';
+import { RaceHorseResult } from '../results/entities/race-horse-result.entity';
+import { DividendRate } from '../results/entities/dividend-rate.entity';
+import { EntryDetail } from '../races/entities/entry-detail.entity';
 import * as moment from 'moment';
+import BigNumber from 'bignumber.js';
+import { isEmpty, isArray, get } from 'lodash';
 
 @Injectable()
 export class DataSourceService {
@@ -244,9 +246,15 @@ export class DataSourceService {
       this.logger.log('로컬 DB에 데이터가 없어 KRA API에서 조회');
       const kraData = await this.kraApiService.getEntryDetails(date, meet);
 
-      if (kraData.success && kraData.data) {
+      if (
+        kraData.success &&
+        'data' in kraData &&
+        isArray(kraData.data) &&
+        !isEmpty(kraData.data)
+      ) {
         // 3. KRA API에서 받은 데이터를 로컬 DB에 저장
-        await this.saveEntryDetailsToLocal(kraData.data);
+        const dataArray = kraData.data as any[];
+        await this.saveEntryDetailsToLocal(dataArray);
 
         return {
           ...kraData,
@@ -255,7 +263,15 @@ export class DataSourceService {
         };
       }
 
-      return kraData;
+      // 데이터가 없거나 실패한 경우
+      return {
+        success: false,
+        error: {
+          code: 'NO_DATA_AVAILABLE',
+          message: '데이터를 찾을 수 없습니다.',
+        },
+        timestamp: new Date().toISOString(),
+      };
     } catch (error) {
       this.logger.error('출마표 상세정보 조회 실패:', error);
       return {
@@ -380,28 +396,33 @@ export class DataSourceService {
       });
 
       if (existingPlan) {
-        await this.racePlanRepository.update(existingPlan.id, {
+        // 기존 데이터 업데이트
+        await this.racePlanRepository.update(existingPlan.planId, {
           rcName: plan.rc_name,
-          distance: plan.distance,
-          grade: plan.grade,
-          prize: plan.prize,
-          rating: plan.rating,
-          ageCondition: plan.age_condition,
-          sexCondition: plan.sex_condition,
+          rcDist: plan.rc_dist,
+          rcGrade: plan.rc_grade,
+          rcPrize: new BigNumber(plan.rc_prize).toNumber() || 0,
+          rcAgeCondition: plan.rc_age_condition,
+          rcSexCondition: plan.rc_sex_condition,
           updatedAt: new Date(),
         });
       } else {
+        // 새 데이터 생성
         const newPlan = this.racePlanRepository.create({
-          rcDate: plan.rc_date,
+          planId: `${plan.rc_date}_${plan.meet}_${plan.rc_no}`,
           meet: plan.meet,
+          meetName: plan.meet_name,
+          rcDate: plan.rc_date,
           rcNo: plan.rc_no,
           rcName: plan.rc_name,
-          distance: plan.distance,
-          grade: plan.grade,
-          prize: plan.prize,
-          rating: plan.rating,
-          ageCondition: plan.age_condition,
-          sexCondition: plan.sex_condition,
+          rcDist: plan.rc_dist,
+          rcGrade: plan.rc_grade,
+          rcPrize: new BigNumber(plan.rc_prize).toNumber() || 0,
+          rcAgeCondition: plan.rc_age_condition,
+          rcSexCondition: plan.rc_sex_condition,
+          rcCondition: plan.rc_condition,
+          apiVersion: 'API72_2',
+          dataSource: 'KRA',
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -418,31 +439,29 @@ export class DataSourceService {
           rcDate: result.rc_date,
           meet: result.meet,
           rcNo: result.rc_no,
-          horseNo: result.horse_no,
+          hrNumber: result.hr_no,
         },
       });
 
       if (existingResult) {
-        await this.raceHorseResultRepository.update(existingResult.id, {
-          finishTime: result.finish_time,
-          finishRank: result.finish_rank,
-          finishLength: result.finish_length,
-          jockey: result.jockey,
-          trainer: result.trainer,
+        // 기존 데이터 업데이트
+        await this.raceHorseResultRepository.update(existingResult.result_id, {
+          rcTime: result.rc_time,
+          rcRank: result.ord,
           updatedAt: new Date(),
         });
       } else {
+        // 새 데이터 생성
         const newResult = this.raceHorseResultRepository.create({
-          rcDate: result.rc_date,
+          result_id: `${result.rc_date}_${result.meet}_${result.rc_no}_${result.hr_no}`,
           meet: result.meet,
+          meetName: result.meet_name,
+          hrName: result.hr_name,
+          hrNumber: result.hr_no,
+          rcDate: result.rc_date,
           rcNo: result.rc_no,
-          horseNo: result.horse_no,
-          horseName: result.horse_name,
-          finishTime: result.finish_time,
-          finishRank: result.finish_rank,
-          finishLength: result.finish_length,
-          jockey: result.jockey,
-          trainer: result.trainer,
+          rcRank: result.ord,
+          rcTime: result.rc_time,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -456,25 +475,29 @@ export class DataSourceService {
     for (const dividend of dividends) {
       const existingDividend = await this.dividendRateRepository.findOne({
         where: {
-          rcDate: dividend.rc_date,
+          rcDate: dividend.rcDate,
           meet: dividend.meet,
-          rcNo: dividend.rc_no,
+          rcNo: dividend.rcNo,
           pool: dividend.pool,
         },
       });
 
       if (existingDividend) {
-        await this.dividendRateRepository.update(existingDividend.id, {
-          dividendRate: dividend.dividend_rate,
+        // 기존 데이터 업데이트
+        await this.dividendRateRepository.update(existingDividend.dividend_id, {
+          odds: new BigNumber(dividend.odds).toNumber() || 0,
           updatedAt: new Date(),
         });
       } else {
+        // 새 데이터 생성
         const newDividend = this.dividendRateRepository.create({
-          rcDate: dividend.rc_date,
+          dividend_id: `${dividend.rcDate}_${dividend.meet}_${dividend.rcNo}_${dividend.pool}`,
           meet: dividend.meet,
-          rcNo: dividend.rc_no,
+          meetName: 'Unknown',
+          rcDate: dividend.rcDate,
+          rcNo: dividend.rcNo,
           pool: dividend.pool,
-          dividendRate: dividend.dividend_rate,
+          odds: new BigNumber(dividend.odds).toNumber() || 0,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
@@ -491,30 +514,32 @@ export class DataSourceService {
           rcDate: entry.rc_date,
           meet: entry.meet,
           rcNo: entry.rc_no,
-          horseNo: entry.horse_no,
+          hrNo: entry.hr_no,
         },
       });
 
       if (existingEntry) {
-        await this.entryDetailRepository.update(existingEntry.id, {
-          horseName: entry.horse_name,
-          jockey: entry.jockey,
-          trainer: entry.trainer,
-          weight: entry.weight,
-          rating: entry.rating,
+        // 기존 데이터 업데이트
+        await this.entryDetailRepository.update(existingEntry.entry_id, {
+          hrName: entry.hr_name,
+          hrWeight: entry.hr_weight,
+          hrRating: entry.hr_rating,
           updatedAt: new Date(),
         });
       } else {
+        // 새 데이터 생성
         const newEntry = this.entryDetailRepository.create({
-          rcDate: entry.rc_date,
+          entry_id: `${entry.rc_date}_${entry.meet}_${entry.rc_no}_${entry.hr_no}`,
+          raceId: `${entry.rc_date}_${entry.meet}_${entry.rc_no}`,
           meet: entry.meet,
+          meetName: entry.meet_name || 'Unknown',
+          rcDate: entry.rc_date,
           rcNo: entry.rc_no,
-          horseNo: entry.horse_no,
-          horseName: entry.horse_name,
-          jockey: entry.jockey,
-          trainer: entry.trainer,
-          weight: entry.weight,
-          rating: entry.rating,
+          rcName: entry.rc_name || 'Unknown',
+          hrNo: entry.hr_no,
+          hrName: entry.hr_name,
+          hrWeight: entry.hr_weight,
+          hrRating: entry.hr_rating,
           createdAt: new Date(),
           updatedAt: new Date(),
         });

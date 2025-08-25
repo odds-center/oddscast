@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 import type { Race } from '@/lib/types/race';
@@ -53,17 +53,13 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
   return (
     <TouchableOpacity onPress={handlePress} style={styles.container}>
       <ThemedView style={styles.card}>
-        <View style={styles.header}>
-          <View style={styles.raceInfo}>
-            <ThemedText type='defaultSemiBold' style={styles.raceName}>
-              {race.rcName}
-            </ThemedText>
-            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-              제{race.rcNo}경주
-            </ThemedText>
-          </View>
-          <View style={styles.statusContainer}>
-            <View
+        <ThemedView style={styles.header}>
+          <ThemedView style={styles.raceInfo}>
+            <ThemedText style={styles.raceName}>{race.rcName}</ThemedText>
+            <ThemedText style={styles.raceNumber}>제{race.rcNo}경주</ThemedText>
+          </ThemedView>
+          <ThemedView style={styles.statusContainer}>
+            <ThemedView
               style={[
                 styles.statusBadge,
                 { backgroundColor: getStatusColor(race.raceStatus || 'UPCOMING') },
@@ -72,50 +68,38 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
               <ThemedText type='small' style={styles.statusText}>
                 {getStatusText(race.raceStatus || 'UPCOMING')}
               </ThemedText>
-            </View>
-          </View>
-        </View>
+            </ThemedView>
+          </ThemedView>
+        </ThemedView>
 
-        <View style={styles.details}>
-          <View style={styles.detailRow}>
-            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-              경주장:
-            </ThemedText>
-            <ThemedText type='caption'>{race.meetName}</ThemedText>
-          </View>
+        <ThemedView style={styles.details}>
+          <ThemedView style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>경주장:</ThemedText>
+            <ThemedText style={styles.detailValue}>{race.meetName}</ThemedText>
+          </ThemedView>
 
-          <View style={styles.detailRow}>
-            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-              거리:
-            </ThemedText>
-            <ThemedText type='caption'>{race.rcDist}m</ThemedText>
-          </View>
+          <ThemedView style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>거리:</ThemedText>
+            <ThemedText style={styles.detailValue}>{race.rcDist}m</ThemedText>
+          </ThemedView>
 
-          <View style={styles.detailRow}>
-            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-              등급:
-            </ThemedText>
-            <ThemedText type='caption'>{race.rcGrade}</ThemedText>
-          </View>
+          <ThemedView style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>등급:</ThemedText>
+            <ThemedText style={styles.detailValue}>{race.rcGrade}</ThemedText>
+          </ThemedView>
 
-          <View style={styles.detailRow}>
-            <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-              시간:
-            </ThemedText>
-            <ThemedText type='caption'>
+          <ThemedView style={styles.detailRow}>
+            <ThemedText style={styles.detailLabel}>시간:</ThemedText>
+            <ThemedText style={styles.detailValue}>
               {race.rcStartTime ? formatTime(race.rcStartTime) : '미정'}
             </ThemedText>
-          </View>
-        </View>
+          </ThemedView>
+        </ThemedView>
 
-        <View style={styles.footer}>
-          <ThemedText type='defaultSemiBold' lightColor='#B48A3C' darkColor='#E5C99C'>
-            상금: {race.rcPrize?.toLocaleString()}원
-          </ThemedText>
-          <ThemedText type='caption' lightColor='#687076' darkColor='#9BA1A6'>
-            출마마: {race.totalEntries || 0}마
-          </ThemedText>
-        </View>
+        <ThemedView style={styles.footer}>
+          <ThemedText style={styles.prizeText}>상금: {race.rcPrize?.toLocaleString()}원</ThemedText>
+          <ThemedText style={styles.entriesText}>출마마: {race.totalEntries || 0}마</ThemedText>
+        </ThemedView>
       </ThemedView>
     </TouchableOpacity>
   );

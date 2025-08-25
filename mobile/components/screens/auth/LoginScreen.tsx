@@ -1,11 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useAuth } from '@/context/AuthProvider';
+import { useGoogleLogin, useLogin } from '@/lib/hooks/useAuth';
 import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -17,12 +17,10 @@ export default function LoginScreen() {
       console.log('Starting Google login...');
 
       // Google 로그인 실행
-      await signIn();
-      // 성공 시 자동으로 홈 화면으로 이동하므로 별도 메시지 불필요
-    } catch (error: any) {
-      console.error('Google login error:', error);
-      const errorMessage = error?.message || 'Google 로그인이 실패했습니다.';
-      showUserErrorMessage(errorMessage);
+      const result = await googleLoginMutation.mutateAsync();
+      showUserSuccessMessage('Google 로그인이 완료되었습니다.');
+    } catch (error) {
+      showUserErrorMessage('Google 로그인이 실패했습니다.');
     } finally {
       setIsLoading(false);
     }
@@ -30,8 +28,12 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      {/* 배경 그라데이션 */}
-      <LinearGradient colors={['#0C2A1E', '#1A4A2E']} style={styles.backgroundGradient} />
+      <ThemedText type='title' style={styles.title}>
+        GoldenRace
+      </ThemedText>
+      <ThemedText type='subtitle' style={styles.subtitle}>
+        경마 앱에 오신 것을 환영합니다
+      </ThemedText>
 
       {/* 로고 및 제목 영역 */}
       <View style={styles.headerSection}>
@@ -41,46 +43,7 @@ export default function LoginScreen() {
         <ThemedText type='largeTitle' lightColor='#B48A3C' darkColor='#E5C99C' style={styles.title}>
           GoldenRace
         </ThemedText>
-        <ThemedText
-          type='subtitle'
-          lightColor='#687076'
-          darkColor='#9BA1A6'
-          style={styles.subtitle}
-        >
-          경마 앱에 오신 것을 환영합니다
-        </ThemedText>
-        <ThemedText type='body' lightColor='#687076' darkColor='#9BA1A6' style={styles.description}>
-          최고의 경마 경험을 시작하세요
-        </ThemedText>
-      </View>
-
-      {/* 로그인 버튼 영역 */}
-      <View style={styles.buttonSection}>
-        <TouchableOpacity
-          style={[styles.googleButton, isLoading && styles.disabledButton]}
-          onPress={handleGoogleLogin}
-          disabled={isLoading}
-        >
-          <Ionicons name='logo-google' size={24} color='#11181C' style={styles.googleIcon} />
-          <ThemedText
-            type='defaultSemiBold'
-            lightColor='#11181C'
-            darkColor='#FFFFFF'
-            style={styles.googleButtonText}
-          >
-            {isLoading ? '로그인 중...' : 'Google 계정으로 로그인'}
-          </ThemedText>
-        </TouchableOpacity>
-
-        <ThemedText
-          type='caption'
-          lightColor='#687076'
-          darkColor='#9BA1A6'
-          style={styles.termsText}
-        >
-          로그인 시 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다
-        </ThemedText>
-      </View>
+      </TouchableOpacity>
     </ThemedView>
   );
 }
@@ -123,11 +86,12 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   title: {
-    marginBottom: 16,
-    textAlign: 'center',
+    fontSize: 32,
+    marginBottom: 8,
   },
   subtitle: {
-    marginBottom: 8,
+    fontSize: 16,
+    marginBottom: 48,
     textAlign: 'center',
   },
   description: {
@@ -139,10 +103,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 32,
     paddingVertical: 16,
     paddingHorizontal: 24,
     borderRadius: 12,
@@ -155,6 +116,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 4,
+  },
+  googleButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
   },
   disabledButton: {
     opacity: 0.6,

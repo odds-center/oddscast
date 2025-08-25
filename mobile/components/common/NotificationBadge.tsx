@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useRouter } from 'expo-router';
 
 interface NotificationBadgeProps {
@@ -25,9 +26,11 @@ export function NotificationBadge({ count }: NotificationBadgeProps) {
   return (
     <TouchableOpacity onPress={handlePress} style={styles.container}>
       <ThemedText style={styles.icon}>🔔</ThemedText>
-      <View style={styles.badge}>
-        <ThemedText style={styles.badgeText}>{count > 99 ? '99+' : count.toString()}</ThemedText>
-      </View>
+      <ThemedView style={styles.badge}>
+        <ThemedText type='caption' style={styles.badgeText}>
+          {count > 99 ? '99+' : count.toString()}
+        </ThemedText>
+      </ThemedView>
     </TouchableOpacity>
   );
 }
@@ -44,7 +47,6 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: 4,
     right: 4,
-    backgroundColor: '#F44336',
     borderRadius: 10,
     minWidth: 20,
     height: 20,
@@ -53,7 +55,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   badgeText: {
-    color: '#ffffff',
     fontSize: 12,
     fontWeight: 'bold',
   },

@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthProvider';
 import { useUserProfile } from '@/lib/hooks/useUsers';
 import { UserProfile } from '@/lib/types/user';
@@ -50,11 +52,9 @@ const MyPageScreen = () => {
 
   if (profileLoading) {
     return (
-      <PageLayout showHeader={false}>
-        <View style={styles.loadingContainer}>
-          <ThemedText type='body'>로딩 중...</ThemedText>
-        </View>
-      </PageLayout>
+      <ThemedView style={styles.container}>
+        <ThemedText>로딩 중...</ThemedText>
+      </ThemedView>
     );
   }
 
@@ -64,114 +64,93 @@ const MyPageScreen = () => {
   const email = profile?.email || user.email || '';
 
   return (
-    <PageLayout title='마이페이지' subtitle='내 정보와 설정을 관리하세요'>
-      {/* 프로필 섹션 */}
-      <Section variant='elevated'>
-        <View style={styles.profileContent}>
-          <View style={styles.avatarContainer}>
-            <View style={styles.avatar}>
-              <ThemedText type='largeTitle' style={styles.avatarText}>
-                {username.charAt(0).toUpperCase()}
-              </ThemedText>
-            </View>
-          </View>
-          <ThemedText type='title' style={styles.username}>
-            {username}
+    <ScrollView style={styles.container}>
+      <ThemedView style={styles.header}>
+        <ThemedText type='title' style={styles.title}>
+          마이페이지
+        </ThemedText>
+      </ThemedView>
+
+      <ThemedView style={styles.profileSection}>
+        <ThemedView style={styles.avatarContainer}>
+          <ThemedView style={styles.avatar}>
+            <ThemedText type='title' style={styles.avatarText}>
+              {username.charAt(0).toUpperCase()}
+            </ThemedText>
+          </ThemedView>
+        </ThemedView>
+        <ThemedText type='subtitle' style={styles.username}>
+          {username}
+        </ThemedText>
+        <ThemedText type='caption' style={styles.email}>
+          {email}
+        </ThemedText>
+      </ThemedView>
+
+      <ThemedView style={styles.menuSection}>
+        <TouchableOpacity style={styles.menuItem}>
+          <ThemedText type='default' style={styles.menuText}>
+            프로필 편집
           </ThemedText>
-          <ThemedText type='body' lightColor='#687076' darkColor='#9BA1A6'>
-            {email}
+          <ThemedText type='default' style={styles.menuArrow}>
+            ›
           </ThemedText>
-        </View>
-      </Section>
+        </TouchableOpacity>
 
-      {/* 메뉴 섹션 */}
-      <Section variant='elevated'>
-        <View style={styles.menuList}>
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              프로필 편집
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <ThemedText type='default' style={styles.menuText}>
+            즐겨찾기
+          </ThemedText>
+          <ThemedText type='default' style={styles.menuArrow}>
+            ›
+          </ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              즐겨찾기
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <ThemedText type='default' style={styles.menuText}>
+            알림 설정
+          </ThemedText>
+          <ThemedText type='default' style={styles.menuArrow}>
+            ›
+          </ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              알림 설정
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <ThemedText type='default' style={styles.menuText}>
+            개인정보 처리방침
+          </ThemedText>
+          <ThemedText type='default' style={styles.menuArrow}>
+            ›
+          </ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              개인정보 처리방침
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.menuItem}>
+          <ThemedText type='default' style={styles.menuText}>
+            이용약관
+          </ThemedText>
+          <ThemedText type='default' style={styles.menuArrow}>
+            ›
+          </ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              이용약관
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+      <ThemedView style={styles.actionSection}>
+        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
+          <ThemedText style={styles.signOutButtonText}>로그아웃</ThemedText>
+        </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              고객센터
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              ›
-            </ThemedText>
-          </TouchableOpacity>
+        <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
+          <ThemedText style={styles.deleteAccountButtonText}>계정 삭제</ThemedText>
+        </TouchableOpacity>
+      </ThemedView>
 
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText type='body' style={styles.menuText}>
-              앱 버전
-            </ThemedText>
-            <ThemedText type='body' style={styles.menuArrow}>
-              1.0.0
-            </ThemedText>
-          </TouchableOpacity>
-        </View>
-      </Section>
-
-      {/* 계정 관리 섹션 */}
-      <Section title='계정 관리' variant='outlined'>
-        <View style={styles.accountButtons}>
-          <Button
-            title='로그아웃'
-            onPress={handleSignOut}
-            variant='danger'
-            size='large'
-            fullWidth
-          />
-          <Button
-            title='계정 삭제'
-            onPress={handleDeleteAccount}
-            variant='danger'
-            size='large'
-            fullWidth
-          />
-        </View>
-      </Section>
-    </PageLayout>
+      <ThemedView style={styles.infoSection}>
+        <ThemedText style={styles.infoText}>
+          {profile?.email || user?.email || '이메일 없음'}
+        </ThemedText>
+        <ThemedText style={styles.versionText}>버전 1.0.0</ThemedText>
+      </ThemedView>
+    </ScrollView>
   );
 };
 

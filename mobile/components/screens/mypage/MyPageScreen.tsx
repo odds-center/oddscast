@@ -1,13 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthProvider';
 import { useUserProfile } from '@/lib/hooks/useUsers';
 import { UserProfile } from '@/lib/types/user';
 import { showConfirmMessage } from '@/utils/alert';
-import { ThemedText } from '@/components/ThemedText';
-import { PageLayout, Section, Button } from '@/components/common';
+import React, { useEffect, useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
@@ -155,14 +153,25 @@ const MyPageScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  loadingContainer: {
+  container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
+    backgroundColor: 'transparent',
   },
-  profileContent: {
+  header: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(180, 138, 60, 0.1)',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  profileSection: {
     alignItems: 'center',
+    paddingVertical: 24,
+    paddingHorizontal: 20,
   },
   avatarContainer: {
     marginBottom: 16,
@@ -188,8 +197,13 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     opacity: 0.9,
   },
-  menuList: {
-    // Menu list styles
+  email: {
+    opacity: 0.7,
+    fontSize: 14,
+  },
+  menuSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
   },
   menuItem: {
     flexDirection: 'row',
@@ -210,6 +224,63 @@ const styles = StyleSheet.create({
   menuArrow: {
     opacity: 0.6,
     marginLeft: 16,
+  },
+  actionSection: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  signOutButton: {
+    backgroundColor: '#B48A3C',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  signOutButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  deleteAccountButton: {
+    backgroundColor: 'rgba(255, 59, 48, 0.1)',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 59, 48, 0.3)',
+  },
+  deleteAccountButtonText: {
+    color: '#FF3B30',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  infoSection: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  infoText: {
+    opacity: 0.6,
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  versionText: {
+    opacity: 0.5,
+    fontSize: 12,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  profileContent: {
+    alignItems: 'center',
+  },
+  menuList: {
+    // Menu list styles
   },
   accountButtons: {
     gap: 12,

@@ -23,8 +23,10 @@ import { PointsModule } from './points/points.module';
       envFilePath: ['.env.local', '.env'],
     }),
 
-    // 스케줄러 모듈
-    ScheduleModule.forRoot(),
+    // 스케줄러 모듈 (개발 환경에서는 비활성화)
+    ...(process.env.NODE_ENV === 'production'
+      ? [ScheduleModule.forRoot()]
+      : []),
 
     // TypeORM 설정
     TypeOrmModule.forRootAsync({

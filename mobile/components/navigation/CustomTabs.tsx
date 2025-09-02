@@ -73,19 +73,7 @@ export function CustomTabs() {
           ),
         }}
       />
-      <Tabs.Screen
-        name='points'
-        options={{
-          title: '포인트',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons
-              size={focused ? 28 : 24}
-              name={focused ? 'wallet' : 'wallet-outline'}
-              color={color}
-            />
-          ),
-        }}
-      />
+
       <Tabs.Screen
         name='results'
         options={{

@@ -23,15 +23,15 @@ export function RaceCard({ race, onPress }: RaceCardProps) {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'UPCOMING':
-        return '#2196F3';
+        return '#DAA520'; // 골든로드
       case 'IN_PROGRESS':
-        return '#FF9800';
+        return '#FFD700'; // 진한 골드
       case 'COMPLETED':
-        return '#4CAF50';
+        return '#B8860B'; // 다크골든로드
       case 'CANCELLED':
-        return '#F44336';
+        return '#CD853F'; // 페루
       default:
-        return '#9E9E9E';
+        return '#CD853F'; // 페루
     }
   };
 
@@ -157,5 +157,30 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: 'rgba(180, 138, 60, 0.2)',
+  },
+  // 누락된 스타일들 추가
+  raceNumber: {
+    fontSize: 14,
+    color: '#FFD700',
+    opacity: 0.8,
+  },
+  detailLabel: {
+    fontSize: 14,
+    color: '#9BA1A6',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  prizeText: {
+    fontSize: 16,
+    color: '#FFD700',
+    fontWeight: '600',
+  },
+  entriesText: {
+    fontSize: 14,
+    color: '#9BA1A6',
   },
 });

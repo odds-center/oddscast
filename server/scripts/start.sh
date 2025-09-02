@@ -8,8 +8,8 @@ echo "========================"
 check_docker_status() {
     echo "🐳 Docker 상태 확인 중..."
     
-    # Docker 데몬 확인 (기본 소켓 사용)
-    if docker info > /dev/null 2>&1; then
+    # Docker 데몬 확인
+    if docker info > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
         echo "✅ Docker가 정상적으로 실행 중입니다."
         return 0
     else
@@ -20,14 +20,20 @@ check_docker_status() {
             echo "🍎 macOS에서 Docker Desktop을 시작합니다..."
             open -a Docker
             
-            echo "⏳ Docker 시작 대기 중... (최대 3분)"
-            for i in {1..36}; do
-                if docker info > /dev/null 2>&1; then
+            echo "⏳ Docker 시작 대기 중... (최대 5분)"
+            for i in {1..60}; do
+                if docker info > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
                     echo "✅ Docker가 준비되었습니다!"
-                    sleep 10  # 안정화 대기
-                    return 0
+                    echo "⏳ Docker 안정화 대기 중... (15초)"
+                    sleep 15  # 안정화 대기
+                    
+                    # 최종 확인
+                    if docker ps > /dev/null 2>&1; then
+                        echo "✅ Docker 데몬이 완전히 준비되었습니다!"
+                        return 0
+                    fi
                 fi
-                echo "Docker 시작 대기... ($i/36)"
+                echo "Docker 시작 대기... ($i/60)"
                 sleep 5
             done
         else
@@ -35,7 +41,7 @@ check_docker_status() {
             if command -v systemctl > /dev/null 2>&1; then
                 sudo systemctl start docker
                 sleep 10
-                if docker info > /dev/null 2>&1; then
+                if docker info > /dev/null 2>&1 && docker ps > /dev/null 2>&1; then
                     echo "✅ Docker가 준비되었습니다!"
                     return 0
                 fi
@@ -68,12 +74,15 @@ start_docker_mode() {
     fi
     
     # 환경변수 파일 확인
-    local env_file=".env.development"
+    local env_file=".env"
     if [ ! -f "$env_file" ]; then
-        echo "⚠️  $env_file 파일이 없습니다. .env 파일을 사용합니다."
-        env_file=".env"
-        if [ ! -f "$env_file" ]; then
-            echo "❌ 환경변수 파일을 찾을 수 없습니다."
+        echo "📝 .env 파일 생성 중..."
+        if [ -f "env.example" ]; then
+            cp env.example .env
+            # Docker 환경에 맞게 DB_HOST 수정
+            sed -i '' 's/DB_HOST=localhost/DB_HOST=mysql/' .env
+        else
+            echo "❌ env.example 파일을 찾을 수 없습니다."
             return 1
         fi
     fi
@@ -82,23 +91,44 @@ start_docker_mode() {
     echo "🧹 기존 컨테이너 정리 중..."
     docker-compose down --remove-orphans 2>/dev/null
     
-    # 컨테이너 시작
-    echo "🚀 컨테이너 시작 중..."
-    if [ -f "$env_file" ]; then
-        docker-compose --env-file "$env_file" up -d
-    else
-        docker-compose up -d
+    # Docker Compose 실행 전 추가 확인
+    echo "🔍 Docker Compose 준비 상태 확인 중..."
+    if ! docker-compose version > /dev/null 2>&1; then
+        echo "❌ Docker Compose를 찾을 수 없습니다."
+        return 1
     fi
     
-    if [ $? -ne 0 ]; then
+    # Docker 데몬 연결 재확인
+    echo "🔍 Docker 데몬 연결 재확인 중..."
+    if ! docker ps > /dev/null 2>&1; then
+        echo "❌ Docker 데몬에 연결할 수 없습니다."
+        echo " Docker Desktop을 수동으로 시작해주세요."
+        return 1
+    fi
+    
+    # 컨테이너 시작 시도
+    echo "🚀 컨테이너 시작 중..."
+    local compose_result=0
+    if [ -f "$env_file" ]; then
+        docker-compose --env-file "$env_file" up -d
+        compose_result=$?
+    else
+        docker-compose up -d
+        compose_result=$?
+    fi
+    
+    if [ $compose_result -ne 0 ]; then
         echo "❌ 컨테이너 시작 실패"
         echo "📋 Docker 상태 재확인 중..."
         if ! docker info > /dev/null 2>&1; then
             echo "❌ Docker가 여전히 실행되지 않았습니다."
             echo " Docker Desktop을 수동으로 시작해주세요."
+        elif ! docker ps > /dev/null 2>&1; then
+            echo "❌ Docker 데몬이 아직 완전히 준비되지 않았습니다."
+            echo " Docker Desktop이 완전히 시작될 때까지 기다려주세요."
         fi
         echo "📋 Docker Compose 로그:"
-        docker-compose logs --tail 20
+        docker-compose logs --tail 20 2>/dev/null || echo "Docker Compose 로그를 가져올 수 없습니다."
         return 1
     fi
     
@@ -200,6 +230,8 @@ main() {
     if [ ! -f ".env" ] && [ -f "env.example" ]; then
         echo "📝 .env 파일 생성 중..."
         cp env.example .env
+        # Docker 환경에 맞게 DB_HOST 수정
+        sed -i '' 's/DB_HOST=localhost/DB_HOST=mysql/' .env
     fi
     
     # Docker 상태 확인

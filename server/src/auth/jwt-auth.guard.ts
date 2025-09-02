@@ -4,33 +4,20 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { JwtService } from './jwt.service';
+import { JWT_CONSTANTS } from '../common/constants';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
-  constructor(private readonly jwtService: JwtService) {
-    super();
-  }
-
   canActivate(context: ExecutionContext) {
-    const request = context.switchToHttp().getRequest();
-    const token = this.extractTokenFromHeader(request);
-
-    if (!token) {
-      throw new UnauthorizedException('토큰이 제공되지 않았습니다.');
-    }
-
-    try {
-      const payload = this.jwtService.verifyToken(token);
-      request.user = payload;
-      return true;
-    } catch (error) {
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
-    }
+    return super.canActivate(context);
   }
 
-  private extractTokenFromHeader(request: any): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+  handleRequest(err: any, user: any, info: any) {
+    if (err || !user) {
+      throw new UnauthorizedException(
+        JWT_CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN
+      );
+    }
+    return user;
   }
 }

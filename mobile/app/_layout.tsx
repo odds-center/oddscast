@@ -19,6 +19,16 @@ function RootLayoutNav() {
   const [loaded] = useLoadFonts();
   const { user, loading: authLoading } = useAuth();
 
+  // 디버깅을 위한 로그
+  console.log('RootLayoutNav state:', {
+    user: user?.email,
+    authLoading,
+    colorSchemeLoading,
+    loaded,
+    shouldShowAuth: !user,
+    shouldShowApp: !!user
+  });
+
   useEffect(() => {
     if (loaded && !authLoading && !colorSchemeLoading) {
       SplashScreen.hideAsync();

@@ -53,13 +53,13 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
   const getAccentColor = () => {
     switch (type) {
       case 'success':
-        return '#4CAF50';
+        return '#FFD700'; // 진한 골드
       case 'error':
-        return '#F44336';
+        return '#B8860B'; // 다크골든로드
       case 'warning':
-        return '#FF9800';
+        return '#DAA520'; // 골든로드
       default:
-        return '#B48A3C';
+        return '#B8860B'; // 다크골든로드
     }
   };
 
@@ -264,8 +264,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(108, 117, 125, 0.3)',
   },
   destructiveButton: {
-    backgroundColor: '#F44336',
-    shadowColor: '#F44336',
+    backgroundColor: '#B48A3C',
+    shadowColor: '#B48A3C',
     shadowOffset: {
       width: 0,
       height: 2,

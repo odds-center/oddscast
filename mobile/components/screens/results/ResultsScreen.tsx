@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
 import { useResults } from '@/lib/hooks/useResults';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { PageLayout, Section, Button } from '@/components/common';
 import type { RaceResult } from '@/lib/api/resultApi';
 
@@ -13,7 +14,7 @@ export default function ResultsScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='transparent' />
+        <ActivityIndicator size='large' color='#E5C99C' />
         <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
       </ThemedView>
     );
@@ -32,12 +33,6 @@ export default function ResultsScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedView style={styles.header}>
-        <ThemedText type='title' style={styles.title}>
-          레이스 결과
-        </ThemedText>
-      </ThemedView>
-
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {results && results.length > 0 ? (
           results.map((result: RaceResult) => (
@@ -93,10 +88,9 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   resultCard: {
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    borderRadius: 16,
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
@@ -135,6 +129,12 @@ const styles = StyleSheet.create({
     marginBottom: 4,
     opacity: 0.8,
   },
+  jockeyName: {
+    opacity: 0.7,
+  },
+  odds: {
+    opacity: 0.7,
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -165,5 +165,15 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: 'center',
     opacity: 0.6,
+  },
+  retryButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: '#B48A3C',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
   },
 });

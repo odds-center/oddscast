@@ -166,3 +166,91 @@ export const useAppTheme = () => {
     return fallbackTheme;
   }
 };
+
+// 골드 테마 색상 상수
+export const GOLD_THEME = {
+  // 골드 색상 팔레트 (더 진한 골드로 업데이트)
+  GOLD: {
+    LIGHT: '#FFD700', // 진한 골드 (성공, 긍정적 상태)
+    MEDIUM: '#DAA520', // 골든로드 (경고, 대기 상태)
+    DARK: '#B8860B', // 다크골든로드 (에러, 부정적 상태)
+    GRAY: '#CD853F', // 페루 (비활성, 취소 상태)
+  },
+
+  // 배경 색상
+  BACKGROUND: {
+    PRIMARY: '#0C0C0C', // 검정 배경
+    SECONDARY: '#1A1A1A', // 어두운 회색 배경
+    CARD: '#1A1A1A', // 카드 배경
+    OVERLAY: 'rgba(0, 0, 0, 0.7)', // 오버레이
+  },
+
+  // 텍스트 색상
+  TEXT: {
+    PRIMARY: '#FFFFFF', // 흰색 텍스트
+    SECONDARY: '#FFD700', // 진한 골드 텍스트
+    TERTIARY: '#9BA1A6', // 회색 텍스트
+    DISABLED: '#687076', // 비활성 텍스트
+  },
+
+  // 테두리 색상
+  BORDER: {
+    PRIMARY: '#333333', // 어두운 테두리
+    SECONDARY: '#404040', // 밝은 테두리
+    GOLD: 'rgba(255, 215, 0, 0.3)', // 진한 골드 테두리
+  },
+
+  // 상태별 색상
+  STATUS: {
+    SUCCESS: '#FFD700', // 성공 (당첨, 완료) - 진한 골드
+    WARNING: '#DAA520', // 경고 (대기, 진행중) - 골든로드
+    ERROR: '#B8860B', // 에러 (실패, 취소) - 다크골든로드
+    INFO: '#CD853F', // 정보 (비활성) - 페루
+  },
+
+  // 그라데이션
+  GRADIENT: {
+    PRIMARY: ['#FFD700', '#B8860B'],
+    SECONDARY: ['#1A1A1A', '#2A2A2A'],
+    BACKGROUND: ['#0C0C0C', '#1A1A1A'],
+  },
+} as const;
+
+// 색상 유틸리티 함수
+export const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'WIN':
+    case 'SUCCESS':
+    case 'COMPLETED':
+      return GOLD_THEME.STATUS.SUCCESS;
+    case 'LOSS':
+    case 'ERROR':
+    case 'FAILED':
+      return GOLD_THEME.STATUS.ERROR;
+    case 'PENDING':
+    case 'WARNING':
+    case 'IN_PROGRESS':
+      return GOLD_THEME.STATUS.WARNING;
+    case 'CANCELLED':
+    case 'INFO':
+    case 'DISABLED':
+      return GOLD_THEME.STATUS.INFO;
+    default:
+      return GOLD_THEME.STATUS.SUCCESS;
+  }
+};
+
+export const getTransactionColor = (type: string) => {
+  switch (type) {
+    case 'BET_WIN':
+    case 'PURCHASE':
+    case 'EARNED':
+      return GOLD_THEME.STATUS.SUCCESS;
+    case 'BET_LOSS':
+    case 'WITHDRAW':
+    case 'SPENT':
+      return GOLD_THEME.STATUS.ERROR;
+    default:
+      return GOLD_THEME.STATUS.WARNING;
+  }
+};

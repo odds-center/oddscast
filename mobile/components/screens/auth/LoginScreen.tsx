@@ -1,14 +1,13 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useGoogleLogin, useLogin } from '@/lib/hooks/useAuth';
+import { useAuth } from '@/context/AuthProvider';
 import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
 
 export default function LoginScreen() {
-  const { signIn } = useAuth();
+  const { user, signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
@@ -16,10 +15,11 @@ export default function LoginScreen() {
       setIsLoading(true);
       console.log('Starting Google login...');
 
-      // Google 로그인 실행
-      const result = await googleLoginMutation.mutateAsync();
+      // AuthProvider의 signIn 메서드 사용
+      await signIn();
       showUserSuccessMessage('Google 로그인이 완료되었습니다.');
     } catch (error) {
+      console.error('Google login error:', error);
       showUserErrorMessage('Google 로그인이 실패했습니다.');
     } finally {
       setIsLoading(false);
@@ -28,13 +28,6 @@ export default function LoginScreen() {
 
   return (
     <ThemedView style={styles.container}>
-      <ThemedText type='title' style={styles.title}>
-        GoldenRace
-      </ThemedText>
-      <ThemedText type='subtitle' style={styles.subtitle}>
-        경마 앱에 오신 것을 환영합니다
-      </ThemedText>
-
       {/* 로고 및 제목 영역 */}
       <View style={styles.headerSection}>
         <View style={styles.logoContainer}>
@@ -43,7 +36,30 @@ export default function LoginScreen() {
         <ThemedText type='largeTitle' lightColor='#B48A3C' darkColor='#E5C99C' style={styles.title}>
           GoldenRace
         </ThemedText>
-      </TouchableOpacity>
+        <ThemedText type='subtitle' style={styles.subtitle}>
+          경마 앱에 오신 것을 환영합니다
+        </ThemedText>
+      </View>
+
+      {/* 버튼 섹션 */}
+      <View style={styles.buttonSection}>
+        <TouchableOpacity
+          style={[styles.googleButton, isLoading && styles.disabledButton]}
+          onPress={handleGoogleLogin}
+          disabled={isLoading}
+        >
+          <View style={styles.googleButtonContent}>
+            <Ionicons name='logo-google' size={20} color='#4285F4' style={styles.googleIcon} />
+            <ThemedText style={styles.googleButtonText}>
+              {isLoading ? '로그인 중...' : 'Google로 로그인'}
+            </ThemedText>
+          </View>
+        </TouchableOpacity>
+
+        <ThemedText style={styles.termsText}>
+          로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
+        </ThemedText>
+      </View>
     </ThemedView>
   );
 }
@@ -103,33 +119,41 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   googleButton: {
-    paddingHorizontal: 32,
-    paddingVertical: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#DADCE0',
     paddingHorizontal: 24,
-    borderRadius: 12,
+    paddingVertical: 12,
+    borderRadius: 8,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 4,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  googleButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   googleButtonText: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#3C4043',
+    marginLeft: 8,
   },
   disabledButton: {
     opacity: 0.6,
   },
   googleIcon: {
     marginRight: 12,
-  },
-  googleButtonText: {
-    flex: 1,
-    textAlign: 'center',
   },
   termsText: {
     textAlign: 'center',

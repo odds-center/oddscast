@@ -367,9 +367,9 @@ export class BetsController {
     await this.betsService.cancelBet(id);
   }
 
-  @Get('statistics/summary')
+  @Get('statistics')
   @ApiOperation({
-    summary: '마권 통계 요약',
+    summary: '마권 통계',
     description: '현재 사용자의 마권 통계 정보를 조회합니다.',
   })
   @ApiResponse({

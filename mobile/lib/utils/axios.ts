@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getCurrentConfig } from '../../config/environment';
 import { tokenManager } from './tokenManager';
+import { API_CONSTANTS } from '@/constants';
 
 import { ApiResponse, ApiError } from '../types/api';
 
@@ -27,7 +28,9 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
       try {
         const token = await tokenManager.getToken();
         if (token) {
-          config.headers.Authorization = `Bearer ${token}`;
+          config.headers[
+            API_CONSTANTS.HEADERS.AUTHORIZATION
+          ] = `${API_CONSTANTS.HEADERS.BEARER_PREFIX} ${token}`;
           console.log('🔑 Authorization header added:', token.substring(0, 30) + '...');
         } else {
           console.log('⚠️  No token available for request');
@@ -47,32 +50,51 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
   // 응답 인터셉터
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      console.log(`API Response: ${response.status} ${response.config.url}`);
+      console.log(`✅ API Response: ${response.status} ${response.config.url}`);
       return response;
     },
     async (error) => {
-      console.error('API Response Error:', error.response?.data || error.message);
+      console.error('❌ API Response Error:', error.response?.data || error.message);
 
       // 401 에러 시 토큰 제거 (하지만 무한 루프 방지)
-      if (error.response?.status === 401) {
+      if (error.response?.status === API_CONSTANTS.STATUS_CODES.UNAUTHORIZED) {
         try {
           // 현재 요청이 인증이 필요한 요청인지 확인
           const isAuthRequest =
             error.config?.url?.includes('/auth') ||
             error.config?.url?.includes('/login') ||
-            error.config?.url?.includes('/signin');
+            error.config?.url?.includes('/signin') ||
+            error.config?.url?.includes('/google');
 
           if (!isAuthRequest) {
-            console.log('401 error on protected route, removing token');
-            await tokenManager.removeToken();
+            console.log('🔐 401 error on protected route, checking token validity...');
+
+            // 토큰이 실제로 유효한지 확인
+            const currentToken = await tokenManager.getToken();
+            if (currentToken) {
+              console.log('🔐 Current token exists, but server says invalid');
+              console.log('🔐 Token preview:', currentToken.substring(0, 50) + '...');
+
+              // 토큰 형식 검증
+              if (currentToken.split('.').length !== 3) {
+                console.log('🔐 Token format invalid, removing...');
+                await tokenManager.removeToken();
+              } else {
+                console.log('🔐 Token format valid, but server rejected');
+                // 서버 연결 문제일 수 있으므로 토큰을 유지
+                console.log('🔐 Keeping token for now, might be server issue');
+              }
+            } else {
+              console.log('🔐 No token found, nothing to remove');
+            }
 
             // 토큰 상태 로그
             tokenManager.logTokenStatus();
           } else {
-            console.log('401 error on auth route, not removing token');
+            console.log('🔐 401 error on auth route, not removing token');
           }
         } catch (storageError) {
-          console.error('Token removal error:', storageError);
+          console.error('❌ Token removal error:', storageError);
         }
       }
 

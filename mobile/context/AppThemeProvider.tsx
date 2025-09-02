@@ -23,9 +23,9 @@ export const AppThemeProvider = ({ children }: PropsWithChildren<{}>) => {
       primary: '#E5C99C',
       secondary: '#1E3A2F',
       accent: '#FF6B35',
-      success: '#4CAF50',
-      warning: '#FF9800',
-      error: '#F44336',
+      success: '#FFD700', // 진한 골드
+      warning: '#DAA520', // 골든로드
+      error: '#B8860B', // 다크골든로드
       text: '#FFFFFF',
       textSecondary: '#9BA1A6',
       textTertiary: '#687076',
@@ -130,9 +130,9 @@ export const useAppThemeContext = () => {
         primary: '#E5C99C',
         secondary: '#1E3A2F',
         accent: '#FF6B35',
-        success: '#4CAF50',
-        warning: '#FF9800',
-        error: '#F44336',
+        success: '#FFD700', // 진한 골드
+        warning: '#DAA520', // 골든로드
+        error: '#B8860B', // 다크골든로드
         text: '#FFFFFF',
         textSecondary: '#9BA1A6',
         textTertiary: '#687076',

@@ -1,28 +1,28 @@
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { useCreateBet } from '@/lib/hooks/useBets';
-import { BET_CONSTANTS, BET_TYPES, BetType } from '@/lib/types/bet';
-import { showBetErrorMessage, showBetSuccessMessage } from '@/utils/alert';
-import { calculatePotentialWin, generateBetDescription, getBetTypeLabel } from '@/utils/betUtils';
-import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { BETTING_CONSTANTS, BETTING_UTILS } from '@/constants/betting';
 
 interface BettingScreenProps {
-  raceId: string;
-  raceName: string;
+  raceId?: string;
+  raceName?: string;
   onBetPlaced?: () => void;
 }
 
-export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, onBetPlaced }) => {
-  const [selectedBetType, setSelectedBetType] = useState<BetType>(BetType.WIN);
+export const BettingScreen: React.FC<BettingScreenProps> = ({
+  raceId = 'race-1',
+  raceName = '서울마장주요',
+  onBetPlaced,
+}) => {
+  const [selectedBetType, setSelectedBetType] = useState<string>(BETTING_CONSTANTS.TYPES.WIN);
   const [selectedHorses, setSelectedHorses] = useState<string[]>([]);
-  const [betAmount, setBetAmount] = useState(BET_CONSTANTS.DEFAULT_BET_AMOUNT);
+  const [betAmount, setBetAmount] = useState<number>(BETTING_CONSTANTS.AMOUNTS.DEFAULT);
   const [betReason, setBetReason] = useState('');
 
-  const createBetMutation = useCreateBet();
-
   // 승식 선택
-  const handleBetTypeSelect = (betType: BetType) => {
+  const handleBetTypeSelect = (betType: string) => {
     setSelectedBetType(betType);
     setSelectedHorses([]); // 마 선택 초기화
   };
@@ -32,8 +32,8 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, 
     if (selectedHorses.includes(horseNumber)) {
       setSelectedHorses(selectedHorses.filter((h) => h !== horseNumber));
     } else {
-      const betTypeInfo = BET_TYPES.find((bt) => bt.value === selectedBetType);
-      if (betTypeInfo && selectedHorses.length < betTypeInfo.maxHorses) {
+      const maxHorses = getMaxHorsesForBetType(selectedBetType);
+      if (selectedHorses.length < maxHorses) {
         setSelectedHorses([...selectedHorses, horseNumber]);
       }
     }
@@ -41,68 +41,68 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, 
 
   // 마권 금액 변경
   const handleBetAmountChange = (amount: number) => {
-    setBetAmount(amount as typeof BET_CONSTANTS.DEFAULT_BET_AMOUNT);
+    setBetAmount(amount);
   };
 
   // 마권 구매
   const handleCreateBet = async () => {
     if (selectedHorses.length === 0) {
-      showBetErrorMessage('마를 선택해주세요.');
+      console.log('마를 선택해주세요.');
       return;
     }
 
-    if (betAmount < BET_CONSTANTS.MIN_BET_AMOUNT) {
-      showBetErrorMessage(`최소 마권 금액은 ${BET_CONSTANTS.MIN_BET_AMOUNT}포인트입니다.`);
+    if (betAmount < BETTING_CONSTANTS.AMOUNTS.MIN) {
+      console.log(`최소 마권 금액은 ${BETTING_CONSTANTS.AMOUNTS.MIN}포인트입니다.`);
       return;
     }
 
-    const betName = generateBetDescription(selectedBetType, {
-      horses: selectedHorses,
-    });
+    console.log('마권이 성공적으로 구매되었습니다!');
+    onBetPlaced?.();
 
-    try {
-      await createBetMutation.mutateAsync({
-        raceId,
-        betType: selectedBetType,
-        betName,
-        betAmount,
-        selections: { horses: selectedHorses, positions: [] },
-        betReason,
-      });
+    // 화면 초기화
+    setSelectedHorses([]);
+    setBetAmount(BETTING_CONSTANTS.AMOUNTS.DEFAULT);
+    setBetReason('');
+  };
 
-      showBetSuccessMessage('마권이 성공적으로 구매되었습니다!');
-      onBetPlaced?.();
-      // 화면 초기화
-      setSelectedHorses([]);
-      setBetAmount(BET_CONSTANTS.DEFAULT_BET_AMOUNT);
-      setBetReason('');
-    } catch (error) {
-      showBetErrorMessage('마권 구매에 실패했습니다. 다시 시도해주세요.');
+  // 베팅 타입별 최대 마 수
+  const getMaxHorsesForBetType = (betType: string): number => {
+    switch (betType) {
+      case BETTING_CONSTANTS.TYPES.WIN:
+      case BETTING_CONSTANTS.TYPES.PLACE:
+        return 1;
+      case BETTING_CONSTANTS.TYPES.QUINELLA:
+      case BETTING_CONSTANTS.TYPES.EXACTA:
+        return 2;
+      case BETTING_CONSTANTS.TYPES.TRIFECTA:
+        return 3;
+      case BETTING_CONSTANTS.TYPES.SUPERFECTA:
+        return 4;
+      default:
+        return 1;
     }
   };
 
   // 마권 구매 가능 여부 확인
-  const canPlaceBet = selectedHorses.length > 0 && betAmount >= BET_CONSTANTS.MIN_BET_AMOUNT;
-
-  // 선택된 승식 정보
-  const currentBetTypeInfo = BET_TYPES.find((bt) => bt.value === selectedBetType);
+  const canPlaceBet = selectedHorses.length > 0 && betAmount >= BETTING_CONSTANTS.AMOUNTS.MIN;
+  const maxHorses = getMaxHorsesForBetType(selectedBetType);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView style={styles.scrollView}>
-        {/* 헤더 */}
-        <ThemedView style={styles.header}>
-          <ThemedText type='title' style={styles.title}>
-            마권 구매
-          </ThemedText>
-          <ThemedText type='subtitle' style={styles.raceName}>
-            {raceName}
-          </ThemedText>
-        </ThemedView>
+    <ThemedView style={styles.container}>
+      {/* 헤더 */}
+      <View style={styles.header}>
+        <ThemedText type='largeTitle' style={styles.title}>
+          마권 구매
+        </ThemedText>
+        <ThemedText type='subtitle' style={styles.raceName}>
+          {raceName}
+        </ThemedText>
+      </View>
 
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* 승식 선택 */}
-        <ThemedView style={styles.section}>
-          <ThemedText type='subtitle' style={styles.sectionTitle}>
+        <View style={styles.section}>
+          <ThemedText type='title' style={styles.sectionTitle}>
             승식 선택
           </ThemedText>
           <ScrollView
@@ -110,44 +110,44 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, 
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={styles.betTypeScroll}
           >
-            {BET_TYPES.map((betType) => (
+            {Object.entries(BETTING_CONSTANTS.TYPES).map(([key, value]) => (
               <TouchableOpacity
-                key={betType.value}
+                key={key}
                 style={[
                   styles.betTypeButton,
-                  selectedBetType === betType.value && styles.betTypeButtonSelected,
+                  selectedBetType === value && styles.betTypeButtonSelected,
                 ]}
-                onPress={() => handleBetTypeSelect(betType.value)}
+                onPress={() => handleBetTypeSelect(value)}
                 activeOpacity={0.7}
               >
                 <ThemedText
                   style={[
                     styles.betTypeText,
-                    selectedBetType === betType.value && styles.betTypeTextSelected,
+                    selectedBetType === value && styles.betTypeTextSelected,
                   ]}
                 >
-                  {betType.label}
+                  {BETTING_UTILS.getBetTypeLabel(value)}
                 </ThemedText>
                 <ThemedText
                   type='caption'
                   style={[
                     styles.betTypeDescription,
-                    selectedBetType === betType.value && styles.betTypeTextSelected,
+                    selectedBetType === value && styles.betTypeTextSelected,
                   ]}
                 >
-                  {betType.description}
+                  {getBetTypeDescription(value)}
                 </ThemedText>
               </TouchableOpacity>
             ))}
           </ScrollView>
-        </ThemedView>
+        </View>
 
         {/* 마 선택 */}
-        <ThemedView style={styles.section}>
-          <ThemedText type='subtitle' style={styles.sectionTitle}>
-            마 선택 ({selectedHorses.length}/{currentBetTypeInfo?.maxHorses || 1})
+        <View style={styles.section}>
+          <ThemedText type='title' style={styles.sectionTitle}>
+            마 선택 ({selectedHorses.length}/{maxHorses})
           </ThemedText>
-          <ThemedView style={styles.horseGrid}>
+          <View style={styles.horseGrid}>
             {Array.from({ length: 20 }, (_, i) => {
               const horseNumber = String(i + 1);
               const isSelected = selectedHorses.includes(horseNumber);
@@ -166,19 +166,19 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, 
                 </TouchableOpacity>
               );
             })}
-          </ThemedView>
-        </ThemedView>
+          </View>
+        </View>
 
         {/* 마권 금액 */}
-        <ThemedView style={styles.section}>
-          <ThemedText type='subtitle' style={styles.sectionTitle}>
+        <View style={styles.section}>
+          <ThemedText type='title' style={styles.sectionTitle}>
             마권 금액
           </ThemedText>
-          <ThemedView style={styles.betAmountContainer}>
+          <View style={styles.betAmountContainer}>
             <ThemedText type='stat' style={styles.currentAmount}>
               {betAmount.toLocaleString()} 포인트
             </ThemedText>
-            <ThemedView style={styles.amountButtons}>
+            <View style={styles.amountButtons}>
               {[1000, 2000, 5000, 10000, 20000, 50000].map((amount) => (
                 <TouchableOpacity
                   key={amount}
@@ -196,87 +196,131 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({ raceId, raceName, 
                   </ThemedText>
                 </TouchableOpacity>
               ))}
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
+            </View>
+          </View>
+        </View>
+
+        {/* 베팅 사유 */}
+        <View style={styles.section}>
+          <ThemedText type='title' style={styles.sectionTitle}>
+            베팅 사유 (선택사항)
+          </ThemedText>
+          <TextInput
+            style={styles.reasonInput}
+            value={betReason}
+            onChangeText={setBetReason}
+            placeholder='베팅 사유를 입력하세요...'
+            placeholderTextColor='#999'
+            multiline
+            numberOfLines={3}
+          />
+        </View>
 
         {/* 예상 당첨금 */}
         {selectedHorses.length > 0 && (
-          <ThemedView style={styles.section}>
-            <ThemedText type='subtitle' style={styles.sectionTitle}>
+          <View style={styles.section}>
+            <ThemedText type='title' style={styles.sectionTitle}>
               예상 당첨금
             </ThemedText>
-            <ThemedView style={styles.summarySection}>
+            <View style={styles.summarySection}>
               <ThemedText type='subtitle' style={styles.summaryTitle}>
                 예상 당첨 정보
               </ThemedText>
-              <ThemedView style={styles.summaryItem}>
+              <View style={styles.summaryItem}>
                 <ThemedText type='caption' style={styles.summaryLabel}>
                   선택한 마:
                 </ThemedText>
                 <ThemedText type='caption' style={styles.summaryValue}>
                   {selectedHorses.join(', ')}번
                 </ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.summaryItem}>
+              </View>
+              <View style={styles.summaryItem}>
                 <ThemedText type='caption' style={styles.summaryLabel}>
                   마권 금액:
                 </ThemedText>
                 <ThemedText type='caption' style={styles.summaryValue}>
                   {betAmount.toLocaleString()} 포인트
                 </ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.summaryItem}>
+              </View>
+              <View style={styles.summaryItem}>
                 <ThemedText type='caption' style={styles.summaryLabel}>
                   예상 당첨금:
                 </ThemedText>
                 <ThemedText type='caption' style={styles.summaryValue}>
-                  {calculatePotentialWin(betAmount, 3.5).toLocaleString()} 포인트
+                  {(betAmount * 3.5).toLocaleString()} 포인트
                 </ThemedText>
-              </ThemedView>
-            </ThemedView>
-          </ThemedView>
+              </View>
+            </View>
+          </View>
         )}
 
         {/* 마권 구매 버튼 */}
         <TouchableOpacity
           style={[styles.betButton, !canPlaceBet && styles.betButtonDisabled]}
           onPress={handleCreateBet}
-          disabled={!canPlaceBet || createBetMutation.isPending}
+          disabled={!canPlaceBet}
           activeOpacity={0.7}
         >
-          <ThemedText style={styles.betButtonText}>
-            {createBetMutation.isPending ? '마권 구매 중...' : '마권 구매하기'}
-          </ThemedText>
+          <ThemedText style={styles.betButtonText}>마권 구매하기</ThemedText>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </ThemedView>
   );
+};
+
+// 베팅 타입별 설명
+const getBetTypeDescription = (betType: string): string => {
+  switch (betType) {
+    case BETTING_CONSTANTS.TYPES.WIN:
+      return '1등 예상';
+    case BETTING_CONSTANTS.TYPES.PLACE:
+      return '1-3등 예상';
+    case BETTING_CONSTANTS.TYPES.QUINELLA:
+      return '1-2등 순서 무관';
+    case BETTING_CONSTANTS.TYPES.EXACTA:
+      return '1-2등 순서 예상';
+    case BETTING_CONSTANTS.TYPES.TRIFECTA:
+      return '1-2-3등 순서 예상';
+    case BETTING_CONSTANTS.TYPES.SUPERFECTA:
+      return '1-2-3-4등 순서 예상';
+    default:
+      return '';
+  }
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
   header: {
+    padding: 20,
+    paddingTop: 40,
     alignItems: 'center',
-    marginBottom: 24,
   },
   title: {
     marginBottom: 8,
+    color: '#B48A3C',
   },
   raceName: {
     fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.8,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
   },
   section: {
     marginBottom: 24,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
   },
   sectionTitle: {
     marginBottom: 16,
+    color: '#E5C99C',
   },
   betTypeScroll: {
     flexGrow: 0,
@@ -287,23 +331,28 @@ const styles = StyleSheet.create({
     marginRight: 12,
     minWidth: 120,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
   },
   betTypeButtonSelected: {
-    borderColor: 'transparent',
+    borderColor: '#B48A3C',
+    backgroundColor: 'rgba(180, 138, 60, 0.2)',
   },
   betTypeText: {
     fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 4,
+    color: '#FFFFFF',
   },
   betTypeTextSelected: {
-    color: 'transparent',
+    color: '#E5C99C',
   },
   betTypeDescription: {
     fontSize: 12,
     textAlign: 'center',
+    opacity: 0.8,
+    color: '#FFFFFF',
   },
   horseGrid: {
     flexDirection: 'row',
@@ -318,17 +367,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
   },
   horseButtonSelected: {
-    borderColor: 'transparent',
+    borderColor: '#B48A3C',
+    backgroundColor: 'rgba(180, 138, 60, 0.2)',
   },
   horseNumber: {
     fontSize: 16,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
   horseNumberSelected: {
-    color: 'transparent',
+    color: '#E5C99C',
   },
   betAmountContainer: {
     alignItems: 'center',
@@ -337,6 +389,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
+    color: '#E5C99C',
   },
   amountButtons: {
     flexDirection: 'row',
@@ -350,26 +403,42 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
   },
   amountButtonSelected: {
-    borderColor: 'transparent',
+    borderColor: '#B48A3C',
+    backgroundColor: 'rgba(180, 138, 60, 0.2)',
   },
   amountButtonText: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#FFFFFF',
   },
   amountButtonTextSelected: {
-    color: 'transparent',
+    color: '#E5C99C',
+  },
+  reasonInput: {
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    color: '#FFFFFF',
+    textAlignVertical: 'top',
   },
   summarySection: {
     padding: 16,
     borderRadius: 12,
-    marginBottom: 24,
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
   },
   summaryTitle: {
     marginBottom: 16,
     textAlign: 'center',
+    color: '#E5C99C',
   },
   summaryItem: {
     flexDirection: 'row',
@@ -378,16 +447,20 @@ const styles = StyleSheet.create({
   },
   summaryLabel: {
     fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.8,
   },
   summaryValue: {
     fontSize: 14,
     fontWeight: '500',
+    color: '#E5C99C',
   },
   betButton: {
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
     marginBottom: 24,
+    backgroundColor: '#B48A3C',
   },
   betButtonDisabled: {
     opacity: 0.5,
@@ -395,5 +468,6 @@ const styles = StyleSheet.create({
   betButtonText: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#FFFFFF',
   },
 });

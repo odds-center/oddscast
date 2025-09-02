@@ -2,11 +2,19 @@ import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService as NestJwtService } from '@nestjs/jwt';
 import { User } from '../users/entities/user.entity';
+import {
+  JWT_CONSTANTS,
+  USER_CONSTANTS,
+  SOCIAL_AUTH_CONSTANTS,
+  ENV_KEYS,
+} from '../common/constants';
 
 export interface JwtPayload {
   sub: string;
   email: string;
   name: string;
+  role?: string;
+  provider?: string;
   iat?: number;
   exp?: number;
 }
@@ -33,12 +41,17 @@ export class JwtService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || user.email?.split('@')[0] || 'User',
+      role: user.role || USER_CONSTANTS.DEFAULTS.ROLE,
+      provider: user.authProvider || SOCIAL_AUTH_CONSTANTS.PROVIDERS.GOOGLE,
     };
 
     return this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_SECRET'),
-      expiresIn: this.configService.get('JWT_EXPIRES_IN', '1h'),
+      secret: this.configService.get(ENV_KEYS.JWT.SECRET),
+      expiresIn: this.configService.get(
+        ENV_KEYS.JWT.EXPIRES_IN,
+        JWT_CONSTANTS.ACCESS_TOKEN_EXPIRES_IN
+      ),
     });
   }
 
@@ -49,12 +62,17 @@ export class JwtService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      name: user.name,
+      name: user.name || user.email?.split('@')[0] || 'User',
+      role: user.role || USER_CONSTANTS.DEFAULTS.ROLE,
+      provider: user.authProvider || SOCIAL_AUTH_CONSTANTS.PROVIDERS.GOOGLE,
     };
 
     return this.jwtService.sign(payload, {
-      secret: this.configService.get('JWT_SECRET'),
-      expiresIn: this.configService.get('JWT_REFRESH_EXPIRES_IN', '7d'),
+      secret: this.configService.get(ENV_KEYS.JWT.SECRET),
+      expiresIn: this.configService.get(
+        ENV_KEYS.JWT.REFRESH_EXPIRES_IN,
+        JWT_CONSTANTS.REFRESH_TOKEN_EXPIRES_IN
+      ),
     });
   }
 
@@ -65,7 +83,10 @@ export class JwtService {
     const accessToken = this.generateAccessToken(user);
     const refreshToken = this.generateRefreshToken(user);
     const expiresIn = this.getTokenExpirationTime(
-      this.configService.get('JWT_EXPIRES_IN', '1h')
+      this.configService.get(
+        ENV_KEYS.JWT.EXPIRES_IN,
+        JWT_CONSTANTS.ACCESS_TOKEN_EXPIRES_IN
+      )
     );
 
     return {
@@ -81,11 +102,13 @@ export class JwtService {
   verifyToken(token: string): JwtPayload {
     try {
       return this.jwtService.verify(token, {
-        secret: this.configService.get('JWT_SECRET'),
+        secret: this.configService.get(ENV_KEYS.JWT.SECRET),
       });
     } catch (error) {
       this.logger.error('JWT 토큰 검증 실패:', error.message);
-      throw new UnauthorizedException('유효하지 않은 토큰입니다.');
+      throw new UnauthorizedException(
+        JWT_CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN
+      );
     }
   }
 
@@ -97,7 +120,9 @@ export class JwtService {
       return this.jwtService.decode(token) as JwtPayload;
     } catch (error) {
       this.logger.error('JWT 토큰 디코딩 실패:', error.message);
-      throw new UnauthorizedException('토큰을 디코딩할 수 없습니다.');
+      throw new UnauthorizedException(
+        JWT_CONSTANTS.ERROR_MESSAGES.TOKEN_DECODE_FAILED
+      );
     }
   }
 

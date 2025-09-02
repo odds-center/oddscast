@@ -1,60 +1,78 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
-import { PageLayout, Section, Button } from '@/components/common';
-import { useRaces } from '@/lib/hooks/useRaces';
-import { RaceCard } from './RaceCard';
+import { PageLayout } from '@/components/common/PageLayout';
+import { Ionicons } from '@expo/vector-icons';
+import { RACE_CONSTANTS, RACE_UTILS } from '@/constants/race';
+
+interface Race {
+  id: string;
+  rcName: string;
+  meetName: string;
+  rcDate: string;
+  rcNo: number;
+  rcDist: number;
+  rcGrade: string;
+  rcStartTime: string;
+  raceStatus: string;
+}
 
 export default function RacesScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
   const venues = ['all', '서울', '부산', '제주', '광주'];
 
-  // TanStack Query 훅 사용
-  const {
-    data: racesResponse,
-    isLoading,
-    error,
-  } = useRaces({
-    page: 1,
-    limit: 50,
-  });
-
-  const races = racesResponse?.races || [];
+  // 임시 데이터 (실제로는 API에서 가져올 예정)
+  const mockRaces: Race[] = [
+    {
+      id: '1',
+      rcName: '서울마장주요',
+      meetName: '서울',
+      rcDate: '2024-02-09',
+      rcNo: 1,
+      rcDist: 1200,
+      rcGrade: 'G3',
+      rcStartTime: '14:00',
+      raceStatus: 'UPCOMING',
+    },
+    {
+      id: '2',
+      rcName: '부산마장주요',
+      meetName: '부산',
+      rcDate: '2024-02-09',
+      rcNo: 2,
+      rcDist: 1600,
+      rcGrade: 'G2',
+      rcStartTime: '14:30',
+      raceStatus: 'UPCOMING',
+    },
+    {
+      id: '3',
+      rcName: '제주마장주요',
+      meetName: '제주',
+      rcDate: '2024-02-09',
+      rcNo: 3,
+      rcDist: 1800,
+      rcGrade: 'G1',
+      rcStartTime: '15:00',
+      raceStatus: 'UPCOMING',
+    },
+  ];
 
   // 선택된 지역에 따라 필터링
   const filteredRaces =
-    selectedVenue === 'all' ? races : races.filter((race) => race.meetName === selectedVenue);
+    selectedVenue === 'all'
+      ? mockRaces
+      : mockRaces.filter((race) => race.meetName === selectedVenue);
 
-  if (isLoading) {
-    return (
-      <PageLayout showHeader={false}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color='#E5C99C' />
-          <ThemedText type='body' style={styles.loadingText}>
-            레이스 정보를 불러오는 중...
-          </ThemedText>
-        </View>
-      </PageLayout>
-    );
-  }
-
-  if (error) {
-    return (
-      <PageLayout showHeader={false}>
-        <View style={styles.errorContainer}>
-          <ThemedText type='body' style={styles.errorText}>
-            레이스 정보를 불러오는데 실패했습니다.
-          </ThemedText>
-          <Button title='다시 시도' onPress={() => {}} variant='primary' size='medium' />
-        </View>
-      </PageLayout>
-    );
-  }
+  const handleRacePress = (raceId: string) => {
+    console.log('Race selected:', raceId);
+    // 경주 상세 페이지로 이동
+  };
 
   return (
-    <PageLayout title='경주 일정' subtitle='오늘의 경주 정보를 확인하세요'>
+    <PageLayout>
       {/* 지역 필터 */}
-      <Section variant='outlined'>
+      <View style={styles.filterSection}>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -78,38 +96,128 @@ export default function RacesScreen() {
             </TouchableOpacity>
           ))}
         </ScrollView>
-      </Section>
+      </View>
 
       {/* 경주 목록 */}
       {filteredRaces.length > 0 ? (
-        <Section variant='elevated'>
-          {filteredRaces.map((race) => (
-            <RaceCard
-              key={race.id}
-              race={race}
-              onPress={() => {
-                // 경주 상세 페이지로 이동
-                console.log('Race selected:', race.id);
-              }}
-            />
-          ))}
-        </Section>
+        filteredRaces.map((race) => (
+          <TouchableOpacity
+            key={race.id}
+            style={styles.raceCard}
+            onPress={() => handleRacePress(race.id)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.raceHeader}>
+              <View style={styles.raceInfo}>
+                <ThemedText type='title' style={styles.raceName}>
+                  {race.rcName}
+                </ThemedText>
+                <ThemedText type='caption' style={styles.raceDetails}>
+                  {race.meetName} • {race.rcNo}경주 • {race.rcDist}m
+                </ThemedText>
+              </View>
+              <View style={styles.raceGrade}>
+                <ThemedText type='caption' style={styles.gradeText}>
+                  {RACE_UTILS.getRaceGradeLabel(race.rcGrade)}
+                </ThemedText>
+              </View>
+            </View>
+
+            <View style={styles.raceFooter}>
+              <View style={styles.raceTime}>
+                <Ionicons name='time' size={16} color='#E5C99C' />
+                <ThemedText type='caption' style={styles.timeText}>
+                  {race.rcStartTime}
+                </ThemedText>
+              </View>
+              <View style={styles.raceStatus}>
+                <View
+                  style={[
+                    styles.statusBadge,
+                    { backgroundColor: RACE_UTILS.getRaceStatusColor(race.raceStatus) },
+                  ]}
+                >
+                  <ThemedText type='caption' style={styles.statusText}>
+                    {RACE_UTILS.getRaceStatusLabel(race.raceStatus)}
+                  </ThemedText>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))
       ) : (
-        <Section variant='elevated'>
-          <View style={styles.emptyContainer}>
-            <ThemedText type='body' style={styles.emptyText}>
-              {selectedVenue === 'all'
-                ? '등록된 경주가 없습니다.'
-                : `${selectedVenue}에 등록된 경주가 없습니다.`}
+        <View style={styles.emptyContainer}>
+          <Ionicons name='calendar-outline' size={48} color='#E5C99C' />
+          <ThemedText type='body' style={styles.emptyText}>
+            {selectedVenue === 'all'
+              ? '등록된 경주가 없습니다.'
+              : `${selectedVenue}에 등록된 경주가 없습니다.`}
+          </ThemedText>
+        </View>
+      )}
+
+      {/* 경주 통계 */}
+      <View style={styles.statsSection}>
+        <ThemedText type='title' style={styles.sectionTitle}>
+          경주 통계
+        </ThemedText>
+        <View style={styles.statsGrid}>
+          <View style={styles.statItem}>
+            <ThemedText type='stat' style={styles.statNumber}>
+              {mockRaces.length}
+            </ThemedText>
+            <ThemedText type='caption' style={styles.statLabel}>
+              총 경주
             </ThemedText>
           </View>
-        </Section>
-      )}
+          <View style={styles.statItem}>
+            <ThemedText type='stat' style={styles.statNumber}>
+              {mockRaces.filter((race) => race.rcGrade === 'G1').length}
+            </ThemedText>
+            <ThemedText type='caption' style={styles.statLabel}>
+              그룹1
+            </ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText type='stat' style={styles.statNumber}>
+              {mockRaces.filter((race) => race.rcGrade === 'G2').length}
+            </ThemedText>
+            <ThemedText type='caption' style={styles.statLabel}>
+              그룹2
+            </ThemedText>
+          </View>
+          <View style={styles.statItem}>
+            <ThemedText type='stat' style={styles.statNumber}>
+              {mockRaces.filter((race) => race.rcGrade === 'G3').length}
+            </ThemedText>
+            <ThemedText type='caption' style={styles.statLabel}>
+              그룹3
+            </ThemedText>
+          </View>
+        </View>
+      </View>
     </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    padding: 20,
+    paddingTop: 40,
+    alignItems: 'center',
+  },
+  title: {
+    marginBottom: 8,
+    color: '#B48A3C',
+  },
+  subtitle: {
+    textAlign: 'center',
+    opacity: 0.8,
+    color: '#FFFFFF',
+  },
+  filterSection: {
+    marginBottom: 20,
+  },
   filterScrollContent: {
     paddingHorizontal: 4,
   },
@@ -131,35 +239,103 @@ const styles = StyleSheet.create({
   filterButtonTextActive: {
     color: '#FFFFFF',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  raceCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 16,
     padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
   },
-  loadingText: {
-    marginTop: 16,
-    opacity: 0.8,
+  raceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
   },
-  errorContainer: {
+  raceInfo: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  errorText: {
-    marginBottom: 20,
-    textAlign: 'center',
+  raceName: {
+    marginBottom: 4,
+    color: '#FFFFFF',
+  },
+  raceDetails: {
     opacity: 0.8,
+    color: '#FFFFFF',
+  },
+  raceGrade: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+  },
+  gradeText: {
+    color: '#E5C99C',
+    fontSize: 12,
+  },
+  raceFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  raceTime: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  timeText: {
+    marginLeft: 4,
+    color: '#E5C99C',
+  },
+  raceStatus: {
+    alignItems: 'flex-end',
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '500',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
     padding: 40,
+    alignItems: 'center',
   },
   emptyText: {
+    marginTop: 16,
     textAlign: 'center',
     opacity: 0.6,
+    color: '#FFFFFF',
+  },
+  statsSection: {
+    marginTop: 20,
+    marginBottom: 40,
+    padding: 20,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
+  },
+  sectionTitle: {
+    marginBottom: 16,
+    color: '#E5C99C',
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    color: '#E5C99C',
+    marginBottom: 4,
+  },
+  statLabel: {
+    opacity: 0.8,
+    color: '#FFFFFF',
   },
 });

@@ -41,8 +41,8 @@ export const Button: React.FC<ButtonProps> = ({
       case 'primary':
         return {
           ...baseStyle,
-          backgroundColor: '#B48A3C',
-          shadowColor: '#B48A3C',
+          backgroundColor: '#B8860B',
+          shadowColor: '#B8860B',
           shadowOpacity: 0.3,
         };
       case 'secondary':
@@ -55,8 +55,8 @@ export const Button: React.FC<ButtonProps> = ({
       case 'danger':
         return {
           ...baseStyle,
-          backgroundColor: '#F44336',
-          shadowColor: '#F44336',
+          backgroundColor: '#B8860B',
+          shadowColor: '#B8860B',
           shadowOpacity: 0.3,
         };
       case 'outline':
@@ -64,7 +64,7 @@ export const Button: React.FC<ButtonProps> = ({
           ...baseStyle,
           backgroundColor: 'transparent',
           borderWidth: 2,
-          borderColor: '#B48A3C',
+          borderColor: '#B8860B',
         };
       default:
         return baseStyle;
@@ -81,7 +81,7 @@ export const Button: React.FC<ButtonProps> = ({
       case 'outline':
         return {
           ...baseTextStyle,
-          color: '#B48A3C',
+          color: '#B8860B',
         };
       default:
         return {

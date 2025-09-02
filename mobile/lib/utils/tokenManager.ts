@@ -1,8 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { AUTH_CONSTANTS } from '@/constants';
 
 // 토큰 저장 키
-const JWT_TOKEN_KEY = 'jwt_token';
-const USER_DATA_KEY = 'user_data';
+const JWT_TOKEN_KEY = AUTH_CONSTANTS.TOKEN.STORAGE_KEY;
+const USER_DATA_KEY = AUTH_CONSTANTS.TOKEN.USER_DATA_KEY;
 
 export interface TokenData {
   accessToken: string;
@@ -30,9 +31,11 @@ class TokenManager {
       console.log('🔐 Token preview:', tokenData.accessToken.substring(0, 30) + '...');
       console.log('🔐 User email:', tokenData.user?.email);
 
+      // 메모리에 먼저 저장
       this.currentToken = tokenData.accessToken;
       this.currentUser = tokenData.user;
 
+      // AsyncStorage에 저장
       await Promise.all([
         AsyncStorage.setItem(JWT_TOKEN_KEY, tokenData.accessToken),
         AsyncStorage.setItem(USER_DATA_KEY, JSON.stringify(tokenData.user)),
@@ -40,12 +43,27 @@ class TokenManager {
 
       console.log('🔐 Token saved successfully to AsyncStorage');
 
-      // 저장 후 검증
-      const storedToken = await AsyncStorage.getItem(JWT_TOKEN_KEY);
+      // 저장 후 즉시 검증
+      const [storedToken, storedUser] = await Promise.all([
+        AsyncStorage.getItem(JWT_TOKEN_KEY),
+        AsyncStorage.getItem(USER_DATA_KEY),
+      ]);
+
       if (storedToken === tokenData.accessToken) {
         console.log('✅ Token storage verification successful');
       } else {
         console.error('❌ Token storage verification failed');
+        console.error('Expected:', tokenData.accessToken.substring(0, 30) + '...');
+        console.error('Got:', storedToken?.substring(0, 30) + '...');
+      }
+
+      if (storedUser) {
+        const parsedUser = JSON.parse(storedUser);
+        if (parsedUser.email === tokenData.user.email) {
+          console.log('✅ User storage verification successful');
+        } else {
+          console.error('❌ User storage verification failed');
+        }
       }
     } catch (error) {
       console.error('❌ Failed to save token:', error);
@@ -69,6 +87,15 @@ class TokenManager {
       if (storedToken) {
         this.currentToken = storedToken;
         console.log('🔐 Token loaded from storage:', storedToken.substring(0, 30) + '...');
+
+        // 토큰 유효성 간단 체크 (JWT 형식 확인)
+        if (storedToken.split('.').length === 3) {
+          console.log('✅ Token format validation passed');
+        } else {
+          console.error('❌ Token format validation failed');
+          this.currentToken = null;
+          return null;
+        }
       } else {
         console.log('🔐 No token found in storage');
       }

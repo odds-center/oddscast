@@ -16,12 +16,27 @@ export const useAuthState = () => {
   });
 
   const setToken = useCallback((tokenData: { accessToken: string; user: User }) => {
-    setAuthState((prev) => ({
-      ...prev,
-      accessToken: tokenData.accessToken,
-      user: tokenData.user,
-      isAuthenticated: true,
-    }));
+    console.log('Setting token in authSlice:', {
+      user: tokenData.user.email,
+      hasToken: !!tokenData.accessToken,
+    });
+
+    setAuthState((prev) => {
+      const newState = {
+        ...prev,
+        accessToken: tokenData.accessToken,
+        user: tokenData.user,
+        isAuthenticated: true,
+      };
+
+      console.log('Auth state updated:', {
+        user: newState.user?.email,
+        isAuthenticated: newState.isAuthenticated,
+        hasToken: !!newState.accessToken,
+      });
+
+      return newState;
+    });
   }, []);
 
   const clearToken = useCallback(() => {

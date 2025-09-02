@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,8 +24,8 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   showSafeArea = true,
   showBackButton = false,
   onBackPress,
-}: PageHeaderProps) {
-  return (
+}) => {
+  const headerContent = (
     <ThemedView style={styles.container}>
       {showBackButton && onBackPress && (
         <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
@@ -60,21 +61,17 @@ const styles = StyleSheet.create({
   safeArea: {
     backgroundColor: 'transparent',
   },
-  header: {
+  container: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
   },
-  leftSection: {
-    width: 60,
-    alignItems: 'flex-start',
-  },
-  centerSection: {
+  textContainer: {
     flex: 1,
     alignItems: 'center',
   },
-  rightSection: {
+  rightContainer: {
     width: 60,
     alignItems: 'flex-end',
   },

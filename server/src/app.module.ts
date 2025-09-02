@@ -42,7 +42,7 @@ import { PointsModule } from './points/points.module';
         synchronize: false, // 개발 환경에서도 안전하게 false로 설정
         migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
         migrationsRun: false, // 자동 마이그레이션 비활성화
-        logging: configService.get('NODE_ENV') === 'development',
+        logging: process.env.DB_LOGGING === 'true' ? ['query', 'error'] : false, // 환경변수로 제어
         charset: 'utf8mb4',
       }),
       inject: [ConfigService],

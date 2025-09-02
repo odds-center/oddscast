@@ -87,15 +87,15 @@ export function BettingSummary({ totalBets, recentBets, isLoading }: BettingSumm
 function getStatusColor(status: string): string {
   switch (status) {
     case 'WIN':
-      return '#4CAF50';
+      return '#FFD700'; // 진한 골드
     case 'LOSS':
-      return '#F44336';
+      return '#B8860B'; // 다크골든로드
     case 'PENDING':
-      return '#FF9800';
+      return '#DAA520'; // 골든로드
     case 'CANCELLED':
-      return '#9E9E9E';
+      return '#CD853F'; // 페루
     default:
-      return '#2196F3';
+      return '#FFD700'; // 진한 골드
   }
 }
 

@@ -10,7 +10,7 @@ COPY nest-cli.json ./
 COPY tsconfig.json ./
 
 # 의존성 설치
-RUN npm ci
+RUN npm ci --only=production && npm cache clean --force
 
 # 소스 코드 복사
 COPY . .
@@ -21,7 +21,14 @@ RUN npm run build
 # 개발 스테이지
 FROM base AS development
 ENV NODE_ENV=development
+
+# 헬스체크를 위한 curl 설치
+RUN apk add --no-cache curl
+
+# 포트 노출
 EXPOSE 3002
+
+# 애플리케이션 실행
 CMD ["npm", "run", "start:dev"]
 
 # 프로덕션 스테이지

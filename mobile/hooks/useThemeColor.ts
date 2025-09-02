@@ -17,11 +17,11 @@ const Colors = {
   },
   dark: {
     text: '#FFFFFF',
-    background: '#1A3A2E', // 더 밝은 다크 배경색으로 변경
-    tint: '#E5C99C',
-    icon: '#9BA1A6',
-    tabIconDefault: '#9BA1A6',
-    tabIconSelected: '#E5C99C',
+    background: '#0C0C0C', // 검정 배경
+    tint: '#FFD700', // 진한 골드
+    icon: '#9BA1A6', // 회색
+    tabIconDefault: '#9BA1A6', // 회색
+    tabIconSelected: '#FFD700', // 진한 골드
   },
 };
 

@@ -279,68 +279,90 @@ export class BetsService {
     favoriteBetType: string;
     recentPerformance: any[];
   }> {
-    const bets = await this.betRepository.find({
-      where: { userId },
-      order: { betTime: 'DESC' },
-    });
+    try {
+      const bets = await this.betRepository.find({
+        where: { userId },
+        order: { betTime: 'DESC' },
+      });
 
-    const totalBets = bets.length;
-    const wonBets = bets.filter(bet => bet.betResult === BetResult.WIN).length;
-    const lostBets = bets.filter(
-      bet => bet.betResult === BetResult.LOSE
-    ).length;
-    const winRate = totalBets > 0 ? (wonBets / totalBets) * 100 : 0;
+      const totalBets = bets.length;
+      const wonBets = bets.filter(
+        bet => bet.betResult === BetResult.WIN
+      ).length;
+      const lostBets = bets.filter(
+        bet => bet.betResult === BetResult.LOSE
+      ).length;
+      const winRate = totalBets > 0 ? (wonBets / totalBets) * 100 : 0;
 
-    const totalWinnings = bets
-      .filter(bet => bet.actualWin && bet.actualWin > 0)
-      .reduce((sum, bet) => sum + bet.actualWin!, 0);
+      const totalWinnings = bets
+        .filter(bet => bet.actualWin && bet.actualWin > 0)
+        .reduce((sum, bet) => sum + bet.actualWin!, 0);
 
-    const totalLosses = bets
-      .filter(bet => bet.betResult === BetResult.LOSE)
-      .reduce((sum, bet) => sum + bet.betAmount, 0);
+      const totalLosses = bets
+        .filter(bet => bet.betResult === BetResult.LOSE)
+        .reduce((sum, bet) => sum + bet.betAmount, 0);
 
-    const totalSpent = bets.reduce((sum, bet) => sum + bet.betAmount, 0);
-    const roi =
-      totalSpent > 0 ? ((totalWinnings - totalSpent) / totalSpent) * 100 : 0;
+      const totalSpent = bets.reduce((sum, bet) => sum + bet.betAmount, 0);
+      const roi =
+        totalSpent > 0 ? ((totalWinnings - totalSpent) / totalSpent) * 100 : 0;
 
-    const averageBetAmount = totalBets > 0 ? totalSpent / totalBets : 0;
+      const averageBetAmount = totalBets > 0 ? totalSpent / totalBets : 0;
 
-    // 가장 많이 사용한 승식
-    const betTypeCounts = bets.reduce(
-      (acc, bet) => {
-        acc[bet.betType] = (acc[bet.betType] || 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>
-    );
+      // 가장 많이 사용한 승식
+      const betTypeCounts = bets.reduce(
+        (acc, bet) => {
+          acc[bet.betType] = (acc[bet.betType] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      );
 
-    const favoriteBetType = Object.entries(betTypeCounts).reduce(
-      (a, b) => (a[1] > b[1] ? a : b),
-      ['', 0]
-    )[0];
+      const favoriteBetType = Object.entries(betTypeCounts).reduce(
+        (a, b) => (a[1] > b[1] ? a : b),
+        ['', 0]
+      )[0];
 
-    // 최근 성과 (최근 10개 마권)
-    const recentPerformance = bets.slice(0, 10).map(bet => ({
-      id: bet.id,
-      betType: bet.betType,
-      betAmount: bet.betAmount,
-      result: bet.betResult,
-      actualWin: bet.actualWin,
-      betTime: bet.betTime,
-    }));
+      // 최근 성과 (최근 10개 마권)
+      const recentPerformance = bets.slice(0, 10).map(bet => ({
+        id: bet.id,
+        betType: bet.betType,
+        betAmount: bet.betAmount,
+        result: bet.betResult,
+        actualWin: bet.actualWin,
+        betTime: bet.betTime,
+      }));
 
-    return {
-      totalBets,
-      wonBets,
-      lostBets,
-      winRate,
-      totalWinnings,
-      totalLosses,
-      roi,
-      averageBetAmount,
-      favoriteBetType,
-      recentPerformance,
-    };
+      return {
+        totalBets,
+        wonBets,
+        lostBets,
+        winRate,
+        totalWinnings,
+        totalLosses,
+        roi,
+        averageBetAmount,
+        favoriteBetType,
+        recentPerformance,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Error getting bet statistics for user ${userId}: ${error.message}`
+      );
+
+      // 에러 발생 시 기본 통계 반환
+      return {
+        totalBets: 0,
+        wonBets: 0,
+        lostBets: 0,
+        winRate: 0,
+        totalWinnings: 0,
+        totalLosses: 0,
+        roi: 0,
+        averageBetAmount: 0,
+        favoriteBetType: '',
+        recentPerformance: [],
+      };
+    }
   }
 
   /**

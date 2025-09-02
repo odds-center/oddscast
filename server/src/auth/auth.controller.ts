@@ -399,6 +399,58 @@ export class AuthController {
     }
   }
 
+  @Get('me')
+  @UseGuards(AuthGuard('jwt'))
+  @ApiOperation({ summary: '현재 사용자 정보 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '현재 사용자 정보 조회 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', description: '사용자 ID' },
+        email: { type: 'string', description: '사용자 이메일' },
+        name: { type: 'string', description: '사용자 이름' },
+        avatar: { type: 'string', description: '프로필 이미지 URL' },
+        role: { type: 'string', description: '사용자 역할' },
+        authProvider: { type: 'string', description: '인증 제공자' },
+        isActive: { type: 'boolean', description: '활성 상태' },
+        isVerified: { type: 'boolean', description: '인증 상태' },
+        lastLogin: { type: 'string', format: 'date-time', description: '마지막 로그인 시간' },
+        createdAt: { type: 'string', format: 'date-time', description: '계정 생성 시간' },
+        updatedAt: { type: 'string', format: 'date-time', description: '계정 수정 시간' },
+      },
+    },
+  })
+  async getCurrentUser(@Req() req) {
+    try {
+      const userId = req.user.id;
+      this.logger.log(`현재 사용자 정보 조회: ${userId}`);
+
+      const user = await this.usersService.findById(userId);
+      
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatar: user.avatar,
+        role: user.role,
+        authProvider: user.authProvider,
+        isActive: user.isActive,
+        isVerified: user.isVerified,
+        lastLogin: user.lastLogin,
+        createdAt: user.createdAt,
+        updatedAt: user.updatedAt,
+      };
+    } catch (error) {
+      this.logger.error(`현재 사용자 정보 조회 실패: ${error.message}`);
+      throw new HttpException(
+        '사용자 정보를 조회할 수 없습니다.',
+        HttpStatus.INTERNAL_SERVER_ERROR
+      );
+    }
+  }
+
   @Post('logout')
   @ApiOperation({ summary: '로그아웃' })
   @ApiBody({

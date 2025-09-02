@@ -1,14 +1,33 @@
-import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
 import { useAuth } from '@/context/AuthProvider';
+import { useBetStatistics } from '@/lib/hooks/useBets';
+import { useUserPointBalance } from '@/lib/hooks/usePoints';
+import { useTodayRaces } from '@/lib/hooks/useRaces';
+import { BetResult } from '@/lib/types/bet';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, resetAuth } = useAuth();
+
+  // API 데이터 조회
+  const { data: betStats, isLoading: betStatsLoading } = useBetStatistics();
+  const { data: todayRaces, isLoading: racesLoading } = useTodayRaces();
+  const { data: pointBalance, isLoading: pointsLoading } = useUserPointBalance();
+
+  // 토큰 재설정 함수
+  const handleTokenReset = async () => {
+    try {
+      await resetAuth();
+      console.log('토큰 재설정 완료');
+    } catch (error) {
+      console.error('토큰 재설정 실패:', error);
+    }
+  };
 
   return (
     <PageLayout>
@@ -40,7 +59,7 @@ export default function HomeScreen() {
         <View style={styles.bettingSummary}>
           <View style={styles.bettingStat}>
             <ThemedText type='stat' style={styles.bettingNumber}>
-              0
+              {betStatsLoading ? '...' : betStats?.totalBets || 0}
             </ThemedText>
             <ThemedText type='caption' style={styles.bettingLabel}>
               총 베팅
@@ -48,7 +67,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.bettingStat}>
             <ThemedText type='stat' style={styles.bettingNumber}>
-              0
+              {betStatsLoading ? '...' : betStats?.byResult?.[BetResult.WIN]?.count || 0}
             </ThemedText>
             <ThemedText type='caption' style={styles.bettingLabel}>
               당첨
@@ -56,7 +75,7 @@ export default function HomeScreen() {
           </View>
           <View style={styles.bettingStat}>
             <ThemedText type='stat' style={styles.bettingNumber}>
-              0%
+              {betStatsLoading ? '...' : `${Math.round((betStats?.winRate || 0) * 100)}%`}
             </ThemedText>
             <ThemedText type='caption' style={styles.bettingLabel}>
               승률
@@ -70,11 +89,47 @@ export default function HomeScreen() {
         <ThemedText type='title' style={styles.sectionTitle}>
           오늘의 경주
         </ThemedText>
-        <View style={styles.emptyContainer}>
-          <ThemedText type='body' style={styles.emptyText}>
-            오늘 예정된 경주가 없습니다.
-          </ThemedText>
-        </View>
+        {racesLoading ? (
+          <View style={styles.emptyContainer}>
+            <ThemedText type='body' style={styles.emptyText}>
+              경주 정보를 불러오는 중...
+            </ThemedText>
+          </View>
+        ) : todayRaces && todayRaces.races && todayRaces.races.length > 0 ? (
+          <View style={styles.racesList}>
+            {todayRaces.races.slice(0, 3).map((race) => (
+              <TouchableOpacity
+                key={race.id}
+                style={styles.raceCard}
+                onPress={() => router.push(`/races/${race.id}`)}
+              >
+                <View style={styles.raceInfo}>
+                  <ThemedText style={styles.raceName}>{race.rcName}</ThemedText>
+                  <ThemedText style={styles.raceDetails}>
+                    {race.meetName} • {race.rcDist}m • {race.rcStartTime}
+                  </ThemedText>
+                </View>
+                <Ionicons name='chevron-forward' size={20} color='#666' />
+              </TouchableOpacity>
+            ))}
+            {todayRaces.races.length > 3 && (
+              <TouchableOpacity
+                style={styles.moreRacesButton}
+                onPress={() => router.push('/races')}
+              >
+                <ThemedText style={styles.moreRacesText}>
+                  더 많은 경주 보기 ({todayRaces.races.length - 3}개 더)
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </View>
+        ) : (
+          <View style={styles.emptyContainer}>
+            <ThemedText type='body' style={styles.emptyText}>
+              오늘 예정된 경주가 없습니다.
+            </ThemedText>
+          </View>
+        )}
       </View>
 
       {/* 빠른 액션 */}
@@ -111,6 +166,16 @@ export default function HomeScreen() {
             <ThemedText style={styles.actionCardText}>마이페이지</ThemedText>
           </TouchableOpacity>
         </View>
+      </View>
+
+      {/* 토큰 디버깅 (개발용) */}
+      <View style={styles.section}>
+        <ThemedText type='title' style={styles.sectionTitle}>
+          토큰 디버깅
+        </ThemedText>
+        <TouchableOpacity style={styles.debugButton} onPress={handleTokenReset}>
+          <ThemedText style={styles.debugButtonText}>토큰 재설정</ThemedText>
+        </TouchableOpacity>
       </View>
 
       {/* 더 많은 기능 */}
@@ -286,5 +351,60 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '500',
     fontSize: 12,
+  },
+  racesList: {
+    gap: 12,
+  },
+  raceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
+  },
+  raceInfo: {
+    flex: 1,
+  },
+  raceName: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  raceDetails: {
+    color: '#FFFFFF',
+    opacity: 0.7,
+    fontSize: 14,
+  },
+  moreRacesButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+  },
+  moreRacesText: {
+    color: '#E5C99C',
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  debugButton: {
+    backgroundColor: 'rgba(255, 0, 0, 0.1)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 0, 0, 0.3)',
+    borderRadius: 8,
+    padding: 12,
+    alignItems: 'center',
+  },
+  debugButtonText: {
+    color: '#FF6B6B',
+    fontSize: 14,
+    fontWeight: '600',
   },
 });

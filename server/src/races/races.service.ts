@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Race } from './entities/race.entity';
-import { Repository, Between } from 'typeorm';
 
 @Injectable()
 export class RacesService {
@@ -25,19 +25,37 @@ export class RacesService {
   }
 
   async findByDate(date: string): Promise<Race[]> {
-    const startDate = new Date(date);
-    const endDate = new Date(date);
-    endDate.setDate(endDate.getDate() + 1);
+    this.logger.log(`Received date parameter: ${date}`);
 
-    return this.racesRepository.find({
-      where: {
-        rcDate: Between(
-          startDate.toISOString().split('T')[0].replace(/-/g, ''),
-          endDate.toISOString().split('T')[0].replace(/-/g, '')
-        ),
-      },
-      order: { rcNo: 'ASC' },
-    });
+    // YYYYMMDD 형식인지 확인
+    if (/^\d{8}$/.test(date)) {
+      this.logger.log(`Using YYYYMMDD format: ${date}`);
+      return this.racesRepository.find({
+        where: {
+          rcDate: date,
+        },
+        order: { rcNo: 'ASC' },
+      });
+    }
+
+    // YYYY-MM-DD 형식인지 확인
+    if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      const yyyymmdd = date.replace(/-/g, '');
+      this.logger.log(
+        `Converting YYYY-MM-DD to YYYYMMDD: ${date} -> ${yyyymmdd}`
+      );
+      return this.racesRepository.find({
+        where: {
+          rcDate: yyyymmdd,
+        },
+        order: { rcNo: 'ASC' },
+      });
+    }
+
+    this.logger.warn(
+      `Invalid date format: ${date}, expected YYYYMMDD or YYYY-MM-DD`
+    );
+    return [];
   }
 
   async create(raceData: Partial<Race>): Promise<Race> {

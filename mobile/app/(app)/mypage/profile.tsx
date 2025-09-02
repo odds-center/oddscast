@@ -1,10 +1,10 @@
+import { PageLayout } from '@/components/common/PageLayout';
 import { ThemedText as Text } from '@/components/ThemedText';
+import { useAuth } from '@/context/AuthProvider';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
-import { PageLayout } from '@/components/common/PageLayout';
-import { useAuth } from '@/context/AuthProvider';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
   const { user } = useAuth();

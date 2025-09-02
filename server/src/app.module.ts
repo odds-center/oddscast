@@ -1,19 +1,19 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
-import { HealthModule } from './health/health.module';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
-import { UsersModule } from './users/users.module';
-import { RacesModule } from './races/races.module';
-import { ResultsModule } from './results/results.module';
-import { RacePlansModule } from './race-plans/race-plans.module';
-import { KraApiModule } from './external-apis/kra/kra-api.module';
 import { BatchModule } from './batch/batch.module';
-import { DataSourceModule } from './data-source/data-source.module';
 import { BetsModule } from './bets/bets.module';
+import { DataSourceModule } from './data-source/data-source.module';
+import { KraApiModule } from './external-apis/kra/kra-api.module';
+import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PointsModule } from './points/points.module';
+import { RacePlansModule } from './race-plans/race-plans.module';
+import { RacesModule } from './races/races.module';
+import { ResultsModule } from './results/results.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [

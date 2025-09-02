@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
-import { Ionicons } from '@expo/vector-icons';
 import { POINTS_CONSTANTS, POINTS_UTILS } from '@/constants/points';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function PointsScreen() {
   const [showAddModal, setShowAddModal] = useState(false);

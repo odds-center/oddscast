@@ -1,10 +1,10 @@
-import { Link, Stack, useRouter } from 'expo-router';
-import { StyleSheet } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
-import { useAuth } from '@/context/AuthProvider';
-import React, { useEffect } from 'react';
 import { Title } from '@/components/ui';
+import { useAuth } from '@/context/AuthProvider';
+import { Link, Stack, useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
 
 export default function NotFoundScreen() {
   const router = useRouter();

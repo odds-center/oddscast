@@ -1,24 +1,33 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Modal, TextInput, Switch } from 'react-native';
-import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
+import { NotificationSettingsModal } from '@/components/modals/NotificationSettingsModal';
+import { PointsEarnModal } from '@/components/modals/PointsEarnModal';
+import { PointsUseModal } from '@/components/modals/PointsUseModal';
+import { ProfileEditModal } from '@/components/modals/ProfileEditModal';
+import { POINTS_UTILS } from '@/constants/points';
 import { useAuth } from '@/context/AuthProvider';
+import { useModal } from '@/hooks/useModal';
+import { useBetStatistics } from '@/lib/hooks/useBets';
+import { useUserPointBalance } from '@/lib/hooks/usePoints';
+import { useCurrentUserProfile } from '@/lib/hooks/useUsers';
+import { BetResult } from '@/lib/types/bet';
 import { Ionicons } from '@expo/vector-icons';
-import { POINTS_CONSTANTS, POINTS_UTILS } from '@/constants/points';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  const { showModal } = useModal();
 
-  // 포인트 관련 상태
-  const [userPoints] = useState(125000);
+  // API 데이터 조회
+  const { data: userProfile, isLoading: profileLoading } = useCurrentUserProfile();
+  const { data: pointBalance, isLoading: pointsLoading } = useUserPointBalance();
+  const { data: betStats, isLoading: betStatsLoading } = useBetStatistics();
 
-  // 모달 상태들
-  const [showProfileModal, setShowProfileModal] = useState(false);
-  const [showNotificationModal, setShowNotificationModal] = useState(false);
-  const [showPointsEarnModal, setShowPointsEarnModal] = useState(false);
-  const [showPointsUseModal, setShowPointsUseModal] = useState(false);
+  // 포인트 관련 상태 (API 데이터가 없을 때 기본값)
+  const userPoints = pointBalance?.currentPoints || 125000;
 
   // 현재 레벨과 다음 레벨 계산
   const currentLevel = POINTS_UTILS.getUserLevel(userPoints);
@@ -41,22 +50,22 @@ const MyPageScreen = () => {
   const handleMenuPress = (menuName: string) => {
     switch (menuName) {
       case '프로필 편집':
-        setShowProfileModal(true);
+        showModal(<ProfileEditModal onClose={() => {}} />, '프로필 편집');
         break;
       case '즐겨찾기':
         router.push('/mypage/favorites');
         break;
       case '알림 설정':
-        setShowNotificationModal(true);
+        showModal(<NotificationSettingsModal onClose={() => {}} />, '알림 설정');
         break;
       case '도움말':
         router.push('/mypage/help');
         break;
       case '포인트 획득':
-        setShowPointsEarnModal(true);
+        showModal(<PointsEarnModal onClose={() => {}} />, '포인트 획득 방법');
         break;
       case '포인트 사용':
-        setShowPointsUseModal(true);
+        showModal(<PointsUseModal onClose={() => {}} />, '포인트 사용 방법');
         break;
       default:
         console.log(`${menuName} 기능이 곧 추가될 예정입니다.`);
@@ -75,8 +84,8 @@ const MyPageScreen = () => {
     );
   }
 
-  const username = user.name || user.email?.split('@')[0] || '사용자';
-  const email = user.email || '';
+  const username = userProfile?.name || user?.name || user?.email?.split('@')[0] || '사용자';
+  const email = userProfile?.email || user?.email || '';
 
   return (
     <PageLayout>
@@ -98,7 +107,7 @@ const MyPageScreen = () => {
             <View style={styles.userStats}>
               <View style={styles.statItem}>
                 <ThemedText type='stat' style={styles.statNumber}>
-                  15
+                  {betStatsLoading ? '...' : betStats?.totalBets || 0}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
                   총 베팅
@@ -106,15 +115,15 @@ const MyPageScreen = () => {
               </View>
               <View style={styles.statItem}>
                 <ThemedText type='stat' style={styles.statNumber}>
-                  8
+                  {betStatsLoading ? '...' : betStats?.byResult?.[BetResult.WIN]?.count || 0}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
-                  당첨
+                  승리
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
                 <ThemedText type='stat' style={styles.statNumber}>
-                  53%
+                  {betStatsLoading ? '...' : `${Math.round((betStats?.winRate || 0) * 100)}%`}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
                   승률
@@ -190,46 +199,35 @@ const MyPageScreen = () => {
         </ThemedText>
         <View style={styles.menuList}>
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('프로필 편집')}>
-            <View style={styles.menuItemLeft}>
-              <Ionicons name='person-circle' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                프로필 편집
-              </ThemedText>
+            <View style={styles.menuIcon}>
+              <Ionicons name='person' size={20} color='#E5C99C' />
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={styles.menuText}>프로필 편집</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push('/mypage/favorites')}
-          >
-            <View style={styles.menuItemLeft}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('즐겨찾기')}>
+            <View style={styles.menuIcon}>
               <Ionicons name='heart' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                즐겨찾기
-              </ThemedText>
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={styles.menuText}>즐겨찾기</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('알림 설정')}>
-            <View style={styles.menuItemLeft}>
+            <View style={styles.menuIcon}>
               <Ionicons name='notifications' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                알림 설정
-              </ThemedText>
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={styles.menuText}>알림 설정</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => router.push('/mypage/help')}>
-            <View style={styles.menuItemLeft}>
+          <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('도움말')}>
+            <View style={styles.menuIcon}>
               <Ionicons name='help-circle' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                도움말
-              </ThemedText>
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={styles.menuText}>도움말</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
         </View>
       </View>
@@ -240,42 +238,20 @@ const MyPageScreen = () => {
           계정 관리
         </ThemedText>
         <View style={styles.menuList}>
-          <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => handleMenuPress('개인정보 처리방침')}
-          >
-            <View style={styles.menuItemLeft}>
-              <Ionicons name='shield-checkmark' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                개인정보 처리방침
-              </ThemedText>
+          <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
+            <View style={styles.menuIcon}>
+              <Ionicons name='log-out' size={20} color='#FF6B6B' />
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={[styles.menuText, styles.dangerText]}>로그아웃</ThemedText>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('이용약관')}>
-            <View style={styles.menuItemLeft}>
-              <Ionicons name='document-text' size={20} color='#E5C99C' />
-              <ThemedText type='body' style={styles.menuText}>
-                이용약관
-              </ThemedText>
+          <TouchableOpacity style={styles.menuItem} onPress={handleDeleteAccount}>
+            <View style={styles.menuIcon}>
+              <Ionicons name='trash' size={20} color='#FF6B6B' />
             </View>
-            <Ionicons name='chevron-forward' size={16} color='#E5C99C' />
+            <ThemedText style={[styles.menuText, styles.dangerText]}>계정 삭제</ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
-
-      {/* 액션 버튼 */}
-      <View style={styles.section}>
-        <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut}>
-          <Ionicons name='log-out' size={20} color='#FFFFFF' />
-          <ThemedText style={styles.signOutButtonText}>로그아웃</ThemedText>
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.deleteAccountButton} onPress={handleDeleteAccount}>
-          <Ionicons name='trash' size={20} color='#FF3B30' />
-          <ThemedText style={styles.deleteAccountButtonText}>계정 삭제</ThemedText>
-        </TouchableOpacity>
       </View>
 
       {/* 앱 정보 */}
@@ -289,273 +265,6 @@ const MyPageScreen = () => {
           </ThemedText>
         </View>
       </View>
-
-      {/* 프로필 편집 모달 */}
-      <Modal
-        visible={showProfileModal}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setShowProfileModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
-                프로필 편집
-              </ThemedText>
-              <TouchableOpacity onPress={() => setShowProfileModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.inputGroup}>
-                <ThemedText type='body' style={styles.inputLabel}>
-                  닉네임
-                </ThemedText>
-                <TextInput
-                  style={styles.modalInput}
-                  placeholder={username}
-                  placeholderTextColor='#999'
-                  defaultValue={username}
-                />
-              </View>
-              <View style={styles.inputGroup}>
-                <ThemedText type='body' style={styles.inputLabel}>
-                  자기소개
-                </ThemedText>
-                <TextInput
-                  style={[styles.modalInput, styles.textArea]}
-                  placeholder='자기소개를 입력하세요'
-                  placeholderTextColor='#999'
-                  multiline
-                  numberOfLines={3}
-                />
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => {
-                  console.log('프로필 저장');
-                  setShowProfileModal(false);
-                }}
-              >
-                <ThemedText style={styles.modalButtonText}>저장</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 알림 설정 모달 */}
-      <Modal
-        visible={showNotificationModal}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setShowNotificationModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
-                알림 설정
-              </ThemedText>
-              <TouchableOpacity onPress={() => setShowNotificationModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <ThemedText type='body' style={styles.settingLabel}>
-                    경주 알림
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.settingDescription}>
-                    새로운 경주 정보 알림
-                  </ThemedText>
-                </View>
-                <Switch
-                  value={true}
-                  onValueChange={() => {}}
-                  trackColor={{ false: '#767577', true: '#B48A3C' }}
-                  thumbColor={'#FFFFFF'}
-                />
-              </View>
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <ThemedText type='body' style={styles.settingLabel}>
-                    베팅 결과 알림
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.settingDescription}>
-                    베팅 결과 알림
-                  </ThemedText>
-                </View>
-                <Switch
-                  value={true}
-                  onValueChange={() => {}}
-                  trackColor={{ false: '#767577', true: '#B48A3C' }}
-                  thumbColor={'#FFFFFF'}
-                />
-              </View>
-              <View style={styles.settingItem}>
-                <View style={styles.settingInfo}>
-                  <ThemedText type='body' style={styles.settingLabel}>
-                    이벤트 알림
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.settingDescription}>
-                    이벤트 및 보상 알림
-                  </ThemedText>
-                </View>
-                <Switch
-                  value={false}
-                  onValueChange={() => {}}
-                  trackColor={{ false: '#767577', true: '#B48A3C' }}
-                  thumbColor={'#FFFFFF'}
-                />
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => {
-                  console.log('알림 설정 저장');
-                  setShowNotificationModal(false);
-                }}
-              >
-                <ThemedText style={styles.modalButtonText}>저장</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 포인트 획득 모달 */}
-      <Modal
-        visible={showPointsEarnModal}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setShowPointsEarnModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
-                포인트 획득 방법
-              </ThemedText>
-              <TouchableOpacity onPress={() => setShowPointsEarnModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.earnMethodItem}>
-                <Ionicons name='trophy' size={24} color='#FFD700' />
-                <View style={styles.earnMethodInfo}>
-                  <ThemedText type='body' style={styles.earnMethodTitle}>
-                    베팅 승리
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.earnMethodDescription}>
-                    베팅에서 승리하면 포인트를 획득합니다
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.earnMethodItem}>
-                <Ionicons name='calendar' size={24} color='#FFD700' />
-                <View style={styles.earnMethodInfo}>
-                  <ThemedText type='body' style={styles.earnMethodTitle}>
-                    일일 보상
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.earnMethodDescription}>
-                    매일 로그인하면 포인트를 받습니다
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.earnMethodItem}>
-                <Ionicons name='gift' size={24} color='#FFD700' />
-                <View style={styles.earnMethodInfo}>
-                  <ThemedText type='body' style={styles.earnMethodTitle}>
-                    이벤트 참여
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.earnMethodDescription}>
-                    특별 이벤트에 참여하여 포인트를 획득합니다
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowPointsEarnModal(false)}
-              >
-                <ThemedText style={styles.modalButtonText}>확인</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
-
-      {/* 포인트 사용 모달 */}
-      <Modal
-        visible={showPointsUseModal}
-        transparent
-        animationType='slide'
-        onRequestClose={() => setShowPointsUseModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
-                포인트 사용 방법
-              </ThemedText>
-              <TouchableOpacity onPress={() => setShowPointsUseModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.modalBody}>
-              <View style={styles.useMethodItem}>
-                <Ionicons name='game-controller' size={24} color='#FFD700' />
-                <View style={styles.useMethodInfo}>
-                  <ThemedText type='body' style={styles.useMethodTitle}>
-                    베팅에 사용
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.useMethodDescription}>
-                    포인트로 베팅에 참여할 수 있습니다
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.useMethodItem}>
-                <Ionicons name='color-palette' size={24} color='#FFD700' />
-                <View style={styles.useMethodInfo}>
-                  <ThemedText type='body' style={styles.useMethodTitle}>
-                    프로필 커스터마이징
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.useMethodDescription}>
-                    프로필 테마나 아이템을 구매할 수 있습니다
-                  </ThemedText>
-                </View>
-              </View>
-              <View style={styles.useMethodItem}>
-                <Ionicons name='star' size={24} color='#FFD700' />
-                <View style={styles.useMethodInfo}>
-                  <ThemedText type='body' style={styles.useMethodTitle}>
-                    특별 기능 해금
-                  </ThemedText>
-                  <ThemedText type='caption' style={styles.useMethodDescription}>
-                    VIP 기능이나 특별 혜택을 해금할 수 있습니다
-                  </ThemedText>
-                </View>
-              </View>
-            </View>
-            <View style={styles.modalFooter}>
-              <TouchableOpacity
-                style={styles.modalButton}
-                onPress={() => setShowPointsUseModal(false)}
-              >
-                <ThemedText style={styles.modalButtonText}>확인</ThemedText>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </PageLayout>
   );
 };
@@ -570,20 +279,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textAlign: 'center',
   },
-  header: {
-    padding: 20,
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  title: {
-    marginBottom: 8,
-    color: '#B48A3C',
-  },
-  subtitle: {
-    textAlign: 'center',
-    opacity: 0.8,
-    color: '#FFFFFF',
-  },
   section: {
     marginBottom: 24,
     padding: 20,
@@ -593,149 +288,92 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(180, 138, 60, 0.2)',
   },
   sectionTitle: {
-    marginBottom: 16,
     color: '#E5C99C',
+    marginBottom: 16,
+    fontSize: 18,
+    fontWeight: '600',
   },
   profileContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   avatarContainer: {
-    marginBottom: 16,
+    marginRight: 16,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#B48A3C',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: 'rgba(180, 138, 60, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#B48A3C',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 6,
+    borderWidth: 2,
+    borderColor: '#B48A3C',
   },
   profileInfo: {
-    alignItems: 'center',
-    width: '100%',
+    flex: 1,
   },
   username: {
-    marginBottom: 8,
     color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   email: {
-    marginBottom: 16,
     color: '#FFFFFF',
-    opacity: 0.8,
+    opacity: 0.7,
+    fontSize: 14,
+    marginBottom: 12,
   },
   userStats: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    gap: 20,
   },
   statItem: {
     alignItems: 'center',
-    flex: 1,
   },
   statNumber: {
     color: '#E5C99C',
-    marginBottom: 4,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 2,
   },
   statLabel: {
     color: '#FFFFFF',
-    opacity: 0.8,
+    opacity: 0.7,
+    fontSize: 12,
   },
-  menuList: {
-    gap: 8,
-  },
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.1)',
-  },
-  menuItemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  menuText: {
-    color: '#FFFFFF',
-  },
-  signOutButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#B48A3C',
-    paddingVertical: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    gap: 8,
-  },
-  signOutButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  deleteAccountButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: 'rgba(255, 59, 48, 0.1)',
-    paddingVertical: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 59, 48, 0.3)',
-    gap: 8,
-  },
-  deleteAccountButtonText: {
-    color: '#FF3B30',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  appInfo: {
-    alignItems: 'center',
-  },
-  appInfoText: {
-    color: '#FFFFFF',
-    opacity: 0.6,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  // 포인트 관련 스타일
   balanceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 16,
   },
   balanceInfo: {
     flex: 1,
   },
   balanceLabel: {
-    marginBottom: 8,
     color: '#FFFFFF',
-    opacity: 0.8,
+    opacity: 0.7,
+    fontSize: 14,
+    marginBottom: 4,
   },
   balanceAmount: {
     color: '#E5C99C',
-    fontWeight: 'bold',
+    fontSize: 24,
+    fontWeight: '600',
   },
   balanceActions: {
     flexDirection: 'row',
-    gap: 12,
+    gap: 8,
   },
   actionButton: {
+    backgroundColor: '#B48A3C',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#B48A3C',
     gap: 4,
   },
   actionButtonText: {
@@ -744,174 +382,85 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   levelContainer: {
-    gap: 16,
+    gap: 12,
   },
   currentLevel: {
-    alignItems: 'center',
-  },
-  levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
+    justifyContent: 'space-between',
+  },
+  levelBadge: {
     backgroundColor: 'rgba(180, 138, 60, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-    gap: 8,
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
   },
   levelText: {
     color: '#E5C99C',
+    fontSize: 14,
+    fontWeight: '600',
   },
   levelDescription: {
-    marginTop: 8,
-    textAlign: 'center',
     color: '#FFFFFF',
-    opacity: 0.8,
+    opacity: 0.7,
+    fontSize: 12,
   },
   levelProgress: {
     gap: 8,
   },
   progressBar: {
-    height: 8,
+    height: 6,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 4,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#E5C99C',
-    borderRadius: 4,
+    backgroundColor: '#B48A3C',
+    borderRadius: 3,
   },
   progressText: {
+    color: '#FFFFFF',
+    opacity: 0.7,
+    fontSize: 12,
     textAlign: 'center',
-    color: '#FFFFFF',
-    opacity: 0.6,
   },
-  // 모달 관련 스타일
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+  menuList: {
+    gap: 8,
   },
-  modalContent: {
-    backgroundColor: '#1A1A1A',
-    borderRadius: 20,
-    padding: 24,
-    width: '85%',
-    maxWidth: 400,
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-  },
-  modalHeader: {
+  menuItem: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  modalTitle: {
-    color: '#FFFFFF',
-    flex: 1,
-  },
-  modalBody: {
-    marginBottom: 24,
-  },
-  modalFooter: {
-    alignItems: 'center',
-  },
-  modalButton: {
-    backgroundColor: '#B48A3C',
-    borderRadius: 12,
     paddingVertical: 16,
-    paddingHorizontal: 32,
-    width: '100%',
-    alignItems: 'center',
+    paddingHorizontal: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.2)',
   },
-  modalButtonText: {
+  menuIcon: {
+    marginRight: 12,
+  },
+  menuText: {
     color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: '600',
-  },
-  // 입력 필드 스타일
-  inputGroup: {
-    marginBottom: 20,
-  },
-  inputLabel: {
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  modalInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 12,
-    padding: 16,
-    color: '#FFFFFF',
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-  },
-  textArea: {
-    height: 80,
-    textAlignVertical: 'top',
-  },
-  // 설정 아이템 스타일
-  settingItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  settingInfo: {
+    fontWeight: '500',
     flex: 1,
   },
-  settingLabel: {
-    color: '#FFFFFF',
-    marginBottom: 4,
+  dangerText: {
+    color: '#FF6B6B',
   },
-  settingDescription: {
-    color: '#FFFFFF',
-    opacity: 0.7,
-  },
-  // 포인트 획득/사용 방법 스타일
-  earnMethodItem: {
-    flexDirection: 'row',
+  appInfo: {
     alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    gap: 4,
   },
-  earnMethodInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  earnMethodTitle: {
+  appInfoText: {
     color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  earnMethodDescription: {
-    color: '#FFFFFF',
-    opacity: 0.7,
-  },
-  useMethodItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  useMethodInfo: {
-    flex: 1,
-    marginLeft: 16,
-  },
-  useMethodTitle: {
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  useMethodDescription: {
-    color: '#FFFFFF',
-    opacity: 0.7,
+    opacity: 0.5,
+    fontSize: 12,
   },
 });
 

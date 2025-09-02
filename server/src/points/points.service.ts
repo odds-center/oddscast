@@ -29,17 +29,32 @@ export class PointsService {
    * 사용자의 포인트 잔액을 조회합니다.
    */
   async getUserPointBalance(userId: string): Promise<UserPointBalance> {
-    const balance = await this.pointBalanceRepository.findOne({
-      where: { userId },
-    });
+    try {
+      const balance = await this.pointBalanceRepository.findOne({
+        where: { userId },
+      });
 
-    if (!balance) {
-      throw new NotFoundException(
-        `사용자 포인트 잔액을 찾을 수 없습니다: ${userId}`
-      );
+      if (!balance) {
+        // 사용자가 없으면 기본 포인트 잔액 생성
+        this.logger.log(`Creating default point balance for user: ${userId}`);
+
+        const defaultBalance = this.pointBalanceRepository.create({
+          userId,
+          currentPoints: 0,
+          totalPointsEarned: 0,
+          totalPointsSpent: 0,
+          bonusPoints: 0,
+          lastUpdated: new Date(),
+        });
+
+        return await this.pointBalanceRepository.save(defaultBalance);
+      }
+
+      return balance;
+    } catch (error) {
+      this.logger.error(`Error getting user point balance: ${error.message}`);
+      throw error;
     }
-
-    return balance;
   }
 
   /**

@@ -1,57 +1,49 @@
-// 공통 API 타입 정의
-export interface ApiResponse<T = any> {
-  success: boolean;
+// 공통 API 응답 타입들
+export interface ApiResponse<T> {
   data: T;
-  message: string;
-  pagination?: {
-    limit: number;
-    offset: number;
-    count: number;
-    total: number;
+  message?: string;
+  status: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: {
     page: number;
+    limit: number;
+    total: number;
     totalPages: number;
   };
 }
 
+// API 에러 타입
 export interface ApiError {
   status: number;
   message: string;
   errors?: Record<string, string[]>;
 }
 
-// API 요청 기본 설정
-export interface ApiRequestConfig {
-  timeout?: number;
-  headers?: Record<string, string>;
-}
+// 공통 타입들 (다른 파일에서 재정의되지 않는 것들)
+// BetStatistics는 bet.ts에서 정의됨
 
-// 페이지네이션 타입
-export interface PaginationParams {
-  page?: number;
-  limit?: number;
-}
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  total: number;
-  page: number;
-  totalPages: number;
-  limit: number;
-}
-
-// 검색 타입
-export interface SearchParams extends PaginationParams {
-  query: string;
-  filters?: Record<string, any>;
-}
-
-// 정렬 타입
-export interface SortParams {
-  field: string;
-  order: 'asc' | 'desc';
-}
-
-// 필터 타입
-export interface FilterParams {
-  [key: string]: string | number | boolean | string[] | number[];
-}
+// 다른 타입 파일들에서 export하는 타입들을 re-export
+export type { AuthResponse, LoginRequest, RegisterRequest } from './auth';
+export type {
+  Bet,
+  BetFilters,
+  BetResult,
+  BetStatistics,
+  BetStatus,
+  BetType,
+  CreateBetRequest,
+  UpdateBetRequest,
+} from './bet';
+export type {
+  CreateFavoriteRequest,
+  Favorite,
+  FavoriteFilters,
+  UpdateFavoriteRequest,
+} from './favorite';
+export type { Notification, NotificationPreferences } from './notification';
+export type { PointTransactionType, UserPointBalance, UserPoints } from './point';
+export type { DividendRate, EntryDetail, Race, RaceDetail, RaceFilters, RaceResult } from './race';
+export type { User, UserProfile, UserStatistics } from './user';

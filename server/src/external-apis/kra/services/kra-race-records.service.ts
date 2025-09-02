@@ -24,7 +24,8 @@ export class KraRaceRecordsService extends ApiClientBase {
 
     super(
       {
-        baseURL: raceRecordsEndpoint.url,
+        baseURL:
+          raceRecordsEndpoint?.url || 'https://apis.data.go.kr/B551015/API4_3',
         timeout: config.timeout,
         maxRetries: config.maxRetries,
       },

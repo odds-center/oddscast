@@ -1,6 +1,6 @@
-import { useColorScheme } from '../hooks/useColorScheme';
 import { Lato_400Regular, Lato_700Bold } from '@expo-google-fonts/lato';
 import { PlayfairDisplay_700Bold, useFonts } from '@expo-google-fonts/playfair-display';
+import { useColorScheme } from '../hooks/useColorScheme';
 
 export const useLoadFonts = () => {
   return useFonts({

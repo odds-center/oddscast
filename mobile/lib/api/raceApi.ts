@@ -1,6 +1,6 @@
-import { apiClient, handleApiResponse, handleApiError } from '@/lib/utils/axios';
-import { ApiResponse } from '@/lib/types/api';
-import { Race, RaceFilters, RaceDetail, RaceResult, DividendRate } from '@/lib/types/race';
+import { ApiResponse, Race, RaceFilters } from '@/lib/types/api';
+import { DividendRate, RaceDetail, RaceResult } from '@/lib/types/race';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
 
 export class RaceApi {
   private static instance: RaceApi;
@@ -35,7 +35,7 @@ export class RaceApi {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           races: Race[];
           total: number;
@@ -52,7 +52,7 @@ export class RaceApi {
 
   static async getRace(raceId: string): Promise<RaceDetail> {
     try {
-      const response = await apiClient.get<ApiResponse<RaceDetail>>(`/races/${raceId}`);
+      const response = await axiosInstance.get<ApiResponse<RaceDetail>>(`/races/${raceId}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -61,7 +61,7 @@ export class RaceApi {
 
   static async createRace(raceData: Partial<Race>): Promise<Race> {
     try {
-      const response = await apiClient.post<ApiResponse<Race>>('/races', raceData);
+      const response = await axiosInstance.post<ApiResponse<Race>>('/races', raceData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -70,7 +70,7 @@ export class RaceApi {
 
   static async updateRace(raceId: string, updateData: Partial<Race>): Promise<Race> {
     try {
-      const response = await apiClient.put<ApiResponse<Race>>(`/races/${raceId}`, updateData);
+      const response = await axiosInstance.put<ApiResponse<Race>>(`/races/${raceId}`, updateData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -79,7 +79,9 @@ export class RaceApi {
 
   static async deleteRace(raceId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{ message: string }>>(`/races/${raceId}`);
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
+        `/races/${raceId}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -88,7 +90,9 @@ export class RaceApi {
 
   static async getRaceResults(raceId: string): Promise<RaceResult[]> {
     try {
-      const response = await apiClient.get<ApiResponse<RaceResult[]>>(`/races/${raceId}/results`);
+      const response = await axiosInstance.get<ApiResponse<RaceResult[]>>(
+        `/races/${raceId}/results`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -97,9 +101,12 @@ export class RaceApi {
 
   static async updateRaceResults(raceId: string, results: RaceResult[]): Promise<RaceResult[]> {
     try {
-      const response = await apiClient.put<ApiResponse<RaceResult[]>>(`/races/${raceId}/results`, {
-        results,
-      });
+      const response = await axiosInstance.put<ApiResponse<RaceResult[]>>(
+        `/races/${raceId}/results`,
+        {
+          results,
+        }
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -108,7 +115,7 @@ export class RaceApi {
 
   static async getRaceDividends(raceId: string): Promise<DividendRate[]> {
     try {
-      const response = await apiClient.get<ApiResponse<DividendRate[]>>(
+      const response = await axiosInstance.get<ApiResponse<DividendRate[]>>(
         `/races/${raceId}/dividends`
       );
       return handleApiResponse(response);
@@ -119,7 +126,7 @@ export class RaceApi {
 
   static async getRaceEntries(raceId: string): Promise<any[]> {
     try {
-      const response = await apiClient.get<ApiResponse<any[]>>(`/races/${raceId}/entries`);
+      const response = await axiosInstance.get<ApiResponse<any[]>>(`/races/${raceId}/entries`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -140,7 +147,7 @@ export class RaceApi {
       if (filters?.month) params.append('month', filters.month);
       if (filters?.year) params.append('year', filters.year);
 
-      const response = await apiClient.get<ApiResponse<any>>(
+      const response = await axiosInstance.get<ApiResponse<any>>(
         `/races/statistics?${params.toString()}`
       );
       return handleApiResponse(response);
@@ -151,7 +158,7 @@ export class RaceApi {
 
   static async getRaceAnalysis(raceId: string): Promise<any> {
     try {
-      const response = await apiClient.get<ApiResponse<any>>(`/races/${raceId}/analysis`);
+      const response = await axiosInstance.get<ApiResponse<any>>(`/races/${raceId}/analysis`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -172,7 +179,7 @@ export class RaceApi {
       if (filters?.month) params.append('month', filters.month);
       if (filters?.year) params.append('year', filters.year);
 
-      const response = await apiClient.get<ApiResponse<any[]>>(
+      const response = await axiosInstance.get<ApiResponse<any[]>>(
         `/races/schedule?${params.toString()}`
       );
       return handleApiResponse(response);
@@ -187,7 +194,7 @@ export class RaceApi {
       params.append('year', year.toString());
       if (month) params.append('month', month.toString());
 
-      const response = await apiClient.get<ApiResponse<any>>(
+      const response = await axiosInstance.get<ApiResponse<any>>(
         `/races/calendar?${params.toString()}`
       );
       return handleApiResponse(response);
@@ -216,7 +223,7 @@ export class RaceApi {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           races: Race[];
           total: number;

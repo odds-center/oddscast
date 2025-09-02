@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
+import { BETTING_UTILS } from '@/constants/betting';
 import { Ionicons } from '@expo/vector-icons';
-import { BETTING_CONSTANTS, BETTING_UTILS } from '@/constants/betting';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function BettingScreen() {
   const router = useRouter();

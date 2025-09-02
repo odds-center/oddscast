@@ -1,15 +1,18 @@
+import { GlobalModal } from '@/components/common/GlobalModal';
 import { useLoadFonts } from '@/constants/theme';
+import { AlertProvider } from '@/context/AlertProvider';
 import { AppThemeProvider } from '@/context/AppThemeProvider';
 import { AuthProvider, useAuth } from '@/context/AuthProvider';
-import { AlertProvider } from '@/context/AlertProvider';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { queryClient } from '@/lib/queryClient';
+import { store } from '@/store';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { SplashScreen, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import 'react-native-reanimated';
+import { Provider } from 'react-redux';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -26,7 +29,7 @@ function RootLayoutNav() {
     colorSchemeLoading,
     loaded,
     shouldShowAuth: !user,
-    shouldShowApp: !!user
+    shouldShowApp: !!user,
   });
 
   useEffect(() => {
@@ -52,6 +55,7 @@ function RootLayoutNav() {
             <Stack.Screen name='+not-found' />
           </Stack>
           <StatusBar style='auto' />
+          <GlobalModal />
         </AlertProvider>
       </AppThemeProvider>
     </ThemeProvider>
@@ -60,10 +64,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <RootLayoutNav />
-      </AuthProvider>
-    </QueryClientProvider>
+    <Provider store={store}>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <RootLayoutNav />
+        </AuthProvider>
+      </QueryClientProvider>
+    </Provider>
   );
 }

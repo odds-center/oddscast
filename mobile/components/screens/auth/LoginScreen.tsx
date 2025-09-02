@@ -4,7 +4,7 @@ import { useAuth } from '@/context/AuthProvider';
 import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
   const { user, signIn } = useAuth();

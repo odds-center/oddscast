@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
-import { ThemedText as Text } from '@/components/ThemedText';
-import { Ionicons } from '@expo/vector-icons';
 import { PageLayout } from '@/components/common/PageLayout';
+import { ThemedText as Text } from '@/components/ThemedText';
+import { useHorseFavorites, useRemoveFavorite } from '@/lib/hooks/useFavorites';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const mockFavorites = [
   { id: '1', name: '금빛질주', recent: '1위, 2위, 1위' },
@@ -12,10 +13,17 @@ const mockFavorites = [
 
 export default function FavoritesScreen() {
   const router = useRouter();
-  const [favorites, setFavorites] = useState(mockFavorites);
 
-  const removeFavorite = (id: string) => {
-    setFavorites(favorites.filter((f) => f.id !== id));
+  // API 데이터 조회
+  const { data: favorites = [], isLoading: favoritesLoading } = useHorseFavorites();
+  const removeFavoriteMutation = useRemoveFavorite();
+
+  const handleRemoveFavorite = async (id: string) => {
+    try {
+      await removeFavoriteMutation.mutateAsync(id);
+    } catch (error) {
+      console.error('즐겨찾기 삭제 실패:', error);
+    }
   };
 
   return (
@@ -37,14 +45,19 @@ export default function FavoritesScreen() {
 
       {/* 즐겨찾기 목록 */}
       <View style={styles.section}>
-        {favorites.length > 0 ? (
-          favorites.map((item) => (
+        {favoritesLoading ? (
+          <View style={styles.emptyContainer}>
+            <Ionicons name='refresh' size={48} color='#666' />
+            <Text style={styles.empty}>즐겨찾기를 불러오는 중...</Text>
+          </View>
+        ) : favorites && 'favorites' in favorites && favorites.favorites.length > 0 ? (
+          favorites.favorites.map((item: any) => (
             <View key={item.id} style={styles.item}>
               <View>
-                <Text style={styles.name}>{item.name}</Text>
-                <Text style={styles.recent}>최근 성적: {item.recent}</Text>
+                <Text style={styles.name}>{item.targetName}</Text>
+                <Text style={styles.recent}>타입: {item.type}</Text>
               </View>
-              <TouchableOpacity onPress={() => removeFavorite(item.id)}>
+              <TouchableOpacity onPress={() => handleRemoveFavorite(item.id)}>
                 <Ionicons name='trash' size={22} color='#FF3B30' />
               </TouchableOpacity>
             </View>

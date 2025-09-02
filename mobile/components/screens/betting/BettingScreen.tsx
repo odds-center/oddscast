@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Ionicons } from '@expo/vector-icons';
 import { BETTING_CONSTANTS, BETTING_UTILS } from '@/constants/betting';
+import { useCreateBet } from '@/lib/hooks/useBets';
+import { useUserPointBalance } from '@/lib/hooks/usePoints';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
 
 interface BettingScreenProps {
   raceId?: string;
@@ -20,6 +21,10 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
   const [selectedHorses, setSelectedHorses] = useState<string[]>([]);
   const [betAmount, setBetAmount] = useState<number>(BETTING_CONSTANTS.AMOUNTS.DEFAULT);
   const [betReason, setBetReason] = useState('');
+
+  // API 훅들
+  const createBetMutation = useCreateBet();
+  const { data: pointBalance, isLoading: pointsLoading } = useUserPointBalance();
 
   // 승식 선택
   const handleBetTypeSelect = (betType: string) => {
@@ -56,13 +61,34 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
       return;
     }
 
-    console.log('마권이 성공적으로 구매되었습니다!');
-    onBetPlaced?.();
+    if (pointBalance && betAmount > pointBalance.currentPoints) {
+      console.log('포인트가 부족합니다.');
+      return;
+    }
 
-    // 화면 초기화
-    setSelectedHorses([]);
-    setBetAmount(BETTING_CONSTANTS.AMOUNTS.DEFAULT);
-    setBetReason('');
+    try {
+      await createBetMutation.mutateAsync({
+        raceId,
+        betType: selectedBetType as any,
+        betName: `${selectedBetType} - ${selectedHorses.join(', ')}번마`,
+        betDescription: `${selectedBetType} 베팅`,
+        betAmount,
+        betReason,
+        selections: {
+          horses: selectedHorses,
+        },
+      });
+
+      console.log('마권이 성공적으로 구매되었습니다!');
+      onBetPlaced?.();
+
+      // 화면 초기화
+      setSelectedHorses([]);
+      setBetAmount(BETTING_CONSTANTS.AMOUNTS.DEFAULT);
+      setBetReason('');
+    } catch (error) {
+      console.error('마권 구매 실패:', error);
+    }
   };
 
   // 베팅 타입별 최대 마 수

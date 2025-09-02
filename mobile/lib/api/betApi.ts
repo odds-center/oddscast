@@ -11,7 +11,7 @@ import type {
   CreateBetRequest,
   UpdateBetRequest,
 } from '@/lib/types/bet';
-import { apiClient, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
 import qs from 'qs';
 
 // 베팅 API 클래스
@@ -31,7 +31,7 @@ export class BetApi {
   // 정적 메서드들 - 인스턴스 생성 없이 직접 사용 가능
   static async createBet(betData: CreateBetRequest): Promise<Bet> {
     try {
-      const response = await apiClient.post<ApiResponse<Bet>>('/bets', betData);
+      const response = await axiosInstance.post<ApiResponse<Bet>>('/bets', betData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -40,7 +40,7 @@ export class BetApi {
 
   static async getBet(betId: string): Promise<Bet> {
     try {
-      const response = await apiClient.get<ApiResponse<Bet>>(`/bets/${betId}`);
+      const response = await axiosInstance.get<ApiResponse<Bet>>(`/bets/${betId}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -59,7 +59,7 @@ export class BetApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           bets: Bet[];
           total: number;
@@ -76,7 +76,7 @@ export class BetApi {
 
   static async updateBet(betId: string, updateData: UpdateBetRequest): Promise<Bet> {
     try {
-      const response = await apiClient.put<ApiResponse<Bet>>(`/bets/${betId}`, updateData);
+      const response = await axiosInstance.put<ApiResponse<Bet>>(`/bets/${betId}`, updateData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -85,7 +85,9 @@ export class BetApi {
 
   static async deleteBet(betId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{ message: string }>>(`/bets/${betId}`);
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
+        `/bets/${betId}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -94,7 +96,7 @@ export class BetApi {
 
   static async cancelBet(betId: string): Promise<Bet> {
     try {
-      const response = await apiClient.patch<ApiResponse<Bet>>(`/bets/${betId}/cancel`);
+      const response = await axiosInstance.patch<ApiResponse<Bet>>(`/bets/${betId}/cancel`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -107,7 +109,7 @@ export class BetApi {
     actualWin?: number
   ): Promise<Bet> {
     try {
-      const response = await apiClient.patch<ApiResponse<Bet>>(`/bets/${betId}/result`, {
+      const response = await axiosInstance.patch<ApiResponse<Bet>>(`/bets/${betId}/result`, {
         result,
         actualWin,
       });
@@ -129,7 +131,7 @@ export class BetApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<ApiResponse<BetStatistics>>(
+      const response = await axiosInstance.get<ApiResponse<BetStatistics>>(
         `/bets/statistics?${queryString}`
       );
       return handleApiResponse(response);
@@ -140,7 +142,7 @@ export class BetApi {
 
   static async getBetAnalysis(betId: string): Promise<BetAnalysis> {
     try {
-      const response = await apiClient.get<ApiResponse<BetAnalysis>>(`/bets/${betId}/analysis`);
+      const response = await axiosInstance.get<ApiResponse<BetAnalysis>>(`/bets/${betId}/analysis`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -149,14 +151,14 @@ export class BetApi {
 
   static async createBetSlip(
     raceId: string,
-    bets: Array<{
+    bets: {
       betType: BetType;
       amount: number;
       selections: string[];
-    }>
+    }[]
   ): Promise<BetSlip> {
     try {
-      const response = await apiClient.post<ApiResponse<BetSlip>>(`/bets/slip`, {
+      const response = await axiosInstance.post<ApiResponse<BetSlip>>(`/bets/slip`, {
         raceId,
         bets,
       });
@@ -168,7 +170,7 @@ export class BetApi {
 
   static async confirmBetSlip(slipId: string): Promise<{ message: string; bets: Bet[] }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string; bets: Bet[] }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string; bets: Bet[] }>>(
         `/bets/slip/${slipId}/confirm`
       );
       return handleApiResponse(response);
@@ -184,7 +186,9 @@ export class BetApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<ApiResponse<BetHistory>>(`/bets/history?${queryString}`);
+      const response = await axiosInstance.get<ApiResponse<BetHistory>>(
+        `/bets/history?${queryString}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -207,7 +211,7 @@ export class BetApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           bets: Bet[];
           total: number;
@@ -230,7 +234,7 @@ export class BetApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get(`/bets/export?${queryString}`, {
+      const response = await axiosInstance.get(`/bets/export?${queryString}`, {
         responseType: 'blob',
       });
       return response.data;
@@ -292,11 +296,11 @@ export class BetApi {
 
   async createBetSlipInstance(
     raceId: string,
-    bets: Array<{
+    bets: {
       betType: BetType;
       amount: number;
       selections: string[];
-    }>
+    }[]
   ): Promise<BetSlip> {
     return BetApi.createBetSlip(raceId, bets);
   }

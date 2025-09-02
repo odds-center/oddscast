@@ -1,25 +1,24 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  HttpCode,
-  HttpStatus,
-  Param,
   Post,
   Put,
+  Patch,
+  Delete,
+  Body,
+  Param,
   Query,
   Request,
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
-  ApiBody,
+  ApiTags,
   ApiOperation,
+  ApiResponse,
+  ApiBody,
   ApiParam,
   ApiQuery,
-  ApiResponse,
-  ApiTags,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { BetsService } from './bets.service';
@@ -98,12 +97,12 @@ export class BetsController {
         betReason: {
           type: 'string',
           description: '마권 구매 이유',
-          example: '최근 상태가 좋고 기수도 유능합니다.',
+          example: '과거 성적이 좋습니다.',
         },
         confidenceLevel: {
           type: 'number',
           description: '신뢰도 (0-100)',
-          example: 75,
+          example: 85,
         },
         analysisData: {
           type: 'object',
@@ -132,239 +131,9 @@ export class BetsController {
   })
   @ApiResponse({ status: 400, description: '잘못된 요청' })
   @ApiResponse({ status: 401, description: '인증 실패' })
-  @ApiResponse({ status: 404, description: '경주 또는 사용자를 찾을 수 없음' })
-  async createBet(
-    @Body() createBetDto: CreateBetDto,
-    @Request() req: any
-  ): Promise<Bet> {
+  async createBet(@Body() createBetDto: CreateBetDto, @Request() req: any) {
     const userId = req.user.id;
     return this.betsService.createBet({ ...createBetDto, userId });
-  }
-
-  @Get(':id')
-  @ApiOperation({
-    summary: '마권 조회',
-    description: '특정 마권의 상세 정보를 조회합니다.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: '마권 ID',
-    example: 'bet-uuid',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '마권 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: 'bet-uuid' },
-        betType: { type: 'string', example: 'WIN' },
-        betName: { type: 'string', example: '1번마 단승식' },
-        betAmount: { type: 'number', example: 1000 },
-        odds: { type: 'number', example: 3.5 },
-        potentialWin: { type: 'number', example: 3500 },
-        betStatus: { type: 'string', example: 'PENDING' },
-        betResult: { type: 'string', example: 'PENDING' },
-        betTime: { type: 'string', format: 'date-time' },
-        race: {
-          type: 'object',
-          properties: {
-            id: { type: 'string', example: 'race-123' },
-            rcName: { type: 'string', example: '3세이상일반' },
-            rcDate: { type: 'string', example: '20241201' },
-          },
-        },
-      },
-    },
-  })
-  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
-  async getBet(@Param('id') id: string): Promise<Bet> {
-    return this.betsService.getBet(id);
-  }
-
-  @Get()
-  @ApiOperation({
-    summary: '사용자 마권 목록 조회',
-    description: '현재 사용자의 마권 목록을 조회합니다.',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: '페이지 번호',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: '한 페이지당 결과 수',
-    example: 20,
-  })
-  @ApiQuery({
-    name: 'status',
-    required: false,
-    description: '마권 상태 필터',
-    enum: BetStatus,
-  })
-  @ApiQuery({
-    name: 'result',
-    required: false,
-    description: '마권 결과 필터',
-    enum: BetResult,
-  })
-  @ApiResponse({
-    status: 200,
-    description: '마권 목록 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        bets: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'bet-uuid' },
-              betType: { type: 'string', example: 'WIN' },
-              betName: { type: 'string', example: '1번마 단승식' },
-              betAmount: { type: 'number', example: 1000 },
-              betStatus: { type: 'string', example: 'PENDING' },
-              betResult: { type: 'string', example: 'PENDING' },
-              betTime: { type: 'string', format: 'date-time' },
-            },
-          },
-        },
-        total: { type: 'number', example: 50 },
-        page: { type: 'number', example: 1 },
-        totalPages: { type: 'number', example: 3 },
-      },
-    },
-  })
-  async getUserBets(
-    @Request() req: any,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 20,
-    @Query('status') status?: BetStatus,
-    @Query('result') result?: BetResult
-  ) {
-    const userId = req.user.id;
-    return this.betsService.getUserBets(userId, page, limit, status, result);
-  }
-
-  @Get('race/:raceId')
-  @ApiOperation({
-    summary: '경주별 마권 목록 조회',
-    description: '특정 경주의 모든 마권 목록을 조회합니다.',
-  })
-  @ApiParam({
-    name: 'raceId',
-    description: '경주 ID',
-    example: 'race-123',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '경주별 마권 목록 조회 성공',
-    schema: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          id: { type: 'string', example: 'bet-uuid' },
-          betType: { type: 'string', example: 'WIN' },
-          betName: { type: 'string', example: '1번마 단승식' },
-          betAmount: { type: 'number', example: 1000 },
-          betStatus: { type: 'string', example: 'PENDING' },
-          betTime: { type: 'string', format: 'date-time' },
-          user: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'user-uuid' },
-              name: { type: 'string', example: '사용자명' },
-            },
-          },
-        },
-      },
-    },
-  })
-  async getRaceBets(@Param('raceId') raceId: string): Promise<Bet[]> {
-    return this.betsService.getRaceBets(raceId);
-  }
-
-  @Put(':id')
-  @ApiOperation({
-    summary: '마권 업데이트',
-    description: '마권 정보를 업데이트합니다.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: '마권 ID',
-    example: 'bet-uuid',
-  })
-  @ApiBody({
-    description: '마권 업데이트 정보',
-    schema: {
-      type: 'object',
-      properties: {
-        betStatus: {
-          type: 'string',
-          enum: Object.values(BetStatus),
-          description: '마권 상태',
-        },
-        betResult: {
-          type: 'string',
-          enum: Object.values(BetResult),
-          description: '마권 결과',
-        },
-        actualWin: {
-          type: 'number',
-          description: '실제 당첨금',
-          example: 3500,
-        },
-        actualOdds: {
-          type: 'number',
-          description: '실제 배당률',
-          example: 3.5,
-        },
-        raceResult: {
-          type: 'object',
-          description: '경주 결과',
-        },
-        notes: {
-          type: 'string',
-          description: '메모',
-        },
-      },
-    },
-  })
-  @ApiResponse({
-    status: 200,
-    description: '마권 업데이트 성공',
-  })
-  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
-  async updateBet(
-    @Param('id') id: string,
-    @Body() updateBetDto: UpdateBetDto
-  ): Promise<Bet> {
-    return this.betsService.updateBet(id, updateBetDto);
-  }
-
-  @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({
-    summary: '마권 취소',
-    description: '마권을 취소하고 포인트를 환불합니다.',
-  })
-  @ApiParam({
-    name: 'id',
-    description: '마권 ID',
-    example: 'bet-uuid',
-  })
-  @ApiResponse({
-    status: 204,
-    description: '마권 취소 성공',
-  })
-  @ApiResponse({ status: 400, description: '취소할 수 없는 마권' })
-  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
-  async cancelBet(@Param('id') id: string): Promise<void> {
-    await this.betsService.cancelBet(id);
   }
 
   @Get('statistics')
@@ -491,5 +260,250 @@ export class BetsController {
         requiresOrder: true,
       },
     ];
+  }
+
+  @Get()
+  @ApiOperation({
+    summary: '사용자 마권 목록 조회',
+    description: '현재 사용자의 마권 목록을 조회합니다.',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: '페이지 번호',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '한 페이지당 결과 수',
+    example: 20,
+  })
+  @ApiQuery({
+    name: 'status',
+    required: false,
+    description: '마권 상태 필터',
+    enum: BetStatus,
+  })
+  @ApiQuery({
+    name: 'result',
+    required: false,
+    description: '마권 결과 필터',
+    enum: BetResult,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '마권 목록 조회 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        bets: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'bet-uuid' },
+              betType: { type: 'string', example: 'WIN' },
+              betName: { type: 'string', example: '1번마 단승식' },
+              betAmount: { type: 'number', example: 1000 },
+              betStatus: { type: 'string', example: 'PENDING' },
+              betResult: { type: 'string', example: 'PENDING' },
+              betTime: { type: 'string', format: 'date-time' },
+            },
+          },
+        },
+        total: { type: 'number', example: 50 },
+        page: { type: 'number', example: 1 },
+        totalPages: { type: 'number', example: 3 },
+      },
+    },
+  })
+  async getUserBets(
+    @Request() req: any,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 20,
+    @Query('status') status?: BetStatus,
+    @Query('result') result?: BetResult
+  ) {
+    const userId = req.user.id;
+    return this.betsService.getUserBets(userId, page, limit, status, result);
+  }
+
+  @Get('race/:raceId')
+  @ApiOperation({
+    summary: '경주별 마권 목록 조회',
+    description: '특정 경주의 모든 마권 목록을 조회합니다.',
+  })
+  @ApiParam({
+    name: 'raceId',
+    description: '경주 ID',
+    example: 'race-123',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '경주별 마권 목록 조회 성공',
+    schema: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          id: { type: 'string', example: 'bet-uuid' },
+          betType: { type: 'string', example: 'WIN' },
+          betName: { type: 'string', example: '1번마 단승식' },
+          betAmount: { type: 'number', example: 1000 },
+          betStatus: { type: 'string', example: 'PENDING' },
+          betTime: { type: 'string', format: 'date-time' },
+          user: {
+            type: 'object',
+            properties: {
+              id: { type: 'string', example: 'user-uuid' },
+              name: { type: 'string', example: '사용자명' },
+            },
+          },
+        },
+      },
+    },
+  })
+  async getRaceBets(@Param('raceId') raceId: string): Promise<Bet[]> {
+    return this.betsService.getRaceBets(raceId);
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: '마권 조회',
+    description: '특정 마권의 상세 정보를 조회합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '마권 ID',
+    example: 'bet-uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '마권 조회 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'bet-uuid' },
+        betType: { type: 'string', example: 'WIN' },
+        betName: { type: 'string', example: '1번마 단승식' },
+        betAmount: { type: 'number', example: 1000 },
+        odds: { type: 'number', example: 3.5 },
+        potentialWin: { type: 'number', example: 3500 },
+        betStatus: { type: 'string', example: 'PENDING' },
+        betResult: { type: 'string', example: 'PENDING' },
+        betTime: { type: 'string', format: 'date-time' },
+        race: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'race-123' },
+            rcName: { type: 'string', example: '3세이상일반' },
+            rcDate: { type: 'string', example: '20241201' },
+          },
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
+  async getBet(@Param('id') id: string): Promise<Bet> {
+    return this.betsService.getBet(id);
+  }
+
+  @Put(':id')
+  @ApiOperation({
+    summary: '마권 업데이트',
+    description: '마권 정보를 업데이트합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '마권 ID',
+    example: 'bet-uuid',
+  })
+  @ApiBody({
+    description: '마권 업데이트 정보',
+    schema: {
+      type: 'object',
+      properties: {
+        betStatus: {
+          type: 'string',
+          enum: Object.values(BetStatus),
+          description: '마권 상태',
+        },
+        betResult: {
+          type: 'string',
+          enum: Object.values(BetResult),
+          description: '마권 결과',
+        },
+        actualWin: {
+          type: 'number',
+          description: '실제 당첨금',
+          example: 3500,
+        },
+        actualOdds: {
+          type: 'number',
+          description: '실제 배당률',
+          example: 3.5,
+        },
+        raceResult: {
+          type: 'object',
+          description: '경주 결과',
+        },
+        notes: {
+          type: 'string',
+          description: '메모',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: '마권 업데이트 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'bet-uuid' },
+        betStatus: { type: 'string', example: 'COMPLETED' },
+        betResult: { type: 'string', example: 'WIN' },
+        actualWin: { type: 'number', example: 3500 },
+        actualOdds: { type: 'number', example: 3.5 },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
+  async updateBet(
+    @Param('id') id: string,
+    @Body() updateBetDto: UpdateBetDto
+  ): Promise<Bet> {
+    return this.betsService.updateBet(id, updateBetDto);
+  }
+
+  @Patch(':id/cancel')
+  @ApiOperation({
+    summary: '마권 취소',
+    description: '마권을 취소하고 포인트를 환불합니다.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: '마권 ID',
+    example: 'bet-uuid',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '마권 취소 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        id: { type: 'string', example: 'bet-uuid' },
+        betStatus: { type: 'string', example: 'CANCELLED' },
+        betResult: { type: 'string', example: 'VOID' },
+        updatedAt: { type: 'string', format: 'date-time' },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: '취소할 수 없는 마권' })
+  @ApiResponse({ status: 404, description: '마권을 찾을 수 없음' })
+  async cancelBet(@Param('id') id: string): Promise<void> {
+    await this.betsService.cancelBet(id);
   }
 }

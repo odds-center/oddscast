@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { PageLayout } from '@/components/common/PageLayout';
 import { ThemedText as Text } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
-import { PageLayout } from '@/components/common/PageLayout';
 import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 const faqs = [
   { id: '1', q: '회원정보를 수정하고 싶어요.', a: '마이페이지 > 프로필 관리에서 수정 가능합니다.' },

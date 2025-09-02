@@ -1,13 +1,13 @@
-import { apiClient, handleApiResponse, handleApiError } from '@/lib/utils/axios';
 import { ApiResponse } from '@/lib/types/api';
-import qs from 'qs';
 import type {
-  Notification,
   CreateNotificationRequest,
-  UpdateNotificationRequest,
+  Notification,
   NotificationFilters,
   NotificationPreferences,
+  UpdateNotificationRequest,
 } from '@/lib/types/notification';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import qs from 'qs';
 
 export class NotificationApi {
   private static instance: NotificationApi;
@@ -35,7 +35,7 @@ export class NotificationApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           notifications: Notification[];
           total: number;
@@ -53,7 +53,7 @@ export class NotificationApi {
   // 개별 알림 조회
   async getNotification(notificationId: string): Promise<Notification> {
     try {
-      const response = await apiClient.get<ApiResponse<Notification>>(
+      const response = await axiosInstance.get<ApiResponse<Notification>>(
         `${this.baseUrl}/${notificationId}`
       );
       return handleApiResponse(response);
@@ -65,7 +65,7 @@ export class NotificationApi {
   // 알림 생성
   async createNotification(notificationData: CreateNotificationRequest): Promise<Notification> {
     try {
-      const response = await apiClient.post<ApiResponse<Notification>>(
+      const response = await axiosInstance.post<ApiResponse<Notification>>(
         this.baseUrl,
         notificationData
       );
@@ -81,7 +81,7 @@ export class NotificationApi {
     updateData: UpdateNotificationRequest
   ): Promise<Notification> {
     try {
-      const response = await apiClient.put<ApiResponse<Notification>>(
+      const response = await axiosInstance.put<ApiResponse<Notification>>(
         `${this.baseUrl}/${notificationId}`,
         updateData
       );
@@ -94,7 +94,7 @@ export class NotificationApi {
   // 알림 읽음 처리
   async markAsRead(notificationId: string): Promise<Notification> {
     try {
-      const response = await apiClient.patch<ApiResponse<Notification>>(
+      const response = await axiosInstance.patch<ApiResponse<Notification>>(
         `${this.baseUrl}/${notificationId}/read`
       );
       return handleApiResponse(response);
@@ -106,7 +106,7 @@ export class NotificationApi {
   // 모든 알림 읽음 처리
   async markAllAsRead(): Promise<{ updatedCount: number }> {
     try {
-      const response = await apiClient.patch<ApiResponse<{ updatedCount: number }>>(
+      const response = await axiosInstance.patch<ApiResponse<{ updatedCount: number }>>(
         `${this.baseUrl}/read-all`
       );
       return handleApiResponse(response);
@@ -118,7 +118,7 @@ export class NotificationApi {
   // 알림 삭제
   async deleteNotification(notificationId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
         `${this.baseUrl}/${notificationId}`
       );
       return handleApiResponse(response);
@@ -130,7 +130,7 @@ export class NotificationApi {
   // 읽지 않은 알림 개수 조회
   async getUnreadCount(): Promise<{ count: number }> {
     try {
-      const response = await apiClient.get<ApiResponse<{ count: number }>>(
+      const response = await axiosInstance.get<ApiResponse<{ count: number }>>(
         `${this.baseUrl}/unread-count`
       );
       return handleApiResponse(response);
@@ -142,7 +142,7 @@ export class NotificationApi {
   // 알림 설정 조회
   async getNotificationPreferences(): Promise<NotificationPreferences> {
     try {
-      const response = await apiClient.get<ApiResponse<NotificationPreferences>>(
+      const response = await axiosInstance.get<ApiResponse<NotificationPreferences>>(
         `${this.baseUrl}/preferences`
       );
       return handleApiResponse(response);
@@ -156,7 +156,7 @@ export class NotificationApi {
     preferences: Partial<NotificationPreferences>
   ): Promise<NotificationPreferences> {
     try {
-      const response = await apiClient.put<ApiResponse<NotificationPreferences>>(
+      const response = await axiosInstance.put<ApiResponse<NotificationPreferences>>(
         `${this.baseUrl}/preferences`,
         preferences
       );
@@ -169,7 +169,7 @@ export class NotificationApi {
   // 알림 구독 (Push 알림용)
   async subscribeToPushNotifications(deviceToken: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         `${this.baseUrl}/push-subscribe`,
         { deviceToken }
       );
@@ -182,7 +182,7 @@ export class NotificationApi {
   // 알림 구독 해제
   async unsubscribeFromPushNotifications(deviceToken: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         `${this.baseUrl}/push-unsubscribe`,
         { deviceToken }
       );
@@ -194,7 +194,7 @@ export class NotificationApi {
 
   // 알림 템플릿 조회 (관리자용)
   async getNotificationTemplates(): Promise<
-    Array<{
+    {
       id: string;
       name: string;
       title: string;
@@ -202,10 +202,10 @@ export class NotificationApi {
       type: Notification['type'];
       category: Notification['category'];
       variables: string[];
-    }>
+    }[]
   > {
     try {
-      const response = await apiClient.get<ApiResponse<any[]>>(`${this.baseUrl}/templates`);
+      const response = await axiosInstance.get<ApiResponse<any[]>>(`${this.baseUrl}/templates`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -219,7 +219,7 @@ export class NotificationApi {
     variables?: Record<string, any>
   ): Promise<{ sentCount: number; failedCount: number }> {
     try {
-      const response = await apiClient.post<ApiResponse<any>>(`${this.baseUrl}/bulk-send`, {
+      const response = await axiosInstance.post<ApiResponse<any>>(`${this.baseUrl}/bulk-send`, {
         templateId,
         recipients,
         variables,

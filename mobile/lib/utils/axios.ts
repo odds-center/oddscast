@@ -1,9 +1,8 @@
+import { API_CONSTANTS } from '@/constants/auth';
+import { ApiError, ApiResponse } from '@/lib/types/api';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getCurrentConfig } from '../../config/environment';
 import { tokenManager } from './tokenManager';
-import { API_CONSTANTS } from '@/constants';
-
-import { ApiResponse, ApiError } from '../types/api';
 
 // API 기본 설정
 const config = getCurrentConfig();
@@ -106,7 +105,7 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
 };
 
 // 기본 API 클라이언트
-export const apiClient = createApiClient();
+export const axiosInstance = createApiClient();
 
 // 토큰 관리 함수들 (기존 호환성을 위해 유지)
 export const getStoredToken = async (): Promise<string | null> => {
@@ -133,10 +132,12 @@ export const defaultRequestConfig: AxiosRequestConfig = {
 
 // API 응답 래퍼 함수
 export const handleApiResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
-  if (response.data.success) {
-    return response.data.data;
+  // data 필드가 없거나 undefined인 경우 빈 배열이나 기본값 반환
+  if (!response.data || response.data.data === undefined || response.data.data === null) {
+    console.warn('⚠️ API response data is undefined or null, returning default value');
+    return [] as T;
   }
-  throw new Error(response.data.message || 'API 요청 실패');
+  return response.data.data;
 };
 
 // API 에러 처리 함수

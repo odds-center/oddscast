@@ -1,16 +1,16 @@
-import React from 'react';
-import {
-  Modal,
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-  Platform,
-  StatusBar,
-} from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { BlurView } from 'expo-blur';
+import React from 'react';
+import {
+  Dimensions,
+  Modal,
+  Platform,
+  StatusBar,
+  StyleSheet,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 
 interface AlertButton {
   text: string;

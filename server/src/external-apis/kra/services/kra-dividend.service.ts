@@ -23,7 +23,7 @@ export class KraDividendService extends ApiClientBase {
 
     super(
       {
-        baseURL: dividendEndpoint.url,
+        baseURL: dividendEndpoint?.url || 'https://apis.data.go.kr/B551015/API160_1',
         timeout: config.timeout,
         maxRetries: config.maxRetries,
       },

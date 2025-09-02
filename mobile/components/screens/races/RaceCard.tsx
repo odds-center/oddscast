@@ -1,8 +1,8 @@
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import type { Race } from '@/lib/types/race';
 import React from 'react';
 import { StyleSheet, TouchableOpacity } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
-import { ThemedText } from '@/components/ThemedText';
-import type { Race } from '@/lib/types/race';
 
 interface RaceCardProps {
   race: Race;

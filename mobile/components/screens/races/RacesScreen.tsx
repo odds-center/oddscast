@@ -1,72 +1,32 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
+import { RACE_UTILS } from '@/constants/race';
+import { useRaces } from '@/lib/hooks/useRaces';
 import { Ionicons } from '@expo/vector-icons';
-import { RACE_CONSTANTS, RACE_UTILS } from '@/constants/race';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
-interface Race {
-  id: string;
-  rcName: string;
-  meetName: string;
-  rcDate: string;
-  rcNo: number;
-  rcDist: number;
-  rcGrade: string;
-  rcStartTime: string;
-  raceStatus: string;
-}
+// Race 타입은 lib/types/api.ts에서 import
 
 export default function RacesScreen() {
+  const router = useRouter();
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
   const venues = ['all', '서울', '부산', '제주', '광주'];
 
-  // 임시 데이터 (실제로는 API에서 가져올 예정)
-  const mockRaces: Race[] = [
-    {
-      id: '1',
-      rcName: '서울마장주요',
-      meetName: '서울',
-      rcDate: '2024-02-09',
-      rcNo: 1,
-      rcDist: 1200,
-      rcGrade: 'G3',
-      rcStartTime: '14:00',
-      raceStatus: 'UPCOMING',
-    },
-    {
-      id: '2',
-      rcName: '부산마장주요',
-      meetName: '부산',
-      rcDate: '2024-02-09',
-      rcNo: 2,
-      rcDist: 1600,
-      rcGrade: 'G2',
-      rcStartTime: '14:30',
-      raceStatus: 'UPCOMING',
-    },
-    {
-      id: '3',
-      rcName: '제주마장주요',
-      meetName: '제주',
-      rcDate: '2024-02-09',
-      rcNo: 3,
-      rcDist: 1800,
-      rcGrade: 'G1',
-      rcStartTime: '15:00',
-      raceStatus: 'UPCOMING',
-    },
-  ];
+  // API 데이터 조회
+  const { data: racesData, isLoading: racesLoading } = useRaces({
+    page: 1,
+    limit: 50,
+    meet: selectedVenue === 'all' ? undefined : selectedVenue,
+  });
 
   // 선택된 지역에 따라 필터링
-  const filteredRaces =
-    selectedVenue === 'all'
-      ? mockRaces
-      : mockRaces.filter((race) => race.meetName === selectedVenue);
+  const filteredRaces = racesData?.races || [];
 
   const handleRacePress = (raceId: string) => {
     console.log('Race selected:', raceId);
-    // 경주 상세 페이지로 이동
+    router.push(`/races/${raceId}`);
   };
 
   return (
@@ -99,7 +59,14 @@ export default function RacesScreen() {
       </View>
 
       {/* 경주 목록 */}
-      {filteredRaces.length > 0 ? (
+      {racesLoading ? (
+        <View style={styles.emptyContainer}>
+          <Ionicons name='refresh' size={48} color='#E5C99C' />
+          <ThemedText type='body' style={styles.emptyText}>
+            경주 정보를 불러오는 중...
+          </ThemedText>
+        </View>
+      ) : filteredRaces.length > 0 ? (
         filteredRaces.map((race) => (
           <TouchableOpacity
             key={race.id}
@@ -113,12 +80,12 @@ export default function RacesScreen() {
                   {race.rcName}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.raceDetails}>
-                  {race.meetName} • {race.rcNo}경주 • {race.rcDist}m
+                  {race.meetName} • {race.rcNo || ''}경주 • {race.rcDist || ''}m
                 </ThemedText>
               </View>
               <View style={styles.raceGrade}>
                 <ThemedText type='caption' style={styles.gradeText}>
-                  {RACE_UTILS.getRaceGradeLabel(race.rcGrade)}
+                  {RACE_UTILS.getRaceGradeLabel(race.rcGrade || '')}
                 </ThemedText>
               </View>
             </View>
@@ -127,7 +94,7 @@ export default function RacesScreen() {
               <View style={styles.raceTime}>
                 <Ionicons name='time' size={16} color='#E5C99C' />
                 <ThemedText type='caption' style={styles.timeText}>
-                  {race.rcStartTime}
+                  {race.rcStartTime || ''}
                 </ThemedText>
               </View>
               <View style={styles.raceStatus}>
@@ -138,7 +105,7 @@ export default function RacesScreen() {
                   ]}
                 >
                   <ThemedText type='caption' style={styles.statusText}>
-                    {RACE_UTILS.getRaceStatusLabel(race.raceStatus)}
+                    {RACE_UTILS.getRaceStatusLabel(race.raceStatus || '')}
                   </ThemedText>
                 </View>
               </View>
@@ -164,7 +131,7 @@ export default function RacesScreen() {
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
             <ThemedText type='stat' style={styles.statNumber}>
-              {mockRaces.length}
+              {racesLoading ? '...' : filteredRaces.length}
             </ThemedText>
             <ThemedText type='caption' style={styles.statLabel}>
               총 경주
@@ -172,7 +139,9 @@ export default function RacesScreen() {
           </View>
           <View style={styles.statItem}>
             <ThemedText type='stat' style={styles.statNumber}>
-              {mockRaces.filter((race) => race.rcGrade === 'G1').length}
+              {racesLoading
+                ? '...'
+                : filteredRaces.filter((race: any) => race.rcGrade === 'G1').length}
             </ThemedText>
             <ThemedText type='caption' style={styles.statLabel}>
               그룹1
@@ -180,7 +149,9 @@ export default function RacesScreen() {
           </View>
           <View style={styles.statItem}>
             <ThemedText type='stat' style={styles.statNumber}>
-              {mockRaces.filter((race) => race.rcGrade === 'G2').length}
+              {racesLoading
+                ? '...'
+                : filteredRaces.filter((race: any) => race.rcGrade === 'G2').length}
             </ThemedText>
             <ThemedText type='caption' style={styles.statLabel}>
               그룹2
@@ -188,7 +159,9 @@ export default function RacesScreen() {
           </View>
           <View style={styles.statItem}>
             <ThemedText type='stat' style={styles.statNumber}>
-              {mockRaces.filter((race) => race.rcGrade === 'G3').length}
+              {racesLoading
+                ? '...'
+                : filteredRaces.filter((race: any) => race.rcGrade === 'G3').length}
             </ThemedText>
             <ThemedText type='caption' style={styles.statLabel}>
               그룹3

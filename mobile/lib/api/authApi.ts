@@ -1,7 +1,7 @@
-import { apiClient, handleApiResponse, handleApiError } from '@/lib/utils/axios';
 import { ApiResponse } from '@/lib/types/api';
-import { LoginRequest, RegisterRequest, AuthResponse } from '@/lib/types/auth';
+import { AuthResponse, LoginRequest, RegisterRequest } from '@/lib/types/auth';
 import { User } from '@/lib/types/user';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
 
 export class AuthApi {
   private static instance: AuthApi;
@@ -19,7 +19,10 @@ export class AuthApi {
   // 정적 메서드들
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', credentials);
+      const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+        '/auth/login',
+        credentials
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -28,7 +31,10 @@ export class AuthApi {
 
   static async register(userData: RegisterRequest): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', userData);
+      const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+        '/auth/register',
+        userData
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -37,7 +43,7 @@ export class AuthApi {
 
   static async logout(): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>('/auth/logout');
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>('/auth/logout');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -46,7 +52,7 @@ export class AuthApi {
 
   static async refreshToken(): Promise<AuthResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/refresh');
+      const response = await axiosInstance.post<ApiResponse<AuthResponse>>('/auth/refresh');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -55,7 +61,7 @@ export class AuthApi {
 
   static async getCurrentUser(): Promise<User> {
     try {
-      const response = await apiClient.get<ApiResponse<User>>('/auth/me');
+      const response = await axiosInstance.get<ApiResponse<User>>('/auth/me');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -64,7 +70,7 @@ export class AuthApi {
 
   static async updateProfile(updateData: Partial<User>): Promise<User> {
     try {
-      const response = await apiClient.put<ApiResponse<User>>('/auth/profile', updateData);
+      const response = await axiosInstance.put<ApiResponse<User>>('/auth/profile', updateData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -76,7 +82,7 @@ export class AuthApi {
     newPassword: string;
   }): Promise<{ message: string }> {
     try {
-      const response = await apiClient.put<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.put<ApiResponse<{ message: string }>>(
         '/auth/password',
         passwordData
       );
@@ -88,7 +94,7 @@ export class AuthApi {
 
   static async forgotPassword(email: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         '/auth/forgot-password',
         { email }
       );
@@ -103,7 +109,7 @@ export class AuthApi {
     newPassword: string;
   }): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         '/auth/reset-password',
         resetData
       );
@@ -115,7 +121,7 @@ export class AuthApi {
 
   static async verifyEmail(token: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         '/auth/verify-email',
         { token }
       );
@@ -127,7 +133,7 @@ export class AuthApi {
 
   static async resendVerificationEmail(email: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         '/auth/resend-verification',
         { email }
       );

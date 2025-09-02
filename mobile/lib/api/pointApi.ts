@@ -18,7 +18,7 @@ import {
   UserPointBalance,
   UserPoints,
 } from '@/lib/types/point';
-import { apiClient, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
 import qs from 'qs';
 
 export class PointApi {
@@ -37,7 +37,7 @@ export class PointApi {
   // 정적 메서드들
   static async getUserPointBalance(userId: string): Promise<UserPointBalance> {
     try {
-      const response = await apiClient.get<ApiResponse<UserPointBalance>>(
+      const response = await axiosInstance.get<ApiResponse<UserPointBalance>>(
         `/points/${userId}/balance`
       );
       return handleApiResponse(response);
@@ -57,7 +57,7 @@ export class PointApi {
         addQueryPrefix: true,
       });
 
-      const response = await apiClient.get<ApiResponse<PointListResponse>>(
+      const response = await axiosInstance.get<ApiResponse<PointListResponse>>(
         `/points/${userId}/transactions${queryString}`
       );
       return handleApiResponse(response);
@@ -71,7 +71,7 @@ export class PointApi {
     transactionData: CreatePointRequest
   ): Promise<UserPoints> {
     try {
-      const response = await apiClient.post<ApiResponse<UserPoints>>(
+      const response = await axiosInstance.post<ApiResponse<UserPoints>>(
         `/points/${userId}/transactions`,
         transactionData
       );
@@ -86,7 +86,7 @@ export class PointApi {
     updateData: UpdatePointRequest
   ): Promise<UserPoints> {
     try {
-      const response = await apiClient.put<ApiResponse<UserPoints>>(
+      const response = await axiosInstance.put<ApiResponse<UserPoints>>(
         `/points/transactions/${transactionId}`,
         updateData
       );
@@ -98,7 +98,7 @@ export class PointApi {
 
   static async getPointStatistics(userId: string): Promise<PointStatistics> {
     try {
-      const response = await apiClient.get<ApiResponse<PointStatistics>>(
+      const response = await axiosInstance.get<ApiResponse<PointStatistics>>(
         `/points/${userId}/statistics`
       );
       return handleApiResponse(response);
@@ -109,7 +109,7 @@ export class PointApi {
 
   static async transferPoints(transferData: PointTransferRequest): Promise<PointTransferResponse> {
     try {
-      const response = await apiClient.post<ApiResponse<PointTransferResponse>>(
+      const response = await axiosInstance.post<ApiResponse<PointTransferResponse>>(
         '/points/transfer',
         transferData
       );
@@ -131,7 +131,7 @@ export class PointApi {
         addQueryPrefix: true,
       });
 
-      const response = await apiClient.get<ApiResponse<PointPromotion[]>>(
+      const response = await axiosInstance.get<ApiResponse<PointPromotion[]>>(
         `/points/promotions${queryString}`
       );
       return handleApiResponse(response);
@@ -145,9 +145,9 @@ export class PointApi {
     promotionId: string
   ): Promise<{ message: string; pointsEarned: number }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string; pointsEarned: number }>>(
-        `/points/${userId}/promotions/${promotionId}/apply`
-      );
+      const response = await axiosInstance.post<
+        ApiResponse<{ message: string; pointsEarned: number }>
+      >(`/points/${userId}/promotions/${promotionId}/apply`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -156,7 +156,7 @@ export class PointApi {
 
   static async getExpiringPoints(userId: string): Promise<PointExpiryNotification[]> {
     try {
-      const response = await apiClient.get<ApiResponse<PointExpiryNotification[]>>(
+      const response = await axiosInstance.get<ApiResponse<PointExpiryNotification[]>>(
         `/points/${userId}/expiring`
       );
       return handleApiResponse(response);
@@ -170,7 +170,7 @@ export class PointApi {
     extensionDays: number
   ): Promise<{ message: string; newExpiryDate: string }> {
     try {
-      const response = await apiClient.post<
+      const response = await axiosInstance.post<
         ApiResponse<{ message: string; newExpiryDate: string }>
       >(`/points/transactions/${transactionId}/extend`, { extensionDays });
       return handleApiResponse(response);
@@ -189,7 +189,7 @@ export class PointApi {
         addQueryPrefix: true,
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           logs: PointAuditLog[];
           total: number;
@@ -206,7 +206,7 @@ export class PointApi {
 
   static async getPointSettings(): Promise<PointSettings[]> {
     try {
-      const response = await apiClient.get<ApiResponse<PointSettings[]>>('/points/settings');
+      const response = await axiosInstance.get<ApiResponse<PointSettings[]>>('/points/settings');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -215,7 +215,7 @@ export class PointApi {
 
   static async updatePointSettings(settingId: string, value: string): Promise<PointSettings> {
     try {
-      const response = await apiClient.put<ApiResponse<PointSettings>>(
+      const response = await axiosInstance.put<ApiResponse<PointSettings>>(
         `/points/settings/${settingId}`,
         { value }
       );
@@ -236,7 +236,7 @@ export class PointApi {
         addQueryPrefix: true,
       });
 
-      const response = await apiClient.get<ApiResponse<PointReport>>(
+      const response = await axiosInstance.get<ApiResponse<PointReport>>(
         `/points/reports${queryString}`
       );
       return handleApiResponse(response);
@@ -258,7 +258,7 @@ export class PointApi {
         addQueryPrefix: true,
       });
 
-      const response = await apiClient.get<ApiResponse<PointListResponse>>(
+      const response = await axiosInstance.get<ApiResponse<PointListResponse>>(
         `/points/${userId}/transactions/search${queryString}`
       );
       return handleApiResponse(response);
@@ -272,10 +272,9 @@ export class PointApi {
     adjustmentData: PointAdjustmentRequest
   ): Promise<{ message: string; newBalance: number }> {
     try {
-      const response = await apiClient.post<ApiResponse<{ message: string; newBalance: number }>>(
-        `/points/${userId}/adjust`,
-        adjustmentData
-      );
+      const response = await axiosInstance.post<
+        ApiResponse<{ message: string; newBalance: number }>
+      >(`/points/${userId}/adjust`, adjustmentData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -284,7 +283,7 @@ export class PointApi {
 
   static async getPointExpirySettings(): Promise<PointExpirySettings> {
     try {
-      const response = await apiClient.get<ApiResponse<PointExpirySettings>>(
+      const response = await axiosInstance.get<ApiResponse<PointExpirySettings>>(
         '/points/expiry-settings'
       );
       return handleApiResponse(response);

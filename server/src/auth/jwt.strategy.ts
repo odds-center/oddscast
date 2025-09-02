@@ -1,4 +1,8 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ConfigService } from '@nestjs/config';
@@ -20,23 +24,54 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   }
 
   async validate(payload: JwtPayload) {
+    console.log('🔐 JWT Strategy validate called with payload:', {
+      sub: payload.sub,
+      email: payload.email,
+      name: payload.name,
+      role: payload.role,
+      provider: payload.provider,
+    });
+
     if (!payload.sub || !payload.email) {
-      throw new UnauthorizedException(JWT_CONSTANTS.ERROR_MESSAGES.INVALID_PAYLOAD);
+      console.log('❌ Invalid payload: missing sub or email');
+      throw new UnauthorizedException(
+        JWT_CONSTANTS.ERROR_MESSAGES.INVALID_PAYLOAD
+      );
     }
 
-    // 데이터베이스에서 사용자 정보 확인
-    const user = await this.usersService.findById(payload.sub);
-    if (!user) {
-      throw new UnauthorizedException(JWT_CONSTANTS.ERROR_MESSAGES.USER_NOT_FOUND);
+    try {
+      // 사용자 조회 시도
+      let user = await this.usersService.findById(payload.sub);
+      console.log('✅ Existing user found:', user.email);
+      return user;
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        // 사용자가 없으면 생성
+        console.log('👤 User not found, creating new user:', payload.email);
+        try {
+          const user = await this.usersService.create({
+            id: payload.sub,
+            email: payload.email,
+            name: payload.name || payload.email?.split('@')[0] || 'User',
+            avatar: null,
+            authProvider: payload.provider || 'google',
+            providerId: payload.sub,
+            role: payload.role || 'user',
+          });
+          console.log('✅ New user created:', user.id);
+          return user;
+        } catch (createError) {
+          console.error('❌ Error creating user:', createError.message);
+          throw new UnauthorizedException(
+            JWT_CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN
+          );
+        }
+      } else {
+        console.error('❌ Error in JWT validation:', error.message);
+        throw new UnauthorizedException(
+          JWT_CONSTANTS.ERROR_MESSAGES.INVALID_TOKEN
+        );
+      }
     }
-
-    return {
-      id: user.id,
-      email: user.email,
-      name: user.name || payload.name,
-      avatar: user.avatar,
-      role: user.role || payload.role,
-      provider: user.authProvider || payload.provider,
-    };
   }
 }

@@ -237,4 +237,110 @@ export class RacePlansService {
       .addOrderBy('racePlan.rcNo', 'ASC')
       .getMany();
   }
+
+  /**
+   * KRA API 데이터로부터 경주 계획 생성
+   */
+  async createFromKraData(kraData: any): Promise<RacePlan> {
+    try {
+      // 기존 데이터 확인
+      const existingPlan = await this.racePlansRepository.findOne({
+        where: {
+          planId: `${kraData.meet}_${kraData.rc_date}_${kraData.rc_no}`,
+        },
+      });
+
+      if (existingPlan) {
+        this.logger.log(`경주 계획 업데이트: ${existingPlan.planId}`);
+        return await this.update(
+          existingPlan.planId,
+          this.mapKraDataToRacePlan(kraData)
+        );
+      }
+
+      // 새 데이터 생성
+      const planData = this.mapKraDataToRacePlan(kraData);
+      const plan = this.racePlansRepository.create(planData);
+
+      this.logger.log(`새 경주 계획 생성: ${plan.planId}`);
+      return await this.racePlansRepository.save(plan);
+    } catch (error) {
+      this.logger.error(`경주 계획 저장 실패: ${error.message}`);
+      throw error;
+    }
+  }
+
+  /**
+   * KRA 데이터를 RacePlan 엔티티로 매핑
+   */
+  private mapKraDataToRacePlan(kraData: any): Partial<RacePlan> {
+    return {
+      planId: `${kraData.meet}_${kraData.rc_date}_${kraData.rc_no}`,
+      meet: kraData.meet,
+      meetName: kraData.meet_name,
+      rcDate: kraData.rc_date,
+      rcNo: kraData.rc_no,
+      rcName: kraData.rc_name,
+      rcDist: kraData.rc_dist,
+      rcGrade: kraData.rc_grade,
+      rcPrize: kraData.rc_prize ? parseInt(kraData.rc_prize) : null,
+      rcCondition: kraData.rc_condition,
+      rcPrize2: kraData.rc_prize_2 ? parseInt(kraData.rc_prize_2) : null,
+      rcPrize3: kraData.rc_prize_3 ? parseInt(kraData.rc_prize_3) : null,
+      rcPrize4: kraData.rc_prize_4 ? parseInt(kraData.rc_prize_4) : null,
+      rcPrize5: kraData.rc_prize_5 ? parseInt(kraData.rc_prize_5) : null,
+      rcPrizeBonus1: kraData.rc_prize_bonus1
+        ? parseInt(kraData.rc_prize_bonus1)
+        : null,
+      rcPrizeBonus2: kraData.rc_prize_bonus2
+        ? parseInt(kraData.rc_prize_bonus2)
+        : null,
+      rcPrizeBonus3: kraData.rc_prize_bonus3
+        ? parseInt(kraData.rc_prize_bonus3)
+        : null,
+      rcRatingMin: kraData.rc_rating_min,
+      rcRatingMax: kraData.rc_rating_max,
+      rcAgeCondition: kraData.rc_age_condition,
+      rcSexCondition: kraData.rc_sex_condition,
+      rcStartTime: kraData.rc_start_time,
+      rcEndTime: kraData.rc_end_time,
+      rcDay: kraData.rc_day,
+      rcWeekday: kraData.rc_weekday,
+      rcWeather: kraData.rc_weather,
+      rcTrack: kraData.rc_track,
+      rcTrackCondition: kraData.rc_track_condition,
+      rcRemarks: kraData.rc_remarks,
+      apiVersion: kraData.api_version || 'API72_2',
+      dataSource: kraData.data_source || 'KRA',
+      totalPrize: kraData.total_prize ? parseInt(kraData.total_prize) : null,
+      expectedEntries: kraData.expected_entries
+        ? parseInt(kraData.expected_entries)
+        : null,
+      planStatus: kraData.plan_status || 'DRAFT',
+      raceCategory: kraData.race_category,
+      surfaceType: kraData.surface_type,
+      trackConditionForecast: kraData.track_condition_forecast,
+    };
+  }
+
+  /**
+   * 오래된 데이터 삭제
+   */
+  async deleteOldData(cutoffDate: string): Promise<void> {
+    try {
+      const result = await this.racePlansRepository
+        .createQueryBuilder()
+        .delete()
+        .from(RacePlan)
+        .where('rc_date < :cutoffDate', { cutoffDate })
+        .execute();
+
+      this.logger.log(
+        `${cutoffDate} 이전 경주 계획 ${result.affected}개 삭제 완료`
+      );
+    } catch (error) {
+      this.logger.error(`오래된 경주 계획 삭제 실패: ${error.message}`);
+      throw error;
+    }
+  }
 }

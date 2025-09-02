@@ -1,15 +1,54 @@
-import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, ScrollView, ActivityIndicator } from 'react-native';
-import { useResults } from '@/lib/hooks/useResults';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { PageLayout, Section, Button } from '@/components/common';
 import type { RaceResult } from '@/lib/api/resultApi';
+import { useResults, useAllResults } from '@/lib/hooks/useResults';
+import React, { useState, useEffect } from 'react';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+  TextInput,
+} from 'react-native';
+import moment from 'moment';
 
 export default function ResultsScreen() {
-  const [selectedRaceId, setSelectedRaceId] = useState<string>('race-1');
+  const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYYMMDD'));
+  const [searchDate, setSearchDate] = useState<string>('');
+  const [viewMode, setViewMode] = useState<'daily' | 'all'>('daily');
+  const [availableDates, setAvailableDates] = useState<string[]>([]);
 
-  const { data: results, isLoading, error } = useResults(selectedRaceId);
+  // 선택된 날짜의 결과 조회
+  const {
+    data: dailyResults,
+    isLoading: dailyLoading,
+    error: dailyError,
+    refetch: dailyRefetch,
+  } = useResults(selectedDate);
+
+  // 전체 결과 조회
+  const {
+    data: allResults,
+    isLoading: allLoading,
+    error: allError,
+    refetch: allRefetch,
+  } = useAllResults();
+
+  // 현재 모드에 따른 데이터 선택
+  const results = viewMode === 'daily' ? dailyResults : allResults;
+  const isLoading = viewMode === 'daily' ? dailyLoading : allLoading;
+  const error = viewMode === 'daily' ? dailyError : allError;
+  const refetch = viewMode === 'daily' ? dailyRefetch : allRefetch;
+
+  // 최근 30일 날짜 목록 생성
+  useEffect(() => {
+    const dates = [];
+    for (let i = 0; i < 30; i++) {
+      dates.push(moment().subtract(i, 'days').format('YYYYMMDD'));
+    }
+    setAvailableDates(dates);
+  }, []);
 
   if (isLoading) {
     return (
@@ -33,8 +72,123 @@ export default function ResultsScreen() {
 
   return (
     <ThemedView style={styles.container}>
+      {/* 헤더 */}
+      <ThemedView style={styles.header}>
+        <ThemedText type='title' style={styles.title}>
+          경주 결과
+        </ThemedText>
+
+        {/* 뷰 모드 선택 */}
+        <ThemedView style={styles.viewModeContainer}>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'daily' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('daily')}
+          >
+            <ThemedText
+              style={[styles.viewModeText, viewMode === 'daily' && styles.viewModeTextActive]}
+            >
+              일별 조회
+            </ThemedText>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.viewModeButton, viewMode === 'all' && styles.viewModeButtonActive]}
+            onPress={() => setViewMode('all')}
+          >
+            <ThemedText
+              style={[styles.viewModeText, viewMode === 'all' && styles.viewModeTextActive]}
+            >
+              전체 기록
+            </ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+
+        {/* 날짜 선택 */}
+        {viewMode === 'daily' && (
+          <ThemedView style={styles.dateSelector}>
+            <TextInput
+              style={styles.dateInput}
+              placeholder='YYYYMMDD 형식으로 입력'
+              placeholderTextColor='rgba(180, 138, 60, 0.6)'
+              value={searchDate}
+              onChangeText={setSearchDate}
+              onSubmitEditing={() => {
+                if (searchDate && searchDate.length === 8) {
+                  setSelectedDate(searchDate);
+                  setSearchDate('');
+                }
+              }}
+            />
+            <TouchableOpacity
+              style={styles.searchButton}
+              onPress={() => {
+                if (searchDate && searchDate.length === 8) {
+                  setSelectedDate(searchDate);
+                  setSearchDate('');
+                }
+              }}
+            >
+              <ThemedText style={styles.searchButtonText}>검색</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        )}
+
+        {/* 최근 날짜 목록 */}
+        {viewMode === 'daily' && (
+          <ThemedView style={styles.recentDatesContainer}>
+            <ThemedText type='caption' style={styles.recentDatesTitle}>
+              최근 날짜
+            </ThemedText>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.recentDatesScroll}
+            >
+              {availableDates.slice(0, 10).map((date) => (
+                <TouchableOpacity
+                  key={date}
+                  style={[styles.dateChip, selectedDate === date && styles.dateChipActive]}
+                  onPress={() => setSelectedDate(date)}
+                >
+                  <ThemedText
+                    style={[
+                      styles.dateChipText,
+                      selectedDate === date && styles.dateChipTextActive,
+                    ]}
+                  >
+                    {moment(date, 'YYYYMMDD').format('MM/DD')}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </ThemedView>
+        )}
+
+        {/* 선택된 날짜 표시 */}
+        <ThemedView style={styles.selectedDateContainer}>
+          <ThemedText type='subtitle' style={styles.selectedDateText}>
+            {moment(selectedDate, 'YYYYMMDD').format('YYYY년 MM월 DD일')}
+          </ThemedText>
+          <TouchableOpacity style={styles.refreshButton} onPress={() => refetch()}>
+            <ThemedText style={styles.refreshButtonText}>새로고침</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
+      </ThemedView>
+
+      {/* 결과 목록 */}
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {results && results.length > 0 ? (
+        {isLoading ? (
+          <ThemedView style={styles.loadingContainer}>
+            <ActivityIndicator size='large' color='#E5C99C' />
+            <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
+          </ThemedView>
+        ) : error ? (
+          <ThemedView style={styles.errorContainer}>
+            <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
+            <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
+              <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
+            </TouchableOpacity>
+          </ThemedView>
+        ) : results && results.length > 0 ? (
           results.map((result: RaceResult) => (
             <ThemedView key={result.id} style={styles.resultCard}>
               <ThemedView style={styles.positionContainer}>
@@ -49,6 +203,9 @@ export default function ResultsScreen() {
                 <ThemedText type='caption' style={styles.jockeyName}>
                   기수: {result.jkName}
                 </ThemedText>
+                <ThemedText type='caption' style={styles.trainerName}>
+                  조교사: {result.trName}
+                </ThemedText>
               </ThemedView>
               <ThemedView style={styles.resultDetails}>
                 <ThemedText type='default' style={styles.finishTime}>
@@ -57,13 +214,16 @@ export default function ResultsScreen() {
                 <ThemedText type='caption' style={styles.odds}>
                   상금: {result.rcPrize?.toLocaleString() || 0}원
                 </ThemedText>
+                <ThemedText type='caption' style={styles.distance}>
+                  거리: {result.rcDist}m
+                </ThemedText>
               </ThemedView>
             </ThemedView>
           ))
         ) : (
           <ThemedView style={styles.emptyContainer}>
             <ThemedText type='subtitle' style={styles.emptyText}>
-              결과가 없습니다.
+              {viewMode === 'daily' ? '해당 날짜의 결과가 없습니다.' : '전체 결과가 없습니다.'}
             </ThemedText>
           </ThemedView>
         )}
@@ -79,9 +239,11 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     borderBottomWidth: 1,
+    borderBottomColor: 'rgba(180, 138, 60, 0.2)',
   },
   title: {
-    marginBottom: 4,
+    marginBottom: 16,
+    color: '#E5C99C',
   },
   content: {
     flex: 1,
@@ -175,5 +337,120 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#FFFFFF',
     fontWeight: '600',
+  },
+  // 뷰 모드 관련 스타일
+  viewModeContainer: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    borderRadius: 8,
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    padding: 4,
+  },
+  viewModeButton: {
+    flex: 1,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  viewModeButtonActive: {
+    backgroundColor: '#B48A3C',
+  },
+  viewModeText: {
+    color: 'rgba(180, 138, 60, 0.8)',
+    fontWeight: '600',
+  },
+  viewModeTextActive: {
+    color: '#FFFFFF',
+  },
+  // 날짜 선택 관련 스타일
+  dateSelector: {
+    flexDirection: 'row',
+    marginBottom: 16,
+    alignItems: 'center',
+  },
+  dateInput: {
+    flex: 1,
+    height: 40,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    color: '#E5C99C',
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+  },
+  searchButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    backgroundColor: '#B48A3C',
+    borderRadius: 8,
+  },
+  searchButtonText: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  // 최근 날짜 관련 스타일
+  recentDatesContainer: {
+    marginBottom: 16,
+  },
+  recentDatesTitle: {
+    marginBottom: 8,
+    color: 'rgba(180, 138, 60, 0.8)',
+  },
+  recentDatesScroll: {
+    flexDirection: 'row',
+  },
+  dateChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(180, 138, 60, 0.3)',
+  },
+  dateChipActive: {
+    backgroundColor: '#B48A3C',
+    borderColor: '#B48A3C',
+  },
+  dateChipText: {
+    color: 'rgba(180, 138, 60, 0.8)',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dateChipTextActive: {
+    color: '#FFFFFF',
+  },
+  // 선택된 날짜 표시 관련 스타일
+  selectedDateContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  selectedDateText: {
+    color: '#E5C99C',
+    fontWeight: '600',
+  },
+  refreshButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+    borderRadius: 6,
+  },
+  refreshButtonText: {
+    color: '#E5C99C',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  // 결과 카드 추가 스타일
+  trainerName: {
+    opacity: 0.6,
+    marginTop: 2,
+  },
+  distance: {
+    opacity: 0.6,
+    marginTop: 2,
   },
 });

@@ -2,12 +2,21 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { resultApi } from '../api/resultApi';
 import type { RaceResult } from '../api/resultApi';
 
-// 레이스 결과 조회
-export const useResults = (raceId: string) => {
+// 날짜별 경주 결과 조회
+export const useResults = (date: string) => {
   return useQuery({
-    queryKey: ['results', raceId],
-    queryFn: () => resultApi.getRaceResults(raceId),
-    enabled: !!raceId,
+    queryKey: ['results', 'date', date],
+    queryFn: async () => {
+      try {
+        const result = await resultApi.getResults({ date });
+        // 결과가 undefined나 null인 경우 빈 배열 반환
+        return result?.results || [];
+      } catch (error) {
+        console.error('결과 조회 실패:', error);
+        return []; // 기본값: 빈 배열
+      }
+    },
+    enabled: !!date,
     staleTime: 2 * 60 * 1000, // 2분
   });
 };
@@ -42,6 +51,23 @@ export const useUpdateRaceResult = () => {
     onSuccess: (_, { resultId }) => {
       queryClient.invalidateQueries({ queryKey: ['results'] });
     },
+  });
+};
+
+// 전체 경주 결과 조회
+export const useAllResults = () => {
+  return useQuery({
+    queryKey: ['results', 'all'],
+    queryFn: async () => {
+      try {
+        const result = await resultApi.getResults();
+        return result?.results || [];
+      } catch (error) {
+        console.error('전체 결과 조회 실패:', error);
+        return [];
+      }
+    },
+    staleTime: 5 * 60 * 1000, // 5분
   });
 };
 

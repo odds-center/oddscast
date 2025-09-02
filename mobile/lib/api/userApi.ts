@@ -1,21 +1,21 @@
-import { apiClient, handleApiResponse, handleApiError } from '@/lib/utils/axios';
 import { ApiResponse } from '@/lib/types/api';
-import qs from 'qs';
 import type {
-  User,
-  UserProfile,
-  UserStatistics,
-  UserAchievement,
   CreateUserRequest,
   UpdateUserRequest,
-  UserFilters,
-  UserSearchFilters,
-  UserListResponse,
-  UserSearchResponse,
+  User,
+  UserAchievement,
   UserActivity,
+  UserFilters,
+  UserListResponse,
   UserNotification,
   UserPreferences,
+  UserProfile,
+  UserSearchFilters,
+  UserSearchResponse,
+  UserStatistics,
 } from '@/lib/types/user';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import qs from 'qs';
 
 export class UserApi {
   private static instance: UserApi;
@@ -38,7 +38,9 @@ export class UserApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<ApiResponse<UserListResponse>>(`/users?${queryString}`);
+      const response = await axiosInstance.get<ApiResponse<UserListResponse>>(
+        `/users?${queryString}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -47,7 +49,7 @@ export class UserApi {
 
   static async getUser(userId: string): Promise<User> {
     try {
-      const response = await apiClient.get<ApiResponse<User>>(`/users/${userId}`);
+      const response = await axiosInstance.get<ApiResponse<User>>(`/users/${userId}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -56,7 +58,7 @@ export class UserApi {
 
   static async createUser(userData: CreateUserRequest): Promise<User> {
     try {
-      const response = await apiClient.post<ApiResponse<User>>('/users', userData);
+      const response = await axiosInstance.post<ApiResponse<User>>('/users', userData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -65,7 +67,7 @@ export class UserApi {
 
   static async updateUser(userId: string, updateData: UpdateUserRequest): Promise<User> {
     try {
-      const response = await apiClient.put<ApiResponse<User>>(`/users/${userId}`, updateData);
+      const response = await axiosInstance.put<ApiResponse<User>>(`/users/${userId}`, updateData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -74,7 +76,9 @@ export class UserApi {
 
   static async deleteUser(userId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{ message: string }>>(`/users/${userId}`);
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
+        `/users/${userId}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -83,7 +87,9 @@ export class UserApi {
 
   static async getUserProfile(userId: string): Promise<UserProfile> {
     try {
-      const response = await apiClient.get<ApiResponse<UserProfile>>(`/users/${userId}/profile`);
+      const response = await axiosInstance.get<ApiResponse<UserProfile>>(
+        `/users/${userId}/profile`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -95,7 +101,7 @@ export class UserApi {
     updateData: UpdateUserRequest
   ): Promise<UserProfile> {
     try {
-      const response = await apiClient.put<ApiResponse<UserProfile>>(
+      const response = await axiosInstance.put<ApiResponse<UserProfile>>(
         `/users/${userId}/profile`,
         updateData
       );
@@ -107,7 +113,7 @@ export class UserApi {
 
   static async getUserStatistics(userId: string): Promise<UserStatistics> {
     try {
-      const response = await apiClient.get<ApiResponse<UserStatistics>>(
+      const response = await axiosInstance.get<ApiResponse<UserStatistics>>(
         `/users/${userId}/statistics`
       );
       return handleApiResponse(response);
@@ -118,7 +124,7 @@ export class UserApi {
 
   static async getUserAchievements(userId: string): Promise<UserAchievement[]> {
     try {
-      const response = await apiClient.get<ApiResponse<UserAchievement[]>>(
+      const response = await axiosInstance.get<ApiResponse<UserAchievement[]>>(
         `/users/${userId}/achievements`
       );
       return handleApiResponse(response);
@@ -138,7 +144,7 @@ export class UserApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<ApiResponse<UserSearchResponse>>(
+      const response = await axiosInstance.get<ApiResponse<UserSearchResponse>>(
         `/users/search?${queryString}`
       );
       return handleApiResponse(response);
@@ -157,7 +163,7 @@ export class UserApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           activities: UserActivity[];
           total: number;
@@ -187,7 +193,7 @@ export class UserApi {
         arrayFormat: 'brackets',
       });
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           notifications: UserNotification[];
           total: number;
@@ -204,7 +210,7 @@ export class UserApi {
 
   static async getUserPreferences(userId: string): Promise<UserPreferences> {
     try {
-      const response = await apiClient.get<ApiResponse<UserPreferences>>(
+      const response = await axiosInstance.get<ApiResponse<UserPreferences>>(
         `/users/${userId}/preferences`
       );
       return handleApiResponse(response);
@@ -218,7 +224,7 @@ export class UserApi {
     preferences: Partial<UserPreferences>
   ): Promise<UserPreferences> {
     try {
-      const response = await apiClient.put<ApiResponse<UserPreferences>>(
+      const response = await axiosInstance.put<ApiResponse<UserPreferences>>(
         `/users/${userId}/preferences`,
         preferences
       );

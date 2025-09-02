@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
-import { Bet, BetStatus } from '@/lib/types/bet';
+import { Bet } from '@/lib/types/bet';
 import React from 'react';
 import { StyleSheet } from 'react-native';
 

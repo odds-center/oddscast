@@ -126,7 +126,7 @@ CREATE TABLE IF NOT EXISTS races (
     INDEX idx_race_status (race_status)
 );
 
--- 마권 테이블 (bet.entity.ts 기반)
+-- 마권 테이블 (bet.entity.ts 기반) - 수정된 필드명
 CREATE TABLE IF NOT EXISTS bets (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
@@ -400,7 +400,7 @@ CREATE TABLE IF NOT EXISTS entry_details (
     INDEX idx_entry_number (entry_number)
 );
 
--- 사용자 포인트 잔액 테이블 (user-point-balance.entity.ts 기반)
+-- 사용자 포인트 잔액 테이블 (user-point-balance.entity.ts 기반) - 수정된 필드들
 CREATE TABLE IF NOT EXISTS user_point_balances (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL UNIQUE,

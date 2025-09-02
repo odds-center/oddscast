@@ -1,5 +1,5 @@
-import { apiClient, handleApiResponse, handleApiError } from '@/lib/utils/axios';
 import { ApiResponse } from '@/lib/types/api';
+import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
 
 // 경마 결과 관련 타입 정의
 export interface RaceResult {
@@ -90,24 +90,24 @@ export interface ResultStatistics {
   byMeet: Record<string, number>;
   byGrade: Record<string, number>;
   byDistance: Record<string, number>;
-  topJockeys: Array<{
+  topJockeys: {
     jockeyName: string;
     wins: number;
     totalStarts: number;
     winRate: number;
-  }>;
-  topTrainers: Array<{
+  }[];
+  topTrainers: {
     trainerName: string;
     wins: number;
     totalStarts: number;
     winRate: number;
-  }>;
-  topHorses: Array<{
+  }[];
+  topHorses: {
     horseName: string;
     wins: number;
     totalStarts: number;
     winRate: number;
-  }>;
+  }[];
 }
 
 // 경마 결과 API 클래스
@@ -149,7 +149,7 @@ export class ResultApi {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           results: RaceResult[];
           total: number;
@@ -167,7 +167,7 @@ export class ResultApi {
   // 개별 경주 결과 조회
   async getResult(resultId: string): Promise<RaceResultDetail> {
     try {
-      const response = await apiClient.get<ApiResponse<RaceResultDetail>>(
+      const response = await axiosInstance.get<ApiResponse<RaceResultDetail>>(
         `${this.baseUrl}/${resultId}`
       );
       return handleApiResponse(response);
@@ -179,7 +179,7 @@ export class ResultApi {
   // 경주별 결과 목록
   async getRaceResults(raceId: string): Promise<RaceResult[]> {
     try {
-      const response = await apiClient.get<ApiResponse<RaceResult[]>>(
+      const response = await axiosInstance.get<ApiResponse<RaceResult[]>>(
         `${this.baseUrl}/race/${raceId}`
       );
       return handleApiResponse(response);
@@ -193,7 +193,7 @@ export class ResultApi {
     resultData: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>
   ): Promise<RaceResult> {
     try {
-      const response = await apiClient.post<ApiResponse<RaceResult>>(this.baseUrl, resultData);
+      const response = await axiosInstance.post<ApiResponse<RaceResult>>(this.baseUrl, resultData);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -206,7 +206,7 @@ export class ResultApi {
     updateData: Partial<Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<RaceResult> {
     try {
-      const response = await apiClient.put<ApiResponse<RaceResult>>(
+      const response = await axiosInstance.put<ApiResponse<RaceResult>>(
         `${this.baseUrl}/${resultId}`,
         updateData
       );
@@ -219,7 +219,7 @@ export class ResultApi {
   // 경주 결과 삭제
   async deleteResult(resultId: string): Promise<{ message: string }> {
     try {
-      const response = await apiClient.delete<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
         `${this.baseUrl}/${resultId}`
       );
       return handleApiResponse(response);
@@ -247,7 +247,7 @@ export class ResultApi {
       if (filters?.grade) params.append('grade', filters.grade);
       if (filters?.distance) params.append('distance', filters.distance);
 
-      const response = await apiClient.get<ApiResponse<ResultStatistics>>(
+      const response = await axiosInstance.get<ApiResponse<ResultStatistics>>(
         `${this.baseUrl}/statistics?${params.toString()}`
       );
       return handleApiResponse(response);
@@ -276,7 +276,7 @@ export class ResultApi {
       if (filters?.page) params.append('page', filters.page.toString());
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
-      const response = await apiClient.get<
+      const response = await axiosInstance.get<
         ApiResponse<{
           results: RaceResult[];
           total: number;
@@ -303,7 +303,7 @@ export class ResultApi {
       if (filters?.distance) params.append('distance', filters.distance);
       params.append('format', format);
 
-      const response = await apiClient.get(`${this.baseUrl}/export?${params.toString()}`, {
+      const response = await axiosInstance.get(`${this.baseUrl}/export?${params.toString()}`, {
         responseType: 'blob',
       });
       return response.data;
@@ -316,10 +316,10 @@ export class ResultApi {
   async createBulkResults(results: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>[]): Promise<{
     createdCount: number;
     failedCount: number;
-    errors: Array<{ index: number; error: string }>;
+    errors: { index: number; error: string }[];
   }> {
     try {
-      const response = await apiClient.post<ApiResponse<any>>(`${this.baseUrl}/bulk-create`, {
+      const response = await axiosInstance.post<ApiResponse<any>>(`${this.baseUrl}/bulk-create`, {
         results,
       });
       return handleApiResponse(response);
@@ -330,17 +330,17 @@ export class ResultApi {
 
   // 경주 결과 일괄 업데이트
   async updateBulkResults(
-    updates: Array<{
+    updates: {
       id: string;
       data: Partial<Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>>;
-    }>
+    }[]
   ): Promise<{
     updatedCount: number;
     failedCount: number;
-    errors: Array<{ id: string; error: string }>;
+    errors: { id: string; error: string }[];
   }> {
     try {
-      const response = await apiClient.put<ApiResponse<any>>(`${this.baseUrl}/bulk-update`, {
+      const response = await axiosInstance.put<ApiResponse<any>>(`${this.baseUrl}/bulk-update`, {
         updates,
       });
       return handleApiResponse(response);
@@ -352,15 +352,15 @@ export class ResultApi {
   // 경주 결과 검증
   async validateResults(raceId: string): Promise<{
     isValid: boolean;
-    issues: Array<{
+    issues: {
       type: 'MISSING' | 'INVALID' | 'DUPLICATE' | 'INCONSISTENT';
       message: string;
       resultId?: string;
       field?: string;
-    }>;
+    }[];
   }> {
     try {
-      const response = await apiClient.get<ApiResponse<any>>(`${this.baseUrl}/validate/${raceId}`);
+      const response = await axiosInstance.get<ApiResponse<any>>(`${this.baseUrl}/validate/${raceId}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);

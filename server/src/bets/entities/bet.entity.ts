@@ -62,7 +62,7 @@ export class Bet extends BaseEntity {
   raceId!: string;
 
   // 마권 기본 정보
-  @Column({ type: 'enum', enum: BetType })
+  @Column({ type: 'enum', enum: BetType, name: 'bet_type' })
   betType!: BetType; // 승식
 
   @Column({ type: 'varchar', length: 100, name: 'bet_name' })
@@ -102,11 +102,21 @@ export class Bet extends BaseEntity {
   };
 
   // 마권 상태
-  @Column({ type: 'enum', enum: BetStatus, default: BetStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: BetStatus,
+    name: 'bet_status',
+    default: BetStatus.PENDING,
+  })
   @Index()
   betStatus!: BetStatus; // 마권 상태
 
-  @Column({ type: 'enum', enum: BetResult, default: BetResult.PENDING })
+  @Column({
+    type: 'enum',
+    enum: BetResult,
+    name: 'bet_result',
+    default: BetResult.PENDING,
+  })
   @Index()
   betResult!: BetResult; // 마권 결과
 

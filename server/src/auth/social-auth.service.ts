@@ -318,8 +318,26 @@ export class SocialAuthService {
         tokenExpiresAt,
       } = params;
 
-      // 기존 사용자 확인
+      // 기존 사용자 확인 (Google ID 또는 이메일로)
       let user = await this.usersService.findByGoogleId(socialId);
+
+      // Google ID로 못 찾았으면 이메일로 찾기
+      if (!user) {
+        user = await this.usersService.findByEmail(socialEmail);
+
+        // 이메일로 찾았으면 Google ID를 업데이트
+        if (user) {
+          this.logger.log(
+            `기존 사용자 발견 (이메일): ${user.email}, Google ID 업데이트`
+          );
+
+          // providerId 업데이트
+          await this.usersService.update(user.id, {
+            providerId: socialId,
+            authProvider: 'google',
+          });
+        }
+      }
 
       if (user) {
         // 기존 사용자: Google OAuth 정보 업데이트
@@ -358,6 +376,8 @@ export class SocialAuthService {
       }
 
       // 새 사용자 생성
+      this.logger.log(`새 사용자 생성 시작: ${socialEmail}`);
+
       const createUserDto = {
         email: socialEmail,
         name: socialName || '',

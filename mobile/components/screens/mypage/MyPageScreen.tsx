@@ -15,11 +15,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GOLD_THEME } from '@/constants/theme';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { showModal } = useModal();
+  const { showModal, hideModal } = useModal();
 
   // API 데이터 조회
   const { data: userProfile, isLoading: profileLoading } = useCurrentUserProfile();
@@ -50,22 +51,22 @@ const MyPageScreen = () => {
   const handleMenuPress = (menuName: string) => {
     switch (menuName) {
       case '프로필 편집':
-        showModal(<ProfileEditModal onClose={() => {}} />, '프로필 편집');
+        showModal(<ProfileEditModal onClose={hideModal} />, '프로필 편집', hideModal);
         break;
       case '즐겨찾기':
         router.push('/mypage/favorites');
         break;
       case '알림 설정':
-        showModal(<NotificationSettingsModal onClose={() => {}} />, '알림 설정');
+        showModal(<NotificationSettingsModal onClose={hideModal} />, '알림 설정', hideModal);
         break;
       case '도움말':
         router.push('/mypage/help');
         break;
       case '포인트 획득':
-        showModal(<PointsEarnModal onClose={() => {}} />, '포인트 획득 방법');
+        showModal(<PointsEarnModal onClose={hideModal} />, '포인트 획득 방법', hideModal);
         break;
       case '포인트 사용':
-        showModal(<PointsUseModal onClose={() => {}} />, '포인트 사용 방법');
+        showModal(<PointsUseModal onClose={hideModal} />, '포인트 사용 방법', hideModal);
         break;
       default:
         console.log(`${menuName} 기능이 곧 추가될 예정입니다.`);
@@ -94,7 +95,7 @@ const MyPageScreen = () => {
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Ionicons name='person' size={32} color='#FFFFFF' />
+              <Ionicons name='person' size={32} color={GOLD_THEME.TEXT.PRIMARY} />
             </View>
           </View>
           <View style={styles.profileInfo}>
@@ -153,14 +154,14 @@ const MyPageScreen = () => {
               style={styles.actionButton}
               onPress={() => handleMenuPress('포인트 획득')}
             >
-              <Ionicons name='gift' size={16} color='#FFFFFF' />
+              <Ionicons name='gift' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
               <ThemedText style={styles.actionButtonText}>획득</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity
               style={styles.actionButton}
               onPress={() => handleMenuPress('포인트 사용')}
             >
-              <Ionicons name='card' size={16} color='#FFFFFF' />
+              <Ionicons name='card' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
               <ThemedText style={styles.actionButtonText}>사용</ThemedText>
             </TouchableOpacity>
           </View>
@@ -170,7 +171,7 @@ const MyPageScreen = () => {
         <View style={styles.levelContainer}>
           <View style={styles.currentLevel}>
             <View style={styles.levelBadge}>
-              <Ionicons name='star' size={16} color='#E5C99C' />
+              <Ionicons name='star' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
               <ThemedText style={styles.levelText}>{currentLevel.NAME}</ThemedText>
             </View>
             <ThemedText type='caption' style={styles.levelDescription}>
@@ -200,7 +201,7 @@ const MyPageScreen = () => {
         <View style={styles.menuList}>
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('프로필 편집')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='person' size={20} color='#E5C99C' />
+              <Ionicons name='person' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.menuText}>프로필 편집</ThemedText>
             <Ionicons name='chevron-forward' size={20} color='#666' />
@@ -208,7 +209,7 @@ const MyPageScreen = () => {
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('즐겨찾기')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='heart' size={20} color='#E5C99C' />
+              <Ionicons name='heart' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.menuText}>즐겨찾기</ThemedText>
             <Ionicons name='chevron-forward' size={20} color='#666' />
@@ -216,7 +217,7 @@ const MyPageScreen = () => {
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('알림 설정')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='notifications' size={20} color='#E5C99C' />
+              <Ionicons name='notifications' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.menuText}>알림 설정</ThemedText>
             <Ionicons name='chevron-forward' size={20} color='#666' />
@@ -224,7 +225,7 @@ const MyPageScreen = () => {
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('도움말')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='help-circle' size={20} color='#E5C99C' />
+              <Ionicons name='help-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.menuText}>도움말</ThemedText>
             <Ionicons name='chevron-forward' size={20} color='#666' />
@@ -276,19 +277,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     textAlign: 'center',
   },
   section: {
     marginBottom: 24,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   sectionTitle: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     marginBottom: 16,
     fontSize: 18,
     fontWeight: '600',
@@ -304,23 +305,23 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(180, 138, 60, 0.3)',
+    backgroundColor: 'rgba(255, 215, 0, 0.3)',
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#B48A3C',
+    borderColor: GOLD_THEME.GOLD.DARK,
   },
   profileInfo: {
     flex: 1,
   },
   username: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontSize: 20,
     fontWeight: '600',
     marginBottom: 4,
   },
   email: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 14,
     marginBottom: 12,
@@ -333,13 +334,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 18,
     fontWeight: '600',
     marginBottom: 2,
   },
   statLabel: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 12,
   },
@@ -353,13 +354,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   balanceLabel: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 14,
     marginBottom: 4,
   },
   balanceAmount: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 24,
     fontWeight: '600',
   },
@@ -368,7 +369,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   actionButton: {
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -377,7 +378,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   actionButtonText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontSize: 14,
     fontWeight: '500',
   },
@@ -390,7 +391,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   levelBadge: {
-    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -399,12 +400,12 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   levelText: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 14,
     fontWeight: '600',
   },
   levelDescription: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 12,
   },
@@ -419,11 +420,11 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     borderRadius: 3,
   },
   progressText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 12,
     textAlign: 'center',
@@ -439,13 +440,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   menuIcon: {
     marginRight: 12,
   },
   menuText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontSize: 16,
     fontWeight: '500',
     flex: 1,
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   appInfoText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.5,
     fontSize: 12,
   },

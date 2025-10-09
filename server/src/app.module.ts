@@ -6,7 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
 import { BetsModule } from './bets/bets.module';
 import { DataSourceModule } from './data-source/data-source.module';
-import { KraApiModule } from './external-apis/kra/kra-api.module';
+import { KraApiModule } from './kra-api/kra-api.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PointsModule } from './points/points.module';

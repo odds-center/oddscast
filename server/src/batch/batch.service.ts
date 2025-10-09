@@ -3,18 +3,12 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
-import { KraApiService } from '../external-apis/kra/kra-api.service';
+import { KraApiIntegratedService } from '../kra-api/kra-api-integrated.service';
 import { RacePlan } from '../races/entities/race-plan.entity';
 import { Race } from '../races/entities/race.entity';
 import { RaceHorseResult } from '../results/entities/race-horse-result.entity';
 import { DividendRate } from '../results/entities/dividend-rate.entity';
 import { EntryDetail } from '../races/entities/entry-detail.entity';
-import {
-  mapKraRacePlanToRacePlan,
-  mapKraRaceRecordToRaceHorseResult,
-  mapKraDividendToDividendRate,
-  mapKraEntryToEntryDetail,
-} from './kra-data-mapper';
 import * as moment from 'moment-timezone';
 import { isEmpty, isArray } from 'lodash';
 
@@ -33,7 +27,7 @@ export class BatchService {
     private readonly dividendRateRepository: Repository<DividendRate>,
     @InjectRepository(EntryDetail)
     private readonly entryDetailRepository: Repository<EntryDetail>,
-    private readonly kraApiService: KraApiService,
+    private readonly kraApiService: KraApiIntegratedService,
     private readonly configService: ConfigService
   ) {}
 
@@ -85,33 +79,40 @@ export class BatchService {
   async syncRacePlans(date: string) {
     try {
       this.logger.log(`경주계획 데이터 동기화 시작: ${date}`);
-      const racePlansResponse = await this.kraApiService.getRacePlans(date);
+      const dateStr = date.replace(/-/g, '');
+      const racePlansResponse =
+        await this.kraApiService.getDailyRacePlans(dateStr);
 
-      if (
-        racePlansResponse.success &&
-        racePlansResponse.data &&
-        isArray(racePlansResponse.data) &&
-        !isEmpty(racePlansResponse.data)
-      ) {
-        const racePlans = racePlansResponse.data;
+      if (racePlansResponse && racePlansResponse.length > 0) {
+        const racePlans = racePlansResponse;
         for (const plan of racePlans) {
           const existingPlan = await this.racePlanRepository.findOne({
             where: {
-              rcDate: plan.rc_date,
+              rcDate: plan.rcDate,
               meet: plan.meet,
-              rcNo: plan.rc_no,
+              rcNo: String(plan.rcNo),
             },
           });
           if (existingPlan) {
-            const mappedData = mapKraRacePlanToRacePlan(plan);
             await this.racePlanRepository.update(existingPlan.planId, {
-              ...mappedData,
+              rcName: plan.rcName,
+              rcDist: String(plan.rcDist),
+              rcGrade: plan.rcGrade,
+              rcPrize: plan.rcPrize,
               updatedAt: new Date(),
             });
           } else {
-            const mappedData = mapKraRacePlanToRacePlan(plan);
             const newPlan = this.racePlanRepository.create({
-              ...mappedData,
+              planId: plan.planId,
+              meet: plan.meet,
+              meetName: plan.meetName,
+              rcDate: plan.rcDate,
+              rcNo: String(plan.rcNo),
+              rcName: plan.rcName,
+              rcDist: String(plan.rcDist),
+              rcGrade: plan.rcGrade,
+              rcPrize: plan.rcPrize,
+              rcCondition: plan.rcCondition,
               createdAt: new Date(),
               updatedAt: new Date(),
             });
@@ -131,37 +132,41 @@ export class BatchService {
   async syncRaceResults(date: string) {
     try {
       this.logger.log(`경주 결과 데이터 동기화 시작: ${date}`);
-      const raceRecordsResponse = await this.kraApiService.getRaceRecords(date);
+      const dateStr = date.replace(/-/g, '');
+      const raceRecordsResponse =
+        await this.kraApiService.getDailyRaceRecords(dateStr);
 
-      if (
-        raceRecordsResponse.success &&
-        raceRecordsResponse.data &&
-        isArray(raceRecordsResponse.data) &&
-        !isEmpty(raceRecordsResponse.data)
-      ) {
-        const raceRecords = raceRecordsResponse.data;
+      if (raceRecordsResponse && raceRecordsResponse.length > 0) {
+        const raceRecords = raceRecordsResponse;
         for (const record of raceRecords) {
           const existingResult = await this.raceHorseResultRepository.findOne({
             where: {
-              rcDate: record.rc_date,
+              rcDate: record.rcDate,
               meet: record.meet,
-              rcNo: record.rc_no,
-              hrNumber: record.hr_no,
+              rcNo: String(record.rcNo),
+              hrNumber: record.hrNo,
             },
           });
           if (existingResult) {
-            const mappedData = mapKraRaceRecordToRaceHorseResult(record);
             await this.raceHorseResultRepository.update(
               existingResult.result_id,
               {
-                ...mappedData,
+                rcTime: String(record.rcTime),
+                rcRank: String(record.ord),
                 updatedAt: new Date(),
               }
             );
           } else {
-            const mappedData = mapKraRaceRecordToRaceHorseResult(record);
             const newResult = this.raceHorseResultRepository.create({
-              ...mappedData,
+              result_id: record.resultId,
+              meet: record.meet,
+              meetName: record.meetName,
+              hrName: record.hrName,
+              hrNumber: record.hrNo,
+              rcDate: record.rcDate,
+              rcNo: String(record.rcNo),
+              rcRank: String(record.ord),
+              rcTime: String(record.rcTime),
               createdAt: new Date(),
               updatedAt: new Date(),
             });
@@ -185,15 +190,12 @@ export class BatchService {
       this.logger.log(`확정배당율 데이터 동기화 시작: ${date}`);
 
       // KRA API에서 확정배당율 조회
-      const dividendResponse = await this.kraApiService.getDividendRates(date);
+      const dateStr = date.replace(/-/g, '');
+      const dividendResponse =
+        await this.kraApiService.getDailyDividendRates(dateStr);
 
-      if (
-        dividendResponse.success &&
-        dividendResponse.data &&
-        isArray(dividendResponse.data) &&
-        !isEmpty(dividendResponse.data)
-      ) {
-        const dividends = dividendResponse.data;
+      if (dividendResponse && dividendResponse.length > 0) {
+        const dividends = dividendResponse;
 
         for (const dividend of dividends) {
           // 기존 배당율 확인
@@ -201,27 +203,32 @@ export class BatchService {
             where: {
               rcDate: dividend.rcDate,
               meet: dividend.meet,
-              rcNo: dividend.rcNo,
-              pool: dividend.pool,
+              rcNo: String(dividend.rcNo),
+              pool: dividend.winType,
             },
           });
 
           if (existingDividend) {
-            // 기존 데이터 업데이트 - 매핑된 데이터 사용
-            const mappedData = mapKraDividendToDividendRate(dividend);
             await this.dividendRateRepository.update(
               existingDividend.dividend_id,
               {
-                ...mappedData,
+                odds: dividend.dividendRate,
                 updatedAt: new Date(),
               }
             );
           } else {
-            // 새 데이터 생성 - 매핑된 데이터 사용
-            const mappedData = mapKraDividendToDividendRate(dividend);
             const newDividend = this.dividendRateRepository.create({
-              dividend_id: `${dividend.rcDate}_${dividend.meet}_${dividend.rcNo}_${dividend.pool}`,
-              ...mappedData,
+              dividend_id: dividend.dividendId,
+              meet: dividend.meet,
+              meetName: dividend.meetName,
+              rcDate: dividend.rcDate,
+              rcNo: String(dividend.rcNo),
+              pool: dividend.winType,
+              poolName: dividend.winTypeName,
+              odds: dividend.dividendRate,
+              chulNo: String(dividend.firstHorseNo),
+              chulNo2: String(dividend.secondHorseNo || ''),
+              chulNo3: String(dividend.thirdHorseNo || ''),
               createdAt: new Date(),
               updatedAt: new Date(),
             });
@@ -244,42 +251,50 @@ export class BatchService {
     try {
       this.logger.log(`출마표 상세정보 동기화 시작: ${date}`);
 
-      // KRA API에서 출마표 조회 (경주기록에서 출전마 정보 추출)
-      const raceRecordsResponse = await this.kraApiService.getRaceRecords(date);
+      // KRA API에서 출마표 조회
+      const dateStr = date.replace(/-/g, '');
+      const raceRecordsResponse =
+        await this.kraApiService.getDailyEntrySheets(dateStr);
 
-      if (
-        raceRecordsResponse.success &&
-        raceRecordsResponse.data &&
-        isArray(raceRecordsResponse.data) &&
-        !isEmpty(raceRecordsResponse.data)
-      ) {
-        const raceRecords = raceRecordsResponse.data;
+      if (raceRecordsResponse && raceRecordsResponse.length > 0) {
+        const entrySheets = raceRecordsResponse;
 
-        for (const record of raceRecords) {
+        for (const entry of entrySheets) {
           // 기존 출마표 확인
           const existingEntry = await this.entryDetailRepository.findOne({
             where: {
-              rcDate: record.rc_date,
-              meet: record.meet,
-              rcNo: record.rc_no,
-              hrNo: record.hr_no,
+              rcDate: entry.rcDate,
+              meet: entry.meet,
+              rcNo: String(entry.rcNo),
+              hrNo: entry.hrNo,
             },
           });
 
           if (existingEntry) {
-            // 기존 데이터 업데이트 - 매핑된 데이터 사용
-            const mappedData = mapKraEntryToEntryDetail(record);
             await this.entryDetailRepository.update(existingEntry.entry_id, {
-              ...mappedData,
+              hrName: entry.hrName,
+              jkName: entry.jkName,
+              trName: entry.trName,
               updatedAt: new Date(),
             });
           } else {
-            // 새 데이터 생성 - 매핑된 데이터 사용
-            const mappedData = mapKraEntryToEntryDetail(record);
             const newEntry = this.entryDetailRepository.create({
-              entry_id: `${record.rc_date}_${record.meet}_${record.rc_no}_${record.hr_no}`,
-              raceId: `${record.rc_date}_${record.meet}_${record.rc_no}`,
-              ...mappedData,
+              entry_id: entry.entryId,
+              raceId: entry.raceId,
+              meet: entry.meet,
+              meetName: entry.meetName,
+              rcDate: entry.rcDate,
+              rcNo: String(entry.rcNo),
+              rcName: entry.rcName,
+              hrNo: entry.hrNo,
+              hrName: entry.hrName,
+              jkName: entry.jkName,
+              jkNo: entry.jkNo,
+              trName: entry.trName,
+              trNo: entry.trNo,
+              owName: entry.owName,
+              owNo: entry.owNo,
+              entryNumber: String(entry.gateNo || 0),
               createdAt: new Date(),
               updatedAt: new Date(),
             });
@@ -288,7 +303,7 @@ export class BatchService {
           }
         }
 
-        this.logger.log(`출마표 상세정보 동기화 완료: ${raceRecords.length}건`);
+        this.logger.log(`출마표 상세정보 동기화 완료: ${entrySheets.length}건`);
       }
     } catch (error) {
       this.logger.error(`출마표 상세정보 동기화 실패: ${date}`, error);

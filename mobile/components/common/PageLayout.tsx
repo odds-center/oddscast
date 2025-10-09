@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, ViewStyle } from 'react-native';
 import { ThemedView } from '@/components/ThemedView';
+import { GOLD_THEME } from '@/constants/theme';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -32,7 +33,7 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#0C0C0C',
+    backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
     paddingTop: 60, // 상단 여백 조정 (노치 영역 포함)
   },
   content: {

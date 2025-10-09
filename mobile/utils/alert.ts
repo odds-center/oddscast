@@ -64,14 +64,14 @@ const showCustomAlert = (
 /**
  * 성공 메시지를 표시합니다.
  */
-export const showSuccessMessage = (message: string, title: string = '성공') => {
+export const showSuccessMessage = (message: string, title: string = '✨ 성공') => {
   showCustomAlert(title, message, [{ text: '확인' }], 'success');
 };
 
 /**
  * 에러 메시지를 표시합니다.
  */
-export const showErrorMessage = (message: string, title: string = '오류') => {
+export const showErrorMessage = (message: string, title: string = '⚠️ 오류') => {
   showCustomAlert(title, message, [{ text: '확인' }], 'error');
 };
 

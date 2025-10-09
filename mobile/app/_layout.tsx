@@ -20,7 +20,7 @@ SplashScreen.preventAutoHideAsync();
 function RootLayoutNav() {
   const { colorScheme, loading: colorSchemeLoading } = useColorScheme();
   const [loaded] = useLoadFonts();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   // 디버깅을 위한 로그
   console.log('RootLayoutNav state:', {

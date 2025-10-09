@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GOLD_THEME } from '@/constants/theme';
 
 export default function BettingScreen() {
   const router = useRouter();
@@ -45,26 +46,26 @@ export default function BettingScreen() {
   const getBetStatusColor = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return '#DAA520'; // 골든로드
+        return GOLD_THEME.STATUS.WARNING;
       case 'COMPLETED':
-        return '#FFD700'; // 진한 골드
+        return GOLD_THEME.STATUS.SUCCESS;
       case 'CANCELLED':
-        return '#B8860B'; // 다크골든로드
+        return GOLD_THEME.STATUS.ERROR;
       default:
-        return '#CD853F'; // 페루
+        return GOLD_THEME.STATUS.INFO;
     }
   };
 
   const getBetResultColor = (result: string) => {
     switch (result) {
       case 'WIN':
-        return '#FFD700'; // 진한 골드
+        return GOLD_THEME.STATUS.SUCCESS;
       case 'LOSS':
-        return '#B8860B'; // 다크골든로드
+        return GOLD_THEME.STATUS.ERROR;
       case 'PENDING':
-        return '#DAA520'; // 골든로드
+        return GOLD_THEME.STATUS.WARNING;
       default:
-        return '#CD853F'; // 페루
+        return GOLD_THEME.STATUS.INFO;
     }
   };
 
@@ -209,7 +210,7 @@ export default function BettingScreen() {
 
       {/* 새 베팅 버튼 */}
       <TouchableOpacity style={styles.newBetButton} onPress={() => router.push('/betting/new')}>
-        <Ionicons name='add' size={24} color='#FFFFFF' />
+        <Ionicons name='add' size={24} color={GOLD_THEME.TEXT.PRIMARY} />
         <ThemedText style={styles.newBetButtonText}>새 베팅하기</ThemedText>
       </TouchableOpacity>
     </PageLayout>
@@ -221,13 +222,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)', // 진한 골드 테두리로 변경
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   sectionTitle: {
     marginBottom: 16,
-    color: '#FFD700', // 진한 골드로 변경
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -240,16 +241,16 @@ const styles = StyleSheet.create({
     width: '45%',
   },
   statNumber: {
-    color: '#FFD700', // 진한 골드로 변경
+    color: GOLD_THEME.TEXT.SECONDARY,
     marginBottom: 4,
   },
   statLabel: {
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   tabContainer: {
     flexDirection: 'row',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
     borderRadius: 12,
     padding: 4,
   },
@@ -261,14 +262,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tabActive: {
-    backgroundColor: '#B8860B', // 다크골든로드로 변경
+    backgroundColor: GOLD_THEME.GOLD.DARK,
   },
   tabText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '500',
   },
   tabTextActive: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
   },
   betItem: {
@@ -277,7 +278,7 @@ const styles = StyleSheet.create({
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.1)', // 진한 골드 테두리로 변경
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   betHeader: {
     flexDirection: 'row',
@@ -286,7 +287,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   betRaceName: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
   },
   betStatus: {
@@ -295,7 +296,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   betStatusText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
   },
   betDetails: {
@@ -306,10 +307,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   betDetailLabel: {
-    color: '#9BA1A6',
+    color: GOLD_THEME.TEXT.TERTIARY,
   },
   betDetailValue: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '500',
   },
   emptyContainer: {
@@ -319,10 +320,10 @@ const styles = StyleSheet.create({
   emptyText: {
     opacity: 0.6,
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   newBetButton: {
-    backgroundColor: '#B8860B', // 다크골든로드로 변경
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -332,7 +333,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   newBetButtonText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
     marginLeft: 8,
   },

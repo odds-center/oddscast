@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GOLD_THEME } from '@/constants/theme';
 
 // Race 타입은 lib/types/api.ts에서 import
 
@@ -61,7 +62,7 @@ export default function RacesScreen() {
       {/* 경주 목록 */}
       {racesLoading ? (
         <View style={styles.emptyContainer}>
-          <Ionicons name='refresh' size={48} color='#E5C99C' />
+          <Ionicons name='refresh' size={48} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText type='body' style={styles.emptyText}>
             경주 정보를 불러오는 중...
           </ThemedText>
@@ -92,7 +93,7 @@ export default function RacesScreen() {
 
             <View style={styles.raceFooter}>
               <View style={styles.raceTime}>
-                <Ionicons name='time' size={16} color='#E5C99C' />
+                <Ionicons name='time' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
                 <ThemedText type='caption' style={styles.timeText}>
                   {race.rcStartTime || ''}
                 </ThemedText>
@@ -114,7 +115,7 @@ export default function RacesScreen() {
         ))
       ) : (
         <View style={styles.emptyContainer}>
-          <Ionicons name='calendar-outline' size={48} color='#E5C99C' />
+          <Ionicons name='calendar-outline' size={48} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText type='body' style={styles.emptyText}>
             {selectedVenue === 'all'
               ? '등록된 경주가 없습니다.'
@@ -181,12 +182,12 @@ const styles = StyleSheet.create({
   },
   title: {
     marginBottom: 8,
-    color: '#B48A3C',
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   subtitle: {
     textAlign: 'center',
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   filterSection: {
     marginBottom: 20,
@@ -199,26 +200,26 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     borderRadius: 20,
     marginHorizontal: 4,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   filterButtonActive: {
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
   },
   filterButtonText: {
-    color: '#B48A3C',
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   filterButtonTextActive: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   raceCard: {
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   raceHeader: {
     flexDirection: 'row',
@@ -231,20 +232,20 @@ const styles = StyleSheet.create({
   },
   raceName: {
     marginBottom: 4,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   raceDetails: {
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   raceGrade: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
-    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
   },
   gradeText: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 12,
   },
   raceFooter: {
@@ -258,7 +259,7 @@ const styles = StyleSheet.create({
   },
   timeText: {
     marginLeft: 4,
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   raceStatus: {
     alignItems: 'flex-end',
@@ -269,7 +270,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   statusText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontSize: 12,
     fontWeight: '500',
   },
@@ -281,20 +282,20 @@ const styles = StyleSheet.create({
     marginTop: 16,
     textAlign: 'center',
     opacity: 0.6,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   statsSection: {
     marginTop: 20,
     marginBottom: 40,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   sectionTitle: {
     marginBottom: 16,
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   statsGrid: {
     flexDirection: 'row',
@@ -304,11 +305,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     marginBottom: 4,
   },
   statLabel: {
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
 });

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
-import { KraApiService } from '../external-apis/kra/kra-api.service';
+import { KraApiIntegratedService } from '../kra-api/kra-api-integrated.service';
 import { RacePlansService } from '../race-plans/race-plans.service';
 import { ResultsService } from '../results/results.service';
 import { DividendRatesService } from '@/results/dividend-rates.service';
@@ -11,7 +11,7 @@ export class KraDataSchedulerService {
   private readonly logger = new Logger(KraDataSchedulerService.name);
 
   constructor(
-    private readonly kraApiService: KraApiService,
+    private readonly kraApiService: KraApiIntegratedService,
     private readonly resultsService: ResultsService,
     private readonly racePlansService: RacePlansService,
     private readonly dividendRatesService: DividendRatesService
@@ -73,31 +73,29 @@ export class KraDataSchedulerService {
 
     try {
       // KRA API에서 경주 결과 조회
-      const raceRecords = await this.kraApiService.getRaceRecordsByDate(date);
+      const raceRecords = await this.kraApiService.getDailyRaceRecords(
+        date.replace(/-/g, '')
+      );
 
-      if (!raceRecords || !raceRecords.success || !raceRecords.data) {
+      if (!raceRecords || raceRecords.length === 0) {
         this.logger.warn(`⚠️ ${date} 경주 결과 데이터가 없습니다.`);
         return;
       }
 
-      const items = Array.isArray(raceRecords.data)
-        ? raceRecords.data
-        : [raceRecords.data];
-
-      this.logger.log(`📊 ${date} 경주 결과 ${items.length}개 발견`);
+      this.logger.log(`📊 ${date} 경주 결과 ${raceRecords.length}개 발견`);
 
       // 각 경주 결과를 DB에 저장
-      for (const item of items) {
+      for (const item of raceRecords) {
         try {
           await this.resultsService.createFromKraData(item);
         } catch (error) {
           this.logger.error(
-            `❌ 경주 결과 저장 실패 (${item.rc_no || 'unknown'}): ${error.message}`
+            `❌ 경주 결과 저장 실패 (${item.rcNo || 'unknown'}): ${error.message}`
           );
         }
       }
 
-      this.logger.log(`✅ ${date} 경주 결과 ${items.length}개 저장 완료`);
+      this.logger.log(`✅ ${date} 경주 결과 ${raceRecords.length}개 저장 완료`);
     } catch (error) {
       this.logger.error(`❌ ${date} 경주 결과 수집 실패: ${error.message}`);
       throw error;
@@ -112,31 +110,29 @@ export class KraDataSchedulerService {
 
     try {
       // KRA API에서 경주 계획 조회
-      const racePlans = await this.kraApiService.getRacePlansByDate(date);
+      const racePlans = await this.kraApiService.getDailyRacePlans(
+        date.replace(/-/g, '')
+      );
 
-      if (!racePlans || !racePlans.success || !racePlans.data) {
+      if (!racePlans || racePlans.length === 0) {
         this.logger.warn(`⚠️ ${date} 경주 계획 데이터가 없습니다.`);
         return;
       }
 
-      const items = Array.isArray(racePlans.data)
-        ? racePlans.data
-        : [racePlans.data];
-
-      this.logger.log(`📋 ${date} 경주 계획 ${items.length}개 발견`);
+      this.logger.log(`📋 ${date} 경주 계획 ${racePlans.length}개 발견`);
 
       // 각 경주 계획을 DB에 저장
-      for (const item of items) {
+      for (const item of racePlans) {
         try {
           await this.racePlansService.createFromKraData(item);
         } catch (error) {
           this.logger.error(
-            `❌ 경주 계획 저장 실패 (${item.rc_no || 'unknown'}): ${error.message}`
+            `❌ 경주 계획 저장 실패 (${item.rcNo || 'unknown'}): ${error.message}`
           );
         }
       }
 
-      this.logger.log(`✅ ${date} 경주 계획 ${items.length}개 저장 완료`);
+      this.logger.log(`✅ ${date} 경주 계획 ${racePlans.length}개 저장 완료`);
     } catch (error) {
       this.logger.error(`❌ ${date} 경주 계획 수집 실패: ${error.message}`);
       throw error;
@@ -151,13 +147,11 @@ export class KraDataSchedulerService {
 
     try {
       // KRA API에서 확정 배당율 조회
-      const dividendRates = await this.kraApiService.getDividendRates(date);
+      const dividendRates = await this.kraApiService.getDailyDividendRates(
+        date.replace(/-/g, '')
+      );
 
-      if (
-        !dividendRates ||
-        !Array.isArray(dividendRates) ||
-        dividendRates.length === 0
-      ) {
+      if (!dividendRates || dividendRates.length === 0) {
         this.logger.warn(`⚠️ ${date} 확정 배당율 데이터가 없습니다.`);
         return;
       }
@@ -170,7 +164,7 @@ export class KraDataSchedulerService {
           await this.dividendRatesService.createFromKraData(item);
         } catch (error) {
           this.logger.error(
-            `❌ 확정 배당율 저장 실패 (${item.pool || 'unknown'}): ${error.message}`
+            `❌ 확정 배당율 저장 실패 (${item.winType || 'unknown'}): ${error.message}`
           );
         }
       }

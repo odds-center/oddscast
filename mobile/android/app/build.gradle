@@ -87,9 +87,9 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace 'com.goldenrace.app'
+    namespace 'com.goldenrace.app.dev'
     defaultConfig {
-        applicationId 'com.goldenrace.app'
+        applicationId 'com.goldenrace.app.dev'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1

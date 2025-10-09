@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GOLD_THEME } from '@/constants/theme';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -46,7 +47,7 @@ export default function HomeScreen() {
             </ThemedText>
           </View>
           <View style={styles.userAvatar}>
-            <Ionicons name='person-circle' size={40} color='#FFD700' />
+            <Ionicons name='person-circle' size={40} color={GOLD_THEME.TEXT.SECONDARY} />
           </View>
         </View>
       </View>
@@ -140,28 +141,28 @@ export default function HomeScreen() {
         <View style={styles.featureGrid}>
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/betting')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='game-controller' size={28} color='#FFD700' />
+              <Ionicons name='game-controller' size={28} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.actionCardText}>베팅하기</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/races')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='trophy' size={28} color='#FFD700' />
+              <Ionicons name='trophy' size={28} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.actionCardText}>경주 보기</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/points')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='wallet' size={28} color='#FFD700' />
+              <Ionicons name='wallet' size={28} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.actionCardText}>포인트</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/mypage')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='person' size={28} color='#FFD700' />
+              <Ionicons name='person' size={28} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.actionCardText}>마이페이지</ThemedText>
           </TouchableOpacity>
@@ -186,21 +187,21 @@ export default function HomeScreen() {
         <View style={styles.featureGrid}>
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/results')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='analytics' size={24} color='#FFD700' />
+              <Ionicons name='analytics' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.featureCardText}>결과 보기</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/favorites')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='heart' size={24} color='#FFD700' />
+              <Ionicons name='heart' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.featureCardText}>즐겨찾기</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.featureCard} onPress={() => router.push('/mypage/help')}>
             <View style={styles.featureIcon}>
-              <Ionicons name='help-circle' size={24} color='#FFD700' />
+              <Ionicons name='help-circle' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.featureCardText}>도움말</ThemedText>
           </TouchableOpacity>
@@ -210,7 +211,7 @@ export default function HomeScreen() {
             onPress={() => router.push('/mypage/settings')}
           >
             <View style={styles.featureIcon}>
-              <Ionicons name='settings' size={24} color='#FFD700' />
+              <Ionicons name='settings' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
             <ThemedText style={styles.featureCardText}>설정</ThemedText>
           </TouchableOpacity>
@@ -225,13 +226,13 @@ const styles = StyleSheet.create({
     marginBottom: 24,
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)', // 진한 골드 테두리로 변경
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   sectionTitle: {
     marginBottom: 16,
-    color: '#FFD700', // 진한 골드로 변경
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   welcomeContainer: {
     flexDirection: 'row',
@@ -243,17 +244,17 @@ const styles = StyleSheet.create({
   },
   welcomeText: {
     marginBottom: 4,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   welcomeSubtext: {
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   userAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#B8860B', // 다크골든로드로 변경
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -265,12 +266,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   bettingNumber: {
-    color: '#FFD700', // 진한 골드로 변경
+    color: GOLD_THEME.TEXT.SECONDARY,
     marginBottom: 4,
   },
   bettingLabel: {
     opacity: 0.8,
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   emptyContainer: {
     padding: 40,
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   emptyText: {
     opacity: 0.6,
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   // 빠른 액션 섹션 스타일 (2x2 그리드)
   actionGrid: {
@@ -293,12 +294,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 20,
     borderRadius: 16,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)', // 진한 골드 배경
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.3)', // 진한 골드 테두리
+    borderColor: GOLD_THEME.BORDER.GOLD,
     minHeight: 120,
     justifyContent: 'center',
-    shadowColor: '#FFD700',
+    shadowColor: GOLD_THEME.GOLD.LIGHT,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.1,
     shadowRadius: 8,
@@ -315,7 +316,7 @@ const styles = StyleSheet.create({
   },
   actionCardText: {
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
     fontSize: 14,
   },
@@ -331,9 +332,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderRadius: 12,
-    backgroundColor: 'rgba(255, 215, 0, 0.08)', // 더 연한 골드 배경
+    backgroundColor: 'rgba(255, 215, 0, 0.08)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 215, 0, 0.2)', // 진한 골드 테두리
+    borderColor: GOLD_THEME.BORDER.GOLD,
     minHeight: 100,
     justifyContent: 'center',
   },
@@ -348,7 +349,7 @@ const styles = StyleSheet.create({
   },
   featureCardText: {
     textAlign: 'center',
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '500',
     fontSize: 12,
   },
@@ -361,22 +362,22 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 16,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.PRIMARY,
   },
   raceInfo: {
     flex: 1,
   },
   raceName: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
   },
   raceDetails: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     opacity: 0.7,
     fontSize: 14,
   },
@@ -384,13 +385,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 16,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   moreRacesText: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 14,
     fontWeight: '500',
   },

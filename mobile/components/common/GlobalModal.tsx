@@ -4,6 +4,7 @@ import { closeModal } from '@/store/modalSlice';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef } from 'react';
 import { Animated, Dimensions, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { GOLD_THEME } from '@/constants/theme';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -104,43 +105,49 @@ const styles = StyleSheet.create({
   },
   modalContainer: {
     width: '90%',
-    maxWidth: 400,
-    maxHeight: '80%',
-    backgroundColor: '#0C0C0C',
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-    shadowColor: '#000',
+    maxWidth: 450,
+    maxHeight: '85%',
+    backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderColor: GOLD_THEME.BORDER.GOLD,
+    shadowColor: GOLD_THEME.GOLD.MEDIUM,
     shadowOffset: {
       width: 0,
       height: 10,
     },
-    shadowOpacity: 0.5,
+    shadowOpacity: 0.4,
     shadowRadius: 20,
-    elevation: 10,
+    elevation: 15,
+    overflow: 'hidden',
   },
   modalContent: {
-    padding: 20,
+    padding: 24,
+    flex: 1,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
-    paddingBottom: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(180, 138, 60, 0.2)',
+    paddingBottom: 16,
+    borderBottomWidth: 2,
+    borderBottomColor: GOLD_THEME.BORDER.GOLD,
   },
   modalTitle: {
-    color: '#E5C99C',
-    fontSize: 18,
-    fontWeight: '600',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    fontSize: 20,
+    fontWeight: '700',
     flex: 1,
+    letterSpacing: 0.5,
   },
   closeButton: {
-    padding: 5,
+    padding: 4,
+    borderRadius: 20,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
   },
   modalBody: {
     flex: 1,
+    minHeight: 200,
   },
 });

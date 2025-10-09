@@ -5,7 +5,7 @@ import { RacePlan } from '../races/entities/race-plan.entity';
 import { RaceHorseResult } from '../results/entities/race-horse-result.entity';
 import { DividendRate } from '../results/entities/dividend-rate.entity';
 import { EntryDetail } from '../races/entities/entry-detail.entity';
-import { KraApiModule } from '../external-apis/kra/kra-api.module';
+import { KraApiModule } from '../kra-api/kra-api.module';
 
 @Module({
   imports: [

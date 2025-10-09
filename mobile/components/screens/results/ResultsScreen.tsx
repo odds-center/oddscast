@@ -10,8 +10,11 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  Platform,
+  StatusBar,
 } from 'react-native';
 import moment from 'moment';
+import { GOLD_THEME } from '@/constants/theme';
 
 export default function ResultsScreen() {
   const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYYMMDD'));
@@ -53,7 +56,7 @@ export default function ResultsScreen() {
   if (isLoading) {
     return (
       <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#E5C99C' />
+        <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
         <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
       </ThemedView>
     );
@@ -178,7 +181,7 @@ export default function ResultsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {isLoading ? (
           <ThemedView style={styles.loadingContainer}>
-            <ActivityIndicator size='large' color='#E5C99C' />
+            <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
           </ThemedView>
         ) : error ? (
@@ -235,15 +238,17 @@ export default function ResultsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop:
+      Platform.OS === 'ios' ? StatusBar.currentHeight || 44 : StatusBar.currentHeight || 0,
   },
   header: {
     padding: 20,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(180, 138, 60, 0.2)',
+    borderBottomColor: GOLD_THEME.BORDER.PRIMARY,
   },
   title: {
     marginBottom: 16,
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
   },
   content: {
     flex: 1,
@@ -256,24 +261,24 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   positionContainer: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 16,
-    shadowColor: '#B48A3C',
+    shadowColor: GOLD_THEME.GOLD.DARK,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   position: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: 'bold',
   },
   horseInfo: {
@@ -332,10 +337,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
   },
   retryButtonText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
   },
   // 뷰 모드 관련 스타일
@@ -343,7 +348,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     marginBottom: 16,
     borderRadius: 8,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     padding: 4,
   },
   viewModeButton: {
@@ -354,14 +359,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   viewModeButtonActive: {
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
   },
   viewModeText: {
-    color: 'rgba(180, 138, 60, 0.8)',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontWeight: '600',
+    opacity: 0.8,
   },
   viewModeTextActive: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   // 날짜 선택 관련 스타일
   dateSelector: {
@@ -373,21 +379,21 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 40,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
     borderRadius: 8,
     paddingHorizontal: 12,
     marginRight: 8,
-    color: '#E5C99C',
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
   },
   searchButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-    backgroundColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
     borderRadius: 8,
   },
   searchButtonText: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '600',
   },
   // 최근 날짜 관련 스타일
@@ -396,7 +402,8 @@ const styles = StyleSheet.create({
   },
   recentDatesTitle: {
     marginBottom: 8,
-    color: 'rgba(180, 138, 60, 0.8)',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    opacity: 0.8,
   },
   recentDatesScroll: {
     flexDirection: 'row',
@@ -405,22 +412,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     marginRight: 8,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
+    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   dateChipActive: {
-    backgroundColor: '#B48A3C',
-    borderColor: '#B48A3C',
+    backgroundColor: GOLD_THEME.GOLD.DARK,
+    borderColor: GOLD_THEME.GOLD.DARK,
   },
   dateChipText: {
-    color: 'rgba(180, 138, 60, 0.8)',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 12,
     fontWeight: '600',
+    opacity: 0.8,
   },
   dateChipTextActive: {
-    color: '#FFFFFF',
+    color: GOLD_THEME.TEXT.PRIMARY,
   },
   // 선택된 날짜 표시 관련 스타일
   selectedDateContainer: {
@@ -430,17 +438,17 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   selectedDateText: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontWeight: '600',
   },
   refreshButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
     borderRadius: 6,
   },
   refreshButtonText: {
-    color: '#E5C99C',
+    color: GOLD_THEME.TEXT.SECONDARY,
     fontSize: 12,
     fontWeight: '600',
   },

@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "297222267377",
-    "project_id": "goldenrace-app",
-    "storage_bucket": "goldenrace-app.appspot.com"
+    "project_number": "943058036301",
+    "project_id": "goldenrace-477a4",
+    "storage_bucket": "goldenrace-477a4.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:297222267377:android:your_android_app_id",
+        "mobilesdk_app_id": "1:943058036301:android:0bf1cd8b666389488e1e04",
         "android_client_info": {
-          "package_name": "com.goldenrace.app"
+          "package_name": "com.goldenrace.app.dev"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "297222267377-esub3cahnjsaqfml8f9mai2ag6o9s78l.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "your_android_api_key_here"
+          "current_key": "AIzaSyANKy0THS_7v3r1JIEnAHQXTbyjfaI578w"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "297222267377-husiseemja8abddjujt78abddjujt78g5bhlnne2do.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }

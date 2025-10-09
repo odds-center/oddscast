@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 export default function LoginScreen() {
-  const { user, signIn } = useAuth();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
@@ -17,10 +17,20 @@ export default function LoginScreen() {
 
       // AuthProvider의 signIn 메서드 사용
       await signIn();
-      showUserSuccessMessage('Google 로그인이 완료되었습니다.');
+
+      // 로그인 성공 시 환영 메시지
+      showUserSuccessMessage('환영합니다! 로그인이 완료되었습니다. 🏇');
+
+      // user 상태가 업데이트되면 _layout.tsx에서 자동으로 (app) 화면으로 리다이렉트됨
     } catch (error) {
       console.error('Google login error:', error);
-      showUserErrorMessage('Google 로그인이 실패했습니다.');
+
+      // 에러 메시지 개선
+      const errorMessage = error instanceof Error ? error.message : 'Google 로그인에 실패했습니다.';
+
+      showUserErrorMessage(
+        errorMessage.includes('취소') ? '로그인이 취소되었습니다.' : `로그인 실패: ${errorMessage}`
+      );
     } finally {
       setIsLoading(false);
     }
@@ -47,9 +57,12 @@ export default function LoginScreen() {
           style={[styles.googleButton, isLoading && styles.disabledButton]}
           onPress={handleGoogleLogin}
           disabled={isLoading}
+          activeOpacity={0.8}
         >
           <View style={styles.googleButtonContent}>
-            <Ionicons name='logo-google' size={20} color='#4285F4' style={styles.googleIcon} />
+            <View style={styles.googleIconContainer}>
+              <Ionicons name='logo-google' size={20} color='#4285F4' />
+            </View>
             <ThemedText style={styles.googleButtonText}>
               {isLoading ? '로그인 중...' : 'Google로 로그인'}
             </ThemedText>
@@ -126,34 +139,36 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#DADCE0',
     paddingHorizontal: 24,
-    paddingVertical: 12,
+    paddingVertical: 14,
     borderRadius: 8,
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 1,
+      height: 2,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   googleButtonContent: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  googleIconContainer: {
+    marginRight: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   googleButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: 15,
+    fontWeight: '600',
     color: '#3C4043',
-    marginLeft: 8,
+    letterSpacing: 0.25,
   },
   disabledButton: {
     opacity: 0.6,
-  },
-  googleIcon: {
-    marginRight: 12,
   },
   termsText: {
     textAlign: 'center',

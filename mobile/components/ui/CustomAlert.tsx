@@ -186,8 +186,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
                   style={[
                     styles.alertContainer,
                     {
-                      borderTopColor: getAccentColor(),
-                      backgroundColor: getBackgroundGradient(),
+                      backgroundColor: GOLD_THEME.BACKGROUND.CARD,
                     },
                   ]}
                 >
@@ -287,7 +286,6 @@ const styles = StyleSheet.create({
     maxWidth: 360,
     borderRadius: 24,
     padding: 0,
-    borderTopWidth: 5,
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     shadowColor: '#000',
     shadowOffset: {

@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Alert } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import googleAuth from '@/utils/GoogleAuthService';
 import { tokenManager } from '@/lib/utils/tokenManager';
 import { API_CONSTANTS } from '@/constants/auth';
@@ -16,7 +15,7 @@ interface AuthContextType {
   user: User | null;
   accessToken: string | null;
   isLoading: boolean;
-  signIn: () => Promise<void>;
+  signIn: () => Promise<{ isNewUser: boolean }>;
   signOut: () => Promise<void>;
   setToken: (tokenData: { accessToken: string; user: User }) => Promise<void>;
   resetAuth: () => Promise<void>;
@@ -46,10 +45,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // 인증 상태 저장
   const saveAuthData = async () => {
     try {
-      console.log('🔄 AuthProvider: Saving auth data to token manager...');
-      console.log('🔄 User email:', authState.user?.email);
-      console.log('🔄 Token preview:', authState.accessToken?.substring(0, 30) + '...');
-
       if (authState.accessToken && authState.user) {
         await tokenManager.setToken({
           accessToken: authState.accessToken,
@@ -57,25 +52,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
     } catch (error) {
-      console.error('❌ Failed to save auth data:', error);
+      console.error('Failed to save auth data:', error);
     }
   };
 
   // 인증 상태 로드
   const loadAuthData = async () => {
     try {
-      console.log('Initializing auth from storage...');
       const storedAuth = await tokenManager.restoreAuth();
 
       if (storedAuth) {
-        console.log('✅ Stored auth data found');
         setAuthState({
           accessToken: storedAuth.accessToken,
           user: storedAuth.user,
           isLoading: false,
         });
       } else {
-        console.log('No stored auth data found');
         setAuthState((prev) => ({ ...prev, isLoading: false }));
       }
     } catch (error) {
@@ -106,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [authState.accessToken, authState.user]);
 
   // Google Sign-In 처리
-  const signIn = async () => {
+  const signIn = async (): Promise<{ isNewUser: boolean }> => {
     try {
       setLocalLoading(true);
       console.log('Starting Google Sign-In...');
@@ -157,6 +149,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         console.error('Login response missing JWT:', loginResult);
         throw new Error('서버에서 JWT 토큰을 받지 못했습니다.');
       }
+
+      // 신규 사용자 여부 확인
+      const isNewUser = loginResult.isFirst === true;
+      console.log('Is new user:', isNewUser);
 
       // 서버 응답에서 사용자 정보 추출
       const serverUser: User = {
@@ -209,36 +205,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         user: serverUser.email,
         isAuthenticated: true,
         hasToken: !!accessToken,
+        isNewUser,
       });
 
       // 4. TokenManager 상태 확인
       tokenManager.logTokenStatus();
 
-      // 5. 서버 연결 테스트
-      try {
-        console.log('🔍 Testing server connection with new token...');
-        const testResponse = await fetch(
-          `${googleAuth.config.api.server.baseURL}/api${API_CONSTANTS.ENDPOINTS.AUTH.ME}`,
-          {
-            method: 'GET',
-            headers: {
-              [API_CONSTANTS.HEADERS
-                .AUTHORIZATION]: `${API_CONSTANTS.HEADERS.BEARER_PREFIX} ${accessToken}`,
-              [API_CONSTANTS.HEADERS.CONTENT_TYPE]: 'application/json',
-            },
-          }
-        );
-
-        if (testResponse.ok) {
-          console.log('✅ Server connection test successful');
-        } else {
-          console.log('⚠️ Server connection test failed:', testResponse.status);
-          const errorText = await testResponse.text();
-          console.log('⚠️ Error details:', errorText);
-        }
-      } catch (error) {
-        console.log('⚠️ Server connection test error:', error);
-      }
+      // 5. 신규 사용자 여부 반환
+      return { isNewUser };
     } catch (error: any) {
       console.error('Google login error:', error);
 

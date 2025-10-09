@@ -71,4 +71,29 @@ export class RacesService {
   async delete(id: string): Promise<void> {
     await this.racesRepository.delete(id);
   }
+
+  /**
+   * 전체 데이터 개수 조회
+   */
+  async count(): Promise<number> {
+    return this.racesRepository.count();
+  }
+
+  /**
+   * 데이터 날짜 범위 조회
+   */
+  async getDateRange(): Promise<{ minDate: string; maxDate: string } | null> {
+    try {
+      const result = await this.racesRepository
+        .createQueryBuilder('race')
+        .select('MIN(race.rcDate)', 'minDate')
+        .addSelect('MAX(race.rcDate)', 'maxDate')
+        .getRawOne();
+
+      return result;
+    } catch (error) {
+      this.logger.error('날짜 범위 조회 실패:', error);
+      return null;
+    }
+  }
 }

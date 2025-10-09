@@ -56,6 +56,31 @@ export class ResultsService {
   }
 
   /**
+   * 전체 데이터 개수 조회
+   */
+  async count(): Promise<number> {
+    return this.resultsRepository.count();
+  }
+
+  /**
+   * 데이터 날짜 범위 조회
+   */
+  async getDateRange(): Promise<{ minDate: string; maxDate: string } | null> {
+    try {
+      const result = await this.resultsRepository
+        .createQueryBuilder('result')
+        .select('MIN(result.rcDate)', 'minDate')
+        .addSelect('MAX(result.rcDate)', 'maxDate')
+        .getRawOne();
+
+      return result;
+    } catch (error) {
+      this.logger.error('날짜 범위 조회 실패:', error);
+      return null;
+    }
+  }
+
+  /**
    * KRA API 데이터로부터 경주 결과 생성
    */
   async createFromKraData(kraData: any): Promise<Result> {

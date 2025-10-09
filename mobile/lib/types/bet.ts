@@ -120,13 +120,20 @@ export interface BetFilters {
 
 export interface BetStatistics {
   totalBets: number;
-  totalAmount: number;
-  totalWinnings: number;
+  wonBets: number;
+  lostBets: number;
   winRate: number;
-  averageOdds: number;
-  byType: Record<BetType, { count: number; amount: number; winnings: number }>;
-  byStatus: Record<BetStatus, { count: number; amount: number }>;
-  byResult: Record<BetResult, { count: number; amount: number; winnings: number }>;
+  totalWinnings: number;
+  totalLosses: number;
+  roi: number;
+  averageBetAmount: number;
+  favoriteBetType?: string;
+  recentPerformance?: any[];
+  totalAmount?: number;
+  averageOdds?: number;
+  byType?: Record<BetType, { count: number; amount: number; winnings: number }>;
+  byStatus?: Record<BetStatus, { count: number; amount: number }>;
+  byResult?: Record<BetResult, { count: number; amount: number; winnings: number }>;
 }
 
 export interface BetAnalysis {

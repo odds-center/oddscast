@@ -17,7 +17,10 @@ export const useResults = (date: string) => {
       }
     },
     enabled: !!date,
-    staleTime: 2 * 60 * 1000, // 2분
+    staleTime: 10 * 60 * 1000, // 10분
+    gcTime: 15 * 60 * 1000, // 15분
+    refetchOnWindowFocus: false, // 포커스 변경 시 refetch 방지
+    refetchOnMount: false, // 마운트 시 refetch 방지 (캐시된 데이터 사용)
   });
 };
 
@@ -67,7 +70,10 @@ export const useAllResults = () => {
         return [];
       }
     },
-    staleTime: 5 * 60 * 1000, // 5분
+    staleTime: 10 * 60 * 1000, // 10분
+    gcTime: 15 * 60 * 1000, // 15분
+    refetchOnWindowFocus: false, // 포커스 변경 시 refetch 방지
+    refetchOnMount: false, // 마운트 시 refetch 방지 (캐시된 데이터 사용)
   });
 };
 

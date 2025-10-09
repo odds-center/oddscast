@@ -4,16 +4,15 @@
 -- 데이터베이스 생성 (이미 존재하는 경우 무시)
 CREATE DATABASE IF NOT EXISTS goldenrace CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
--- 사용자 생성 및 권한 설정
-CREATE USER IF NOT EXISTS 'goldenrace_user'@'%' IDENTIFIED BY 'goldenrace_password';
-GRANT ALL PRIVILEGES ON goldenrace.* TO 'goldenrace_user'@'%';
-FLUSH PRIVILEGES;
-
 -- 데이터베이스 사용
 USE goldenrace;
 
+-- 외래키 체크 비활성화
+SET FOREIGN_KEY_CHECKS = 0;
+
 -- 사용자 테이블 (user.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS users (
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
     id VARCHAR(36) PRIMARY KEY,
     email VARCHAR(100) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
@@ -45,7 +44,8 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- 사용자 소셜 인증 테이블 (user-social-auth.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS user_social_auth (
+DROP TABLE IF EXISTS user_social_auth;
+CREATE TABLE user_social_auth (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     provider VARCHAR(20) NOT NULL,
@@ -67,7 +67,8 @@ CREATE TABLE IF NOT EXISTS user_social_auth (
 );
 
 -- JWT 리프레시 토큰 테이블 (refresh-token.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS refresh_tokens (
+DROP TABLE IF EXISTS refresh_tokens;
+CREATE TABLE refresh_tokens (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     token TEXT NOT NULL,
@@ -83,7 +84,8 @@ CREATE TABLE IF NOT EXISTS refresh_tokens (
 );
 
 -- 경마 테이블 (race.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS races (
+DROP TABLE IF EXISTS races;
+CREATE TABLE races (
     id VARCHAR(50) PRIMARY KEY,
     meet VARCHAR(10) NOT NULL,
     meet_name VARCHAR(100) NOT NULL,
@@ -127,7 +129,8 @@ CREATE TABLE IF NOT EXISTS races (
 );
 
 -- 마권 테이블 (bet.entity.ts 기반) - 수정된 필드명
-CREATE TABLE IF NOT EXISTS bets (
+DROP TABLE IF EXISTS bets;
+CREATE TABLE bets (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     race_id VARCHAR(50) NOT NULL,
@@ -170,7 +173,8 @@ CREATE TABLE IF NOT EXISTS bets (
 );
 
 -- 경주 결과 테이블 (result.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS results (
+DROP TABLE IF EXISTS results;
+CREATE TABLE results (
     result_id VARCHAR(100) PRIMARY KEY,
     race_id VARCHAR(50) NOT NULL,
     meet VARCHAR(10) NOT NULL,
@@ -250,7 +254,8 @@ CREATE TABLE IF NOT EXISTS results (
 );
 
 -- 경주계획표 테이블 (race-plan.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS race_plans (
+DROP TABLE IF EXISTS race_plans;
+CREATE TABLE race_plans (
     plan_id VARCHAR(50) PRIMARY KEY,
     meet VARCHAR(10) NOT NULL,
     meet_name VARCHAR(100) NOT NULL,
@@ -296,7 +301,8 @@ CREATE TABLE IF NOT EXISTS race_plans (
 );
 
 -- 확정배당율 테이블 (dividend-rate.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS dividend_rates (
+DROP TABLE IF EXISTS dividend_rates;
+CREATE TABLE dividend_rates (
     dividend_id VARCHAR(100) PRIMARY KEY,
     meet VARCHAR(10) NOT NULL,
     meet_name VARCHAR(100) NOT NULL,
@@ -331,7 +337,8 @@ CREATE TABLE IF NOT EXISTS dividend_rates (
 );
 
 -- 출전표 상세정보 테이블 (entry-detail.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS entry_details (
+DROP TABLE IF EXISTS entry_details;
+CREATE TABLE entry_details (
     entry_id VARCHAR(100) PRIMARY KEY,
     race_id VARCHAR(50) NOT NULL,
     meet VARCHAR(10) NOT NULL,
@@ -401,7 +408,8 @@ CREATE TABLE IF NOT EXISTS entry_details (
 );
 
 -- 사용자 포인트 잔액 테이블 (user-point-balance.entity.ts 기반) - 수정된 필드들
-CREATE TABLE IF NOT EXISTS user_point_balances (
+DROP TABLE IF EXISTS user_point_balances;
+CREATE TABLE user_point_balances (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL UNIQUE,
     current_balance DECIMAL(15,2) DEFAULT 0,
@@ -418,7 +426,8 @@ CREATE TABLE IF NOT EXISTS user_point_balances (
 );
 
 -- 사용자 포인트 거래내역 테이블 (user-points.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS user_points (
+DROP TABLE IF EXISTS user_points;
+CREATE TABLE user_points (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     transaction_type ENUM('EARN', 'SPEND', 'BONUS', 'REFUND', 'ADJUSTMENT', 'BET_PLACED', 'BET_WON', 'BET_LOST', 'SIGNUP_BONUS', 'DAILY_LOGIN', 'REFERRAL_BONUS', 'EVENT_BONUS', 'ADMIN_ADJUSTMENT', 'WITHDRAWAL', 'EXPIRY') NOT NULL,
@@ -440,7 +449,8 @@ CREATE TABLE IF NOT EXISTS user_points (
 );
 
 -- 경마 결과 (race-horse-result.entity.ts 기반)
-CREATE TABLE IF NOT EXISTS race_horse_results (
+DROP TABLE IF EXISTS race_horse_results;
+CREATE TABLE race_horse_results (
     result_id VARCHAR(100) PRIMARY KEY,
     meet VARCHAR(10) NOT NULL,
     meet_name VARCHAR(100) NOT NULL,
@@ -498,7 +508,8 @@ CREATE TABLE IF NOT EXISTS race_horse_results (
 );
 
 -- 알림 테이블 (notifications 모듈용)
-CREATE TABLE IF NOT EXISTS notifications (
+DROP TABLE IF EXISTS notifications;
+CREATE TABLE notifications (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
     title VARCHAR(255) NOT NULL,
@@ -516,4 +527,135 @@ CREATE TABLE IF NOT EXISTS notifications (
     INDEX idx_type (type),
     INDEX idx_created_at (created_at),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-); 
+);
+
+-- 즐겨찾기 테이블 (favorite.entity.ts 기반)
+DROP TABLE IF EXISTS favorites;
+CREATE TABLE favorites (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    type ENUM('RACE', 'HORSE', 'JOCKEY', 'TRAINER', 'MEET') NOT NULL,
+    target_id VARCHAR(50) NOT NULL,
+    target_name VARCHAR(255) NOT NULL,
+    target_data JSON,
+    notes TEXT,
+    priority ENUM('LOW', 'MEDIUM', 'HIGH') DEFAULT 'MEDIUM',
+    tags JSON,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_user_type_target (user_id, type, target_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_type (type),
+    INDEX idx_target_id (target_id),
+    INDEX idx_priority (priority),
+    INDEX idx_created_at (created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 사용자 랭킹 테이블
+DROP TABLE IF EXISTS user_rankings;
+CREATE TABLE user_rankings (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    ranking_type ENUM('OVERALL', 'WEEKLY', 'MONTHLY', 'YEARLY') NOT NULL,
+    rank_position INT NOT NULL,
+    score DECIMAL(15,2) NOT NULL,
+    total_bets INT DEFAULT 0,
+    won_bets INT DEFAULT 0,
+    win_rate DECIMAL(5,2) DEFAULT 0,
+    total_winnings DECIMAL(15,0) DEFAULT 0,
+    roi DECIMAL(10,2) DEFAULT 0,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_user_type_period (user_id, ranking_type, period_start),
+    INDEX idx_ranking_type (ranking_type),
+    INDEX idx_rank_position (rank_position),
+    INDEX idx_period (period_start, period_end),
+    INDEX idx_score (score DESC),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 공개 베팅 내역 테이블 (다른 사용자들이 볼 수 있는 베팅)
+DROP TABLE IF EXISTS public_bets;
+CREATE TABLE public_bets (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    bet_id VARCHAR(36) NOT NULL,
+    race_id VARCHAR(100) NOT NULL,
+    race_name VARCHAR(200) NOT NULL,
+    bet_type VARCHAR(50) NOT NULL,
+    bet_amount DECIMAL(15,0) NOT NULL,
+    selected_horses JSON NOT NULL,
+    odds DECIMAL(8,2),
+    result ENUM('PENDING', 'WIN', 'LOSE', 'PARTIAL_WIN', 'VOID') DEFAULT 'PENDING',
+    winnings DECIMAL(15,0) DEFAULT 0,
+    is_public BOOLEAN DEFAULT TRUE,
+    visibility ENUM('PUBLIC', 'FRIENDS_ONLY', 'PRIVATE') DEFAULT 'PUBLIC',
+    likes_count INT DEFAULT 0,
+    comments_count INT DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_bet_id (bet_id),
+    INDEX idx_race_id (race_id),
+    INDEX idx_is_public (is_public),
+    INDEX idx_visibility (visibility),
+    INDEX idx_created_at (created_at DESC),
+    INDEX idx_result (result),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (bet_id) REFERENCES bets(id) ON DELETE CASCADE
+);
+
+-- 베팅 좋아요 테이블
+DROP TABLE IF EXISTS bet_likes;
+CREATE TABLE bet_likes (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    public_bet_id VARCHAR(36) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_user_bet (user_id, public_bet_id),
+    INDEX idx_public_bet_id (public_bet_id),
+    INDEX idx_created_at (created_at),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (public_bet_id) REFERENCES public_bets(id) ON DELETE CASCADE
+);
+
+-- 베팅 댓글 테이블
+DROP TABLE IF EXISTS bet_comments;
+CREATE TABLE bet_comments (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    public_bet_id VARCHAR(36) NOT NULL,
+    parent_comment_id VARCHAR(36),
+    content TEXT NOT NULL,
+    is_deleted BOOLEAN DEFAULT FALSE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    INDEX idx_public_bet_id (public_bet_id),
+    INDEX idx_parent_comment_id (parent_comment_id),
+    INDEX idx_created_at (created_at DESC),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (public_bet_id) REFERENCES public_bets(id) ON DELETE CASCADE,
+    FOREIGN KEY (parent_comment_id) REFERENCES bet_comments(id) ON DELETE CASCADE
+);
+
+-- 사용자 팔로우 테이블
+DROP TABLE IF EXISTS user_follows;
+CREATE TABLE user_follows (
+    id VARCHAR(36) PRIMARY KEY,
+    follower_id VARCHAR(36) NOT NULL,
+    following_id VARCHAR(36) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY idx_follower_following (follower_id, following_id),
+    INDEX idx_follower_id (follower_id),
+    INDEX idx_following_id (following_id),
+    INDEX idx_created_at (created_at),
+    FOREIGN KEY (follower_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (following_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 외래키 체크 다시 활성화
+SET FOREIGN_KEY_CHECKS = 1;

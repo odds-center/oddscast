@@ -16,10 +16,14 @@ export default function LoginScreen() {
       console.log('Starting Google login...');
 
       // AuthProvider의 signIn 메서드 사용
-      await signIn();
+      const result = await signIn();
 
-      // 로그인 성공 시 환영 메시지
-      showUserSuccessMessage('환영합니다! 로그인이 완료되었습니다. 🏇');
+      // 신규 사용자와 기존 사용자 구분하여 메시지 표시
+      if (result.isNewUser) {
+        showUserSuccessMessage('🎉 환영합니다! 회원가입이 완료되었습니다. 🏇');
+      } else {
+        showUserSuccessMessage('환영합니다! 로그인이 완료되었습니다. 🏇');
+      }
 
       // user 상태가 업데이트되면 _layout.tsx에서 자동으로 (app) 화면으로 리다이렉트됨
     } catch (error) {
@@ -47,7 +51,10 @@ export default function LoginScreen() {
           GoldenRace
         </ThemedText>
         <ThemedText type='subtitle' style={styles.subtitle}>
-          경마 앱에 오신 것을 환영합니다
+          AI 기반 경마 예측 게임
+        </ThemedText>
+        <ThemedText type='caption' style={styles.description}>
+          데이터와 AI로 배우는 스마트한 예측
         </ThemedText>
       </View>
 
@@ -69,9 +76,13 @@ export default function LoginScreen() {
           </View>
         </TouchableOpacity>
 
-        <ThemedText style={styles.termsText}>
-          로그인하면 서비스 이용약관 및 개인정보처리방침에 동의하는 것으로 간주됩니다.
-        </ThemedText>
+        <View style={styles.legalNotice}>
+          <Ionicons name='information-circle-outline' size={16} color='#888' />
+          <ThemedText style={styles.termsText}>
+            본 서비스는 AI 예측 게임으로,{'\n'}
+            포인트는 게임 내 가상 화폐입니다
+          </ThemedText>
+        </View>
       </View>
     </ThemedView>
   );
@@ -119,13 +130,18 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   subtitle: {
-    fontSize: 16,
-    marginBottom: 48,
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 8,
     textAlign: 'center',
+    opacity: 0.9,
   },
   description: {
+    opacity: 0.7,
+    marginTop: 4,
+    marginBottom: 32,
+    fontSize: 14,
     textAlign: 'center',
-    opacity: 0.8,
   },
   buttonSection: {
     width: '100%',
@@ -170,9 +186,18 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.6,
   },
+  legalNotice: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 20,
+    marginTop: 16,
+  },
   termsText: {
+    fontSize: 11,
+    opacity: 0.6,
     textAlign: 'center',
-    lineHeight: 18,
-    opacity: 0.7,
+    lineHeight: 16,
+    flex: 1,
   },
 });

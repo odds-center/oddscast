@@ -1,16 +1,10 @@
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
-import { NotificationSettingsModal } from '@/components/modals/NotificationSettingsModal';
-import { PointsEarnModal } from '@/components/modals/PointsEarnModal';
-import { PointsUseModal } from '@/components/modals/PointsUseModal';
-import { ProfileEditModal } from '@/components/modals/ProfileEditModal';
 import { POINTS_UTILS } from '@/constants/points';
 import { useAuth } from '@/context/AuthProvider';
-import { useModal } from '@/hooks/useModal';
 import { useBetStatistics } from '@/lib/hooks/useBets';
 import { useUserPointBalance } from '@/lib/hooks/usePoints';
 import { useCurrentUserProfile } from '@/lib/hooks/useUsers';
-import { BetResult } from '@/lib/types/bet';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
@@ -20,7 +14,6 @@ import { GOLD_THEME } from '@/constants/theme';
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  const { showModal, hideModal } = useModal();
 
   // API 데이터 조회
   const { data: userProfile, isLoading: profileLoading } = useCurrentUserProfile();
@@ -28,7 +21,7 @@ const MyPageScreen = () => {
   const { data: betStats, isLoading: betStatsLoading } = useBetStatistics();
 
   // 포인트 관련 상태 (API 데이터가 없을 때 기본값)
-  const userPoints = pointBalance?.currentPoints || 125000;
+  const userPoints = pointBalance?.currentPoints || 0;
 
   // 현재 레벨과 다음 레벨 계산
   const currentLevel = POINTS_UTILS.getUserLevel(userPoints);
@@ -39,6 +32,8 @@ const MyPageScreen = () => {
     try {
       await signOut();
       console.log('로그아웃 성공');
+      // 로그아웃 후 로그인 페이지로 이동
+      router.replace('/login');
     } catch (error) {
       console.error('로그아웃 에러:', error);
     }
@@ -51,22 +46,22 @@ const MyPageScreen = () => {
   const handleMenuPress = (menuName: string) => {
     switch (menuName) {
       case '프로필 편집':
-        showModal(<ProfileEditModal onClose={hideModal} />, '프로필 편집', hideModal);
+        router.push('/mypage/profile-edit');
         break;
       case '즐겨찾기':
         router.push('/mypage/favorites');
         break;
       case '알림 설정':
-        showModal(<NotificationSettingsModal onClose={hideModal} />, '알림 설정', hideModal);
+        router.push('/mypage/notification-settings');
         break;
       case '도움말':
         router.push('/mypage/help');
         break;
       case '포인트 획득':
-        showModal(<PointsEarnModal onClose={hideModal} />, '포인트 획득 방법', hideModal);
+        router.push('/mypage/points-earn');
         break;
       case '포인트 사용':
-        showModal(<PointsUseModal onClose={hideModal} />, '포인트 사용 방법', hideModal);
+        router.push('/mypage/points-use');
         break;
       default:
         console.log(`${menuName} 기능이 곧 추가될 예정입니다.`);
@@ -111,20 +106,20 @@ const MyPageScreen = () => {
                   {betStatsLoading ? '...' : betStats?.totalBets || 0}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
-                  총 베팅
+                  베팅 기록
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
                 <ThemedText type='stat' style={styles.statNumber}>
-                  {betStatsLoading ? '...' : betStats?.byResult?.[BetResult.WIN]?.count || 0}
+                  {betStatsLoading ? '...' : betStats?.wonBets || 0}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
-                  승리
+                  적중
                 </ThemedText>
               </View>
               <View style={styles.statItem}>
                 <ThemedText type='stat' style={styles.statNumber}>
-                  {betStatsLoading ? '...' : `${Math.round((betStats?.winRate || 0) * 100)}%`}
+                  {betStatsLoading ? '...' : `${Math.round(betStats?.winRate || 0)}%`}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.statLabel}>
                   승률

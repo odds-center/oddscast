@@ -6,6 +6,7 @@ import { tokenManager } from './tokenManager';
 
 // API 기본 설정
 const config = getCurrentConfig();
+// 서버의 /api prefix 추가
 const API_BASE_URL = `${config.api.server.baseURL}/api`;
 
 // API 클라이언트 생성
@@ -21,8 +22,6 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
   // 요청 인터셉터
   client.interceptors.request.use(
     async (config) => {
-      console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${config.url}`);
-
       // 토큰이 있으면 헤더에 추가
       try {
         const token = await tokenManager.getToken();
@@ -30,18 +29,14 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
           config.headers[
             API_CONSTANTS.HEADERS.AUTHORIZATION
           ] = `${API_CONSTANTS.HEADERS.BEARER_PREFIX} ${token}`;
-          console.log('🔑 Authorization header added:', token.substring(0, 30) + '...');
-        } else {
-          console.log('⚠️  No token available for request');
         }
       } catch (error) {
-        console.error('❌ Token retrieval error:', error);
+        console.error('Token retrieval error:', error);
       }
 
       return config;
     },
     (error) => {
-      console.error('❌ API Request Error:', error);
       return Promise.reject(error);
     }
   );
@@ -49,16 +44,12 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
   // 응답 인터셉터
   client.interceptors.response.use(
     (response: AxiosResponse) => {
-      console.log(`✅ API Response: ${response.status} ${response.config.url}`);
       return response;
     },
     async (error) => {
-      console.error('❌ API Response Error:', error.response?.data || error.message);
-
-      // 401 에러 시 토큰 제거 (하지만 무한 루프 방지)
+      // 401 에러 시 토큰 제거
       if (error.response?.status === API_CONSTANTS.STATUS_CODES.UNAUTHORIZED) {
         try {
-          // 현재 요청이 인증이 필요한 요청인지 확인
           const isAuthRequest =
             error.config?.url?.includes('/auth') ||
             error.config?.url?.includes('/login') ||
@@ -66,34 +57,13 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
             error.config?.url?.includes('/google');
 
           if (!isAuthRequest) {
-            console.log('🔐 401 error on protected route, checking token validity...');
-
-            // 토큰이 실제로 유효한지 확인
             const currentToken = await tokenManager.getToken();
-            if (currentToken) {
-              console.log('🔐 Current token exists, but server says invalid');
-              console.log('🔐 Token preview:', currentToken.substring(0, 50) + '...');
-
-              // 토큰 형식 검증
-              if (currentToken.split('.').length !== 3) {
-                console.log('🔐 Token format invalid, removing...');
-                await tokenManager.removeToken();
-              } else {
-                console.log('🔐 Token format valid, but server rejected');
-                // 서버 연결 문제일 수 있으므로 토큰을 유지
-                console.log('🔐 Keeping token for now, might be server issue');
-              }
-            } else {
-              console.log('🔐 No token found, nothing to remove');
+            if (currentToken && currentToken.split('.').length !== 3) {
+              await tokenManager.removeToken();
             }
-
-            // 토큰 상태 로그
-            tokenManager.logTokenStatus();
-          } else {
-            console.log('🔐 401 error on auth route, not removing token');
           }
         } catch (storageError) {
-          console.error('❌ Token removal error:', storageError);
+          console.error('Token removal error:', storageError);
         }
       }
 
@@ -134,7 +104,6 @@ export const defaultRequestConfig: AxiosRequestConfig = {
 export const handleApiResponse = <T>(response: AxiosResponse<ApiResponse<T>>): T => {
   // data 필드가 없거나 undefined인 경우 빈 배열이나 기본값 반환
   if (!response.data || response.data.data === undefined || response.data.data === null) {
-    console.warn('⚠️ API response data is undefined or null, returning default value');
     return [] as T;
   }
   return response.data.data;

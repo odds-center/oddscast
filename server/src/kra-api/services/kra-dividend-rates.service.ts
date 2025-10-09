@@ -14,6 +14,7 @@ import {
 import {
   getCurrentDate,
   getYear,
+  getMonth,
   getYearMonth,
   getDay,
   getMeetName,
@@ -163,7 +164,7 @@ export class KraDividendRatesService {
         _type: KRA_API_CONFIG.RESPONSE_TYPE,
         meet,
         rc_year: getYear(rcDate),
-        rc_month: getYearMonth(rcDate),
+        rc_month: getYearMonth(rcDate), // YYYYMM 형식 (예: 202509)
         rc_day: getDay(rcDate),
       };
 

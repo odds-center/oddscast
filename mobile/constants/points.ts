@@ -38,8 +38,8 @@ export const POINTS_CONSTANTS = {
     DAILY_LOGIN_BONUS: 100, // 일일 로그인 보너스
     REFERRAL_BONUS: 1000, // 추천인 보너스
     EVENT_BONUS: 500, // 이벤트 보너스
-    MIN_ADD_AMOUNT: 1000, // 최소 충전 금액
-    MIN_WITHDRAW_AMOUNT: 5000, // 최소 출금 금액
+    MIN_BET_AMOUNT: 100, // 최소 베팅 금액
+    MAX_BET_AMOUNT: 100000, // 최대 베팅 금액
   },
 
   // 포인트 만료

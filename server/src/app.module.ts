@@ -6,13 +6,16 @@ import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
 import { BetsModule } from './bets/bets.module';
 import { DataSourceModule } from './data-source/data-source.module';
+import { FavoritesModule } from './favorites/favorites.module';
 import { KraApiModule } from './kra-api/kra-api.module';
 import { HealthModule } from './health/health.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { PointsModule } from './points/points.module';
 import { RacePlansModule } from './race-plans/race-plans.module';
 import { RacesModule } from './races/races.module';
+import { RankingsModule } from './rankings/rankings.module';
 import { ResultsModule } from './results/results.module';
+import { SocialModule } from './social/social.module';
 import { UsersModule } from './users/users.module';
 
 @Module({
@@ -55,10 +58,13 @@ import { UsersModule } from './users/users.module';
     RacesModule,
     ResultsModule,
     RacePlansModule,
+    RankingsModule,
+    SocialModule,
     KraApiModule,
     BatchModule,
     DataSourceModule,
     BetsModule,
+    FavoritesModule,
     NotificationsModule,
     PointsModule,
   ],

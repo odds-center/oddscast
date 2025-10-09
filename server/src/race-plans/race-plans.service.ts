@@ -343,4 +343,29 @@ export class RacePlansService {
       throw error;
     }
   }
+
+  /**
+   * 전체 데이터 개수 조회
+   */
+  async count(): Promise<number> {
+    return this.racePlansRepository.count();
+  }
+
+  /**
+   * 데이터 날짜 범위 조회
+   */
+  async getDateRange(): Promise<{ minDate: string; maxDate: string } | null> {
+    try {
+      const result = await this.racePlansRepository
+        .createQueryBuilder('plan')
+        .select('MIN(plan.rcDate)', 'minDate')
+        .addSelect('MAX(plan.rcDate)', 'maxDate')
+        .getRawOne();
+
+      return result;
+    } catch (error) {
+      this.logger.error('날짜 범위 조회 실패:', error);
+      return null;
+    }
+  }
 }

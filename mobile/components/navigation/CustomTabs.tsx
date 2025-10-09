@@ -101,6 +101,8 @@ export function CustomTabs() {
         }}
       />
       <Tabs.Screen name='races/[raceId]' options={{ href: null }} />
+      <Tabs.Screen name='ranking' options={{ href: null }} />
+      <Tabs.Screen name='betting/register' options={{ href: null }} />
     </Tabs>
   );
 }

@@ -12,9 +12,79 @@ import {
   TextInput,
   Platform,
   StatusBar,
+  View,
 } from 'react-native';
 import moment from 'moment';
 import { GOLD_THEME } from '@/constants/theme';
+import { Ionicons } from '@expo/vector-icons';
+
+// Mock 과거 경주 기록
+const MOCK_PAST_RESULTS = [
+  {
+    id: '1',
+    rcName: '한라산배',
+    meetName: '제주',
+    rcNo: '7',
+    rcDist: '1200',
+    rcGrade: 'G2',
+    rcDate: '20251008',
+    rcDay: '화요일',
+    winner: {
+      hrName: '황금마',
+      hrNo: '3',
+      jkName: '김철수',
+      winOdds: '4.5',
+    },
+  },
+  {
+    id: '2',
+    rcName: '서울 스프린트',
+    meetName: '서울',
+    rcNo: '11',
+    rcDist: '1000',
+    rcGrade: 'G3',
+    rcDate: '20251007',
+    rcDay: '월요일',
+    winner: {
+      hrName: '번개',
+      hrNo: '7',
+      jkName: '이영희',
+      winOdds: '2.3',
+    },
+  },
+  {
+    id: '3',
+    rcName: '부산컵',
+    meetName: '부산',
+    rcNo: '9',
+    rcDist: '1800',
+    rcGrade: 'G1',
+    rcDate: '20251006',
+    rcDay: '일요일',
+    winner: {
+      hrName: '대왕',
+      hrNo: '5',
+      jkName: '박민수',
+      winOdds: '6.8',
+    },
+  },
+  {
+    id: '4',
+    rcName: '제주 챔피언십',
+    meetName: '제주',
+    rcNo: '8',
+    rcDist: '1600',
+    rcGrade: 'G2',
+    rcDate: '20251005',
+    rcDay: '토요일',
+    winner: {
+      hrName: '질주',
+      hrNo: '2',
+      jkName: '정수진',
+      winOdds: '3.1',
+    },
+  },
+];
 
 export default function ResultsScreen() {
   const [selectedDate, setSelectedDate] = useState<string>(moment().format('YYYYMMDD'));
@@ -52,26 +122,6 @@ export default function ResultsScreen() {
     }
     setAvailableDates(dates);
   }, []);
-
-  if (isLoading) {
-    return (
-      <ThemedView style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
-        <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
-      </ThemedView>
-    );
-  }
-
-  if (error) {
-    return (
-      <ThemedView style={styles.errorContainer}>
-        <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
-        <TouchableOpacity style={styles.retryButton}>
-          <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-    );
-  }
 
   return (
     <ThemedView style={styles.container}>

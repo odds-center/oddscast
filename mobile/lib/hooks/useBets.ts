@@ -58,26 +58,26 @@ export const useBetStatistics = () => {
         return (
           result || {
             totalBets: 0,
-            totalAmount: 0,
-            totalWinnings: 0,
+            wonBets: 0,
+            lostBets: 0,
             winRate: 0,
-            averageOdds: 0,
-            byType: {} as any,
-            byStatus: {} as any,
-            byResult: {} as any,
+            totalWinnings: 0,
+            totalLosses: 0,
+            roi: 0,
+            averageBetAmount: 0,
           }
         );
       } catch (error) {
         console.error('베팅 통계 조회 실패:', error);
         return {
           totalBets: 0,
-          totalAmount: 0,
-          totalWinnings: 0,
+          wonBets: 0,
+          lostBets: 0,
           winRate: 0,
-          averageOdds: 0,
-          byType: {} as any,
-          byStatus: {} as any,
-          byResult: {} as any,
+          totalWinnings: 0,
+          totalLosses: 0,
+          roi: 0,
+          averageBetAmount: 0,
         };
       }
     },

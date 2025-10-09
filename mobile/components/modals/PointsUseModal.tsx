@@ -65,7 +65,7 @@ export const PointsUseModal: React.FC<PointsUseModalProps> = ({ onClose }) => {
       <View style={styles.infoBox}>
         <Ionicons name='information-circle' size={20} color='#E5C99C' />
         <ThemedText style={styles.infoText}>
-          포인트는 게임 내에서만 사용 가능하며, 현금으로 환불되지 않습니다
+          포인트는 게임 내 가상 화폐로, 게임 플레이에만 사용됩니다
         </ThemedText>
       </View>
 

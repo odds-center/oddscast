@@ -73,6 +73,13 @@ export function getYear(date: string): string {
 }
 
 /**
+ * 날짜에서 월 추출 (MM)
+ */
+export function getMonth(date: string): string {
+  return date.substring(4, 6);
+}
+
+/**
  * 날짜에서 년월 추출 (YYYYMM)
  */
 export function getYearMonth(date: string): string {

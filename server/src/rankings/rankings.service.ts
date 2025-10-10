@@ -191,7 +191,7 @@ export class RankingsService {
       rank: ranking.rankPosition,
       userId: ranking.userId,
       name: ranking.user?.name || '알 수 없음',
-      avatar: ranking.user?.profileImage || '🎮',
+      avatar: ranking.user?.avatar || '🎮',
       winRate: parseFloat(ranking.winRate.toString()),
       totalBets: ranking.totalBets,
       totalWinnings: parseFloat(ranking.totalWinnings.toString()),

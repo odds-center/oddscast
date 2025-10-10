@@ -95,6 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!authState.isLoading) {
       saveAuthData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authState.accessToken, authState.user]);
 
   // Google Sign-In 처리

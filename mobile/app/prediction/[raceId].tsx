@@ -24,8 +24,8 @@ export default function PredictionRequestScreen() {
     if (!hasTickets) {
       Alert.alert('예측권 없음', '사용 가능한 예측권이 없습니다.\n구독하거나 개별 구매해주세요.', [
         { text: '취소', style: 'cancel' },
-        { text: '구독하기', onPress: () => router.push('/subscription/plans') },
-        { text: '개별 구매', onPress: () => router.push('/purchase/single') },
+        { text: '구독하기', onPress: () => router.push('/mypage/subscription/plans') },
+        { text: '개별 구매', onPress: () => router.push('/mypage/purchase/single') },
       ]);
       return;
     }
@@ -144,7 +144,7 @@ export default function PredictionRequestScreen() {
             <Text style={styles.noTicketText}>예측권이 없습니다</Text>
             <TouchableOpacity
               style={styles.buyButton}
-              onPress={() => router.push('/subscription/plans')}
+              onPress={() => router.push('/mypage/subscription/plans')}
             >
               <Text style={styles.buyButtonText}>구독하기</Text>
             </TouchableOpacity>

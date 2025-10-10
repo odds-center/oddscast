@@ -230,10 +230,10 @@ export default function BettingScreen() {
       {/* 새 기록 버튼 */}
       <TouchableOpacity
         style={styles.newBetButton}
-        onPress={() => router.push('/betting/register')}
+        onPress={() => router.push('/betting-register')}
       >
         <Ionicons name='add-circle' size={24} color={GOLD_THEME.TEXT.PRIMARY} />
-        <ThemedText style={styles.newBetButtonText}>베팅 기록 등록</ThemedText>
+        <ThemedText style={styles.newBetButtonText}>마권 기록 등록</ThemedText>
       </TouchableOpacity>
     </PageLayout>
   );

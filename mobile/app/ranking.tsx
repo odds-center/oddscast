@@ -1,18 +1,12 @@
-import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
+import { PageHeader } from '@/components/common';
 import { PageLayout } from '@/components/common/PageLayout';
 import { GOLD_THEME } from '@/constants/theme';
-import { useRankings, useMyRanking } from '@/lib/hooks/useRankings';
+import { useMyRanking, useRankings } from '@/lib/hooks/useRankings';
+import { Ionicons } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 
 // Mock 랭킹 데이터 (전체/주간/월간)
 const MOCK_RANKINGS = {
@@ -255,7 +249,6 @@ const MOCK_RANKINGS = {
 };
 
 export default function RankingScreen() {
-  const router = useRouter();
   const [selectedTab, setSelectedTab] = useState<'overall' | 'weekly' | 'monthly'>('overall');
 
   // API 데이터 조회
@@ -312,20 +305,10 @@ export default function RankingScreen() {
   };
 
   return (
-    <PageLayout>
-      {/* 헤더 */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-          <Ionicons name='arrow-back' size={24} color={GOLD_THEME.TEXT.PRIMARY} />
-        </TouchableOpacity>
-        <ThemedText type='title' style={styles.title}>
-          랭킹
-        </ThemedText>
-        <View style={styles.placeholder} />
-      </View>
-
+    <PageLayout scrollable={false}>
+      <PageHeader title='랭킹' />
       {/* 랭킹 탭 */}
-      <View style={styles.tabContainer}>
+      <ThemedView style={styles.tabContainer}>
         {(['overall', 'weekly', 'monthly'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
@@ -340,19 +323,19 @@ export default function RankingScreen() {
             </ThemedText>
           </TouchableOpacity>
         ))}
-      </View>
+      </ThemedView>
 
       {/* 랭킹 통계 */}
-      <View style={styles.statsSection}>
-        <View style={styles.statsCard}>
+      <ThemedView style={styles.statsSection}>
+        <ThemedView style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
             총 참여자
           </ThemedText>
           <ThemedText type='stat' style={styles.statsValue}>
             {getCurrentRankings().length}명
           </ThemedText>
-        </View>
-        <View style={styles.statsCard}>
+        </ThemedView>
+        <ThemedView style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
             평균 승률
           </ThemedText>
@@ -363,100 +346,106 @@ export default function RankingScreen() {
             ).toFixed(1)}
             %
           </ThemedText>
-        </View>
-        <View style={styles.statsCard}>
+        </ThemedView>
+        <ThemedView style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
-            총 베팅
+            총 기록
           </ThemedText>
           <ThemedText type='stat' style={styles.statsValue}>
             {getCurrentRankings().reduce((sum, user) => sum + user.totalBets, 0)}회
           </ThemedText>
-        </View>
-      </View>
+        </ThemedView>
+      </ThemedView>
 
       {/* 로딩 상태 */}
       {rankingsLoading ? (
-        <View style={styles.loadingContainer}>
+        <ThemedView style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={GOLD_THEME.GOLD.LIGHT} />
           <ThemedText type='caption' style={styles.loadingText}>
             랭킹 데이터 불러오는 중...
           </ThemedText>
-        </View>
+        </ThemedView>
       ) : (
         <>
           {/* 내 순위 (상단 고정) */}
-          <View style={styles.myRankingSection}>
-            <View style={styles.myRankingCard}>
-              <View style={styles.myRankingHeader}>
+          <ThemedView style={styles.myRankingSection}>
+            <ThemedView style={styles.myRankingCard}>
+              <ThemedView style={styles.myRankingHeader}>
                 <ThemedText type='body' style={styles.myRankingTitle}>
                   내 순위
                 </ThemedText>
                 <Ionicons name='person' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              </View>
-              <View style={styles.myRankingContent}>
-                <View style={styles.myRankInfo}>
+              </ThemedView>
+              <ThemedView style={styles.myRankingContent}>
+                <ThemedView style={styles.myRankInfo}>
                   <ThemedText type='stat' style={styles.myRankNumber}>
                     {myRankingLoading ? '...' : `${getMyRanking().rank}위`}
                   </ThemedText>
                   <ThemedText type='caption' style={styles.myRankText}>
-                    승률 {getMyRanking().winRate}% • {getMyRanking().totalBets}회 베팅
+                    승률 {getMyRanking().winRate}% • {getMyRanking().totalBets}회 기록
                   </ThemedText>
-                </View>
-                <View style={styles.myRankScore}>
+                </ThemedView>
+                <ThemedView style={styles.myRankScore}>
                   <ThemedText type='caption' style={styles.myRankScoreLabel}>
                     총 수익
                   </ThemedText>
                   <ThemedText type='body' style={styles.myRankScoreValue}>
                     {getMyRanking().totalWinnings.toLocaleString()}원
                   </ThemedText>
-                </View>
-              </View>
-            </View>
-          </View>
+                </ThemedView>
+              </ThemedView>
+            </ThemedView>
+          </ThemedView>
 
           {/* 랭킹 목록 */}
-          <ScrollView style={styles.rankingList} showsVerticalScrollIndicator={false}>
-            {getCurrentRankings().map((user) => (
-              <View key={user.id} style={styles.rankingCard}>
-                <View style={styles.rankingItem}>
-                  <View style={styles.rankSection}>
-                    <View style={styles.rankNumber}>
-                      <ThemedText type='stat' style={styles.rankText}>
-                        {user.rank}
-                      </ThemedText>
-                    </View>
-                    {getRankIcon(user.rank) && (
-                      <ThemedText style={styles.rankIcon}>{getRankIcon(user.rank)}</ThemedText>
-                    )}
-                  </View>
+          <ThemedView style={styles.rankingListContainer}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {getCurrentRankings().map((user) => (
+                <ThemedView key={user.id} style={styles.rankingCard}>
+                  <ThemedView style={styles.rankingItem}>
+                    <ThemedView style={styles.rankSection}>
+                      <ThemedView style={styles.rankNumber}>
+                        <ThemedText type='stat' style={styles.rankText}>
+                          {user.rank}
+                        </ThemedText>
+                      </ThemedView>
+                      {getRankIcon(user.rank) && (
+                        <ThemedText style={styles.rankIcon}>{getRankIcon(user.rank)}</ThemedText>
+                      )}
+                    </ThemedView>
 
-                  <View style={styles.userSection}>
-                    <View style={styles.userAvatar}>
-                      <ThemedText style={styles.avatarText}>{user.avatar}</ThemedText>
-                    </View>
-                    <View style={styles.userInfo}>
-                      <ThemedText type='body' style={styles.userName}>
-                        {user.name}
-                      </ThemedText>
-                      <ThemedText type='caption' style={styles.userStats}>
-                        {user.totalBets}회 • 승률 {user.winRate}%
-                      </ThemedText>
-                    </View>
-                  </View>
-                </View>
+                    <ThemedView style={styles.userSection}>
+                      <ThemedView style={styles.userAvatar}>
+                        <Ionicons
+                          name='person-circle'
+                          size={44}
+                          color={GOLD_THEME.TEXT.SECONDARY}
+                        />
+                      </ThemedView>
+                      <ThemedView style={styles.userInfo}>
+                        <ThemedText type='body' style={styles.userName}>
+                          {user.name}
+                        </ThemedText>
+                        <ThemedText type='caption' style={styles.userStats}>
+                          {user.totalBets}회 기록 • 승률 {user.winRate}%
+                        </ThemedText>
+                      </ThemedView>
+                    </ThemedView>
+                  </ThemedView>
 
-                {/* 총 수익 섹션을 별도로 아래에 배치 */}
-                <View style={styles.winningsSection}>
-                  <ThemedText type='caption' style={styles.winningsLabel}>
-                    총 수익
-                  </ThemedText>
-                  <ThemedText type='body' style={styles.winningsValue}>
-                    {user.totalWinnings.toLocaleString()}원
-                  </ThemedText>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+                  {/* 총 수익 섹션을 별도로 아래에 배치 */}
+                  <ThemedView style={styles.winningsSection}>
+                    <ThemedText type='caption' style={styles.winningsLabel}>
+                      총 수익
+                    </ThemedText>
+                    <ThemedText type='body' style={styles.winningsValue}>
+                      {user.totalWinnings.toLocaleString()}원
+                    </ThemedText>
+                  </ThemedView>
+                </ThemedView>
+              ))}
+            </ScrollView>
+          </ThemedView>
         </>
       )}
     </PageLayout>
@@ -464,74 +453,69 @@ export default function RankingScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
-    borderBottomWidth: 1,
-    borderBottomColor: GOLD_THEME.BORDER.GOLD,
-  },
-  backButton: {
-    padding: 8,
-  },
-  title: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: 'bold',
-  },
-  placeholder: {
-    width: 40,
-  },
   tabContainer: {
     flexDirection: 'row',
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    margin: 16,
-    borderRadius: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    borderRadius: 16,
     padding: 4,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: GOLD_THEME.BORDER.GOLD,
   },
   tab: {
     flex: 1,
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
+    minHeight: 44,
+    justifyContent: 'center',
   },
   tabActive: {
-    backgroundColor: GOLD_THEME.GOLD.LIGHT,
+    backgroundColor: GOLD_THEME.GOLD.DARK,
   },
   tabText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontWeight: '500',
+    color: GOLD_THEME.TEXT.PRIMARY,
+    fontWeight: '600',
+    fontSize: 15,
+    lineHeight: 22,
   },
   tabTextActive: {
     color: GOLD_THEME.BACKGROUND.PRIMARY,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    fontSize: 15,
+    lineHeight: 22,
   },
   statsSection: {
     flexDirection: 'row',
-    paddingHorizontal: 16,
-    marginBottom: 12,
-    gap: 10,
+    paddingHorizontal: 20,
+    marginBottom: 20,
+    gap: 12,
   },
   statsCard: {
     flex: 1,
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 12,
-    padding: 12,
+    borderRadius: 16,
+    padding: 16,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: GOLD_THEME.BORDER.GOLD,
+    minHeight: 80,
+    justifyContent: 'center',
   },
   statsLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    marginBottom: 6,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
+    marginBottom: 8,
+    fontSize: 12,
+    lineHeight: 18,
   },
   statsValue: {
     color: GOLD_THEME.TEXT.SECONDARY,
-    fontWeight: 'bold',
+    fontWeight: '700',
+    fontSize: 18,
+    lineHeight: 26,
   },
   loadingContainer: {
     flex: 1,
@@ -542,29 +526,30 @@ const styles = StyleSheet.create({
   loadingText: {
     color: GOLD_THEME.TEXT.SECONDARY,
     marginTop: 16,
+    fontSize: 14,
+    lineHeight: 20,
   },
-  rankingList: {
+  rankingListContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingBottom: 16,
+    paddingHorizontal: 20,
   },
   rankingCard: {
-    marginBottom: 10,
+    marginBottom: 12,
   },
   rankingItem: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 12,
-    padding: 14,
-    minHeight: 70,
-    borderWidth: 1,
+    borderRadius: 16,
+    padding: 16,
+    minHeight: 76,
+    borderWidth: 2,
     borderColor: GOLD_THEME.BORDER.GOLD,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
   },
   rankSection: {
-    width: 50,
+    width: 56,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -573,31 +558,32 @@ const styles = StyleSheet.create({
   },
   rankText: {
     color: GOLD_THEME.TEXT.SECONDARY,
-    fontWeight: 'bold',
-    fontSize: 18,
+    fontWeight: '700',
+    fontSize: 20,
+    lineHeight: 28,
   },
   rankIcon: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: 16,
+    marginTop: 4,
+    lineHeight: 20,
   },
   userSection: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
-    marginRight: 8,
+    marginLeft: 12,
   },
   userAvatar: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: 12,
   },
   avatarText: {
-    fontSize: 20,
+    fontSize: 24,
+    lineHeight: 32,
   },
   userInfo: {
     flex: 1,
@@ -607,11 +593,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
     fontSize: 16,
+    lineHeight: 24,
   },
   userStats: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: 20,
   },
   scoreSection: {
     alignItems: 'center',
@@ -620,56 +608,63 @@ const styles = StyleSheet.create({
     maxWidth: 120,
   },
   winningsLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
     marginBottom: 6,
     fontSize: 12,
     textAlign: 'center',
+    lineHeight: 18,
   },
   winningsValue: {
-    color: GOLD_THEME.GOLD.LIGHT,
-    fontWeight: 'bold',
-    fontSize: 18,
+    color: GOLD_THEME.TEXT.SECONDARY,
+    fontWeight: '700',
+    fontSize: 16,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 24,
   },
   winningsCurrency: {
     color: GOLD_THEME.TEXT.SECONDARY,
     marginTop: 3,
     fontSize: 11,
     textAlign: 'center',
+    lineHeight: 16,
   },
   winningsSection: {
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderWidth: 1,
+    borderWidth: 2,
     borderColor: GOLD_THEME.BORDER.GOLD,
     borderTopWidth: 0,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
-    padding: 12,
-    paddingTop: 10,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    padding: 16,
+    paddingTop: 12,
     alignItems: 'center',
+    minHeight: 56,
+    justifyContent: 'center',
   },
   myRankingSection: {
-    paddingHorizontal: 16,
     paddingTop: 0,
-    paddingBottom: 16,
+    paddingBottom: 20,
   },
   myRankingCard: {
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 12,
-    padding: 14,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 2,
-    borderColor: GOLD_THEME.GOLD.LIGHT,
+    borderColor: GOLD_THEME.TEXT.SECONDARY,
+    minHeight: 100,
   },
   myRankingHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 16,
   },
   myRankingTitle: {
     color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: '600',
+    fontWeight: '700',
+    fontSize: 16,
+    lineHeight: 24,
   },
   myRankingContent: {
     flexDirection: 'row',
@@ -681,26 +676,33 @@ const styles = StyleSheet.create({
   },
   myRankNumber: {
     color: GOLD_THEME.TEXT.SECONDARY,
-    fontWeight: 'bold',
-    fontSize: 18,
-    marginBottom: 4,
+    fontWeight: '700',
+    fontSize: 24,
+    lineHeight: 32,
+    marginBottom: 6,
   },
   myRankText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
+    fontSize: 13,
+    lineHeight: 20,
   },
   myRankScore: {
     alignItems: 'flex-end',
     minWidth: 100,
   },
   myRankScoreLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    marginBottom: 4,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
+    marginBottom: 6,
     fontSize: 12,
+    lineHeight: 18,
   },
   myRankScoreValue: {
-    color: GOLD_THEME.GOLD.LIGHT,
-    fontWeight: 'bold',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    fontWeight: '700',
     fontSize: 16,
     textAlign: 'right',
+    lineHeight: 24,
   },
 });

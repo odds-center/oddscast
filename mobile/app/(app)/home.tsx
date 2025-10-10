@@ -1,5 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
+import { GOLD_THEME } from '@/constants/theme';
 import { useAuth } from '@/context/AuthProvider';
 import { useBetStatistics } from '@/lib/hooks/useBets';
 import { useUserPointBalance } from '@/lib/hooks/usePoints';
@@ -8,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { GOLD_THEME } from '@/constants/theme';
 
 // Mock 랭킹 데이터 (전체/주간/월간)
 const MOCK_RANKINGS = {
@@ -205,7 +205,7 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={race.id}
                 style={styles.raceCard}
-                onPress={() => router.push(`/races/${race.id}`)}
+                onPress={() => router.push(`/race-detail/${race.id}`)}
               >
                 <View style={styles.raceInfo}>
                   <ThemedText style={styles.raceName}>{race.rcName}</ThemedText>
@@ -236,6 +236,58 @@ export default function HomeScreen() {
         )}
       </View>
 
+      {/* AI 예측권 구독 배너 */}
+      <TouchableOpacity
+        style={styles.subscriptionBanner}
+        onPress={() => router.push('/mypage/subscription/plans')}
+        activeOpacity={0.9}
+      >
+        {/* 헤더 */}
+        <View style={styles.bannerHeader}>
+          <View style={styles.bannerTitleContainer}>
+            <Ionicons name='diamond' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText type='title' style={styles.bannerTitle}>
+              AI 예측권 프리미엄
+            </ThemedText>
+          </View>
+          <View style={styles.badgeNew}>
+            <ThemedText style={styles.badgeText}>추천</ThemedText>
+          </View>
+        </View>
+
+        {/* 가격 */}
+        <View style={styles.priceSection}>
+          <ThemedText style={styles.priceAmount}>19,800원</ThemedText>
+          <ThemedText style={styles.pricePeriod}>/월</ThemedText>
+        </View>
+
+        {/* 주요 혜택 */}
+        <View style={styles.features}>
+          <View style={styles.featureItem}>
+            <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.featureText}>월 30장 AI 예측권</ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.featureText}>장당 660원 (34% 할인)</ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.featureText}>평균 70%+ 정확도 목표</ThemedText>
+          </View>
+          <View style={styles.featureItem}>
+            <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.featureText}>자동 갱신</ThemedText>
+          </View>
+        </View>
+
+        {/* 절약 정보 */}
+        <View style={styles.savings}>
+          <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+          <ThemedText style={styles.savingsText}>개별 구매 대비 월 10,200원 절약!</ThemedText>
+        </View>
+      </TouchableOpacity>
+
       {/* 포인트 현황 */}
       <View style={styles.section}>
         <View style={styles.pointsHeader}>
@@ -264,12 +316,12 @@ export default function HomeScreen() {
           빠른 액션
         </ThemedText>
         <View style={styles.actionGrid}>
-          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/betting')}>
+          <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/records')}>
             <View style={styles.actionIcon}>
               <Ionicons name='document-text' size={32} color={GOLD_THEME.TEXT.SECONDARY} />
             </View>
-            <ThemedText style={styles.actionCardText}>베팅 기록</ThemedText>
-            <ThemedText style={styles.actionCardSubtext}>외부 마권 등록</ThemedText>
+            <ThemedText style={styles.actionCardText}>마권 기록</ThemedText>
+            <ThemedText style={styles.actionCardSubtext}>외부 구매 마권 관리</ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.actionCard} onPress={() => router.push('/races')}>
@@ -683,4 +735,92 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
   // 다른 사용자 베팅 스타일
+  // 구독 배너 스타일
+  subscriptionBanner: {
+    marginBottom: 24,
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: GOLD_THEME.BORDER.GOLD,
+    padding: 20,
+  },
+  bannerHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  bannerTitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  bannerTitle: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: GOLD_THEME.TEXT.PRIMARY,
+    lineHeight: 30,
+  },
+  badgeNew: {
+    backgroundColor: GOLD_THEME.GOLD.DARK,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 12,
+  },
+  badgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: GOLD_THEME.BACKGROUND.PRIMARY,
+    lineHeight: 18,
+  },
+  priceSection: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 20,
+  },
+  priceAmount: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    lineHeight: 44,
+  },
+  pricePeriod: {
+    fontSize: 18,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    marginLeft: 4,
+    opacity: 0.7,
+    lineHeight: 28,
+  },
+  features: {
+    marginBottom: 16,
+    gap: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    minHeight: 28,
+  },
+  featureText: {
+    fontSize: 16,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    lineHeight: 24,
+  },
+  savings: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 8,
+    minHeight: 44,
+  },
+  savingsText: {
+    fontSize: 14,
+    color: GOLD_THEME.TEXT.SECONDARY,
+    fontWeight: '600',
+    lineHeight: 20,
+  },
 });

@@ -188,6 +188,36 @@ const MyPageScreen = () => {
         </View>
       </View>
 
+      {/* 구독 관리 섹션 */}
+      <View style={styles.section}>
+        <ThemedText type='title' style={styles.sectionTitle}>
+          구독
+        </ThemedText>
+        <View style={styles.menuList}>
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/mypage/subscription/dashboard')}
+          >
+            <View style={styles.menuIcon}>
+              <Ionicons name='card' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            </View>
+            <ThemedText style={styles.menuText}>구독 관리</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push('/mypage/subscription/plans')}
+          >
+            <View style={styles.menuIcon}>
+              <Ionicons name='diamond' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            </View>
+            <ThemedText style={styles.menuText}>프리미엄 구독</ThemedText>
+            <Ionicons name='chevron-forward' size={20} color='#666' />
+          </TouchableOpacity>
+        </View>
+      </View>
+
       {/* 메뉴 섹션 */}
       <View style={styles.section}>
         <ThemedText type='title' style={styles.sectionTitle}>

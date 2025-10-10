@@ -7,25 +7,23 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios, { AxiosResponse } from 'axios';
 import {
-  KRA_API_ENDPOINTS,
   KRA_API_CONFIG,
-  KRA_BET_TYPES,
+  KRA_API_ENDPOINTS
 } from '../constants/kra.constants';
 import {
-  getCurrentDate,
-  getYear,
-  getMonth,
-  getYearMonth,
-  getDay,
-  getMeetName,
-  getBetTypeName,
   extractItems,
-  isSuccessResponse,
-  getErrorMessage,
-  generateRaceId,
-  generateDividendId,
   formatRequestLog,
   formatResponseLog,
+  generateDividendId,
+  generateRaceId,
+  getBetTypeName,
+  getCurrentDate,
+  getDay,
+  getErrorMessage,
+  getMeetName,
+  getYear,
+  getYearMonth,
+  isSuccessResponse
 } from '../utils/kra.utils';
 
 /**

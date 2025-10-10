@@ -19,7 +19,13 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
   showsVerticalScrollIndicator = false,
 }) => {
   const ContentWrapper = scrollable ? ScrollView : View;
-  const scrollViewProps = scrollable ? { showsVerticalScrollIndicator } : {};
+  const scrollViewProps = scrollable
+    ? {
+        showsVerticalScrollIndicator,
+        removeClippedSubviews: true, // 성능 최적화
+        keyboardShouldPersistTaps: 'handled' as const,
+      }
+    : {};
 
   return (
     <ThemedView style={[styles.container, style]}>
@@ -33,8 +39,8 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingTop: 60,
     backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
-    paddingTop: 60, // 상단 여백 조정 (노치 영역 포함)
   },
   content: {
     flex: 1,

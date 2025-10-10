@@ -102,7 +102,7 @@ export default function RacesScreen() {
 
   const handleRacePress = (raceId: string) => {
     console.log('Race selected:', raceId);
-    router.push(`/races/${raceId}`);
+    router.push(`/race-detail/${raceId}`);
   };
 
   return (

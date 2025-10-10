@@ -18,6 +18,7 @@ export enum SubscriptionStatus {
 }
 
 export enum SubscriptionPlan {
+  LIGHT = 'LIGHT', // 라이트 (9,900원/월, 15장)
   PREMIUM = 'PREMIUM', // 프리미엄 (19,800원/월, 30장)
 }
 
@@ -166,4 +167,3 @@ export class Subscription {
     }
   }
 }
-

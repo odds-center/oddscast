@@ -1,4 +1,5 @@
 import { GlobalModal } from '@/components/common/GlobalModal';
+import { AuthGuard } from '@/components/common/AuthGuard';
 import { useLoadFonts } from '@/constants/theme';
 import { AlertProvider } from '@/context/AlertProvider';
 import { AppThemeProvider } from '@/context/AppThemeProvider';
@@ -46,7 +47,9 @@ function RootLayoutNav() {
       <AppThemeProvider>
         <AlertProvider>
           <AuthProvider>
-            <AuthNavigator />
+            <AuthGuard>
+              <AuthNavigator />
+            </AuthGuard>
             <StatusBar style='auto' />
             <GlobalModal />
           </AuthProvider>
@@ -68,6 +71,10 @@ function AuthNavigator() {
       <Stack.Screen name='index' options={{ headerShown: false }} />
       <Stack.Screen name='(app)' options={{ headerShown: false }} />
       <Stack.Screen name='(auth)' options={{ headerShown: false }} />
+      <Stack.Screen name='ranking' options={{ headerShown: false }} />
+      <Stack.Screen name='race-detail' options={{ headerShown: false }} />
+      <Stack.Screen name='betting-register' options={{ headerShown: false }} />
+      <Stack.Screen name='prediction' options={{ headerShown: false }} />
       <Stack.Screen name='+not-found' />
     </Stack>
   );

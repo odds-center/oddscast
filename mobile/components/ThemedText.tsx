@@ -32,7 +32,17 @@ export function ThemedText(props: ThemedTextProps = {}) {
   return (
     <Text
       style={[
-        { color: textColor },
+        {
+          color: textColor,
+          backgroundColor: 'transparent',
+          textShadowColor: 'transparent',
+          textShadowOffset: { width: 0, height: 0 },
+          textShadowRadius: 0,
+          elevation: 0, // Android에서 그림자 제거
+          shadowOpacity: 0, // iOS에서 그림자 제거
+          shadowRadius: 0,
+          shadowOffset: { width: 0, height: 0 },
+        },
         type === 'default' ? styles.default : undefined,
         type === 'title' ? styles.title : undefined,
         type === 'subtitle' ? styles.subtitle : undefined,
@@ -47,6 +57,7 @@ export function ThemedText(props: ThemedTextProps = {}) {
       ]}
       numberOfLines={undefined}
       ellipsizeMode='tail'
+      allowFontScaling={false}
       {...rest}
     />
   );
@@ -59,6 +70,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   defaultSemiBold: {
     fontSize: 16,
@@ -66,6 +81,10 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   title: {
     fontSize: 24,
@@ -73,6 +92,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   largeTitle: {
     fontSize: 32,
@@ -80,6 +103,10 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   subtitle: {
     fontSize: 18,
@@ -87,6 +114,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   body: {
     fontSize: 16,
@@ -94,6 +125,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   link: {
     fontSize: 16,
@@ -102,6 +137,10 @@ const styles = StyleSheet.create({
     textDecorationLine: 'underline',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   stat: {
     fontSize: 20,
@@ -109,6 +148,10 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   caption: {
     fontSize: 14,
@@ -116,6 +159,10 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
   small: {
     fontSize: 12,
@@ -123,5 +170,9 @@ const styles = StyleSheet.create({
     fontWeight: '400',
     includeFontPadding: false,
     textAlignVertical: 'center',
+    backgroundColor: 'transparent',
+    shadowOpacity: 0,
+    shadowRadius: 0,
+    shadowOffset: { width: 0, height: 0 },
   },
 });

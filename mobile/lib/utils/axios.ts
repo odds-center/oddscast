@@ -3,6 +3,7 @@ import { ApiError, ApiResponse } from '@/lib/types/api';
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 import { getCurrentConfig } from '../../config/environment';
 import { tokenManager } from './tokenManager';
+import { authEvents, AUTH_EVENTS } from './authEvents';
 
 // API 기본 설정
 const config = getCurrentConfig();
@@ -47,7 +48,7 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
       return response;
     },
     async (error) => {
-      // 401 에러 시 토큰 제거
+      // 401 에러 시 토큰 제거 및 로그인 페이지로 리다이렉트
       if (error.response?.status === API_CONSTANTS.STATUS_CODES.UNAUTHORIZED) {
         try {
           const isAuthRequest =
@@ -57,10 +58,13 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
             error.config?.url?.includes('/google');
 
           if (!isAuthRequest) {
-            const currentToken = await tokenManager.getToken();
-            if (currentToken && currentToken.split('.').length !== 3) {
-              await tokenManager.removeToken();
-            }
+            console.log('🚫 401 Unauthorized - Token invalid or expired');
+
+            // 토큰 제거
+            await tokenManager.removeToken();
+
+            // 글로벌 이벤트 발송 (AuthProvider가 리스닝)
+            authEvents.emit(AUTH_EVENTS.UNAUTHORIZED);
           }
         } catch (storageError) {
           console.error('Token removal error:', storageError);

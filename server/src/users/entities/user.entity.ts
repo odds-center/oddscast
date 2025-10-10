@@ -53,7 +53,7 @@ export class User extends BaseEntity {
   @Column({ type: 'boolean', name: 'is_verified', default: false })
   isVerified!: boolean;
 
-  @Column({ type: 'datetime', name: 'last_login', nullable: true })
+  @Column({ type: 'datetime', name: 'last_login_at', nullable: true })
   lastLogin?: Date;
 
   @Column({ type: 'varchar', length: 20, name: 'role', default: 'user' })

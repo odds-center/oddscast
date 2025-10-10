@@ -21,7 +21,7 @@ CREATE TABLE users (
     provider_id VARCHAR(100),
     is_active BOOLEAN DEFAULT TRUE,
     is_verified BOOLEAN DEFAULT FALSE,
-    last_login DATETIME,
+    last_login_at DATETIME,
     role VARCHAR(20) DEFAULT 'user',
     preferences JSON,
     total_bets INT DEFAULT 0,

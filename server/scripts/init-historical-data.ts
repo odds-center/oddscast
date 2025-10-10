@@ -1,11 +1,11 @@
+import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import * as moment from 'moment';
 import { AppModule } from '../src/app.module';
 import { KraApiIntegratedService } from '../src/kra-api/kra-api-integrated.service';
+import { RacePlansService } from '../src/race-plans/race-plans.service';
 import { RacesService } from '../src/races/races.service';
 import { ResultsService } from '../src/results/results.service';
-import { RacePlansService } from '../src/race-plans/race-plans.service';
-import * as moment from 'moment';
-import { Logger } from '@nestjs/common';
 
 /**
  * 과거 데이터 초기화 스크립트

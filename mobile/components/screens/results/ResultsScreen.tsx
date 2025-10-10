@@ -1,22 +1,19 @@
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
+import { PageLayout } from '@/components/common/PageLayout';
+import { GOLD_THEME } from '@/constants/theme';
 import type { RaceResult } from '@/lib/api/resultApi';
-import { useResults, useAllResults } from '@/lib/hooks/useResults';
-import React, { useState, useEffect } from 'react';
+import { useAllResults, useResults } from '@/lib/hooks/useResults';
+import moment from 'moment';
+import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   ScrollView,
   StyleSheet,
-  TouchableOpacity,
-  FlatList,
   TextInput,
-  Platform,
-  StatusBar,
+  TouchableOpacity,
   View,
 } from 'react-native';
-import moment from 'moment';
-import { GOLD_THEME } from '@/constants/theme';
-import { Ionicons } from '@expo/vector-icons';
 
 // Mock 과거 경주 기록
 const MOCK_PAST_RESULTS = [
@@ -124,7 +121,7 @@ export default function ResultsScreen() {
   }, []);
 
   return (
-    <ThemedView style={styles.container}>
+    <PageLayout>
       {/* 헤더 */}
       <ThemedView style={styles.header}>
         <ThemedText type='title' style={styles.title}>
@@ -228,7 +225,7 @@ export default function ResultsScreen() {
       </ThemedView>
 
       {/* 결과 목록 */}
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <View style={styles.content}>
         {isLoading ? (
           <ThemedView style={styles.loadingContainer}>
             <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
@@ -280,21 +277,17 @@ export default function ResultsScreen() {
             </ThemedText>
           </ThemedView>
         )}
-      </ScrollView>
-    </ThemedView>
+      </View>
+    </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    paddingTop:
-      Platform.OS === 'ios' ? StatusBar.currentHeight || 44 : StatusBar.currentHeight || 0,
-  },
   header: {
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: GOLD_THEME.BORDER.PRIMARY,
+    marginBottom: 16,
   },
   title: {
     marginBottom: 16,

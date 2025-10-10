@@ -231,26 +231,27 @@ interface Bet {
 
 ## 🔗 관련 문서
 
-### 서버 API 문서
+### 아키텍처
 
-- [KRA API 연동 가이드](../../server/docs/KRA_API_INTEGRATION.md)
-- [에러 처리 시스템](../../server/docs/ERROR_HANDLING_SYSTEM.md)
-- [API 가이드라인](../../server/docs/API_GUIDELINES.md)
+- [모바일 아키텍처](../../architecture/mobile/ARCHITECTURE.md) - 앱 구조
+- [네비게이션](../../architecture/mobile/NAVIGATION.md) - 화면 구조
+- [상태 관리](../../architecture/mobile/STATE_MANAGEMENT.md) - 상태 관리
+- [프로젝트 개요](../../architecture/PROJECT_OVERVIEW.md) - 전체 비전
 
-### 모바일 앱 문서
+### 개발 가이드
 
-- [구현 계획서](./IMPLEMENTATION_PLAN.md)
-- [UI 컴포넌트 가이드](./UI_COMPONENTS.md)
-- [네비게이션 가이드](./NAVIGATION.md)
-- [테마 시스템](./Theming.md)
-- [인증 시스템](./Authentication.md)
+- [구현 계획](./IMPLEMENTATION_PLAN.md) - 로드맵
+- [UI 컴포넌트](../../guides/mobile/UI_COMPONENTS.md) - 컴포넌트
+- [테마 시스템](../../guides/mobile/Theming.md) - 스타일링
+- [인증 시스템](../../guides/authentication/Authentication.md) - OAuth
 
-### 전체 프로젝트 문서
+### API 문서
 
-- [프로젝트 개요](../PROJECT_OVERVIEW.md)
-- [아키텍처 개요](../ARCHITECTURE_OVERVIEW.md)
-- [개발 가이드](../DEVELOPMENT_GUIDE.md)
+- [API 매핑](../../api/rest/SERVER_MOBILE_API_MAPPING.md) - 서버-모바일 연동
+- [KRA API](../../api/kra/) - 한국마사회 API
 
 ---
 
 > 📱 **참고**: 이 문서는 모바일 앱의 기능과 구조에만 집중합니다. 서버 구현은 별도 문서를 참조하세요.
+
+**마지막 업데이트**: 2025년 10월 10일

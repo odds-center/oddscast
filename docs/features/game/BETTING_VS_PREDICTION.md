@@ -182,3 +182,7 @@ CREATE TABLE predictions (
 ---
 
 **다음 단계**: Predictions 시스템 구현 및 베팅/예측 명확한 분리
+
+---
+
+**마지막 업데이트**: 2025년 10월 10일

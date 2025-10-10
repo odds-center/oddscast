@@ -160,3 +160,7 @@ CREATE INDEX idx_bets_user ON bets(userId);
 ### 6.2. 쿼리 최적화
 
 복잡한 쿼리는 JOIN을 최소화하고 적절한 WHERE 절을 사용하여 최적화합니다.
+
+---
+
+**마지막 업데이트**: 2025년 10월 10일

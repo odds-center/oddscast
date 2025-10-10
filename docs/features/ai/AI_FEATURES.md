@@ -2,7 +2,16 @@
 
 ## 개요
 
-Golden Race의 핵심 기능은 **AI/ML 기반 경마 예측**입니다. 사용자가 실제 경마 결과를 예측하고, AI 예측과 비교하여 경쟁하는 게임입니다.
+Golden Race의 핵심 기능은 **LLM 기반 경마 예측 정보 제공**입니다.
+
+### AI 예측 방식
+
+- 🤖 **LLM API 활용**: GPT-4, Claude 등의 AI 모델 사용
+- 📊 **데이터 기반 프롬프트**: 과거 경주 데이터를 AI에게 제공
+- 🎯 **맥락 기반 분석**: 경주마, 기수, 조교사, 경주 조건 등 종합 분석
+- ✅ **빠른 구현**: 별도 ML 모델 학습 불필요
+
+> **중요**: 초기에는 ML 모델을 직접 학습하지 않고, LLM API를 활용하여 예측 정보를 제공합니다.
 
 ## 🎯 AI 예측 기능
 
@@ -71,7 +80,7 @@ interface PredictionAccuracy {
 
 ## 🏗️ 시스템 아키텍처
 
-### 서버 구조
+### LLM 기반 예측 시스템
 
 ```
 ┌─────────────────────────────────────────────┐
@@ -91,33 +100,24 @@ interface PredictionAccuracy {
 │                      │                      │
 │                      ↓                      │
 │  ┌──────────────────────────────────────┐  │
-│  │   Feature Extraction Service         │  │
-│  │  - Calculate ML features             │  │
+│  │   Prompt Builder Service              │  │
+│  │  - 경주 데이터 정리                   │  │
+│  │  - 과거 성적 요약                     │  │
+│  │  - 프롬프트 생성                      │  │
 │  └──────────────────────────────────────┘  │
-└─────────────────────────────────────────────┘
-                       │
-                       ↓ (REST API)
-┌─────────────────────────────────────────────┐
-│      Python AI Service (FastAPI)            │
-├─────────────────────────────────────────────┤
-│                                              │
+│                      │                      │
+│                      ↓                      │
 │  ┌──────────────────────────────────────┐  │
-│  │   ML Model Pipeline                   │  │
-│  │  - XGBoost, LightGBM, Neural Net     │  │
+│  │   LLM Service                         │  │
+│  │  - OpenAI GPT-4 API                  │  │
+│  │  - Anthropic Claude API              │  │
+│  │  - 예측 결과 파싱                    │  │
 │  └──────────────────────────────────────┘  │
-│           │                                  │
-│           ↓                                  │
+│                      │                      │
+│                      ↓                      │
 │  ┌──────────────────────────────────────┐  │
-│  │   Prediction Engine                   │  │
-│  │  - Ensemble predictions              │  │
-│  │  - Confidence calculation            │  │
-│  └──────────────────────────────────────┘  │
-│           │                                  │
-│           ↓                                  │
-│  ┌──────────────────────────────────────┐  │
-│  │   Model Storage (MLflow)              │  │
-│  │  - Version control                   │  │
-│  │  - A/B testing                       │  │
+│  │   Prediction Cache                    │  │
+│  │  - Redis (예측 결과 캐싱)            │  │
 │  └──────────────────────────────────────┘  │
 └─────────────────────────────────────────────┘
                        │
@@ -128,89 +128,130 @@ interface PredictionAccuracy {
 │                                              │
 │  ┌──────────────────────────────────────┐  │
 │  │   AI Prediction Screen                │  │
-│  │  - Win probability chart             │  │
-│  │  - Factor analysis                   │  │
-│  │  - Confidence indicators             │  │
+│  │  - LLM 예측 결과 표시                │  │
+│  │  - 예측 근거 설명                    │  │
+│  │  - 신뢰도 표시                       │  │
 │  └──────────────────────────────────────┘  │
 │                                              │
 │  ┌──────────────────────────────────────┐  │
-│  │   User Prediction Screen              │  │
-│  │  - Make prediction                   │  │
-│  │  - Compare with AI                   │  │
-│  └──────────────────────────────────────┘  │
-│                                              │
-│  ┌──────────────────────────────────────┐  │
-│  │   Performance Tracking                │  │
-│  │  - User accuracy vs AI               │  │
-│  │  - Leaderboard                       │  │
+│  │   Prediction Ticket Management        │  │
+│  │  - 예측권 사용                       │  │
+│  │  - 남은 개수 표시                    │  │
 │  └──────────────────────────────────────┘  │
 └─────────────────────────────────────────────┘
 ```
 
-## 🧮 특징 엔지니어링
+## 🤖 LLM 기반 예측 시스템
 
-### 경주마 특징 (30+ features)
+### AI 예측 생성 방식
 
-```python
-horse_features = {
-    # 성적 특징
-    'recent_win_rate': float,       # 최근 10경주 승률
-    'career_win_rate': float,       # 전체 승률
-    'distance_win_rate': float,     # 해당 거리 승률
-    'track_win_rate': float,        # 해당 경주장 승률
+**LLM API (GPT-4, Claude 등) 활용**
 
-    # 폼 특징
-    'days_since_last_race': int,    # 마지막 경주 이후 일수
-    'recent_rank_trend': float,     # 최근 순위 추세
-    'weight_change': float,         # 체중 변화
-    'rating': float,                # 레이팅
+```typescript
+class LLMPredictionService {
+  /**
+   * LLM을 사용한 경주 예측
+   */
+  async generatePrediction(raceId: string): Promise<AIPrediction> {
+    // 1. 경주 데이터 수집
+    const raceData = await this.getRaceData(raceId);
 
-    # 환경 적응도
-    'weather_performance': float,   # 날씨별 성적
-    'track_condition_perf': float,  # 주로 상태별 성적
-    'season_performance': float,    # 계절별 성적
+    // 2. 프롬프트 생성
+    const prompt = this.buildPredictionPrompt(raceData);
 
-    # 경력
-    'total_starts': int,            # 총 출전 횟수
-    'age': int,                     # 나이
-    'experience_months': int,       # 경력 (개월)
+    // 3. LLM API 호출 (GPT-4 또는 Claude)
+    const llmResponse = await this.llmService.chat({
+      model: 'gpt-4',
+      messages: [
+        { role: 'system', content: PREDICTION_SYSTEM_PROMPT },
+        { role: 'user', content: prompt },
+      ],
+      temperature: 0.7,
+    });
+
+    // 4. 응답 파싱
+    const prediction = this.parseLLMResponse(llmResponse);
+
+    return prediction;
+  }
+
+  /**
+   * 프롬프트 생성
+   */
+  private buildPredictionPrompt(race: RaceData): string {
+    return `
+다음 경주를 분석하여 1위부터 3위까지 예측해주세요:
+
+경주 정보:
+- 경마장: ${race.track} (${race.trackName})
+- 거리: ${race.distance}m
+- 등급: ${race.grade}
+- 날씨: ${race.weather}
+- 주로 상태: ${race.trackCondition}
+
+출전마 정보:
+${race.horses
+  .map(
+    (h) => `
+  ${h.number}번 ${h.name}
+  - 최근 5경주: ${h.recentRanks.join(', ')}
+  - 승률: ${h.winRate}%
+  - 기수: ${h.jockey} (승률 ${h.jockeyWinRate}%)
+  - 조교사: ${h.trainer} (승률 ${h.trainerWinRate}%)
+  - 이 거리 성적: ${h.distancePerformance}
+`
+  )
+  .join('\n')}
+
+다음 형식으로 답변해주세요:
+{
+  "winner": "말 번호",
+  "top3": ["1위", "2위", "3위"],
+  "confidence": 85,
+  "reasoning": "예측 근거 설명"
+}
+    `;
+  }
+
+  /**
+   * LLM 응답 파싱
+   */
+  private parseLLMResponse(response: string): AIPrediction {
+    try {
+      const parsed = JSON.parse(response);
+      return {
+        winner: parsed.winner,
+        top3: parsed.top3,
+        confidence: parsed.confidence,
+        reasoning: parsed.reasoning,
+        generatedAt: new Date(),
+      };
+    } catch (error) {
+      throw new Error('AI 예측 파싱 실패');
+    }
+  }
 }
 ```
 
-### 기수 특징 (15+ features)
+### 프롬프트 엔지니어링
 
-```python
-jockey_features = {
-    'win_rate': float,              # 승률
-    'place_rate': float,            # 연대율
-    'recent_form': float,           # 최근 폼
-    'horse_compatibility': float,   # 해당 말과의 궁합
-    'track_expertise': float,       # 경주장 전문성
-    'distance_expertise': float,    # 거리별 전문성
-}
+#### System Prompt
+
 ```
+당신은 경마 전문가입니다.
+과거 경주 데이터를 분석하여 정확한 예측을 제공합니다.
 
-### 조교사 특징 (10+ features)
+분석 시 고려사항:
+1. 최근 경주 성적 (최근 5경주가 가장 중요)
+2. 해당 거리에서의 성적
+3. 해당 경마장에서의 성적
+4. 기수 승률 및 말과의 궁합
+5. 조교사의 최근 성적
+6. 날씨 및 주로 상태
+7. 경주 등급 및 상금
 
-```python
-trainer_features = {
-    'win_rate': float,
-    'stable_form': float,           # 마방 전체 폼
-    'preparation_quality': float,   # 조교 품질
-}
-```
-
-### 경주 조건 (10+ features)
-
-```python
-race_features = {
-    'field_size': int,              # 출전 두수
-    'race_class': str,              # 경주 등급
-    'distance': int,                # 거리
-    'prize_money': int,             # 상금 (게임 내 가치)
-    'weather': str,                 # 날씨
-    'track_condition': str,         # 주로 상태
-}
+예측은 데이터에 기반하되,
+불확실성이 높으면 신뢰도를 낮게 표시하세요.
 ```
 
 ## 🎨 UI/UX 설계
@@ -384,3 +425,7 @@ race_features = {
 ---
 
 **업데이트**: 2025년 10월 9일
+
+---
+
+**마지막 업데이트**: 2025년 10월 10일

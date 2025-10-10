@@ -1,737 +1,652 @@
-# Golden Race - 결제 시스템 연동
+# 💳 구독 결제 시스템
 
-## 💳 개요
-
-Golden Race의 결제 시스템 연동 가이드를 제공합니다. 안전하고 신뢰할 수 있는 결제 시스템을 통해 사용
-자의 베팅 자금을 안전하게 관리하고, 다양한 결제 수단을 지원하는 것이 목표입니다.
-
-## 🏗️ 결제 시스템 아키텍처
-
-### 전체 구조
-
-```
-결제 시스템 계층
-├── 💰 결제 게이트웨이
-│   ├── 카드 결제 (신용카드, 체크카드)
-│   ├── 간편 결제 (카카오페이, 네이버페이)
-│   ├── 계좌 이체 (실시간 계좌이체)
-│   └── 가상 계좌 (무통장입금)
-├── 🔐 보안 시스템
-│   ├── 결제 암호화
-│   ├── PCI DSS 준수
-│   ├── 3D Secure 인증
-│   └── 사기 방지
-├── 💾 잔액 관리
-│   ├── 사용자 잔액
-│   ├── 거래 내역
-│   ├── 정산 처리
-│   └── 환불 처리
-└── 📊 모니터링
-    ├── 결제 성공률
-    ├── 오류 추적
-    ├── 성능 모니터링
-    └── 알림 시스템
-```
-
-### 기술 스택
-
-- **결제 게이트웨이**: 토스페이먼츠, 아임포트
-- **보안**: SSL/TLS, AES-256, RSA-2048
-- **데이터베이스**: MySQL + Redis (캐싱)
-- **모니터링**: Prometheus + Grafana
-- **로깅**: ELK Stack (Elasticsearch, Logstash, Kibana)
-
-## 💳 결제 수단별 구현
-
-### 카드 결제
-
-가장 일반적인 결제 수단으로, 신용카드와 체크카드를 지원합니다.
-
-```typescript
-interface CardPayment {
-  cardNumber: string; // 카드 번호 (마스킹 처리)
-  expiryMonth: string; // 만료 월 (MM)
-  expiryYear: string; // 만료 년 (YYYY)
-  cardPassword: string; // 카드 비밀번호 (앞 2자리)
-  birthDate: string; // 생년월일 (YYYYMMDD)
-  amount: number; // 결제 금액
-  installment: number; // 할부 개월 (0: 일시불)
-}
-
-class CardPaymentService {
-  async processCardPayment(payment: CardPayment): Promise<PaymentResult> {
-    try {
-      // 1. 카드 정보 검증
-      const validationResult = await this.validateCardInfo(payment);
-      if (!validationResult.isValid) {
-        throw new Error(validationResult.error);
-      }
-
-      // 2. 결제 게이트웨이 호출
-      const gatewayResponse = await this.paymentGateway.charge({
-        method: 'card',
-        card: {
-          number: payment.cardNumber,
-          expiry: `${payment.expiryMonth}/${payment.expiryYear}`,
-          cvc: payment.cardPassword,
-          name: payment.cardHolderName,
-        },
-        amount: payment.amount,
-        currency: 'KRW',
-        description: 'Golden Race 베팅 충전',
-        metadata: {
-          userId: payment.userId,
-          type: 'BETTING_CHARGE',
-        },
-      });
-
-      // 3. 결제 성공 처리
-      if (gatewayResponse.status === 'success') {
-        await this.updateUserBalance(payment.userId, payment.amount);
-        await this.createTransactionRecord(payment, gatewayResponse);
-
-        return {
-          success: true,
-          transactionId: gatewayResponse.transactionId,
-          amount: payment.amount,
-          timestamp: new Date(),
-        };
-      } else {
-        throw new Error(gatewayResponse.errorMessage);
-      }
-    } catch (error) {
-      await this.handlePaymentError(payment, error);
-      throw error;
-    }
-  }
-
-  private async validateCardInfo(payment: CardPayment): Promise<ValidationResult> {
-    // 카드 번호 유효성 검사 (Luhn 알고리즘)
-    if (!this.isValidCardNumber(payment.cardNumber)) {
-      return {
-        isValid: false,
-        error: '유효하지 않은 카드 번호입니다.',
-      };
-    }
-
-    // 만료일 검사
-    const expiryDate = new Date(parseInt(payment.expiryYear), parseInt(payment.expiryMonth) - 1);
-
-    if (expiryDate <= new Date()) {
-      return {
-        isValid: false,
-        error: '카드가 만료되었습니다.',
-      };
-    }
-
-    return { isValid: true };
-  }
-
-  private isValidCardNumber(cardNumber: string): boolean {
-    // Luhn 알고리즘 구현
-    const digits = cardNumber.replace(/\D/g, '').split('').map(Number);
-    let sum = 0;
-    let isEven = false;
-
-    for (let i = digits.length - 1; i >= 0; i--) {
-      let digit = digits[i];
-
-      if (isEven) {
-        digit *= 2;
-        if (digit > 9) {
-          digit -= 9;
-        }
-      }
-
-      sum += digit;
-      isEven = !isEven;
-    }
-
-    return sum % 10 === 0;
-  }
-}
-```
-
-### 간편 결제
-
-카카오페이, 네이버페이 등 간편 결제 서비스를 지원합니다.
-
-```typescript
-interface SimplePayment {
-  provider: 'KAKAO' | 'NAVER' | 'PAYPAL';
-  amount: number;
-  userId: string;
-  redirectUrl: string;
-}
-
-class SimplePaymentService {
-  async initiateSimplePayment(payment: SimplePayment): Promise<SimplePaymentResult> {
-    try {
-      // 1. 결제 세션 생성
-      const session = await this.createPaymentSession(payment);
-
-      // 2. 결제 게이트웨이 호출
-      const gatewayResponse = await this.paymentGateway.createPayment({
-        method: payment.provider.toLowerCase(),
-        amount: payment.amount,
-        currency: 'KRW',
-        description: 'Golden Race 베팅 충전',
-        returnUrl: payment.redirectUrl,
-        cancelUrl: `${payment.redirectUrl}?canceled=true`,
-        metadata: {
-          sessionId: session.id,
-          userId: payment.userId,
-        },
-      });
-
-      // 3. 결제 URL 반환
-      return {
-        success: true,
-        paymentUrl: gatewayResponse.paymentUrl,
-        sessionId: session.id,
-        expiresAt: session.expiresAt,
-      };
-    } catch (error) {
-      await this.handlePaymentError(payment, error);
-      throw error;
-    }
-  }
-
-  async handleSimplePaymentCallback(callbackData: any): Promise<void> {
-    const { sessionId, status, transactionId } = callbackData;
-
-    // 1. 세션 검증
-    const session = await this.validatePaymentSession(sessionId);
-    if (!session) {
-      throw new Error('유효하지 않은 결제 세션입니다.');
-    }
-
-    // 2. 결제 상태 확인
-    if (status === 'success') {
-      await this.completePayment(session, transactionId);
-    } else {
-      await this.cancelPayment(session);
-    }
-  }
-
-  private async createPaymentSession(payment: SimplePayment): Promise<PaymentSession> {
-    const session = await this.paymentSessionService.create({
-      userId: payment.userId,
-      amount: payment.amount,
-      provider: payment.provider,
-      status: 'PENDING',
-      expiresAt: new Date(Date.now() + 30 * 60 * 1000), // 30분 후 만료
-    });
-
-    return session;
-  }
-}
-```
-
-### 계좌 이체
-
-실시간 계좌이체를 통한 결제를 지원합니다.
-
-```typescript
-interface BankTransfer {
-  bankCode: string; // 은행 코드
-  accountNumber: string; // 계좌번호
-  accountHolder: string; // 예금주명
-  amount: number; // 이체 금액
-  userId: string;
-}
-
-class BankTransferService {
-  async processBankTransfer(transfer: BankTransfer): Promise<TransferResult> {
-    try {
-      // 1. 계좌 정보 검증
-      const validationResult = await this.validateBankAccount(transfer);
-      if (!validationResult.isValid) {
-        throw new Error(validationResult.error);
-      }
-
-      // 2. 이체 요청
-      const transferResponse = await this.bankGateway.transfer({
-        fromAccount: this.getSystemAccount(),
-        toAccount: {
-          bankCode: transfer.bankCode,
-          accountNumber: transfer.accountNumber,
-          accountHolder: transfer.accountHolder,
-        },
-        amount: transfer.amount,
-        description: 'Golden Race 베팅 충전',
-        reference: `GR_${Date.now()}`,
-      });
-
-      // 3. 이체 성공 처리
-      if (transferResponse.status === 'success') {
-        await this.updateUserBalance(transfer.userId, transfer.amount);
-        await this.createTransactionRecord(transfer, transferResponse);
-
-        return {
-          success: true,
-          transferId: transferResponse.transferId,
-          amount: transfer.amount,
-          timestamp: new Date(),
-        };
-      } else {
-        throw new Error(transferResponse.errorMessage);
-      }
-    } catch (error) {
-      await this.handleTransferError(transfer, error);
-      throw error;
-    }
-  }
-
-  private async validateBankAccount(transfer: BankTransfer): Promise<ValidationResult> {
-    // 계좌번호 형식 검증
-    if (!this.isValidAccountNumber(transfer.accountNumber)) {
-      return {
-        isValid: false,
-        error: '유효하지 않은 계좌번호입니다.',
-      };
-    }
-
-    // 예금주명 검증 (실제 은행 API 호출)
-    try {
-      const accountInfo = await this.bankGateway.getAccountInfo({
-        bankCode: transfer.bankCode,
-        accountNumber: transfer.accountNumber,
-      });
-
-      if (accountInfo.accountHolder !== transfer.accountHolder) {
-        return {
-          isValid: false,
-          error: '예금주명이 일치하지 않습니다.',
-        };
-      }
-
-      return { isValid: true };
-    } catch (error) {
-      return {
-        isValid: false,
-        error: '계좌 정보를 확인할 수 없습니다.',
-      };
-    }
-  }
-}
-```
-
-## 🔐 결제 보안 시스템
-
-### PCI DSS 준수
-
-결제 카드 정보 보안을 위한 PCI DSS 표준을 준수합니다.
-
-```typescript
-class PaymentSecurityService {
-  // 카드 정보 암호화
-  encryptCardData(cardData: CardData): EncryptedCardData {
-    const encryptedCardNumber = this.encrypt(cardData.cardNumber, this.getEncryptionKey());
-    const encryptedCvc = this.encrypt(cardData.cvc, this.getEncryptionKey());
-
-    return {
-      encryptedCardNumber,
-      encryptedCvc,
-      maskedCardNumber: this.maskCardNumber(cardData.cardNumber),
-      expiryMonth: cardData.expiryMonth,
-      expiryYear: cardData.expiryYear,
-    };
-  }
-
-  // 카드 정보 복호화
-  decryptCardData(encryptedData: EncryptedCardData): CardData {
-    const cardNumber = this.decrypt(encryptedData.encryptedCardNumber, this.getEncryptionKey());
-    const cvc = this.decrypt(encryptedData.encryptedCvc, this.getEncryptionKey());
-
-    return {
-      cardNumber,
-      cvc,
-      expiryMonth: encryptedData.expiryMonth,
-      expiryYear: encryptedData.expiryYear,
-    };
-  }
-
-  // 카드 번호 마스킹
-  private maskCardNumber(cardNumber: string): string {
-    if (cardNumber.length < 4) return cardNumber;
-
-    const lastFour = cardNumber.slice(-4);
-    const masked = '*'.repeat(cardNumber.length - 4);
-
-    return masked + lastFour;
-  }
-
-  // 암호화 키 관리
-  private getEncryptionKey(): string {
-    return process.env.PAYMENT_ENCRYPTION_KEY || '';
-  }
-}
-```
-
-### 3D Secure 인증
-
-3D Secure를 통한 추가 보안 인증을 지원합니다.
-
-```typescript
-class ThreeDSecureService {
-  async initiate3DSecure(payment: CardPayment): Promise<ThreeDSecureResult> {
-    try {
-      // 1. 3D Secure 인증 요청
-      const authResponse = await this.paymentGateway.initiate3DSecure({
-        cardNumber: payment.cardNumber,
-        amount: payment.amount,
-        currency: 'KRW',
-        returnUrl: `${process.env.APP_URL}/payment/3ds/callback`,
-      });
-
-      // 2. 인증 URL 반환
-      return {
-        requiresAuthentication: true,
-        authenticationUrl: authResponse.authenticationUrl,
-        sessionId: authResponse.sessionId,
-      };
-    } catch (error) {
-      // 3D Secure가 지원되지 않는 경우
-      return {
-        requiresAuthentication: false,
-        sessionId: null,
-      };
-    }
-  }
-
-  async complete3DSecure(sessionId: string, authResult: any): Promise<PaymentResult> {
-    try {
-      // 1. 3D Secure 인증 결과 확인
-      if (authResult.status !== 'success') {
-        throw new Error('3D Secure 인증에 실패했습니다.');
-      }
-
-      // 2. 실제 결제 처리
-      const paymentResult = await this.completePayment(sessionId);
-
-      return paymentResult;
-    } catch (error) {
-      await this.handle3DSecureError(sessionId, error);
-      throw error;
-    }
-  }
-}
-```
-
-## 💾 잔액 관리 시스템
-
-### 사용자 잔액 관리
-
-```typescript
-class BalanceService {
-  async getUserBalance(userId: string): Promise<UserBalance> {
-    const user = await this.userService.findById(userId);
-
-    return {
-      userId,
-      currentBalance: user.balance,
-      availableBalance: user.balance - user.reservedBalance,
-      reservedBalance: user.reservedBalance,
-      totalDeposits: user.totalDeposits,
-      totalWithdrawals: user.totalWithdrawals,
-      lastUpdated: user.balanceUpdatedAt,
-    };
-  }
-
-  async addBalance(userId: string, amount: number, source: string): Promise<void> {
-    const user = await this.userService.findById(userId);
-
-    // 잔액 증가
-    user.balance += amount;
-    user.totalDeposits += amount;
-    user.balanceUpdatedAt = new Date();
-
-    await this.userService.update(user);
-
-    // 거래 내역 기록
-    await this.transactionService.create({
-      userId,
-      type: 'DEPOSIT',
-      amount,
-      source,
-      description: `${source}를 통한 충전`,
-      balanceAfter: user.balance,
-    });
-
-    // 알림 발송
-    await this.notificationService.sendBalanceUpdate(userId, {
-      type: 'BALANCE_ADDED',
-      amount,
-      newBalance: user.balance,
-    });
-  }
-
-  async deductBalance(userId: string, amount: number, reason: string): Promise<boolean> {
-    const user = await this.userService.findById(userId);
-
-    if (user.balance < amount) {
-      return false; // 잔액 부족
-    }
-
-    // 잔액 차감
-    user.balance -= amount;
-    user.balanceUpdatedAt = new Date();
-
-    await this.userService.update(user);
-
-    // 거래 내역 기록
-    await this.transactionService.create({
-      userId,
-      type: 'WITHDRAWAL',
-      amount: -amount,
-      reason,
-      description: reason,
-      balanceAfter: user.balance,
-    });
-
-    return true;
-  }
-
-  async reserveBalance(userId: string, amount: number): Promise<boolean> {
-    const user = await this.userService.findById(userId);
-
-    if (user.balance - user.reservedBalance < amount) {
-      return false; // 사용 가능한 잔액 부족
-    }
-
-    // 잔액 예약
-    user.reservedBalance += amount;
-    await this.userService.update(user);
-
-    return true;
-  }
-
-  async releaseReservedBalance(userId: string, amount: number): Promise<void> {
-    const user = await this.userService.findById(userId);
-
-    user.reservedBalance = Math.max(0, user.reservedBalance - amount);
-    await this.userService.update(user);
-  }
-}
-```
-
-### 거래 내역 관리
-
-```typescript
-class TransactionService {
-  async createTransaction(transaction: CreateTransactionDto): Promise<Transaction> {
-    const newTransaction = await this.transactionRepository.create({
-      ...transaction,
-      id: this.generateTransactionId(),
-      timestamp: new Date(),
-      status: 'COMPLETED',
-    });
-
-    // 캐시 무효화
-    await this.cacheService.invalidate(`user_transactions_${transaction.userId}`);
-
-    return newTransaction;
-  }
-
-  async getUserTransactions(
-    userId: string,
-    filters: TransactionFilters
-  ): Promise<PaginatedTransactions> {
-    const cacheKey = `user_transactions_${userId}_${JSON.stringify(filters)}`;
-
-    // 캐시에서 조회
-    const cached = await this.cacheService.get(cacheKey);
-    if (cached) {
-      return cached;
-    }
-
-    // 데이터베이스에서 조회
-    const transactions = await this.transactionRepository.findByUserId(userId, filters);
-
-    // 캐시에 저장
-    await this.cacheService.set(cacheKey, transactions, 300); // 5분
-
-    return transactions;
-  }
-
-  async getTransactionSummary(userId: string, timeRange: TimeRange): Promise<TransactionSummary> {
-    const transactions = await this.transactionRepository.findByUserIdAndTimeRange(
-      userId,
-      timeRange
-    );
-
-    const summary = transactions.reduce(
-      (acc, transaction) => {
-        if (transaction.type === 'DEPOSIT') {
-          acc.totalDeposits += transaction.amount;
-        } else if (transaction.type === 'WITHDRAWAL') {
-          acc.totalWithdrawals += Math.abs(transaction.amount);
-        }
-
-        acc.transactionCount++;
-        return acc;
-      },
-      {
-        totalDeposits: 0,
-        totalWithdrawals: 0,
-        transactionCount: 0,
-      }
-    );
-
-    return {
-      ...summary,
-      netAmount: summary.totalDeposits - summary.totalWithdrawals,
-    };
-  }
-
-  private generateTransactionId(): string {
-    const timestamp = Date.now().toString();
-    const random = Math.random().toString(36).substr(2, 9);
-    return `TXN_${timestamp}_${random}`.toUpperCase();
-  }
-}
-```
-
-## 📊 결제 모니터링 및 알림
-
-### 결제 성공률 모니터링
-
-```typescript
-class PaymentMonitoringService {
-  async monitorPaymentSuccessRate(): Promise<void> {
-    const timeRange = {
-      start: new Date(Date.now() - 24 * 60 * 60 * 1000), // 24시간 전
-      end: new Date(),
-    };
-
-    const payments = await this.paymentRepository.findByTimeRange(timeRange);
-
-    const totalPayments = payments.length;
-    const successfulPayments = payments.filter((p) => p.status === 'SUCCESS').length;
-    const successRate = totalPayments > 0 ? (successfulPayments / totalPayments) * 100 : 0;
-
-    // 성공률이 95% 미만인 경우 알림
-    if (successRate < 95) {
-      await this.sendPaymentAlert({
-        type: 'LOW_SUCCESS_RATE',
-        severity: 'HIGH',
-        message: `결제 성공률이 낮습니다: ${successRate.toFixed(2)}%`,
-        data: {
-          successRate,
-          totalPayments,
-          successfulPayments,
-          timeRange,
-        },
-      });
-    }
-
-    // 시간대별 성공률 분석
-    const hourlyStats = this.analyzeHourlySuccessRate(payments);
-    await this.updatePaymentMetrics(hourlyStats);
-  }
-
-  private analyzeHourlySuccessRate(payments: Payment[]): HourlyPaymentStats[] {
-    const hourlyStats = new Map<number, { total: number; success: number }>();
-
-    for (const payment of payments) {
-      const hour = new Date(payment.createdAt).getHours();
-
-      if (!hourlyStats.has(hour)) {
-        hourlyStats.set(hour, { total: 0, success: 0 });
-      }
-
-      const stats = hourlyStats.get(hour)!;
-      stats.total++;
-
-      if (payment.status === 'SUCCESS') {
-        stats.success++;
-      }
-    }
-
-    return Array.from(hourlyStats.entries()).map(([hour, stats]) => ({
-      hour,
-      totalPayments: stats.total,
-      successfulPayments: stats.success,
-      successRate: (stats.success / stats.total) * 100,
-    }));
-  }
-}
-```
-
-### 오류 추적 및 알림
-
-```typescript
-class PaymentErrorTrackingService {
-  async trackPaymentError(error: PaymentError): Promise<void> {
-    // 오류 로그 기록
-    await this.errorLogRepository.create({
-      timestamp: new Date(),
-      errorType: error.type,
-      errorMessage: error.message,
-      userId: error.userId,
-      paymentData: error.paymentData,
-      stackTrace: error.stackTrace,
-    });
-
-    // 오류 패턴 분석
-    const errorPattern = await this.analyzeErrorPattern(error);
-
-    // 심각한 오류인 경우 즉시 알림
-    if (errorPattern.severity === 'CRITICAL') {
-      await this.sendImmediateAlert(errorPattern);
-    }
-
-    // 오류 통계 업데이트
-    await this.updateErrorStatistics(errorPattern);
-  }
-
-  private async analyzeErrorPattern(error: PaymentError): Promise<ErrorPattern> {
-    const recentErrors = await this.errorLogRepository.findRecentErrors(
-      error.type,
-      24 // 24시간
-    );
-
-    const errorCount = recentErrors.length;
-    let severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL' = 'LOW';
-
-    if (errorCount > 100) {
-      severity = 'CRITICAL';
-    } else if (errorCount > 50) {
-      severity = 'HIGH';
-    } else if (errorCount > 20) {
-      severity = 'MEDIUM';
-    }
-
-    return {
-      type: error.type,
-      severity,
-      errorCount,
-      timeRange: 24,
-      affectedUsers: new Set(recentErrors.map((e) => e.userId)).size,
-      lastOccurrence: new Date(),
-    };
-  }
-
-  private async sendImmediateAlert(pattern: ErrorPattern): Promise<void> {
-    await this.notificationService.sendAlert({
-      type: 'PAYMENT_ERROR_CRITICAL',
-      severity: pattern.severity,
-      message: `결제 시스템에 심각한 오류가 발생했습니다: ${pattern.type}`,
-      data: pattern,
-      requiresImmediate: true,
-    });
-  }
-}
-```
-
-## 📚 관련 문서
-
-- [베팅 시스템 설계](./BETTING_SYSTEM.md) - 베팅 시스템 설계 가이드
-- [도박 규제 준수](./GAMBLING_COMPLIANCE.md) - 도박 규제 준수 가이드
-- [보안 시스템](./SECURITY_SYSTEM.md) - 보안 및 인증 시스템
-- [모니터링 시스템](./MONITORING.md) - 시스템 모니터링 가이드
+**AI 예측권 월 구독 서비스** (19,800원/월)
 
 ---
 
-> 💳 **안전하고 신뢰할 수 있는 결제 시스템으로 사용자의 베팅 자금을 안전하게 관리합니다.**
+## 📋 개요
+
+### 비즈니스 모델
+
+Golden Race는 **AI 예측 정보 구독 서비스**입니다.
+
+| 항목      | 내용                                   |
+| --------- | -------------------------------------- |
+| 서비스    | AI 예측 정보 제공 (합법적 정보 서비스) |
+| 구독료    | 월 19,800원                            |
+| 제공 내용 | 월 30장 AI 예측권                      |
+| 결제 방식 | 카드 정기 결제 (자동 갱신)             |
+| 실제 베팅 | 한국마사회 등 외부에서 사용자 직접     |
+
+> **중요**: 본 앱은 AI 예측 정보만 제공합니다. 실제 마권 구매는 한국마사회 공식 채널에서 사용자가 직
+> 접 진행합니다.
+
+---
+
+## 🏗️ 시스템 아키텍처
+
+```
+구독 결제 시스템
+│
+├── 💳 결제 게이트웨이
+│   └── 토스페이먼츠 (정기 결제)
+│
+├── 📋 구독 관리
+│   ├── 구독 시작/취소
+│   ├── 자동 갱신 (매월 1일)
+│   └── 예측권 발급 (30장)
+│
+├── 🎫 예측권 시스템
+│   ├── 발급/사용/만료
+│   ├── AI 예측 연동
+│   └── 정확도 기록
+│
+└── 📊 통계 및 알림
+    ├── 구독자 통계
+    ├── 매출 분석
+    └── 결제 알림
+```
+
+---
+
+## 💎 구독 플랜
+
+### 프리미엄 플랜
+
+```typescript
+const SUBSCRIPTION_PLAN = {
+  name: 'AI 예측권 프리미엄',
+  price: 19800, // 월 19,800원
+  currency: 'KRW',
+  billingCycle: 'MONTHLY', // 매월
+  ticketsPerMonth: 30, // 월 30장
+  features: [
+    '월 30장 AI 예측권',
+    '평균 70%+ 정확도',
+    '상세 예측 근거',
+    '신뢰도 점수',
+    '맞춤 알림 서비스',
+  ],
+};
+```
+
+---
+
+## 🗄️ 데이터베이스
+
+### Subscriptions 테이블
+
+```sql
+CREATE TABLE subscriptions (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+
+    -- 구독 정보
+    plan VARCHAR(20) DEFAULT 'PREMIUM',
+    price DECIMAL(10,2) DEFAULT 19800.00,
+    status ENUM('ACTIVE', 'CANCELLED', 'EXPIRED') DEFAULT 'ACTIVE',
+
+    -- 기간
+    start_date DATETIME NOT NULL,
+    next_billing_date DATETIME NOT NULL,
+
+    -- 결제 정보 (암호화 저장)
+    billing_key VARCHAR(200) NOT NULL COMMENT '토스 빌링키',
+    card_last4 VARCHAR(4) COMMENT '카드 뒷 4자리',
+
+    -- 예측권 관리
+    tickets_per_month INT DEFAULT 30,
+    tickets_remaining INT DEFAULT 30,
+
+    -- 설정
+    auto_renew BOOLEAN DEFAULT TRUE,
+
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    INDEX idx_user (user_id),
+    INDEX idx_status (status),
+    INDEX idx_billing_date (next_billing_date)
+);
+```
+
+### Prediction_Tickets 테이블
+
+```sql
+CREATE TABLE prediction_tickets (
+    id VARCHAR(36) PRIMARY KEY,
+    subscription_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+    race_id VARCHAR(50),
+
+    -- 예측권 상태
+    status ENUM('AVAILABLE', 'USED', 'EXPIRED') DEFAULT 'AVAILABLE',
+    issue_date DATETIME NOT NULL,
+    expiry_date DATETIME NOT NULL,
+    used_date DATETIME,
+
+    -- AI 예측 (사용 시 생성)
+    ai_prediction JSON COMMENT '{"winner":"3","top3":["3","5","1"],"confidence":85}',
+    prediction_reasoning TEXT,
+
+    -- 결과 (경주 종료 후)
+    actual_result JSON,
+    is_correct BOOLEAN,
+    accuracy_score DECIMAL(5,2),
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+```
+
+### Billing_History 테이블
+
+```sql
+CREATE TABLE billing_history (
+    id VARCHAR(36) PRIMARY KEY,
+    subscription_id VARCHAR(36) NOT NULL,
+    user_id VARCHAR(36) NOT NULL,
+
+    -- 결제 정보
+    amount DECIMAL(10,2) NOT NULL,
+    billing_date DATETIME NOT NULL,
+
+    -- PG사 정보
+    pg_transaction_id VARCHAR(100),
+    pg_provider VARCHAR(20) DEFAULT 'TOSS',
+
+    -- 상태
+    status ENUM('SUCCESS', 'FAILED', 'REFUNDED') DEFAULT 'SUCCESS',
+    error_message TEXT,
+
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id)
+);
+```
+
+---
+
+## 💳 구독 결제 흐름
+
+### 1. 구독 시작
+
+```
+[사용자] "프리미엄 구독" 선택
+    ↓
+[앱] 결제 페이지 표시
+    ↓
+[사용자] 카드 정보 입력
+    ↓
+[서버] 토스페이먼츠로 빌링키 발급
+    ↓
+[서버] 첫 결제 (19,800원)
+    ↓
+[DB] 구독 정보 저장
+    ↓
+[서버] 예측권 30장 즉시 발급
+    ↓
+[사용자] 구독 활성화 완료!
+```
+
+### 2. 매월 자동 갱신
+
+```
+[Cron] 매월 1일 00:00 실행
+    ↓
+[서버] 활성 구독자 조회
+    ↓
+[서버] 빌링키로 자동 결제 (19,800원)
+    ↓
+[결제 성공?]
+    ↓ YES
+[서버] 새로운 예측권 30장 발급
+[알림] "예측권 30장이 충전되었습니다"
+    ↓ NO
+[서버] 결제 재시도 (최대 3회)
+[알림] "결제 실패, 카드 정보를 확인해주세요"
+```
+
+### 3. 예측권 사용
+
+```
+[사용자] 경주 선택 → "AI 예측 보기"
+    ↓
+[서버] 예측권 1장 차감 (29장 남음)
+    ↓
+[AI] 해당 경주 예측 생성
+    ↓
+[앱] AI 예측 정보 표시
+    - 1위: 3번 (28%)
+    - 상위 3위: 3, 5, 1
+    - 신뢰도: 85%
+    - 근거: 최근 성적 우수
+    ↓
+[사용자] 이 정보를 참고하여
+         한국마사회 앱에서 직접 마권 구매
+```
+
+---
+
+## 🔧 구현 코드
+
+### SubscriptionService
+
+```typescript
+@Injectable()
+export class SubscriptionService {
+  constructor(
+    @InjectRepository(Subscription)
+    private subscriptionRepo: Repository<Subscription>,
+    private tossService: TossPaymentService,
+    private ticketService: PredictionTicketService
+  ) {}
+
+  /**
+   * 구독 시작
+   */
+  async subscribe(userId: string, cardInfo: CardInfo) {
+    // 1. 빌링키 발급
+    const billingKey = await this.tossService.issueBillingKey({
+      customerKey: userId,
+      ...cardInfo,
+    });
+
+    // 2. 첫 결제
+    const payment = await this.tossService.charge({
+      billingKey,
+      amount: 19800,
+      orderName: 'AI 예측권 프리미엄 (첫 결제)',
+    });
+
+    if (!payment.success) {
+      throw new BadRequestException('결제 실패');
+    }
+
+    // 3. 구독 생성
+    const subscription = this.subscriptionRepo.create({
+      userId,
+      plan: 'PREMIUM',
+      price: 19800,
+      status: 'ACTIVE',
+      startDate: new Date(),
+      nextBillingDate: this.getNextMonthDate(),
+      billingKey: await this.encrypt(billingKey),
+      cardLast4: cardInfo.cardNumber.slice(-4),
+      ticketsPerMonth: 30,
+      ticketsRemaining: 30,
+      autoRenew: true,
+    });
+
+    await this.subscriptionRepo.save(subscription);
+
+    // 4. 예측권 30장 발급
+    await this.ticketService.issueTickets(userId, subscription.id, 30);
+
+    return {
+      subscriptionId: subscription.id,
+      ticketsIssued: 30,
+      nextBillingDate: subscription.nextBillingDate,
+    };
+  }
+
+  /**
+   * 매월 자동 결제 (Cron Job)
+   */
+  @Cron('0 0 1 * *') // 매월 1일 00:00
+  async processMonthlyBilling() {
+    const activeSubscriptions = await this.subscriptionRepo.find({
+      where: { status: 'ACTIVE', autoRenew: true },
+    });
+
+    for (const sub of activeSubscriptions) {
+      try {
+        const billingKey = await this.decrypt(sub.billingKey);
+
+        // 정기 결제
+        const payment = await this.tossService.charge({
+          billingKey,
+          amount: 19800,
+          orderName: `AI 예측권 구독 ${this.getMonthString()}`,
+        });
+
+        if (payment.success) {
+          // 새 예측권 30장 발급
+          await this.ticketService.issueTickets(sub.userId, sub.id, 30);
+
+          // 구독 정보 업데이트
+          sub.nextBillingDate = this.getNextMonthDate();
+          sub.ticketsRemaining = 30;
+          await this.subscriptionRepo.save(sub);
+
+          // 성공 알림
+          await this.sendNotification(sub.userId, '예측권 30장이 충전되었습니다! 🎉');
+        } else {
+          // 결제 실패 처리
+          await this.handleBillingFailure(sub);
+        }
+      } catch (error) {
+        this.logger.error(`구독 결제 실패: ${sub.id}`, error);
+      }
+    }
+  }
+
+  /**
+   * 구독 취소
+   */
+  async cancelSubscription(userId: string, subscriptionId: string) {
+    const subscription = await this.subscriptionRepo.findOne({
+      where: { id: subscriptionId, userId },
+    });
+
+    subscription.status = 'CANCELLED';
+    subscription.autoRenew = false;
+    await this.subscriptionRepo.save(subscription);
+
+    return {
+      message: '구독이 취소되었습니다. 남은 예측권은 만료일까지 사용 가능합니다.',
+      remainingTickets: subscription.ticketsRemaining,
+      expiryDate: subscription.nextBillingDate,
+    };
+  }
+
+  private getNextMonthDate(): Date {
+    const next = new Date();
+    next.setMonth(next.getMonth() + 1);
+    next.setDate(1);
+    next.setHours(0, 0, 0, 0);
+    return next;
+  }
+}
+```
+
+---
+
+## 🎫 예측권 시스템
+
+### PredictionTicketService
+
+```typescript
+@Injectable()
+export class PredictionTicketService {
+  /**
+   * 예측권 발급
+   */
+  async issueTickets(userId: string, subscriptionId: string, count: number) {
+    const expiryDate = this.getNextMonthDate();
+    const tickets = [];
+
+    for (let i = 0; i < count; i++) {
+      tickets.push({
+        id: uuid(),
+        subscriptionId,
+        userId,
+        status: 'AVAILABLE',
+        issueDate: new Date(),
+        expiryDate,
+      });
+    }
+
+    await this.ticketRepo.save(tickets);
+    return tickets;
+  }
+
+  /**
+   * 예측권 사용 (AI 예측 보기)
+   */
+  async useTicket(userId: string, raceId: string) {
+    // 1. 사용 가능한 예측권 조회
+    const ticket = await this.ticketRepo.findOne({
+      where: { userId, status: 'AVAILABLE' },
+      order: { issueDate: 'ASC' },
+    });
+
+    if (!ticket) {
+      throw new BadRequestException('사용 가능한 예측권이 없습니다.');
+    }
+
+    // 2. AI 예측 생성
+    const aiPrediction = await this.aiService.predictRace(raceId);
+
+    // 3. 예측권 사용 처리
+    ticket.status = 'USED';
+    ticket.raceId = raceId;
+    ticket.usedDate = new Date();
+    ticket.aiPrediction = aiPrediction;
+    await this.ticketRepo.save(ticket);
+
+    // 4. 구독 정보 업데이트
+    await this.updateSubscriptionTickets(ticket.subscriptionId, -1);
+
+    return {
+      ticketId: ticket.id,
+      aiPrediction,
+      remainingTickets: await this.getRemainingCount(userId),
+    };
+  }
+
+  /**
+   * 경주 결과 확인 및 정확도 기록
+   */
+  async checkResult(ticketId: string, actualResult: string[]) {
+    const ticket = await this.ticketRepo.findOne(ticketId);
+
+    const prediction = ticket.aiPrediction;
+    const isCorrect = prediction.winner === actualResult[0];
+    const accuracy = this.calculateAccuracy(prediction.top3, actualResult);
+
+    ticket.actualResult = actualResult;
+    ticket.isCorrect = isCorrect;
+    ticket.accuracyScore = accuracy;
+
+    await this.ticketRepo.save(ticket);
+
+    return { isCorrect, accuracy };
+  }
+
+  private calculateAccuracy(predicted: string[], actual: string[]): number {
+    let score = 0;
+    if (predicted[0] === actual[0]) score += 50; // 1위 맞춤
+    if (predicted.includes(actual[1])) score += 30; // 2위 포함
+    if (predicted.includes(actual[2])) score += 20; // 3위 포함
+    return score;
+  }
+}
+```
+
+---
+
+## 💳 토스페이먼츠 연동
+
+### 설치
+
+```bash
+npm install @tosspayments/payment-sdk
+```
+
+### 환경 변수
+
+```bash
+# .env
+TOSS_CLIENT_KEY=test_ck_YOUR_CLIENT_KEY
+TOSS_SECRET_KEY=test_sk_YOUR_SECRET_KEY
+TOSS_SUCCESS_URL=https://your-domain.com/payment/success
+TOSS_FAIL_URL=https://your-domain.com/payment/fail
+```
+
+### TossPaymentService
+
+```typescript
+@Injectable()
+export class TossPaymentService {
+  private apiUrl = 'https://api.tosspayments.com/v1';
+
+  /**
+   * 빌링키 발급 (정기 결제용)
+   */
+  async issueBillingKey(data: {
+    customerKey: string;
+    cardNumber: string;
+    cardExpirationYear: string;
+    cardExpirationMonth: string;
+    cardPassword: string;
+    customerBirthday: string;
+  }): Promise<string> {
+    const response = await axios.post(
+      `${this.apiUrl}/billing/authorizations/card`,
+      {
+        customerKey: data.customerKey,
+        cardNumber: data.cardNumber,
+        cardExpirationYear: data.cardExpirationYear,
+        cardExpirationMonth: data.cardExpirationMonth,
+        cardPassword: data.cardPassword,
+        customerBirthday: data.customerBirthday,
+      },
+      {
+        headers: {
+          Authorization: `Basic ${Buffer.from(`${process.env.TOSS_SECRET_KEY}:`).toString(
+            'base64'
+          )}`,
+        },
+      }
+    );
+
+    return response.data.billingKey;
+  }
+
+  /**
+   * 빌링키로 결제 (정기 결제)
+   */
+  async charge(data: {
+    billingKey: string;
+    amount: number;
+    orderName: string;
+  }): Promise<PaymentResult> {
+    try {
+      const response = await axios.post(
+        `${this.apiUrl}/billing/${data.billingKey}`,
+        {
+          amount: data.amount,
+          orderName: data.orderName,
+          customerKey: data.customerKey,
+        },
+        {
+          headers: {
+            Authorization: `Basic ${Buffer.from(`${process.env.TOSS_SECRET_KEY}:`).toString(
+              'base64'
+            )}`,
+          },
+        }
+      );
+
+      return {
+        success: response.data.status === 'DONE',
+        paymentKey: response.data.paymentKey,
+        approvedAt: response.data.approvedAt,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message,
+      };
+    }
+  }
+}
+```
+
+---
+
+## 📱 모바일 UI
+
+### 구독 화면
+
+```typescript
+function SubscriptionScreen() {
+  return (
+    <View>
+      <Text style={styles.title}>🎯 AI 예측권 프리미엄</Text>
+
+      <View style={styles.priceCard}>
+        <Text style={styles.price}>월 19,800원</Text>
+        <Text style={styles.subtitle}>매월 30장 AI 예측권</Text>
+      </View>
+
+      <View style={styles.features}>
+        <Feature icon='✨' text='월 30장 AI 예측권' />
+        <Feature icon='🎯' text='평균 70%+ 정확도' />
+        <Feature icon='📊' text='상세 예측 근거' />
+        <Feature icon='🔔' text='맞춤 알림 서비스' />
+      </View>
+
+      <Button onPress={handleSubscribe}>구독 시작하기</Button>
+
+      <Text style={styles.legal}>
+        * AI 예측 정보 제공 서비스입니다.
+        {'\n'}* 실제 베팅은 한국마사회에서 직접 진행하세요.
+      </Text>
+    </View>
+  );
+}
+```
+
+---
+
+## 💰 수익 모델
+
+### 예상 수익
+
+| 구독자  | 월 매출   | 연 매출   |
+| ------- | --------- | --------- |
+| 100명   | 198만원   | 2,376만원 |
+| 500명   | 990만원   | 1.19억원  |
+| 1,000명 | 1,980만원 | 2.38억원  |
+| 5,000명 | 9,900만원 | 11.88억원 |
+
+### 비용 구조 (예상)
+
+| 항목             | 비용              | 비율     |
+| ---------------- | ----------------- | -------- |
+| PG 수수료 (3.5%) | ~69,300원 (100명) | 3.5%     |
+| 서버 운영 (GCP)  | ~50만원           | 5%       |
+| AI 서버          | ~100만원          | 10%      |
+| 마케팅           | ~200만원          | 20%      |
+| **순이익**       | **~1,178,700원**  | **~59%** |
+
+---
+
+## ⚖️ 법적 안전성
+
+### 합법적인 이유
+
+| 구분            | 설명                                |
+| --------------- | ----------------------------------- |
+| **서비스 성격** | 정보 제공 서비스 (주식 정보와 동일) |
+| **결제 대상**   | AI 예측 정보 구독료                 |
+| **베팅 행위**   | 앱 내 베팅 없음 (정보만 제공)       |
+| **책임**        | 실제 베팅은 사용자 책임             |
+
+### 명시 사항
+
+```
+✅ AI 예측 정보 구독 서비스입니다
+✅ 구독료는 정보 서비스 이용료입니다
+✅ 실제 마권 구매는 한국마사회 공식 채널에서
+❌ 본 앱에서는 베팅을 중개하지 않습니다
+❌ 예측 정확도를 보장하지 않습니다
+```
+
+---
+
+## 🔗 관련 문서
+
+- [AI 구독 모델](AI_SUBSCRIPTION_MODEL.md) - 구독 서비스 상세
+- [베팅 vs 예측](BETTING_VS_PREDICTION.md) - 개념 구분
+- [법적 고지](../../../LEGAL_NOTICE.md) - 법적 안내
+
+---
+
+**마지막 업데이트**: 2025년 10월 10일

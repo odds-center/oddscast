@@ -2,8 +2,8 @@
 
 ## 📱 프로젝트 현황 요약
 
-**현재 상태**: 기본 인프라, 인증 시스템, UI 컴포넌트 완성 (약 40% 완성) **목표**: MVP 완성 후 베타
-테스트 진행 **예상 완성 기간**: 2-3주 (단축됨)
+**현재 상태**: 기본 인프라, 인증 시스템, UI 컴포넌트 완성 (약 40% 완성) **목표**: MVP 완성 후 베타테
+스트 진행 **예상 완성 기간**: 2-3주 (단축됨)
 
 ## 🎯 Phase 1: 핵심 기능 완성 (1-2주)
 
@@ -244,9 +244,8 @@ mypage/
 
 ### 개발 단계
 
-O1. **개발 환경**: Expo Go 앱으로 테스트
-2. **스테이징**: TestFlight (iOS) / Internal Testing (Android)
-3. **프로덕션**: App Store / Google Play Store
+O1. **개발 환경**: Expo Go 앱으로 테스트 2. **스테이징**: TestFlight (iOS) / Internal Testing
+(Android) 3. **프로덕션**: App Store / Google Play Store
 
 ### 버전 관리
 
@@ -257,18 +256,25 @@ O1. **개발 환경**: Expo Go 앱으로 테스트
 
 ## 🔗 관련 문서
 
-### 서버 API 문서
+### 아키텍처
 
-- [KRA API 연동 가이드](../../server/docs/KRA_API_INTEGRATION.md)
-- [에러 처리 시스템](../../server/docs/ERROR_HANDLING_SYSTEM.md)
-- [API 가이드라인](../../server/docs/API_GUIDELINES.md)
+- [모바일 아키텍처](../../architecture/mobile/ARCHITECTURE.md) - 앱 구조
+- [프로젝트 개요](../../architecture/PROJECT_OVERVIEW.md) - 전체 비전
 
-### 전체 프로젝트 문서
+### 개발 가이드
 
-- [프로젝트 개요](../PROJECT_OVERVIEW.md)
-- [아키텍처 개요](../ARCHITECTURE_OVERVIEW.md)
-- [개발 가이드](../DEVELOPMENT_GUIDE.md)
+- [앱 기능](./HorseRacingApp.md) - 기능 상세
+- [UI 컴포넌트](../../guides/mobile/UI_COMPONENTS.md) - 컴포넌트
+- [테마 시스템](../../guides/mobile/Theming.md) - 스타일링
+
+### 서버 문서
+
+- [KRA API 마이그레이션](../../guides/server/KRA_API_MIGRATION_GUIDE.md) - API 통합
+- [데이터 수집](../../guides/server/DATA_COLLECTION_GUIDE.md) - 데이터 수집
+- [API 매핑](../../api/rest/SERVER_MOBILE_API_MAPPING.md) - 서버-모바일 연동
 
 ---
 
 > 📱 **참고**: 이 문서는 모바일 앱 구현에만 집중합니다. 서버 구현은 별도 문서를 참조하세요.
+
+**마지막 업데이트**: 2025년 10월 10일

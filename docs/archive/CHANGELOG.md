@@ -324,3 +324,7 @@
 
 - **`app/app/(app)/mypage/profile.tsx` 수정:**
   `placeholderTextColor`를 `theme.colors.text` (이제 `useAppTheme().colors.text`)로 변경했습니다.
+
+---
+
+**마지막 업데이트**: 2025년 10월 10일

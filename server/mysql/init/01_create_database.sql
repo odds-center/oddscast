@@ -507,6 +507,204 @@ CREATE TABLE race_horse_results (
     INDEX idx_rc_rank (rc_rank)
 );
 
+-- AI 예측 테이블 (prediction.entity.ts 기반)
+DROP TABLE IF EXISTS predictions;
+CREATE TABLE predictions (
+    id VARCHAR(36) PRIMARY KEY,
+    race_id VARCHAR(36) NOT NULL,
+    
+    -- 예측 결과
+    first_place INT NOT NULL COMMENT '1위 예측 마번',
+    second_place INT NOT NULL COMMENT '2위 예측 마번',
+    third_place INT NOT NULL COMMENT '3위 예측 마번',
+    
+    -- 분석 내용
+    analysis TEXT NOT NULL COMMENT '예측 분석 내용',
+    confidence DECIMAL(5,2) NOT NULL COMMENT '신뢰도 (0-100)',
+    warnings JSON COMMENT '주의사항 목록',
+    
+    -- LLM 메타데이터
+    llm_model VARCHAR(50) NOT NULL COMMENT 'LLM 모델명',
+    input_tokens INT NOT NULL COMMENT '입력 토큰 수',
+    output_tokens INT NOT NULL COMMENT '출력 토큰 수',
+    total_tokens INT NOT NULL COMMENT '총 토큰 수',
+    llm_cost DECIMAL(10,2) NOT NULL COMMENT '비용 (KRW)',
+    response_time INT NOT NULL COMMENT '응답 시간 (ms)',
+    
+    -- 정확도 검증 (경주 종료 후)
+    is_accurate BOOLEAN COMMENT '예측 정확 여부',
+    accuracy_score DECIMAL(5,2) COMMENT '정확도 점수',
+    
+    -- 실제 결과 (검증용)
+    actual_first_place INT COMMENT '실제 1위',
+    actual_second_place INT COMMENT '실제 2위',
+    actual_third_place INT COMMENT '실제 3위',
+    
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_race_id_created (race_id, created_at),
+    INDEX idx_race_id (race_id),
+    INDEX idx_created_at (created_at),
+    INDEX idx_is_accurate (is_accurate),
+    FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
+);
+
+-- 구독 테이블 (subscription.entity.ts 기반)
+DROP TABLE IF EXISTS subscriptions;
+CREATE TABLE subscriptions (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    
+    -- 구독 정보
+    plan_id ENUM('PREMIUM') DEFAULT 'PREMIUM' COMMENT '구독 플랜',
+    price DECIMAL(10,2) DEFAULT 19800.00 COMMENT '구독료',
+    
+    -- 상태
+    status ENUM('PENDING', 'ACTIVE', 'CANCELLED', 'EXPIRED') DEFAULT 'PENDING',
+    
+    -- 결제 정보
+    billing_key VARCHAR(100) COMMENT 'Toss Payments 빌링키',
+    next_billing_date DATE COMMENT '다음 결제일',
+    last_billed_at DATETIME COMMENT '마지막 결제일',
+    
+    -- 타임스탬프
+    started_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '구독 시작일',
+    cancelled_at DATETIME COMMENT '구독 취소일',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_status (user_id, status),
+    INDEX idx_user_id (user_id),
+    INDEX idx_status (status),
+    INDEX idx_next_billing (next_billing_date, status),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 예측권 테이블 (prediction-ticket.entity.ts 기반)
+DROP TABLE IF EXISTS prediction_tickets;
+CREATE TABLE prediction_tickets (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    subscription_id VARCHAR(36) COMMENT '구독 ID (구독으로 발급된 경우)',
+    
+    -- 상태
+    status ENUM('AVAILABLE', 'USED', 'EXPIRED') DEFAULT 'AVAILABLE',
+    
+    -- 사용 정보
+    used_at DATETIME COMMENT '사용 시간',
+    race_id VARCHAR(36) COMMENT '사용한 경주 ID',
+    prediction_id VARCHAR(36) COMMENT '생성된 예측 ID',
+    
+    -- 유효 기간
+    issued_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '발급 시간',
+    expires_at DATETIME NOT NULL COMMENT '만료 시간',
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_status (user_id, status),
+    INDEX idx_user_id (user_id),
+    INDEX idx_expires_status (expires_at, status),
+    INDEX idx_subscription_id (subscription_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL,
+    FOREIGN KEY (prediction_id) REFERENCES predictions(id) ON DELETE SET NULL
+);
+
+-- 개별 구매 테이블 (single-purchase.entity.ts 기반)
+DROP TABLE IF EXISTS single_purchases;
+CREATE TABLE single_purchases (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    ticket_id VARCHAR(36) NOT NULL,
+    
+    -- 결제 정보
+    amount DECIMAL(10,2) DEFAULT 1000.00 COMMENT '구매 금액',
+    pg_transaction_id VARCHAR(100) COMMENT 'PG사 거래 ID',
+    payment_method VARCHAR(20) COMMENT '결제 수단',
+    
+    -- 상태
+    status ENUM('SUCCESS', 'FAILED', 'REFUNDED') DEFAULT 'SUCCESS',
+    
+    -- 타임스탬프
+    purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_purchased (user_id, purchased_at),
+    INDEX idx_user_id (user_id),
+    INDEX idx_purchased_at (purchased_at),
+    INDEX idx_status (status),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (ticket_id) REFERENCES prediction_tickets(id) ON DELETE CASCADE
+);
+
+-- 결제 테이블 (payment.entity.ts 기반)
+DROP TABLE IF EXISTS payments;
+CREATE TABLE payments (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    
+    -- 주문 정보
+    order_id VARCHAR(100) NOT NULL UNIQUE COMMENT '주문 ID',
+    order_name VARCHAR(200) NOT NULL COMMENT '주문명',
+    amount DECIMAL(10,2) NOT NULL COMMENT '결제 금액',
+    payment_method ENUM('CARD', 'VIRTUAL_ACCOUNT', 'TRANSFER', 'MOBILE', 'KAKAOPAY', 'NAVERPAY', 'TOSSPAY') DEFAULT 'CARD',
+    
+    -- PG사 정보 (Toss)
+    payment_key VARCHAR(200) COMMENT 'Toss 결제 키',
+    pg_transaction_id VARCHAR(100) UNIQUE COMMENT 'PG사 거래 ID',
+    receipt_url VARCHAR(100) COMMENT '영수증 URL',
+    
+    -- 상태
+    status ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED', 'REFUNDED') DEFAULT 'PENDING',
+    
+    -- 취소/환불 정보
+    cancelled_amount DECIMAL(10,2) COMMENT '취소 금액',
+    cancel_reason VARCHAR(255) COMMENT '취소 사유',
+    cancelled_at DATETIME COMMENT '취소 시간',
+    
+    -- 메타데이터
+    metadata JSON COMMENT '추가 정보',
+    
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_created (user_id, created_at),
+    INDEX idx_user_id (user_id),
+    INDEX idx_order_id (order_id),
+    INDEX idx_pg_transaction_id (pg_transaction_id),
+    INDEX idx_status (status),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 빌링키 테이블 (billing-key.entity.ts 기반)
+DROP TABLE IF EXISTS billing_keys;
+CREATE TABLE billing_keys (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    
+    -- 빌링키 정보 (Toss)
+    billing_key VARCHAR(200) NOT NULL UNIQUE COMMENT 'Toss 빌링키',
+    customer_key VARCHAR(100) NOT NULL COMMENT '고객 키',
+    
+    -- 카드 정보
+    card_number VARCHAR(50) COMMENT '카드 번호 (마스킹)',
+    card_company VARCHAR(50) COMMENT '카드사',
+    card_type VARCHAR(20) COMMENT '카드 타입',
+    
+    -- 상태
+    is_active BOOLEAN DEFAULT TRUE,
+    deactivated_at DATETIME COMMENT '비활성화 시간',
+    
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_user_id (user_id),
+    INDEX idx_billing_key (billing_key),
+    INDEX idx_is_active (is_active),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- 알림 테이블 (notifications 모듈용)
 DROP TABLE IF EXISTS notifications;
 CREATE TABLE notifications (

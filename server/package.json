@@ -42,6 +42,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
     "@nestjs/common": "^10.0.0",
     "@nestjs/config": "^3.1.1",
     "@nestjs/core": "^10.0.0",
@@ -51,6 +52,7 @@
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/swagger": "^7.1.17",
     "@nestjs/typeorm": "^10.0.1",
+    "@tosspayments/payment-sdk": "^1.9.1",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/moment": "^2.13.0",
     "@types/moment-timezone": "^0.5.30",
@@ -64,6 +66,7 @@
     "moment": "^2.30.1",
     "moment-timezone": "^0.6.0",
     "mysql2": "^3.6.5",
+    "openai": "^6.3.0",
     "passport": "^0.7.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",

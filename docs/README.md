@@ -1,144 +1,254 @@
-# Golden Race - 프로젝트 문서
+# 📚 Golden Race 문서 허브
 
-## 📚 문서 개요
-
-Golden Race 프로젝트의 모든 문서를 체계적으로 정리한 중앙 허브입니다. 각 영역별 문서를 쉽게 찾고 참
-조할 수 있습니다.
-
-## 🏗️ 프로젝트 구조
-
-```
-goldenrace/
-├── 📱 mobile/                 # React Native + Expo 앱
-├── 🖥️ server/                 # NestJS 백엔드
-├── 📖 docs/                   # 전체 프로젝트 문서 (현재 위치)
-└── 🔧 scripts/                # 공통 스크립트
-```
-
-## 📖 문서 분류
-
-### 🏠 **전체 프로젝트 문서** (현재 위치)
-
-- [📋 프로젝트 개요](./PROJECT_OVERVIEW.md) - 전체 프로젝트 소개 및 비전
-- [🏗️ 아키텍처 개요](./ARCHITECTURE_OVERVIEW.md) - 전체 시스템 아키텍처
-- [🚀 개발 로드맵](./DEVELOPMENT_ROADMAP.md) - 단계별 개발 계획
-- [📱 배포 가이드](./DEPLOYMENT_OVERVIEW.md) - 배포 및 운영 가이드
-
-### 📱 **모바일 앱 문서** (`mobile/docs/`)
-
-- [📱 앱 개요](../mobile/docs/HorseRacingApp.md) - 모바일 앱 기능 및 구조
-- [🎯 구현 계획](../mobile/docs/IMPLEMENTATION_PLAN.md) - 모바일 앱 개발 계획
-- [🎨 UI 컴포넌트](../mobile/docs/UI_COMPONENTS.md) - UI 컴포넌트 가이드
-- [🧭 네비게이션](../mobile/docs/NAVIGATION.md) - 네비게이션 구조
-- [🎨 테마 시스템](../mobile/docs/Theming.md) - 테마 및 스타일링
-- [🔐 인증 시스템](../mobile/docs/Authentication.md) - 인증 및 보안
-
-### 🖥️ **서버 백엔드 문서** (`server/docs/`)
-
-- [🏗️ 서버 아키텍처](../server/docs/ARCHITECTURE.md) - NestJS 서버 구조
-- [🔌 KRA API 연동](../server/docs/KRA_API_INTEGRATION.md) - 한국마사회 API 연동
-- [⚠️ 에러 처리 시스템](../server/docs/ERROR_HANDLING_SYSTEM.md) - 에러 처리 및 로깅
-- [📁 폴더 구조](../server/docs/FOLDER_ARCHITECTURE.md) - 서버 폴더 아키텍처
-- [📋 API 가이드라인](../server/docs/API_GUIDELINES.md) - API 개발 표준
-- [💻 코딩 표준](../server/docs/CODING_STANDARDS.md) - 개발 코딩 표준
-- [⚙️ 환경 설정](../server/docs/ENVIRONMENT_SETUP.md) - 개발 환경 설정
-
-## 🚀 빠른 시작
-
-### 개발자 가이드
-
-1. [프로젝트 개요](./PROJECT_OVERVIEW.md) 읽기
-2. [개발 환경 설정](../server/docs/ENVIRONMENT_SETUP.md) 따라하기
-3. [구현 계획](../mobile/docs/IMPLEMENTATION_PLAN.md) 확인하기
-4. [코딩 표준](../server/docs/CODING_STANDARDS.md) 숙지하기
-
-### 특정 영역 개발
-
-- **모바일 앱**: [모바일 문서](../mobile/docs/) 참조
-- **백엔드 API**: [서버 문서](../server/docs/) 참조
-- **KRA API 연동**: [KRA API 가이드](../server/docs/KRA_API_INTEGRATION.md) 참조
-
-## 📋 문서 작성 가이드
-
-### 문서 구조
-
-- **제목**: 명확하고 간결한 제목
-- **개요**: 문서의 목적과 범위
-- **상세 내용**: 단계별 상세 설명
-- **예시 코드**: 실제 사용 가능한 코드 예시
-- **관련 문서**: 연관된 다른 문서 링크
-
-### 마크다운 규칙
-
-- **제목**: `#` ~ `######` 사용
-- **코드**: ` ` 블록 사용
-- **링크**: `[텍스트](경로)` 형식
-- **이모지**: 섹션별 적절한 이모지 사용
-
-## 🔄 문서 업데이트
-
-### 업데이트 주기
-
-- **주요 기능**: 기능 완성 시 즉시 업데이트
-- **버그 수정**: 수정 완료 시 업데이트
-- **정기 검토**: 월 1회 전체 문서 검토
-
-### 업데이트 절차
-
-1. 코드 변경사항 확인
-2. 관련 문서 식별
-3. 문서 내용 업데이트
-4. 변경사항 검토 및 승인
-5. 문서 버전 관리
-
-## 🧪 문서 품질 관리
-
-### 품질 기준
-
-- **정확성**: 코드와 문서 내용 일치
-- **완성성**: 필요한 모든 정보 포함
-- **가독성**: 명확하고 이해하기 쉬운 설명
-- **최신성**: 최신 코드 상태 반영
-
-### 검토 프로세스
-
-1. **자동 검사**: 마크다운 문법 검사
-2. **동료 검토**: 다른 개발자 검토
-3. **사용자 테스트**: 실제 사용자 피드백
-4. **정기 감사**: 월 1회 품질 감사
-
-## 📞 지원 및 문의
-
-### 문서 관련 문의
-
-- **GitHub Issues**: 문서 버그 및 개선 제안
-- **Pull Request**: 문서 수정 및 추가
-- **이메일**: docs@goldenrace.com
-
-### 개발 관련 문의
-
-- **기술 지원**: tech@goldenrace.com
-- **기능 제안**: feature@goldenrace.com
-- **버그 리포트**: bug@goldenrace.com
-
-## 📈 문서 통계
-
-### 현재 상태
-
-- **총 문서 수**: 15개
-- **총 페이지 수**: 약 200페이지
-- **코드 예시**: 50+ 개
-- **다이어그램**: 10+ 개
-
-### 향후 계획
-
-- **Q1 2024**: 문서 완성도 80% 달성
-- **Q2 2024**: 사용자 가이드 추가
-- **Q3 2024**: 비디오 튜토리얼 제작
-- **Q4 2024**: 다국어 지원
+Golden Race 프로젝트의 모든 문서를 통합 관리하는 중앙 허브입니다.
 
 ---
 
-> 📚 **문서는 프로젝트의 생명입니다.** 정확하고 최신의 문서를 유지하여 개발 효율성을 높이겠습니다.
+## 📖 문서 구조
 
-**마지막 업데이트**: 2024년 3월 15일 **문서 버전**: v1.0.0
+```
+docs/
+├── setup/              # 설치 및 초기 설정
+├── architecture/       # 시스템 아키텍처
+├── features/           # 기능 설계
+├── guides/             # 개발 가이드
+├── api/                # API 문서
+├── reference/          # 레퍼런스
+└── archive/            # 아카이브
+```
+
+---
+
+## 🚀 시작하기
+
+### 빠른 시작 가이드
+
+처음 프로젝트를 시작하는 분들을 위한 가이드:
+
+| 문서                                             | 설명                         | 소요 시간 |
+| ------------------------------------------------ | ---------------------------- | --------- |
+| [빠른 시작](setup/QUICK_START.md)                | 5분 안에 프로젝트 실행하기   | ⏱️ 5분    |
+| [Docker 설정](setup/DOCKER_SETUP.md)             | Docker 환경 구축 상세 가이드 | ⏱️ 10분   |
+| [Google Cloud 설정](setup/GOOGLE_CLOUD_SETUP.md) | OAuth 인증 설정              | ⏱️ 15분   |
+| [환경변수 설정](setup/ENVIRONMENT.md)            | 환경변수 상세 설정           | ⏱️ 5분    |
+
+### 환경별 가이드
+
+- **로컬 개발**: [빠른 시작](setup/QUICK_START.md) → npm으로 실행
+- **Docker 개발**: [Docker 설정](setup/DOCKER_SETUP.md) → 컨테이너로 실행
+- **프로덕션 배포**: [배포 가이드](guides/deployment/) → 앱/서버 배포
+
+---
+
+## 🎯 역할별 가이드
+
+### 백엔드 개발자
+
+**시작 경로**: [서버 README](../server/README.md) → [서버 아키텍처](architecture/server/) →
+[서버 가이드](guides/server/)
+
+**주요 문서**:
+
+- [데이터 저장소](architecture/server/DATA_STORAGE.md) - DB 구조
+- [엔티티 상태](architecture/server/ENTITY_STATUS.md) - 엔티티 관리
+- [데이터 수집](guides/server/DATA_COLLECTION_GUIDE.md) - KRA API 수집
+- [KRA API 마이그레이션](guides/server/KRA_API_MIGRATION_GUIDE.md) - API 통합
+
+### 프론트엔드 개발자
+
+**시작 경로**: [모바일 README](../mobile/README.md) → [모바일 아키텍처](architecture/mobile/) →
+[모바일 가이드](guides/mobile/)
+
+**주요 문서**:
+
+- [앱 아키텍처](architecture/mobile/ARCHITECTURE.md) - 앱 구조
+- [네비게이션](architecture/mobile/NAVIGATION.md) - 화면 구조
+- [상태 관리](architecture/mobile/STATE_MANAGEMENT.md) - Redux + React Query
+- [UI 컴포넌트](guides/mobile/UI_COMPONENTS.md) - 컴포넌트
+- [테마 시스템](guides/mobile/Theming.md) - 스타일링
+
+### 풀스택 개발자
+
+**시작 경로**: [프로젝트 개요](architecture/PROJECT_OVERVIEW.md) → [전체 아키텍처](architecture/) →
+[API 문서](api/)
+
+**주요 문서**:
+
+- [프로젝트 개요](architecture/PROJECT_OVERVIEW.md) - 전체 비전
+- [API 매핑](api/rest/SERVER_MOBILE_API_MAPPING.md) - 서버-모바일 연동
+- [인증 시스템](guides/authentication/) - OAuth 구현
+- [통합 테스트](guides/INTEGRATION_TEST_GUIDE.md) - 테스트
+
+### DevOps / 인프라
+
+**시작 경로**: [Docker 설정](setup/DOCKER_SETUP.md) → [환경변수](setup/ENVIRONMENT.md) →
+[배포 가이드](guides/deployment/)
+
+**주요 문서**:
+
+- [Docker 설정](setup/DOCKER_SETUP.md) - 컨테이너 환경
+- [환경변수](setup/ENVIRONMENT.md) - 설정 관리
+- [Google Cloud](setup/GOOGLE_CLOUD_SETUP.md) - OAuth 설정
+- [모바일 배포](guides/deployment/mobile.md) - 앱 스토어
+
+---
+
+## 📂 문서 카테고리
+
+### 🔧 설정 가이드 ([setup/](setup/))
+
+| 문서                                             | 설명                       |
+| ------------------------------------------------ | -------------------------- |
+| [빠른 시작](setup/QUICK_START.md)                | 프로젝트 5분 만에 실행하기 |
+| [Docker 설정](setup/DOCKER_SETUP.md)             | Docker 환경 구축 및 관리   |
+| [Google Cloud 설정](setup/GOOGLE_CLOUD_SETUP.md) | OAuth 2.0 인증 설정        |
+| [환경변수 설정](setup/ENVIRONMENT.md)            | 환경변수 상세 가이드       |
+
+### 🏗️ 아키텍처 ([architecture/](architecture/))
+
+| 문서                                              | 설명                            |
+| ------------------------------------------------- | ------------------------------- |
+| [프로젝트 개요](architecture/PROJECT_OVERVIEW.md) | 프로젝트 전체 개요              |
+| [모바일 아키텍처](architecture/mobile/)           | React Native 앱 구조 (3개 문서) |
+| [서버 아키텍처](architecture/server/)             | NestJS 서버 구조 (2개 문서)     |
+
+### 🎯 기능 문서 ([features/](features/))
+
+| 문서                            | 설명                          |
+| ------------------------------- | ----------------------------- |
+| [AI 시스템](features/ai/)       | AI 예측 시스템 (2개 문서)     |
+| [게임 시스템](features/game/)   | 베팅/포인트 시스템 (3개 문서) |
+| [모바일 기능](features/mobile/) | 앱 기능 상세 (2개 문서)       |
+
+### 📖 개발 가이드 ([guides/](guides/))
+
+| 카테고리                       | 문서 수 | 설명                 |
+| ------------------------------ | ------- | -------------------- |
+| [인증](guides/authentication/) | 2개     | Google OAuth 구현    |
+| [모바일](guides/mobile/)       | 3개     | UI, 테마, DB         |
+| [서버](guides/server/)         | 2개     | 데이터 수집, KRA API |
+| [배포](guides/deployment/)     | 1개     | 앱/서버 배포         |
+| [테스트](guides/)              | 1개     | 통합 테스트          |
+
+### 📡 API 문서 ([api/](api/))
+
+| 카테고리              | 문서 수 | 설명                |
+| --------------------- | ------- | ------------------- |
+| [REST API](api/rest/) | 1개     | 서버-모바일 API     |
+| [KRA API](api/kra/)   | 3개     | 한국마사회 공공 API |
+
+### 📚 레퍼런스 ([reference/](reference/))
+
+| 문서                                               | 설명                  |
+| -------------------------------------------------- | --------------------- |
+| [경마 용어](reference/HORSE_RACING_TERMINOLOGY.md) | 경마 용어 완전 가이드 |
+
+### 📦 아카이브 ([archive/](archive/))
+
+| 문서                                                | 설명                          |
+| --------------------------------------------------- | ----------------------------- |
+| [변경 이력](archive/CHANGELOG.md)                   | 과거 변경 사항                |
+| [마이그레이션 보고서](archive/MIGRATION_REPORT.md)  | Express → NestJS 마이그레이션 |
+| [API 통합 요약](archive/API_INTEGRATION_SUMMARY.md) | KRA API 통합 완료 보고서      |
+
+---
+
+## 🎓 학습 경로
+
+### 초급 (프로젝트 이해)
+
+1. ✅ [프로젝트 개요](architecture/PROJECT_OVERVIEW.md) - 프로젝트 소개
+2. ✅ [빠른 시작](setup/QUICK_START.md) - 실행 방법
+3. ✅ [법적 고지](../LEGAL_NOTICE.md) - 서비스 정책
+4. ✅ [경마 용어](reference/HORSE_RACING_TERMINOLOGY.md) - 용어 학습
+
+### 중급 (기능 개발)
+
+#### 모바일 개발
+
+1. ✅ [모바일 아키텍처](architecture/mobile/ARCHITECTURE.md) - 앱 구조
+2. ✅ [네비게이션](architecture/mobile/NAVIGATION.md) - 화면 구조
+3. ✅ [UI 컴포넌트](guides/mobile/UI_COMPONENTS.md) - 컴포넌트
+4. ✅ [테마 시스템](guides/mobile/Theming.md) - 스타일링
+
+#### 서버 개발
+
+1. ✅ [서버 아키텍처](architecture/server/DATA_STORAGE.md) - DB 구조
+2. ✅ [데이터 수집](guides/server/DATA_COLLECTION_GUIDE.md) - KRA API
+3. ✅ [엔티티 관리](architecture/server/ENTITY_STATUS.md) - 엔티티
+
+### 고급 (시스템 확장)
+
+1. 🔄 [AI 로드맵](features/ai/AI_PREDICTION_ROADMAP.md) - AI 시스템
+2. 🔄 [KRA API 마이그레이션](guides/server/KRA_API_MIGRATION_GUIDE.md) - API 고도화
+3. 🔄 [배포 가이드](guides/deployment/) - 프로덕션 배포
+
+---
+
+## 🔗 외부 리소스
+
+### 공식 문서
+
+- [NestJS](https://docs.nestjs.com/) - 백엔드 프레임워크
+- [React Native](https://reactnative.dev/) - 모바일 프레임워크
+- [Expo](https://docs.expo.dev/) - 개발 도구
+- [TypeORM](https://typeorm.io/) - ORM 라이브러리
+
+### 한국마사회 API
+
+- [공공데이터 포털](https://www.data.go.kr/) - KRA API 신청
+- [경주기록 API](https://www.data.go.kr/data/15052651/openapi.do) - API4_3
+- [출전표 API](https://www.data.go.kr/data/15052660/openapi.do) - API26_2
+- [확정배당율 API](https://www.data.go.kr/data/15052679/openapi.do) - API160
+
+---
+
+## 📊 문서 통계
+
+| 카테고리    | 문서 수 | 상태    |
+| ----------- | ------- | ------- |
+| 설정 가이드 | 4개     | ✅ 완료 |
+| 아키텍처    | 6개     | ✅ 완료 |
+| 기능 문서   | 7개     | ✅ 완료 |
+| 개발 가이드 | 9개     | ✅ 완료 |
+| API 문서    | 4개     | ✅ 완료 |
+| 레퍼런스    | 1개     | ✅ 완료 |
+| 아카이브    | 3개     | ✅ 완료 |
+
+**총 문서 수**: 34개  
+**마지막 업데이트**: 2025년 10월 10일
+
+---
+
+## 💬 도움이 필요하신가요?
+
+### 자주 묻는 질문
+
+1. **Q: 서버가 시작되지 않아요**
+
+   - A: [빠른 시작 가이드](setup/QUICK_START.md)의 문제 해결 섹션 확인
+
+2. **Q: Google 로그인이 안 돼요**
+
+   - A: [Google Cloud 설정](setup/GOOGLE_CLOUD_SETUP.md) 가이드 참고
+
+3. **Q: 문서를 어디서 찾나요?**
+   - A: [SUMMARY.md](SUMMARY.md)에서 빠른 검색
+
+### 문의하기
+
+- **이메일**: vcjsm2283@gmail.com
+- **GitHub Issues**: 이슈 등록
+- **프로젝트 README**: [루트 README](../README.md)
+
+---
+
+<div align="center">
+
+📚 **모든 문서가 하나로 통합되었습니다!**
+
+정확하고 최신의 문서로 개발 효율성을 높입니다.
+
+**Golden Race Team** 🏇
+
+</div>

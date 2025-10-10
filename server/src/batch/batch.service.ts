@@ -1,16 +1,15 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
+import * as moment from 'moment-timezone';
 import { Repository } from 'typeorm';
-import { ConfigService } from '@nestjs/config';
 import { KraApiIntegratedService } from '../kra-api/kra-api-integrated.service';
+import { EntryDetail } from '../races/entities/entry-detail.entity';
 import { RacePlan } from '../races/entities/race-plan.entity';
 import { Race } from '../races/entities/race.entity';
-import { RaceHorseResult } from '../results/entities/race-horse-result.entity';
 import { DividendRate } from '../results/entities/dividend-rate.entity';
-import { EntryDetail } from '../races/entities/entry-detail.entity';
-import * as moment from 'moment-timezone';
-import { isEmpty, isArray } from 'lodash';
+import { RaceHorseResult } from '../results/entities/race-horse-result.entity';
 
 @Injectable()
 export class BatchService {

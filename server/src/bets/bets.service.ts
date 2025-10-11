@@ -276,6 +276,25 @@ export class BetsService {
     totalLosses: number;
     roi: number;
     averageBetAmount: number;
+    maxWin: number;
+    maxLoss: number;
+    currentStreak: number;
+    maxStreak: number;
+    betsByType: {
+      [betType: string]: {
+        count: number;
+        winRate: number;
+        totalAmount: number;
+      };
+    };
+    monthlyStats: Array<{
+      month: string;
+      bets: number;
+      wins: number;
+      winRate: number;
+      amount: number;
+      profit: number;
+    }>;
     favoriteBetType: string;
     recentPerformance: any[];
   }> {
@@ -332,6 +351,77 @@ export class BetsService {
         betTime: bet.betTime,
       }));
 
+      // 최대 승리/손실 계산
+      const maxWin = Math.max(
+        ...bets
+          .filter(bet => bet.actualWin && bet.actualWin > 0)
+          .map(bet => bet.actualWin || 0),
+        0
+      );
+      const maxLoss = Math.max(
+        ...bets
+          .filter(bet => bet.betResult === BetResult.LOSE)
+          .map(bet => bet.betAmount),
+        0
+      );
+
+      // 연승 계산
+      let currentStreak = 0;
+      let maxStreak = 0;
+      let tempStreak = 0;
+      let lastResult = null;
+
+      for (const bet of bets) {
+        if (bet.betResult === BetResult.WIN) {
+          if (lastResult === BetResult.WIN) {
+            tempStreak++;
+          } else {
+            tempStreak = 1;
+          }
+          maxStreak = Math.max(maxStreak, tempStreak);
+        } else {
+          tempStreak = 0;
+        }
+        lastResult = bet.betResult;
+      }
+
+      currentStreak =
+        bets.length > 0 && bets[0].betResult === BetResult.WIN ? tempStreak : 0;
+
+      // 베팅 타입별 통계
+      const betsByType: {
+        [betType: string]: {
+          count: number;
+          winRate: number;
+          totalAmount: number;
+        };
+      } = {};
+      Object.keys(betTypeCounts).forEach(betType => {
+        const typeBets = bets.filter(bet => bet.betType === betType);
+        const typeWins = typeBets.filter(
+          bet => bet.betResult === BetResult.WIN
+        ).length;
+        const typeAmount = typeBets.reduce(
+          (sum, bet) => sum + bet.betAmount,
+          0
+        );
+        betsByType[betType] = {
+          count: typeBets.length,
+          winRate: typeBets.length > 0 ? (typeWins / typeBets.length) * 100 : 0,
+          totalAmount: typeAmount,
+        };
+      });
+
+      // 월별 통계 (간단한 구현)
+      const monthlyStats: Array<{
+        month: string;
+        bets: number;
+        wins: number;
+        winRate: number;
+        amount: number;
+        profit: number;
+      }> = [];
+
       return {
         totalBets,
         wonBets,
@@ -341,6 +431,12 @@ export class BetsService {
         totalLosses,
         roi,
         averageBetAmount,
+        maxWin,
+        maxLoss,
+        currentStreak,
+        maxStreak,
+        betsByType,
+        monthlyStats,
         favoriteBetType,
         recentPerformance,
       };
@@ -359,6 +455,12 @@ export class BetsService {
         totalLosses: 0,
         roi: 0,
         averageBetAmount: 0,
+        maxWin: 0,
+        maxLoss: 0,
+        currentStreak: 0,
+        maxStreak: 0,
+        betsByType: {},
+        monthlyStats: [],
         favoriteBetType: '',
         recentPerformance: [],
       };

@@ -1,72 +1,61 @@
 import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEnum,
-  IsNotEmpty,
-  IsOptional,
   IsString,
+  IsOptional,
+  IsObject,
   IsArray,
 } from 'class-validator';
-import { FavoritePriority, FavoriteType } from '../entities/favorite.entity';
+import { FavoriteType } from '../entities/favorite.entity';
 
 export class CreateFavoriteDto {
   @ApiProperty({
-    description: '즐겨찾기 유형',
+    description: '즐겨찾기 타입',
     enum: FavoriteType,
-    example: 'HORSE',
+    example: FavoriteType.HORSE,
   })
   @IsEnum(FavoriteType)
-  @IsNotEmpty()
   type: FavoriteType;
 
   @ApiProperty({
     description: '대상 ID',
-    example: 'HORSE_123456',
+    example: 'horse-123',
   })
   @IsString()
-  @IsNotEmpty()
   targetId: string;
 
   @ApiProperty({
     description: '대상 이름',
-    example: '천둥번개',
+    example: '천리마',
   })
   @IsString()
-  @IsNotEmpty()
   targetName: string;
 
   @ApiProperty({
-    description: '대상 상세 데이터',
+    description: '추가 대상 데이터',
+    example: { venue: '제주', grade: 'G3' },
     required: false,
   })
   @IsOptional()
-  targetData?: any;
+  @IsObject()
+  targetData?: Record<string, any>;
 
   @ApiProperty({
     description: '메모',
+    example: '우수한 성적을 보이는 말',
     required: false,
-    example: '이번 시즌 유망주',
   })
-  @IsString()
   @IsOptional()
+  @IsString()
   notes?: string;
 
   @ApiProperty({
-    description: '우선순위',
-    enum: FavoritePriority,
-    required: false,
-    default: 'MEDIUM',
-  })
-  @IsEnum(FavoritePriority)
-  @IsOptional()
-  priority?: FavoritePriority;
-
-  @ApiProperty({
     description: '태그 목록',
+    example: ['빠른말', '안정적'],
     required: false,
-    example: ['유망주', '2024'],
   })
+  @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  @IsOptional()
   tags?: string[];
 }

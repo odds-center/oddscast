@@ -2,147 +2,303 @@ import {
   Controller,
   Get,
   Post,
-  Body,
-  Patch,
-  Param,
+  Put,
   Delete,
-  UseGuards,
-  Request,
+  Body,
+  Param,
   Query,
+  Request,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ApiTags,
   ApiOperation,
   ApiResponse,
-  ApiBearerAuth,
+  ApiBody,
+  ApiParam,
   ApiQuery,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
-import { FavoritesService } from './favorites.service';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { UpdateFavoriteDto } from './dto/update-favorite.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { FavoritePriority, FavoriteType } from './entities/favorite.entity';
+import { FavoritesService } from './favorites.service';
+import {
+  CreateFavoriteDto,
+  UpdateFavoriteDto,
+  FavoriteResponseDto,
+  FavoriteListResponseDto,
+  FavoriteToggleDto,
+  FavoriteCheckDto,
+  FavoriteStatisticsDto,
+  BulkAddFavoritesDto,
+  BulkDeleteFavoritesDto,
+} from './dto/index';
 
+/**
+ * 즐겨찾기 API 컨트롤러
+ */
 @ApiTags('Favorites')
-@ApiBearerAuth()
 @Controller('favorites')
 @UseGuards(JwtAuthGuard)
+@ApiBearerAuth()
 export class FavoritesController {
   constructor(private readonly favoritesService: FavoritesService) {}
 
+  @Get()
+  @ApiOperation({ summary: '즐겨찾기 목록 조회' })
+  @ApiQuery({
+    name: 'type',
+    required: false,
+    description: '즐겨찾기 타입 (HORSE, JOCKEY, TRAINER)',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: '페이지 번호',
+    example: 1,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: '페이지당 항목 수',
+    example: 20,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '즐겨찾기 목록 반환',
+    type: FavoriteListResponseDto,
+  })
+  async getFavorites(
+    @Request() req,
+    @Query('type') type?: string,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number
+  ): Promise<FavoriteListResponseDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.getFavorites(userId, {
+      type,
+      page,
+      limit,
+    });
+  }
+
+  @Get(':id')
+  @ApiOperation({ summary: '즐겨찾기 상세 조회' })
+  @ApiParam({ name: 'id', description: '즐겨찾기 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '즐겨찾기 상세 정보 반환',
+    type: FavoriteResponseDto,
+  })
+  @ApiResponse({
+    status: 404,
+    description: '즐겨찾기를 찾을 수 없음',
+  })
+  async getFavorite(
+    @Request() req,
+    @Param('id') id: string
+  ): Promise<FavoriteResponseDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.getFavorite(userId, id);
+  }
+
   @Post()
   @ApiOperation({ summary: '즐겨찾기 추가' })
+  @ApiBody({ type: CreateFavoriteDto })
   @ApiResponse({
     status: 201,
-    description: '즐겨찾기가 성공적으로 추가되었습니다.',
+    description: '즐겨찾기 생성 성공',
+    type: FavoriteResponseDto,
   })
   @ApiResponse({
     status: 409,
-    description: '이미 즐겨찾기에 추가된 항목입니다.',
+    description: '이미 즐겨찾기에 추가된 항목',
   })
-  async create(@Request() req, @Body() createFavoriteDto: CreateFavoriteDto) {
-    return this.favoritesService.create(req.user.userId, createFavoriteDto);
+  async createFavorite(
+    @Request() req,
+    @Body() createFavoriteDto: CreateFavoriteDto
+  ): Promise<FavoriteResponseDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.createFavorite(
+      userId,
+      createFavoriteDto
+    );
   }
 
-  @Get()
-  @ApiOperation({ summary: '즐겨찾기 목록 조회' })
-  @ApiQuery({ name: 'type', enum: FavoriteType, required: false })
-  @ApiQuery({ name: 'priority', enum: FavoritePriority, required: false })
-  @ApiQuery({ name: 'page', required: false, type: Number })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @Put(':id')
+  @ApiOperation({ summary: '즐겨찾기 수정' })
+  @ApiParam({ name: 'id', description: '즐겨찾기 ID' })
+  @ApiBody({ type: UpdateFavoriteDto })
   @ApiResponse({
     status: 200,
-    description: '즐겨찾기 목록을 성공적으로 조회했습니다.',
+    description: '즐겨찾기 수정 성공',
+    type: FavoriteResponseDto,
   })
-  async findAll(
+  @ApiResponse({
+    status: 404,
+    description: '즐겨찾기를 찾을 수 없음',
+  })
+  async updateFavorite(
     @Request() req,
-    @Query('type') type?: FavoriteType,
-    @Query('priority') priority?: FavoritePriority,
-    @Query('page') page?: number,
-    @Query('limit') limit?: number
-  ) {
-    return this.favoritesService.findAll(req.user.userId, {
-      type,
-      priority,
-      page: page ? Number(page) : undefined,
-      limit: limit ? Number(limit) : undefined,
-    });
+    @Param('id') id: string,
+    @Body() updateFavoriteDto: UpdateFavoriteDto
+  ): Promise<FavoriteResponseDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.updateFavorite(
+      userId,
+      id,
+      updateFavoriteDto
+    );
+  }
+
+  @Delete(':id')
+  @ApiOperation({ summary: '즐겨찾기 삭제' })
+  @ApiParam({ name: 'id', description: '즐겨찾기 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '즐겨찾기 삭제 성공',
+    schema: { type: 'object', properties: { message: { type: 'string' } } },
+  })
+  @ApiResponse({
+    status: 404,
+    description: '즐겨찾기를 찾을 수 없음',
+  })
+  async deleteFavorite(
+    @Request() req,
+    @Param('id') id: string
+  ): Promise<{ message: string }> {
+    const userId = req.user.userId;
+    return await this.favoritesService.deleteFavorite(userId, id);
+  }
+
+  @Post('toggle')
+  @ApiOperation({ summary: '즐겨찾기 토글 (추가/삭제)' })
+  @ApiBody({ type: FavoriteToggleDto })
+  @ApiResponse({
+    status: 200,
+    description: '즐겨찾기 토글 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        action: { type: 'string', enum: ['ADDED', 'REMOVED'] },
+        favorite: { $ref: '#/components/schemas/FavoriteResponseDto' },
+      },
+    },
+  })
+  async toggleFavorite(
+    @Request() req,
+    @Body() toggleDto: FavoriteToggleDto
+  ): Promise<{ action: 'ADDED' | 'REMOVED'; favorite?: FavoriteResponseDto }> {
+    const userId = req.user.userId;
+    return await this.favoritesService.toggleFavorite(userId, toggleDto);
+  }
+
+  @Get('check')
+  @ApiOperation({ summary: '즐겨찾기 확인' })
+  @ApiQuery({ name: 'type', description: '즐겨찾기 타입', example: 'HORSE' })
+  @ApiQuery({ name: 'targetId', description: '대상 ID', example: 'horse-123' })
+  @ApiResponse({
+    status: 200,
+    description: '즐겨찾기 확인 결과',
+    type: FavoriteCheckDto,
+  })
+  async checkFavorite(
+    @Request() req,
+    @Query('type') type: string,
+    @Query('targetId') targetId: string
+  ): Promise<FavoriteCheckDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.checkFavorite(userId, type, targetId);
   }
 
   @Get('statistics')
   @ApiOperation({ summary: '즐겨찾기 통계 조회' })
   @ApiResponse({
     status: 200,
-    description: '즐겨찾기 통계를 성공적으로 조회했습니다.',
+    description: '즐겨찾기 통계 반환',
+    type: FavoriteStatisticsDto,
   })
-  async getStatistics(@Request() req) {
-    return this.favoritesService.getStatistics(req.user.userId);
+  async getFavoriteStatistics(@Request() req): Promise<FavoriteStatisticsDto> {
+    const userId = req.user.userId;
+    return await this.favoritesService.getFavoriteStatistics(userId);
   }
 
-  @Get('check/:type/:targetId')
-  @ApiOperation({ summary: '즐겨찾기 여부 확인' })
+  @Post('bulk-add')
+  @ApiOperation({ summary: '즐겨찾기 일괄 추가' })
+  @ApiBody({ type: BulkAddFavoritesDto })
   @ApiResponse({
     status: 200,
-    description: '즐겨찾기 여부를 성공적으로 확인했습니다.',
+    description: '즐겨찾기 일괄 추가 결과',
+    schema: {
+      type: 'object',
+      properties: {
+        added: { type: 'number' },
+        failed: { type: 'number' },
+        errors: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              index: { type: 'number' },
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
   })
-  async checkFavorite(
+  async bulkAddFavorites(
     @Request() req,
-    @Param('type') type: FavoriteType,
-    @Param('targetId') targetId: string
-  ) {
-    const isFavorite = await this.favoritesService.checkFavorite(
-      req.user.userId,
-      type,
-      targetId
+    @Body() bulkAddDto: BulkAddFavoritesDto
+  ): Promise<{
+    added: number;
+    failed: number;
+    errors: { index: number; error: string }[];
+  }> {
+    const userId = req.user.userId;
+    return await this.favoritesService.bulkAddFavorites(
+      userId,
+      bulkAddDto.favorites
     );
-    return { isFavorite };
   }
 
-  @Get(':id')
-  @ApiOperation({ summary: '개별 즐겨찾기 조회' })
-  @ApiResponse({
-    status: 200,
-    description: '즐겨찾기를 성공적으로 조회했습니다.',
-  })
-  @ApiResponse({ status: 404, description: '즐겨찾기를 찾을 수 없습니다.' })
-  async findOne(@Request() req, @Param('id') id: string) {
-    return this.favoritesService.findOne(req.user.userId, id);
-  }
-
-  @Patch(':id')
-  @ApiOperation({ summary: '즐겨찾기 수정' })
-  @ApiResponse({
-    status: 200,
-    description: '즐겨찾기가 성공적으로 수정되었습니다.',
-  })
-  @ApiResponse({ status: 404, description: '즐겨찾기를 찾을 수 없습니다.' })
-  async update(
-    @Request() req,
-    @Param('id') id: string,
-    @Body() updateFavoriteDto: UpdateFavoriteDto
-  ) {
-    return this.favoritesService.update(req.user.userId, id, updateFavoriteDto);
-  }
-
-  @Delete(':id')
-  @ApiOperation({ summary: '즐겨찾기 삭제' })
-  @ApiResponse({
-    status: 200,
-    description: '즐겨찾기가 성공적으로 삭제되었습니다.',
-  })
-  @ApiResponse({ status: 404, description: '즐겨찾기를 찾을 수 없습니다.' })
-  async remove(@Request() req, @Param('id') id: string) {
-    await this.favoritesService.remove(req.user.userId, id);
-    return { message: '즐겨찾기가 삭제되었습니다.' };
-  }
-
-  @Delete()
+  @Delete('bulk-delete')
   @ApiOperation({ summary: '즐겨찾기 일괄 삭제' })
+  @ApiBody({ type: BulkDeleteFavoritesDto })
   @ApiResponse({
     status: 200,
-    description: '즐겨찾기가 성공적으로 삭제되었습니다.',
+    description: '즐겨찾기 일괄 삭제 결과',
+    schema: {
+      type: 'object',
+      properties: {
+        deleted: { type: 'number' },
+        failed: { type: 'number' },
+        errors: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              favoriteId: { type: 'string' },
+              error: { type: 'string' },
+            },
+          },
+        },
+      },
+    },
   })
-  async bulkDelete(@Request() req, @Body('favoriteIds') favoriteIds: string[]) {
-    return this.favoritesService.bulkDelete(req.user.userId, favoriteIds);
+  async bulkDeleteFavorites(
+    @Request() req,
+    @Body() bulkDeleteDto: BulkDeleteFavoritesDto
+  ): Promise<{
+    deleted: number;
+    failed: number;
+    errors: { favoriteId: string; error: string }[];
+  }> {
+    const userId = req.user.userId;
+    return await this.favoritesService.bulkDeleteFavorites(
+      userId,
+      bulkDeleteDto.favoriteIds
+    );
   }
 }

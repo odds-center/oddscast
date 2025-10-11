@@ -2,12 +2,14 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
 import { BetsModule } from './bets/bets.module';
 import { DataSourceModule } from './data-source/data-source.module';
 import { FavoritesModule } from './favorites/favorites.module';
 import { HealthModule } from './health/health.module';
+import { HomeModule } from './home/home.module';
 import { KraApiModule } from './kra-api/kra-api.module';
 import { LlmModule } from './llm/llm.module';
 import { NotificationsModule } from './notifications/notifications.module';
@@ -60,8 +62,10 @@ import { UsersModule } from './users/users.module';
 
     // 기능 모듈들
     HealthModule,
+    AdminModule,
     AuthModule,
     UsersModule,
+    HomeModule,
     RacesModule,
     ResultsModule,
     RacePlansModule,

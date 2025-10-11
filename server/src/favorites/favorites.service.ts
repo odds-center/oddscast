@@ -1,18 +1,22 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   ConflictException,
-  Logger,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
+import { Favorite, FavoriteType } from './entities/favorite.entity';
 import {
-  Favorite,
-  FavoritePriority,
-  FavoriteType,
-} from './entities/favorite.entity';
-import { CreateFavoriteDto } from './dto/create-favorite.dto';
-import { UpdateFavoriteDto } from './dto/update-favorite.dto';
+  CreateFavoriteDto,
+  UpdateFavoriteDto,
+  FavoriteResponseDto,
+  FavoriteListResponseDto,
+  FavoriteToggleDto,
+  FavoriteCheckDto,
+  FavoriteStatisticsDto,
+} from './dto/index';
 
 @Injectable()
 export class FavoritesService {
@@ -20,212 +24,277 @@ export class FavoritesService {
 
   constructor(
     @InjectRepository(Favorite)
-    private favoritesRepository: Repository<Favorite>
+    private readonly favoriteRepo: Repository<Favorite>
   ) {}
 
-  // 즐겨찾기 생성
-  async create(
-    userId: string,
-    createFavoriteDto: CreateFavoriteDto
-  ): Promise<Favorite> {
-    try {
-      // 중복 체크
-      const existing = await this.favoritesRepository.findOne({
-        where: {
-          userId,
-          type: createFavoriteDto.type,
-          targetId: createFavoriteDto.targetId,
-        },
-      });
-
-      if (existing) {
-        throw new ConflictException('이미 즐겨찾기에 추가된 항목입니다.');
-      }
-
-      const favorite = this.favoritesRepository.create({
-        userId,
-        ...createFavoriteDto,
-      });
-
-      const saved = await this.favoritesRepository.save(favorite);
-      this.logger.log(`즐겨찾기 생성: ${saved.id}`);
-      return saved;
-    } catch (error) {
-      this.logger.error(`즐겨찾기 생성 실패: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  // 즐겨찾기 목록 조회 (필터링 및 페이지네이션)
-  async findAll(
+  /**
+   * 즐겨찾기 목록 조회
+   */
+  async getFavorites(
     userId: string,
     filters?: {
-      type?: FavoriteType;
-      priority?: FavoritePriority;
+      type?: string;
       page?: number;
       limit?: number;
     }
-  ): Promise<{
-    favorites: Favorite[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    try {
-      const page = filters?.page || 1;
-      const limit = filters?.limit || 20;
-      const skip = (page - 1) * limit;
+  ): Promise<FavoriteListResponseDto> {
+    const { type, page = 1, limit = 20 } = filters || {};
 
-      const queryBuilder = this.favoritesRepository
-        .createQueryBuilder('favorite')
-        .where('favorite.userId = :userId', { userId });
+    const queryBuilder = this.favoriteRepo
+      .createQueryBuilder('favorite')
+      .where('favorite.userId = :userId', { userId });
 
-      if (filters?.type) {
-        queryBuilder.andWhere('favorite.type = :type', { type: filters.type });
-      }
-
-      if (filters?.priority) {
-        queryBuilder.andWhere('favorite.priority = :priority', {
-          priority: filters.priority,
-        });
-      }
-
-      queryBuilder.orderBy('favorite.createdAt', 'DESC').skip(skip).take(limit);
-
-      const [favorites, total] = await queryBuilder.getManyAndCount();
-      const totalPages = Math.ceil(total / limit);
-
-      return {
-        favorites,
-        total,
-        page,
-        totalPages,
-      };
-    } catch (error) {
-      this.logger.error(
-        `즐겨찾기 목록 조회 실패: ${error.message}`,
-        error.stack
-      );
-      throw error;
+    if (type) {
+      queryBuilder.andWhere('favorite.type = :type', { type });
     }
+
+    const [favorites, total] = await queryBuilder
+      .orderBy('favorite.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
+
+    return {
+      favorites: favorites.map(f => new FavoriteResponseDto(f)),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  // 개별 즐겨찾기 조회
-  async findOne(userId: string, favoriteId: string): Promise<Favorite> {
-    try {
-      const favorite = await this.favoritesRepository.findOne({
-        where: { id: favoriteId, userId },
+  /**
+   * 즐겨찾기 상세 조회
+   */
+  async getFavorite(userId: string, id: string): Promise<FavoriteResponseDto> {
+    const favorite = await this.favoriteRepo.findOne({
+      where: { id, userId },
+    });
+
+    if (!favorite) {
+      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
+    }
+
+    return new FavoriteResponseDto(favorite);
+  }
+
+  /**
+   * 즐겨찾기 생성
+   */
+  async createFavorite(
+    userId: string,
+    createFavoriteDto: CreateFavoriteDto
+  ): Promise<FavoriteResponseDto> {
+    const { type, targetId, targetName, targetData, notes, tags } =
+      createFavoriteDto;
+
+    // 중복 확인
+    const existing = await this.favoriteRepo.findOne({
+      where: { userId, type, targetId },
+    });
+
+    if (existing) {
+      throw new ConflictException('이미 즐겨찾기에 추가된 항목입니다.');
+    }
+
+    const favorite = this.favoriteRepo.create({
+      userId,
+      type,
+      targetId,
+      targetName,
+      targetData,
+      notes,
+      tags,
+    });
+
+    const saved = await this.favoriteRepo.save(favorite);
+    this.logger.log(`즐겨찾기 생성: ${saved.id}`);
+
+    return new FavoriteResponseDto(saved);
+  }
+
+  /**
+   * 즐겨찾기 수정
+   */
+  async updateFavorite(
+    userId: string,
+    id: string,
+    updateFavoriteDto: UpdateFavoriteDto
+  ): Promise<FavoriteResponseDto> {
+    const favorite = await this.favoriteRepo.findOne({
+      where: { id, userId },
+    });
+
+    if (!favorite) {
+      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
+    }
+
+    Object.assign(favorite, updateFavoriteDto);
+    const saved = await this.favoriteRepo.save(favorite);
+
+    this.logger.log(`즐겨찾기 수정: ${saved.id}`);
+    return new FavoriteResponseDto(saved);
+  }
+
+  /**
+   * 즐겨찾기 삭제
+   */
+  async deleteFavorite(
+    userId: string,
+    id: string
+  ): Promise<{ message: string }> {
+    const favorite = await this.favoriteRepo.findOne({
+      where: { id, userId },
+    });
+
+    if (!favorite) {
+      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
+    }
+
+    await this.favoriteRepo.remove(favorite);
+    this.logger.log(`즐겨찾기 삭제: ${id}`);
+
+    return { message: '즐겨찾기가 삭제되었습니다.' };
+  }
+
+  /**
+   * 즐겨찾기 토글 (추가/삭제)
+   */
+  async toggleFavorite(
+    userId: string,
+    toggleDto: FavoriteToggleDto
+  ): Promise<{ action: 'ADDED' | 'REMOVED'; favorite?: FavoriteResponseDto }> {
+    const { type, targetId, targetName, targetData } = toggleDto;
+
+    const existing = await this.favoriteRepo.findOne({
+      where: { userId, type, targetId },
+    });
+
+    if (existing) {
+      // 기존 즐겨찾기 삭제
+      await this.favoriteRepo.remove(existing);
+      this.logger.log(`즐겨찾기 토글 - 삭제: ${existing.id}`);
+      return { action: 'REMOVED' };
+    } else {
+      // 새 즐겨찾기 추가
+      const favorite = this.favoriteRepo.create({
+        userId,
+        type,
+        targetId,
+        targetName,
+        targetData,
       });
 
-      if (!favorite) {
-        throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
-      }
-
-      return favorite;
-    } catch (error) {
-      this.logger.error(`즐겨찾기 조회 실패: ${error.message}`, error.stack);
-      throw error;
+      const saved = await this.favoriteRepo.save(favorite);
+      this.logger.log(`즐겨찾기 토글 - 추가: ${saved.id}`);
+      return { action: 'ADDED', favorite: new FavoriteResponseDto(saved) };
     }
   }
 
-  // 즐겨찾기 수정
-  async update(
-    userId: string,
-    favoriteId: string,
-    updateFavoriteDto: UpdateFavoriteDto
-  ): Promise<Favorite> {
-    try {
-      const favorite = await this.findOne(userId, favoriteId);
-
-      Object.assign(favorite, updateFavoriteDto);
-
-      const updated = await this.favoritesRepository.save(favorite);
-      this.logger.log(`즐겨찾기 수정: ${updated.id}`);
-      return updated;
-    } catch (error) {
-      this.logger.error(`즐겨찾기 수정 실패: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  // 즐겨찾기 삭제
-  async remove(userId: string, favoriteId: string): Promise<void> {
-    try {
-      const favorite = await this.findOne(userId, favoriteId);
-      await this.favoritesRepository.remove(favorite);
-      this.logger.log(`즐겨찾기 삭제: ${favoriteId}`);
-    } catch (error) {
-      this.logger.error(`즐겨찾기 삭제 실패: ${error.message}`, error.stack);
-      throw error;
-    }
-  }
-
-  // 특정 대상이 즐겨찾기에 있는지 확인
+  /**
+   * 즐겨찾기 확인
+   */
   async checkFavorite(
     userId: string,
-    type: FavoriteType,
+    type: string,
     targetId: string
-  ): Promise<boolean> {
-    try {
-      const favorite = await this.favoritesRepository.findOne({
-        where: { userId, type, targetId },
-      });
+  ): Promise<FavoriteCheckDto> {
+    const favorite = await this.favoriteRepo.findOne({
+      where: { userId, type: type as FavoriteType, targetId },
+    });
 
-      return !!favorite;
-    } catch (error) {
-      this.logger.error(`즐겨찾기 확인 실패: ${error.message}`, error.stack);
-      return false;
-    }
+    return {
+      isFavorite: !!favorite,
+      favorite: favorite ? new FavoriteResponseDto(favorite) : undefined,
+    };
   }
 
-  // 즐겨찾기 통계
-  async getStatistics(userId: string): Promise<{
-    totalFavorites: number;
-    byType: Record<FavoriteType, number>;
-    byPriority: Record<FavoritePriority, number>;
-    recentAdditions: Favorite[];
+  /**
+   * 즐겨찾기 통계 조회
+   */
+  async getFavoriteStatistics(userId: string): Promise<FavoriteStatisticsDto> {
+    const totalFavorites = await this.favoriteRepo.count({
+      where: { userId },
+    });
+
+    // 타입별 통계
+    const favoritesByType = await this.favoriteRepo
+      .createQueryBuilder('favorite')
+      .select('favorite.type', 'type')
+      .addSelect('COUNT(*)', 'count')
+      .where('favorite.userId = :userId', { userId })
+      .groupBy('favorite.type')
+      .getRawMany();
+
+    const typeStats: Record<FavoriteType, number> = {
+      [FavoriteType.HORSE]: 0,
+      [FavoriteType.JOCKEY]: 0,
+      [FavoriteType.TRAINER]: 0,
+      [FavoriteType.RACE]: 0,
+    };
+
+    favoritesByType.forEach(stat => {
+      typeStats[stat.type] = parseInt(stat.count);
+    });
+
+    // 최근 7일간 추가된 즐겨찾기
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+
+    const recentFavorites = await this.favoriteRepo.count({
+      where: {
+        userId,
+        createdAt: { $gte: weekAgo } as any,
+      },
+    });
+
+    // 가장 많이 즐겨찾기된 타입
+    const mostFavoritedType = Object.entries(typeStats).reduce((a, b) =>
+      typeStats[a[0] as FavoriteType] > typeStats[b[0] as FavoriteType] ? a : b
+    )[0] as FavoriteType;
+
+    return {
+      totalFavorites,
+      favoritesByType: typeStats,
+      recentFavorites,
+      mostFavoritedType,
+    };
+  }
+
+  /**
+   * 즐겨찾기 일괄 추가
+   */
+  async bulkAddFavorites(
+    userId: string,
+    favorites: CreateFavoriteDto[]
+  ): Promise<{
+    added: number;
+    failed: number;
+    errors: { index: number; error: string }[];
   }> {
-    try {
-      const [favorites, total] = await this.favoritesRepository.findAndCount({
-        where: { userId },
-        order: { createdAt: 'DESC' },
-      });
+    let added = 0;
+    let failed = 0;
+    const errors: { index: number; error: string }[] = [];
 
-      const byType = favorites.reduce(
-        (acc, fav) => {
-          acc[fav.type] = (acc[fav.type] || 0) + 1;
-          return acc;
-        },
-        {} as Record<FavoriteType, number>
-      );
-
-      const byPriority = favorites.reduce(
-        (acc, fav) => {
-          acc[fav.priority] = (acc[fav.priority] || 0) + 1;
-          return acc;
-        },
-        {} as Record<FavoritePriority, number>
-      );
-
-      const recentAdditions = favorites.slice(0, 5);
-
-      return {
-        totalFavorites: total,
-        byType,
-        byPriority,
-        recentAdditions,
-      };
-    } catch (error) {
-      this.logger.error(
-        `즐겨찾기 통계 조회 실패: ${error.message}`,
-        error.stack
-      );
-      throw error;
+    for (let i = 0; i < favorites.length; i++) {
+      try {
+        await this.createFavorite(userId, favorites[i]);
+        added++;
+      } catch (error) {
+        failed++;
+        errors.push({
+          index: i,
+          error: error instanceof Error ? error.message : '알 수 없는 오류',
+        });
+      }
     }
+
+    return { added, failed, errors };
   }
 
-  // 즐겨찾기 일괄 삭제
-  async bulkDelete(
+  /**
+   * 즐겨찾기 일괄 삭제
+   */
+  async bulkDeleteFavorites(
     userId: string,
     favoriteIds: string[]
   ): Promise<{
@@ -233,25 +302,23 @@ export class FavoritesService {
     failed: number;
     errors: { favoriteId: string; error: string }[];
   }> {
-    const result = {
-      deleted: 0,
-      failed: 0,
-      errors: [] as { favoriteId: string; error: string }[],
-    };
+    let deleted = 0;
+    let failed = 0;
+    const errors: { favoriteId: string; error: string }[] = [];
 
     for (const favoriteId of favoriteIds) {
       try {
-        await this.remove(userId, favoriteId);
-        result.deleted++;
+        await this.deleteFavorite(userId, favoriteId);
+        deleted++;
       } catch (error) {
-        result.failed++;
-        result.errors.push({
+        failed++;
+        errors.push({
           favoriteId,
-          error: error.message,
+          error: error instanceof Error ? error.message : '알 수 없는 오류',
         });
       }
     }
 
-    return result;
+    return { deleted, failed, errors };
   }
 }

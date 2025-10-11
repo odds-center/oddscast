@@ -66,9 +66,11 @@ export class AdminStatisticsController {
 
     // 활성 구독자 수
     const activeSubscriptions = await this.subscriptionRepository
-      .count({
-        where: { status: SubscriptionStatus.ACTIVE },
+      .createQueryBuilder('subscription')
+      .where('subscription.status = :status', {
+        status: SubscriptionStatus.ACTIVE,
       })
+      .getCount()
       .catch(() => 0);
 
     return {

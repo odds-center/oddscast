@@ -13,22 +13,27 @@ export default function NotificationSettingsScreen() {
   const [bettingAlerts, setBettingAlerts] = useState(true);
   const [raceResults, setRaceResults] = useState(true);
   const [promotions, setPromotions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log('알림 설정 저장:', {
-      pushNotifications,
-      emailNotifications,
-      bettingAlerts,
-      raceResults,
-      promotions,
-    });
-    Alert.alert('저장 완료', '알림 설정이 성공적으로 저장되었습니다.', [
-      { text: '확인', onPress: () => router.back() },
-    ]);
+  // 설정 변경 시 즉시 서버에 저장
+  const saveSettings = async (key: string, value: boolean) => {
+    setIsSaving(true);
+    try {
+      // TODO: API 연동
+      console.log('알림 설정 저장:', { [key]: value });
+      // await notificationApi.updatePreferences({ [key]: value });
+    } catch (error) {
+      console.error('설정 저장 실패:', error);
+      Alert.alert('오류', '설정 저장에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleCancel = () => {
-    router.back();
+  const handleToggle = (key: string, currentValue: boolean, setter: (value: boolean) => void) => {
+    const newValue = !currentValue;
+    setter(newValue);
+    saveSettings(key, newValue);
   };
 
   const SettingItem = ({
@@ -42,7 +47,7 @@ export default function NotificationSettingsScreen() {
     title: string;
     description: string;
     value: boolean;
-    onValueChange: (value: boolean) => void;
+    onValueChange: () => void;
   }) => (
     <View style={[styles.settingItem, value && styles.settingItemActive]}>
       <View style={styles.settingInfo}>
@@ -61,6 +66,7 @@ export default function NotificationSettingsScreen() {
       <Switch
         value={value}
         onValueChange={onValueChange}
+        disabled={isSaving}
         trackColor={{
           false: GOLD_THEME.BACKGROUND.SECONDARY,
           true: GOLD_THEME.GOLD.DARK,
@@ -75,7 +81,11 @@ export default function NotificationSettingsScreen() {
     <PageLayout>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleCancel} activeOpacity={0.7}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
           <Ionicons name='arrow-back' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -86,7 +96,7 @@ export default function NotificationSettingsScreen() {
             </ThemedText>
           </View>
           <ThemedText type='caption' style={styles.subtitle}>
-            받고 싶은 알림을 선택하세요
+            토글 시 자동으로 저장됩니다
           </ThemedText>
         </View>
       </View>
@@ -99,7 +109,9 @@ export default function NotificationSettingsScreen() {
             title='푸시 알림'
             description='앱 푸시 알림을 받습니다'
             value={pushNotifications}
-            onValueChange={setPushNotifications}
+            onValueChange={() =>
+              handleToggle('pushNotifications', pushNotifications, setPushNotifications)
+            }
           />
 
           <SettingItem
@@ -107,7 +119,9 @@ export default function NotificationSettingsScreen() {
             title='이메일 알림'
             description='이메일로 알림을 받습니다'
             value={emailNotifications}
-            onValueChange={setEmailNotifications}
+            onValueChange={() =>
+              handleToggle('emailNotifications', emailNotifications, setEmailNotifications)
+            }
           />
 
           <SettingItem
@@ -115,7 +129,7 @@ export default function NotificationSettingsScreen() {
             title='베팅 알림'
             description='베팅 관련 알림을 받습니다'
             value={bettingAlerts}
-            onValueChange={setBettingAlerts}
+            onValueChange={() => handleToggle('bettingAlerts', bettingAlerts, setBettingAlerts)}
           />
 
           <SettingItem
@@ -123,7 +137,7 @@ export default function NotificationSettingsScreen() {
             title='경주 결과'
             description='경주 결과 알림을 받습니다'
             value={raceResults}
-            onValueChange={setRaceResults}
+            onValueChange={() => handleToggle('raceResults', raceResults, setRaceResults)}
           />
 
           <SettingItem
@@ -131,21 +145,16 @@ export default function NotificationSettingsScreen() {
             title='프로모션'
             description='프로모션 알림을 받습니다'
             value={promotions}
-            onValueChange={setPromotions}
+            onValueChange={() => handleToggle('promotions', promotions, setPromotions)}
           />
         </View>
 
-        {/* 버튼 그룹 */}
-        <View style={styles.buttonGroup}>
-          <TouchableOpacity style={styles.cancelButton} onPress={handleCancel} activeOpacity={0.7}>
-            <Ionicons name='close-circle-outline' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-            <ThemedText style={styles.cancelButtonText}>취소</ThemedText>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
-            <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.PRIMARY} />
-            <ThemedText style={styles.saveButtonText}>저장</ThemedText>
-          </TouchableOpacity>
-        </View>
+        {/* 저장 상태 표시 */}
+        {isSaving && (
+          <View style={styles.savingIndicator}>
+            <ThemedText style={styles.savingText}>저장 중...</ThemedText>
+          </View>
+        )}
       </ScrollView>
     </PageLayout>
   );
@@ -238,50 +247,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 16,
+  savingIndicator: {
+    padding: 16,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 12,
+    alignItems: 'center',
     marginTop: 16,
-    paddingBottom: 40,
+    marginBottom: 40,
   },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.PRIMARY,
-  },
-  cancelButtonText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 16,
+  savingText: {
+    color: GOLD_THEME.GOLD.DARK,
+    fontSize: 14,
     fontWeight: '600',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    borderRadius: 12,
-    paddingVertical: 16,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: GOLD_THEME.GOLD.MEDIUM,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 16,
-    fontWeight: '700',
   },
 });

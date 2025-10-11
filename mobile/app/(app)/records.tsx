@@ -217,11 +217,11 @@ export default function BettingScreen() {
             <Ionicons name='document-text-outline' size={60} color={GOLD_THEME.TEXT.TERTIARY} />
             <ThemedText type='body' style={styles.emptyText}>
               {selectedTab === 'active'
-                ? '대기 중인 베팅 기록이 없습니다.'
-                : '베팅 기록이 없습니다.'}
+                ? '대기 중인 마권 기록이 없습니다.'
+                : '마권 기록이 없습니다.'}
             </ThemedText>
             <ThemedText type='caption' style={styles.emptySubtext}>
-              외부에서 구매한 마권 정보를 등록해보세요
+              외부에서 구매한 마권을 등록해보세요
             </ThemedText>
           </View>
         )}

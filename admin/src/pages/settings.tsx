@@ -60,31 +60,7 @@ export default function SettingsPage() {
             <Card title='시스템 설정'>
               <div className='space-y-4'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>배치 작업</label>
-                  <div className='flex items-center justify-between'>
-                    <span className='text-sm text-gray-600'>자동 데이터 동기화</span>
-                    <button className='relative inline-flex h-6 w-11 items-center rounded-full bg-gray-200'>
-                      <span className='inline-block h-4 w-4 transform rounded-full bg-white transition' />
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-2'>알림 설정</label>
-                  <div className='space-y-2'>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-600'>신규 회원 가입 알림</span>
-                      <button className='relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600'>
-                        <span className='inline-block h-4 w-4 transform translate-x-6 rounded-full bg-white transition' />
-                      </button>
-                    </div>
-                    <div className='flex items-center justify-between'>
-                      <span className='text-sm text-gray-600'>고액 베팅 알림</span>
-                      <button className='relative inline-flex h-6 w-11 items-center rounded-full bg-blue-600'>
-                        <span className='inline-block h-4 w-4 transform translate-x-6 rounded-full bg-white transition' />
-                      </button>
-                    </div>
-                  </div>
+                  <p className='text-sm text-gray-600'>시스템 설정 및 관리 기능입니다.</p>
                 </div>
 
                 <div className='border-t pt-4'>

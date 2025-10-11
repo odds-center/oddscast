@@ -16,16 +16,26 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
   const [bettingAlerts, setBettingAlerts] = useState(true);
   const [raceResults, setRaceResults] = useState(true);
   const [promotions, setPromotions] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSave = () => {
-    console.log('알림 설정 저장:', {
-      pushNotifications,
-      emailNotifications,
-      bettingAlerts,
-      raceResults,
-      promotions,
-    });
-    onClose();
+  // 설정 변경 시 즉시 서버에 저장
+  const saveSettings = async (key: string, value: boolean) => {
+    setIsSaving(true);
+    try {
+      // TODO: API 연동
+      console.log('알림 설정 저장:', { [key]: value });
+      // await notificationApi.updatePreferences({ [key]: value });
+    } catch (error) {
+      console.error('설정 저장 실패:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleToggle = (key: string, currentValue: boolean, setter: (value: boolean) => void) => {
+    const newValue = !currentValue;
+    setter(newValue);
+    saveSettings(key, newValue);
   };
 
   const SettingItem = ({
@@ -39,7 +49,7 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
     title: string;
     description: string;
     value: boolean;
-    onValueChange: (value: boolean) => void;
+    onValueChange: () => void;
   }) => (
     <View style={[styles.settingItem, value && styles.settingItemActive]}>
       <View style={styles.settingInfo}>
@@ -58,6 +68,7 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
       <Switch
         value={value}
         onValueChange={onValueChange}
+        disabled={isSaving}
         trackColor={{
           false: GOLD_THEME.BACKGROUND.SECONDARY,
           true: GOLD_THEME.GOLD.DARK,
@@ -75,7 +86,7 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
         <Ionicons name='notifications' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
         <ThemedText style={styles.sectionTitle}>알림 설정</ThemedText>
       </View>
-      <ThemedText style={styles.sectionDescription}>받고 싶은 알림을 선택하세요</ThemedText>
+      <ThemedText style={styles.sectionDescription}>토글 시 자동으로 저장됩니다</ThemedText>
 
       {/* 설정 항목들 */}
       <View style={styles.settingsContainer}>
@@ -84,7 +95,9 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
           title='푸시 알림'
           description='앱 푸시 알림을 받습니다'
           value={pushNotifications}
-          onValueChange={setPushNotifications}
+          onValueChange={() =>
+            handleToggle('pushNotifications', pushNotifications, setPushNotifications)
+          }
         />
 
         <SettingItem
@@ -92,7 +105,9 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
           title='이메일 알림'
           description='이메일로 알림을 받습니다'
           value={emailNotifications}
-          onValueChange={setEmailNotifications}
+          onValueChange={() =>
+            handleToggle('emailNotifications', emailNotifications, setEmailNotifications)
+          }
         />
 
         <SettingItem
@@ -100,7 +115,7 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
           title='베팅 알림'
           description='베팅 관련 알림을 받습니다'
           value={bettingAlerts}
-          onValueChange={setBettingAlerts}
+          onValueChange={() => handleToggle('bettingAlerts', bettingAlerts, setBettingAlerts)}
         />
 
         <SettingItem
@@ -108,7 +123,7 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
           title='경주 결과'
           description='경주 결과 알림을 받습니다'
           value={raceResults}
-          onValueChange={setRaceResults}
+          onValueChange={() => handleToggle('raceResults', raceResults, setRaceResults)}
         />
 
         <SettingItem
@@ -116,21 +131,16 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
           title='프로모션'
           description='프로모션 알림을 받습니다'
           value={promotions}
-          onValueChange={setPromotions}
+          onValueChange={() => handleToggle('promotions', promotions, setPromotions)}
         />
       </View>
 
-      {/* 버튼 그룹 */}
-      <View style={styles.buttonGroup}>
-        <TouchableOpacity style={styles.cancelButton} onPress={onClose} activeOpacity={0.7}>
-          <Ionicons name='close-circle-outline' size={18} color={GOLD_THEME.TEXT.SECONDARY} />
-          <ThemedText style={styles.cancelButtonText}>취소</ThemedText>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave} activeOpacity={0.8}>
-          <Ionicons name='checkmark-circle' size={18} color={GOLD_THEME.TEXT.PRIMARY} />
-          <ThemedText style={styles.saveButtonText}>저장</ThemedText>
-        </TouchableOpacity>
-      </View>
+      {/* 저장 상태 표시 */}
+      {isSaving && (
+        <View style={styles.savingIndicator}>
+          <ThemedText style={styles.savingText}>저장 중...</ThemedText>
+        </View>
+      )}
     </ScrollView>
   );
 };
@@ -210,50 +220,17 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  buttonGroup: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 8,
-    paddingBottom: 20,
-  },
-  cancelButton: {
-    flex: 1,
-    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
+  savingIndicator: {
+    padding: 12,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderRadius: 12,
-    paddingVertical: 14,
     alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.PRIMARY,
+    marginTop: 12,
+    marginBottom: 20,
   },
-  cancelButtonText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 15,
+  savingText: {
+    color: GOLD_THEME.GOLD.DARK,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  saveButton: {
-    flex: 1,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    borderRadius: 12,
-    paddingVertical: 14,
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    shadowColor: GOLD_THEME.GOLD.MEDIUM,
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  saveButtonText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 15,
-    fontWeight: '700',
   },
 });

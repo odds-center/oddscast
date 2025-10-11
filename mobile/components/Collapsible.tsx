@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { TouchableOpacity, Animated, StyleSheet } from 'react-native';
+import { TouchableOpacity, Animated, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useColorScheme } from '@/hooks/useColorScheme';
 
 interface CollapsibleProps {
@@ -32,7 +31,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <TouchableOpacity style={styles.header} onPress={toggleExpanded} activeOpacity={0.7}>
         <ThemedText type='defaultSemiBold' style={styles.title}>
           {title}
@@ -70,7 +69,7 @@ export const Collapsible: React.FC<CollapsibleProps> = ({
       >
         {children}
       </Animated.View>
-    </ThemedView>
+    </View>
   );
 };
 

@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { BETTING_CONSTANTS, BETTING_UTILS } from '@/constants/betting';
 import { useCreateBet } from '@/lib/hooks/useBets';
 import { useUserPointBalance } from '@/lib/hooks/usePoints';
@@ -57,12 +56,12 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
     }
 
     if (betAmount < BETTING_CONSTANTS.AMOUNTS.MIN) {
-      console.log(`최소 마권 금액은 ${BETTING_CONSTANTS.AMOUNTS.MIN}포인트입니다.`);
+      console.log(`최소 마권 금액은 ${BETTING_CONSTANTS.AMOUNTS.MIN}원입니다.`);
       return;
     }
 
     if (pointBalance && betAmount > pointBalance.currentPoints) {
-      console.log('포인트가 부족합니다.');
+      console.log('잔액이 부족합니다.');
       return;
     }
 
@@ -114,7 +113,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
   const maxHorses = getMaxHorsesForBetType(selectedBetType);
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
         <ThemedText type='largeTitle' style={styles.title}>
@@ -202,7 +201,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
           </ThemedText>
           <View style={styles.betAmountContainer}>
             <ThemedText type='stat' style={styles.currentAmount}>
-              {betAmount.toLocaleString()} 포인트
+              {betAmount.toLocaleString()}원
             </ThemedText>
             <View style={styles.amountButtons}>
               {[1000, 2000, 5000, 10000, 20000, 50000].map((amount) => (
@@ -265,7 +264,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
                   마권 금액:
                 </ThemedText>
                 <ThemedText type='caption' style={styles.summaryValue}>
-                  {betAmount.toLocaleString()} 포인트
+                  {betAmount.toLocaleString()}원
                 </ThemedText>
               </View>
               <View style={styles.summaryItem}>
@@ -273,7 +272,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
                   예상 당첨금:
                 </ThemedText>
                 <ThemedText type='caption' style={styles.summaryValue}>
-                  {(betAmount * 3.5).toLocaleString()} 포인트
+                  {(betAmount * 3.5).toLocaleString()}원
                 </ThemedText>
               </View>
             </View>
@@ -290,7 +289,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
           <ThemedText style={styles.betButtonText}>마권 구매하기</ThemedText>
         </TouchableOpacity>
       </ScrollView>
-    </ThemedView>
+    </View>
   );
 };
 

@@ -1,9 +1,8 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Ionicons } from '@expo/vector-icons';
 import { GOLD_THEME } from '@/constants/theme';
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface PageHeaderProps {
@@ -26,13 +25,20 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
   onBackPress,
 }) => {
   const headerContent = (
-    <ThemedView style={styles.container}>
-      {showBackButton && onBackPress && (
-        <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
-          <Ionicons name='arrow-back' size={24} color={GOLD_THEME.GOLD.LIGHT} />
-        </TouchableOpacity>
-      )}
-      <ThemedView style={styles.textContainer}>
+    <View style={styles.container}>
+      {/* 왼쪽: 백 버튼 또는 빈 공간 */}
+      <View style={styles.leftContainer}>
+        {showBackButton && onBackPress ? (
+          <TouchableOpacity style={styles.backButton} onPress={onBackPress}>
+            <Ionicons name='arrow-back' size={24} color={GOLD_THEME.GOLD.LIGHT} />
+          </TouchableOpacity>
+        ) : (
+          leftComponent
+        )}
+      </View>
+
+      {/* 중앙: 제목 */}
+      <View style={styles.textContainer}>
         <ThemedText type='title' style={styles.title}>
           {title}
         </ThemedText>
@@ -41,9 +47,11 @@ export const PageHeader: React.FC<PageHeaderProps> = ({
             {subtitle}
           </ThemedText>
         )}
-      </ThemedView>
-      {rightComponent && <ThemedView style={styles.rightContainer}>{rightComponent}</ThemedView>}
-    </ThemedView>
+      </View>
+
+      {/* 오른쪽: 커스텀 컴포넌트 또는 빈 공간 */}
+      <View style={styles.rightContainer}>{rightComponent}</View>
+    </View>
   );
 
   if (showSafeArea) {
@@ -64,9 +72,13 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    justifyContent: 'space-between',
     paddingVertical: 16,
     backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
+  },
+  leftContainer: {
+    width: 60,
+    alignItems: 'flex-start',
   },
   textContainer: {
     flex: 1,
@@ -77,16 +89,16 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   title: {
-    fontSize: 20,
+    fontSize: 18,
     fontWeight: '700',
     color: GOLD_THEME.GOLD.LIGHT,
-    lineHeight: 28,
+    lineHeight: 24,
     backgroundColor: 'transparent',
   },
   subtitle: {
-    fontSize: 16,
+    fontSize: 14,
     color: GOLD_THEME.TEXT.SECONDARY,
-    lineHeight: 22,
+    lineHeight: 20,
     backgroundColor: 'transparent',
   },
   backButton: {
@@ -94,7 +106,7 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 12,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
   },
 });

@@ -1,5 +1,6 @@
 import { PageLayout } from '@/components/common/PageLayout';
 import { ThemedText as Text } from '@/components/ThemedText';
+import { GOLD_THEME } from '@/constants/theme';
 import { useAuth } from '@/context/AuthProvider';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -105,6 +106,9 @@ const styles = StyleSheet.create({
   },
   backButton: {
     marginRight: 16,
+    padding: 8,
+    borderRadius: 12,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
   },
   headerContent: {
     flex: 1,

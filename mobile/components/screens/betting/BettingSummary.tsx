@@ -1,8 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { Bet } from '@/lib/types/bet';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface BettingSummaryProps {
   totalBets: number;
@@ -16,54 +15,54 @@ export function BettingSummary({ totalBets, recentBets, isLoading }: BettingSumm
 
   if (isLoading) {
     return (
-      <ThemedView style={styles.container}>
+      <View style={styles.container}>
         <ThemedText>마권 정보 로딩 중...</ThemedText>
-      </ThemedView>
+      </View>
     );
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       <ThemedText type='subtitle' style={styles.title}>
         마권 현황
       </ThemedText>
 
-      <ThemedView style={styles.statsContainer}>
-        <ThemedView style={styles.statItem}>
+      <View style={styles.statsContainer}>
+        <View style={styles.statItem}>
           <ThemedText type='stat' style={styles.statValue}>
             {totalBets}
           </ThemedText>
           <ThemedText type='caption' style={styles.statLabel}>
             총 마권
           </ThemedText>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.statItem}>
+        <View style={styles.statItem}>
           <ThemedText type='stat' style={styles.statValue}>
             {totalAmount.toLocaleString()}
           </ThemedText>
           <ThemedText type='caption' style={styles.statLabel}>
             총 마권금
           </ThemedText>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.statItem}>
+        <View style={styles.statItem}>
           <ThemedText type='stat' style={styles.statValue}>
             {totalPayout.toLocaleString()}
           </ThemedText>
           <ThemedText type='caption' style={styles.statLabel}>
             총 상금
           </ThemedText>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
       {recentBets.length > 0 && (
-        <ThemedView style={styles.recentBets}>
+        <View style={styles.recentBets}>
           <ThemedText type='subtitle' style={styles.recentTitle}>
             최근 마권
           </ThemedText>
           {recentBets.map((bet) => (
-            <ThemedView key={bet.id} style={styles.betItem}>
+            <View key={bet.id} style={styles.betItem}>
               <ThemedText type='default' style={styles.betType}>
                 {bet.betType}
               </ThemedText>
@@ -76,11 +75,11 @@ export function BettingSummary({ totalBets, recentBets, isLoading }: BettingSumm
               >
                 {getStatusText(bet.betStatus)}
               </ThemedText>
-            </ThemedView>
+            </View>
           ))}
-        </ThemedView>
+        </View>
       )}
-    </ThemedView>
+    </View>
   );
 }
 

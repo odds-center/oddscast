@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageLayout } from '@/components/common/PageLayout';
 import { GOLD_THEME } from '@/constants/theme';
 import type { RaceResult } from '@/lib/api/resultApi';
@@ -123,13 +122,13 @@ export default function ResultsScreen() {
   return (
     <PageLayout>
       {/* 헤더 */}
-      <ThemedView style={styles.header}>
+      <View style={styles.header}>
         <ThemedText type='title' style={styles.title}>
           경주 결과
         </ThemedText>
 
         {/* 뷰 모드 선택 */}
-        <ThemedView style={styles.viewModeContainer}>
+        <View style={styles.viewModeContainer}>
           <TouchableOpacity
             style={[styles.viewModeButton, viewMode === 'daily' && styles.viewModeButtonActive]}
             onPress={() => setViewMode('daily')}
@@ -150,11 +149,11 @@ export default function ResultsScreen() {
               전체 기록
             </ThemedText>
           </TouchableOpacity>
-        </ThemedView>
+        </View>
 
         {/* 날짜 선택 */}
         {viewMode === 'daily' && (
-          <ThemedView style={styles.dateSelector}>
+          <View style={styles.dateSelector}>
             <TextInput
               style={styles.dateInput}
               placeholder='YYYYMMDD 형식으로 입력'
@@ -179,12 +178,12 @@ export default function ResultsScreen() {
             >
               <ThemedText style={styles.searchButtonText}>검색</ThemedText>
             </TouchableOpacity>
-          </ThemedView>
+          </View>
         )}
 
         {/* 최근 날짜 목록 */}
         {viewMode === 'daily' && (
-          <ThemedView style={styles.recentDatesContainer}>
+          <View style={styles.recentDatesContainer}>
             <ThemedText type='caption' style={styles.recentDatesTitle}>
               최근 날짜
             </ThemedText>
@@ -210,43 +209,43 @@ export default function ResultsScreen() {
                 </TouchableOpacity>
               ))}
             </ScrollView>
-          </ThemedView>
+          </View>
         )}
 
         {/* 선택된 날짜 표시 */}
-        <ThemedView style={styles.selectedDateContainer}>
+        <View style={styles.selectedDateContainer}>
           <ThemedText type='subtitle' style={styles.selectedDateText}>
             {moment(selectedDate, 'YYYYMMDD').format('YYYY년 MM월 DD일')}
           </ThemedText>
           <TouchableOpacity style={styles.refreshButton} onPress={() => refetch()}>
             <ThemedText style={styles.refreshButtonText}>새로고침</ThemedText>
           </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
       {/* 결과 목록 */}
       <View style={styles.content}>
         {isLoading ? (
-          <ThemedView style={styles.loadingContainer}>
+          <View style={styles.loadingContainer}>
             <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
-          </ThemedView>
+          </View>
         ) : error ? (
-          <ThemedView style={styles.errorContainer}>
+          <View style={styles.errorContainer}>
             <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
             <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
               <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
             </TouchableOpacity>
-          </ThemedView>
+          </View>
         ) : results && results.length > 0 ? (
           results.map((result: RaceResult) => (
-            <ThemedView key={result.id} style={styles.resultCard}>
-              <ThemedView style={styles.positionContainer}>
+            <View key={result.id} style={styles.resultCard}>
+              <View style={styles.positionContainer}>
                 <ThemedText type='stat' style={styles.position}>
                   {result.rcRank}
                 </ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.horseInfo}>
+              </View>
+              <View style={styles.horseInfo}>
                 <ThemedText type='subtitle' style={styles.horseName}>
                   {result.hrName}
                 </ThemedText>
@@ -256,8 +255,8 @@ export default function ResultsScreen() {
                 <ThemedText type='caption' style={styles.trainerName}>
                   조교사: {result.trName}
                 </ThemedText>
-              </ThemedView>
-              <ThemedView style={styles.resultDetails}>
+              </View>
+              <View style={styles.resultDetails}>
                 <ThemedText type='default' style={styles.finishTime}>
                   {result.rcTime}
                 </ThemedText>
@@ -267,15 +266,15 @@ export default function ResultsScreen() {
                 <ThemedText type='caption' style={styles.distance}>
                   거리: {result.rcDist}m
                 </ThemedText>
-              </ThemedView>
-            </ThemedView>
+              </View>
+            </View>
           ))
         ) : (
-          <ThemedView style={styles.emptyContainer}>
+          <View style={styles.emptyContainer}>
             <ThemedText type='subtitle' style={styles.emptyText}>
               {viewMode === 'daily' ? '해당 날짜의 결과가 없습니다.' : '전체 결과가 없습니다.'}
             </ThemedText>
-          </ThemedView>
+          </View>
         )}
       </View>
     </PageLayout>
@@ -284,7 +283,7 @@ export default function ResultsScreen() {
 
 const styles = StyleSheet.create({
   header: {
-    padding: 20,
+    paddingBottom: 20,
     borderBottomWidth: 1,
     borderBottomColor: GOLD_THEME.BORDER.PRIMARY,
     marginBottom: 16,
@@ -295,7 +294,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
   },
   resultCard: {
     borderRadius: 16,

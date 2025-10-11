@@ -193,7 +193,7 @@ export default function BettingScreen() {
                     베팅 금액:
                   </ThemedText>
                   <ThemedText type='caption' style={styles.betDetailValue}>
-                    {bet.amount.toLocaleString()} 포인트
+                    {bet.amount.toLocaleString()}원
                   </ThemedText>
                 </View>
                 {bet.result !== 'PENDING' && (

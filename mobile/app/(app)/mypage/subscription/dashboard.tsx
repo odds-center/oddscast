@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageHeader } from '@/components/common';
 import { PageLayout } from '@/components/common/PageLayout';
 import { GOLD_THEME } from '@/constants/theme';
@@ -8,7 +7,7 @@ import { showConfirmMessage, showSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
-import { StyleSheet, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 
 /**
  * 구독 관리 대시보드
@@ -69,7 +68,7 @@ export default function SubscriptionDashboardScreen() {
       <PageLayout style={{ paddingTop: 0 }}>
         <PageHeader title='구독 관리' />
         {/* 구독 없음 상태 */}
-        <ThemedView style={styles.emptyState}>
+        <View style={styles.emptyState}>
           <Ionicons name='card-outline' size={64} color={GOLD_THEME.TEXT.PRIMARY} />
           <ThemedText type='title' style={styles.emptyTitle}>
             구독이 없습니다
@@ -83,7 +82,7 @@ export default function SubscriptionDashboardScreen() {
           >
             <ThemedText style={styles.subscribeButtonText}>구독 시작하기</ThemedText>
           </TouchableOpacity>
-        </ThemedView>
+        </View>
       </PageLayout>
     );
   }
@@ -92,77 +91,77 @@ export default function SubscriptionDashboardScreen() {
     <PageLayout style={{ paddingTop: 0 }}>
       <PageHeader title='구독 관리' />
       {/* 구독 상태 카드 */}
-      <ThemedView style={styles.statusCard}>
-        <ThemedView style={styles.statusHeader}>
-          <ThemedView style={styles.statusInfo}>
+      <View style={styles.statusCard}>
+        <View style={styles.statusHeader}>
+          <View style={styles.statusInfo}>
             <ThemedText type='title' style={styles.planName}>
               {subscriptionInfo.planName}
             </ThemedText>
-            <ThemedView style={[styles.statusBadge, styles.activeBadge]}>
+            <View style={[styles.statusBadge, styles.activeBadge]}>
               <ThemedText style={styles.statusText}>활성</ThemedText>
-            </ThemedView>
-          </ThemedView>
+            </View>
+          </View>
           <Ionicons name='checkmark-circle' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.statusDetails}>
-          <ThemedView style={styles.detailRow}>
+        <View style={styles.statusDetails}>
+          <View style={styles.detailRow}>
             <ThemedText style={styles.detailLabel}>구독 시작일</ThemedText>
             <ThemedText style={styles.detailValue}>
               {new Date(subscriptionInfo.startDate).toLocaleDateString('ko-KR')}
             </ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.detailRow}>
+          </View>
+          <View style={styles.detailRow}>
             <ThemedText style={styles.detailLabel}>다음 결제일</ThemedText>
             <ThemedText style={styles.detailValue}>
               {new Date(subscriptionInfo.nextBillingDate).toLocaleDateString('ko-KR')}
             </ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.detailRow}>
+          </View>
+          <View style={styles.detailRow}>
             <ThemedText style={styles.detailLabel}>월 결제액</ThemedText>
             <ThemedText style={styles.detailValue}>
               {subscriptionInfo.amount.toLocaleString()}원
             </ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.detailRow}>
+          </View>
+          <View style={styles.detailRow}>
             <ThemedText style={styles.detailLabel}>자동 갱신</ThemedText>
             <ThemedText style={[styles.detailValue, styles.autoRenewal]}>
               {subscriptionInfo.autoRenewal ? '활성' : '비활성'}
             </ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+          </View>
+        </View>
+      </View>
 
       {/* 사용량 통계 */}
-      <ThemedView style={styles.usageCard}>
-        <ThemedView style={styles.usageHeader}>
+      <View style={styles.usageCard}>
+        <View style={styles.usageHeader}>
           <Ionicons name='stats-chart' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText type='title' style={styles.usageTitle}>
             이번 달 사용량
           </ThemedText>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.usageStats}>
-          <ThemedView style={styles.statItem}>
+        <View style={styles.usageStats}>
+          <View style={styles.statItem}>
             <ThemedText style={styles.statValue}>{subscriptionInfo.ticketsUsed}</ThemedText>
             <ThemedText style={styles.statLabel}>사용한 예측권</ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
             <ThemedText style={styles.statValue}>{subscriptionInfo.ticketsRemaining}</ThemedText>
             <ThemedText style={styles.statLabel}>남은 예측권</ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.statItem}>
+          </View>
+          <View style={styles.statItem}>
             <ThemedText style={styles.statValue}>
               {Math.round((subscriptionInfo.ticketsUsed / 30) * 100)}%
             </ThemedText>
             <ThemedText style={styles.statLabel}>사용률</ThemedText>
-          </ThemedView>
-        </ThemedView>
+          </View>
+        </View>
 
         {/* 진행률 바 */}
-        <ThemedView style={styles.progressContainer}>
-          <ThemedView style={styles.progressBar}>
-            <ThemedView
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View
               style={[
                 styles.progressFill,
                 {
@@ -170,20 +169,20 @@ export default function SubscriptionDashboardScreen() {
                 },
               ]}
             />
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+          </View>
+        </View>
+      </View>
 
       {/* 관리 옵션 */}
-      <ThemedView style={styles.actionsSection}>
-        <ThemedView style={styles.sectionHeader}>
+      <View style={styles.actionsSection}>
+        <View style={styles.sectionHeader}>
           <Ionicons name='options' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText type='title' style={styles.sectionTitle}>
             관리 옵션
           </ThemedText>
-        </ThemedView>
+        </View>
 
-        <ThemedView style={styles.actionButtons}>
+        <View style={styles.actionButtons}>
           <TouchableOpacity style={styles.actionButton} onPress={handleViewHistory}>
             <Ionicons name='receipt' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText style={styles.actionButtonText}>결제 내역</ThemedText>
@@ -198,22 +197,22 @@ export default function SubscriptionDashboardScreen() {
             <Ionicons name='settings' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText style={styles.actionButtonText}>구독 관리</ThemedText>
           </TouchableOpacity>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
       {/* 법적 고지 */}
-      <ThemedView style={styles.legalNotice}>
-        <ThemedView style={styles.legalRow}>
+      <View style={styles.legalNotice}>
+        <View style={styles.legalRow}>
           <Ionicons name='information-circle' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText style={styles.legalText}>
             구독 취소 시 남은 기간 동안은 계속 이용하실 수 있습니다.
           </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.legalRow}>
+        </View>
+        <View style={styles.legalRow}>
           <Ionicons name='shield-checkmark' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText style={styles.legalText}>언제든지 구독을 재개하실 수 있습니다.</ThemedText>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
     </PageLayout>
   );
 }

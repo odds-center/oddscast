@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { BlurView } from 'expo-blur';
 import React, { useEffect, useRef } from 'react';
 import {
@@ -182,7 +181,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
                   opacity: fadeAnim,
                 }}
               >
-                <ThemedView
+                <View
                   style={[
                     styles.alertContainer,
                     {
@@ -241,7 +240,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
                       </TouchableOpacity>
                     ))}
                   </View>
-                </ThemedView>
+                </View>
               </Animated.View>
             </TouchableOpacity>
           </View>

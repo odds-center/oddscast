@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GOLD_THEME } from '@/constants/theme';
+import { RACES } from '@/constants/mockData';
 
 // Mock 데이터 - 오늘의 경주 (진행중 + 예정)
 const getTodayDate = () => {
@@ -80,25 +81,12 @@ export default function RacesScreen() {
   const [selectedVenue, setSelectedVenue] = useState<string>('all');
   const venues = ['all', '서울', '부산', '제주', '광주'];
 
-  // API 데이터 조회 (KRA API 복구 시 사용 - 오늘 날짜만)
-  const todayDate = getTodayDate();
-  const { data: racesData, isLoading: racesLoading } = useRaces({
-    page: 1,
-    limit: 50,
-    date: todayDate,
-    meet: selectedVenue === 'all' ? undefined : selectedVenue,
-  });
+  // Mock 데이터 사용
+  const mockRaces = RACES;
 
-  // Mock 데이터 사용 (API 데이터 없을 때)
-  const apiRaces = racesData?.races || [];
-  const mockRaces = apiRaces.length > 0 ? apiRaces : MOCK_TODAY_RACES;
-
-  // 선택된 지역에 따라 필터링 (진행중 + 예정만)
-  const filteredRaces = (
-    selectedVenue === 'all'
-      ? mockRaces
-      : mockRaces.filter((race: any) => race.meetName === selectedVenue)
-  ).filter((race: any) => race.raceStatus !== 'finished');
+  // 선택된 지역에 따라 필터링
+  const filteredRaces =
+    selectedVenue === 'all' ? mockRaces : mockRaces.filter((race) => race.venue === selectedVenue);
 
   const handleRacePress = (raceId: string) => {
     console.log('Race selected:', raceId);
@@ -146,37 +134,89 @@ export default function RacesScreen() {
             <View style={styles.raceHeader}>
               <View style={styles.raceInfo}>
                 <ThemedText type='title' style={styles.raceName}>
-                  {race.rcName}
+                  {race.raceName}
                 </ThemedText>
                 <ThemedText type='caption' style={styles.raceDetails}>
-                  {race.meetName} • {race.rcNo || ''}경주 • {race.rcDist || ''}m
+                  {race.venue} • {race.raceNumber}경주 • {race.distance}m
                 </ThemedText>
               </View>
               <View style={styles.raceGrade}>
                 <ThemedText type='caption' style={styles.gradeText}>
-                  {RACE_UTILS.getRaceGradeLabel(race.rcGrade || '')}
+                  {race.grade}
                 </ThemedText>
               </View>
+            </View>
+
+            {/* 트랙 컨디션 */}
+            <View style={styles.trackConditionRow}>
+              <View style={styles.conditionItem}>
+                <Ionicons
+                  name={
+                    race.trackCondition.weather === 'sunny'
+                      ? 'sunny'
+                      : race.trackCondition.weather === 'cloudy'
+                      ? 'cloudy'
+                      : race.trackCondition.weather === 'rainy'
+                      ? 'rainy'
+                      : 'cloud'
+                  }
+                  size={16}
+                  color={GOLD_THEME.TEXT.SECONDARY}
+                />
+                <ThemedText type='caption' style={styles.conditionText}>
+                  {race.trackCondition.temperature}°C
+                </ThemedText>
+              </View>
+              <View style={styles.conditionItem}>
+                <Ionicons name='water' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                <ThemedText type='caption' style={styles.conditionText}>
+                  습도 {race.trackCondition.humidity}%
+                </ThemedText>
+              </View>
+              <View style={styles.conditionItem}>
+                <Ionicons name='speedometer' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                <ThemedText type='caption' style={styles.conditionText}>
+                  {race.trackCondition.surface === 'fast'
+                    ? '빠름'
+                    : race.trackCondition.surface === 'good'
+                    ? '양호'
+                    : race.trackCondition.surface === 'soft'
+                    ? '습함'
+                    : '무거움'}
+                </ThemedText>
+              </View>
+            </View>
+
+            {/* AI 예측 */}
+            <View style={styles.aiAnalysisSection}>
+              <View style={styles.aiHeader}>
+                <Ionicons name='analytics' size={18} color={GOLD_THEME.GOLD.LIGHT} />
+                <ThemedText type='defaultSemiBold' style={styles.aiTitle}>
+                  AI 예측
+                </ThemedText>
+                <View style={styles.confidenceBadge}>
+                  <ThemedText type='caption' style={styles.confidenceText}>
+                    신뢰도 {race.aiAnalysis.confidence}%
+                  </ThemedText>
+                </View>
+              </View>
+              <ThemedText type='caption' style={styles.aiRecommendation}>
+                {race.aiAnalysis.recommendation}
+              </ThemedText>
             </View>
 
             <View style={styles.raceFooter}>
               <View style={styles.raceTime}>
                 <Ionicons name='time' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
                 <ThemedText type='caption' style={styles.timeText}>
-                  {race.rcStartTime || ''}
+                  {race.date.split(' ')[1] || ''}
                 </ThemedText>
               </View>
-              <View style={styles.raceStatus}>
-                <View
-                  style={[
-                    styles.statusBadge,
-                    { backgroundColor: RACE_UTILS.getRaceStatusColor(race.raceStatus) },
-                  ]}
-                >
-                  <ThemedText type='caption' style={styles.statusText}>
-                    {RACE_UTILS.getRaceStatusLabel(race.raceStatus || '')}
-                  </ThemedText>
-                </View>
+              <View style={styles.prizeInfo}>
+                <Ionicons name='trophy' size={16} color={GOLD_THEME.GOLD.LIGHT} />
+                <ThemedText type='caption' style={styles.prizeText}>
+                  {(race.prize / 10000).toLocaleString()}만원
+                </ThemedText>
               </View>
             </View>
           </TouchableOpacity>
@@ -275,7 +315,6 @@ const styles = StyleSheet.create({
   },
   gradeText: {
     color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 12,
   },
   raceFooter: {
     flexDirection: 'row',
@@ -300,7 +339,6 @@ const styles = StyleSheet.create({
   },
   statusText: {
     color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 12,
     fontWeight: '500',
   },
   emptyContainer: {
@@ -316,18 +354,78 @@ const styles = StyleSheet.create({
   infoSection: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 40,
-    padding: 16,
-    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 32,
+    padding: 12,
+    borderRadius: 10,
     backgroundColor: 'rgba(255, 215, 0, 0.1)',
     borderWidth: 1,
     borderColor: GOLD_THEME.BORDER.GOLD,
-    gap: 12,
+    gap: 10,
   },
   infoText: {
     flex: 1,
     color: GOLD_THEME.TEXT.SECONDARY,
     lineHeight: 20,
+  },
+  trackConditionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    marginVertical: 6,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: GOLD_THEME.BORDER.GOLD,
+  },
+  conditionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  conditionText: {
+    color: GOLD_THEME.TEXT.PRIMARY,
+  },
+  aiAnalysisSection: {
+    marginTop: 6,
+    padding: 10,
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: GOLD_THEME.GOLD.LIGHT,
+  },
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+    gap: 6,
+  },
+  aiTitle: {
+    color: GOLD_THEME.GOLD.LIGHT,
+    flex: 1,
+  },
+  confidenceBadge: {
+    backgroundColor: GOLD_THEME.GOLD.DARK,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 10,
+  },
+  confidenceText: {
+    color: GOLD_THEME.TEXT.PRIMARY,
+    fontWeight: '600',
+  },
+  aiRecommendation: {
+    color: GOLD_THEME.TEXT.PRIMARY,
+    lineHeight: 18,
+  },
+  prizeInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  prizeText: {
+    color: GOLD_THEME.GOLD.LIGHT,
+    fontWeight: '600',
   },
 });

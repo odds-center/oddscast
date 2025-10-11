@@ -1,12 +1,11 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageHeader } from '@/components/common';
 import { PageLayout } from '@/components/common/PageLayout';
 import { GOLD_THEME } from '@/constants/theme';
 import { useMyRanking, useRankings } from '@/lib/hooks/useRankings';
 import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 // Mock 랭킹 데이터 (전체/주간/월간)
 const MOCK_RANKINGS = {
@@ -308,7 +307,7 @@ export default function RankingScreen() {
     <PageLayout scrollable={false}>
       <PageHeader title='랭킹' />
       {/* 랭킹 탭 */}
-      <ThemedView style={styles.tabContainer}>
+      <View style={styles.tabContainer}>
         {(['overall', 'weekly', 'monthly'] as const).map((tab) => (
           <TouchableOpacity
             key={tab}
@@ -323,19 +322,19 @@ export default function RankingScreen() {
             </ThemedText>
           </TouchableOpacity>
         ))}
-      </ThemedView>
+      </View>
 
       {/* 랭킹 통계 */}
-      <ThemedView style={styles.statsSection}>
-        <ThemedView style={styles.statsCard}>
+      <View style={styles.statsSection}>
+        <View style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
             총 참여자
           </ThemedText>
           <ThemedText type='stat' style={styles.statsValue}>
             {getCurrentRankings().length}명
           </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.statsCard}>
+        </View>
+        <View style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
             평균 승률
           </ThemedText>
@@ -346,106 +345,106 @@ export default function RankingScreen() {
             ).toFixed(1)}
             %
           </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.statsCard}>
+        </View>
+        <View style={styles.statsCard}>
           <ThemedText type='caption' style={styles.statsLabel}>
             총 기록
           </ThemedText>
           <ThemedText type='stat' style={styles.statsValue}>
             {getCurrentRankings().reduce((sum, user) => sum + user.totalBets, 0)}회
           </ThemedText>
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
       {/* 로딩 상태 */}
       {rankingsLoading ? (
-        <ThemedView style={styles.loadingContainer}>
+        <View style={styles.loadingContainer}>
           <ActivityIndicator size='large' color={GOLD_THEME.GOLD.LIGHT} />
           <ThemedText type='caption' style={styles.loadingText}>
             랭킹 데이터 불러오는 중...
           </ThemedText>
-        </ThemedView>
+        </View>
       ) : (
         <>
           {/* 내 순위 (상단 고정) */}
-          <ThemedView style={styles.myRankingSection}>
-            <ThemedView style={styles.myRankingCard}>
-              <ThemedView style={styles.myRankingHeader}>
+          <View style={styles.myRankingSection}>
+            <View style={styles.myRankingCard}>
+              <View style={styles.myRankingHeader}>
                 <ThemedText type='body' style={styles.myRankingTitle}>
                   내 순위
                 </ThemedText>
                 <Ionicons name='person' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              </ThemedView>
-              <ThemedView style={styles.myRankingContent}>
-                <ThemedView style={styles.myRankInfo}>
+              </View>
+              <View style={styles.myRankingContent}>
+                <View style={styles.myRankInfo}>
                   <ThemedText type='stat' style={styles.myRankNumber}>
                     {myRankingLoading ? '...' : `${getMyRanking().rank}위`}
                   </ThemedText>
                   <ThemedText type='caption' style={styles.myRankText}>
                     승률 {getMyRanking().winRate}% • {getMyRanking().totalBets}회 기록
                   </ThemedText>
-                </ThemedView>
-                <ThemedView style={styles.myRankScore}>
+                </View>
+                <View style={styles.myRankScore}>
                   <ThemedText type='caption' style={styles.myRankScoreLabel}>
                     총 수익
                   </ThemedText>
                   <ThemedText type='body' style={styles.myRankScoreValue}>
                     {getMyRanking().totalWinnings.toLocaleString()}원
                   </ThemedText>
-                </ThemedView>
-              </ThemedView>
-            </ThemedView>
-          </ThemedView>
+                </View>
+              </View>
+            </View>
+          </View>
 
           {/* 랭킹 목록 */}
-          <ThemedView style={styles.rankingListContainer}>
+          <View style={styles.rankingListContainer}>
             <ScrollView showsVerticalScrollIndicator={false}>
               {getCurrentRankings().map((user) => (
-                <ThemedView key={user.id} style={styles.rankingCard}>
-                  <ThemedView style={styles.rankingItem}>
-                    <ThemedView style={styles.rankSection}>
-                      <ThemedView style={styles.rankNumber}>
+                <View key={user.id} style={styles.rankingCard}>
+                  <View style={styles.rankingItem}>
+                    <View style={styles.rankSection}>
+                      <View style={styles.rankNumber}>
                         <ThemedText type='stat' style={styles.rankText}>
                           {user.rank}
                         </ThemedText>
-                      </ThemedView>
+                      </View>
                       {getRankIcon(user.rank) && (
                         <ThemedText style={styles.rankIcon}>{getRankIcon(user.rank)}</ThemedText>
                       )}
-                    </ThemedView>
+                    </View>
 
-                    <ThemedView style={styles.userSection}>
-                      <ThemedView style={styles.userAvatar}>
+                    <View style={styles.userSection}>
+                      <View style={styles.userAvatar}>
                         <Ionicons
                           name='person-circle'
                           size={44}
                           color={GOLD_THEME.TEXT.SECONDARY}
                         />
-                      </ThemedView>
-                      <ThemedView style={styles.userInfo}>
+                      </View>
+                      <View style={styles.userInfo}>
                         <ThemedText type='body' style={styles.userName}>
                           {user.name}
                         </ThemedText>
                         <ThemedText type='caption' style={styles.userStats}>
                           {user.totalBets}회 기록 • 승률 {user.winRate}%
                         </ThemedText>
-                      </ThemedView>
-                    </ThemedView>
-                  </ThemedView>
+                      </View>
+                    </View>
+                  </View>
 
                   {/* 총 수익 섹션을 별도로 아래에 배치 */}
-                  <ThemedView style={styles.winningsSection}>
+                  <View style={styles.winningsSection}>
                     <ThemedText type='caption' style={styles.winningsLabel}>
                       총 수익
                     </ThemedText>
                     <ThemedText type='body' style={styles.winningsValue}>
                       {user.totalWinnings.toLocaleString()}원
                     </ThemedText>
-                  </ThemedView>
-                </ThemedView>
+                  </View>
+                </View>
               ))}
             </ScrollView>
-          </ThemedView>
+          </View>
         </>
       )}
     </PageLayout>

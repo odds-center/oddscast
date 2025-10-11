@@ -1,8 +1,7 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageLayout } from '@/components/common/PageLayout';
 import { Ionicons } from '@expo/vector-icons';
 import { GOLD_THEME } from '@/constants/theme';
@@ -67,21 +66,21 @@ export default function SubscriptionHistoryScreen() {
   return (
     <PageLayout>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <ThemedView style={styles.header}>
+        <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
             <Ionicons name='arrow-back' size={24} color={GOLD_THEME.TEXT.PRIMARY} />
           </TouchableOpacity>
           <ThemedText type='title' style={styles.title}>
             결제 내역
           </ThemedText>
-          <ThemedView style={{ width: 24 }} />
-        </ThemedView>
+          <View style={{ width: 24 }} />
+        </View>
 
         {mockHistory.length > 0 ? (
-          <ThemedView style={styles.historyList}>
+          <View style={styles.historyList}>
             {mockHistory.map((item, index) => (
-              <ThemedView key={item.id} style={styles.historyCard}>
-                <ThemedView style={styles.historyHeader}>
+              <View key={item.id} style={styles.historyCard}>
+                <View style={styles.historyHeader}>
                   <ThemedText style={styles.historyDate}>
                     {new Date(item.billingDate).toLocaleDateString('ko-KR', {
                       year: 'numeric',
@@ -89,7 +88,7 @@ export default function SubscriptionHistoryScreen() {
                       day: 'numeric',
                     })}
                   </ThemedText>
-                  <ThemedView
+                  <View
                     style={[
                       styles.statusBadge,
                       { backgroundColor: getStatusColor(item.status) + '20' },
@@ -98,32 +97,32 @@ export default function SubscriptionHistoryScreen() {
                     <ThemedText style={[styles.statusText, { color: getStatusColor(item.status) }]}>
                       {getStatusText(item.status)}
                     </ThemedText>
-                  </ThemedView>
-                </ThemedView>
+                  </View>
+                </View>
 
-                <ThemedView style={styles.historyBody}>
-                  <ThemedView style={styles.infoRow}>
+                <View style={styles.historyBody}>
+                  <View style={styles.infoRow}>
                     <ThemedText style={styles.infoLabel}>상품명</ThemedText>
                     <ThemedText style={styles.infoValue}>AI 예측권 프리미엄</ThemedText>
-                  </ThemedView>
+                  </View>
 
-                  <ThemedView style={styles.infoRow}>
+                  <View style={styles.infoRow}>
                     <ThemedText style={styles.infoLabel}>결제 금액</ThemedText>
                     <ThemedText style={styles.amountValue}>
                       {item.amount.toLocaleString()}원
                     </ThemedText>
-                  </ThemedView>
+                  </View>
 
-                  <ThemedView style={styles.infoRow}>
+                  <View style={styles.infoRow}>
                     <ThemedText style={styles.infoLabel}>발급 예측권</ThemedText>
                     <ThemedText style={styles.infoValue}>{item.ticketsIssued}장</ThemedText>
-                  </ThemedView>
-                </ThemedView>
-              </ThemedView>
+                  </View>
+                </View>
+              </View>
             ))}
-          </ThemedView>
+          </View>
         ) : (
-          <ThemedView style={styles.emptyState}>
+          <View style={styles.emptyState}>
             <Ionicons
               name='receipt-outline'
               size={64}
@@ -134,23 +133,23 @@ export default function SubscriptionHistoryScreen() {
             <ThemedText style={styles.emptyText}>
               프리미엄 구독을 시작하면 결제 내역이 표시됩니다.
             </ThemedText>
-          </ThemedView>
+          </View>
         )}
 
-        <ThemedView style={styles.totalSection}>
-          <ThemedView style={styles.totalRow}>
+        <View style={styles.totalSection}>
+          <View style={styles.totalRow}>
             <ThemedText style={styles.totalLabel}>총 결제 금액</ThemedText>
             <ThemedText style={styles.totalAmount}>
               {mockHistory.reduce((sum, item) => sum + item.amount, 0).toLocaleString()}원
             </ThemedText>
-          </ThemedView>
-          <ThemedView style={styles.totalRow}>
+          </View>
+          <View style={styles.totalRow}>
             <ThemedText style={styles.totalLabel}>총 발급 예측권</ThemedText>
             <ThemedText style={styles.totalTickets}>
               {mockHistory.reduce((sum, item) => sum + item.ticketsIssued, 0)}장
             </ThemedText>
-          </ThemedView>
-        </ThemedView>
+          </View>
+        </View>
       </ScrollView>
     </PageLayout>
   );
@@ -169,6 +168,8 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
+    borderRadius: 12,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
   },
   title: {
     fontSize: 20,

@@ -13,7 +13,6 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageLayout } from '@/components/common/PageLayout';
 import { GOLD_THEME } from '@/constants/theme';
 import { useRaces } from '@/lib/hooks/useRaces';
@@ -469,6 +468,8 @@ const styles = StyleSheet.create({
   },
   backButton: {
     padding: 8,
+    borderRadius: 12,
+    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
   },
   title: {
     color: GOLD_THEME.TEXT.PRIMARY,

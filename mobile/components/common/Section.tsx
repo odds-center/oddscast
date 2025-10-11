@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, StyleSheet, ViewStyle } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
 import { ThemedText } from '@/components/ThemedText';
 
 interface SectionProps {
@@ -36,7 +35,7 @@ export const Section: React.FC<SectionProps> = ({
   };
 
   return (
-    <ThemedView variant='card' style={[styles.container, getSectionStyle(), style]}>
+    <View style={[styles.container, getSectionStyle(), style]}>
       {(title || subtitle) && (
         <View style={[styles.header, titleStyle]}>
           {title && (
@@ -60,7 +59,7 @@ export const Section: React.FC<SectionProps> = ({
       <View style={[styles.content, contentStyle]}>{children}</View>
 
       {showBorder && <View style={styles.border} />}
-    </ThemedView>
+    </View>
   );
 };
 

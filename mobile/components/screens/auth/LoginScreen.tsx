@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { useAuth } from '@/context/AuthProvider';
 import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
@@ -41,7 +40,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}>
+    <View style={styles.container}>
       {/* 로고 및 제목 영역 */}
       <View style={styles.headerSection}>
         <View style={styles.logoContainer}>
@@ -79,12 +78,12 @@ export default function LoginScreen() {
         <View style={styles.legalNotice}>
           <Ionicons name='information-circle-outline' size={16} color='#888' />
           <ThemedText style={styles.termsText}>
-            본 서비스는 AI 예측 게임으로,{'\n'}
-            포인트는 게임 내 가상 화폐입니다
+            본 서비스는 AI 예측 게임입니다{'\n'}
+            실제 경마와는 무관합니다
           </ThemedText>
         </View>
       </View>
-    </ThemedView>
+    </View>
   );
 }
 

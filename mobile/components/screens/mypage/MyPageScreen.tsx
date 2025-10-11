@@ -1,9 +1,7 @@
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
-import { POINTS_UTILS } from '@/constants/points';
 import { useAuth } from '@/context/AuthProvider';
 import { useBetStatistics } from '@/lib/hooks/useBets';
-import { useUserPointBalance } from '@/lib/hooks/usePoints';
 import { useCurrentUserProfile } from '@/lib/hooks/useUsers';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -16,17 +14,8 @@ const MyPageScreen = () => {
   const router = useRouter();
 
   // API 데이터 조회
-  const { data: userProfile, isLoading: profileLoading } = useCurrentUserProfile();
-  const { data: pointBalance, isLoading: pointsLoading } = useUserPointBalance();
+  const { data: userProfile } = useCurrentUserProfile();
   const { data: betStats, isLoading: betStatsLoading } = useBetStatistics();
-
-  // 포인트 관련 상태 (API 데이터가 없을 때 기본값)
-  const userPoints = pointBalance?.currentPoints || 0;
-
-  // 현재 레벨과 다음 레벨 계산
-  const currentLevel = POINTS_UTILS.getUserLevel(userPoints);
-  const nextLevel = POINTS_UTILS.getNextLevel(userPoints);
-  const progressPercentage = nextLevel ? (userPoints / nextLevel.MIN_POINTS) * 100 : 100;
 
   const handleSignOut = async () => {
     try {
@@ -56,12 +45,6 @@ const MyPageScreen = () => {
         break;
       case '도움말':
         router.push('/mypage/help');
-        break;
-      case '포인트 획득':
-        router.push('/mypage/points-earn');
-        break;
-      case '포인트 사용':
-        router.push('/mypage/points-use');
         break;
       default:
         console.log(`${menuName} 기능이 곧 추가될 예정입니다.`);
@@ -127,64 +110,6 @@ const MyPageScreen = () => {
               </View>
             </View>
           </View>
-        </View>
-      </View>
-
-      {/* 포인트 섹션 */}
-      <View style={styles.section}>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          포인트
-        </ThemedText>
-        <View style={styles.balanceContainer}>
-          <View style={styles.balanceInfo}>
-            <ThemedText type='caption' style={styles.balanceLabel}>
-              현재 포인트
-            </ThemedText>
-            <ThemedText type='title' style={styles.balanceAmount}>
-              {userPoints.toLocaleString()}P
-            </ThemedText>
-          </View>
-          <View style={styles.balanceActions}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleMenuPress('포인트 획득')}
-            >
-              <Ionicons name='gift' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
-              <ThemedText style={styles.actionButtonText}>획득</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => handleMenuPress('포인트 사용')}
-            >
-              <Ionicons name='card' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
-              <ThemedText style={styles.actionButtonText}>사용</ThemedText>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        {/* 레벨 정보 */}
-        <View style={styles.levelContainer}>
-          <View style={styles.currentLevel}>
-            <View style={styles.levelBadge}>
-              <Ionicons name='star' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.levelText}>{currentLevel.NAME}</ThemedText>
-            </View>
-            <ThemedText type='caption' style={styles.levelDescription}>
-              {currentLevel.LABEL} 레벨
-            </ThemedText>
-          </View>
-
-          {nextLevel && (
-            <View style={styles.levelProgress}>
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progressPercentage}%` }]} />
-              </View>
-              <ThemedText type='caption' style={styles.progressText}>
-                다음 레벨까지 {nextLevel ? (nextLevel.MIN_POINTS - userPoints).toLocaleString() : 0}
-                P 남음
-              </ThemedText>
-            </View>
-          )}
         </View>
       </View>
 
@@ -435,7 +360,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   levelProgress: {
-    gap: 8,
+    gap: 6,
   },
   progressBar: {
     height: 6,
@@ -455,20 +380,20 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   menuList: {
-    gap: 8,
+    gap: 6,
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
     backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 12,
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: GOLD_THEME.BORDER.GOLD,
   },
   menuIcon: {
-    marginRight: 12,
+    marginRight: 10,
   },
   menuText: {
     color: GOLD_THEME.TEXT.PRIMARY,

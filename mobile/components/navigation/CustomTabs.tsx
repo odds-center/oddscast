@@ -9,15 +9,25 @@ export function CustomTabs() {
   const router = useRouter();
   const pathname = usePathname();
 
-  const handleTabPress = (tabName: string) => {
+  const handleTabPress = (e: any, tabName: string) => {
     const targetPath = `/(app)/${tabName}`;
 
     // 현재 경로가 해당 탭의 루트라면 이동하지 않음
     if (pathname === targetPath || pathname === `/(app)/${tabName}/`) {
+      console.log(`🚫 Already on ${tabName} root, preventing navigation`);
+      e.preventDefault(); // 기본 동작 막기
       return;
     }
 
-    // 탭을 누를 때마다 해당 탭의 루트로 이동
+    // 해당 탭의 하위 경로에 있는 경우 루트로 이동
+    const isInTabGroup = pathname.startsWith(`/(app)/${tabName}`);
+
+    if (isInTabGroup) {
+      console.log(`📍 Navigating to ${tabName} root from sub-page`);
+    }
+
+    // 기본 탭 전환 동작 막고 직접 처리
+    e.preventDefault();
     router.push(targetPath);
   };
 
@@ -66,7 +76,7 @@ export function CustomTabs() {
           ),
         }}
         listeners={{
-          tabPress: () => handleTabPress('home'),
+          tabPress: (e) => handleTabPress(e, 'home'),
         }}
       />
       <Tabs.Screen
@@ -82,7 +92,7 @@ export function CustomTabs() {
           ),
         }}
         listeners={{
-          tabPress: () => handleTabPress('races'),
+          tabPress: (e) => handleTabPress(e, 'races'),
         }}
       />
       <Tabs.Screen
@@ -98,7 +108,7 @@ export function CustomTabs() {
           ),
         }}
         listeners={{
-          tabPress: () => handleTabPress('records'),
+          tabPress: (e) => handleTabPress(e, 'records'),
         }}
       />
 
@@ -115,7 +125,7 @@ export function CustomTabs() {
           ),
         }}
         listeners={{
-          tabPress: () => handleTabPress('results'),
+          tabPress: (e) => handleTabPress(e, 'results'),
         }}
       />
       <Tabs.Screen
@@ -131,7 +141,7 @@ export function CustomTabs() {
           ),
         }}
         listeners={{
-          tabPress: () => handleTabPress('mypage'),
+          tabPress: (e) => handleTabPress(e, 'mypage'),
         }}
       />
     </Tabs>

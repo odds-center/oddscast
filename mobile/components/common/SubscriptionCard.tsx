@@ -1,9 +1,8 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { GOLD_THEME } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
 interface SubscriptionCardProps {
   title: string;
@@ -17,21 +16,20 @@ interface SubscriptionCardProps {
  */
 export function SubscriptionCard({ title, icon = 'card', children, style }: SubscriptionCardProps) {
   return (
-    <ThemedView style={[styles.card, style]}>
-      <ThemedView style={styles.cardHeader}>
+    <View style={[styles.card, style]}>
+      <View style={styles.cardHeader}>
         <Ionicons name={icon} size={24} color={GOLD_THEME.TEXT.SECONDARY} />
         <ThemedText type='title' style={styles.cardTitle}>
           {title}
         </ThemedText>
-      </ThemedView>
+      </View>
       {children}
-    </ThemedView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    marginHorizontal: 16,
     marginBottom: 20,
     backgroundColor: GOLD_THEME.BACKGROUND.CARD,
     borderRadius: 16,

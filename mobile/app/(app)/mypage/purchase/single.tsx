@@ -1,5 +1,4 @@
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageLayout } from '@/components/common/PageLayout';
 import { PageHeader } from '@/components/common/PageHeader';
 import { TossPaymentWidget } from '@/components/payment/TossPaymentWidget';
@@ -11,7 +10,7 @@ import { showConfirmMessage, showErrorMessage, showSuccessMessage } from '@/util
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { Modal, StyleSheet, TouchableOpacity } from 'react-native';
+import { Modal, StyleSheet, TouchableOpacity, View } from 'react-native';
 
 /**
  * 개별 구매 화면 (1,000원/장)
@@ -73,23 +72,23 @@ export default function SinglePurchaseScreen() {
       <PageHeader title='AI 예측권 구매' showBackButton={true} onBackPress={() => router.back()} />
       {/* 현재 잔액 */}
       {balance && (
-        <ThemedView style={styles.balanceCard}>
+        <View style={styles.balanceCard}>
           <ThemedText type='caption' style={styles.balanceLabel}>
             현재 보유
           </ThemedText>
           <ThemedText type='title' style={styles.balanceValue}>
             {balance.availableTickets}장
           </ThemedText>
-        </ThemedView>
+        </View>
       )}
 
       {/* 수량 선택 */}
-      <ThemedView style={styles.section}>
+      <View style={styles.section}>
         <ThemedText type='title' style={styles.sectionTitle}>
           수량 선택
         </ThemedText>
 
-        <ThemedView style={styles.quantityOptions}>
+        <View style={styles.quantityOptions}>
           {[1, 5, 10].map((qty) => (
             <TouchableOpacity
               key={qty}
@@ -112,50 +111,50 @@ export default function SinglePurchaseScreen() {
               {qty === 10 && <ThemedText style={styles.discountBadge}>10% 할인</ThemedText>}
             </TouchableOpacity>
           ))}
-        </ThemedView>
-      </ThemedView>
+        </View>
+      </View>
 
       {/* 가격 상세 */}
-      <ThemedView style={styles.section}>
+      <View style={styles.section}>
         <ThemedText type='title' style={styles.sectionTitle}>
           가격 상세
         </ThemedText>
 
-        <ThemedView style={styles.card}>
-          <ThemedView style={styles.priceRow}>
+        <View style={styles.card}>
+          <View style={styles.priceRow}>
             <ThemedText style={styles.priceLabel}>단가</ThemedText>
             <ThemedText style={styles.priceValue}>1,000원/장</ThemedText>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.priceRow}>
+          <View style={styles.priceRow}>
             <ThemedText style={styles.priceLabel}>수량</ThemedText>
             <ThemedText style={styles.priceValue}>{selectedQuantity}장</ThemedText>
-          </ThemedView>
+          </View>
 
           {selectedQuantity >= 5 && (
-            <ThemedView style={styles.priceRow}>
+            <View style={styles.priceRow}>
               <ThemedText style={styles.priceLabel}>할인</ThemedText>
               <ThemedText style={[styles.priceValue, styles.discount]}>
                 -{selectedQuantity >= 10 ? '10%' : '5%'}
               </ThemedText>
-            </ThemedView>
+            </View>
           )}
 
-          <ThemedView style={styles.divider} />
+          <View style={styles.divider} />
 
-          <ThemedView style={styles.priceRow}>
+          <View style={styles.priceRow}>
             <ThemedText style={styles.totalLabel}>총 결제 금액</ThemedText>
             <ThemedText style={styles.totalValue}>{totalPrice.toLocaleString()}원</ThemedText>
-          </ThemedView>
-        </ThemedView>
-      </ThemedView>
+          </View>
+        </View>
+      </View>
 
       {/* 구독 추천 */}
-      <ThemedView style={styles.recommendCard}>
-        <ThemedView style={styles.recommendHeader}>
+      <View style={styles.recommendCard}>
+        <View style={styles.recommendHeader}>
           <Ionicons name='bulb' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText style={styles.recommendTitle}>구독이 더 저렴해요!</ThemedText>
-        </ThemedView>
+        </View>
         <ThemedText style={styles.recommendText}>
           월 15장 이상 사용하신다면 프리미엄 구독을 추천드립니다.
         </ThemedText>
@@ -169,10 +168,10 @@ export default function SinglePurchaseScreen() {
         >
           <ThemedText style={styles.recommendButtonText}>구독 플랜 보기</ThemedText>
         </TouchableOpacity>
-      </ThemedView>
+      </View>
 
       {/* 구매 버튼 */}
-      <ThemedView style={styles.buttonSection}>
+      <View style={styles.buttonSection}>
         <TouchableOpacity
           style={styles.purchaseButton}
           onPress={handlePurchase}
@@ -183,18 +182,18 @@ export default function SinglePurchaseScreen() {
             {purchase.isPending ? '처리 중...' : `${totalPrice.toLocaleString()}원 결제하기`}
           </ThemedText>
         </TouchableOpacity>
-      </ThemedView>
+      </View>
 
       {/* 안내사항 */}
-      <ThemedView style={styles.notice}>
-        <ThemedView style={styles.noticeHeader}>
+      <View style={styles.notice}>
+        <View style={styles.noticeHeader}>
           <Ionicons name='information-circle' size={18} color={GOLD_THEME.TEXT.SECONDARY} />
           <ThemedText style={styles.noticeTitle}>안내사항</ThemedText>
-        </ThemedView>
+        </View>
         <ThemedText style={styles.noticeText}>• 구매한 예측권은 30일간 사용 가능합니다.</ThemedText>
         <ThemedText style={styles.noticeText}>• 환불은 미사용 예측권에 한해 가능합니다.</ThemedText>
         <ThemedText style={styles.noticeText}>• 예측권은 1회 사용 시 소진됩니다.</ThemedText>
-      </ThemedView>
+      </View>
 
       {/* 결제 위젯 모달 */}
       <Modal

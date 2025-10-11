@@ -12,6 +12,7 @@ import {
   SubscriptionStatus,
   SubscriptionPlan,
 } from './entities/subscription.entity';
+import { SubscriptionPlanEntity } from './entities/subscription-plan.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import {
   CreateSubscriptionDto,
@@ -29,8 +30,24 @@ export class SubscriptionsService {
   constructor(
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(SubscriptionPlanEntity)
+    private readonly planRepo: Repository<SubscriptionPlanEntity>,
     private readonly ticketsService: PredictionTicketsService
   ) {}
+
+  /**
+   * 구독 플랜 목록 조회
+   */
+  async getPlans(): Promise<SubscriptionPlanEntity[]> {
+    this.logger.log('Fetching subscription plans');
+
+    const plans = await this.planRepo.find({
+      where: { isActive: true },
+      order: { price: 'ASC' },
+    });
+
+    return plans;
+  }
 
   /**
    * 구독 생성

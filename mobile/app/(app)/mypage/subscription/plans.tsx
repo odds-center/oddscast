@@ -1,14 +1,17 @@
 import { ActionButton } from '@/components/common/ActionButton';
-import { PageLayout } from '@/components/common/PageLayout';
 import { PageHeader } from '@/components/common/PageHeader';
+import { PageLayout } from '@/components/common/PageLayout';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { GOLD_THEME } from '@/constants/theme';
 import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useSubscriptionPlans } from '@/lib/hooks/useSubscriptionPlans';
 import { Ionicons } from '@expo/vector-icons';
+import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 
 /**
  * 구독 플랜 선택 화면
@@ -16,221 +19,349 @@ import { StyleSheet, TouchableOpacity, View } from 'react-native';
 export default function SubscriptionPlansScreen() {
   const router = useRouter();
   const { isSubscribed } = useSubscription();
-  const [selectedPlan, setSelectedPlan] = useState<'LIGHT' | 'PREMIUM' | null>('PREMIUM');
+  const { data: plans, isLoading } = useSubscriptionPlans();
+  const [selectedPlan, setSelectedPlan] = useState<'LIGHT' | 'PREMIUM' | null>(null);
+
+  // Bottom Sheet ref
+  const bottomSheetRef = useRef<BottomSheet>(null);
+  const snapPoints = useMemo(() => ['50%'], []);
+
+  // 플랜 데이터를 맵으로 변환
+  const planMap = useMemo(() => {
+    if (!plans) return null;
+    const map: any = {};
+    plans.forEach((plan) => {
+      map[plan.planId] = {
+        id: plan.planId,
+        name: plan.name,
+        description: plan.description,
+        price: plan.price,
+        tickets: plan.ticketsPerMonth,
+        pricePerTicket: plan.pricePerTicket,
+        discount: plan.discountPercentage,
+        isRecommended: plan.isRecommended,
+        features: plan.features,
+        savings: 1000 * plan.ticketsPerMonth - plan.price, // 개별 구매 대비 절약액
+      };
+    });
+    return map;
+  }, [plans]);
+
+  const handlePlanSelect = (planId: 'LIGHT' | 'PREMIUM') => {
+    setSelectedPlan(planId);
+    bottomSheetRef.current?.expand();
+  };
 
   const handleSubscribe = () => {
     if (isSubscribed) {
       router.push('/mypage/subscription/dashboard');
       return;
     }
-    router.push('/mypage/subscription/payment');
+    // 선택된 플랜 정보를 payment 페이지로 전달
+    router.push({
+      pathname: '/mypage/subscription/payment',
+      params: { planId: selectedPlan || 'PREMIUM' },
+    });
   };
 
   const handleBuySingle = () => {
     router.push('/mypage/purchase/single');
   };
 
-  return (
-    <PageLayout style={{ paddingTop: 0 }}>
-      <PageHeader title='AI 예측권 구독' showBackButton={true} onBackPress={() => router.back()} />
+  const renderBackdrop = useCallback(
+    (props: BottomSheetBackdropProps) => (
+      <BottomSheetBackdrop {...props} disappearsOnIndex={-1} appearsOnIndex={0} opacity={0.5} />
+    ),
+    []
+  );
 
-      {/* 라이트 플랜 */}
-      <ThemedView style={[styles.planCard, selectedPlan === 'LIGHT' && styles.planCardSelected]}>
-        <TouchableOpacity
-          onPress={() => setSelectedPlan('LIGHT')}
-          disabled={isSubscribed}
-          activeOpacity={0.8}
-          style={styles.touchableArea}
-        >
-          <View style={styles.planHeader}>
-            <View>
-              <ThemedText type='title' style={styles.planName}>
-                라이트 구독
-              </ThemedText>
-            </View>
-            {isSubscribed && (
-              <View style={styles.currentBadge}>
-                <ThemedText style={styles.currentBadgeText}>현재 구독 중</ThemedText>
-              </View>
-            )}
-          </View>
+  const currentPlan = selectedPlan && planMap ? planMap[selectedPlan] : null;
 
-          <View style={styles.priceSection}>
-            <ThemedText style={styles.price}>9,900원</ThemedText>
-            <ThemedText style={styles.pricePeriod}>/월</ThemedText>
-          </View>
+  const lightPlan = planMap?.LIGHT;
+  const premiumPlan = planMap?.PREMIUM;
 
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>월 15장 AI 예측권</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>장당 660원 (34% 할인)</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>평균 70%+ 정확도 목표</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>자동 갱신</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.savings}>
-            <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-            <ThemedText style={styles.savingsText}>개별 구매 대비 월 5,100원 절약!</ThemedText>
-          </View>
-        </TouchableOpacity>
-      </ThemedView>
-
-      {/* 프리미엄 플랜 */}
-      <ThemedView style={[styles.planCard, selectedPlan === 'PREMIUM' && styles.planCardSelected]}>
-        <TouchableOpacity
-          onPress={() => setSelectedPlan('PREMIUM')}
-          disabled={isSubscribed}
-          activeOpacity={0.8}
-          style={styles.touchableArea}
-        >
-          <View style={styles.planHeader}>
-            <View>
-              <View style={styles.recommendBadge}>
-                <Ionicons name='diamond' size={14} color={GOLD_THEME.BACKGROUND.PRIMARY} />
-                <ThemedText style={styles.recommendText}>추천</ThemedText>
-              </View>
-              <ThemedText type='title' style={styles.planName}>
-                프리미엄 구독
-              </ThemedText>
-            </View>
-            {isSubscribed && (
-              <View style={styles.currentBadge}>
-                <ThemedText style={styles.currentBadgeText}>현재 구독 중</ThemedText>
-              </View>
-            )}
-          </View>
-
-          <View style={styles.priceSection}>
-            <ThemedText style={styles.price}>19,800원</ThemedText>
-            <ThemedText style={styles.pricePeriod}>/월</ThemedText>
-          </View>
-
-          <View style={styles.features}>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>월 35장 AI 예측권</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>장당 566원 (43% 할인)</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>평균 70%+ 정확도 목표</ThemedText>
-            </View>
-            <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedText style={styles.featureText}>자동 갱신</ThemedText>
-            </View>
-          </View>
-
-          <View style={styles.savings}>
-            <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-            <ThemedText style={styles.savingsText}>개별 구매 대비 월 15,200원 절약!</ThemedText>
-          </View>
-        </TouchableOpacity>
-      </ThemedView>
-
-      {/* 가격 비교 */}
-      <View style={styles.comparisonSection}>
-        <View style={styles.comparisonTitleContainer}>
-          <Ionicons name='cash' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-          <ThemedText type='title' style={styles.comparisonTitle}>
-            가격 비교
-          </ThemedText>
-        </View>
-
-        <View style={styles.comparisonTable}>
-          <View style={styles.comparisonRow}>
-            <ThemedText style={styles.comparisonLabel}>프리미엄 구독 (35장)</ThemedText>
-            <ThemedText style={styles.comparisonSubscription}>19,800원</ThemedText>
-            <ThemedText style={styles.comparisonUnit}>566원/장</ThemedText>
-          </View>
-
-          <View style={styles.comparisonRow}>
-            <ThemedText style={styles.comparisonLabel}>라이트 구독 (15장)</ThemedText>
-            <ThemedText style={styles.comparisonSubscription}>9,900원</ThemedText>
-            <ThemedText style={styles.comparisonUnit}>660원/장</ThemedText>
-          </View>
-
-          <View style={styles.comparisonRow}>
-            <ThemedText style={styles.comparisonLabel}>개별 구매 (1장)</ThemedText>
-            <ThemedText style={styles.comparisonSingle}>1,000원</ThemedText>
-            <ThemedText style={styles.comparisonUnit}>1,000원/장</ThemedText>
-          </View>
-
-          <View style={styles.comparisonRow}>
-            <ThemedText style={styles.comparisonLabel}>개별 5장 (5% 할인)</ThemedText>
-            <ThemedText style={styles.comparisonSingle}>4,750원</ThemedText>
-            <ThemedText style={styles.comparisonUnit}>950원/장</ThemedText>
-          </View>
-
-          <View style={styles.comparisonRow}>
-            <ThemedText style={styles.comparisonLabel}>개별 10장 (10% 할인)</ThemedText>
-            <ThemedText style={styles.comparisonSingle}>9,000원</ThemedText>
-            <ThemedText style={styles.comparisonUnit}>900원/장</ThemedText>
-          </View>
-        </View>
-
-        <View style={styles.tipContainer}>
-          <Ionicons name='information-circle' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-          <ThemedText style={styles.comparisonTip}>
-            월 15장 이상 사용하시면 라이트 구독이, 35장 이상 사용하시면 프리미엄 구독이 더
-            저렴합니다!
-          </ThemedText>
-        </View>
-      </View>
-
-      {/* 버튼 */}
-      <ThemedView style={styles.buttonSection}>
-        {!isSubscribed ? (
-          <ActionButton
-            title='구독하기 (19,800원/월)'
-            onPress={handleSubscribe}
-            variant='primary'
-          />
-        ) : (
-          <ActionButton
-            title='구독 관리'
-            onPress={() => router.push('/mypage/subscription/manage')}
-            variant='secondary'
-          />
-        )}
-
-        <ActionButton
-          title='개별 구매 (1,000원/장)'
-          onPress={handleBuySingle}
-          variant='secondary'
+  if (isLoading || !planMap || !lightPlan || !premiumPlan) {
+    return (
+      <PageLayout style={{ paddingTop: 0 }}>
+        <PageHeader
+          title='AI 예측권 구독'
+          showBackButton={true}
+          onBackPress={() => router.back()}
         />
-      </ThemedView>
+        <View style={styles.loadingContainer}>
+          <ThemedText>플랜 정보를 불러오는 중...</ThemedText>
+        </View>
+      </PageLayout>
+    );
+  }
 
-      {/* 법적 고지 */}
-      <ThemedView style={styles.legalNotice}>
-        <ThemedView style={styles.legalRow}>
-          <Ionicons name='shield-checkmark' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-          <ThemedText style={styles.legalText}>
-            본 서비스는 AI 기반 경마 예측 정보를 제공하는 정보 서비스입니다.
-          </ThemedText>
-        </ThemedView>
-        <ThemedView style={styles.legalRow}>
-          <Ionicons name='information-circle' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
-          <ThemedText style={styles.legalText}>
-            실제 마권 구매는 한국마사회 공식 채널을 통해 이루어집니다.
-          </ThemedText>
-        </ThemedView>
-      </ThemedView>
-    </PageLayout>
+  return (
+    <>
+      <PageLayout style={{ paddingTop: 0 }}>
+        <PageHeader
+          title='AI 예측권 구독'
+          showBackButton={true}
+          onBackPress={() => router.back()}
+        />
+
+        {/* 라이트 플랜 */}
+        <View style={[styles.planCard, selectedPlan === 'LIGHT' && styles.planCardSelected]}>
+          <TouchableOpacity
+            onPress={() => handlePlanSelect('LIGHT')}
+            disabled={isSubscribed}
+            activeOpacity={0.8}
+            style={styles.touchableArea}
+          >
+            <View style={styles.planHeader}>
+              <View>
+                <ThemedText type='title' style={styles.planName}>
+                  라이트 구독
+                </ThemedText>
+              </View>
+              {isSubscribed && (
+                <View style={styles.currentBadge}>
+                  <ThemedText style={styles.currentBadgeText}>현재 구독 중</ThemedText>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.priceSection}>
+              <ThemedText style={styles.price}>
+                {Math.floor(lightPlan.price).toLocaleString('ko-KR')}원
+              </ThemedText>
+              <ThemedText style={styles.pricePeriod}>/월</ThemedText>
+            </View>
+
+            <View style={styles.features}>
+              {lightPlan.features.map((feature: string, index: number) => (
+                <View key={index} style={styles.featureItem}>
+                  <Ionicons name='checkmark-circle' size={18} color={GOLD_THEME.TEXT.SECONDARY} />
+                  <ThemedText style={styles.featureText}>{feature}</ThemedText>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.savings}>
+              <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+              <ThemedText style={styles.savingsText}>
+                개별 구매 대비 월 {Math.floor(lightPlan.savings).toLocaleString('ko-KR')}원 절약!
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* 프리미엄 플랜 */}
+        <View style={[styles.planCard, selectedPlan === 'PREMIUM' && styles.planCardSelected]}>
+          <TouchableOpacity
+            onPress={() => handlePlanSelect('PREMIUM')}
+            disabled={isSubscribed}
+            activeOpacity={0.8}
+            style={styles.touchableArea}
+          >
+            <View style={styles.planHeader}>
+              <View>
+                <LinearGradient
+                  colors={[GOLD_THEME.GOLD.LIGHT, GOLD_THEME.GOLD.DARK]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={styles.recommendBadge}
+                >
+                  <ThemedText style={styles.recommendText}>BEST</ThemedText>
+                </LinearGradient>
+                <ThemedText type='title' style={styles.planName}>
+                  프리미엄 구독
+                </ThemedText>
+              </View>
+              {isSubscribed && (
+                <View style={styles.currentBadge}>
+                  <ThemedText style={styles.currentBadgeText}>현재 구독 중</ThemedText>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.priceSection}>
+              <ThemedText style={styles.price}>
+                {Math.floor(premiumPlan.price).toLocaleString('ko-KR')}원
+              </ThemedText>
+              <ThemedText style={styles.pricePeriod}>/월</ThemedText>
+            </View>
+
+            <View style={styles.features}>
+              {premiumPlan.features.map((feature: string, index: number) => (
+                <View key={index} style={styles.featureItem}>
+                  <Ionicons name='checkmark-circle' size={18} color={GOLD_THEME.TEXT.SECONDARY} />
+                  <ThemedText style={styles.featureText}>{feature}</ThemedText>
+                </View>
+              ))}
+            </View>
+
+            <View style={styles.savings}>
+              <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+              <ThemedText style={styles.savingsText}>
+                개별 구매 대비 월 {Math.floor(premiumPlan.savings).toLocaleString('ko-KR')}원 절약!
+              </ThemedText>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* 가격 비교 */}
+        <View style={styles.comparisonSection}>
+          <View style={styles.comparisonTitleContainer}>
+            <Ionicons name='cash' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText type='title' style={styles.comparisonTitle}>
+              가격 비교
+            </ThemedText>
+          </View>
+
+          <View style={styles.comparisonTable}>
+            <View style={styles.comparisonRow}>
+              <ThemedText style={styles.comparisonLabel}>
+                프리미엄 구독 ({premiumPlan.tickets}장)
+              </ThemedText>
+              <ThemedText style={styles.comparisonSubscription}>
+                {Math.floor(premiumPlan.price).toLocaleString('ko-KR')}원
+              </ThemedText>
+              <ThemedText style={styles.comparisonUnit}>
+                {Math.floor(premiumPlan.pricePerTicket).toLocaleString('ko-KR')}원/장
+              </ThemedText>
+            </View>
+
+            <View style={styles.comparisonRow}>
+              <ThemedText style={styles.comparisonLabel}>
+                라이트 구독 ({lightPlan.tickets}장)
+              </ThemedText>
+              <ThemedText style={styles.comparisonSubscription}>
+                {Math.floor(lightPlan.price).toLocaleString('ko-KR')}원
+              </ThemedText>
+              <ThemedText style={styles.comparisonUnit}>
+                {Math.floor(lightPlan.pricePerTicket).toLocaleString('ko-KR')}원/장
+              </ThemedText>
+            </View>
+
+            <View style={styles.comparisonRow}>
+              <ThemedText style={styles.comparisonLabel}>개별 구매 (1장)</ThemedText>
+              <ThemedText style={styles.comparisonSingle}>1,000원</ThemedText>
+              <ThemedText style={styles.comparisonUnit}>1,000원/장</ThemedText>
+            </View>
+
+            <View style={styles.comparisonRow}>
+              <ThemedText style={styles.comparisonLabel}>개별 5장 (5% 할인)</ThemedText>
+              <ThemedText style={styles.comparisonSingle}>4,750원</ThemedText>
+              <ThemedText style={styles.comparisonUnit}>950원/장</ThemedText>
+            </View>
+
+            <View style={styles.comparisonRow}>
+              <ThemedText style={styles.comparisonLabel}>개별 10장 (10% 할인)</ThemedText>
+              <ThemedText style={styles.comparisonSingle}>9,000원</ThemedText>
+              <ThemedText style={styles.comparisonUnit}>900원/장</ThemedText>
+            </View>
+          </View>
+
+          <View style={styles.tipContainer}>
+            <Ionicons name='information-circle' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.comparisonTip}>
+              월 {lightPlan.tickets}장 이상 사용하시면 라이트 구독이, {premiumPlan.tickets}장 이상
+              사용하시면 프리미엄 구독이 더 저렴합니다!
+            </ThemedText>
+          </View>
+        </View>
+
+        {/* 법적 고지 */}
+        <View style={styles.legalNotice}>
+          <View style={styles.legalRow}>
+            <Ionicons name='shield-checkmark' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+            <ThemedText style={styles.legalText}>
+              본 서비스는 AI 기반 경마 예측 정보를 제공하는 정보 서비스입니다.
+            </ThemedText>
+          </View>
+          <View style={styles.legalRow}>
+            <Ionicons name='information-circle' size={16} color={GOLD_THEME.TEXT.PRIMARY} />
+            <ThemedText style={styles.legalText}>
+              실제 마권 구매는 한국마사회 공식 채널을 통해 이루어집니다.
+            </ThemedText>
+          </View>
+        </View>
+      </PageLayout>
+
+      {/* Bottom Sheet - PageLayout 밖으로 이동 */}
+      {selectedPlan && currentPlan && (
+        <BottomSheet
+          ref={bottomSheetRef}
+          index={-1}
+          snapPoints={snapPoints}
+          enablePanDownToClose={true}
+          backdropComponent={renderBackdrop}
+          backgroundStyle={styles.sheetBackground}
+          handleIndicatorStyle={styles.sheetIndicator}
+        >
+          <BottomSheetScrollView
+            style={styles.sheetContent}
+            contentContainerStyle={styles.sheetContentContainer}
+          >
+            {/* 선택된 플랜 정보 */}
+            <View style={styles.sheetHeader}>
+              <View style={styles.sheetTitleRow}>
+                {currentPlan.isRecommended && (
+                  <LinearGradient
+                    colors={[GOLD_THEME.GOLD.LIGHT, GOLD_THEME.GOLD.DARK]}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 0 }}
+                    style={styles.sheetRecommendBadge}
+                  >
+                    <ThemedText style={styles.sheetRecommendText}>BEST</ThemedText>
+                  </LinearGradient>
+                )}
+                <ThemedText type='title' style={styles.sheetTitle}>
+                  {currentPlan.name}
+                </ThemedText>
+              </View>
+              <ThemedText style={styles.sheetPrice}>
+                월 {Math.floor(currentPlan.price).toLocaleString('ko-KR')}원
+              </ThemedText>
+            </View>
+
+            {/* 플랜 상세 정보 */}
+            <View style={styles.sheetDetails}>
+              <View style={styles.sheetDetailRow}>
+                <Ionicons name='ticket' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                <ThemedText style={styles.sheetDetailText}>
+                  월 {currentPlan.tickets}장 AI 예측권
+                </ThemedText>
+              </View>
+              <View style={styles.sheetDetailRow}>
+                <Ionicons name='pricetag' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                <ThemedText style={styles.sheetDetailText}>
+                  장당 {Math.floor(currentPlan.pricePerTicket).toLocaleString('ko-KR')}원 (
+                  {currentPlan.discount}% 할인)
+                </ThemedText>
+              </View>
+              <View style={styles.sheetDetailRow}>
+                <Ionicons name='trending-down' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                <ThemedText style={styles.sheetDetailText}>
+                  개별 구매 대비 월 {Math.floor(currentPlan.savings).toLocaleString('ko-KR')}원 절약
+                </ThemedText>
+              </View>
+            </View>
+
+            {/* 구독 버튼 */}
+            <View style={styles.sheetButtonContainer}>
+              <ActionButton
+                title={`${currentPlan.name} 시작하기`}
+                onPress={handleSubscribe}
+                variant='primary'
+                style={styles.sheetSubscribeButton}
+              />
+              <TouchableOpacity
+                onPress={() => bottomSheetRef.current?.close()}
+                style={styles.sheetCancelButton}
+              >
+                <ThemedText style={styles.sheetCancelText}>다른 플랜 보기</ThemedText>
+              </TouchableOpacity>
+            </View>
+          </BottomSheetScrollView>
+        </BottomSheet>
+      )}
+    </>
   );
 }
 
@@ -283,71 +414,76 @@ const styles = StyleSheet.create({
   recommendBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
     borderRadius: 12,
     marginBottom: 8,
+    shadowColor: GOLD_THEME.GOLD.LIGHT,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+    elevation: 4,
+    alignSelf: 'flex-start',
   },
   recommendText: {
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 10,
+    fontWeight: '800',
     color: GOLD_THEME.BACKGROUND.PRIMARY,
     backgroundColor: 'transparent',
+    letterSpacing: 0.5,
   },
   planName: {
-    fontSize: 22,
+    fontSize: 18,
     fontWeight: '700',
     color: GOLD_THEME.TEXT.PRIMARY,
     backgroundColor: 'transparent',
   },
   currentBadge: {
     backgroundColor: GOLD_THEME.TEXT.SECONDARY,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
   },
   currentBadgeText: {
     color: GOLD_THEME.BACKGROUND.PRIMARY,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: '600',
     backgroundColor: 'transparent',
   },
   priceSection: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   price: {
-    fontSize: 36,
+    fontSize: 28,
     fontWeight: '700',
     color: GOLD_THEME.TEXT.SECONDARY,
-    lineHeight: 44,
+    lineHeight: 36,
     backgroundColor: 'transparent',
   },
   pricePeriod: {
-    fontSize: 18,
+    fontSize: 16,
     color: GOLD_THEME.TEXT.PRIMARY,
     marginLeft: 4,
     opacity: 0.7,
-    lineHeight: 28,
+    lineHeight: 24,
     backgroundColor: 'transparent',
   },
   features: {
     marginBottom: 16,
-    gap: 12,
+    gap: 10,
   },
   featureItem: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-    minHeight: 28,
+    minHeight: 24,
   },
   featureText: {
-    fontSize: 16,
+    fontSize: 14,
     color: GOLD_THEME.TEXT.PRIMARY,
-    lineHeight: 24,
+    lineHeight: 20,
     backgroundColor: 'transparent',
   },
   savings: {
@@ -384,10 +520,10 @@ const styles = StyleSheet.create({
     minHeight: 28,
   },
   comparisonTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: GOLD_THEME.TEXT.PRIMARY,
-    lineHeight: 24,
+    lineHeight: 22,
     backgroundColor: 'transparent',
   },
   comparisonTable: {
@@ -520,5 +656,115 @@ const styles = StyleSheet.create({
     color: GOLD_THEME.TEXT.PRIMARY,
     lineHeight: 18,
     opacity: 0.7,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  // Bottom Sheet 스타일
+  sheetBackground: {
+    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderRightWidth: 2,
+    borderColor: GOLD_THEME.BORDER.GOLD,
+  },
+  sheetIndicator: {
+    backgroundColor: GOLD_THEME.BORDER.GOLD,
+    width: 40,
+  },
+  sheetContent: {
+    flex: 1,
+  },
+  sheetContentContainer: {
+    paddingBottom: 40,
+    flexGrow: 1,
+  },
+  sheetHeader: {
+    marginBottom: 24,
+    paddingBottom: 20,
+    paddingHorizontal: 24,
+    borderBottomWidth: 1,
+    borderBottomColor: GOLD_THEME.BORDER.GOLD,
+  },
+  sheetTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  sheetRecommendBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    shadowColor: GOLD_THEME.GOLD.LIGHT,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.3,
+    shadowRadius: 2,
+    elevation: 2,
+    alignSelf: 'flex-start',
+  },
+  sheetRecommendText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: GOLD_THEME.BACKGROUND.PRIMARY,
+    backgroundColor: 'transparent',
+    letterSpacing: 0.5,
+  },
+  sheetTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: GOLD_THEME.TEXT.PRIMARY,
+    backgroundColor: 'transparent',
+  },
+  sheetPrice: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: GOLD_THEME.TEXT.SECONDARY,
+    lineHeight: 30,
+    backgroundColor: 'transparent',
+  },
+  sheetDetails: {
+    gap: 16,
+    marginBottom: 24,
+    paddingHorizontal: 24,
+  },
+  sheetDetailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 28,
+  },
+  sheetDetailText: {
+    fontSize: 13,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    lineHeight: 18,
+    backgroundColor: 'transparent',
+  },
+  sheetButtonContainer: {
+    gap: 12,
+    marginTop: 'auto',
+    paddingHorizontal: 24,
+  },
+  sheetSubscribeButton: {
+    marginBottom: 0,
+    height: 48,
+    paddingVertical: 12,
+  },
+  sheetCancelButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  sheetCancelText: {
+    fontSize: 12,
+    color: GOLD_THEME.TEXT.PRIMARY,
+    opacity: 0.7,
+    backgroundColor: 'transparent',
   },
 });

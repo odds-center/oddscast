@@ -30,7 +30,6 @@ export function NoticeCard({ title, text, icon = 'information-circle', style }: 
 
 const styles = StyleSheet.create({
   noticeCard: {
-    marginHorizontal: 16,
     marginBottom: 20,
     padding: 16,
     backgroundColor: 'rgba(255, 215, 0, 0.2)',

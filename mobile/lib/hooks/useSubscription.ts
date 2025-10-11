@@ -46,7 +46,7 @@ export function useSubscription() {
 
   return {
     // Queries
-    subscription,
+    subscription: subscription || null,
     isLoading,
     refetch,
 
@@ -55,9 +55,9 @@ export function useSubscription() {
     cancel,
 
     // Helpers
-    isSubscribed: subscription?.isActive || false,
-    daysUntilRenewal: subscription?.daysUntilRenewal || null,
-    monthlyPrice: 19800,
-    monthlyTickets: 30,
+    isSubscribed: subscription?.isActive ?? false,
+    daysUntilRenewal: subscription?.daysUntilRenewal ?? null,
+    monthlyPrice: subscription?.price ?? 19800,
+    monthlyTickets: subscription?.monthlyTickets ?? 30,
   };
 }

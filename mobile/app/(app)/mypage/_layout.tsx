@@ -15,8 +15,6 @@ export default function MyPageStack() {
       <Stack.Screen name='notifications' options={{ headerShown: false }} />
       <Stack.Screen name='settings' options={{ headerShown: false }} />
       <Stack.Screen name='terms' options={{ headerShown: false }} />
-      <Stack.Screen name='subscription' options={{ headerShown: false }} />
-      <Stack.Screen name='purchase' options={{ headerShown: false }} />
     </Stack>
   );
 }

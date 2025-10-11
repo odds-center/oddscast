@@ -1,8 +1,7 @@
 import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { StyleSheet, ScrollView, TouchableOpacity, Alert, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
 import { PageLayout } from '@/components/common/PageLayout';
 import { useSubscription } from '@/lib/hooks/useSubscription';
 import { usePredictions } from '@/lib/hooks/usePredictions';
@@ -43,7 +42,7 @@ export default function SubscriptionManageScreen() {
   if (!isSubscribed || !subscription) {
     return (
       <PageLayout>
-        <ThemedView style={styles.emptyState}>
+        <View style={styles.emptyState}>
           <Ionicons
             name='mail-open-outline'
             size={64}
@@ -62,7 +61,7 @@ export default function SubscriptionManageScreen() {
           >
             <ThemedText style={styles.subscribeButtonText}>구독하기</ThemedText>
           </TouchableOpacity>
-        </ThemedView>
+        </View>
       </PageLayout>
     );
   }
@@ -71,142 +70,142 @@ export default function SubscriptionManageScreen() {
     <PageLayout>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 구독 정보 */}
-        <ThemedView style={styles.section}>
-          <ThemedView style={styles.sectionHeader}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Ionicons name='diamond' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText type='title' style={styles.sectionTitle}>
               구독 정보
             </ThemedText>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.card}>
-            <ThemedView style={styles.infoRow}>
+          <View style={styles.card}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>플랜</ThemedText>
               <ThemedText style={styles.infoValue}>프리미엄</ThemedText>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>월 구독료</ThemedText>
               <ThemedText style={styles.infoValue}>19,800원</ThemedText>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>월 제공 예측권</ThemedText>
               <ThemedText style={styles.infoValue}>30장</ThemedText>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>장당 가격</ThemedText>
               <ThemedText style={styles.infoValue}>660원</ThemedText>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>상태</ThemedText>
               <ThemedText style={[styles.infoValue, styles.statusActive]}>활성</ThemedText>
-            </ThemedView>
+            </View>
 
             {subscription.nextBillingDate && (
-              <ThemedView style={styles.infoRow}>
+              <View style={styles.infoRow}>
                 <ThemedText style={styles.infoLabel}>다음 결제일</ThemedText>
                 <ThemedText style={styles.infoValue}>
                   {new Date(subscription.nextBillingDate).toLocaleDateString('ko-KR')}
                   {daysUntilRenewal !== null && ` (D-${daysUntilRenewal})`}
                 </ThemedText>
-              </ThemedView>
+              </View>
             )}
 
-            <ThemedView style={styles.infoRow}>
+            <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>구독 시작일</ThemedText>
               <ThemedText style={styles.infoValue}>
                 {new Date(subscription.startedAt).toLocaleDateString('ko-KR')}
               </ThemedText>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
+            </View>
+          </View>
+        </View>
 
         {/* 예측권 잔액 */}
         {balance && (
-          <ThemedView style={styles.section}>
-            <ThemedView style={styles.sectionHeader}>
+          <View style={styles.section}>
+            <View style={styles.sectionHeader}>
               <Ionicons name='ticket' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
               <ThemedText type='title' style={styles.sectionTitle}>
                 예측권 잔액
               </ThemedText>
-            </ThemedView>
+            </View>
 
-            <ThemedView style={styles.card}>
-              <ThemedView style={styles.ticketStats}>
-                <ThemedView style={styles.ticketStatItem}>
+            <View style={styles.card}>
+              <View style={styles.ticketStats}>
+                <View style={styles.ticketStatItem}>
                   <ThemedText style={styles.ticketStatValue}>{balance.availableTickets}</ThemedText>
                   <ThemedText style={styles.ticketStatLabel}>사용 가능</ThemedText>
-                </ThemedView>
-                <ThemedView style={styles.ticketStatItem}>
+                </View>
+                <View style={styles.ticketStatItem}>
                   <ThemedText style={styles.ticketStatValue}>{balance.usedTickets}</ThemedText>
                   <ThemedText style={styles.ticketStatLabel}>사용함</ThemedText>
-                </ThemedView>
-                <ThemedView style={styles.ticketStatItem}>
+                </View>
+                <View style={styles.ticketStatItem}>
                   <ThemedText style={styles.ticketStatValue}>{balance.totalTickets}</ThemedText>
                   <ThemedText style={styles.ticketStatLabel}>총 발급</ThemedText>
-                </ThemedView>
-              </ThemedView>
-            </ThemedView>
-          </ThemedView>
+                </View>
+              </View>
+            </View>
+          </View>
         )}
 
         {/* 혜택 */}
-        <ThemedView style={styles.section}>
-          <ThemedView style={styles.sectionHeader}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Ionicons name='sparkles' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText type='title' style={styles.sectionTitle}>
               구독 혜택
             </ThemedText>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.card}>
-            <ThemedView style={styles.benefitItem}>
+          <View style={styles.card}>
+            <View style={styles.benefitItem}>
               <Ionicons name='pricetag' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedView style={styles.benefitContent}>
+              <View style={styles.benefitContent}>
                 <ThemedText style={styles.benefitTitle}>34% 할인</ThemedText>
                 <ThemedText style={styles.benefitText}>개별 구매 대비 월 10,200원 절약</ThemedText>
-              </ThemedView>
-            </ThemedView>
+              </View>
+            </View>
 
-            <ThemedView style={styles.benefitItem}>
+            <View style={styles.benefitItem}>
               <Ionicons name='hardware-chip' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedView style={styles.benefitContent}>
+              <View style={styles.benefitContent}>
                 <ThemedText style={styles.benefitTitle}>최신 AI 기술</ThemedText>
                 <ThemedText style={styles.benefitText}>GPT-4o 또는 Claude 3.5 Sonnet</ThemedText>
-              </ThemedView>
-            </ThemedView>
+              </View>
+            </View>
 
-            <ThemedView style={styles.benefitItem}>
+            <View style={styles.benefitItem}>
               <Ionicons name='stats-chart' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedView style={styles.benefitContent}>
+              <View style={styles.benefitContent}>
                 <ThemedText style={styles.benefitTitle}>높은 정확도</ThemedText>
                 <ThemedText style={styles.benefitText}>평균 70%+ 정확도 목표</ThemedText>
-              </ThemedView>
-            </ThemedView>
+              </View>
+            </View>
 
-            <ThemedView style={styles.benefitItem}>
+            <View style={styles.benefitItem}>
               <Ionicons name='sync' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
-              <ThemedView style={styles.benefitContent}>
+              <View style={styles.benefitContent}>
                 <ThemedText style={styles.benefitTitle}>자동 갱신</ThemedText>
                 <ThemedText style={styles.benefitText}>매월 자동으로 예측권 재발급</ThemedText>
-              </ThemedView>
-            </ThemedView>
-          </ThemedView>
-        </ThemedView>
+              </View>
+            </View>
+          </View>
+        </View>
 
         {/* 결제 내역 */}
-        <ThemedView style={styles.section}>
-          <ThemedView style={styles.sectionHeader}>
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
             <Ionicons name='card' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText type='title' style={styles.sectionTitle}>
               결제 관리
             </ThemedText>
-          </ThemedView>
+          </View>
 
-          <ThemedView style={styles.card}>
+          <View style={styles.card}>
             <TouchableOpacity
               style={styles.menuItem}
               onPress={() => router.push('/mypage/subscription/history')}
@@ -224,11 +223,11 @@ export default function SubscriptionManageScreen() {
               <ThemedText style={styles.menuText}>추가 구매 (개별)</ThemedText>
               <Ionicons name='chevron-forward' size={20} color={GOLD_THEME.TEXT.PRIMARY} />
             </TouchableOpacity>
-          </ThemedView>
-        </ThemedView>
+          </View>
+        </View>
 
         {/* 구독 취소 버튼 */}
-        <ThemedView style={styles.section}>
+        <View style={styles.section}>
           <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
             <ThemedText style={styles.cancelButtonText}>구독 취소</ThemedText>
           </TouchableOpacity>
@@ -236,7 +235,7 @@ export default function SubscriptionManageScreen() {
           <ThemedText style={styles.cancelNotice}>
             구독 취소 시 다음 결제일까지 예측권을 계속 사용하실 수 있습니다.
           </ThemedText>
-        </ThemedView>
+        </View>
       </ScrollView>
     </PageLayout>
   );

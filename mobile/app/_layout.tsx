@@ -15,6 +15,7 @@ import { StatusBar } from 'expo-status-bar';
 import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 // Mock 서버 초기화 (개발 모드에서만)
 if (__DEV__) {
@@ -43,19 +44,21 @@ function RootLayoutNav() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AppThemeProvider>
-        <AlertProvider>
-          <AuthProvider>
-            <AuthGuard>
-              <AuthNavigator />
-            </AuthGuard>
-            <StatusBar style='auto' />
-            <GlobalModal />
-          </AuthProvider>
-        </AlertProvider>
-      </AppThemeProvider>
-    </ThemeProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <AppThemeProvider>
+          <AlertProvider>
+            <AuthProvider>
+              <AuthGuard>
+                <AuthNavigator />
+              </AuthGuard>
+              <StatusBar style='auto' />
+              <GlobalModal />
+            </AuthProvider>
+          </AlertProvider>
+        </AppThemeProvider>
+      </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }
 

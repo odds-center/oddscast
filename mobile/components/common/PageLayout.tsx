@@ -1,7 +1,6 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, ViewStyle } from 'react-native';
-import { ThemedView } from '@/components/ThemedView';
 import { GOLD_THEME } from '@/constants/theme';
+import React from 'react';
+import { ScrollView, StyleSheet, View, ViewStyle } from 'react-native';
 
 interface PageLayoutProps {
   children: React.ReactNode;
@@ -28,11 +27,11 @@ export const PageLayout: React.FC<PageLayoutProps> = ({
     : {};
 
   return (
-    <ThemedView style={[styles.container, style]}>
+    <View style={[styles.container, style]}>
       <ContentWrapper style={[styles.content, contentStyle]} {...scrollViewProps}>
         {children}
       </ContentWrapper>
-    </ThemedView>
+    </View>
   );
 };
 

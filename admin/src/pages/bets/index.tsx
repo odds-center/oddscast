@@ -56,11 +56,11 @@ export default function BetsPage() {
     },
     {
       key: 'betType',
-      header: '베팅 타입',
+      header: '마권 타입',
     },
     {
       key: 'betAmount',
-      header: '베팅 금액',
+      header: '구매 금액',
       render: (bet: Bet) => formatCurrency(bet.betAmount),
     },
     {
@@ -137,15 +137,15 @@ export default function BetsPage() {
   return (
     <>
       <Head>
-        <title>베팅 관리 | GoldenRace Admin</title>
+        <title>마권 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
         <div className='space-y-6'>
           <div className='flex items-center justify-between'>
             <div>
-              <h1 className='text-3xl font-bold text-gray-900'>베팅 관리</h1>
+              <h1 className='text-3xl font-bold text-gray-900'>마권 관리</h1>
               <p className='mt-2 text-sm text-gray-600'>
-                모든 베팅 내역을 조회하고 관리할 수 있습니다.
+                모든 마권 기록을 조회하고 관리할 수 있습니다.
               </p>
             </div>
           </div>
@@ -165,7 +165,7 @@ export default function BetsPage() {
               data={data?.data || []}
               columns={columns}
               isLoading={isLoading}
-              emptyMessage='베팅 내역이 없습니다.'
+              emptyMessage='마권 기록이 없습니다.'
             />
 
             {data && data.meta && (

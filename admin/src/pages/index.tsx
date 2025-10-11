@@ -47,7 +47,7 @@ export default function DashboardPage() {
       color: 'bg-green-500',
     },
     {
-      name: '오늘 베팅',
+      name: '오늘 마권',
       value: stats?.todayBets ? formatCurrency(stats.todayBets.amount) : '-',
       change: stats?.todayBets ? `${formatNumber(stats.todayBets.count)}건` : '-',
       icon: DollarSign,
@@ -165,8 +165,8 @@ export default function DashboardPage() {
                     className='p-4 border rounded-lg hover:bg-gray-50 transition-colors'
                   >
                     <DollarSign className='h-8 w-8 text-yellow-500 mb-2' />
-                    <div className='font-semibold'>베팅 관리</div>
-                    <div className='text-sm text-gray-500'>베팅 내역 조회</div>
+                    <div className='font-semibold'>마권 관리</div>
+                    <div className='text-sm text-gray-500'>마권 내역 조회</div>
                   </a>
                   <a
                     href='/statistics'

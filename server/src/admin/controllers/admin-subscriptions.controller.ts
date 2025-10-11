@@ -20,19 +20,42 @@ export class AdminSubscriptionsController {
   // 구독 플랜 관리
   @Get('plans')
   async findAllPlans() {
-    return this.subscriptionsService.getPlans();
+    try {
+      return await this.subscriptionsService.getPlans();
+    } catch (error) {
+      return {
+        success: false,
+        message: '구독 플랜 조회에 실패했습니다.',
+        error: error.message,
+      };
+    }
   }
 
   @Get('plans/:planId')
   async findOnePlan(@Param('planId') planId: string) {
-    const plans = await this.subscriptionsService.getPlans();
-    return plans.find(plan => plan.planId === planId);
+    try {
+      const plans = await this.subscriptionsService.getPlans();
+      const plan = plans.find(p => p.planId === planId);
+      if (!plan) {
+        return { success: false, message: '해당 플랜을 찾을 수 없습니다.' };
+      }
+      return plan;
+    } catch (error) {
+      return {
+        success: false,
+        message: '플랜 조회에 실패했습니다.',
+        error: error.message,
+      };
+    }
   }
 
   @Post('plans')
   async createPlan(@Body() createPlanDto: any) {
-    // SubscriptionsService에 createPlan 메서드가 없으므로 임시 응답
-    return { message: '구독 플랜 생성 기능은 추후 구현 예정입니다.' };
+    // 구독 플랜 생성 (DB에 직접 저장 필요)
+    return {
+      success: false,
+      message: '구독 플랜 생성 기능은 추후 구현 예정입니다.',
+    };
   }
 
   @Patch('plans/:planId')
@@ -40,12 +63,18 @@ export class AdminSubscriptionsController {
     @Param('planId') planId: string,
     @Body() updatePlanDto: any
   ) {
-    return { message: '구독 플랜 수정 기능은 추후 구현 예정입니다.' };
+    return {
+      success: false,
+      message: '구독 플랜 수정 기능은 추후 구현 예정입니다.',
+    };
   }
 
   @Delete('plans/:planId')
   async removePlan(@Param('planId') planId: string) {
-    return { message: '구독 플랜 삭제 기능은 추후 구현 예정입니다.' };
+    return {
+      success: false,
+      message: '구독 플랜 삭제 기능은 추후 구현 예정입니다.',
+    };
   }
 
   // 사용자 구독 관리
@@ -55,20 +84,43 @@ export class AdminSubscriptionsController {
     @Query('limit') limitStr?: string,
     @Query('status') status?: string
   ) {
-    const page = pageStr ? parseInt(pageStr, 10) : 1;
-    const limit = limitStr ? parseInt(limitStr, 10) : 20;
+    try {
+      const page = pageStr ? parseInt(pageStr, 10) : 1;
+      const limit = limitStr ? parseInt(limitStr, 10) : 20;
+      const validPage = isNaN(page) ? 1 : page;
+      const validLimit = isNaN(limit) ? 20 : limit;
 
-    return {
-      message: '사용자 구독 목록 조회 기능은 추후 구현 예정입니다.',
-      page: isNaN(page) ? 1 : page,
-      limit: isNaN(limit) ? 20 : limit,
-    };
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page: validPage,
+          limit: validLimit,
+          totalPages: 0,
+        },
+        message: '사용자 구독 목록 조회 기능은 추후 구현 예정입니다.',
+      };
+    } catch (error) {
+      return {
+        data: [],
+        meta: { total: 0, page: 1, limit: 20, totalPages: 0 },
+        error: error.message,
+      };
+    }
   }
 
   @Get('users/:userId')
   async findUserSubscription(@Param('userId') userId: string) {
-    // getUserSubscription 메서드가 없으므로 임시 응답
-    return { message: '사용자 구독 조회 기능은 추후 구현 예정입니다.' };
+    try {
+      const status = await this.subscriptionsService.getStatus(userId);
+      return status;
+    } catch (error) {
+      return {
+        success: false,
+        message: '사용자 구독 조회에 실패했습니다.',
+        error: error.message,
+      };
+    }
   }
 
   @Patch('users/:userId/cancel')
@@ -76,7 +128,15 @@ export class AdminSubscriptionsController {
     @Param('userId') userId: string,
     @Body() body: any
   ) {
-    return this.subscriptionsService.cancelSubscription(userId, body);
+    try {
+      return await this.subscriptionsService.cancelSubscription(userId, body);
+    } catch (error) {
+      return {
+        success: false,
+        message: '구독 취소에 실패했습니다.',
+        error: error.message,
+      };
+    }
   }
 
   @Patch('users/:userId/extend')
@@ -84,7 +144,9 @@ export class AdminSubscriptionsController {
     @Param('userId') userId: string,
     @Body('days') days: number
   ) {
-    // 구독 연장은 새 구독 생성으로 처리
-    return { message: '구독 연장 기능은 추후 구현 예정입니다.' };
+    return {
+      success: false,
+      message: '구독 연장 기능은 추후 구현 예정입니다.',
+    };
   }
 }

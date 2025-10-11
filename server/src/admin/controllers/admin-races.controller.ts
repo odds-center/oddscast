@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { AdminGuard } from '../guards/admin.guard';
 import { RacesService } from '../../races/races.service';
+import { CreateRaceDto, UpdateRaceDto } from '../../races/dto';
 
 @Controller('admin/races')
 @UseGuards(AdminGuard)
@@ -25,36 +26,49 @@ export class AdminRacesController {
     @Query('track') track?: string,
     @Query('status') status?: string
   ) {
-    // Query 파라미터를 안전하게 숫자로 변환
-    const page = pageStr ? parseInt(pageStr, 10) : 1;
-    const limit = limitStr ? parseInt(limitStr, 10) : 20;
+    try {
+      // Query 파라미터를 안전하게 숫자로 변환
+      const page = pageStr ? parseInt(pageStr, 10) : 1;
+      const limit = limitStr ? parseInt(limitStr, 10) : 20;
 
-    const validPage = isNaN(page) ? 1 : page;
-    const validLimit = isNaN(limit) ? 20 : limit;
+      const validPage = isNaN(page) ? 1 : page;
+      const validLimit = isNaN(limit) ? 20 : limit;
 
-    let races = await this.racesService.findAll();
+      let races = await this.racesService.findAll();
 
-    // 필터링
-    if (date) {
-      races = races.filter(race => race.rcDate === date);
+      // 필터링
+      if (date) {
+        races = races.filter(race => race.rcDate === date);
+      }
+      if (track) {
+        races = races.filter(race => race.meet === track);
+      }
+
+      // 페이지네이션
+      const startIndex = (validPage - 1) * validLimit;
+      const endIndex = startIndex + validLimit;
+
+      return {
+        data: races.slice(startIndex, endIndex),
+        meta: {
+          total: races.length,
+          page: validPage,
+          limit: validLimit,
+          totalPages: Math.ceil(races.length / validLimit),
+        },
+      };
+    } catch (error) {
+      return {
+        data: [],
+        meta: {
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        },
+        error: error.message,
+      };
     }
-    if (track) {
-      races = races.filter(race => race.meet === track);
-    }
-
-    // 페이지네이션
-    const startIndex = (validPage - 1) * validLimit;
-    const endIndex = startIndex + validLimit;
-
-    return {
-      data: races.slice(startIndex, endIndex),
-      meta: {
-        total: races.length,
-        page: validPage,
-        limit: validLimit,
-        totalPages: Math.ceil(races.length / validLimit),
-      },
-    };
   }
 
   @Get(':id')
@@ -63,12 +77,12 @@ export class AdminRacesController {
   }
 
   @Post()
-  async create(@Body() createRaceDto: any) {
+  async create(@Body() createRaceDto: CreateRaceDto) {
     return this.racesService.create(createRaceDto);
   }
 
   @Patch(':id')
-  async update(@Param('id') id: string, @Body() updateRaceDto: any) {
+  async update(@Param('id') id: string, @Body() updateRaceDto: UpdateRaceDto) {
     return this.racesService.update(id, updateRaceDto);
   }
 

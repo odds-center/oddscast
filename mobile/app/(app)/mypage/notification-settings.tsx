@@ -3,11 +3,14 @@ import { ThemedText } from '@/components/ThemedText';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, Switch, TouchableOpacity, View, ScrollView, Alert } from 'react-native';
+import { StyleSheet, Switch, TouchableOpacity, View, ScrollView } from 'react-native';
 import { GOLD_THEME } from '@/constants/theme';
+import { useNotificationPermission } from '@/lib/hooks/useNotificationPermission';
+import { showErrorMessage } from '@/utils/alert';
 
 export default function NotificationSettingsScreen() {
   const router = useRouter();
+  const { hasPermission, isLoading: permissionLoading } = useNotificationPermission();
   const [pushNotifications, setPushNotifications] = useState(true);
   const [emailNotifications, setEmailNotifications] = useState(false);
   const [bettingAlerts, setBettingAlerts] = useState(true);
@@ -24,7 +27,7 @@ export default function NotificationSettingsScreen() {
       // await notificationApi.updatePreferences({ [key]: value });
     } catch (error) {
       console.error('설정 저장 실패:', error);
-      Alert.alert('오류', '설정 저장에 실패했습니다.');
+      showErrorMessage('설정 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
@@ -126,8 +129,8 @@ export default function NotificationSettingsScreen() {
 
           <SettingItem
             icon='alert-circle'
-            title='베팅 알림'
-            description='베팅 관련 알림을 받습니다'
+            title='기록 알림'
+            description='경마 기록 관련 알림을 받습니다'
             value={bettingAlerts}
             onValueChange={() => handleToggle('bettingAlerts', bettingAlerts, setBettingAlerts)}
           />
@@ -168,6 +171,43 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     borderBottomWidth: 2,
     borderBottomColor: GOLD_THEME.BORDER.GOLD,
+  },
+  permissionBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 24,
+    borderWidth: 2,
+    borderColor: GOLD_THEME.BORDER.GOLD,
+    gap: 12,
+  },
+  permissionBannerWarning: {
+    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+    borderColor: '#F59E0B',
+  },
+  permissionIconContainer: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  permissionContent: {
+    flex: 1,
+  },
+  permissionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: GOLD_THEME.TEXT.PRIMARY,
+    marginBottom: 4,
+  },
+  permissionDescription: {
+    fontSize: 13,
+    color: GOLD_THEME.TEXT.SECONDARY,
+    lineHeight: 18,
   },
   backButton: {
     marginRight: 16,

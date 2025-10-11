@@ -18,17 +18,17 @@ const earnMethods = [
   {
     id: 'betting',
     icon: 'trophy',
-    title: '베팅 참여',
-    description: '경마 베팅에 참여하면 포인트를 획득할 수 있습니다',
-    points: '베팅 금액의 1%',
+    title: '마권 등록',
+    description: '마권을 등록하면 포인트를 획득할 수 있습니다',
+    points: '등록당 100P',
     color: GOLD_THEME.GOLD.MEDIUM,
   },
   {
     id: 'win',
     icon: 'star',
-    title: '승리 보너스',
-    description: '베팅에서 승리하면 추가 포인트를 획득할 수 있습니다',
-    points: '승리 금액의 5%',
+    title: '적중 보너스',
+    description: '마권이 적중하면 추가 포인트를 획득할 수 있습니다',
+    points: '적중 시 500P',
     color: GOLD_THEME.GOLD.DARK,
   },
   {
@@ -119,7 +119,7 @@ export default function PointsEarnScreen() {
             <View style={styles.infoItem}>
               <Ionicons name='checkmark-circle' size={16} color={GOLD_THEME.GOLD.LIGHT} />
               <ThemedText style={styles.infoText}>
-                포인트는 베팅에 사용하거나 상품으로 교환할 수 있습니다
+                포인트는 예측 게임에 사용하거나 상품으로 교환할 수 있습니다
               </ThemedText>
             </View>
           </View>

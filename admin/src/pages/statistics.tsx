@@ -37,16 +37,16 @@ export default function StatisticsPage() {
               </div>
             </Card>
 
-            <Card title='베팅 통계' description='베팅 건수 및 금액'>
+            <Card title='마권 통계' description='마권 건수 및 금액'>
               <div className='flex items-center justify-center h-64'>
                 <div className='text-center text-gray-500'>
                   <DollarSign className='h-16 w-16 mx-auto mb-4' />
-                  <p>베팅 통계가 표시될 영역입니다.</p>
+                  <p>마권 통계가 표시될 영역입니다.</p>
                 </div>
               </div>
             </Card>
 
-            <Card title='승률 분석' description='베팅 타입별 승률'>
+            <Card title='승률 분석' description='마권 타입별 승률'>
               <div className='flex items-center justify-center h-64'>
                 <div className='text-center text-gray-500'>
                   <TrendingUp className='h-16 w-16 mx-auto mb-4' />

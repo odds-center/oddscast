@@ -73,7 +73,7 @@ export default function BettingScreen() {
       {/* 통계 요약 */}
       <View style={styles.section}>
         <ThemedText type='title' style={styles.sectionTitle}>
-          베팅 기록 통계
+          마권 기록 통계
         </ThemedText>
         <View style={styles.statsGrid}>
           <View style={styles.statItem}>
@@ -133,23 +133,23 @@ export default function BettingScreen() {
         </View>
       </View>
 
-      {/* 베팅 목록 */}
+      {/* 마권 목록 */}
       <View style={styles.section}>
         <ThemedText type='title' style={styles.sectionTitle}>
-          {selectedTab === 'active' ? '활성 베팅' : '베팅 내역'}
+          {selectedTab === 'active' ? '대기 중' : '완료된 기록'}
         </ThemedText>
         {betsLoading ? (
           <View style={styles.loadingContainer}>
             <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
             <ThemedText type='body' style={styles.loadingText}>
-              베팅 기록을 불러오는 중...
+              마권 기록을 불러오는 중...
             </ThemedText>
           </View>
         ) : betsError ? (
           <View style={styles.errorContainer}>
             <Ionicons name='alert-circle' size={48} color={GOLD_THEME.STATUS.ERROR} />
             <ThemedText type='body' style={styles.errorText}>
-              베팅 기록을 불러오는데 실패했습니다.
+              마권 기록을 불러오는데 실패했습니다.
             </ThemedText>
           </View>
         ) : bets.length > 0 ? (
@@ -174,7 +174,7 @@ export default function BettingScreen() {
               <View style={styles.betDetails}>
                 <View style={styles.betDetailRow}>
                   <ThemedText type='caption' style={styles.betDetailLabel}>
-                    베팅 타입:
+                    마권 타입:
                   </ThemedText>
                   <ThemedText type='caption' style={styles.betDetailValue}>
                     {BETTING_UTILS.getBetTypeLabel(bet.betType)}
@@ -190,7 +190,7 @@ export default function BettingScreen() {
                 </View>
                 <View style={styles.betDetailRow}>
                   <ThemedText type='caption' style={styles.betDetailLabel}>
-                    베팅 금액:
+                    구매 금액:
                   </ThemedText>
                   <ThemedText type='caption' style={styles.betDetailValue}>
                     {bet.amount.toLocaleString()}원

@@ -145,7 +145,8 @@ export class NotificationsController {
     const userId = req.user.userId;
     return await this.notificationsService.subscribeToPushNotifications(
       userId,
-      subscriptionDto.deviceToken
+      subscriptionDto.deviceToken,
+      subscriptionDto.platform
     );
   }
 

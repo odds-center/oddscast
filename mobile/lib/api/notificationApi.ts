@@ -167,11 +167,14 @@ export class NotificationApi {
   }
 
   // 알림 구독 (Push 알림용)
-  async subscribeToPushNotifications(deviceToken: string): Promise<{ message: string }> {
+  async subscribeToPushNotifications(
+    deviceToken: string,
+    platform?: string
+  ): Promise<{ message: string }> {
     try {
       const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         `${this.baseUrl}/push-subscribe`,
-        { deviceToken }
+        { deviceToken, platform }
       );
       return handleApiResponse(response);
     } catch (error) {

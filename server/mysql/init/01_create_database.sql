@@ -23,6 +23,9 @@ CREATE TABLE users (
     is_verified BOOLEAN DEFAULT FALSE,
     last_login_at DATETIME,
     role VARCHAR(20) DEFAULT 'user',
+    device_token TEXT COMMENT 'Expo Push Token',
+    device_platform VARCHAR(20) COMMENT 'Device Platform (ios/android)',
+    token_updated_at DATETIME COMMENT 'Token 업데이트 시간',
     preferences JSON,
     total_bets INT DEFAULT 0,
     won_bets INT DEFAULT 0,
@@ -40,7 +43,9 @@ CREATE TABLE users (
     INDEX idx_email (email),
     INDEX idx_provider_id (provider_id),
     INDEX idx_is_active (is_active),
-    INDEX idx_auth_provider (auth_provider)
+    INDEX idx_auth_provider (auth_provider),
+    INDEX idx_device_token (device_token(255)),
+    INDEX idx_device_platform (device_platform)
 );
 
 -- 사용자 소셜 인증 테이블 (user-social-auth.entity.ts 기반)

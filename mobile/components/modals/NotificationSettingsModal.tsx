@@ -112,8 +112,8 @@ export const NotificationSettingsModal: React.FC<NotificationSettingsModalProps>
 
         <SettingItem
           icon='alert-circle'
-          title='베팅 알림'
-          description='베팅 관련 알림을 받습니다'
+          title='기록 알림'
+          description='경마 기록 관련 알림을 받습니다'
           value={bettingAlerts}
           onValueChange={() => handleToggle('bettingAlerts', bettingAlerts, setBettingAlerts)}
         />

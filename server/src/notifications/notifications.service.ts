@@ -14,6 +14,7 @@ import {
   NotificationPreferencesDto,
   UnreadCountResponseDto,
 } from './dto/index';
+import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class NotificationsService {
@@ -21,7 +22,9 @@ export class NotificationsService {
 
   constructor(
     @InjectRepository(Notification)
-    private readonly notificationRepo: Repository<Notification>
+    private readonly notificationRepo: Repository<Notification>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>
   ) {}
 
   /**
@@ -261,28 +264,55 @@ export class NotificationsService {
    */
   async subscribeToPushNotifications(
     userId: string,
-    deviceToken: string
+    deviceToken: string,
+    platform?: string
   ): Promise<{ message: string }> {
-    this.logger.log(
-      `Push 알림 구독: userId=${userId}, deviceToken=${deviceToken}`
-    );
+    try {
+      this.logger.log(
+        `Push 알림 구독: userId=${userId}, deviceToken=${deviceToken}, platform=${platform}`
+      );
 
-    // 실제로는 디바이스 토큰을 DB에 저장하고 FCM 등에 등록해야 함
-    return { message: 'Push 알림 구독이 완료되었습니다.' };
+      // User 엔티티에 deviceToken 저장
+      await this.userRepo.update(userId, {
+        deviceToken,
+        devicePlatform: platform,
+        tokenUpdatedAt: new Date(),
+      });
+
+      this.logger.log(`✅ Device Token 저장 완료: ${userId}`);
+
+      return { message: 'Push 알림 구독이 완료되었습니다.' };
+    } catch (error) {
+      this.logger.error(`Push 알림 구독 실패: ${error.message}`);
+      throw error;
+    }
   }
 
   /**
-   * Push 알림 구독 해제 (현재는 로그만 출력)
+   * Push 알림 구독 해제
    */
   async unsubscribeFromPushNotifications(
     userId: string,
     deviceToken: string
   ): Promise<{ message: string }> {
-    this.logger.log(
-      `Push 알림 구독 해제: userId=${userId}, deviceToken=${deviceToken}`
-    );
+    try {
+      this.logger.log(
+        `Push 알림 구독 해제: userId=${userId}, deviceToken=${deviceToken}`
+      );
 
-    // 실제로는 디바이스 토큰을 DB에서 제거하고 FCM 등에서 해제해야 함
-    return { message: 'Push 알림 구독이 해제되었습니다.' };
+      // User 엔티티에서 deviceToken 제거
+      await this.userRepo.update(userId, {
+        deviceToken: null,
+        devicePlatform: null,
+        tokenUpdatedAt: new Date(),
+      });
+
+      this.logger.log(`✅ Device Token 제거 완료: ${userId}`);
+
+      return { message: 'Push 알림 구독이 해제되었습니다.' };
+    } catch (error) {
+      this.logger.error(`Push 알림 구독 해제 실패: ${error.message}`);
+      throw error;
+    }
   }
 }

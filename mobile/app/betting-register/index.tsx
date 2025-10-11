@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/ThemedText';
@@ -11,6 +11,7 @@ import { CreateBetRequest, BetType } from '@/lib/types/bet';
 import moment from 'moment';
 import BottomSheet, { BottomSheetScrollView, BottomSheetBackdrop } from '@gorhom/bottom-sheet';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
+import { showErrorMessage, showSuccessMessage } from '@/utils/alert';
 
 interface BetFormData {
   raceId: string;
@@ -158,21 +159,20 @@ export default function BettingRegisterScreen() {
   const handleSubmit = async () => {
     // 유효성 검사
     if (!formData.raceId) {
-      Alert.alert('오류', '경주를 선택해주세요.');
+      showErrorMessage('경주를 선택해주세요.');
       return;
     }
 
     const requiredCount = getRequiredHorsesCount(formData.betType);
     if (formData.horses.length !== requiredCount) {
-      Alert.alert(
-        '오류',
+      showErrorMessage(
         `${getBetTypeLabel(formData.betType)}는 ${requiredCount}개의 마번이 필요합니다.`
       );
       return;
     }
 
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
-      Alert.alert('오류', '베팅 금액을 입력해주세요.');
+      showErrorMessage('구매 금액을 입력해주세요.');
       return;
     }
 
@@ -191,15 +191,11 @@ export default function BettingRegisterScreen() {
 
       await BetApi.createBet(betData);
 
-      Alert.alert('성공', '베팅 기록이 등록되었습니다.', [
-        {
-          text: '확인',
-          onPress: () => router.back(),
-        },
-      ]);
+      showSuccessMessage('마권 기록이 등록되었습니다.', '등록 완료');
+      setTimeout(() => router.back(), 500);
     } catch (error) {
-      console.error('베팅 기록 등록 실패:', error);
-      Alert.alert('오류', '베팅 기록 등록에 실패했습니다. 다시 시도해주세요.', [{ text: '확인' }]);
+      console.error('마권 기록 등록 실패:', error);
+      showErrorMessage('마권 기록 등록에 실패했습니다. 다시 시도해주세요.');
     }
   };
 

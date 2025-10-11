@@ -66,8 +66,8 @@ export default function BettingHistoryScreen() {
   return (
     <View style={styles.container}>
       <PageHeader
-        title='베팅 내역'
-        subtitle='나의 베팅 기록'
+        title='마권 기록'
+        subtitle='나의 마권 내역'
         showBackButton={true}
         onBackPress={() => router.back()}
       />
@@ -89,7 +89,7 @@ export default function BettingHistoryScreen() {
             </View>
           </View>
         )}
-        ListEmptyComponent={<Text style={styles.empty}>베팅 내역이 없습니다.</Text>}
+        ListEmptyComponent={<Text style={styles.empty}>마권 기록이 없습니다.</Text>}
       />
     </View>
   );

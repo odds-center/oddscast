@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString, IsOptional } from 'class-validator';
 
-export class PushSubscriptionDto {
+/**
+ * 디바이스 토큰 업데이트 DTO
+ */
+export class UpdateDeviceTokenDto {
   @ApiProperty({
-    description: '디바이스 토큰 (Expo Push Token)',
-    example: 'ExponentPushToken[xxxxxxxxxxxxxxxxxxxxxx]',
+    description: 'Expo Push Token',
+    example: 'ExponentPushToken[xxx]',
   })
   @IsString()
   deviceToken: string;
@@ -16,5 +19,5 @@ export class PushSubscriptionDto {
   })
   @IsOptional()
   @IsString()
-  platform?: string;
+  devicePlatform?: string;
 }

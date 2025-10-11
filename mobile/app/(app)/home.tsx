@@ -169,7 +169,7 @@ export default function HomeScreen() {
               {betStatsLoading ? '...' : betStats?.totalBets || 0}
             </ThemedText>
             <ThemedText type='caption' style={styles.bettingLabel}>
-              베팅 기록
+              마권 기록
             </ThemedText>
           </View>
           <View style={styles.bettingStat}>

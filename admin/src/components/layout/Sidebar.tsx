@@ -17,7 +17,7 @@ const navigation = [
   { name: '회원 관리', href: '/users', icon: Users },
   { name: '경주 관리', href: '/races', icon: CalendarDays },
   { name: '경기 결과', href: '/results', icon: Trophy },
-  { name: '베팅 관리', href: '/bets', icon: DollarSign },
+  { name: '마권 관리', href: '/bets', icon: DollarSign },
   { name: '구독 관리', href: '/subscriptions', icon: CreditCard },
   { name: '통계', href: '/statistics', icon: BarChart3 },
   { name: '알림 관리', href: '/notifications', icon: Bell },

@@ -24,13 +24,10 @@
         "backgroundColor": "#ffffff"
       },
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "사진 라이브러리에 접근하여 이미지를 저장하고 불러오기 위해 권한이 필요합니다.",
-        "NSPhotoLibraryAddUsageDescription": "사진을 저장하기 위해 권한이 필요합니다.",
-        "NSCameraUsageDescription": "앱에서 사진을 찍거나 비디오를 녹화하기 위해 카메라 접근 권한이 필요합니다. 예를 들어, 사용자가 프로필 사진을 업데이트하거나 이벤트를 기록할 때 사용됩니다.",
-        "NSMicrophoneUsageDescription": "앱에서 오디오 녹음을 위해 마이크 접근 권한이 필요합니다. 이는 비디오 녹화 시 음성을 함께 녹음하기 위함입니다. 예를 들어, 사용자가 비디오 메시지를 녹음할 때 사용됩니다.",
-        "NSUserNotificationsUsageDescription": "알림을 보내기 위해 권한이 필요합니다.",
+        "NSUserNotificationsUsageDescription": "앱 서비스 알림을 받으려면 권한이 필요합니다.",
         "UIBackgroundModes": ["remote-notification"],
         "aps-environment": "development",
+        "FirebaseAppDelegateProxyEnabled": false,
         "CFBundleURLTypes": [
           {
             "CFBundleURLName": "goldenrace",
@@ -39,7 +36,8 @@
         ]
       },
       "entitlements": {
-        "com.apple.developer.team-identifier": "F7PXG2W4M9"
+        "com.apple.developer.team-identifier": "F7PXG2W4M9",
+        "aps-environment": "development"
       },
       "googleServicesFile": "./google_ios_dev.plist",
       "notification": {
@@ -66,14 +64,8 @@
         "backgroundColor": "#ffffff"
       },
       "jsEngine": "hermes",
-      "permissions": [
-        "NOTIFICATIONS",
-        "POST_NOTIFICATIONS",
-        "READ_EXTERNAL_STORAGE",
-        "WRITE_EXTERNAL_STORAGE",
-        "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE"
-      ],
+      "useNextNotificationsApi": true,
+      "permissions": ["NOTIFICATIONS", "POST_NOTIFICATIONS", "RECEIVE_BOOT_COMPLETED", "VIBRATE"],
       "googleServicesFile": "./google_android_dev.json",
       "notification": {
         "icon": "./assets/images/icon.png",
@@ -106,20 +98,15 @@
       "expo-font",
       "expo-router",
       [
-        "expo-media-library",
-        {
-          "photosPermission": "앱에서 사진에 접근하려고 합니다.",
-          "savePhotosPermission": "앱에서 사진을 저장하려고 합니다."
-        }
-      ],
-      [
         "expo-notifications",
         {
           "icon": "./assets/images/icon.png",
           "color": "#ffffff",
           "androidMode": "default",
           "androidCollapsedTitle": true,
-          "iosDisplayInForeground": true
+          "iosDisplayInForeground": true,
+          "sounds": [],
+          "defaultChannel": "default"
         }
       ]
     ],

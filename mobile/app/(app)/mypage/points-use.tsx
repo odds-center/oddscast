@@ -10,8 +10,8 @@ const useMethods = [
   {
     id: 'betting',
     icon: 'trophy',
-    title: '베팅에 사용',
-    description: '경마 예측 게임에서 포인트를 사용하여 베팅할 수 있습니다',
+    title: '예측 게임에 사용',
+    description: '경마 예측 게임에서 포인트를 사용할 수 있습니다',
     points: '게임 내 가상 화폐',
     color: GOLD_THEME.GOLD.LIGHT,
   },

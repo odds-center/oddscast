@@ -59,6 +59,21 @@ export class User extends BaseEntity {
   @Column({ type: 'varchar', length: 20, name: 'role', default: 'user' })
   role!: string;
 
+  // 푸시 알림 토큰
+  @Column({ type: 'text', name: 'device_token', nullable: true })
+  deviceToken?: string;
+
+  @Column({
+    type: 'varchar',
+    length: 20,
+    name: 'device_platform',
+    nullable: true,
+  })
+  devicePlatform?: string; // 'ios' | 'android'
+
+  @Column({ type: 'datetime', name: 'token_updated_at', nullable: true })
+  tokenUpdatedAt?: Date;
+
   @Column({ type: 'json', name: 'preferences', nullable: true })
   preferences?: {
     theme?: string;

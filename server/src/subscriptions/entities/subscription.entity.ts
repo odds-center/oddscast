@@ -18,8 +18,8 @@ export enum SubscriptionStatus {
 }
 
 export enum SubscriptionPlan {
-  LIGHT = 'LIGHT', // 라이트 (9,900원/월, 15장)
-  PREMIUM = 'PREMIUM', // 프리미엄 (19,800원/월, 30장)
+  LIGHT = 'LIGHT', // 라이트 (₩9,900/월, 10+1장)
+  PREMIUM = 'PREMIUM', // 프리미엄 (₩19,800/월, 20+4장)
 }
 
 /**
@@ -33,24 +33,38 @@ export class Subscription {
   id: string;
 
   // 사용자
-  @Column({ type: 'varchar', length: 36 })
+  @Column({ type: 'varchar', length: 36, name: 'user_id' })
   @Index()
   userId: string;
 
   @ManyToOne(() => User, { nullable: true })
-  @JoinColumn({ name: 'userId' })
+  @JoinColumn({ name: 'user_id' })
   user: User;
 
-  // 구독 정보
+  // 플랜 정보
+  @Column({ type: 'varchar', length: 36, name: 'plan_id' })
+  @Index()
+  planId: string; // FK to subscription_plans
+
   @Column({
     type: 'enum',
     enum: SubscriptionPlan,
-    default: SubscriptionPlan.PREMIUM,
+    name: 'plan_name',
   })
-  planId: SubscriptionPlan;
+  planName: SubscriptionPlan;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, default: 19800.0 })
-  price: number;
+  // 가격 정보
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'original_price' })
+  originalPrice: number; // 원가
+
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  vat: number; // 부가세
+
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_price' })
+  totalPrice: number; // 최종 가격
+
+  @Column({ type: 'int', name: 'tickets_per_month' })
+  ticketsPerMonth: number; // 월 예측권 수
 
   // 상태
   @Column({
@@ -62,24 +76,24 @@ export class Subscription {
   status: SubscriptionStatus;
 
   // 결제 정보
-  @Column({ type: 'varchar', length: 100, nullable: true })
+  @Column({ type: 'varchar', length: 100, nullable: true, name: 'billing_key' })
   billingKey: string | null; // Toss Payments 빌링키
 
-  @Column({ type: 'date', nullable: true })
+  @Column({ type: 'date', nullable: true, name: 'next_billing_date' })
   @Index()
   nextBillingDate: Date | null; // 다음 결제일
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'datetime', nullable: true, name: 'last_billed_at' })
   lastBilledAt: Date | null; // 마지막 결제일
 
   // 타임스탬프
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'started_at' })
   startedAt: Date; // 구독 시작일
 
-  @Column({ type: 'datetime', nullable: true })
+  @Column({ type: 'datetime', nullable: true, name: 'cancelled_at' })
   cancelledAt: Date | null; // 구독 취소일
 
-  @UpdateDateColumn()
+  @UpdateDateColumn({ name: 'updated_at' })
   updatedAt: Date;
 
   /**

@@ -26,6 +26,7 @@ import { SocialModule } from './social/social.module';
 import { SubscriptionPlanEntity } from './subscriptions/entities/subscription-plan.entity';
 import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { UsersModule } from './users/users.module';
+import { CacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -34,6 +35,9 @@ import { UsersModule } from './users/users.module';
       isGlobal: true,
       envFilePath: ['.env.local', '.env'],
     }),
+
+    // 글로벌 캐시 모듈
+    CacheModule,
 
     // 스케줄러 모듈 (개발 환경에서는 비활성화)
     ...(process.env.NODE_ENV === 'production'

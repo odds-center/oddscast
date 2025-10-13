@@ -39,20 +39,21 @@ export class SinglePurchasesController {
   }
 
   /**
-   * 가격 계산 (할인 적용)
+   * 가격 계산
    * GET /api/single-purchases/calculate-price?quantity=5
    */
   @Get('calculate-price')
-  async calculatePrice(
-    @Query('quantity') quantity = 1
-  ): Promise<{ quantity: number; totalPrice: number }> {
-    const totalPrice = this.singlePurchasesService.calculateTotalPrice(
-      Number(quantity)
-    );
-    return {
-      quantity: Number(quantity),
-      totalPrice,
-    };
+  async calculatePrice(@Query('quantity') quantity = 1) {
+    return this.singlePurchasesService.calculateTotalPrice(Number(quantity));
+  }
+
+  /**
+   * 개별 구매 설정 조회
+   * GET /api/single-purchases/config
+   */
+  @Get('config')
+  async getConfig() {
+    return this.singlePurchasesService.getConfig();
   }
 
   /**

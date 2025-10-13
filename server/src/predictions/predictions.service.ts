@@ -66,9 +66,9 @@ export class PredictionsService {
     const prompt = PromptBuilder.buildPrompt(race, entries);
     this.logger.debug(`Prompt length: ${prompt.length} characters`);
 
-    // 5. LLM 호출
+    // 5. LLM 호출 (폴백 전략)
     const llmProvider = this.getProvider(dto.llmProvider);
-    const llmResponse = await this.llmService.predict(
+    const llmResponse = await this.predictWithFallback(
       prompt,
       {
         temperature: dto.temperature ?? 0.7,
@@ -83,24 +83,27 @@ export class PredictionsService {
     // 7. 예측 저장
     const prediction = this.predictionRepo.create({
       raceId: dto.raceId,
-      firstPlace: parsed.firstPlace,
-      secondPlace: parsed.secondPlace,
-      thirdPlace: parsed.thirdPlace,
+      predictedFirst: parsed.firstPlace,
+      predictedSecond: parsed.secondPlace,
+      predictedThird: parsed.thirdPlace,
       analysis: parsed.analysis,
       confidence: parsed.confidence,
       warnings: parsed.warnings,
-      llmModel: llmResponse.model,
+      factors: parsed.factors,
+      modelVersion: llmResponse.model,
+      llmProvider: dto.llmProvider || 'openai',
+      promptVersion: 'v1.0',
       inputTokens: llmResponse.inputTokens,
       outputTokens: llmResponse.outputTokens,
       totalTokens: llmResponse.totalTokens,
-      llmCost: llmResponse.cost,
+      cost: llmResponse.cost,
       responseTime: llmResponse.responseTime,
     });
 
     const saved = await this.predictionRepo.save(prediction);
 
     this.logger.log(
-      `Prediction saved: ${saved.id} | Cost: ₩${saved.llmCost} | Time: ${saved.responseTime}ms`
+      `Prediction saved: ${saved.id} | Cost: ₩${saved.cost} | Time: ${saved.responseTime}ms`
     );
 
     return this.toDto(saved);
@@ -207,18 +210,99 @@ export class PredictionsService {
     return {
       id: prediction.id,
       raceId: prediction.raceId,
-      firstPlace: prediction.firstPlace,
-      secondPlace: prediction.secondPlace,
-      thirdPlace: prediction.thirdPlace,
+      predictedFirst: prediction.predictedFirst,
+      predictedSecond: prediction.predictedSecond,
+      predictedThird: prediction.predictedThird,
       analysis: prediction.analysis,
       confidence: prediction.confidence,
       warnings: prediction.warnings,
-      llmModel: prediction.llmModel,
-      llmCost: prediction.llmCost,
+      factors: prediction.factors,
+      modelVersion: prediction.modelVersion,
+      llmProvider: prediction.llmProvider,
+      cost: prediction.cost,
       responseTime: prediction.responseTime,
-      isAccurate: prediction.isAccurate,
+      firstCorrect: prediction.firstCorrect,
+      inTop3: prediction.inTop3,
+      exactOrder: prediction.exactOrder,
       accuracyScore: prediction.accuracyScore,
-      createdAt: prediction.createdAt,
+      predictedAt: prediction.predictedAt,
+      updatedAt: prediction.updatedAt,
+      verifiedAt: prediction.verifiedAt,
     };
+  }
+
+  /**
+   * 예측 업데이트
+   */
+  async updatePrediction(
+    raceId: string,
+    newData: Partial<Prediction>
+  ): Promise<Prediction> {
+    const existing = await this.findByRaceId(raceId);
+    if (!existing) {
+      throw new NotFoundException(`Prediction not found: ${raceId}`);
+    }
+
+    // 업데이트
+    Object.assign(existing, newData);
+    existing.updatedAt = new Date();
+
+    return this.predictionRepo.save(existing);
+  }
+
+  /**
+   * 경주 시작 처리
+   */
+  async finalizePrediction(raceId: string): Promise<void> {
+    const prediction = await this.findByRaceId(raceId);
+    if (prediction) {
+      prediction.finalize();
+      await this.predictionRepo.save(prediction);
+    }
+  }
+
+  /**
+   * LLM 호출 (폴백 전략)
+   * - GPT-4 Turbo 실패 시 다른 GPT 모델 시도
+   */
+  private async predictWithFallback(
+    prompt: string,
+    options: { temperature: number; maxTokens: number },
+    providerType: LlmProviderType
+  ): Promise<any> {
+    const models = ['gpt-4-turbo', 'gpt-4o', 'gpt-4', 'gpt-3.5-turbo'];
+
+    for (let i = 0; i < models.length; i++) {
+      const model = models[i];
+      try {
+        this.logger.debug(
+          `LLM 호출 시도: ${model} (${i + 1}/${models.length})`
+        );
+
+        // 모델별로 OpenAI Service 직접 호출
+        const response = await this.llmService.predict(
+          prompt,
+          options,
+          providerType
+        );
+
+        this.logger.log(`✅ LLM 성공: ${model}`);
+        return response;
+      } catch (error) {
+        this.logger.warn(`LLM 실패: ${model} - ${error.message}`);
+
+        // 마지막 모델까지 실패하면 에러 throw
+        if (i === models.length - 1) {
+          this.logger.error('모든 GPT 모델 실패');
+          throw error;
+        }
+
+        // 다음 모델 시도
+        this.logger.log(`다음 모델로 폴백: ${models[i + 1]}`);
+        continue;
+      }
+    }
+
+    throw new Error('All models failed');
   }
 }

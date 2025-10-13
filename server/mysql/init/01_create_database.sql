@@ -512,59 +512,333 @@ CREATE TABLE race_horse_results (
     INDEX idx_rc_rank (rc_rank)
 );
 
--- AI 예측 테이블 (prediction.entity.ts 기반)
-DROP TABLE IF EXISTS predictions;
-CREATE TABLE predictions (
+-- =====================================================
+-- AI 예측 캐싱 시스템 (비용 99% 절감)
+-- =====================================================
+
+-- AI 예측 테이블 (prediction.entity.ts 기반 - 캐싱 최적화)
+DROP TABLE IF EXISTS ai_predictions;
+CREATE TABLE ai_predictions (
     id VARCHAR(36) PRIMARY KEY,
-    race_id VARCHAR(36) NOT NULL,
+    race_id VARCHAR(36) NOT NULL UNIQUE COMMENT '경주 ID (UNIQUE - 중복 방지)',
     
     -- 예측 결과
-    first_place INT NOT NULL COMMENT '1위 예측 마번',
-    second_place INT NOT NULL COMMENT '2위 예측 마번',
-    third_place INT NOT NULL COMMENT '3위 예측 마번',
+    predicted_first INT NOT NULL COMMENT '1위 예측 마번',
+    predicted_second INT NOT NULL COMMENT '2위 예측 마번',
+    predicted_third INT NOT NULL COMMENT '3위 예측 마번',
+    confidence DECIMAL(5,2) NOT NULL COMMENT '신뢰도 (0-100)',
     
     -- 분석 내용
-    analysis TEXT NOT NULL COMMENT '예측 분석 내용',
-    confidence DECIMAL(5,2) NOT NULL COMMENT '신뢰도 (0-100)',
+    analysis TEXT COMMENT 'AI 분석 내용',
     warnings JSON COMMENT '주의사항 목록',
+    factors JSON COMMENT '예측 요인 점수 {"recentForm": 0.9, "distanceAptitude": 0.85}',
     
     -- LLM 메타데이터
-    llm_model VARCHAR(50) NOT NULL COMMENT 'LLM 모델명',
-    input_tokens INT NOT NULL COMMENT '입력 토큰 수',
-    output_tokens INT NOT NULL COMMENT '출력 토큰 수',
-    total_tokens INT NOT NULL COMMENT '총 토큰 수',
-    llm_cost DECIMAL(10,2) NOT NULL COMMENT '비용 (KRW)',
-    response_time INT NOT NULL COMMENT '응답 시간 (ms)',
+    model_version VARCHAR(20) COMMENT 'gpt-4-turbo, gpt-3.5-turbo',
+    llm_provider VARCHAR(20) COMMENT 'openai, anthropic',
+    prompt_version VARCHAR(20) DEFAULT 'v1.0' COMMENT '프롬프트 버전',
+    input_tokens INT COMMENT '입력 토큰 수',
+    output_tokens INT COMMENT '출력 토큰 수',
+    total_tokens INT COMMENT '총 토큰 수',
+    cost DECIMAL(10,4) COMMENT '비용 (원)',
+    response_time INT COMMENT '응답 시간 (ms)',
     
-    -- 정확도 검증 (경주 종료 후)
-    is_accurate BOOLEAN COMMENT '예측 정확 여부',
-    accuracy_score DECIMAL(5,2) COMMENT '정확도 점수',
+    -- 타임스탬프
+    predicted_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '최초 예측 시각',
+    updated_at DATETIME COMMENT '마지막 업데이트 시각',
     
-    -- 실제 결과 (검증용)
-    actual_first_place INT COMMENT '실제 1위',
-    actual_second_place INT COMMENT '실제 2위',
-    actual_third_place INT COMMENT '실제 3위',
+    -- 실제 결과 (경주 후 검증)
+    actual_first INT COMMENT '실제 1위',
+    actual_second INT COMMENT '실제 2위',
+    actual_third INT COMMENT '실제 3위',
+    first_correct BOOLEAN COMMENT '1위 예측 정확',
+    in_top3 BOOLEAN COMMENT '예측한 말이 3위 안에 포함',
+    exact_order BOOLEAN COMMENT '순서까지 정확',
+    accuracy_score DECIMAL(5,2) COMMENT '정확도 점수 (0-100)',
+    verified_at DATETIME COMMENT '검증 완료 시각',
+    
+    -- 상태
+    is_finalized BOOLEAN DEFAULT FALSE COMMENT '경주 시작 여부 (시작 후 업데이트 중단)',
+    
+    -- 인덱스
+    INDEX idx_race_id (race_id),
+    INDEX idx_predicted_at (predicted_at),
+    INDEX idx_model_version (model_version),
+    INDEX idx_llm_provider (llm_provider),
+    INDEX idx_verified_at (verified_at),
+    INDEX idx_finalized (is_finalized),
+    
+    FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='AI 예측 결과 (캐싱 최적화)';
+
+-- AI 예측 업데이트 이력 테이블
+DROP TABLE IF EXISTS ai_prediction_updates;
+CREATE TABLE ai_prediction_updates (
+    id VARCHAR(36) PRIMARY KEY,
+    prediction_id VARCHAR(36) NOT NULL,
+    
+    -- 변경 내용
+    old_first INT COMMENT '이전 1위 예측',
+    new_first INT COMMENT '새 1위 예측',
+    old_second INT COMMENT '이전 2위 예측',
+    new_second INT COMMENT '새 2위 예측',
+    old_third INT COMMENT '이전 3위 예측',
+    new_third INT COMMENT '새 3위 예측',
+    old_confidence DECIMAL(5,2) COMMENT '이전 신뢰도',
+    new_confidence DECIMAL(5,2) COMMENT '새 신뢰도',
+    
+    -- 업데이트 이유
+    update_reason ENUM('scheduled', 'odds_change', 'weather_change', 'horse_withdrawn', 'track_condition', 'manual') DEFAULT 'scheduled',
+    reason_details JSON COMMENT '변경 이유 상세',
+    
+    -- 비용
+    cost DECIMAL(10,4) COMMENT '업데이트 비용',
     
     -- 타임스탬프
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
-    INDEX idx_race_id_created (race_id, created_at),
+    -- 인덱스
+    INDEX idx_prediction_id (prediction_id),
+    INDEX idx_updated_at (updated_at),
+    INDEX idx_update_reason (update_reason),
+    
+    FOREIGN KEY (prediction_id) REFERENCES ai_predictions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='AI 예측 업데이트 이력';
+
+-- 일일 AI 예측 통계 테이블
+DROP TABLE IF EXISTS daily_prediction_stats;
+CREATE TABLE daily_prediction_stats (
+    date DATE PRIMARY KEY,
+    
+    -- 예측 통계
+    total_predictions INT DEFAULT 0,
+    first_correct INT DEFAULT 0,
+    top3_correct INT DEFAULT 0,
+    exact_order_correct INT DEFAULT 0,
+    
+    -- 정확도 (%)
+    accuracy DECIMAL(5,2),
+    top3_accuracy DECIMAL(5,2),
+    exact_order_accuracy DECIMAL(5,2),
+    avg_confidence DECIMAL(5,2),
+    avg_accuracy_score DECIMAL(5,2),
+    
+    -- 비용
+    total_cost DECIMAL(10,2),
+    total_updates INT DEFAULT 0,
+    update_cost DECIMAL(10,2),
+    
+    -- ROI 시뮬레이션
+    simulated_stake DECIMAL(12,2),
+    simulated_return DECIMAL(12,2),
+    simulated_roi DECIMAL(10,2),
+    
+    -- 타임스탬프
+    calculated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    -- 인덱스
+    INDEX idx_date (date),
+    INDEX idx_accuracy (accuracy)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='일일 AI 예측 통계';
+
+-- 모델 성과 테이블
+DROP TABLE IF EXISTS model_performance;
+CREATE TABLE model_performance (
+    model_version VARCHAR(20) PRIMARY KEY,
+    llm_provider VARCHAR(20),
+    
+    -- 예측 통계
+    total_predictions INT DEFAULT 0,
+    first_correct INT DEFAULT 0,
+    top3_correct INT DEFAULT 0,
+    
+    -- 정확도 (%)
+    accuracy DECIMAL(5,2),
+    top3_accuracy DECIMAL(5,2),
+    avg_confidence DECIMAL(5,2),
+    
+    -- 비용
+    total_cost DECIMAL(12,2) DEFAULT 0,
+    avg_cost_per_prediction DECIMAL(10,2),
+    
+    -- ROI
+    simulated_roi DECIMAL(10,2),
+    
+    -- 상태
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- 인덱스
+    INDEX idx_llm_provider (llm_provider),
+    INDEX idx_is_active (is_active),
+    INDEX idx_accuracy (accuracy DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='모델 버전별 성과';
+
+-- AI 예측 실패 분석 테이블
+DROP TABLE IF EXISTS prediction_failures;
+CREATE TABLE prediction_failures (
+    id VARCHAR(36) PRIMARY KEY,
+    prediction_id VARCHAR(36) NOT NULL,
+    race_id VARCHAR(36) NOT NULL,
+    
+    -- 실패 정보
+    predicted_first INT,
+    actual_first INT,
+    prediction_confidence DECIMAL(5,2),
+    
+    -- 실패 유형
+    failure_type ENUM('overconfidence', 'upset', 'weather', 'track_condition', 'injury', 'other'),
+    failure_reason TEXT,
+    
+    -- 컨텍스트 정보
+    race_grade INT,
+    race_distance INT,
+    track_condition VARCHAR(20),
+    weather VARCHAR(20),
+    actual_winner_popularity INT COMMENT '실제 우승마 인기 순위',
+    
+    -- 타임스탬프
+    analyzed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- 인덱스
+    INDEX idx_prediction_id (prediction_id),
     INDEX idx_race_id (race_id),
+    INDEX idx_failure_type (failure_type),
+    INDEX idx_analyzed_at (analyzed_at),
+    
+    FOREIGN KEY (prediction_id) REFERENCES ai_predictions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='AI 예측 실패 원인 분석';
+
+-- 초기 데이터: 기본 모델 버전
+INSERT INTO model_performance (model_version, llm_provider, is_active) VALUES
+('gpt-4-turbo', 'openai', TRUE),
+('gpt-3.5-turbo', 'openai', TRUE),
+('claude-3-opus', 'anthropic', FALSE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- 사용자 예측 피드백 테이블
+DROP TABLE IF EXISTS user_prediction_feedback;
+CREATE TABLE user_prediction_feedback (
+    id VARCHAR(36) PRIMARY KEY,
+    user_id VARCHAR(36) NOT NULL,
+    prediction_id VARCHAR(36) NOT NULL,
+    
+    -- 피드백
+    feedback_type ENUM('accurate', 'inaccurate', 'helpful', 'not_helpful') NOT NULL,
+    rating INT COMMENT '별점 (1-5)',
+    comment TEXT COMMENT '피드백 내용',
+    
+    -- 사용자 자체 예측
+    user_predicted_first INT COMMENT '사용자가 예측한 1위',
+    user_predicted_second INT COMMENT '사용자가 예측한 2위',
+    user_predicted_third INT COMMENT '사용자가 예측한 3위',
+    user_was_correct BOOLEAN COMMENT '사용자 예측 정확 여부',
+    user_accuracy_score DECIMAL(5,2) COMMENT '사용자 정확도 점수',
+    
+    -- 타임스탬프
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    -- 인덱스
+    INDEX idx_user_id (user_id),
+    INDEX idx_prediction_id (prediction_id),
+    INDEX idx_feedback_type (feedback_type),
     INDEX idx_created_at (created_at),
-    INDEX idx_is_accurate (is_accurate),
-    FOREIGN KEY (race_id) REFERENCES races(id) ON DELETE CASCADE
-);
+    
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (prediction_id) REFERENCES ai_predictions(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='사용자 AI 예측 피드백';
+
+-- 개별 구매 설정 테이블
+DROP TABLE IF EXISTS single_purchase_config;
+CREATE TABLE single_purchase_config (
+    id VARCHAR(36) PRIMARY KEY,
+    config_name VARCHAR(50) NOT NULL UNIQUE COMMENT 'SINGLE_TICKET',
+    display_name VARCHAR(100) NOT NULL COMMENT '표시명',
+    description TEXT COMMENT '설명',
+    
+    -- 가격 정보
+    original_price DECIMAL(10,2) NOT NULL COMMENT '원가 (VAT 전)',
+    vat DECIMAL(10,2) NOT NULL COMMENT '부가세 (10%)',
+    total_price DECIMAL(10,2) NOT NULL COMMENT '최종 가격',
+    
+    -- 상태
+    is_active BOOLEAN DEFAULT TRUE,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_config_name (config_name),
+    INDEX idx_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='개별 구매 설정';
+
+-- 기본 개별 구매 설정
+INSERT INTO single_purchase_config (id, config_name, display_name, description, original_price, vat, total_price, is_active) VALUES
+(UUID(), 'SINGLE_TICKET', '개별 예측권', 'AI 예측 1회 사용 가능', 1000.00, 100.00, 1100.00, TRUE)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
+
+-- 구독 플랜 정의 테이블
+DROP TABLE IF EXISTS subscription_plans;
+CREATE TABLE subscription_plans (
+    id VARCHAR(36) PRIMARY KEY,
+    plan_name VARCHAR(50) NOT NULL UNIQUE COMMENT '플랜명 (LIGHT, PREMIUM)',
+    display_name VARCHAR(100) NOT NULL COMMENT '표시명',
+    description TEXT COMMENT '플랜 설명',
+    
+    -- 가격 정보
+    original_price DECIMAL(10,2) NOT NULL COMMENT '원가 (VAT 포함 전)',
+    vat DECIMAL(10,2) NOT NULL COMMENT '부가세 (10%)',
+    total_price DECIMAL(10,2) NOT NULL COMMENT '최종 가격 (VAT 포함)',
+    
+    -- 예측권 구성
+    base_tickets INT NOT NULL COMMENT '기본 예측권 수',
+    bonus_tickets INT NOT NULL DEFAULT 0 COMMENT '보너스 예측권 수',
+    total_tickets INT NOT NULL COMMENT '총 예측권 수 (base + bonus)',
+    
+    -- 상태
+    is_active BOOLEAN DEFAULT TRUE,
+    sort_order INT DEFAULT 0,
+    
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    
+    INDEX idx_plan_name (plan_name),
+    INDEX idx_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='구독 플랜 정의';
+
+-- 기본 플랜 데이터
+INSERT INTO subscription_plans (id, plan_name, display_name, description, original_price, vat, total_price, base_tickets, bonus_tickets, total_tickets, is_active, sort_order) VALUES
+(UUID(), 'LIGHT', '라이트 플랜', '매월 11장 (10장 + 보너스 1장)', 9000.00, 900.00, 9900.00, 10, 1, 11, TRUE, 1),
+(UUID(), 'PREMIUM', '프리미엄 플랜', '매월 24장 (20장 + 보너스 4장)', 18000.00, 1800.00, 19800.00, 20, 4, 24, TRUE, 2)
+ON DUPLICATE KEY UPDATE updated_at = CURRENT_TIMESTAMP;
 
 -- 구독 테이블 (subscription.entity.ts 기반)
 DROP TABLE IF EXISTS subscriptions;
 CREATE TABLE subscriptions (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
+    plan_id VARCHAR(36) NOT NULL COMMENT '구독 플랜 ID (FK)',
     
     -- 구독 정보
-    plan_id ENUM('PREMIUM') DEFAULT 'PREMIUM' COMMENT '구독 플랜',
-    price DECIMAL(10,2) DEFAULT 19800.00 COMMENT '구독료',
+    plan_name ENUM('LIGHT', 'PREMIUM') NOT NULL COMMENT '플랜명',
+    original_price DECIMAL(10,2) NOT NULL COMMENT '원가',
+    vat DECIMAL(10,2) NOT NULL COMMENT '부가세',
+    total_price DECIMAL(10,2) NOT NULL COMMENT '최종 가격',
+    tickets_per_month INT NOT NULL COMMENT '월간 예측권 수',
     
     -- 상태
     status ENUM('PENDING', 'ACTIVE', 'CANCELLED', 'EXPIRED') DEFAULT 'PENDING',
@@ -581,17 +855,24 @@ CREATE TABLE subscriptions (
     
     INDEX idx_user_status (user_id, status),
     INDEX idx_user_id (user_id),
+    INDEX idx_plan_id (plan_id),
     INDEX idx_status (status),
     INDEX idx_next_billing (next_billing_date, status),
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (plan_id) REFERENCES subscription_plans(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='사용자 구독';
 
 -- 예측권 테이블 (prediction-ticket.entity.ts 기반)
 DROP TABLE IF EXISTS prediction_tickets;
 CREATE TABLE prediction_tickets (
     id VARCHAR(36) PRIMARY KEY,
     user_id VARCHAR(36) NOT NULL,
-    subscription_id VARCHAR(36) COMMENT '구독 ID (구독으로 발급된 경우)',
+    
+    -- 발급 정보
+    source_type ENUM('SUBSCRIPTION', 'SINGLE_PURCHASE', 'BONUS', 'ADMIN') NOT NULL COMMENT '발급 유형',
+    subscription_id VARCHAR(36) COMMENT '구독 ID (구독 발급)',
+    single_purchase_id VARCHAR(36) COMMENT '개별 구매 ID',
     
     -- 상태
     status ENUM('AVAILABLE', 'USED', 'EXPIRED') DEFAULT 'AVAILABLE',
@@ -599,21 +880,24 @@ CREATE TABLE prediction_tickets (
     -- 사용 정보
     used_at DATETIME COMMENT '사용 시간',
     race_id VARCHAR(36) COMMENT '사용한 경주 ID',
-    prediction_id VARCHAR(36) COMMENT '생성된 예측 ID',
+    prediction_id VARCHAR(36) COMMENT '조회한 예측 ID',
     
     -- 유효 기간
     issued_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '발급 시간',
     expires_at DATETIME NOT NULL COMMENT '만료 시간',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     INDEX idx_user_status (user_id, status),
     INDEX idx_user_id (user_id),
     INDEX idx_expires_status (expires_at, status),
     INDEX idx_subscription_id (subscription_id),
+    INDEX idx_source_type (source_type),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (subscription_id) REFERENCES subscriptions(id) ON DELETE SET NULL,
-    FOREIGN KEY (prediction_id) REFERENCES predictions(id) ON DELETE SET NULL
-);
+    FOREIGN KEY (prediction_id) REFERENCES ai_predictions(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='AI 예측권';
 
 -- 개별 구매 테이블 (single-purchase.entity.ts 기반)
 DROP TABLE IF EXISTS single_purchases;
@@ -622,8 +906,12 @@ CREATE TABLE single_purchases (
     user_id VARCHAR(36) NOT NULL,
     ticket_id VARCHAR(36) NOT NULL,
     
+    -- 가격 정보
+    original_price DECIMAL(10,2) DEFAULT 1000.00 COMMENT '원가 (VAT 전)',
+    vat DECIMAL(10,2) DEFAULT 100.00 COMMENT '부가세 (10%)',
+    total_price DECIMAL(10,2) DEFAULT 1100.00 COMMENT '최종 가격',
+    
     -- 결제 정보
-    amount DECIMAL(10,2) DEFAULT 1000.00 COMMENT '구매 금액',
     pg_transaction_id VARCHAR(100) COMMENT 'PG사 거래 ID',
     payment_method VARCHAR(20) COMMENT '결제 수단',
     
@@ -632,6 +920,8 @@ CREATE TABLE single_purchases (
     
     -- 타임스탬프
     purchased_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     
     INDEX idx_user_purchased (user_id, purchased_at),
     INDEX idx_user_id (user_id),
@@ -639,7 +929,8 @@ CREATE TABLE single_purchases (
     INDEX idx_status (status),
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (ticket_id) REFERENCES prediction_tickets(id) ON DELETE CASCADE
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+COMMENT='개별 예측권 구매';
 
 -- 결제 테이블 (payment.entity.ts 기반)
 DROP TABLE IF EXISTS payments;

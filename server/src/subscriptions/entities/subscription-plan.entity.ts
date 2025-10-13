@@ -1,45 +1,64 @@
 import {
   Entity,
-  PrimaryColumn,
+  PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
+
+export enum PlanName {
+  LIGHT = 'LIGHT',
+  PREMIUM = 'PREMIUM',
+}
 
 /**
  * 구독 플랜 엔티티
+ * - 라이트: ₩9,900 (10+1장)
+ * - 프리미엄: ₩19,800 (20+4장)
  */
 @Entity('subscription_plans')
 export class SubscriptionPlanEntity {
-  @PrimaryColumn({ type: 'varchar', length: 20, name: 'plan_id' })
-  planId: string; // LIGHT, PREMIUM
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ type: 'varchar', length: 50 })
-  name: string; // 라이트 구독, 프리미엄 구독
+  @Column({ type: 'varchar', length: 50, unique: true, name: 'plan_name' })
+  @Index()
+  planName: string; // LIGHT, PREMIUM
+
+  @Column({ type: 'varchar', length: 100, name: 'display_name' })
+  displayName: string; // 라이트 플랜, 프리미엄 플랜
 
   @Column({ type: 'text', nullable: true })
   description: string; // 플랜 설명
 
+  // 가격 정보
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'original_price' })
+  originalPrice: number; // 원가 (VAT 전)
+
   @Column({ type: 'decimal', precision: 10, scale: 2 })
-  price: number; // 월 가격
+  vat: number; // 부가세 (10%)
 
-  @Column({ type: 'int', name: 'tickets_per_month' })
-  ticketsPerMonth: number; // 월 예측권 수량
+  @Column({ type: 'decimal', precision: 10, scale: 2, name: 'total_price' })
+  totalPrice: number; // 최종 가격 (VAT 포함)
 
-  @Column({ type: 'decimal', precision: 8, scale: 2, name: 'price_per_ticket' })
-  pricePerTicket: number; // 장당 가격
+  // 예측권 구성
+  @Column({ type: 'int', name: 'base_tickets' })
+  baseTickets: number; // 기본 예측권
 
-  @Column({ type: 'int', default: 0, name: 'discount_percentage' })
-  discountPercentage: number; // 할인율
+  @Column({ type: 'int', default: 0, name: 'bonus_tickets' })
+  bonusTickets: number; // 보너스 예측권
 
+  @Column({ type: 'int', name: 'total_tickets' })
+  totalTickets: number; // 총 예측권 (base + bonus)
+
+  // 상태
   @Column({ type: 'boolean', default: true, name: 'is_active' })
-  isActive: boolean; // 활성화 여부
+  @Index()
+  isActive: boolean;
 
-  @Column({ type: 'boolean', default: false, name: 'is_recommended' })
-  isRecommended: boolean; // 추천 플랜 여부
-
-  @Column({ type: 'json', nullable: true })
-  features: string[]; // 포함 기능들
+  @Column({ type: 'int', default: 0, name: 'sort_order' })
+  sortOrder: number;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
@@ -51,19 +70,26 @@ export class SubscriptionPlanEntity {
    * 개별 구매 대비 절약 금액 계산
    */
   getMonthlySavings(): number {
-    const individualPrice = 1000; // 개별 구매 가격
-    const totalIndividualPrice = individualPrice * this.ticketsPerMonth;
-    return totalIndividualPrice - this.price;
+    const SINGLE_PRICE = 1100; // 개별 구매 가격 (VAT 포함)
+    const totalIndividualPrice = SINGLE_PRICE * this.totalTickets;
+    return totalIndividualPrice - this.totalPrice;
   }
 
   /**
    * 할인율 계산
    */
   getDiscountPercentage(): number {
-    const individualPrice = 1000;
-    const totalIndividualPrice = individualPrice * this.ticketsPerMonth;
+    const SINGLE_PRICE = 1100;
+    const totalIndividualPrice = SINGLE_PRICE * this.totalTickets;
     return Math.round(
-      ((totalIndividualPrice - this.price) / totalIndividualPrice) * 100
+      ((totalIndividualPrice - this.totalPrice) / totalIndividualPrice) * 100
     );
+  }
+
+  /**
+   * 장당 가격 계산
+   */
+  getPricePerTicket(): number {
+    return Math.round(this.totalPrice / this.totalTickets);
   }
 }

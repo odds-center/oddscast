@@ -10,6 +10,7 @@ export interface ParsedPrediction {
   confidence: number;
   analysis: string;
   warnings: string[];
+  factors?: Record<string, number>;
 }
 
 export class ResponseParser {
@@ -33,6 +34,7 @@ export class ResponseParser {
         confidence: data.confidence,
         analysis: data.analysis || '',
         warnings: data.warnings || [],
+        factors: data.factors || {},
       };
     } catch (error) {
       this.logger.error(`Failed to parse LLM response: ${error.message}`);
@@ -99,6 +101,7 @@ export class ResponseParser {
           confidence: data.confidence,
           analysis: data.analysis || '',
           warnings: data.warnings || [],
+          factors: data.factors || {},
         };
       }
 
@@ -113,6 +116,7 @@ export class ResponseParser {
           confidence: 50, // 낮은 신뢰도
           analysis: '자동 추출된 예측 (신뢰도 낮음)',
           warnings: ['AI 응답 형식이 올바르지 않아 자동으로 추출했습니다.'],
+          factors: {},
         };
       }
     } catch (error) {

@@ -1,26 +1,49 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import {
   SinglePurchase,
   PurchaseStatus,
 } from './entities/single-purchase.entity';
+import { SinglePurchaseConfig } from './entities/single-purchase-config.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { PurchaseTicketDto, PurchaseResultDto } from './dto';
+import * as _ from 'lodash';
 
 /**
- * 개별 구매 서비스 (1,000원/장)
+ * 개별 구매 서비스 (DB 가격 관리, 할인 없음)
  */
 @Injectable()
 export class SinglePurchasesService {
   private readonly logger = new Logger(SinglePurchasesService.name);
-  private readonly PRICE_PER_TICKET = 1000; // 1,000원/장
 
   constructor(
     @InjectRepository(SinglePurchase)
     private readonly purchaseRepo: Repository<SinglePurchase>,
+    @InjectRepository(SinglePurchaseConfig)
+    private readonly configRepo: Repository<SinglePurchaseConfig>,
     private readonly ticketsService: PredictionTicketsService
   ) {}
+
+  /**
+   * 개별 구매 설정 조회
+   */
+  async getConfig(): Promise<SinglePurchaseConfig> {
+    const config = await this.configRepo.findOne({
+      where: { configName: 'SINGLE_TICKET', isActive: true },
+    });
+
+    if (!config) {
+      throw new NotFoundException('개별 구매 설정을 찾을 수 없습니다');
+    }
+
+    return config;
+  }
 
   /**
    * 예측권 구매
@@ -30,10 +53,13 @@ export class SinglePurchasesService {
     dto: PurchaseTicketDto
   ): Promise<PurchaseResultDto> {
     const quantity = dto.quantity || 1;
-    const totalAmount = this.calculateTotalPrice(quantity);
+
+    // DB에서 가격 설정 조회
+    const config = await this.getConfig();
+    const priceInfo = config.calculateTotalPrice(quantity);
 
     this.logger.log(
-      `Purchasing ${quantity} tickets for user: ${userId}, total: ₩${totalAmount}`
+      `Purchasing ${quantity} tickets for user: ${userId}, total: ₩${priceInfo.totalPrice}`
     );
 
     // 1. 예측권 발급
@@ -43,13 +69,15 @@ export class SinglePurchasesService {
       validDays: 30,
     });
 
-    // 2. 구매 내역 저장
+    // 2. 구매 내역 저장 (장당 가격으로 각각 저장)
     const purchases = await Promise.all(
       tickets.map(ticket =>
         this.purchaseRepo.save({
           userId,
           ticketId: ticket.id,
-          amount: this.PRICE_PER_TICKET,
+          originalPrice: config.originalPrice,
+          vat: config.vat,
+          totalPrice: config.totalPrice,
           pgTransactionId: dto.pgTransactionId || null,
           paymentMethod: dto.paymentMethod || 'CARD',
           status: PurchaseStatus.SUCCESS,
@@ -64,7 +92,7 @@ export class SinglePurchasesService {
     return {
       purchaseId: purchases[0].id,
       tickets,
-      totalAmount,
+      totalAmount: priceInfo.totalPrice,
       paymentMethod: dto.paymentMethod || 'CARD',
       pgTransactionId: dto.pgTransactionId || '',
       purchasedAt: new Date(),
@@ -72,22 +100,37 @@ export class SinglePurchasesService {
   }
 
   /**
-   * 총 가격 계산 (할인 적용)
+   * 총 가격 계산 (DB 설정 기반, 할인 없음)
    */
-  calculateTotalPrice(quantity: number): number {
-    let totalPrice = quantity * this.PRICE_PER_TICKET;
+  async calculateTotalPrice(quantity: number): Promise<{
+    quantity: number;
+    originalPrice: number;
+    vat: number;
+    totalPrice: number;
+    pricePerTicket: number;
+  }> {
+    const config = await this.getConfig();
+    const priceInfo = config.calculateTotalPrice(quantity);
 
-    // 5장 이상 구매 시 5% 할인
-    if (quantity >= 5) {
-      totalPrice = Math.round(totalPrice * 0.95);
-    }
+    return {
+      quantity,
+      ...priceInfo,
+    };
+  }
 
-    // 10장 이상 구매 시 10% 할인
-    if (quantity >= 10) {
-      totalPrice = Math.round(totalPrice * 0.9);
-    }
+  /**
+   * 구매 내역 조회
+   */
+  async getHistory(userId: string, limit = 50, offset = 0) {
+    const purchases = await this.purchaseRepo.find({
+      where: { userId },
+      order: { purchasedAt: 'DESC' },
+      take: limit,
+      skip: offset,
+      relations: ['ticket'],
+    });
 
-    return totalPrice;
+    return purchases;
   }
 
   /**
@@ -113,12 +156,12 @@ export class SinglePurchasesService {
   async getTotalSpent(userId: string): Promise<number> {
     const result = await this.purchaseRepo
       .createQueryBuilder('purchase')
-      .select('SUM(purchase.amount)', 'total')
-      .where('purchase.userId = :userId', { userId })
+      .select('SUM(purchase.total_price)', 'total')
+      .where('purchase.user_id = :userId', { userId })
       .andWhere('purchase.status = :status', { status: PurchaseStatus.SUCCESS })
       .getRawOne();
 
-    return result?.total ? parseFloat(result.total) : 0;
+    return _.toNumber(result?.total) || 0;
   }
 
   /**
@@ -136,8 +179,6 @@ export class SinglePurchasesService {
 
     purchase.refund();
     const refunded = await this.purchaseRepo.save(purchase);
-
-    // TODO: 예측권도 함께 취소 처리 (미사용인 경우)
 
     this.logger.log(`Purchase refunded: ${purchaseId}`);
 

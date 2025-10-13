@@ -11,11 +11,25 @@ mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace
 ### 2. 마이그레이션 실행
 
 ```bash
-# 개발 환경
+# AI 캐싱 테이블 (신규)
+mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace < migrations/create-ai-caching-tables.sql
+
+# Device Token (기존)
 mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace < migrations/add-device-token-to-users.sql
 ```
 
 ## 마이그레이션 목록
+
+### 2025-10-12: AI 캐싱 테이블 추가 ⭐
+
+- **파일:** `create-ai-caching-tables.sql`
+- **목적:** AI 예측 비용 99% 절감을 위한 캐싱 시스템
+- **변경 사항:**
+  - `ai_predictions` - AI 예측 결과 저장 (UNIQUE race_id)
+  - `ai_prediction_updates` - 예측 업데이트 이력
+  - `daily_prediction_stats` - 일일 통계
+  - `model_performance` - 모델 버전별 성과
+  - `prediction_failures` - 실패 원인 분석
 
 ### 2025-10-11: Device Token 추가
 

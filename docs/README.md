@@ -83,14 +83,17 @@ docs/
 
 ### DevOps / 인프라
 
-**시작 경로**: [Docker 설정](setup/DOCKER_SETUP.md) → [환경변수](setup/ENVIRONMENT.md) →
-[배포 가이드](guides/deployment/)
+**시작 경로**: [인프라 비교](guides/deployment/INFRASTRUCTURE_COMPARISON.md) ⭐ →
+[Railway vs EC2](guides/deployment/RAILWAY_VS_EC2.md) ⭐ → [배포 가이드](guides/deployment/)
 
 **주요 문서**:
 
+- [Railway 상세 가이드](guides/deployment/RAILWAY_DETAILED_GUIDE.md) ⭐ 신규 - Railway 완벽 설정
+- [Railway vs EC2](guides/deployment/RAILWAY_VS_EC2.md) ⭐ 신규 - 실전 비교 가이드
+- [Cloudflare 가이드](guides/deployment/CLOUDFLARE_GUIDE.md) ⭐ 신규 - CDN + 보안
+- [인프라 비교](guides/deployment/INFRASTRUCTURE_COMPARISON.md) ⭐ 신규 - 모든 옵션 비교
 - [Docker 설정](setup/DOCKER_SETUP.md) - 컨테이너 환경
 - [환경변수](setup/ENVIRONMENT.md) - 설정 관리
-- [Google Cloud](setup/GOOGLE_CLOUD_SETUP.md) - OAuth 설정
 - [모바일 배포](guides/deployment/mobile.md) - 앱 스토어
 
 ---
@@ -123,21 +126,21 @@ docs/
 
 ### 🎯 기능 문서 ([features/](features/))
 
-| 문서                            | 설명                                  |
-| ------------------------------- | ------------------------------------- |
-| [AI 시스템](features/ai/)       | LLM 기반 예측 + 비용 모델 (5개 문서)  |
-| [게임 시스템](features/game/)   | 구독/결제/베팅 + 비용 분석 (7개 문서) |
-| [모바일 기능](features/mobile/) | 앱 기능 상세 (3개 문서)               |
+| 문서                            | 설명                                    |
+| ------------------------------- | --------------------------------------- |
+| [AI 시스템](features/ai/)       | LLM 기반 예측 + 성과 분석 (7개 문서) ⭐ |
+| [게임 시스템](features/game/)   | 구독/결제/베팅 + 비용 분석 (7개 문서)   |
+| [모바일 기능](features/mobile/) | 앱 기능 상세 (3개 문서)                 |
 
 ### 📖 개발 가이드 ([guides/](guides/))
 
-| 카테고리                       | 문서 수 | 설명                 |
-| ------------------------------ | ------- | -------------------- |
-| [인증](guides/authentication/) | 2개     | Google OAuth 구현    |
-| [모바일](guides/mobile/)       | 3개     | UI, 테마, DB         |
-| [서버](guides/server/)         | 2개     | 데이터 수집, KRA API |
-| [배포](guides/deployment/)     | 3개     | 앱/서버 배포, 인프라 |
-| [테스트](guides/)              | 1개     | 통합 테스트          |
+| 카테고리                       | 문서 수 | 설명                              |
+| ------------------------------ | ------- | --------------------------------- |
+| [인증](guides/authentication/) | 2개     | Google OAuth 구현                 |
+| [모바일](guides/mobile/)       | 3개     | UI, 테마, DB                      |
+| [서버](guides/server/)         | 2개     | 데이터 수집, KRA API              |
+| [배포](guides/deployment/)     | 7개     | 앱/서버 배포, 인프라 비교 ⭐ 신규 |
+| [테스트](guides/)              | 1개     | 통합 테스트                       |
 
 ### 📡 API 문서 ([api/](api/))
 
@@ -146,11 +149,14 @@ docs/
 | [REST API](api/rest/) | 1개     | 서버-모바일 API     |
 | [KRA API](api/kra/)   | 3개     | 한국마사회 공공 API |
 
-### 📚 레퍼런스 ([reference/](reference/))
+### 📚 레퍼런스 ([reference/](reference/)) ⭐ 신규 확장
 
-| 문서                                               | 설명                  |
-| -------------------------------------------------- | --------------------- |
-| [경마 용어](reference/HORSE_RACING_TERMINOLOGY.md) | 경마 용어 완전 가이드 |
+| 문서                                                               | 설명                         |
+| ------------------------------------------------------------------ | ---------------------------- |
+| [레퍼런스 허브](reference/README.md) ⭐ 신규                       | 레퍼런스 문서 총정리         |
+| [KRA 시스템 가이드](reference/KRA_SYSTEM_GUIDE.md) ⭐ 신규         | 한국마사회 완벽 가이드       |
+| [베팅 시스템 가이드](reference/BETTING_SYSTEM_DETAILED.md) ⭐ 신규 | 모든 승식 및 전략            |
+| [경마 용어](reference/HORSE_RACING_TERMINOLOGY.md)                 | 경마 용어 완전 가이드 (개선) |
 
 ### 📦 아카이브 ([archive/](archive/))
 
@@ -219,19 +225,30 @@ docs/
 
 ## 📊 문서 통계
 
-| 카테고리    | 문서 수 | 상태    |
-| ----------- | ------- | ------- |
-| 개발 일지   | 2개     | 🆕 신규 |
-| 설정 가이드 | 4개     | ✅ 완료 |
-| 아키텍처    | 6개     | ✅ 완료 |
-| 기능 문서   | 16개    | ✅ 완료 |
-| 개발 가이드 | 11개    | ✅ 완료 |
-| API 문서    | 4개     | ✅ 완료 |
-| 레퍼런스    | 1개     | ✅ 완료 |
-| 아카이브    | 8개     | ✅ 완료 |
+| 카테고리    | 문서 수 | 상태       |
+| ----------- | ------- | ---------- |
+| 개발 일지   | 2개     | 🆕 신규    |
+| 설정 가이드 | 4개     | ✅ 완료    |
+| 아키텍처    | 6개     | ✅ 완료    |
+| 기능 문서   | 18개    | ✅ 완료 ⭐ |
+| 개발 가이드 | 15개    | ✅ 완료 ⭐ |
+| API 문서    | 4개     | ✅ 완료    |
+| 레퍼런스    | 4개     | ✅ 완료 ⭐ |
+| 아카이브    | 8개     | ✅ 완료    |
 
-**총 문서 수**: 52개  
-**마지막 업데이트**: 2025년 10월 11일 (오후)
+**총 문서 수**: 61개 (+9개 신규) 🆕  
+**마지막 업데이트**: 2025년 10월 12일
+
+**주요 업데이트**:
+
+- ⭐ Railway 상세 가이드 (Redis, MySQL, CI/CD, Nginx)
+- ⭐ 한국 경마 레퍼런스 대폭 확장 (3개 신규)
+  - KRA 시스템 완벽 가이드
+  - 베팅 시스템 완벽 가이드
+  - 레퍼런스 허브
+- ⭐ AI 시스템 강화 (2개 신규)
+  - AI 예측 성과 분석 시스템
+  - **AI 캐싱 전략 (비용 99% 절감!) ⭐⭐⭐**
 
 ---
 

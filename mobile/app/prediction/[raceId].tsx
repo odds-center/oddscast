@@ -9,74 +9,97 @@ import {
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { BlurView } from 'expo-blur';
 import { usePredictions } from '@/lib/hooks/usePredictions';
+import { useQuery } from '@tanstack/react-query';
+import { predictionsApi } from '@/lib/api/predictions';
 
 /**
- * AI 예측 요청 화면
+ * AI 예측 화면 (예측권 필수)
  */
 export default function PredictionRequestScreen() {
   const router = useRouter();
   const { raceId } = useLocalSearchParams<{ raceId: string }>();
-  const { usePredictionTicket, hasTickets, availableTickets } = usePredictions();
+  const { hasTickets, availableTickets } = usePredictions();
   const [prediction, setPrediction] = useState<any>(null);
 
-  const handleRequestPrediction = async () => {
+  // 예측 미리보기 (예측권 없어도 가능)
+  const { data: preview, isLoading: previewLoading } = useQuery({
+    queryKey: ['prediction-preview', raceId],
+    queryFn: () => predictionsApi.getPreview(raceId as string),
+    enabled: !!raceId && !prediction,
+  });
+
+  const handleUsePredictionTicket = async () => {
     if (!hasTickets) {
-      Alert.alert('예측권 없음', '사용 가능한 예측권이 없습니다.\n구독하거나 개별 구매해주세요.', [
+      Alert.alert('예측권 필요', '예측권을 사용하여 AI 예측을 확인하세요.', [
         { text: '취소', style: 'cancel' },
+        {
+          text: '개별 구매 (₩1,100)',
+          onPress: () => router.push('/mypage/purchase/single'),
+        },
         { text: '구독하기', onPress: () => router.push('/mypage/subscription/plans') },
-        { text: '개별 구매', onPress: () => router.push('/mypage/purchase/single') },
       ]);
       return;
     }
 
     try {
-      const result = await usePredictionTicket.mutateAsync(raceId);
-      setPrediction(result.prediction);
+      // 예측권 사용하여 전체 예측 조회
+      const response = await predictionsApi.getByRaceId(raceId as string);
+      setPrediction(response);
+      Alert.alert('예측권 사용 완료', '예측권 1장이 사용되었습니다.');
     } catch (error: any) {
-      Alert.alert('오류', error.message || 'AI 예측에 실패했습니다.');
+      if (error.code === 'TICKET_REQUIRED') {
+        Alert.alert('예측권 필요', '예측권이 필요합니다.\n구독하거나 개별 구매해주세요.', [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '개별 구매 (₩1,100)',
+            onPress: () => router.push('/mypage/purchase/single'),
+          },
+          { text: '구독하기', onPress: () => router.push('/mypage/subscription/plans') },
+        ]);
+      } else {
+        Alert.alert('오류', error.message || 'AI 예측 조회에 실패했습니다.');
+      }
     }
   };
 
-  if (usePredictionTicket.isPending) {
+  if (previewLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size='large' color='#007AFF' />
-        <Text style={styles.loadingText}>AI가 예측 중입니다...</Text>
-        <Text style={styles.loadingSubtext}>3-5초 정도 소요됩니다</Text>
+        <Text style={styles.loadingText}>예측 정보를 불러오는 중...</Text>
       </View>
     );
   }
 
+  // 예측권 사용 완료 - 전체 예측 표시
   if (prediction) {
     return (
       <ScrollView style={styles.container}>
-        {/* 예측 결과 */}
         <View style={styles.resultCard}>
           <View style={styles.resultHeader}>
             <Text style={styles.resultTitle}>🤖 AI 예측 결과</Text>
-            <Text style={styles.resultModel}>{prediction.llmModel}</Text>
+            <View style={styles.usedBadge}>
+              <Text style={styles.usedBadgeText}>✅ 사용완료</Text>
+            </View>
           </View>
 
-          {/* 예측 순위 */}
           <View style={styles.predictions}>
             <View style={styles.predictionItem}>
               <Text style={styles.rank}>🥇 1위</Text>
-              <Text style={styles.horseNumber}>{prediction.firstPlace}번</Text>
+              <Text style={styles.horseNumber}>{prediction.predictedFirst}번</Text>
             </View>
-
             <View style={styles.predictionItem}>
               <Text style={styles.rank}>🥈 2위</Text>
-              <Text style={styles.horseNumber}>{prediction.secondPlace}번</Text>
+              <Text style={styles.horseNumber}>{prediction.predictedSecond}번</Text>
             </View>
-
             <View style={styles.predictionItem}>
               <Text style={styles.rank}>🥉 3위</Text>
-              <Text style={styles.horseNumber}>{prediction.thirdPlace}번</Text>
+              <Text style={styles.horseNumber}>{prediction.predictedThird}번</Text>
             </View>
           </View>
 
-          {/* 신뢰도 */}
           <View style={styles.confidenceSection}>
             <Text style={styles.confidenceLabel}>신뢰도</Text>
             <View style={styles.confidenceBar}>
@@ -85,13 +108,11 @@ export default function PredictionRequestScreen() {
             <Text style={styles.confidenceValue}>{prediction.confidence.toFixed(1)}%</Text>
           </View>
 
-          {/* 분석 내용 */}
           <View style={styles.analysisSection}>
             <Text style={styles.analysisTitle}>📊 상세 분석</Text>
             <Text style={styles.analysisText}>{prediction.analysis}</Text>
           </View>
 
-          {/* 주의사항 */}
           {prediction.warnings && prediction.warnings.length > 0 && (
             <View style={styles.warningsSection}>
               <Text style={styles.warningsTitle}>⚠️ 주의사항</Text>
@@ -102,54 +123,127 @@ export default function PredictionRequestScreen() {
               ))}
             </View>
           )}
-
-          {/* 메타 정보 */}
-          <View style={styles.metaInfo}>
-            <Text style={styles.metaText}>비용: ₩{prediction.llmCost}</Text>
-            <Text style={styles.metaText}>응답 시간: {prediction.responseTime}ms</Text>
-          </View>
         </View>
 
-        {/* 법적 고지 */}
-        <View style={styles.disclaimer}>
+        <View style={styles.disclaimerCard}>
+          <Text style={styles.disclaimerTitle}>⚠️ 면책 공지</Text>
           <Text style={styles.disclaimerText}>
-            ⚖️ 본 예측은 AI가 과거 데이터를 분석하여 제공하는 정보이며, 실제 경주 결과와 다를 수
-            있습니다. 투자 결정은 본인의 책임하에 신중하게 하시기 바랍니다.
+            본 예측은 AI 기반 참고 자료이며, 실제 결과와 다를 수 있습니다.
           </Text>
         </View>
       </ScrollView>
     );
   }
 
-  return (
-    <ScrollView style={styles.container}>
-      {/* 예측 요청 전 */}
-      <View style={styles.requestSection}>
-        <Text style={styles.requestIcon}>🤖</Text>
-        <Text style={styles.requestTitle}>AI 예측 요청</Text>
-        <Text style={styles.requestText}>LLM AI가 과거 경주 데이터를 분석하여 예측합니다.</Text>
+  // 미리보기 - 블러 처리 (예측권 필요)
+  if (preview && preview.hasPrediction) {
+    return (
+      <ScrollView style={styles.container}>
+        <View style={styles.blurContainer}>
+          <View style={styles.resultCard}>
+            <View style={styles.resultHeader}>
+              <Text style={styles.resultTitle}>🤖 AI 예측 결과</Text>
+              <View style={styles.lockBadge}>
+                <Text style={styles.lockBadgeText}>🔒 잠김</Text>
+              </View>
+            </View>
 
-        {/* 예측권 정보 */}
-        <View style={styles.ticketInfo}>
-          <Text style={styles.ticketInfoLabel}>보유 예측권</Text>
-          <Text style={styles.ticketInfoValue}>{availableTickets}장</Text>
+            {/* 블러 처리된 내용 */}
+            <BlurView intensity={80} style={styles.blurredContent} tint='light'>
+              <View style={styles.predictions}>
+                <View style={styles.predictionItem}>
+                  <Text style={styles.rank}>🥇 1위</Text>
+                  <Text style={styles.horseNumber}>?번</Text>
+                </View>
+                <View style={styles.predictionItem}>
+                  <Text style={styles.rank}>🥈 2위</Text>
+                  <Text style={styles.horseNumber}>?번</Text>
+                </View>
+                <View style={styles.predictionItem}>
+                  <Text style={styles.rank}>🥉 3위</Text>
+                  <Text style={styles.horseNumber}>?번</Text>
+                </View>
+              </View>
+
+              {preview.confidence && (
+                <View style={styles.confidenceSection}>
+                  <Text style={styles.confidenceLabel}>신뢰도</Text>
+                  <View style={styles.confidenceBar}>
+                    <View style={[styles.confidenceFill, { width: `${preview.confidence}%` }]} />
+                  </View>
+                  <Text style={styles.confidenceValue}>{preview.confidence.toFixed(1)}%</Text>
+                </View>
+              )}
+
+              <View style={styles.analysisSection}>
+                <Text style={styles.analysisTitle}>📊 상세 분석</Text>
+                <Text style={styles.analysisText}>••••••••••••••••••••</Text>
+                <Text style={styles.analysisText}>••••••••••••••••••••</Text>
+              </View>
+            </BlurView>
+
+            {/* 예측권 사용 오버레이 */}
+            <View style={styles.unlockOverlay}>
+              <Text style={styles.unlockIcon}>🔓</Text>
+              <Text style={styles.unlockTitle}>예측권으로 잠금 해제</Text>
+              <Text style={styles.unlockMessage}>{preview.message}</Text>
+
+              <View style={styles.ticketInfoBox}>
+                <Text style={styles.ticketInfoLabel}>보유 예측권</Text>
+                <Text style={styles.ticketInfoValue}>{availableTickets}장</Text>
+              </View>
+
+              <TouchableOpacity
+                style={[styles.unlockButton, !hasTickets && styles.unlockButtonDisabled]}
+                onPress={handleUsePredictionTicket}
+                disabled={!hasTickets}
+              >
+                <Text style={styles.unlockButtonText}>
+                  {hasTickets ? '예측권 1장 사용하기' : '예측권 없음'}
+                </Text>
+              </TouchableOpacity>
+
+              {!hasTickets && (
+                <View style={styles.purchaseButtons}>
+                  <TouchableOpacity
+                    style={styles.singleBuyButton}
+                    onPress={() => router.push('/mypage/purchase/single')}
+                  >
+                    <Text style={styles.singleBuyText}>개별 구매 ₩1,100</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.subscribeButton}
+                    onPress={() => router.push('/mypage/subscription/plans')}
+                  >
+                    <Text style={styles.subscribeText}>구독하기</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
         </View>
 
-        <TouchableOpacity style={styles.requestButton} onPress={handleRequestPrediction}>
-          <Text style={styles.requestButtonText}>예측권 1장 사용하기</Text>
-        </TouchableOpacity>
+        <View style={styles.infoCard}>
+          <Text style={styles.infoTitle}>💡 예측권이란?</Text>
+          <Text style={styles.infoText}>• 개별 구매: ₩1,100/장</Text>
+          <Text style={styles.infoText}>• 라이트 플랜: ₩9,900 (10+1장)</Text>
+          <Text style={styles.infoText}>• 프리미엄 플랜: ₩19,800 (20+4장)</Text>
+          <Text style={styles.infoHighlight}>구독하면 최대 54% 할인!</Text>
+        </View>
+      </ScrollView>
+    );
+  }
 
-        {!hasTickets && (
-          <View style={styles.noTicketNotice}>
-            <Text style={styles.noTicketText}>예측권이 없습니다</Text>
-            <TouchableOpacity
-              style={styles.buyButton}
-              onPress={() => router.push('/mypage/subscription/plans')}
-            >
-              <Text style={styles.buyButtonText}>구독하기</Text>
-            </TouchableOpacity>
-          </View>
-        )}
+  // 예측 생성 대기 중
+  return (
+    <ScrollView style={styles.container}>
+      <View style={styles.pendingSection}>
+        <ActivityIndicator size='large' color='#007AFF' />
+        <Text style={styles.pendingTitle}>AI 예측 생성 중</Text>
+        <Text style={styles.pendingText}>
+          배치 예측 시스템이 경주 시작 전에 자동으로 예측을 생성합니다.
+        </Text>
+        <Text style={styles.pendingSubtext}>잠시 후 다시 확인해주세요.</Text>
       </View>
     </ScrollView>
   );
@@ -164,93 +258,23 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#fff',
   },
   loadingText: {
     marginTop: 16,
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#007AFF',
-  },
-  loadingSubtext: {
-    marginTop: 8,
-    fontSize: 14,
-    color: '#666',
-  },
-  requestSection: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  requestIcon: {
-    fontSize: 64,
-    marginBottom: 16,
-  },
-  requestTitle: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  requestText: {
-    fontSize: 14,
-    color: '#666',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  ticketInfo: {
-    backgroundColor: '#f0f7ff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-    alignItems: 'center',
-  },
-  ticketInfoLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 4,
-  },
-  ticketInfoValue: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#007AFF',
-  },
-  requestButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 32,
-    paddingVertical: 14,
-    borderRadius: 12,
-  },
-  requestButtonText: {
-    color: '#fff',
     fontSize: 16,
-    fontWeight: '700',
-  },
-  noTicketNotice: {
-    marginTop: 24,
-    alignItems: 'center',
-  },
-  noTicketText: {
-    fontSize: 14,
-    color: '#dc3545',
-    marginBottom: 12,
-  },
-  buyButton: {
-    backgroundColor: '#28a745',
-    paddingHorizontal: 24,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  buyButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    color: '#333',
   },
   resultCard: {
+    backgroundColor: '#fff',
     margin: 16,
     padding: 20,
-    backgroundColor: '#fff',
-    borderRadius: 16,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 3,
   },
   resultHeader: {
     flexDirection: 'row',
@@ -260,15 +284,30 @@ const styles = StyleSheet.create({
   },
   resultTitle: {
     fontSize: 20,
-    fontWeight: '700',
+    fontWeight: 'bold',
+    color: '#333',
   },
-  resultModel: {
-    fontSize: 12,
-    color: '#007AFF',
-    backgroundColor: '#f0f7ff',
-    paddingHorizontal: 8,
+  usedBadge: {
+    backgroundColor: '#4CAF50',
+    paddingHorizontal: 12,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 12,
+  },
+  usedBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  lockBadge: {
+    backgroundColor: '#FF9800',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  lockBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   predictions: {
     marginBottom: 20,
@@ -277,18 +316,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
-    marginBottom: 12,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   rank: {
     fontSize: 18,
     fontWeight: '600',
+    color: '#666',
   },
   horseNumber: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 24,
+    fontWeight: 'bold',
     color: '#007AFF',
   },
   confidenceSection: {
@@ -300,77 +339,218 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   confidenceBar: {
-    height: 8,
-    backgroundColor: '#e9ecef',
-    borderRadius: 4,
+    height: 24,
+    backgroundColor: '#e0e0e0',
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: 8,
   },
   confidenceFill: {
     height: '100%',
-    backgroundColor: '#28a745',
+    backgroundColor: '#4CAF50',
   },
   confidenceValue: {
     fontSize: 16,
-    fontWeight: '700',
-    color: '#28a745',
+    fontWeight: 'bold',
+    color: '#4CAF50',
     textAlign: 'right',
   },
   analysisSection: {
     marginBottom: 20,
-    padding: 16,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 12,
   },
   analysisTitle: {
     fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
   },
   analysisText: {
     fontSize: 14,
-    color: '#333',
+    color: '#666',
     lineHeight: 22,
   },
   warningsSection: {
+    backgroundColor: '#FFF3CD',
+    padding: 12,
+    borderRadius: 8,
     marginBottom: 20,
-    padding: 16,
-    backgroundColor: '#fff3cd',
-    borderRadius: 12,
   },
   warningsTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    marginBottom: 12,
+    fontSize: 14,
+    fontWeight: '600',
     color: '#856404',
+    marginBottom: 8,
   },
   warningText: {
-    fontSize: 14,
+    fontSize: 13,
     color: '#856404',
-    lineHeight: 20,
     marginBottom: 4,
   },
-  metaInfo: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
-  },
-  metaText: {
-    fontSize: 12,
-    color: '#999',
-  },
-  disclaimer: {
+  disclaimerCard: {
+    backgroundColor: '#fff',
     margin: 16,
+    marginTop: 0,
     padding: 16,
-    backgroundColor: '#f8f9fa',
     borderRadius: 12,
-    marginBottom: 32,
+  },
+  disclaimerTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginBottom: 8,
   },
   disclaimerText: {
     fontSize: 12,
-    color: '#666',
+    color: '#999',
     lineHeight: 18,
+  },
+  // 블러 화면
+  blurContainer: {
+    margin: 16,
+  },
+  blurredContent: {
+    padding: 20,
+  },
+  unlockOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  unlockIcon: {
+    fontSize: 60,
+    marginBottom: 16,
+  },
+  unlockTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 8,
+  },
+  unlockMessage: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  ticketInfoBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  ticketInfoLabel: {
+    fontSize: 14,
+    color: '#666',
+    marginRight: 12,
+  },
+  ticketInfoValue: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#007AFF',
+  },
+  unlockButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    width: '100%',
+  },
+  unlockButtonDisabled: {
+    backgroundColor: '#ccc',
+  },
+  unlockButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  purchaseButtons: {
+    flexDirection: 'row',
+    gap: 12,
+    width: '100%',
+  },
+  singleBuyButton: {
+    flex: 1,
+    backgroundColor: '#4CAF50',
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  singleBuyText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  subscribeButton: {
+    flex: 1,
+    backgroundColor: '#FF9800',
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  subscribeText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  infoCard: {
+    backgroundColor: '#fff',
+    margin: 16,
+    marginTop: 0,
+    padding: 20,
+    borderRadius: 12,
+  },
+  infoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 12,
+  },
+  infoText: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 6,
+  },
+  infoHighlight: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FF9800',
+    marginTop: 8,
+  },
+  // 생성 대기 중
+  pendingSection: {
+    alignItems: 'center',
+    padding: 40,
+    backgroundColor: '#fff',
+    margin: 16,
+    borderRadius: 12,
+  },
+  pendingTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#333',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  pendingText: {
+    fontSize: 14,
+    color: '#666',
+    textAlign: 'center',
+    marginBottom: 8,
+    lineHeight: 22,
+  },
+  pendingSubtext: {
+    fontSize: 12,
+    color: '#999',
   },
 });

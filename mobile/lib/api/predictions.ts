@@ -63,13 +63,39 @@ export class PredictionsApi {
   }
 
   /**
-   * 경주별 예측 조회
+   * 경주별 예측 조회 (예측권 필수)
    */
   static async getByRaceId(raceId: string): Promise<PredictionResult | null> {
     try {
       const response = await axiosInstance.get<ApiResponse<PredictionResult | null>>(
         `/predictions/race/${raceId}`
       );
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /**
+   * 예측 미리보기 (예측권 불필요, 블러 처리용)
+   */
+  static async getPreview(raceId: string): Promise<{
+    raceId: string;
+    confidence?: number;
+    hasPrediction: boolean;
+    requiresTicket: boolean;
+    message: string;
+  }> {
+    try {
+      const response = await axiosInstance.get<
+        ApiResponse<{
+          raceId: string;
+          confidence?: number;
+          hasPrediction: boolean;
+          requiresTicket: boolean;
+          message: string;
+        }>
+      >(`/predictions/race/${raceId}/preview`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);

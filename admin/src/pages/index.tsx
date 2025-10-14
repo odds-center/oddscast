@@ -1,7 +1,7 @@
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
-import { apiClient } from '@/lib/api';
+import { adminDashboardApi } from '@/lib/api/admin';
 import { Users, CalendarDays, DollarSign, TrendingUp } from 'lucide-react';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
@@ -24,10 +24,7 @@ interface DashboardStats {
 export default function DashboardPage() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ['dashboard-stats'],
-    queryFn: async () => {
-      const response = await apiClient.get<DashboardStats>('/api/admin/statistics/dashboard');
-      return response;
-    },
+    queryFn: () => adminDashboardApi.getStats(),
     refetchInterval: 30000, // 30초마다 자동 새로고침
   });
 

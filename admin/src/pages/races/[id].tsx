@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminRacesApi } from '@/lib/api/admin';
 import { formatDate } from '@/lib/utils';
 
 interface Race {
@@ -25,10 +25,7 @@ export default function RaceDetailPage() {
 
   const { data: race, isLoading } = useQuery({
     queryKey: ['race', id],
-    queryFn: async () => {
-      const response = await apiClient.get<Race>(`/api/admin/races/${id}`);
-      return response;
-    },
+    queryFn: () => adminRacesApi.getOne(id as string),
     enabled: !!id,
   });
 

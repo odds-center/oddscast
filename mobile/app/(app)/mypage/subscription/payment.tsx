@@ -10,11 +10,13 @@ import { TossPaymentWidget } from '@/components/payment/TossPaymentWidget';
 import { GOLD_THEME } from '@/constants/theme';
 import { useAuth } from '@/context/AuthProvider';
 import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useSubscriptionPlans } from '@/lib/hooks/useSubscriptionPlans';
+import { useSinglePurchaseConfig } from '@/lib/hooks/useSinglePurchaseConfig';
 import { showErrorMessage, showSuccessMessage } from '@/utils/alert';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import React, { useState, useMemo } from 'react';
+import { Modal, StyleSheet, View, ActivityIndicator } from 'react-native';
 
 /**
  * 구독 결제 화면 (Toss Payments)
@@ -24,26 +26,31 @@ export default function SubscriptionPaymentScreen() {
   const { planId } = useLocalSearchParams<{ planId?: string }>();
   const { user } = useAuth();
   const { subscribe } = useSubscription();
+  const { data: plans, isLoading } = useSubscriptionPlans();
+  const { data: singleConfig } = useSinglePurchaseConfig();
   const [showPaymentWidget, setShowPaymentWidget] = useState(false);
 
-  // 플랜 정보
-  const planInfo = {
-    LIGHT: { name: '라이트 구독', price: 9900, tickets: 15, pricePerTicket: 660, discount: 34 },
-    PREMIUM: {
-      name: '프리미엄 구독',
-      price: 19800,
-      tickets: 35,
-      pricePerTicket: 566,
-      discount: 43,
-    },
-  };
+  // DB에서 가져온 플랜 정보 (planName 기준으로 찾기)
+  const selectedPlanName = (planId as string) || 'PREMIUM';
+  const plan = useMemo(() => {
+    if (!plans || plans.length === 0) return null;
+    return plans.find((p) => p.planName === selectedPlanName) || plans[0];
+  }, [plans, selectedPlanName]);
 
-  const selectedPlan = (planId as 'LIGHT' | 'PREMIUM') || 'PREMIUM';
-  const plan = planInfo[selectedPlan];
+  // 계산된 값
+  const pricePerTicket = plan ? Math.round(plan.totalPrice / plan.totalTickets) : 0;
+  const SINGLE_PRICE = singleConfig?.totalPrice || 1100; // DB에서 가져온 개별 구매 가격
+  const discount = plan
+    ? Math.round(
+        ((SINGLE_PRICE * plan.totalTickets - plan.totalPrice) /
+          (SINGLE_PRICE * plan.totalTickets)) *
+          100
+      )
+    : 0;
 
   const orderId = `SUB-${Date.now()}`;
-  const orderName = `AI 예측권 ${plan.name}`;
-  const amount = plan.price;
+  const orderName = plan ? `AI 예측권 ${plan.displayName}` : 'AI 예측권 구독';
+  const amount = plan?.totalPrice || 0;
 
   const handleStartPayment = () => {
     setShowPaymentWidget(true);
@@ -57,7 +64,7 @@ export default function SubscriptionPaymentScreen() {
       setShowPaymentWidget(false);
 
       showSuccessMessage(
-        `${plan.name}이 활성화되었습니다.\n월 ${plan.tickets}장의 AI 예측권을 사용하실 수 있습니다.`,
+        `${plan?.displayName}이 활성화되었습니다.\n월 ${plan?.totalTickets}장의 AI 예측권을 사용하실 수 있습니다.`,
         '구독 완료!'
       );
       setTimeout(() => {
@@ -78,6 +85,25 @@ export default function SubscriptionPaymentScreen() {
     setShowPaymentWidget(false);
   };
 
+  // 로딩 중이거나 플랜이 없을 때
+  if (isLoading) {
+    return (
+      <PageLayout style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
+        <ThemedText style={{ marginTop: 16 }}>플랜 정보를 불러오는 중...</ThemedText>
+      </PageLayout>
+    );
+  }
+
+  if (!plan) {
+    return (
+      <PageLayout>
+        <ThemedText>플랜 정보를 찾을 수 없습니다.</ThemedText>
+        <ActionButton title='돌아가기' onPress={() => router.back()} variant='secondary' />
+      </PageLayout>
+    );
+  }
+
   return (
     <PageLayout style={{ paddingTop: 0 }}>
       <PageHeader title='구독 결제' showBackButton={true} onBackPress={() => router.back()} />
@@ -85,18 +111,19 @@ export default function SubscriptionPaymentScreen() {
       {/* 결제 정보 카드 */}
       <SubscriptionCard title='결제 정보 확인' icon='card'>
         <View style={styles.paymentDetails}>
-          <DetailRow label='상품명' value={`AI 예측권 ${plan.name}`} />
+          <DetailRow label='상품명' value={`AI 예측권 ${plan.displayName}`} />
           <DetailRow
             label='결제 금액'
-            value={`${Math.floor(plan.price).toLocaleString('ko-KR')}원/월`}
+            value={`${Math.floor(plan.totalPrice).toLocaleString('ko-KR')}원/월`}
             valueStyle={styles.amountValue}
           />
-          <DetailRow label='제공 내용' value={`월 ${plan.tickets}장 AI 예측권`} />
+          <DetailRow
+            label='제공 내용'
+            value={`월 ${plan.totalTickets}장 AI 예측권 (기본 ${plan.baseTickets}장 + 보너스 ${plan.bonusTickets}장)`}
+          />
           <DetailRow
             label='장당 가격'
-            value={`${Math.floor(plan.pricePerTicket).toLocaleString('ko-KR')}원 (${
-              plan.discount
-            }% 할인)`}
+            value={`${pricePerTicket.toLocaleString('ko-KR')}원 (${discount}% 할인)`}
           />
           <DetailRow label='결제 방식' value='정기 결제 (자동 갱신)' />
           <DetailRow
@@ -109,11 +136,9 @@ export default function SubscriptionPaymentScreen() {
       {/* 구독 혜택 카드 */}
       <SubscriptionCard title='구독 혜택' icon='diamond'>
         <View style={styles.benefitsList}>
-          <BenefitItem text={`월 ${plan.tickets}장 AI 예측권`} />
+          <BenefitItem text={`월 ${plan.totalTickets}장 AI 예측권`} />
           <BenefitItem
-            text={`장당 ${Math.floor(plan.pricePerTicket).toLocaleString('ko-KR')}원 (${
-              plan.discount
-            }% 할인)`}
+            text={`장당 ${pricePerTicket.toLocaleString('ko-KR')}원 (${discount}% 할인)`}
           />
           <BenefitItem text='평균 70%+ 정확도 목표' />
           <BenefitItem text='자동 갱신' />
@@ -130,7 +155,7 @@ export default function SubscriptionPaymentScreen() {
       {/* 결제 버튼 */}
       <View style={styles.buttonContainer}>
         <ActionButton
-          title={`${Math.floor(plan.price).toLocaleString('ko-KR')}원 결제하기`}
+          title={`${Math.floor(plan.totalPrice).toLocaleString('ko-KR')}원 결제하기`}
           onPress={handleStartPayment}
           variant='primary'
         />

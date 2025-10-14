@@ -6,7 +6,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminUsersApi } from '@/lib/api/admin';
 import { formatDateTime } from '@/lib/utils';
 
 interface User {
@@ -30,20 +30,14 @@ export default function UsersPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search],
-    queryFn: async () => {
-      const params: any = { page, limit: 20 };
-      if (search) params.search = search;
-      const response = await apiClient.get<any>('/api/admin/users', { params });
-      return response;
-    },
+    queryFn: () => adminUsersApi.getAll({ page, limit: 20, search }),
+    placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
+    staleTime: 2 * 60 * 1000, // 2분
   });
 
   const toggleActiveMutation = useMutation({
-    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      const endpoint = isActive
-        ? `/api/admin/users/${id}/deactivate`
-        : `/api/admin/users/${id}/activate`;
-      return apiClient.patch(endpoint);
+    mutationFn: ({ id, isActive }: { id: string; isActive: boolean }) => {
+      return isActive ? adminUsersApi.deactivate(id) : adminUsersApi.activate(id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });

@@ -5,6 +5,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { GOLD_THEME } from '@/constants/theme';
 import { useSubscription } from '@/lib/hooks/useSubscription';
 import { useSubscriptionPlans } from '@/lib/hooks/useSubscriptionPlans';
+import { useSinglePurchaseConfig } from '@/lib/hooks/useSinglePurchaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import type { BottomSheetBackdropProps } from '@gorhom/bottom-sheet';
 import BottomSheet, { BottomSheetBackdrop, BottomSheetScrollView } from '@gorhom/bottom-sheet';
@@ -20,32 +21,50 @@ export default function SubscriptionPlansScreen() {
   const router = useRouter();
   const { isSubscribed } = useSubscription();
   const { data: plans, isLoading } = useSubscriptionPlans();
+  const { data: singleConfig } = useSinglePurchaseConfig();
   const [selectedPlan, setSelectedPlan] = useState<'LIGHT' | 'PREMIUM' | null>(null);
 
   // Bottom Sheet ref
   const bottomSheetRef = useRef<BottomSheet>(null);
   const snapPoints = useMemo(() => ['50%'], []);
 
-  // 플랜 데이터를 맵으로 변환
+  // 플랜 데이터를 맵으로 변환 (DB 스키마 기준)
   const planMap = useMemo(() => {
-    if (!plans) return null;
+    if (!plans || !singleConfig) return null;
     const map: any = {};
+    const SINGLE_PRICE = singleConfig.totalPrice; // DB에서 가져온 개별 구매 가격
+
     plans.forEach((plan) => {
-      map[plan.planId] = {
-        id: plan.planId,
-        name: plan.name,
-        description: plan.description,
-        price: plan.price,
-        tickets: plan.ticketsPerMonth,
-        pricePerTicket: plan.pricePerTicket,
-        discount: plan.discountPercentage,
-        isRecommended: plan.isRecommended,
-        features: plan.features,
-        savings: 1000 * plan.ticketsPerMonth - plan.price, // 개별 구매 대비 절약액
+      const pricePerTicket = Math.round(plan.totalPrice / plan.totalTickets);
+      const discount = Math.round(
+        ((SINGLE_PRICE * plan.totalTickets - plan.totalPrice) /
+          (SINGLE_PRICE * plan.totalTickets)) *
+          100
+      );
+      const savings = SINGLE_PRICE * plan.totalTickets - plan.totalPrice;
+
+      map[plan.planName] = {
+        id: plan.id,
+        name: plan.displayName,
+        description: plan.description || '',
+        price: plan.totalPrice,
+        tickets: plan.totalTickets,
+        baseTickets: plan.baseTickets,
+        bonusTickets: plan.bonusTickets,
+        pricePerTicket,
+        discount,
+        isRecommended: plan.sortOrder === 2, // 프리미엄(sortOrder=2)이 추천
+        features: [
+          `월 ${plan.totalTickets}장 AI 예측권 (기본 ${plan.baseTickets}장 + 보너스 ${plan.bonusTickets}장)`,
+          `장당 ${pricePerTicket.toLocaleString('ko-KR')}원 (${discount}% 할인)`,
+          '평균 70%+ 정확도 목표',
+          '자동 갱신',
+        ],
+        savings,
       };
     });
     return map;
-  }, [plans]);
+  }, [plans, singleConfig]);
 
   const handlePlanSelect = (planId: 'LIGHT' | 'PREMIUM') => {
     setSelectedPlan(planId);
@@ -238,23 +257,17 @@ export default function SubscriptionPlansScreen() {
               </ThemedText>
             </View>
 
-            <View style={styles.comparisonRow}>
-              <ThemedText style={styles.comparisonLabel}>개별 구매 (1장)</ThemedText>
-              <ThemedText style={styles.comparisonSingle}>1,000원</ThemedText>
-              <ThemedText style={styles.comparisonUnit}>1,000원/장</ThemedText>
-            </View>
-
-            <View style={styles.comparisonRow}>
-              <ThemedText style={styles.comparisonLabel}>개별 5장 (5% 할인)</ThemedText>
-              <ThemedText style={styles.comparisonSingle}>4,750원</ThemedText>
-              <ThemedText style={styles.comparisonUnit}>950원/장</ThemedText>
-            </View>
-
-            <View style={styles.comparisonRow}>
-              <ThemedText style={styles.comparisonLabel}>개별 10장 (10% 할인)</ThemedText>
-              <ThemedText style={styles.comparisonSingle}>9,000원</ThemedText>
-              <ThemedText style={styles.comparisonUnit}>900원/장</ThemedText>
-            </View>
+            {singleConfig && (
+              <View style={styles.comparisonRow}>
+                <ThemedText style={styles.comparisonLabel}>개별 구매 (1장)</ThemedText>
+                <ThemedText style={styles.comparisonSingle}>
+                  {Math.floor(singleConfig.totalPrice).toLocaleString('ko-KR')}원
+                </ThemedText>
+                <ThemedText style={styles.comparisonUnit}>
+                  {Math.floor(singleConfig.totalPrice).toLocaleString('ko-KR')}원/장
+                </ThemedText>
+              </View>
+            )}
           </View>
 
           <View style={styles.tipContainer}>

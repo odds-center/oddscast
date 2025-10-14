@@ -10,6 +10,8 @@ import {
  * 일일 AI 예측 통계
  */
 @Entity('daily_prediction_stats')
+@Index(['date'])
+@Index(['accuracy'])
 export class DailyPredictionStats {
   @PrimaryColumn({ type: 'date' })
   date: Date;
@@ -120,11 +122,4 @@ export class DailyPredictionStats {
   // 타임스탬프
   @CreateDateColumn({ name: 'calculated_at' })
   calculatedAt: Date;
-
-  // 인덱스
-  @Index()
-  date_index: Date;
-
-  @Index()
-  accuracy_index: number;
 }

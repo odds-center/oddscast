@@ -1,12 +1,16 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
-import { apiClient } from '@/lib/api';
+import { adminNotificationsApi } from '@/lib/api/admin';
 import { formatDateTime } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 
@@ -20,47 +24,55 @@ interface Notification {
   createdAt: string;
 }
 
+// Zod 스키마
+const notificationSchema = z.object({
+  title: z.string().min(1, '제목을 입력해주세요').max(100, '제목은 100자 이내로 입력해주세요'),
+  message: z.string().min(1, '내용을 입력해주세요').max(500, '내용은 500자 이내로 입력해주세요'),
+  target: z.enum(['all', 'active', 'subscribers']),
+});
+
+type NotificationFormData = z.infer<typeof notificationSchema>;
+
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [title, setTitle] = useState('');
-  const [message, setMessage] = useState('');
-  const [target, setTarget] = useState('all');
-  const [isSending, setIsSending] = useState(false);
+
+  // react-hook-form 설정
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors, isValid },
+  } = useForm<NotificationFormData>({
+    resolver: zodResolver(notificationSchema),
+    defaultValues: {
+      title: '',
+      message: '',
+      target: 'all',
+    },
+    mode: 'onChange',
+  });
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-notifications', page],
-    queryFn: async () => {
-      const response = await apiClient.get<any>('/api/admin/notifications', {
-        params: { page, limit: 20 },
-      });
-      return response;
+    queryFn: () => adminNotificationsApi.getAll({ page, limit: 20 }),
+  });
+
+  const sendNotificationMutation = useMutation({
+    mutationFn: (data: NotificationFormData) => adminNotificationsApi.send(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      toast.success('알림이 전송되었습니다!');
+      reset();
+    },
+    onError: (error) => {
+      console.error('알림 전송 실패:', error);
+      toast.error('알림 전송에 실패했습니다.');
     },
   });
 
-  const handleSendNotification = async () => {
-    if (!title.trim() || !message.trim()) {
-      alert('제목과 내용을 입력해주세요.');
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      await apiClient.post('/api/admin/notifications/send', {
-        title,
-        message,
-        target,
-      });
-
-      alert('알림이 전송되었습니다!');
-      setTitle('');
-      setMessage('');
-      queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
-    } catch (error) {
-      alert('알림 전송에 실패했습니다.');
-    } finally {
-      setIsSending(false);
-    }
+  const onSubmit = (data: NotificationFormData) => {
+    sendNotificationMutation.mutate(data);
   };
 
   const columns = [
@@ -125,32 +137,37 @@ export default function NotificationsPage() {
           </div>
 
           <Card title='알림 전송' description='모바일 앱 사용자들에게 푸시 알림을 전송합니다.'>
-            <div className='space-y-4'>
+            <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>제목</label>
                 <input
                   type='text'
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  {...register('title')}
                   className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
                   placeholder='알림 제목을 입력하세요'
                 />
+                {errors.title && (
+                  <p className='text-red-500 text-sm mt-1'>{errors.title.message}</p>
+                )}
               </div>
+
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>내용</label>
                 <textarea
                   rows={4}
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
+                  {...register('message')}
                   className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
                   placeholder='알림 내용을 입력하세요'
                 />
+                {errors.message && (
+                  <p className='text-red-500 text-sm mt-1'>{errors.message.message}</p>
+                )}
               </div>
+
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>전송 대상</label>
                 <select
-                  value={target}
-                  onChange={(e) => setTarget(e.target.value)}
+                  {...register('target')}
                   className='w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
                 >
                   <option value='all'>전체 회원</option>
@@ -158,16 +175,16 @@ export default function NotificationsPage() {
                   <option value='subscribers'>구독자</option>
                 </select>
               </div>
+
               <Button
+                type='submit'
                 className='w-full'
-                onClick={handleSendNotification}
-                isLoading={isSending}
-                disabled={isSending || !title.trim() || !message.trim()}
+                disabled={sendNotificationMutation.isPending || !isValid}
               >
                 <Bell className='w-4 h-4 mr-2' />
-                알림 전송
+                {sendNotificationMutation.isPending ? '전송 중...' : '알림 전송'}
               </Button>
-            </div>
+            </form>
           </Card>
 
           <Card title='알림 내역' description='전송된 알림 목록을 확인할 수 있습니다.'>

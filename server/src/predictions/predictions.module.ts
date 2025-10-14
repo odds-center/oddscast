@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { PredictionsController } from './predictions.controller';
 import { PredictionsService } from './predictions.service';
@@ -47,7 +47,7 @@ import {
     ]),
     LlmModule,
     CacheModule, // Redis 캐싱
-    PredictionTicketsModule, // 예측권
+    forwardRef(() => PredictionTicketsModule), // 예측권 (순환 참조 방지)
   ],
   controllers: [PredictionsController],
   providers: [

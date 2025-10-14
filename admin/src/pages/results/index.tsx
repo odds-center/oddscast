@@ -6,7 +6,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminResultsApi } from '@/lib/api/admin';
 import { formatDate } from '@/lib/utils';
 
 interface RaceResult {
@@ -36,12 +36,7 @@ export default function ResultsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-results', page, dateFilter],
-    queryFn: async () => {
-      const params: any = { page, limit: 20 };
-      if (dateFilter) params.date = dateFilter;
-      const response = await apiClient.get<any>('/api/admin/results', { params });
-      return response;
-    },
+    queryFn: () => adminResultsApi.getAll({ page, limit: 20, date: dateFilter }),
   });
 
   const columns = [

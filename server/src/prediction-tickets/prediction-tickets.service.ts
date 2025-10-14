@@ -3,10 +3,15 @@ import {
   Logger,
   NotFoundException,
   BadRequestException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
-import { PredictionTicket, TicketStatus } from './entities/prediction-ticket.entity';
+import {
+  PredictionTicket,
+  TicketStatus,
+} from './entities/prediction-ticket.entity';
 import { PredictionsService } from '../predictions/predictions.service';
 import { IssueTicketDto, UseTicketDto, TicketBalanceDto } from './dto';
 
@@ -20,7 +25,8 @@ export class PredictionTicketsService {
   constructor(
     @InjectRepository(PredictionTicket)
     private readonly ticketRepo: Repository<PredictionTicket>,
-    private readonly predictionsService: PredictionsService,
+    @Inject(forwardRef(() => PredictionsService))
+    private readonly predictionsService: PredictionsService
   ) {}
 
   /**
@@ -50,7 +56,7 @@ export class PredictionTicketsService {
     const saved = await this.ticketRepo.save(tickets);
 
     this.logger.log(
-      `Issued ${saved.length} tickets for user ${dto.userId}, expires: ${expiresAt.toISOString()}`,
+      `Issued ${saved.length} tickets for user ${dto.userId}, expires: ${expiresAt.toISOString()}`
     );
 
     return saved;
@@ -65,18 +71,22 @@ export class PredictionTicketsService {
 
     if (!ticket) {
       throw new BadRequestException(
-        'No available prediction tickets. Please purchase or subscribe to get tickets.',
+        'No available prediction tickets. Please purchase or subscribe to get tickets.'
       );
     }
 
     // 2. 이미 예측이 있는지 확인 (캐싱)
-    const existingPrediction = await this.predictionsService.findByRaceId(dto.raceId);
+    const existingPrediction = await this.predictionsService.findByRaceId(
+      dto.raceId
+    );
 
     if (existingPrediction) {
       // 기존 예측 사용 (예측권 소모하지 않음)
       this.logger.log(`Using cached prediction for race: ${dto.raceId}`);
       return {
-        prediction: await this.predictionsService.findOne(existingPrediction.id),
+        prediction: await this.predictionsService.findOne(
+          existingPrediction.id
+        ),
         ticketUsed: false,
         ticket: null,
       };
@@ -159,7 +169,7 @@ export class PredictionTicketsService {
   async getHistory(
     userId: string,
     limit = 50,
-    offset = 0,
+    offset = 0
   ): Promise<PredictionTicket[]> {
     return this.ticketRepo.find({
       where: { userId },
@@ -224,11 +234,12 @@ export class PredictionTicketsService {
   /**
    * 구독으로 발급된 예측권 조회
    */
-  async findBySubscription(subscriptionId: string): Promise<PredictionTicket[]> {
+  async findBySubscription(
+    subscriptionId: string
+  ): Promise<PredictionTicket[]> {
     return this.ticketRepo.find({
       where: { subscriptionId },
       order: { issuedAt: 'DESC' },
     });
   }
 }
-

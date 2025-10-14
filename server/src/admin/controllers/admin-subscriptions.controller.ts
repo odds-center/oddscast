@@ -35,7 +35,7 @@ export class AdminSubscriptionsController {
   async findOnePlan(@Param('planId') planId: string) {
     try {
       const plans = await this.subscriptionsService.getPlans();
-      const plan = plans.find(p => p.planId === planId);
+      const plan = plans.find(p => p.id === planId);
       if (!plan) {
         return { success: false, message: '해당 플랜을 찾을 수 없습니다.' };
       }

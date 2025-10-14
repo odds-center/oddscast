@@ -32,31 +32,21 @@ export class AdminUsersController {
       const validPage = isNaN(page) ? 1 : page;
       const validLimit = isNaN(limit) ? 20 : limit;
 
-      // UsersService의 findAll은 파라미터가 없으므로 전체 조회
-      const users = await this.usersService.findAll();
-
-      // 필터링
-      let filteredUsers = users;
-      if (search) {
-        filteredUsers = users.filter(
-          user => user.email.includes(search) || user.name.includes(search)
-        );
-      }
-      if (role) {
-        filteredUsers = filteredUsers.filter(user => user.role === role);
-      }
-
-      // 페이지네이션 직접 구현
-      const startIndex = (validPage - 1) * validLimit;
-      const endIndex = startIndex + validLimit;
+      // DB 레벨에서 페이지네이션 처리 (성능 향상)
+      const result = await this.usersService.findWithPagination({
+        page: validPage,
+        limit: validLimit,
+        search,
+        role,
+      });
 
       return {
-        data: filteredUsers.slice(startIndex, endIndex),
+        data: result.data,
         meta: {
-          total: filteredUsers.length,
+          total: result.total,
           page: validPage,
           limit: validLimit,
-          totalPages: Math.ceil(filteredUsers.length / validLimit),
+          totalPages: Math.ceil(result.total / validLimit),
         },
       };
     } catch (error) {

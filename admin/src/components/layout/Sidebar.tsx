@@ -10,6 +10,9 @@ import {
   Settings,
   BarChart3,
   CreditCard,
+  Ticket,
+  Bot,
+  TrendingUp,
 } from 'lucide-react';
 
 const navigation = [
@@ -19,6 +22,11 @@ const navigation = [
   { name: '경기 결과', href: '/results', icon: Trophy },
   { name: '마권 관리', href: '/bets', icon: DollarSign },
   { name: '구독 관리', href: '/subscriptions', icon: CreditCard },
+  { name: '구독 플랜', href: '/subscription-plans', icon: CreditCard },
+  { name: '개별 구매', href: '/single-purchase-config', icon: Ticket },
+  { name: 'AI 설정', href: '/ai-config', icon: Bot },
+  { name: 'AI 분석', href: '/analytics', icon: BarChart3 },
+  { name: '수익 대시보드', href: '/revenue', icon: TrendingUp },
   { name: '통계', href: '/statistics', icon: BarChart3 },
   { name: '알림 관리', href: '/notifications', icon: Bell },
   { name: '설정', href: '/settings', icon: Settings },

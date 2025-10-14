@@ -62,3 +62,6 @@ export interface ApiError {
   statusCode: number;
   error: string;
 }
+
+// Admin types
+export * from './admin';

@@ -6,7 +6,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminBetsApi } from '@/lib/api/admin';
 import { formatDateTime, formatCurrency } from '@/lib/utils';
 
 interface Bet {
@@ -29,12 +29,9 @@ export default function BetsPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-bets', page, userId],
-    queryFn: async () => {
-      const params: any = { page, limit: 20 };
-      if (userId) params.userId = userId;
-      const response = await apiClient.get<any>('/api/admin/bets', { params });
-      return response;
-    },
+    queryFn: () => adminBetsApi.getAll({ page, limit: 20, userId }),
+    placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
+    staleTime: 2 * 60 * 1000, // 2분
   });
 
   const columns = [

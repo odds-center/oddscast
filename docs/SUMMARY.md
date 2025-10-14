@@ -13,9 +13,15 @@ goldenrace/
 ├── README.md                    ✨ 통합 링크 추가
 ├── LEGAL_NOTICE.md              ✅ 유지
 │
-├── 📚 docs/                     통합 문서 허브 (34개)
+├── 📚 docs/                     통합 문서 허브 (65개)
 │   ├── README.md               ⭐ 통합 네비게이션
 │   ├── SUMMARY.md              ⭐ 이 파일
+│   │
+│   ├── 📅 daily/ (3개)         개발 일지 ⭐ 신규
+│   │   ├── README.md
+│   │   ├── 2025-10-14-admin-panel-complete.md
+│   │   ├── 2025-10-11-notification-system.md
+│   │   └── 2025-10-11-development-summary.md
 │   │
 │   ├── 🔧 setup/ (4개)         설치 및 설정
 │   │   ├── QUICK_START.md
@@ -29,33 +35,42 @@ goldenrace/
 │   │   ├── mobile/            (3개 - ARCHITECTURE, NAVIGATION, STATE_MANAGEMENT)
 │   │   └── server/            (2개 - DATA_STORAGE, ENTITY_STATUS)
 │   │
-│   ├── 🎯 features/ (7개)      기능 설계
+│   ├── 🎯 features/ (18개)     기능 설계
 │   │   ├── README.md
-│   │   ├── ai/                (2개 - AI_FEATURES, AI_PREDICTION_ROADMAP)
-│   │   ├── game/              (3개 - BETTING, PAYMENT)
-│   │   └── mobile/            (2개 - HorseRacingApp, IMPLEMENTATION_PLAN)
+│   │   ├── ai/                (7개 - AI 시스템 완전 문서화)
+│   │   ├── game/              (8개 - 게임 시스템)
+│   │   └── mobile/            (3개 - 모바일 기능)
 │   │
-│   ├── 📖 guides/ (9개)        개발 가이드
+│   ├── 📖 guides/ (17개)       개발 가이드 ⭐ 확장
 │   │   ├── README.md
 │   │   ├── INTEGRATION_TEST_GUIDE.md
 │   │   ├── authentication/    (2개 - Authentication, GOOGLE_AUTH_USAGE)
 │   │   ├── mobile/            (3개 - UI_COMPONENTS, Theming, Database)
 │   │   ├── server/            (2개 - DATA_COLLECTION, KRA_API_MIGRATION)
-│   │   └── deployment/        (1개 + README - mobile.md)
+│   │   ├── admin/             (2개 - ADMIN_PANEL_GUIDE, README) ⭐ 신규
+│   │   └── deployment/        (7개 - Railway, EC2, Cloudflare 등)
 │   │
 │   ├── 📡 api/ (4개)           API 문서
 │   │   ├── README.md
 │   │   ├── rest/              (1개 - SERVER_MOBILE_API_MAPPING)
 │   │   └── kra/               (3개 - 한국마사회 API 문서)
 │   │
-│   ├── 📚 reference/ (1개)     레퍼런스
+│   ├── 📚 reference/ (4개)     레퍼런스 ⭐ 확장
 │   │   ├── README.md
+│   │   ├── KRA_SYSTEM_GUIDE.md
+│   │   ├── BETTING_SYSTEM_DETAILED.md
 │   │   └── HORSE_RACING_TERMINOLOGY.md
 │   │
-│   └── 📦 archive/ (3개)       아카이브
+│   └── 📦 archive/ (9개)       아카이브 ⭐ 확장
 │       ├── CHANGELOG.md
 │       ├── MIGRATION_REPORT.md
-│       └── API_INTEGRATION_SUMMARY.md
+│       ├── API_INTEGRATION_SUMMARY.md
+│       ├── IMPLEMENTATION_ROADMAP.md
+│       ├── FINAL_CONSISTENCY_REPORT.md
+│       ├── DOCS_INTEGRATION_COMPLETE.md
+│       ├── UNIFIED_DOCS_REPORT.md
+│       ├── IMPROVEMENTS.md
+│       └── 2025-10-14-admin-complete.md ⭐ 신규
 │
 ├── 📱 mobile/
 │   └── README.md               ✨ 통합 문서 링크
@@ -72,23 +87,23 @@ goldenrace/
 
 | 위치      | 문서 수      | 상태         |
 | --------- | ------------ | ------------ |
-| **docs/** | **35개**     | ✅ 통합 완료 |
+| **docs/** | **65개**     | ✅ 통합 완료 |
 | mobile/   | 1개 (README) | ✅ 간소화    |
 | server/   | 1개 (README) | ✅ 간소화    |
-| daily/    | 1개          | ✅ 신규 추가 |
-| **총계**  | **38개**     | ✅ 완료      |
+| **총계**  | **67개**     | ✅ 완료      |
 
 ### 카테고리별
 
 | 카테고리    | 문서 수 | 위치                 |
 | ----------- | ------- | -------------------- |
+| 개발 일지   | 3개     | `docs/daily/`        |
 | 설정 가이드 | 4개     | `docs/setup/`        |
 | 아키텍처    | 6개     | `docs/architecture/` |
-| 기능 설계   | 7개     | `docs/features/`     |
-| 개발 가이드 | 9개     | `docs/guides/`       |
+| 기능 설계   | 18개    | `docs/features/`     |
+| 개발 가이드 | 17개    | `docs/guides/`       |
 | API 문서    | 4개     | `docs/api/`          |
-| 레퍼런스    | 1개     | `docs/reference/`    |
-| 아카이브    | 3개     | `docs/archive/`      |
+| 레퍼런스    | 4개     | `docs/reference/`    |
+| 아카이브    | 9개     | `docs/archive/`      |
 
 ---
 
@@ -185,6 +200,27 @@ docs/api/README.md → docs/api/rest/ + docs/api/kra/
 **Golden Race Team** 🏇
 
 **최초 통합**: 2025년 10월 10일  
-**마지막 업데이트**: 2025년 10월 11일
+**마지막 업데이트**: 2025년 10월 14일
+
+---
+
+## 🆕 최근 업데이트
+
+### 2025년 10월 14일
+
+- ✅ **Admin Panel 완전 재구축** - React Hook Form + Zod + TanStack Query
+- ✅ **Admin 가이드 추가** - 800줄 분량의 완벽 가이드
+- ✅ **성능 최적화** - DB 레벨 페이지네이션, 캐싱 강화
+- ✅ **AI Config DB 저장** - 실시간 AI 설정 관리
+- ✅ **문서 4개 추가** - 총 65개 문서
+
+### 2025년 10월 11일
+
+- ✅ Push Notification 시스템
+- ✅ 구독 시스템 완성
+
+### 2025년 10월 10일
+
+- ✅ 문서 통합 완료
 
 </div>

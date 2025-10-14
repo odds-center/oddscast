@@ -43,7 +43,7 @@ export class SubscriptionsService {
 
     const plans = await this.planRepo.find({
       where: { isActive: true },
-      order: { price: 'ASC' },
+      order: { sortOrder: 'ASC' },
     });
 
     return plans;
@@ -61,11 +61,24 @@ export class SubscriptionsService {
       throw new ConflictException('User already has an active subscription');
     }
 
+    // 플랜 정보 조회
+    const plan = await this.planRepo.findOne({
+      where: { id: dto.planId },
+    });
+
+    if (!plan) {
+      throw new NotFoundException(`Subscription plan not found: ${dto.planId}`);
+    }
+
     // 구독 생성
     const subscription = this.subscriptionRepo.create({
       userId: dto.userId,
-      planId: dto.planId || SubscriptionPlan.PREMIUM,
-      price: 19800,
+      planId: dto.planId,
+      planName: plan.planName as SubscriptionPlan,
+      originalPrice: plan.originalPrice,
+      vat: plan.vat,
+      totalPrice: plan.totalPrice,
+      ticketsPerMonth: plan.totalTickets,
       status: dto.billingKey
         ? SubscriptionStatus.ACTIVE
         : SubscriptionStatus.PENDING,
@@ -263,8 +276,8 @@ export class SubscriptionsService {
     return {
       id: subscription.id,
       userId: subscription.userId,
-      planId: subscription.planId,
-      price: subscription.price,
+      planId: subscription.planName,
+      price: subscription.totalPrice,
       status: subscription.status,
       nextBillingDate: subscription.nextBillingDate,
       lastBilledAt: subscription.lastBilledAt,

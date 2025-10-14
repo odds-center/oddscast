@@ -12,6 +12,7 @@ import { AdminSubscriptionsController } from './controllers/admin-subscriptions.
 import { AdminBetsController } from './controllers/admin-bets.controller';
 import { AdminStatisticsController } from './controllers/admin-statistics.controller';
 import { AdminNotificationsController } from './controllers/admin-notifications.controller';
+import { AdminAIConfigController } from './controllers/admin-ai-config.controller';
 import { UsersModule } from '../users/users.module';
 import { RacesModule } from '../races/races.module';
 import { ResultsModule } from '../results/results.module';
@@ -22,10 +23,18 @@ import { User } from '../users/entities/user.entity';
 import { Bet } from '../bets/entities/bet.entity';
 import { Race } from '../races/entities/race.entity';
 import { Subscription } from '../subscriptions/entities/subscription.entity';
+import { AIConfigEntity } from '../llm/entities/ai-config.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Admin, User, Bet, Race, Subscription]),
+    TypeOrmModule.forFeature([
+      Admin,
+      User,
+      Bet,
+      Race,
+      Subscription,
+      AIConfigEntity,
+    ]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -52,6 +61,7 @@ import { Subscription } from '../subscriptions/entities/subscription.entity';
     AdminBetsController,
     AdminStatisticsController,
     AdminNotificationsController,
+    AdminAIConfigController,
   ],
   providers: [AdminService],
   exports: [AdminService, JwtModule],

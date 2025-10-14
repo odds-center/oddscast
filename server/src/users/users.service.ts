@@ -95,6 +95,41 @@ export class UsersService {
   }
 
   /**
+   * 페이지네이션 + 검색을 지원하는 사용자 조회 (Admin용)
+   */
+  async findWithPagination(params: {
+    page: number;
+    limit: number;
+    search?: string;
+    role?: string;
+  }): Promise<{ data: User[]; total: number }> {
+    const { page, limit, search, role } = params;
+    const skip = (page - 1) * limit;
+
+    const queryBuilder = this.userRepository.createQueryBuilder('user');
+
+    // 검색 필터
+    if (search) {
+      queryBuilder.where('user.email LIKE :search OR user.name LIKE :search', {
+        search: `%${search}%`,
+      });
+    }
+
+    // 역할 필터
+    if (role) {
+      queryBuilder.andWhere('user.role = :role', { role });
+    }
+
+    // 정렬 및 페이지네이션
+    queryBuilder.orderBy('user.createdAt', 'DESC').skip(skip).take(limit);
+
+    // 총 개수와 데이터 동시 조회
+    const [data, total] = await queryBuilder.getManyAndCount();
+
+    return { data, total };
+  }
+
+  /**
    * Google ID로 사용자를 찾거나 생성합니다.
    */
   async findOrCreateByGoogle(googleUser: any): Promise<User> {

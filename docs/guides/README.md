@@ -28,6 +28,12 @@ Golden Race 프로젝트의 개발 가이드 및 튜토리얼 문서입니다.
 | [DATA_COLLECTION_GUIDE.md](server/DATA_COLLECTION_GUIDE.md)     | KRA API 데이터 수집 방법    |
 | [KRA_API_MIGRATION_GUIDE.md](server/KRA_API_MIGRATION_GUIDE.md) | KRA API 마이그레이션 가이드 |
 
+### Admin 개발 가이드 ⭐ 신규
+
+| 문서                                               | 설명                    |
+| -------------------------------------------------- | ----------------------- |
+| [ADMIN_PANEL_GUIDE.md](admin/ADMIN_PANEL_GUIDE.md) | Admin Panel 완벽 가이드 |
+
 ### 배포 가이드
 
 | 문서                              | 설명                                   |
@@ -84,7 +90,21 @@ Golden Race 프로젝트의 개발 가이드 및 튜토리얼 문서입니다.
 
 ---
 
-### 4. 배포
+### 4. Admin 개발 ⭐ 신규
+
+**Next.js Admin Panel 개발**
+
+- 🎨 React Hook Form + Zod
+- 🔔 React Hot Toast 알림
+- 📊 TanStack Query 상태 관리
+- 🤖 AI 설정 DB 저장
+- 💳 구독 플랜 관리
+
+**문서**: [admin/](admin/)
+
+---
+
+### 5. 배포
 
 **앱 스토어 및 서버 배포**
 
@@ -109,7 +129,8 @@ Golden Race 프로젝트의 개발 가이드 및 튜토리얼 문서입니다.
 
 1. ✅ [UI 컴포넌트](mobile/UI_COMPONENTS.md) - 컴포넌트 개발
 2. ✅ [데이터 수집](server/DATA_COLLECTION_GUIDE.md) - 백엔드 데이터
-3. ✅ [통합 테스트](INTEGRATION_TEST_GUIDE.md) - 테스트 작성
+3. ✅ [Admin Panel](admin/ADMIN_PANEL_GUIDE.md) - 관리자 패널 ⭐ 신규
+4. ✅ [통합 테스트](INTEGRATION_TEST_GUIDE.md) - 테스트 작성
 
 ### 고급 (시스템 확장)
 
@@ -127,4 +148,4 @@ Golden Race 프로젝트의 개발 가이드 및 튜토리얼 문서입니다.
 
 ---
 
-**마지막 업데이트**: 2025년 10월 10일
+**마지막 업데이트**: 2025년 10월 14일

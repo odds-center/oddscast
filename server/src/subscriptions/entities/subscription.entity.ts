@@ -170,14 +170,9 @@ export class Subscription {
   }
 
   /**
-   * 월 예측권 수 (플랜별)
+   * 월 예측권 수
    */
   getMonthlyTickets(): number {
-    switch (this.planId) {
-      case SubscriptionPlan.PREMIUM:
-        return 30;
-      default:
-        return 30;
-    }
+    return this.ticketsPerMonth;
   }
 }

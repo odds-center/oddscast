@@ -1,16 +1,21 @@
 import { axiosInstance } from '../utils/axios';
 
+/**
+ * 구독 플랜 인터페이스 (DB 스키마 기준)
+ */
 export interface SubscriptionPlan {
-  planId: string;
-  name: string;
+  id: string;
+  planName: string; // LIGHT, PREMIUM
+  displayName: string; // 라이트 플랜, 프리미엄 플랜
   description: string;
-  price: number;
-  ticketsPerMonth: number;
-  pricePerTicket: number;
-  discountPercentage: number;
+  originalPrice: number; // VAT 전 가격
+  vat: number; // 부가세
+  totalPrice: number; // 최종 가격 (VAT 포함)
+  baseTickets: number; // 기본 예측권
+  bonusTickets: number; // 보너스 예측권
+  totalTickets: number; // 총 예측권
   isActive: boolean;
-  isRecommended: boolean;
-  features: string[];
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }

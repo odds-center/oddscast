@@ -1,9 +1,18 @@
-import React from 'react';
-import { StyleSheet, ScrollView, TouchableOpacity, Alert, View } from 'react-native';
+import React, { useMemo } from 'react';
+import {
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Alert,
+  View,
+  ActivityIndicator,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
 import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useSubscriptionPlans } from '@/lib/hooks/useSubscriptionPlans';
+import { useSinglePurchaseConfig } from '@/lib/hooks/useSinglePurchaseConfig';
 import { usePredictions } from '@/lib/hooks/usePredictions';
 import { Ionicons } from '@expo/vector-icons';
 import { GOLD_THEME } from '@/constants/theme';
@@ -14,7 +23,32 @@ import { GOLD_THEME } from '@/constants/theme';
 export default function SubscriptionManageScreen() {
   const router = useRouter();
   const { subscription, cancel, isSubscribed, daysUntilRenewal } = useSubscription();
+  const { data: plans, isLoading: plansLoading } = useSubscriptionPlans();
+  const { data: singleConfig } = useSinglePurchaseConfig();
   const { balance } = usePredictions();
+
+  // 현재 구독 중인 플랜 정보 (DB에서)
+  const currentPlan = useMemo(() => {
+    if (!subscription || !plans || plans.length === 0) return null;
+    // subscription.planId로 찾기 (UUID)
+    return plans.find((p) => p.id === subscription.planId) || plans[0];
+  }, [subscription, plans]);
+
+  // 계산된 값
+  const pricePerTicket = currentPlan
+    ? Math.round(currentPlan.totalPrice / currentPlan.totalTickets)
+    : 0;
+  const SINGLE_PRICE = singleConfig?.totalPrice || 1100; // DB에서 가져온 개별 구매 가격
+  const discount = currentPlan
+    ? Math.round(
+        ((SINGLE_PRICE * currentPlan.totalTickets - currentPlan.totalPrice) /
+          (SINGLE_PRICE * currentPlan.totalTickets)) *
+          100
+      )
+    : 0;
+  const monthlySavings = currentPlan
+    ? SINGLE_PRICE * currentPlan.totalTickets - currentPlan.totalPrice
+    : 0;
 
   const handleCancel = () => {
     Alert.alert(
@@ -39,7 +73,21 @@ export default function SubscriptionManageScreen() {
     );
   };
 
+  // 로딩 중
+  if (plansLoading) {
+    return (
+      <PageLayout style={{ justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
+        <ThemedText style={{ marginTop: 16 }}>플랜 정보를 불러오는 중...</ThemedText>
+      </PageLayout>
+    );
+  }
+
   if (!isSubscribed || !subscription) {
+    // 플랜 정보로 동적으로 표시
+    const premiumPlan = plans?.find((p) => p.planName === 'PREMIUM');
+    const ticketsText = premiumPlan ? `${premiumPlan.totalTickets}장` : '24장';
+
     return (
       <PageLayout>
         <View style={styles.emptyState}>
@@ -53,7 +101,7 @@ export default function SubscriptionManageScreen() {
             활성 구독이 없습니다
           </ThemedText>
           <ThemedText style={styles.emptyText}>
-            프리미엄 구독으로 매월 30장의 AI 예측권을 받으세요!
+            프리미엄 구독으로 매월 {ticketsText}의 AI 예측권을 받으세요!
           </ThemedText>
           <TouchableOpacity
             style={styles.subscribeButton}
@@ -81,22 +129,35 @@ export default function SubscriptionManageScreen() {
           <View style={styles.card}>
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>플랜</ThemedText>
-              <ThemedText style={styles.infoValue}>프리미엄</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {currentPlan?.displayName || '프리미엄'}
+              </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>월 구독료</ThemedText>
-              <ThemedText style={styles.infoValue}>19,800원</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {currentPlan
+                  ? Math.floor(currentPlan.totalPrice).toLocaleString('ko-KR')
+                  : '19,800'}
+                원
+              </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>월 제공 예측권</ThemedText>
-              <ThemedText style={styles.infoValue}>30장</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {currentPlan
+                  ? `${currentPlan.totalTickets}장 (${currentPlan.baseTickets}+${currentPlan.bonusTickets})`
+                  : '24장 (20+4)'}
+              </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
               <ThemedText style={styles.infoLabel}>장당 가격</ThemedText>
-              <ThemedText style={styles.infoValue}>660원</ThemedText>
+              <ThemedText style={styles.infoValue}>
+                {pricePerTicket.toLocaleString('ko-KR')}원
+              </ThemedText>
             </View>
 
             <View style={styles.infoRow}>
@@ -165,8 +226,10 @@ export default function SubscriptionManageScreen() {
             <View style={styles.benefitItem}>
               <Ionicons name='pricetag' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
               <View style={styles.benefitContent}>
-                <ThemedText style={styles.benefitTitle}>34% 할인</ThemedText>
-                <ThemedText style={styles.benefitText}>개별 구매 대비 월 10,200원 절약</ThemedText>
+                <ThemedText style={styles.benefitTitle}>{discount}% 할인</ThemedText>
+                <ThemedText style={styles.benefitText}>
+                  개별 구매 대비 월 {Math.floor(monthlySavings).toLocaleString('ko-KR')}원 절약
+                </ThemedText>
               </View>
             </View>
 

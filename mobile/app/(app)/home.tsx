@@ -4,9 +4,11 @@ import { GOLD_THEME } from '@/constants/theme';
 import { useAuth } from '@/context/AuthProvider';
 import { useBetStatistics } from '@/lib/hooks/useBets';
 import { useSubscription } from '@/lib/hooks/useSubscription';
+import { useSubscriptionPlans } from '@/lib/hooks/useSubscriptionPlans';
+import { useSinglePurchaseConfig } from '@/lib/hooks/useSinglePurchaseConfig';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RACES } from '@/constants/mockData';
@@ -119,6 +121,25 @@ export default function HomeScreen() {
   // API 데이터 조회
   const { data: betStats, isLoading: betStatsLoading } = useBetStatistics();
   const { isSubscribed } = useSubscription();
+  const { data: plans } = useSubscriptionPlans();
+  const { data: singleConfig } = useSinglePurchaseConfig();
+
+  // 프리미엄 플랜 정보 (DB에서)
+  const premiumPlan = useMemo(() => {
+    if (!plans || plans.length === 0 || !singleConfig) return null;
+    const plan = plans.find((p) => p.planName === 'PREMIUM');
+    if (!plan) return null;
+
+    const SINGLE_PRICE = singleConfig.totalPrice; // DB에서 가져온 개별 구매 가격
+    const pricePerTicket = Math.round(plan.totalPrice / plan.totalTickets);
+    const discount = Math.round(
+      ((SINGLE_PRICE * plan.totalTickets - plan.totalPrice) / (SINGLE_PRICE * plan.totalTickets)) *
+        100
+    );
+    const savings = SINGLE_PRICE * plan.totalTickets - plan.totalPrice;
+
+    return { ...plan, pricePerTicket, discount, savings };
+  }, [plans, singleConfig]);
 
   // Mock 경주 데이터 사용 (최대 3개만)
   const todayRaces = RACES.slice(0, 3);
@@ -433,13 +454,13 @@ export default function HomeScreen() {
             <View style={styles.featureItem}>
               <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
               <ThemedText type='default' style={styles.featureText}>
-                월 30장 AI 예측권
+                월 24장 AI 예측권 (20+4)
               </ThemedText>
             </View>
             <View style={styles.featureItem}>
               <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
               <ThemedText type='default' style={styles.featureText}>
-                장당 660원 (34% 할인)
+                장당 825원 (25% 할인)
               </ThemedText>
             </View>
             <View style={styles.featureItem}>

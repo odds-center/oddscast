@@ -4,28 +4,14 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminSubscriptionsApi } from '@/lib/api/admin';
 import { formatCurrency } from '@/lib/utils';
-
-interface SubscriptionPlan {
-  planId: string;
-  name: string;
-  description: string;
-  price: number;
-  ticketsPerMonth: number;
-  pricePerTicket: number;
-  discountPercentage: number;
-  isActive: boolean;
-  isRecommended: boolean;
-}
+import type { SubscriptionPlan } from '@/lib/types/admin';
 
 export default function SubscriptionsPage() {
   const { data: plans, isLoading } = useQuery({
     queryKey: ['admin-subscription-plans'],
-    queryFn: async () => {
-      const response = await apiClient.get<SubscriptionPlan[]>('/api/admin/subscriptions/plans');
-      return response;
-    },
+    queryFn: () => adminSubscriptionsApi.getPlans(),
   });
 
   return (
@@ -52,14 +38,14 @@ export default function SubscriptionsPage() {
                 <div className='col-span-3 text-center py-12'>로딩 중...</div>
               ) : plans && plans.length > 0 ? (
                 plans.map((plan) => (
-                  <Card key={plan.planId}>
+                  <Card key={plan.id}>
                     <div className='space-y-4'>
                       <div className='flex items-start justify-between'>
                         <div>
-                          <h3 className='text-lg font-semibold'>{plan.name}</h3>
+                          <h3 className='text-lg font-semibold'>{plan.displayName}</h3>
                           <p className='text-sm text-gray-500'>{plan.description}</p>
                         </div>
-                        {plan.isRecommended && (
+                        {plan.sortOrder === 2 && (
                           <span className='inline-flex rounded-full bg-green-100 px-2 py-1 text-xs font-semibold text-green-800'>
                             추천
                           </span>
@@ -67,21 +53,28 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className='border-t pt-4'>
-                        <div className='text-3xl font-bold'>{formatCurrency(plan.price)}</div>
+                        <div className='text-3xl font-bold'>{formatCurrency(plan.totalPrice)}</div>
                         <div className='text-sm text-gray-500 mt-1'>
-                          월 {plan.ticketsPerMonth}개 예측권
+                          월 {plan.totalTickets}개 예측권
                         </div>
                       </div>
 
                       <div className='space-y-2 text-sm'>
                         <div className='flex justify-between'>
                           <span className='text-gray-600'>장당 가격</span>
-                          <span className='font-medium'>{formatCurrency(plan.pricePerTicket)}</span>
+                          <span className='font-medium'>
+                            {formatCurrency(Math.round(plan.totalPrice / plan.totalTickets))}
+                          </span>
                         </div>
                         <div className='flex justify-between'>
                           <span className='text-gray-600'>할인율</span>
                           <span className='font-medium text-green-600'>
-                            {plan.discountPercentage}%
+                            {Math.round(
+                              ((plan.totalTickets * 1100 - plan.totalPrice) /
+                                (plan.totalTickets * 1100)) *
+                                100
+                            )}
+                            %
                           </span>
                         </div>
                         <div className='flex justify-between'>
@@ -99,7 +92,12 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className='border-t pt-4 flex gap-2'>
-                        <Button size='sm' variant='ghost' className='flex-1'>
+                        <Button
+                          size='sm'
+                          variant='ghost'
+                          className='flex-1'
+                          onClick={() => (window.location.href = '/subscription-plans')}
+                        >
                           수정
                         </Button>
                         <Button size='sm' variant='ghost' className='flex-1'>

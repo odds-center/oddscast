@@ -6,7 +6,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { apiClient } from '@/lib/api';
+import { adminRacesApi } from '@/lib/api/admin';
 import { formatDate } from '@/lib/utils';
 
 interface RaceData {
@@ -27,12 +27,9 @@ export default function RacesPage() {
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-races', page],
-    queryFn: async () => {
-      const response = await apiClient.get<any>('/api/admin/races', {
-        params: { page, limit: 20 },
-      });
-      return response;
-    },
+    queryFn: () => adminRacesApi.getAll({ page, limit: 20 }),
+    placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
+    staleTime: 2 * 60 * 1000, // 2분
   });
 
   const columns = [

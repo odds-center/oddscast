@@ -156,10 +156,10 @@ export default function SinglePurchaseScreen() {
           <ThemedText style={styles.recommendTitle}>구독이 더 저렴해요!</ThemedText>
         </View>
         <ThemedText style={styles.recommendText}>
-          월 15장 이상 사용하신다면 프리미엄 구독을 추천드립니다.
+          월 11장 이상이면 라이트, 24장 이상이면 프리미엄 구독을 추천드립니다.
         </ThemedText>
         <ThemedText style={styles.recommendCompare}>
-          개별 15장: 15,000원 vs 구독 30장: 19,800원
+          개별 11장: 12,100원 vs 라이트: 9,900원 | 개별 24장: 26,400원 vs 프리미엄: 19,800원
         </ThemedText>
         <TouchableOpacity
           style={styles.recommendButton}

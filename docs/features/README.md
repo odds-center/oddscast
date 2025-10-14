@@ -6,13 +6,22 @@ Golden Race 프로젝트의 주요 기능 설계 및 계획 문서입니다.
 
 ## 📚 문서 목록
 
-### AI 시스템 (계획 중)
+### AI 시스템 (12개) ⭐ 확장됨
 
-| 문서                                                          | 설명                           | 상태       |
-| ------------------------------------------------------------- | ------------------------------ | ---------- |
-| [AI_FEATURES.md](ai/AI_FEATURES.md)                           | AI 예측 시스템 설계 (LLM 기반) | 🔄 개발 중 |
-| [AI_PREDICTION_COST_MODEL.md](ai/AI_PREDICTION_COST_MODEL.md) | AI 비용 모델 및 수익성 분석    | ✅ 완료    |
-| [AI_PREDICTION_ROADMAP.md](ai/AI_PREDICTION_ROADMAP.md)       | AI 개발 로드맵                 | 📅 계획 중 |
+| 문서                                                                    | 설명              | 상태    |
+| ----------------------------------------------------------------------- | ----------------- | ------- |
+| [README.md](ai/README.md)                                               | AI 문서 허브      | ✅ 완료 |
+| [AI_PREDICTION_IMPLEMENTATION.md](ai/AI_PREDICTION_IMPLEMENTATION.md)   | 구현 가이드       | ✅ 완료 |
+| [AI_FEATURES.md](ai/AI_FEATURES.md)                                     | 기능 설계         | ✅ 완료 |
+| [AI_PREDICTION_ROADMAP.md](ai/AI_PREDICTION_ROADMAP.md)                 | 로드맵            | ✅ 완료 |
+| [AI_PREDICTION_COST_MODEL.md](ai/AI_PREDICTION_COST_MODEL.md)           | 비용 모델         | ✅ 완료 |
+| [AI_PREDICTION_ANALYSIS.md](ai/AI_PREDICTION_ANALYSIS.md)               | 성과 분석         | ✅ 완료 |
+| [AI_CACHING_STRATEGY.md](ai/AI_CACHING_STRATEGY.md) ⭐⭐⭐              | 캐싱 전략 (필수!) | ✅ 완료 |
+| [MODEL_STRATEGY_FINAL.md](ai/MODEL_STRATEGY_FINAL.md) ⭐ 신규           | 모델 전략 최종안  | ✅ 완료 |
+| [AI_CACHING_IMPLEMENTATION.md](ai/AI_CACHING_IMPLEMENTATION.md) ⭐ 신규 | 캐싱 구현 가이드  | ✅ 완료 |
+| [MODEL_COMPARISON.md](ai/MODEL_COMPARISON.md) ⭐ 신규                   | 모델 비교         | ✅ 완료 |
+| [AI_IMPROVEMENT_STRATEGY.md](ai/AI_IMPROVEMENT_STRATEGY.md) ⭐ 신규     | 개선 전략         | ✅ 완료 |
+| [SINGLE_MODEL_STRATEGY.md](ai/SINGLE_MODEL_STRATEGY.md) ⭐ 신규         | 단일 모델 전략    | ✅ 완료 |
 
 ### 게임 시스템 (개발 중)
 
@@ -44,19 +53,19 @@ Golden Race 프로젝트의 주요 기능 설계 및 계획 문서입니다.
 | 항목         | 내용                           |
 | ------------ | ------------------------------ |
 | 💎 구독료    | 월 19,800원                    |
-| 🎫 제공 내용 | 월 35장 AI 예측권 (보너스 5장) |
-| 💰 장당 가격 | 566원 (43% 할인)               |
+| 🎫 제공 내용 | 월 24장 AI 예측권 (보너스 4장) |
+| 💰 장당 가격 | 825원 (25% 할인)               |
 | 🤖 AI 정확도 | 평균 70%+ 목표                 |
 | 🔄 결제 방식 | 카드 정기 결제                 |
 | ✅ 법적 근거 | 정보 서비스 (주식 정보와 동일) |
 
 #### 라이트 플랜
 
-| 항목         | 내용              |
-| ------------ | ----------------- |
-| 💎 구독료    | 월 9,900원        |
-| 🎫 제공 내용 | 월 15장 AI 예측권 |
-| 💰 장당 가격 | 660원 (34% 할인)  |
+| 항목         | 내용                           |
+| ------------ | ------------------------------ |
+| 💎 구독료    | 월 9,900원                     |
+| 🎫 제공 내용 | 월 11장 AI 예측권 (보너스 1장) |
+| 💰 장당 가격 | 900원 (18% 할인)               |
 
 #### 개별 구매
 

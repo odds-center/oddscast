@@ -40,6 +40,15 @@ export class PredictionTicket {
   @Column({ type: 'varchar', length: 36, nullable: true })
   subscriptionId: string | null;
 
+  // 발급 출처
+  @Column({
+    type: 'enum',
+    enum: ['subscription', 'single_purchase', 'bonus'],
+    default: 'subscription',
+    comment: '발급 출처',
+  })
+  source: 'subscription' | 'single_purchase' | 'bonus';
+
   // 상태
   @Column({
     type: 'enum',
@@ -61,6 +70,10 @@ export class PredictionTicket {
   @ManyToOne(() => Prediction, { nullable: true })
   @JoinColumn({ name: 'predictionId' })
   prediction: Prediction;
+
+  // 예측 버전 추적 (업데이트 감지용)
+  @Column({ type: 'datetime', nullable: true, comment: '예측을 본 시점' })
+  viewedAt: Date | null;
 
   // 유효 기간
   @CreateDateColumn()
@@ -100,6 +113,7 @@ export class PredictionTicket {
     this.usedAt = new Date();
     this.raceId = raceId;
     this.predictionId = predictionId;
+    this.viewedAt = new Date(); // 예측을 본 시점 기록
   }
 
   /**

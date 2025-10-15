@@ -1,93 +1,68 @@
 import {
   Controller,
   Post,
+  Get,
   Body,
+  Req,
   UseGuards,
   HttpCode,
   HttpStatus,
-  Req,
+  Logger,
 } from '@nestjs/common';
-import { TossPaymentService } from './services/toss-payment.service';
-import { PaymentWebhookService } from './services/payment-webhook.service';
 import {
-  ConfirmPaymentDto,
-  IssueBillingKeyDto,
-  BillingPaymentDto,
-  CancelPaymentDto,
-} from './dto';
+  PaymentsService,
+  SubscribeRequest,
+  SinglePurchaseRequest,
+} from './payments.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 /**
- * 결제 API 컨트롤러
+ * 결제 API Controller
  */
 @Controller('payments')
+@UseGuards(JwtAuthGuard)
 export class PaymentsController {
-  constructor(
-    private readonly tossPaymentService: TossPaymentService,
-    private readonly webhookService: PaymentWebhookService,
-  ) {}
+  private readonly logger = new Logger(PaymentsController.name);
+
+  constructor(private readonly paymentsService: PaymentsService) {}
 
   /**
-   * 결제 승인 (즉시 결제)
-   * POST /api/payments/confirm
+   * 구독 시작 (빌링키 발급 + 첫 결제)
+   * POST /api/payments/subscribe
    */
-  @Post('confirm')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async confirmPayment(@Req() req: any, @Body() dto: ConfirmPaymentDto) {
-    const userId = req.user.id;
-    return this.tossPaymentService.confirmPayment(userId, dto);
-  }
-
-  /**
-   * 빌링키 발급 (정기 결제용)
-   * POST /api/payments/billing-key
-   */
-  @Post('billing-key')
-  @UseGuards(JwtAuthGuard)
+  @Post('subscribe')
   @HttpCode(HttpStatus.CREATED)
-  async issueBillingKey(@Req() req: any, @Body() dto: IssueBillingKeyDto) {
+  async subscribe(@Body() body: SubscribeRequest, @Req() req: any) {
     const userId = req.user.id;
-    return this.tossPaymentService.issueBillingKey(userId, dto);
-  }
 
-  /**
-   * 빌링키로 결제 (정기 결제 실행)
-   * POST /api/payments/billing-pay
-   */
-  @Post('billing-pay')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async payWithBillingKey(@Req() req: any, @Body() dto: BillingPaymentDto) {
-    const userId = req.user.id;
-    return this.tossPaymentService.payWithBillingKey(
+    return this.paymentsService.startSubscription({
+      ...body,
       userId,
-      dto.billingKey,
-      dto.amount,
-      dto.orderName,
-    );
+    });
   }
 
   /**
-   * 결제 취소
-   * POST /api/payments/cancel
+   * 개별 예측권 구매 (즉시 결제)
+   * POST /api/payments/purchase
    */
-  @Post('cancel')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async cancelPayment(@Body() dto: CancelPaymentDto) {
-    return this.tossPaymentService.cancelPayment(dto);
+  @Post('purchase')
+  @HttpCode(HttpStatus.CREATED)
+  async purchaseTickets(@Body() body: SinglePurchaseRequest, @Req() req: any) {
+    const userId = req.user.id;
+
+    return this.paymentsService.purchaseSingleTickets({
+      ...body,
+      userId,
+    });
   }
 
   /**
-   * Toss Payments 웹훅
-   * POST /api/payments/webhook
+   * 결제 내역 조회
+   * GET /api/payments/history
    */
-  @Post('webhook')
-  @HttpCode(HttpStatus.OK)
-  async handleWebhook(@Body() webhookData: any) {
-    await this.webhookService.handleTossWebhook(webhookData);
-    return { success: true };
+  @Get('history')
+  async getHistory(@Req() req: any) {
+    const userId = req.user.id;
+    return this.paymentsService.getBillingHistory(userId);
   }
 }
-

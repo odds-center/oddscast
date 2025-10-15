@@ -7,7 +7,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prediction } from './entities/prediction.entity';
-import { LlmService, LlmProviderType } from '../llm';
+import { LlmService } from '../llm';
 import { Race } from '../races/entities/race.entity';
 import { EntryDetail } from '../races/entities/entry-detail.entity';
 import { PromptBuilder } from './utils/prompt-builder';
@@ -66,16 +66,11 @@ export class PredictionsService {
     const prompt = PromptBuilder.buildPrompt(race, entries);
     this.logger.debug(`Prompt length: ${prompt.length} characters`);
 
-    // 5. LLM 호출 (폴백 전략)
-    const llmProvider = this.getProvider(dto.llmProvider);
-    const llmResponse = await this.predictWithFallback(
-      prompt,
-      {
-        temperature: dto.temperature ?? 0.7,
-        maxTokens: dto.maxTokens ?? 800,
-      },
-      llmProvider
-    );
+    // 5. LLM 호출 (OpenAI 전용)
+    const llmResponse = await this.llmService.predict(prompt, {
+      temperature: dto.temperature ?? 0.7,
+      maxTokens: dto.maxTokens ?? 800,
+    });
 
     // 6. 응답 파싱
     const parsed = ResponseParser.parse(llmResponse.content);
@@ -195,15 +190,6 @@ export class PredictionsService {
   }
 
   /**
-   * Provider 타입 변환
-   */
-  private getProvider(provider?: string): LlmProviderType | undefined {
-    if (provider === 'claude') return LlmProviderType.CLAUDE;
-    if (provider === 'openai') return LlmProviderType.OPENAI;
-    return undefined; // 기본값 사용
-  }
-
-  /**
    * Entity → DTO 변환
    */
   private toDto(prediction: Prediction): PredictionResultDto {
@@ -259,50 +245,5 @@ export class PredictionsService {
       prediction.finalize();
       await this.predictionRepo.save(prediction);
     }
-  }
-
-  /**
-   * LLM 호출 (폴백 전략)
-   * - GPT-4 Turbo 실패 시 다른 GPT 모델 시도
-   */
-  private async predictWithFallback(
-    prompt: string,
-    options: { temperature: number; maxTokens: number },
-    providerType: LlmProviderType
-  ): Promise<any> {
-    const models = ['gpt-4-turbo', 'gpt-4o', 'gpt-4', 'gpt-3.5-turbo'];
-
-    for (let i = 0; i < models.length; i++) {
-      const model = models[i];
-      try {
-        this.logger.debug(
-          `LLM 호출 시도: ${model} (${i + 1}/${models.length})`
-        );
-
-        // 모델별로 OpenAI Service 직접 호출
-        const response = await this.llmService.predict(
-          prompt,
-          options,
-          providerType
-        );
-
-        this.logger.log(`✅ LLM 성공: ${model}`);
-        return response;
-      } catch (error) {
-        this.logger.warn(`LLM 실패: ${model} - ${error.message}`);
-
-        // 마지막 모델까지 실패하면 에러 throw
-        if (i === models.length - 1) {
-          this.logger.error('모든 GPT 모델 실패');
-          throw error;
-        }
-
-        // 다음 모델 시도
-        this.logger.log(`다음 모델로 폴백: ${models[i + 1]}`);
-        continue;
-      }
-    }
-
-    throw new Error('All models failed');
   }
 }

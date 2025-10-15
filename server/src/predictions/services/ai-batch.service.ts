@@ -101,6 +101,10 @@ export class AIBatchService {
 
   /**
    * 10분마다 - 경주 시작 전 예측 업데이트
+   *
+   * ✅ 비즈니스 로직:
+   * - 예측이 업데이트되면 사용자는 새 예측권으로 다시 봐야 함
+   * - 예측권 소비 증가 → 수익 증가
    */
   @Cron('*/10 * * * *', {
     name: 'update-upcoming-predictions',
@@ -155,8 +159,19 @@ export class AIBatchService {
         // 새로운 예측 생성
         const newPrediction = await this.predictionsService.generatePrediction({
           raceId: race.id,
-          llmProvider: 'openai', // 업데이트는 저렴한 모델 사용 가능
+          llmProvider: 'openai',
         });
+
+        // 기존 예측과 다른지 확인
+        const hasChanged =
+          existing.predictedFirst !== newPrediction.predictedFirst ||
+          existing.predictedSecond !== newPrediction.predictedSecond ||
+          existing.predictedThird !== newPrediction.predictedThird;
+
+        if (!hasChanged) {
+          this.logger.debug(`⏭️ 변경 없음: ${race.id}`);
+          continue;
+        }
 
         // 업데이트 이력 저장
         const update = this.updateRepo.create({
@@ -175,8 +190,22 @@ export class AIBatchService {
 
         await this.updateRepo.save(update);
 
+        // 기존 예측 업데이트 (덮어쓰기)
+        existing.predictedFirst = newPrediction.predictedFirst;
+        existing.predictedSecond = newPrediction.predictedSecond;
+        existing.predictedThird = newPrediction.predictedThird;
+        existing.confidence = newPrediction.confidence;
+        existing.analysis = newPrediction.analysis;
+        existing.warnings = newPrediction.warnings;
+        existing.factors = newPrediction.factors;
+        existing.updatedAt = new Date(); // 중요: 업데이트 시각 갱신
+
+        await this.predictionRepo.save(existing);
+
         updateCount++;
-        this.logger.log(`🔄 업데이트: ${race.id}`);
+        this.logger.log(
+          `🔄 업데이트: ${race.id} | ${existing.predictedFirst}번 → ${newPrediction.predictedFirst}번`
+        );
 
         // API Rate Limit 방지
         await this.sleep(1000);

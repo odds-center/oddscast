@@ -4,6 +4,7 @@ import { useCreateBet } from '@/lib/hooks/useBets';
 import { useUserPointBalance } from '@/lib/hooks/usePoints';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { showWarningMessage, showErrorMessage, showSuccessMessage } from '@/utils/alert';
 
 interface BettingScreenProps {
   raceId?: string;
@@ -51,17 +52,17 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
   // 마권 구매
   const handleCreateBet = async () => {
     if (selectedHorses.length === 0) {
-      console.log('마를 선택해주세요.');
+      showWarningMessage('마를 선택해주세요');
       return;
     }
 
     if (betAmount < BETTING_CONSTANTS.AMOUNTS.MIN) {
-      console.log(`최소 마권 금액은 ${BETTING_CONSTANTS.AMOUNTS.MIN}원입니다.`);
+      showWarningMessage(`최소 마권 금액은 ${BETTING_CONSTANTS.AMOUNTS.MIN}원입니다`);
       return;
     }
 
     if (pointBalance && betAmount > pointBalance.currentPoints) {
-      console.log('잔액이 부족합니다.');
+      showErrorMessage('잔액이 부족합니다');
       return;
     }
 
@@ -78,7 +79,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
         },
       });
 
-      console.log('마권이 성공적으로 구매되었습니다!');
+      showSuccessMessage('마권이 성공적으로 등록되었습니다', '🎯 완료');
       onBetPlaced?.();
 
       // 화면 초기화
@@ -87,6 +88,7 @@ export const BettingScreen: React.FC<BettingScreenProps> = ({
       setBetReason('');
     } catch (error) {
       console.error('마권 구매 실패:', error);
+      showErrorMessage('마권 등록에 실패했습니다');
     }
   };
 

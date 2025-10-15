@@ -4,9 +4,19 @@ import { BETTING_UTILS } from '@/constants/betting';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
-import { StyleSheet, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GOLD_THEME } from '@/constants/theme';
 import { useUserBets, useBetStatistics } from '@/lib/hooks/useBets';
+import {
+  Card,
+  Section,
+  Button,
+  LoadingSpinner,
+  EmptyState,
+  ErrorState,
+  InfoBanner,
+  StatCard,
+} from '@/components/ui';
 
 export default function BettingScreen() {
   const router = useRouter();
@@ -62,57 +72,53 @@ export default function BettingScreen() {
 
   return (
     <PageLayout>
-      {/* 안내 배너 */}
-      <View style={styles.infoBanner}>
-        <Ionicons name='information-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-        <ThemedText style={styles.infoBannerText}>
-          외부에서 구매한 마권을 기록하고 관리하세요
-        </ThemedText>
-      </View>
+      {/* 안내 배너 - 신규 컴포넌트 사용 */}
+      <InfoBanner
+        type='info'
+        message='외부에서 구매한 마권을 기록하고 관리하세요'
+        icon='information-circle'
+      />
 
-      {/* 통계 요약 */}
-      <View style={styles.section}>
+      {/* 통계 요약 - 신규 Section & StatCard 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           마권 기록 통계
         </ThemedText>
         <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
-              {statsLoading ? '...' : betStats.totalBets}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
-              총 기록
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
-              {statsLoading ? '...' : betStats.wonBets}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
-              적중
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
-              {statsLoading ? '...' : `${betStats.winRate.toFixed(1)}%`}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
-              승률
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
-              {statsLoading ? '...' : betStats.totalWinnings.toLocaleString()}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
-              수익 (기록)
-            </ThemedText>
-          </View>
+          <StatCard
+            icon='document-text'
+            label='총 기록'
+            value={statsLoading ? '...' : betStats.totalBets}
+            variant='default'
+            style={styles.statCard}
+          />
+          <StatCard
+            icon='trophy'
+            label='적중'
+            value={statsLoading ? '...' : betStats.wonBets}
+            variant='highlight'
+            style={styles.statCard}
+          />
+          <StatCard
+            icon='trending-up'
+            label='승률'
+            value={statsLoading ? '...' : `${betStats.winRate.toFixed(1)}%`}
+            variant='default'
+            style={styles.statCard}
+          />
+          <StatCard
+            icon='cash'
+            label='수익'
+            value={statsLoading ? '...' : betStats.totalWinnings.toLocaleString()}
+            subValue='(기록)'
+            variant='highlight'
+            style={styles.statCard}
+          />
         </View>
-      </View>
+      </Section>
 
-      {/* 탭 네비게이션 */}
-      <View style={styles.section}>
+      {/* 탭 네비게이션 - Section 컴포넌트 사용 */}
+      <Section>
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tab, selectedTab === 'active' && styles.tabActive]}
@@ -131,27 +137,21 @@ export default function BettingScreen() {
             </ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
+      </Section>
 
-      {/* 마권 목록 */}
-      <View style={styles.section}>
+      {/* 마권 목록 - 신규 컴포넌트 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           {selectedTab === 'active' ? '대기 중' : '완료된 기록'}
         </ThemedText>
         {betsLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
-            <ThemedText type='body' style={styles.loadingText}>
-              마권 기록을 불러오는 중...
-            </ThemedText>
-          </View>
+          <LoadingSpinner message='마권 기록을 불러오는 중...' />
         ) : betsError ? (
-          <View style={styles.errorContainer}>
-            <Ionicons name='alert-circle' size={48} color={GOLD_THEME.STATUS.ERROR} />
-            <ThemedText type='body' style={styles.errorText}>
-              마권 기록을 불러오는데 실패했습니다.
-            </ThemedText>
-          </View>
+          <ErrorState
+            error={betsError}
+            title='마권 기록을 불러오는데 실패했습니다'
+            onRetry={() => window.location.reload()}
+          />
         ) : bets.length > 0 ? (
           bets.map((bet: any) => (
             <View key={bet.id} style={styles.betItem}>
@@ -213,58 +213,32 @@ export default function BettingScreen() {
             </View>
           ))
         ) : (
-          <View style={styles.emptyContainer}>
-            <Ionicons name='document-text-outline' size={60} color={GOLD_THEME.TEXT.TERTIARY} />
-            <ThemedText type='body' style={styles.emptyText}>
-              {selectedTab === 'active'
-                ? '대기 중인 마권 기록이 없습니다.'
-                : '마권 기록이 없습니다.'}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.emptySubtext}>
-              외부에서 구매한 마권을 등록해보세요
-            </ThemedText>
-          </View>
+          <EmptyState
+            icon='document-text-outline'
+            title={
+              selectedTab === 'active' ? '대기 중인 마권 기록이 없습니다' : '마권 기록이 없습니다'
+            }
+            message='외부에서 구매한 마권을 등록해보세요'
+            actionText='마권 기록 등록'
+            onActionPress={() => router.push('/betting-register')}
+          />
         )}
-      </View>
+      </Section>
 
-      {/* 새 기록 버튼 */}
-      <TouchableOpacity
-        style={styles.newBetButton}
+      {/* 새 기록 버튼 - 신규 Button 컴포넌트 사용 */}
+      <Button
+        title='마권 기록 등록'
         onPress={() => router.push('/betting-register')}
-      >
-        <Ionicons name='add-circle' size={24} color={GOLD_THEME.TEXT.PRIMARY} />
-        <ThemedText style={styles.newBetButtonText}>마권 기록 등록</ThemedText>
-      </TouchableOpacity>
+        variant='primary'
+        size='large'
+        icon='add-circle'
+        style={styles.newBetButton}
+      />
     </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  infoBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(180, 138, 60, 0.15)',
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
-  },
-  infoBannerText: {
-    flex: 1,
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  section: {
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
-  },
   sectionTitle: {
     marginBottom: 16,
     color: GOLD_THEME.TEXT.SECONDARY,
@@ -273,19 +247,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     flexWrap: 'wrap',
+    gap: 12,
   },
-  statItem: {
-    alignItems: 'center',
-    marginBottom: 16,
-    width: '45%',
-  },
-  statNumber: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    marginBottom: 4,
-  },
-  statLabel: {
-    opacity: 0.8,
-    color: GOLD_THEME.TEXT.PRIMARY,
+  statCard: {
+    flex: 1,
+    minWidth: '45%',
   },
   tabContainer: {
     flexDirection: 'row',
@@ -352,55 +318,7 @@ const styles = StyleSheet.create({
     color: GOLD_THEME.TEXT.PRIMARY,
     fontWeight: '500',
   },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-    gap: 12,
-  },
-  emptyText: {
-    opacity: 0.7,
-    textAlign: 'center',
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 16,
-    marginTop: 16,
-  },
-  emptySubtext: {
-    opacity: 0.5,
-    textAlign: 'center',
-    color: GOLD_THEME.TEXT.TERTIARY,
-    fontSize: 14,
-  },
   newBetButton: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
     marginBottom: 20,
-  },
-  newBetButtonText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: '600',
-    marginLeft: 8,
-  },
-  loadingContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-    textAlign: 'center',
-    color: GOLD_THEME.TEXT.SECONDARY,
-  },
-  errorContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  errorText: {
-    marginTop: 16,
-    textAlign: 'center',
-    color: GOLD_THEME.STATUS.ERROR,
   },
 });

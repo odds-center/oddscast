@@ -50,6 +50,47 @@ export class SubscriptionsService {
   }
 
   /**
+   * 플랜 ID로 조회
+   */
+  async getPlanById(planId: string): Promise<SubscriptionPlanEntity> {
+    const plan = await this.planRepo.findOne({ where: { id: planId } });
+
+    if (!plan) {
+      throw new NotFoundException(`구독 플랜을 찾을 수 없습니다: ${planId}`);
+    }
+
+    return plan;
+  }
+
+  /**
+   * 모든 활성 구독 조회 (정기 결제용)
+   */
+  async getActiveSubscriptions(): Promise<Subscription[]> {
+    return this.subscriptionRepo.find({
+      where: {
+        status: SubscriptionStatus.ACTIVE,
+      },
+      relations: ['user'],
+    });
+  }
+
+  /**
+   * 결제 실패 처리
+   *
+   * 결제 실패 시 구독 취소 처리
+   */
+  async handleBillingFailure(subscriptionId: string): Promise<void> {
+    const subscription = await this.findOne(subscriptionId);
+
+    // 구독 취소 처리 (결제 실패 시)
+    subscription.cancel();
+
+    await this.subscriptionRepo.save(subscription);
+
+    this.logger.warn(`구독 취소 (결제 실패): ${subscriptionId}`);
+  }
+
+  /**
    * 구독 생성
    */
   async createSubscription(dto: CreateSubscriptionDto): Promise<Subscription> {
@@ -73,8 +114,8 @@ export class SubscriptionsService {
     // 구독 생성
     const subscription = this.subscriptionRepo.create({
       userId: dto.userId,
-      planId: dto.planId,
-      planName: plan.planName as SubscriptionPlan,
+      planId: dto.planId || plan.id,
+      planName: plan.planName as unknown as SubscriptionPlan,
       originalPrice: plan.originalPrice,
       vat: plan.vat,
       totalPrice: plan.totalPrice,

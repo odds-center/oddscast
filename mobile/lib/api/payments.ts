@@ -1,93 +1,91 @@
-import { ApiResponse } from '@/lib/types/api';
-import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import { axiosInstance } from '../utils/axios';
 
 /**
- * 결제 승인 요청
+ * 구독 시작 요청
  */
-export interface ConfirmPaymentRequest {
+export interface SubscribeRequest {
+  planId: string;
+  cardNumber: string;
+  cardExpirationYear: string; // YY
+  cardExpirationMonth: string; // MM
+  cardPassword: string; // 앞 2자리
+  customerBirthday: string; // YYMMDD
+  customerName: string;
+  customerEmail: string;
+}
+
+/**
+ * 구독 결제 응답
+ */
+export interface SubscribeResponse {
+  subscriptionId: string;
+  ticketsIssued: number;
+  nextBillingDate: string;
+  paymentKey: string;
+}
+
+/**
+ * 개별 구매 요청 (결제 완료 후)
+ */
+export interface PurchaseTicketsRequest {
+  ticketCount: number;
   paymentKey: string;
   orderId: string;
   amount: number;
 }
 
 /**
- * 빌링키 발급 요청
+ * 개별 구매 응답
  */
-export interface IssueBillingKeyRequest {
-  customerKey: string;
-  authKey: string;
+export interface PurchaseTicketsResponse {
+  ticketsIssued: number;
+  transactionId: string;
 }
 
 /**
- * 빌링키 결제 요청
+ * 결제 이력
  */
-export interface BillingPaymentRequest {
-  billingKey: string;
+export interface BillingHistory {
+  id: string;
   amount: number;
-  orderName: string;
-}
-
-/**
- * 결제 취소 요청
- */
-export interface CancelPaymentRequest {
-  paymentKey: string;
-  cancelReason: string;
-  cancelAmount?: number;
+  billingDate: string;
+  status: 'SUCCESS' | 'FAILED' | 'REFUNDED';
+  pgProvider: string;
+  pgTransactionId: string;
+  errorMessage?: string;
 }
 
 /**
  * 결제 API
  */
-export class PaymentsApi {
+export const paymentsApi = {
   /**
-   * 결제 승인 (즉시 결제)
+   * 구독 시작 (빌링키 발급 + 첫 결제)
+   * POST /api/payments/subscribe
    */
-  static async confirm(data: ConfirmPaymentRequest) {
-    try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/payments/confirm', data);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async subscribe(data: SubscribeRequest): Promise<SubscribeResponse> {
+    const response = await axiosInstance.post<SubscribeResponse>('/api/payments/subscribe', data);
+    return response.data;
+  },
 
   /**
-   * 빌링키 발급 (정기 결제용)
+   * 개별 예측권 구매 (모바일에서 결제 완료 후)
+   * POST /api/payments/purchase
    */
-  static async issueBillingKey(data: IssueBillingKeyRequest) {
-    try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/payments/billing-key', data);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async purchaseTickets(data: PurchaseTicketsRequest): Promise<PurchaseTicketsResponse> {
+    const response = await axiosInstance.post<PurchaseTicketsResponse>(
+      '/api/payments/purchase',
+      data
+    );
+    return response.data;
+  },
 
   /**
-   * 빌링키로 결제
+   * 결제 내역 조회
+   * GET /api/payments/history
    */
-  static async payWithBillingKey(data: BillingPaymentRequest) {
-    try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/payments/billing-pay', data);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
-  /**
-   * 결제 취소
-   */
-  static async cancel(data: CancelPaymentRequest) {
-    try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/payments/cancel', data);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-}
-
-// 기본 export
-export const paymentsApi = PaymentsApi;
+  async getHistory(): Promise<BillingHistory[]> {
+    const response = await axiosInstance.get<BillingHistory[]>('/api/payments/history');
+    return response.data;
+  },
+};

@@ -1,149 +1,95 @@
-import { ApiResponse } from '@/lib/types/api';
-import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
+import { axiosInstance } from '../utils/axios';
+import type {
+  PredictionResultDto,
+  PredictionStatusDto,
+  PredictionPreview,
+} from '../types/predictions';
 
 /**
- * 예측 결과 타입
+ * AI 예측 API
  */
-export interface PredictionResult {
-  id: string;
-  raceId: string;
-  firstPlace: number;
-  secondPlace: number;
-  thirdPlace: number;
-  analysis: string;
-  confidence: number;
-  warnings: string[];
-  llmModel: string;
-  llmCost: number;
-  responseTime: number;
-  isAccurate?: boolean;
-  accuracyScore?: number;
-  createdAt: string;
-}
-
-/**
- * 예측 생성 요청
- */
-export interface CreatePredictionRequest {
-  raceId: string;
-  temperature?: number;
-  maxTokens?: number;
-  llmProvider?: 'openai' | 'claude';
-}
-
-/**
- * 예측 API
- */
-export class PredictionsApi {
-  /**
-   * AI 예측 생성
-   */
-  static async create(data: CreatePredictionRequest): Promise<PredictionResult> {
-    try {
-      const response = await axiosInstance.post<ApiResponse<PredictionResult>>(
-        '/predictions',
-        data
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
-  /**
-   * 예측 조회 (ID)
-   */
-  static async getById(id: string): Promise<PredictionResult> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<PredictionResult>>(`/predictions/${id}`);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
+export const predictionsApi = {
   /**
    * 경주별 예측 조회 (예측권 필수)
+   * GET /api/predictions/race/:raceId
    */
-  static async getByRaceId(raceId: string): Promise<PredictionResult | null> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<PredictionResult | null>>(
-        `/predictions/race/${raceId}`
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async getByRaceId(raceId: string): Promise<PredictionResultDto> {
+    const response = await axiosInstance.get<PredictionResultDto>(
+      `/api/predictions/race/${raceId}`
+    );
+    return response.data;
+  },
 
   /**
-   * 예측 미리보기 (예측권 불필요, 블러 처리용)
+   * 예측 미리보기 (예측권 없어도 가능)
+   * GET /api/predictions/race/:raceId/preview
    */
-  static async getPreview(raceId: string): Promise<{
-    raceId: string;
-    confidence?: number;
-    hasPrediction: boolean;
-    requiresTicket: boolean;
-    message: string;
-  }> {
-    try {
-      const response = await axiosInstance.get<
-        ApiResponse<{
-          raceId: string;
-          confidence?: number;
-          hasPrediction: boolean;
-          requiresTicket: boolean;
-          message: string;
-        }>
-      >(`/predictions/race/${raceId}/preview`);
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async getPreview(raceId: string): Promise<PredictionPreview> {
+    const response = await axiosInstance.get<PredictionPreview>(
+      `/api/predictions/race/${raceId}/preview`
+    );
+    return response.data;
+  },
+
+  /**
+   * 예측 ID로 조회
+   * GET /api/predictions/:id
+   */
+  async getById(id: string): Promise<PredictionResultDto> {
+    const response = await axiosInstance.get<PredictionResultDto>(`/api/predictions/${id}`);
+    return response.data;
+  },
 
   /**
    * 모든 예측 조회
+   * GET /api/predictions?limit=50&offset=0
    */
-  static async getAll(limit = 50, offset = 0): Promise<PredictionResult[]> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<PredictionResult[]>>('/predictions', {
-        params: { limit, offset },
-      });
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async getAll(limit = 50, offset = 0): Promise<PredictionResultDto[]> {
+    const response = await axiosInstance.get<PredictionResultDto[]>('/api/predictions', {
+      params: { limit, offset },
+    });
+    return response.data;
+  },
 
   /**
    * 평균 정확도 조회
+   * GET /api/predictions/stats/accuracy
    */
-  static async getAverageAccuracy(): Promise<{ averageAccuracy: number }> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<{ averageAccuracy: number }>>(
-        '/predictions/stats/accuracy'
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  async getAverageAccuracy(): Promise<{ averageAccuracy: number }> {
+    const response = await axiosInstance.get<{ averageAccuracy: number }>(
+      '/api/predictions/stats/accuracy'
+    );
+    return response.data;
+  },
 
   /**
-   * 총 비용 조회
+   * AI 분석 대시보드
+   * GET /api/predictions/analytics/dashboard
    */
-  static async getTotalCost(): Promise<{ totalCost: number }> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<{ totalCost: number }>>(
-        '/predictions/stats/cost'
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-}
+  async getAnalyticsDashboard(): Promise<any> {
+    const response = await axiosInstance.get('/api/predictions/analytics/dashboard');
+    return response.data;
+  },
 
-// 기본 export
-export const predictionsApi = PredictionsApi;
+  /**
+   * 일일 통계 계산
+   * POST /api/predictions/analytics/daily-stats
+   */
+  async calculateDailyStats(date?: string): Promise<any> {
+    const response = await axiosInstance.post('/api/predictions/analytics/daily-stats', {
+      date,
+    });
+    return response.data;
+  },
+
+  /**
+   * 실패 원인 분석
+   * GET /api/predictions/analytics/failures
+   */
+  async analyzeFailures(startDate?: string, endDate?: string): Promise<any> {
+    const response = await axiosInstance.get('/api/predictions/analytics/failures', {
+      params: { startDate, endDate },
+    });
+    return response.data;
+  },
+};

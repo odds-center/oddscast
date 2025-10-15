@@ -21,5 +21,5 @@ export class CreatePredictionDto {
 
   @IsOptional()
   @IsString()
-  llmProvider?: 'openai' | 'claude';
+  llmProvider?: 'openai'; // Claude 제거
 }

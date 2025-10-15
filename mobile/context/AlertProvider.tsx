@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { CustomAlert } from '@/components/ui/CustomAlert';
-import { setGlobalAlertRef } from '@/utils/alert';
 
 interface AlertButton {
   text: string;
@@ -62,12 +61,6 @@ export const AlertProvider: React.FC<AlertProviderProps> = ({ children }) => {
       visible: false,
     }));
   };
-
-  // 전역 Alert 참조 설정
-  useEffect(() => {
-    setGlobalAlertRef({ showAlert });
-    return () => setGlobalAlertRef(null);
-  }, []);
 
   return (
     <AlertContext.Provider value={{ showAlert, hideAlert }}>

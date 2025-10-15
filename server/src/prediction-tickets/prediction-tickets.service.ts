@@ -35,8 +35,11 @@ export class PredictionTicketsService {
   async issueTickets(dto: IssueTicketDto): Promise<PredictionTicket[]> {
     const quantity = dto.quantity || 1;
     const validDays = dto.validDays || 30;
+    const source = dto.source || 'subscription';
 
-    this.logger.log(`Issuing ${quantity} tickets for user: ${dto.userId}`);
+    this.logger.log(
+      `Issuing ${quantity} tickets for user: ${dto.userId} (source: ${source})`
+    );
 
     const tickets: PredictionTicket[] = [];
     const expiresAt = new Date();
@@ -46,6 +49,7 @@ export class PredictionTicketsService {
       const ticket = this.ticketRepo.create({
         userId: dto.userId,
         subscriptionId: dto.subscriptionId || null,
+        source,
         status: TicketStatus.AVAILABLE,
         expiresAt,
       });
@@ -63,7 +67,12 @@ export class PredictionTicketsService {
   }
 
   /**
-   * 예측권 사용 (AI 예측 요청)
+   * 예측권 사용 (AI 예측 열람)
+   * 
+   * ✅ 올바른 개념:
+   * - AI 예측은 배치로 미리 생성됨
+   * - 예측권은 "열람 권한"
+   * - 예측이 있든 없든 예측권 소비
    */
   async useTicket(userId: string, dto: UseTicketDto): Promise<any> {
     // 1. 사용 가능한 예측권 조회
@@ -71,44 +80,42 @@ export class PredictionTicketsService {
 
     if (!ticket) {
       throw new BadRequestException(
-        'No available prediction tickets. Please purchase or subscribe to get tickets.'
+        '사용 가능한 예측권이 없습니다. 구독 또는 개별 구매를 통해 예측권을 획득하세요.'
       );
     }
 
-    // 2. 이미 예측이 있는지 확인 (캐싱)
+    // 2. AI 예측 확인 (배치로 미리 생성되어 있어야 함)
     const existingPrediction = await this.predictionsService.findByRaceId(
       dto.raceId
     );
 
-    if (existingPrediction) {
-      // 기존 예측 사용 (예측권 소모하지 않음)
-      this.logger.log(`Using cached prediction for race: ${dto.raceId}`);
-      return {
-        prediction: await this.predictionsService.findOne(
-          existingPrediction.id
-        ),
-        ticketUsed: false,
-        ticket: null,
-      };
+    if (!existingPrediction) {
+      // 예측이 없으면 에러 (배치 작업에서 생성되어야 함)
+      throw new NotFoundException(
+        '해당 경주에 대한 AI 예측이 아직 생성되지 않았습니다. 잠시 후 다시 시도해주세요.'
+      );
     }
 
-    // 3. AI 예측 생성
-    const prediction = await this.predictionsService.generatePrediction({
-      raceId: dto.raceId,
-    });
-
-    // 4. 예측권 사용 처리
-    ticket.use(dto.raceId, prediction.id);
+    // 3. 예측권 사용 처리 (열람 권한 소비)
+    ticket.use(dto.raceId, existingPrediction.id);
     await this.ticketRepo.save(ticket);
 
-    this.logger.log(`Ticket ${ticket.id} used for race ${dto.raceId}`);
+    this.logger.log(
+      `예측권 사용: ${ticket.id} → Race ${dto.raceId} (Prediction ${existingPrediction.id})`
+    );
+
+    // 4. AI 예측 결과 반환
+    const predictionDetail = await this.predictionsService.findOne(
+      existingPrediction.id
+    );
 
     return {
-      prediction,
+      prediction: predictionDetail,
       ticketUsed: true,
       ticket: {
         id: ticket.id,
         usedAt: ticket.usedAt,
+        expiresAt: ticket.expiresAt,
       },
     };
   }
@@ -240,6 +247,22 @@ export class PredictionTicketsService {
     return this.ticketRepo.find({
       where: { subscriptionId },
       order: { issuedAt: 'DESC' },
+    });
+  }
+
+  /**
+   * 만료 예정 예측권 조회 (알림용)
+   */
+  async findExpiringTickets(days: number): Promise<PredictionTicket[]> {
+    const now = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() + days);
+
+    return this.ticketRepo.find({
+      where: {
+        status: TicketStatus.AVAILABLE,
+      },
+      order: { expiresAt: 'ASC' },
     });
   }
 }

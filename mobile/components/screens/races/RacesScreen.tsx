@@ -89,7 +89,6 @@ export default function RacesScreen() {
     selectedVenue === 'all' ? mockRaces : mockRaces.filter((race) => race.venue === selectedVenue);
 
   const handleRacePress = (raceId: string) => {
-    console.log('Race selected:', raceId);
     router.push(`/race-detail/${raceId}`);
   };
 

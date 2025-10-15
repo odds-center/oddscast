@@ -1,18 +1,13 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-} from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { usePredictions } from '@/lib/hooks/usePredictions';
 import { useQuery } from '@tanstack/react-query';
 import { predictionsApi } from '@/lib/api/predictions';
+import { Section, Card, Button, LoadingSpinner, InfoBanner } from '@/components/ui';
+import { ThemedText } from '@/components/ThemedText';
+import { showSuccessMessage, showErrorMessage, showConfirmMessage } from '@/utils/alert';
 
 /**
  * AI 예측 화면 (예측권 필수)
@@ -32,52 +27,51 @@ export default function PredictionRequestScreen() {
 
   const handleUsePredictionTicket = async () => {
     if (!hasTickets) {
-      Alert.alert('예측권 필요', '예측권을 사용하여 AI 예측을 확인하세요.', [
-        { text: '취소', style: 'cancel' },
-        {
-          text: '개별 구매 (₩1,100)',
-          onPress: () => router.push('/mypage/purchase/single'),
-        },
-        { text: '구독하기', onPress: () => router.push('/mypage/subscription/plans') },
-      ]);
+      showConfirmMessage(
+        '예측권을 사용하여 AI 예측을 확인하세요.\n\n개별 구매 (₩1,100) 또는 구독을 선택하세요.',
+        '예측권 필요',
+        () => router.push('/mypage/purchase/single'), // 개별 구매로 이동
+        () => {} // 취소
+      );
       return;
     }
 
-    try {
-      // 예측권 사용하여 전체 예측 조회
-      const response = await predictionsApi.getByRaceId(raceId as string);
-      setPrediction(response);
-      Alert.alert('예측권 사용 완료', '예측권 1장이 사용되었습니다.');
-    } catch (error: any) {
-      if (error.code === 'TICKET_REQUIRED') {
-        Alert.alert('예측권 필요', '예측권이 필요합니다.\n구독하거나 개별 구매해주세요.', [
-          { text: '취소', style: 'cancel' },
-          {
-            text: '개별 구매 (₩1,100)',
-            onPress: () => router.push('/mypage/purchase/single'),
-          },
-          { text: '구독하기', onPress: () => router.push('/mypage/subscription/plans') },
-        ]);
-      } else {
-        Alert.alert('오류', error.message || 'AI 예측 조회에 실패했습니다.');
+    showConfirmMessage(
+      `예측권 1장을 사용하여 AI 예측을 확인하시겠습니까?\n\n보유 예측권: ${availableTickets}장`,
+      '예측권 사용',
+      async () => {
+        try {
+          // 예측권 사용하여 전체 예측 조회
+          const response = await predictionsApi.getByRaceId(raceId as string);
+          setPrediction(response);
+          showSuccessMessage('예측권 1장이 사용되었습니다.', '예측권 사용 완료');
+        } catch (error: any) {
+          if (error.code === 'TICKET_REQUIRED') {
+            showErrorMessage('예측권이 필요합니다. 구독하거나 개별 구매해주세요.', '예측권 필요');
+          } else {
+            showErrorMessage(error.message || 'AI 예측 조회에 실패했습니다.', '오류');
+          }
+        }
       }
-    }
+    );
   };
 
   if (previewLoading) {
-    return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size='large' color='#007AFF' />
-        <Text style={styles.loadingText}>예측 정보를 불러오는 중...</Text>
-      </View>
-    );
+    return <LoadingSpinner message='예측 정보를 불러오는 중...' />;
   }
 
   // 예측권 사용 완료 - 전체 예측 표시
   if (prediction) {
     return (
       <ScrollView style={styles.container}>
-        <View style={styles.resultCard}>
+        <Section>
+          <InfoBanner
+            icon='checkmark-circle'
+            message='예측권이 사용되었습니다. AI 예측 결과를 확인하세요.'
+          />
+        </Section>
+
+        <Card style={styles.resultCard}>
           <View style={styles.resultHeader}>
             <Text style={styles.resultTitle}>🤖 AI 예측 결과</Text>
             <View style={styles.usedBadge}>
@@ -123,7 +117,7 @@ export default function PredictionRequestScreen() {
               ))}
             </View>
           )}
-        </View>
+        </Card>
 
         <View style={styles.disclaimerCard}>
           <Text style={styles.disclaimerTitle}>⚠️ 면책 공지</Text>
@@ -193,30 +187,32 @@ export default function PredictionRequestScreen() {
                 <Text style={styles.ticketInfoValue}>{availableTickets}장</Text>
               </View>
 
-              <TouchableOpacity
-                style={[styles.unlockButton, !hasTickets && styles.unlockButtonDisabled]}
+              <Button
+                title={hasTickets ? '예측권 1장 사용하기' : '예측권 없음'}
                 onPress={handleUsePredictionTicket}
                 disabled={!hasTickets}
-              >
-                <Text style={styles.unlockButtonText}>
-                  {hasTickets ? '예측권 1장 사용하기' : '예측권 없음'}
-                </Text>
-              </TouchableOpacity>
+                variant='primary'
+                size='large'
+                icon='sparkles'
+                style={{ marginBottom: 12 }}
+              />
 
               {!hasTickets && (
                 <View style={styles.purchaseButtons}>
-                  <TouchableOpacity
-                    style={styles.singleBuyButton}
+                  <Button
+                    title='개별 구매 ₩1,100'
                     onPress={() => router.push('/mypage/purchase/single')}
-                  >
-                    <Text style={styles.singleBuyText}>개별 구매 ₩1,100</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.subscribeButton}
+                    variant='secondary'
+                    size='medium'
+                    style={{ flex: 1 }}
+                  />
+                  <Button
+                    title='구독하기'
                     onPress={() => router.push('/mypage/subscription/plans')}
-                  >
-                    <Text style={styles.subscribeText}>구독하기</Text>
-                  </TouchableOpacity>
+                    variant='primary'
+                    size='medium'
+                    style={{ flex: 1 }}
+                  />
                 </View>
               )}
             </View>
@@ -237,14 +233,20 @@ export default function PredictionRequestScreen() {
   // 예측 생성 대기 중
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.pendingSection}>
-        <ActivityIndicator size='large' color='#007AFF' />
-        <Text style={styles.pendingTitle}>AI 예측 생성 중</Text>
-        <Text style={styles.pendingText}>
-          배치 예측 시스템이 경주 시작 전에 자동으로 예측을 생성합니다.
-        </Text>
-        <Text style={styles.pendingSubtext}>잠시 후 다시 확인해주세요.</Text>
-      </View>
+      <Section>
+        <Card style={styles.pendingSection}>
+          <LoadingSpinner />
+          <ThemedText type='title' style={styles.pendingTitle}>
+            AI 예측 생성 중
+          </ThemedText>
+          <ThemedText style={styles.pendingText}>
+            배치 예측 시스템이 경주 시작 전에 자동으로 예측을 생성합니다.
+          </ThemedText>
+          <ThemedText type='caption' style={styles.pendingSubtext}>
+            잠시 후 다시 확인해주세요.
+          </ThemedText>
+        </Card>
+      </Section>
     </ScrollView>
   );
 }

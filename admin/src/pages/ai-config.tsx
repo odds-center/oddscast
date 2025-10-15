@@ -9,19 +9,12 @@ import Layout from '@/components/layout/Layout';
 import { adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
 
-// Zod 스키마 (서버 구조에 맞춤)
+// Zod 스키마 (OpenAI 전용)
 const aiConfigSchema = z.object({
-  llmProvider: z.enum(['openai', 'claude']),
-  primaryModel: z.enum([
-    'gpt-4-turbo',
-    'gpt-4',
-    'gpt-4o',
-    'gpt-3.5-turbo',
-    'claude-3-opus',
-    'claude-3-sonnet',
-  ]),
+  llmProvider: z.enum(['openai']),
+  primaryModel: z.enum(['gpt-4-turbo', 'gpt-4', 'gpt-4o', 'gpt-3.5-turbo']),
   fallbackModels: z.array(z.string()),
-  costStrategy: z.enum(['premium', 'balanced', 'budget', 'hybrid']),
+  costStrategy: z.enum(['premium', 'balanced', 'budget']),
   temperature: z.number().min(0).max(1),
   maxTokens: z.number().int().min(100).max(4000),
   enableCaching: z.boolean(),
@@ -37,17 +30,15 @@ const aiConfigSchema = z.object({
 
 type AIConfigFormData = z.infer<typeof aiConfigSchema>;
 
-// 모델 정보 (서버의 model-config.ts와 동일)
+// 모델 정보 (OpenAI 전용)
 const MODEL_INFO = {
   'gpt-4-turbo': { cost: 54, speed: 4, accuracy: 30, provider: 'openai' },
   'gpt-4': { cost: 90, speed: 3, accuracy: 31, provider: 'openai' },
   'gpt-4o': { cost: 15, speed: 5, accuracy: 29, provider: 'openai' },
   'gpt-3.5-turbo': { cost: 10, speed: 5, accuracy: 24, provider: 'openai' },
-  'claude-3-opus': { cost: 60, speed: 2, accuracy: 32, provider: 'claude' },
-  'claude-3-sonnet': { cost: 15, speed: 4, accuracy: 28, provider: 'claude' },
 };
 
-// 비용 전략 (서버의 COST_STRATEGIES와 동일)
+// 비용 전략 (OpenAI 전용)
 const COST_STRATEGIES = {
   premium: {
     name: 'Premium',
@@ -62,7 +53,6 @@ const COST_STRATEGIES = {
     description: 'GPT-4 + GPT-3.5 혼용 (추천)',
   },
   budget: { name: 'Budget', cost: 12960, accuracy: 24, description: 'GPT-3.5 위주 (최저 비용)' },
-  hybrid: { name: 'Hybrid', cost: 34560, accuracy: 31, description: 'GPT-4 + Claude (실험적)' },
 };
 
 export default function AIConfigPage() {
@@ -157,17 +147,7 @@ export default function AIConfigPage() {
     updateConfigMutation.mutate(data);
   };
 
-  // Provider 변경 시 모델 자동 변경
-  const handleProviderChange = (provider: 'openai' | 'claude') => {
-    setValue('llmProvider', provider);
-    if (provider === 'openai') {
-      setValue('primaryModel', 'gpt-4-turbo');
-      setValue('fallbackModels', ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo']);
-    } else {
-      setValue('primaryModel', 'claude-3-opus');
-      setValue('fallbackModels', ['claude-3-sonnet']);
-    }
-  };
+  // Provider는 항상 OpenAI (변경 불필요)
 
   if (configLoading) {
     return (
@@ -258,58 +238,22 @@ export default function AIConfigPage() {
           {/* 설정 폼 */}
           <div className='bg-white rounded-lg shadow p-8'>
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
-              {/* LLM Provider */}
+              {/* LLM Provider (OpenAI 전용) */}
               <div>
                 <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
                   <Bot className='w-5 h-5' />
-                  LLM Provider
+                  LLM Provider (OpenAI 전용)
                 </h3>
-                <div className='grid grid-cols-2 gap-4'>
-                  <label
-                    className={`relative flex items-center p-4 border-2 rounded-lg cursor-pointer ${
-                      watch('llmProvider') === 'openai'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type='radio'
-                      {...register('llmProvider')}
-                      value='openai'
-                      onChange={() => handleProviderChange('openai')}
-                      className='sr-only'
-                    />
-                    <div className='flex-1'>
-                      <div className='font-semibold'>OpenAI</div>
-                      <div className='text-sm text-gray-500'>GPT-4, GPT-3.5</div>
+                <div className='bg-blue-50 border-2 border-blue-500 rounded-lg p-4'>
+                  <div className='flex items-center justify-between'>
+                    <div>
+                      <div className='font-semibold text-blue-900'>OpenAI GPT-4o</div>
+                      <div className='text-sm text-blue-700'>GPT-4 Turbo, GPT-4, GPT-3.5</div>
                     </div>
-                    {watch('llmProvider') === 'openai' && (
-                      <div className='w-4 h-4 bg-blue-500 rounded-full'></div>
-                    )}
-                  </label>
-
-                  <label
-                    className={`relative flex items-center p-4 border-2 rounded-lg cursor-pointer ${
-                      watch('llmProvider') === 'claude'
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-300'
-                    }`}
-                  >
-                    <input
-                      type='radio'
-                      {...register('llmProvider')}
-                      value='claude'
-                      onChange={() => handleProviderChange('claude')}
-                      className='sr-only'
-                    />
-                    <div className='flex-1'>
-                      <div className='font-semibold'>Anthropic</div>
-                      <div className='text-sm text-gray-500'>Claude 3</div>
+                    <div className='px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-full'>
+                      활성화
                     </div>
-                    {watch('llmProvider') === 'claude' && (
-                      <div className='w-4 h-4 bg-blue-500 rounded-full'></div>
-                    )}
-                  </label>
+                  </div>
                 </div>
               </div>
 
@@ -326,19 +270,10 @@ export default function AIConfigPage() {
                       {...register('primaryModel')}
                       className='w-full px-4 py-2 border rounded-lg'
                     >
-                      {watch('llmProvider') === 'openai' ? (
-                        <>
-                          <option value='gpt-4-turbo'>GPT-4 Turbo (추천, ₩54)</option>
-                          <option value='gpt-4o'>GPT-4o (빠름, ₩15)</option>
-                          <option value='gpt-4'>GPT-4 (느림, ₩90)</option>
-                          <option value='gpt-3.5-turbo'>GPT-3.5 Turbo (저렴, ₩10)</option>
-                        </>
-                      ) : (
-                        <>
-                          <option value='claude-3-opus'>Claude 3 Opus (최고, ₩60)</option>
-                          <option value='claude-3-sonnet'>Claude 3 Sonnet (균형, ₩15)</option>
-                        </>
-                      )}
+                      <option value='gpt-4-turbo'>GPT-4 Turbo (추천, ₩54)</option>
+                      <option value='gpt-4o'>GPT-4o (빠름, ₩15)</option>
+                      <option value='gpt-4'>GPT-4 (느림, ₩90)</option>
+                      <option value='gpt-3.5-turbo'>GPT-3.5 Turbo (저렴, ₩10)</option>
                     </select>
                     <div className='mt-2 text-sm text-gray-500'>
                       비용: ₩{MODEL_INFO[watchedPrimaryModel as keyof typeof MODEL_INFO].cost} /
@@ -586,7 +521,7 @@ export default function AIConfigPage() {
 
           {/* 도움말 */}
           <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
-            <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 (서버 기반)</h4>
+            <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 (OpenAI 전용)</h4>
             <div className='space-y-2 text-sm text-blue-800'>
               <p>
                 <strong>• Premium 전략:</strong> GPT-4만 사용, 최고 정확도 (30%), 월 ₩30,240
@@ -597,9 +532,6 @@ export default function AIConfigPage() {
               </p>
               <p>
                 <strong>• Budget 전략:</strong> GPT-3.5 위주, 정확도 24%, 월 ₩12,960
-              </p>
-              <p>
-                <strong>• Hybrid 전략:</strong> GPT-4 + Claude, 정확도 31%, 월 ₩34,560 (실험적)
               </p>
               <p className='mt-3 pt-3 border-t border-blue-200'>
                 <strong>⚠️ 캐싱 활성화 시:</strong> 실제 비용은 1% 수준 (월 ₩300 내외)

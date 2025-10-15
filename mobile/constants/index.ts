@@ -3,3 +3,4 @@ export * from './betting';
 export * from './points';
 export * from './race';
 export * from './theme';
+export * from './commonStyles';

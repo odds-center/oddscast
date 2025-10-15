@@ -13,7 +13,7 @@ import { HomeModule } from './home/home.module';
 import { KraApiModule } from './kra-api/kra-api.module';
 import { LlmModule } from './llm/llm.module';
 import { NotificationsModule } from './notifications/notifications.module';
-import { PaymentsModule } from './payments/payments.module';
+import { PaymentsModule } from './payments/payments.module'; // Toss Payments
 import { PointsModule } from './points/points.module';
 import { PredictionTicketsModule } from './prediction-tickets/prediction-tickets.module';
 import { PredictionsModule } from './predictions/predictions.module';

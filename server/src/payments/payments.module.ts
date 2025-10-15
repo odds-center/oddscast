@@ -1,26 +1,33 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { PaymentsController } from './payments.controller';
-import { TossPaymentService } from './services/toss-payment.service';
-import { PaymentWebhookService } from './services/payment-webhook.service';
-import { Payment } from './entities/payment.entity';
-import { BillingKey } from './entities/billing-key.entity';
+import { PaymentsService } from './payments.service';
+import { TossPaymentService } from './toss.service';
+import { BillingHistory } from './entities/billing-history.entity';
+import { Subscription } from '../subscriptions/entities/subscription.entity';
+import { PredictionTicket } from '../prediction-tickets/entities/prediction-ticket.entity';
+import { User } from '../users/entities/user.entity';
 import { SubscriptionsModule } from '../subscriptions/subscriptions.module';
-import { SinglePurchasesModule } from '../single-purchases/single-purchases.module';
+import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
 
 /**
- * 결제 모듈
+ * 결제 모듈 (Toss Payments)
  */
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Payment, BillingKey]),
     ConfigModule,
+    TypeOrmModule.forFeature([
+      BillingHistory,
+      Subscription,
+      PredictionTicket,
+      User,
+    ]),
     SubscriptionsModule,
-    SinglePurchasesModule,
+    PredictionTicketsModule,
   ],
   controllers: [PaymentsController],
-  providers: [TossPaymentService, PaymentWebhookService],
-  exports: [TossPaymentService],
+  providers: [PaymentsService, TossPaymentService],
+  exports: [PaymentsService, TossPaymentService],
 })
 export class PaymentsModule {}

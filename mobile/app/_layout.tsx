@@ -16,6 +16,7 @@ import React, { useEffect } from 'react';
 import 'react-native-reanimated';
 import { Provider } from 'react-redux';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Toast from 'react-native-toast-message';
 
 // Mock 서버 초기화 (개발 모드에서만)
 if (__DEV__) {
@@ -58,6 +59,8 @@ function RootLayoutNav() {
           </AlertProvider>
         </AppThemeProvider>
       </ThemeProvider>
+      {/* Toast 알림 */}
+      <Toast />
     </GestureHandlerRootView>
   );
 }

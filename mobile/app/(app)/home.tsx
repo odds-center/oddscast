@@ -12,6 +12,8 @@ import React, { useState, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RACES } from '@/constants/mockData';
+import { Card, Section, StatCard, EmptyState, InfoBanner, Button } from '@/components/ui';
+import { TicketBadge } from '@/components/common/TicketBadge';
 
 // Mock 랭킹 데이터 (전체/주간/월간)
 const MOCK_RANKINGS = {
@@ -159,8 +161,8 @@ export default function HomeScreen() {
 
   return (
     <PageLayout>
-      {/* 사용자 환영 메시지 */}
-      <View style={styles.section}>
+      {/* 사용자 환영 메시지 + 예측권 Badge */}
+      <Section>
         <View style={styles.welcomeContainer}>
           <View style={styles.userInfo}>
             <ThemedText type='caption' style={styles.welcomeLabel}>
@@ -173,47 +175,44 @@ export default function HomeScreen() {
               오늘의 경주를 예측해보세요 🤖
             </ThemedText>
           </View>
-          <View style={styles.userAvatar}>
-            <Ionicons name='person-circle' size={40} color={GOLD_THEME.TEXT.SECONDARY} />
+          <View style={styles.headerRight}>
+            <TicketBadge />
+            <View style={styles.userAvatar}>
+              <Ionicons name='person-circle' size={32} color={GOLD_THEME.TEXT.SECONDARY} />
+            </View>
           </View>
         </View>
-      </View>
+      </Section>
 
-      {/* 나의 기록 */}
-      <View style={styles.section}>
+      {/* 나의 기록 - 신규 Section & StatCard 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           나의 기록
         </ThemedText>
         <View style={styles.bettingSummary}>
-          <View style={styles.bettingStat}>
-            <ThemedText type='stat' style={styles.bettingNumber}>
-              {betStatsLoading ? '...' : betStats?.totalBets || 0}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.bettingLabel}>
-              마권 기록
-            </ThemedText>
-          </View>
-          <View style={styles.bettingStat}>
-            <ThemedText type='stat' style={styles.bettingNumber}>
-              {betStatsLoading ? '...' : betStats?.wonBets || 0}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.bettingLabel}>
-              적중
-            </ThemedText>
-          </View>
-          <View style={styles.bettingStat}>
-            <ThemedText type='stat' style={styles.bettingNumber}>
-              {betStatsLoading ? '...' : `${Math.round(betStats?.winRate || 0)}%`}
-            </ThemedText>
-            <ThemedText type='caption' style={styles.bettingLabel}>
-              승률
-            </ThemedText>
-          </View>
+          <StatCard
+            icon='document-text'
+            label='마권 기록'
+            value={betStatsLoading ? '...' : betStats?.totalBets || 0}
+            variant='default'
+          />
+          <StatCard
+            icon='trophy'
+            label='적중'
+            value={betStatsLoading ? '...' : betStats?.wonBets || 0}
+            variant='highlight'
+          />
+          <StatCard
+            icon='trending-up'
+            label='승률'
+            value={betStatsLoading ? '...' : `${Math.round(betStats?.winRate || 0)}%`}
+            variant='default'
+          />
         </View>
-      </View>
+      </Section>
 
-      {/* 빠른 액션 */}
-      <View style={styles.quickActionsSection}>
+      {/* 빠른 액션 - Card 사용 */}
+      <Card variant='elevated' style={styles.quickActionsCard}>
         <View style={styles.quickActionsRow}>
           <TouchableOpacity style={styles.quickActionItem} onPress={() => router.push('/records')}>
             <Ionicons name='document-text' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
@@ -246,7 +245,7 @@ export default function HomeScreen() {
             </ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
+      </Card>
 
       {/* 오늘의 경주 */}
       <View style={styles.racesSection}>
@@ -409,11 +408,11 @@ export default function HomeScreen() {
           ))}
         </View>
       ) : (
-        <View style={styles.emptyContainer}>
-          <ThemedText type='body' style={styles.emptyText}>
-            오늘 예정된 경주가 없습니다.
-          </ThemedText>
-        </View>
+        <EmptyState
+          icon='calendar-outline'
+          title='오늘 예정된 경주가 없습니다'
+          message='다른 날짜를 확인해보세요'
+        />
       )}
 
       {/* AI 예측권 구독 배너 - 구독하지 않은 경우에만 표시 */}
@@ -487,8 +486,8 @@ export default function HomeScreen() {
         </TouchableOpacity>
       )}
 
-      {/* 랭킹 */}
-      <View style={styles.section}>
+      {/* 랭킹 - Section 컴포넌트 사용 */}
+      <Section>
         <View style={styles.rankingHeader}>
           <ThemedText type='title' style={styles.sectionTitle}>
             랭킹
@@ -565,25 +564,12 @@ export default function HomeScreen() {
               </View>
             ))}
         </View>
-      </View>
+      </Section>
     </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginBottom: 16,
-    padding: 16,
-    borderRadius: 16,
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
-  },
   sectionTitle: {
     marginBottom: 12,
     color: GOLD_THEME.TEXT.SECONDARY,
@@ -596,6 +582,11 @@ const styles = StyleSheet.create({
   },
   userInfo: {
     flex: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
   },
   welcomeLabel: {
     color: GOLD_THEME.TEXT.SECONDARY,
@@ -621,26 +612,7 @@ const styles = StyleSheet.create({
   bettingSummary: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-  },
-  bettingStat: {
-    alignItems: 'center',
-  },
-  bettingNumber: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    marginBottom: 4,
-  },
-  bettingLabel: {
-    opacity: 0.8,
-    color: GOLD_THEME.TEXT.PRIMARY,
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    opacity: 0.6,
-    textAlign: 'center',
-    color: GOLD_THEME.TEXT.PRIMARY,
+    gap: 12,
   },
   racesSection: {
     marginBottom: 16,
@@ -1061,19 +1033,13 @@ const styles = StyleSheet.create({
     color: GOLD_THEME.TEXT.SECONDARY,
     fontWeight: '600',
   },
-  quickActionsSection: {
-    marginBottom: 16,
+  quickActionsCard: {
+    padding: 16,
   },
   quickActionsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   quickActionItem: {
     flex: 1,

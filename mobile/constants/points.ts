@@ -40,6 +40,8 @@ export const POINTS_CONSTANTS = {
     EVENT_BONUS: 500, // 이벤트 보너스
     MIN_BET_AMOUNT: 100, // 최소 베팅 금액
     MAX_BET_AMOUNT: 100000, // 최대 베팅 금액
+    MIN_ADD_AMOUNT: 100, // 최소 추가 금액
+    MIN_WITHDRAW_AMOUNT: 1000, // 최소 출금 금액
   },
 
   // 포인트 만료

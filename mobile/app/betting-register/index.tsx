@@ -191,11 +191,11 @@ export default function BettingRegisterScreen() {
 
       await BetApi.createBet(betData);
 
-      showSuccessMessage('마권 기록이 등록되었습니다.', '등록 완료');
+      showSuccessMessage('마권 기록이 등록되었습니다', '✅ 등록 완료');
       setTimeout(() => router.back(), 500);
     } catch (error) {
       console.error('마권 기록 등록 실패:', error);
-      showErrorMessage('마권 기록 등록에 실패했습니다. 다시 시도해주세요.');
+      showErrorMessage('마권 기록 등록에 실패했습니다. 다시 시도해주세요');
     }
   };
 

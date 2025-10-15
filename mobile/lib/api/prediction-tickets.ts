@@ -1,6 +1,6 @@
 import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/utils/axios';
-import type { PredictionResult } from './predictions';
+import type { PredictionResultDto } from '@/lib/types/predictions';
 
 /**
  * 예측권 타입
@@ -32,7 +32,7 @@ export interface TicketBalance {
  * 예측권 사용 결과
  */
 export interface UseTicketResult {
-  prediction: PredictionResult;
+  prediction: PredictionResultDto;
   ticketUsed: boolean;
   ticket: {
     id: string;

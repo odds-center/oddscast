@@ -5,14 +5,8 @@ import type { RaceResult } from '@/lib/api/resultApi';
 import { useAllResults, useResults } from '@/lib/hooks/useResults';
 import moment from 'moment';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { LoadingSpinner, ErrorState, EmptyState, Button } from '@/components/ui';
 
 // Mock 과거 경주 기록
 const MOCK_PAST_RESULTS = [
@@ -223,20 +217,16 @@ export default function ResultsScreen() {
         </View>
       </View>
 
-      {/* 결과 목록 */}
+      {/* 결과 목록 - 신규 컴포넌트 사용 */}
       <View style={styles.content}>
         {isLoading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size='large' color={GOLD_THEME.TEXT.SECONDARY} />
-            <ThemedText style={styles.loadingText}>결과를 불러오는 중...</ThemedText>
-          </View>
+          <LoadingSpinner message='결과를 불러오는 중...' />
         ) : error ? (
-          <View style={styles.errorContainer}>
-            <ThemedText style={styles.errorText}>결과를 불러오는데 실패했습니다.</ThemedText>
-            <TouchableOpacity style={styles.retryButton} onPress={() => refetch()}>
-              <ThemedText style={styles.retryButtonText}>다시 시도</ThemedText>
-            </TouchableOpacity>
-          </View>
+          <ErrorState
+            error={error}
+            title='결과를 불러오는데 실패했습니다'
+            onRetry={() => refetch()}
+          />
         ) : results && results.length > 0 ? (
           results.map((result: RaceResult) => (
             <View key={result.id} style={styles.resultCard}>
@@ -270,11 +260,11 @@ export default function ResultsScreen() {
             </View>
           ))
         ) : (
-          <View style={styles.emptyContainer}>
-            <ThemedText type='subtitle' style={styles.emptyText}>
-              {viewMode === 'daily' ? '해당 날짜의 결과가 없습니다.' : '전체 결과가 없습니다.'}
-            </ThemedText>
-          </View>
+          <EmptyState
+            icon='calendar-outline'
+            title={viewMode === 'daily' ? '해당 날짜의 결과가 없습니다' : '전체 결과가 없습니다'}
+            message='다른 날짜를 선택해보세요'
+          />
         )}
       </View>
     </PageLayout>
@@ -342,47 +332,6 @@ const styles = StyleSheet.create({
   },
   odds: {
     opacity: 0.7,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 16,
-    opacity: 0.8,
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  errorText: {
-    marginBottom: 20,
-    textAlign: 'center',
-    opacity: 0.8,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-  },
-  emptyText: {
-    textAlign: 'center',
-    opacity: 0.6,
-  },
-  retryButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-  },
-  retryButtonText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: '600',
   },
   // 뷰 모드 관련 스타일
   viewModeContainer: {

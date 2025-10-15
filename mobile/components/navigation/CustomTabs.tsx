@@ -14,19 +14,11 @@ export function CustomTabs() {
 
     // 현재 경로가 해당 탭의 루트라면 이동하지 않음
     if (pathname === targetPath || pathname === `/(app)/${tabName}/`) {
-      console.log(`🚫 Already on ${tabName} root, preventing navigation`);
-      e.preventDefault(); // 기본 동작 막기
+      e.preventDefault(); // 기본 동작 막기 (불필요한 리렌더링 방지)
       return;
     }
 
-    // 해당 탭의 하위 경로에 있는 경우 루트로 이동
-    const isInTabGroup = pathname.startsWith(`/(app)/${tabName}`);
-
-    if (isInTabGroup) {
-      console.log(`📍 Navigating to ${tabName} root from sub-page`);
-    }
-
-    // 기본 탭 전환 동작 막고 직접 처리
+    // 기본 탭 전환 동작 막고 직접 처리 (최적화된 전환)
     e.preventDefault();
     router.push(targetPath);
   };

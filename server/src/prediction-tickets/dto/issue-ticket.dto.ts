@@ -22,4 +22,8 @@ export class IssueTicketDto {
   @Min(1)
   @Max(90)
   validDays?: number; // 유효 기간 (일, 기본 30일)
+
+  @IsOptional()
+  @IsString()
+  source?: 'subscription' | 'single_purchase' | 'bonus'; // 발급 출처
 }

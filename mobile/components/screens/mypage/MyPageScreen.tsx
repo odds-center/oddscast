@@ -8,6 +8,8 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { GOLD_THEME } from '@/constants/theme';
+import { showSuccessMessage, showErrorMessage, showInfoMessage } from '@/utils/alert';
+import { Section, StatCard } from '@/components/ui';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
@@ -20,16 +22,17 @@ const MyPageScreen = () => {
   const handleSignOut = async () => {
     try {
       await signOut();
-      console.log('로그아웃 성공');
+      showSuccessMessage('로그아웃되었습니다');
       // 로그아웃 후 로그인 페이지로 이동
       router.replace('/login');
     } catch (error) {
+      showErrorMessage('로그아웃 중 오류가 발생했습니다');
       console.error('로그아웃 에러:', error);
     }
   };
 
   const handleDeleteAccount = () => {
-    console.log('계정 삭제 기능이 곧 추가될 예정입니다.');
+    showInfoMessage('계정 삭제 기능이 곧 추가될 예정입니다');
   };
 
   const handleMenuPress = (menuName: string) => {
@@ -47,7 +50,7 @@ const MyPageScreen = () => {
         router.push('/mypage/help');
         break;
       default:
-        console.log(`${menuName} 기능이 곧 추가될 예정입니다.`);
+        showInfoMessage(`${menuName} 기능이 곧 추가될 예정입니다`);
     }
   };
 
@@ -68,8 +71,8 @@ const MyPageScreen = () => {
 
   return (
     <PageLayout>
-      {/* 프로필 섹션 */}
-      <View style={styles.section}>
+      {/* 프로필 섹션 - 신규 Section 사용 */}
+      <Section>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
@@ -84,37 +87,31 @@ const MyPageScreen = () => {
               {email}
             </ThemedText>
             <View style={styles.userStats}>
-              <View style={styles.statItem}>
-                <ThemedText type='stat' style={styles.statNumber}>
-                  {betStatsLoading ? '...' : betStats?.totalBets || 0}
-                </ThemedText>
-                <ThemedText type='caption' style={styles.statLabel}>
-                  베팅 기록
-                </ThemedText>
-              </View>
-              <View style={styles.statItem}>
-                <ThemedText type='stat' style={styles.statNumber}>
-                  {betStatsLoading ? '...' : betStats?.wonBets || 0}
-                </ThemedText>
-                <ThemedText type='caption' style={styles.statLabel}>
-                  적중
-                </ThemedText>
-              </View>
-              <View style={styles.statItem}>
-                <ThemedText type='stat' style={styles.statNumber}>
-                  {betStatsLoading ? '...' : `${Math.round(betStats?.winRate || 0)}%`}
-                </ThemedText>
-                <ThemedText type='caption' style={styles.statLabel}>
-                  승률
-                </ThemedText>
-              </View>
+              <StatCard
+                icon='document-text'
+                label='베팅 기록'
+                value={betStatsLoading ? '...' : betStats?.totalBets || 0}
+                variant='default'
+              />
+              <StatCard
+                icon='trophy'
+                label='적중'
+                value={betStatsLoading ? '...' : betStats?.wonBets || 0}
+                variant='highlight'
+              />
+              <StatCard
+                icon='trending-up'
+                label='승률'
+                value={betStatsLoading ? '...' : `${Math.round(betStats?.winRate || 0)}%`}
+                variant='default'
+              />
             </View>
           </View>
         </View>
-      </View>
+      </Section>
 
-      {/* 구독 관리 섹션 */}
-      <View style={styles.section}>
+      {/* 구독 관리 섹션 - 신규 Section 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           구독
         </ThemedText>
@@ -141,10 +138,10 @@ const MyPageScreen = () => {
             <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
         </View>
-      </View>
+      </Section>
 
-      {/* 메뉴 섹션 */}
-      <View style={styles.section}>
+      {/* 메뉴 섹션 - 신규 Section 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           설정
         </ThemedText>
@@ -181,10 +178,10 @@ const MyPageScreen = () => {
             <Ionicons name='chevron-forward' size={20} color='#666' />
           </TouchableOpacity>
         </View>
-      </View>
+      </Section>
 
-      {/* 계정 관리 섹션 */}
-      <View style={styles.section}>
+      {/* 계정 관리 섹션 - 신규 Section 사용 */}
+      <Section>
         <ThemedText type='title' style={styles.sectionTitle}>
           계정 관리
         </ThemedText>
@@ -203,10 +200,10 @@ const MyPageScreen = () => {
             <ThemedText style={[styles.menuText, styles.dangerText]}>계정 삭제</ThemedText>
           </TouchableOpacity>
         </View>
-      </View>
+      </Section>
 
-      {/* 앱 정보 */}
-      <View style={styles.section}>
+      {/* 앱 정보 - 신규 Section 사용 */}
+      <Section>
         <View style={styles.appInfo}>
           <ThemedText type='caption' style={styles.appInfoText}>
             골든레이스 v1.0.0
@@ -215,7 +212,7 @@ const MyPageScreen = () => {
             © 2024 GoldenRace. All rights reserved.
           </ThemedText>
         </View>
-      </View>
+      </Section>
     </PageLayout>
   );
 };
@@ -229,14 +226,6 @@ const styles = StyleSheet.create({
   errorText: {
     color: GOLD_THEME.TEXT.PRIMARY,
     textAlign: 'center',
-  },
-  section: {
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
   },
   sectionTitle: {
     color: GOLD_THEME.TEXT.SECONDARY,
@@ -278,21 +267,8 @@ const styles = StyleSheet.create({
   },
   userStats: {
     flexDirection: 'row',
-    gap: 20,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  statLabel: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.7,
-    fontSize: 12,
+    gap: 12,
+    marginTop: 12,
   },
   balanceContainer: {
     flexDirection: 'row',

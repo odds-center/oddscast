@@ -4,6 +4,7 @@ import googleAuth from '@/utils/GoogleAuthService';
 import { tokenManager } from '@/lib/utils/tokenManager';
 import { API_CONSTANTS } from '@/constants/auth';
 import { User } from '@/lib/types/api';
+import { showErrorMessage, showSuccessMessage } from '@/utils/alert';
 
 interface AuthState {
   accessToken: string | null;
@@ -249,7 +250,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ Sign out successful');
     } catch (error) {
       console.error('❌ Sign out error:', error);
-      Alert.alert('로그아웃 오류', '로그아웃 중 오류가 발생했습니다.');
+      showErrorMessage('로그아웃 중 오류가 발생했습니다', '로그아웃 오류');
     }
   };
 
@@ -274,7 +275,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log('✅ Auth reset successful');
     } catch (error) {
       console.error('❌ Auth reset error:', error);
-      Alert.alert('토큰 초기화 오류', '토큰 초기화 중 오류가 발생했습니다.');
+      showErrorMessage('토큰 초기화 중 오류가 발생했습니다', '초기화 오류');
     }
   };
 

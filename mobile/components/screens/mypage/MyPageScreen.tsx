@@ -1,15 +1,16 @@
-import { ThemedText } from '@/components/ThemedText';
-import { PageLayout } from '@/components/common/PageLayout';
+import React from 'react';
+import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
+// 디자인 시스템
+import { StyledText, Section, StatCard, Card, SectionHeader } from '@/components/ui';
+import { PageLayout } from '@/components/common';
+import { Colors, Spacing } from '@/constants/designTokens';
 import { useAuth } from '@/context/AuthProvider';
 import { useBetStatistics } from '@/lib/hooks/useBets';
 import { useCurrentUserProfile } from '@/lib/hooks/useUsers';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import React from 'react';
-import { StyleSheet, TouchableOpacity, View } from 'react-native';
-import { GOLD_THEME } from '@/constants/theme';
 import { showSuccessMessage, showErrorMessage, showInfoMessage } from '@/utils/alert';
-import { Section, StatCard } from '@/components/ui';
 
 const MyPageScreen = () => {
   const { user, signOut } = useAuth();
@@ -58,9 +59,9 @@ const MyPageScreen = () => {
     return (
       <PageLayout>
         <View style={styles.centerContainer}>
-          <ThemedText type='title' style={styles.errorText}>
+          <StyledText variant='h3' style={styles.errorText}>
             로그인이 필요합니다.
-          </ThemedText>
+          </StyledText>
         </View>
       </PageLayout>
     );
@@ -71,21 +72,21 @@ const MyPageScreen = () => {
 
   return (
     <PageLayout>
-      {/* 프로필 섹션 - 신규 Section 사용 */}
+      {/* 프로필 섹션 */}
       <Section>
         <View style={styles.profileContainer}>
           <View style={styles.avatarContainer}>
             <View style={styles.avatar}>
-              <Ionicons name='person' size={32} color={GOLD_THEME.TEXT.PRIMARY} />
+              <Ionicons name='person' size={32} color={Colors.text.primary} />
             </View>
           </View>
           <View style={styles.profileInfo}>
-            <ThemedText type='title' style={styles.username}>
+            <StyledText variant='h2' style={styles.username}>
               {username}
-            </ThemedText>
-            <ThemedText type='body' style={styles.email}>
+            </StyledText>
+            <StyledText variant='body' color={Colors.text.tertiary} style={styles.email}>
               {email}
-            </ThemedText>
+            </StyledText>
             <View style={styles.userStats}>
               <StatCard
                 icon='document-text'
@@ -110,107 +111,111 @@ const MyPageScreen = () => {
         </View>
       </Section>
 
-      {/* 구독 관리 섹션 - 신규 Section 사용 */}
+      {/* 구독 관리 섹션 */}
       <Section>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          구독
-        </ThemedText>
-        <View style={styles.menuList}>
+        <SectionHeader title='구독' />
+        <Card variant='base' style={styles.menuList}>
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/mypage/subscription/dashboard')}
           >
             <View style={styles.menuIcon}>
-              <Ionicons name='card' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='card' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>구독 관리</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>구독 관리</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
 
           <TouchableOpacity
             style={styles.menuItem}
             onPress={() => router.push('/mypage/subscription/plans')}
           >
             <View style={styles.menuIcon}>
-              <Ionicons name='diamond' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='diamond' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>프리미엄 구독</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>프리미엄 구독</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
-        </View>
+        </Card>
       </Section>
 
-      {/* 메뉴 섹션 - 신규 Section 사용 */}
+      {/* 메뉴 섹션 */}
       <Section>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          설정
-        </ThemedText>
-        <View style={styles.menuList}>
+        <SectionHeader title='설정' />
+        <Card variant='base' style={styles.menuList}>
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('프로필 편집')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='person' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='person' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>프로필 편집</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>프로필 편집</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('즐겨찾기')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='heart' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='heart' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>즐겨찾기</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>즐겨찾기</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('알림 설정')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='notifications' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='notifications' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>알림 설정</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>알림 설정</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
+
+          <View style={styles.divider} />
 
           <TouchableOpacity style={styles.menuItem} onPress={() => handleMenuPress('도움말')}>
             <View style={styles.menuIcon}>
-              <Ionicons name='help-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='help-circle' size={20} color={Colors.text.secondary} />
             </View>
-            <ThemedText style={styles.menuText}>도움말</ThemedText>
-            <Ionicons name='chevron-forward' size={20} color='#666' />
+            <StyledText style={styles.menuText}>도움말</StyledText>
+            <Ionicons name='chevron-forward' size={20} color={Colors.text.tertiary} />
           </TouchableOpacity>
-        </View>
+        </Card>
       </Section>
 
-      {/* 계정 관리 섹션 - 신규 Section 사용 */}
+      {/* 계정 관리 섹션 */}
       <Section>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          계정 관리
-        </ThemedText>
-        <View style={styles.menuList}>
+        <SectionHeader title='계정 관리' />
+        <Card variant='base' style={styles.menuList}>
           <TouchableOpacity style={styles.menuItem} onPress={handleSignOut}>
             <View style={styles.menuIcon}>
-              <Ionicons name='log-out' size={20} color='#FF6B6B' />
+              <Ionicons name='log-out' size={20} color={Colors.status.error} />
             </View>
-            <ThemedText style={[styles.menuText, styles.dangerText]}>로그아웃</ThemedText>
+            <StyledText style={[styles.menuText, styles.dangerText]}>로그아웃</StyledText>
           </TouchableOpacity>
+
+          <View style={styles.divider} />
 
           <TouchableOpacity style={styles.menuItem} onPress={handleDeleteAccount}>
             <View style={styles.menuIcon}>
-              <Ionicons name='trash' size={20} color='#FF6B6B' />
+              <Ionicons name='trash' size={20} color={Colors.status.error} />
             </View>
-            <ThemedText style={[styles.menuText, styles.dangerText]}>계정 삭제</ThemedText>
+            <StyledText style={[styles.menuText, styles.dangerText]}>계정 삭제</StyledText>
           </TouchableOpacity>
-        </View>
+        </Card>
       </Section>
 
-      {/* 앱 정보 - 신규 Section 사용 */}
+      {/* 앱 정보 */}
       <Section>
         <View style={styles.appInfo}>
-          <ThemedText type='caption' style={styles.appInfoText}>
+          <StyledText variant='caption' color={Colors.text.tertiary}>
             골든레이스 v1.0.0
-          </ThemedText>
-          <ThemedText type='caption' style={styles.appInfoText}>
+          </StyledText>
+          <StyledText variant='caption' color={Colors.text.tertiary}>
             © 2024 GoldenRace. All rights reserved.
-          </ThemedText>
+          </StyledText>
         </View>
       </Section>
     </PageLayout>
@@ -224,170 +229,72 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
     textAlign: 'center',
-  },
-  sectionTitle: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    marginBottom: 16,
-    fontSize: 18,
-    fontWeight: '600',
   },
   profileContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   avatarContainer: {
-    marginRight: 16,
+    marginRight: Spacing.lg,
   },
   avatar: {
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: 'rgba(255, 215, 0, 0.3)',
+    backgroundColor: `${Colors.primary.main}30`,
     justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: GOLD_THEME.GOLD.DARK,
+    borderColor: Colors.primary.dark,
   },
   profileInfo: {
     flex: 1,
   },
   username: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 4,
+    marginBottom: Spacing.xs,
   },
   email: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.7,
-    fontSize: 14,
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   userStats: {
     flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  balanceContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  balanceInfo: {
-    flex: 1,
-  },
-  balanceLabel: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.7,
-    fontSize: 14,
-    marginBottom: 4,
-  },
-  balanceAmount: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  balanceActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  actionButton: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  actionButtonText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  levelContainer: {
-    gap: 12,
-  },
-  currentLevel: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  levelBadge: {
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  levelText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  levelDescription: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.7,
-    fontSize: 12,
-  },
-  levelProgress: {
-    gap: 6,
-  },
-  progressBar: {
-    height: 6,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 3,
-    overflow: 'hidden',
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    borderRadius: 3,
-  },
-  progressText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.7,
-    fontSize: 12,
-    textAlign: 'center',
+    gap: Spacing.md,
+    marginTop: Spacing.sm,
   },
   menuList: {
-    gap: 6,
+    padding: 0,
+    overflow: 'hidden',
   },
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    paddingVertical: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
   },
   menuIcon: {
-    marginRight: 10,
+    marginRight: Spacing.md,
+    width: 24,
+    alignItems: 'center',
   },
   menuText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    flex: 1,
     fontSize: 16,
     fontWeight: '500',
-    flex: 1,
+    color: Colors.text.primary,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: Colors.border.primary,
+    marginLeft: Spacing.lg + 34, // 아이콘 너비 + 마진 고려
   },
   dangerText: {
-    color: '#FF6B6B',
+    color: Colors.status.error,
   },
   appInfo: {
     alignItems: 'center',
-    gap: 4,
-  },
-  appInfoText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    opacity: 0.5,
-    fontSize: 12,
+    gap: Spacing.xs,
+    marginBottom: Spacing.xl,
   },
 });
 

@@ -14,15 +14,12 @@ export function ThemedView({
   variant = 'background',
   ...otherProps
 }: ThemedViewProps) {
-  let backgroundColor;
+  const backgroundColorFromProps = useThemeColor(
+    { light: lightColor, dark: darkColor },
+    variant === 'border' ? 'icon' : 'background',
+  );
 
-  if (variant === 'card') {
-    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
-  } else if (variant === 'border') {
-    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'icon');
-  } else {
-    backgroundColor = useThemeColor({ light: lightColor, dark: darkColor }, 'background');
-  }
+  const backgroundColor = backgroundColorFromProps;
 
   return <View style={[{ backgroundColor }, style]} {...otherProps} />;
 }

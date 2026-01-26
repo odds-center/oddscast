@@ -1,9 +1,12 @@
-import { ThemedText } from '@/components/ThemedText';
-import { PageLayout } from '@/components/common/PageLayout';
-import { POINTS_CONSTANTS, POINTS_UTILS } from '@/constants/points';
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { Modal, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// 디자인 시스템
+import { StyledText, Section, SectionHeader, Card, Button } from '@/components/ui';
+import { PageLayout } from '@/components/common';
+import { Colors, Spacing, BorderRadius } from '@/constants/designTokens';
+import { POINTS_CONSTANTS, POINTS_UTILS } from '@/constants/points';
 
 export default function PointsScreen() {
   const [showAddModal, setShowAddModal] = useState(false);
@@ -70,7 +73,7 @@ export default function PointsScreen() {
       setShowAddModal(false);
     } else {
       console.log(
-        `최소 충전 금액은 ${POINTS_CONSTANTS.AMOUNTS.MIN_ADD_AMOUNT.toLocaleString()}포인트입니다.`
+        `최소 충전 금액은 ${POINTS_CONSTANTS.AMOUNTS.MIN_ADD_AMOUNT.toLocaleString()}포인트입니다.`,
       );
     }
   };
@@ -86,7 +89,7 @@ export default function PointsScreen() {
       console.log('보유 포인트보다 많은 금액을 출금할 수 없습니다.');
     } else {
       console.log(
-        `최소 출금 금액은 ${POINTS_CONSTANTS.AMOUNTS.MIN_WITHDRAW_AMOUNT.toLocaleString()}포인트입니다.`
+        `최소 출금 금액은 ${POINTS_CONSTANTS.AMOUNTS.MIN_WITHDRAW_AMOUNT.toLocaleString()}포인트입니다.`,
       );
     }
   };
@@ -112,165 +115,149 @@ export default function PointsScreen() {
     switch (type) {
       case 'BET_WIN':
       case 'PURCHASE':
-        return '#FFD700'; // 진한 골드
+        return Colors.status.success;
       case 'BET_LOSS':
       case 'WITHDRAW':
-        return '#B8860B'; // 다크골든로드
+        return Colors.status.warning;
       default:
-        return '#DAA520'; // 골든로드
+        return Colors.status.info;
     }
   };
 
   return (
     <PageLayout>
       {/* 포인트 잔액 */}
-      <View style={styles.section}>
-        <View style={styles.balanceContainer}>
+      <Section>
+        <Card variant='elevated' style={styles.balanceContainer}>
           <View style={styles.balanceInfo}>
-            <ThemedText type='title' style={styles.balanceLabel}>
+            <StyledText variant='h4' color={Colors.text.tertiary} style={styles.balanceLabel}>
               현재 포인트
-            </ThemedText>
-            <ThemedText type='largeTitle' style={styles.balanceAmount}>
+            </StyledText>
+            <StyledText variant='h1' color={Colors.primary.main} style={styles.balanceAmount}>
               {userPoints.toLocaleString()} P
-            </ThemedText>
+            </StyledText>
           </View>
           <View style={styles.balanceActions}>
-            <TouchableOpacity style={styles.actionButton} onPress={() => setShowAddModal(true)}>
-              <Ionicons name='add' size={20} color='#FFFFFF' />
-              <ThemedText style={styles.actionButtonText}>충전</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.actionButton}
+            <Button
+              title='충전'
+              icon='add'
+              variant='primary'
+              onPress={() => setShowAddModal(true)}
+            />
+            <Button
+              title='출금'
+              icon='remove'
+              variant='secondary'
               onPress={() => setShowWithdrawModal(true)}
-            >
-              <Ionicons name='remove' size={20} color='#FFFFFF' />
-              <ThemedText style={styles.actionButtonText}>출금</ThemedText>
-            </TouchableOpacity>
+            />
           </View>
-        </View>
-      </View>
+        </Card>
+      </Section>
 
       {/* 레벨 정보 */}
-      <View style={styles.section}>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          포인트 레벨
-        </ThemedText>
-        <View style={styles.levelContainer}>
+      <Section>
+        <SectionHeader title='포인트 레벨' />
+        <Card variant='base'>
           <View style={styles.currentLevel}>
             <View style={styles.levelBadge}>
               <Ionicons
                 name={POINTS_UTILS.getLevelIcon(userLevel) as any}
                 size={24}
-                color='#E5C99C'
+                color={Colors.primary.main}
               />
-              <ThemedText type='title' style={styles.levelText}>
+              <StyledText variant='h3' color={Colors.primary.main}>
                 {POINTS_UTILS.getLevelLabel(userLevel)}
-              </ThemedText>
+              </StyledText>
             </View>
-            <ThemedText type='body' style={styles.levelDescription}>
+            <StyledText variant='body' style={styles.levelDescription}>
               {POINTS_UTILS.getLevelDescription(userLevel)}
-            </ThemedText>
+            </StyledText>
           </View>
           <View style={styles.levelProgress}>
             <View style={styles.progressBar}>
               <View style={[styles.progressFill, { width: `${progressToNextLevel}%` }]} />
             </View>
-            <ThemedText type='caption' style={styles.progressText}>
+            <StyledText variant='caption' color={Colors.text.tertiary} style={styles.progressText}>
               다음 레벨까지 {nextLevel ? (nextLevel.MIN_POINTS - userPoints).toLocaleString() : 0}P
               남음
-            </ThemedText>
+            </StyledText>
           </View>
-        </View>
-      </View>
+        </Card>
+      </Section>
 
       {/* 통계 */}
-      <View style={styles.section}>
-        <ThemedText type='title' style={styles.sectionTitle}>
-          포인트 통계
-        </ThemedText>
+      <Section>
+        <SectionHeader title='포인트 통계' />
         <View style={styles.statsGrid}>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
+          <Card variant='base' style={styles.statItem}>
+            <StyledText variant='h3' color={Colors.primary.main} style={styles.statNumber}>
               15
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
+            </StyledText>
+            <StyledText variant='caption' color={Colors.text.tertiary}>
               총 베팅
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
+            </StyledText>
+          </Card>
+          <Card variant='base' style={styles.statItem}>
+            <StyledText variant='h3' color={Colors.primary.main} style={styles.statNumber}>
               8
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
+            </StyledText>
+            <StyledText variant='caption' color={Colors.text.tertiary}>
               당첨
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
+            </StyledText>
+          </Card>
+          <Card variant='base' style={styles.statItem}>
+            <StyledText variant='h3' color={Colors.primary.main} style={styles.statNumber}>
               53%
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
+            </StyledText>
+            <StyledText variant='caption' color={Colors.text.tertiary}>
               승률
-            </ThemedText>
-          </View>
-          <View style={styles.statItem}>
-            <ThemedText type='stat' style={styles.statNumber}>
-              250,000
-            </ThemedText>
-            <ThemedText type='caption' style={styles.statLabel}>
+            </StyledText>
+          </Card>
+          <Card variant='base' style={styles.statItem}>
+            <StyledText variant='h3' color={Colors.primary.main} style={styles.statNumber}>
+              250k
+            </StyledText>
+            <StyledText variant='caption' color={Colors.text.tertiary}>
               총 수익
-            </ThemedText>
-          </View>
+            </StyledText>
+          </Card>
         </View>
-      </View>
+      </Section>
 
       {/* 거래 내역 */}
-      <View style={styles.section}>
-        <View style={styles.sectionHeader}>
-          <ThemedText type='title' style={styles.sectionTitle}>
-            거래 내역
-          </ThemedText>
-          <TouchableOpacity style={styles.filterButton}>
-            <ThemedText type='caption' style={styles.filterButtonText}>
-              전체
-            </ThemedText>
-            <Ionicons name='chevron-down' size={16} color='#E5C99C' />
-          </TouchableOpacity>
-        </View>
+      <Section>
+        <SectionHeader title='거래 내역' action={{ label: '전체', onPress: () => {} }} />
         <View style={styles.transactionsList}>
           {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
+            <Card key={transaction.id} variant='base' style={styles.transactionItem}>
               <View style={styles.transactionIcon}>
                 <Ionicons
-                  name={getTransactionIcon(transaction.type)}
+                  name={getTransactionIcon(transaction.type) as any}
                   size={24}
                   color={getTransactionColor(transaction.type)}
                 />
               </View>
               <View style={styles.transactionInfo}>
-                <ThemedText type='body' style={styles.transactionDescription}>
+                <StyledText variant='body' style={styles.transactionDescription}>
                   {transaction.description}
-                </ThemedText>
-                <ThemedText type='caption' style={styles.transactionDate}>
+                </StyledText>
+                <StyledText variant='caption' color={Colors.text.tertiary}>
                   {transaction.date} {transaction.time}
-                </ThemedText>
+                </StyledText>
               </View>
               <View style={styles.transactionAmount}>
-                <ThemedText
-                  type='body'
-                  style={[
-                    styles.transactionAmountText,
-                    { color: getTransactionColor(transaction.type) },
-                  ]}
+                <StyledText
+                  variant='body'
+                  style={{ color: getTransactionColor(transaction.type), fontWeight: '600' }}
                 >
                   {transaction.amount > 0 ? '+' : ''}
                   {transaction.amount.toLocaleString()} P
-                </ThemedText>
+                </StyledText>
               </View>
-            </View>
+            </Card>
           ))}
         </View>
-      </View>
+      </Section>
 
       {/* 포인트 충전 모달 */}
       <Modal
@@ -282,23 +269,23 @@ export default function PointsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
+              <StyledText variant='h3' color={Colors.primary.main}>
                 포인트 충전
-              </ThemedText>
+              </StyledText>
               <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
+                <Ionicons name='close' size={24} color={Colors.text.primary} />
               </TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <ThemedText type='body' style={styles.modalLabel}>
+              <StyledText variant='body' style={styles.modalLabel}>
                 충전할 포인트 금액을 입력하세요
-              </ThemedText>
+              </StyledText>
               <TextInput
                 style={styles.modalInput}
                 value={addAmount}
                 onChangeText={setAddAmount}
                 placeholder='금액 입력'
-                placeholderTextColor='#999'
+                placeholderTextColor={Colors.text.tertiary}
                 keyboardType='numeric'
               />
               <View style={styles.quickAmounts}>
@@ -308,17 +295,15 @@ export default function PointsScreen() {
                     style={styles.quickAmountButton}
                     onPress={() => setAddAmount(amount.toString())}
                   >
-                    <ThemedText style={styles.quickAmountText}>
+                    <StyledText variant='caption' color={Colors.primary.main}>
                       {amount.toLocaleString()}P
-                    </ThemedText>
+                    </StyledText>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleAddPoints}>
-                <ThemedText style={styles.modalButtonText}>충전하기</ThemedText>
-              </TouchableOpacity>
+              <Button title='충전하기' onPress={handleAddPoints} />
             </View>
           </View>
         </View>
@@ -334,33 +319,31 @@ export default function PointsScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <ThemedText type='title' style={styles.modalTitle}>
+              <StyledText variant='h3' color={Colors.primary.main}>
                 포인트 출금
-              </ThemedText>
+              </StyledText>
               <TouchableOpacity onPress={() => setShowWithdrawModal(false)}>
-                <Ionicons name='close' size={24} color='#FFFFFF' />
+                <Ionicons name='close' size={24} color={Colors.text.primary} />
               </TouchableOpacity>
             </View>
             <View style={styles.modalBody}>
-              <ThemedText type='body' style={styles.modalLabel}>
+              <StyledText variant='body' style={styles.modalLabel}>
                 출금할 포인트 금액을 입력하세요
-              </ThemedText>
+              </StyledText>
               <TextInput
                 style={styles.modalInput}
                 value={withdrawAmount}
                 onChangeText={setWithdrawAmount}
                 placeholder='금액 입력'
-                placeholderTextColor='#999'
+                placeholderTextColor={Colors.text.tertiary}
                 keyboardType='numeric'
               />
-              <ThemedText type='caption' style={styles.modalNote}>
+              <StyledText variant='caption' color={Colors.text.tertiary} style={styles.modalNote}>
                 보유 포인트: {userPoints.toLocaleString()}P
-              </ThemedText>
+              </StyledText>
             </View>
             <View style={styles.modalFooter}>
-              <TouchableOpacity style={styles.modalButton} onPress={handleWithdrawPoints}>
-                <ThemedText style={styles.modalButtonText}>출금하기</ThemedText>
-              </TouchableOpacity>
+              <Button title='출금하기' onPress={handleWithdrawPoints} />
             </View>
           </View>
         </View>
@@ -370,264 +353,157 @@ export default function PointsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  title: {
-    marginBottom: 8,
-    color: '#B48A3C',
-  },
-  subtitle: {
-    textAlign: 'center',
-    opacity: 0.8,
-    color: '#FFFFFF',
-  },
-  section: {
-    marginBottom: 24,
-    padding: 20,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
-  },
-  sectionTitle: {
-    marginBottom: 16,
-    color: '#E5C99C',
-  },
   balanceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    padding: Spacing.lg,
   },
   balanceInfo: {
     flex: 1,
   },
   balanceLabel: {
-    marginBottom: 8,
-    color: '#FFFFFF',
-    opacity: 0.8,
+    marginBottom: Spacing.xs,
   },
   balanceAmount: {
-    color: '#E5C99C',
     fontWeight: 'bold',
   },
   balanceActions: {
     flexDirection: 'row',
-    gap: 12,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#B48A3C',
-    gap: 4,
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  levelContainer: {
-    gap: 16,
+    gap: Spacing.md,
   },
   currentLevel: {
     alignItems: 'center',
+    marginBottom: Spacing.lg,
   },
   levelBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: 'rgba(180, 138, 60, 0.2)',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xl,
+    backgroundColor: `${Colors.primary.main}20`,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-    gap: 8,
-  },
-  levelText: {
-    color: '#E5C99C',
+    borderColor: `${Colors.primary.main}30`,
+    gap: Spacing.sm,
+    marginBottom: Spacing.sm,
   },
   levelDescription: {
-    marginTop: 8,
     textAlign: 'center',
-    color: '#FFFFFF',
     opacity: 0.8,
   },
   levelProgress: {
-    gap: 8,
+    gap: Spacing.sm,
   },
   progressBar: {
     height: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: `${Colors.text.primary}10`,
     borderRadius: 4,
     overflow: 'hidden',
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#E5C99C',
+    backgroundColor: Colors.primary.main,
     borderRadius: 4,
   },
   progressText: {
     textAlign: 'center',
-    color: '#FFFFFF',
-    opacity: 0.6,
   },
   statsGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: Spacing.sm,
   },
   statItem: {
     alignItems: 'center',
     flex: 1,
+    padding: Spacing.md,
   },
   statNumber: {
-    color: '#E5C99C',
-    marginBottom: 4,
-  },
-  statLabel: {
-    color: '#FFFFFF',
-    opacity: 0.8,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  filterButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
-    gap: 4,
-  },
-  filterButtonText: {
-    color: '#E5C99C',
-    fontSize: 12,
+    marginBottom: Spacing.xs,
   },
   transactionsList: {
-    gap: 12,
+    gap: Spacing.md,
   },
   transactionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.03)',
-    borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.1)',
+    padding: Spacing.md,
   },
   transactionIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    backgroundColor: `${Colors.text.primary}05`,
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
+    marginRight: Spacing.md,
   },
   transactionInfo: {
     flex: 1,
   },
   transactionDescription: {
-    color: '#FFFFFF',
-    marginBottom: 4,
-  },
-  transactionDate: {
-    color: '#FFFFFF',
-    opacity: 0.6,
+    marginBottom: Spacing.xxs,
   },
   transactionAmount: {
     alignItems: 'flex-end',
   },
-  transactionAmountText: {
-    fontWeight: '600',
-  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   modalContent: {
     width: '90%',
-    backgroundColor: '#1A1A1A',
-    borderRadius: 16,
+    backgroundColor: Colors.background.card,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
+    borderColor: Colors.border.gold,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    padding: Spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(180, 138, 60, 0.2)',
-  },
-  modalTitle: {
-    color: '#E5C99C',
+    borderBottomColor: Colors.border.primary,
   },
   modalBody: {
-    padding: 20,
+    padding: Spacing.lg,
   },
   modalLabel: {
-    marginBottom: 16,
-    color: '#FFFFFF',
+    marginBottom: Spacing.md,
   },
   modalInput: {
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.3)',
-    borderRadius: 8,
-    padding: 12,
+    borderColor: Colors.border.primary,
+    borderRadius: BorderRadius.md,
+    padding: Spacing.md,
     fontSize: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    color: '#FFFFFF',
-    marginBottom: 16,
+    backgroundColor: Colors.background.secondary,
+    color: Colors.text.primary,
+    marginBottom: Spacing.md,
   },
   modalNote: {
-    color: '#FFFFFF',
-    opacity: 0.6,
     textAlign: 'center',
   },
   quickAmounts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: Spacing.sm,
   },
   quickAmountButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    backgroundColor: 'rgba(180, 138, 60, 0.1)',
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.lg,
+    backgroundColor: `${Colors.primary.main}10`,
     borderWidth: 1,
-    borderColor: 'rgba(180, 138, 60, 0.2)',
-  },
-  quickAmountText: {
-    color: '#E5C99C',
-    fontSize: 12,
+    borderColor: `${Colors.primary.main}20`,
   },
   modalFooter: {
-    padding: 20,
+    padding: Spacing.lg,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(180, 138, 60, 0.2)',
-  },
-  modalButton: {
-    backgroundColor: '#B48A3C',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
+    borderTopColor: Colors.border.primary,
   },
 });

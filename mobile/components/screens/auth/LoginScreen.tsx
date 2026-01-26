@@ -1,9 +1,12 @@
-import { ThemedText } from '@/components/ThemedText';
-import { useAuth } from '@/context/AuthProvider';
-import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
-import { Ionicons } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+
+// 디자인 시스템
+import { StyledText } from '@/components/ui';
+import { Colors, Spacing, BorderRadius } from '@/constants/designTokens';
+import { useAuth } from '@/context/AuthProvider';
+import { showUserErrorMessage, showUserSuccessMessage } from '@/utils/alert';
 
 export default function LoginScreen() {
   const { signIn } = useAuth();
@@ -32,7 +35,7 @@ export default function LoginScreen() {
       const errorMessage = error instanceof Error ? error.message : 'Google 로그인에 실패했습니다.';
 
       showUserErrorMessage(
-        errorMessage.includes('취소') ? '로그인이 취소되었습니다.' : `로그인 실패: ${errorMessage}`
+        errorMessage.includes('취소') ? '로그인이 취소되었습니다.' : `로그인 실패: ${errorMessage}`,
       );
     } finally {
       setIsLoading(false);
@@ -44,17 +47,17 @@ export default function LoginScreen() {
       {/* 로고 및 제목 영역 */}
       <View style={styles.headerSection}>
         <View style={styles.logoContainer}>
-          <Ionicons name='trophy' size={48} color='#E5C99C' />
+          <Ionicons name='trophy' size={48} color={Colors.text.primary} />
         </View>
-        <ThemedText type='largeTitle' lightColor='#B48A3C' darkColor='#E5C99C' style={styles.title}>
+        <StyledText variant='h1' color={Colors.primary.main} style={styles.title}>
           GoldenRace
-        </ThemedText>
-        <ThemedText type='subtitle' style={styles.subtitle}>
+        </StyledText>
+        <StyledText variant='h3' style={styles.subtitle}>
           AI 기반 경마 예측 게임
-        </ThemedText>
-        <ThemedText type='caption' style={styles.description}>
+        </StyledText>
+        <StyledText variant='caption' color={Colors.text.tertiary} style={styles.description}>
           데이터와 AI로 배우는 스마트한 예측
-        </ThemedText>
+        </StyledText>
       </View>
 
       {/* 버튼 섹션 */}
@@ -69,18 +72,18 @@ export default function LoginScreen() {
             <View style={styles.googleIconContainer}>
               <Ionicons name='logo-google' size={20} color='#4285F4' />
             </View>
-            <ThemedText style={styles.googleButtonText}>
+            <StyledText style={styles.googleButtonText}>
               {isLoading ? '로그인 중...' : 'Google로 로그인'}
-            </ThemedText>
+            </StyledText>
           </View>
         </TouchableOpacity>
 
         <View style={styles.legalNotice}>
-          <Ionicons name='information-circle-outline' size={16} color='#888' />
-          <ThemedText style={styles.termsText}>
+          <Ionicons name='information-circle-outline' size={16} color={Colors.text.tertiary} />
+          <StyledText variant='caption' color={Colors.text.tertiary} style={styles.termsText}>
             본 서비스는 AI 예측 게임입니다{'\n'}
             실제 경마와는 무관합니다
-          </ThemedText>
+          </StyledText>
         </View>
       </View>
     </View>
@@ -92,14 +95,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 24,
-  },
-  backgroundGradient: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    padding: Spacing.xxl,
+    backgroundColor: Colors.background.primary,
   },
   headerSection: {
     flex: 1,
@@ -111,10 +108,10 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: '#B48A3C',
+    backgroundColor: Colors.primary.dark,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: Spacing.xl,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -125,21 +122,16 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   title: {
-    fontSize: 32,
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   subtitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
     textAlign: 'center',
     opacity: 0.9,
   },
   description: {
-    opacity: 0.7,
-    marginTop: 4,
-    marginBottom: 32,
-    fontSize: 14,
+    marginTop: Spacing.xs,
+    marginBottom: Spacing.xxxl,
     textAlign: 'center',
   },
   buttonSection: {
@@ -153,10 +145,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DADCE0',
-    paddingHorizontal: 24,
+    paddingHorizontal: Spacing.xl,
     paddingVertical: 14,
-    borderRadius: 8,
-    marginBottom: 16,
+    borderRadius: BorderRadius.md,
+    marginBottom: Spacing.lg,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -172,7 +164,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   googleIconContainer: {
-    marginRight: 12,
+    marginRight: Spacing.md,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -188,13 +180,11 @@ const styles = StyleSheet.create({
   legalNotice: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingHorizontal: 20,
-    marginTop: 16,
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.xl,
+    marginTop: Spacing.lg,
   },
   termsText: {
-    fontSize: 11,
-    opacity: 0.6,
     textAlign: 'center',
     lineHeight: 16,
     flex: 1,

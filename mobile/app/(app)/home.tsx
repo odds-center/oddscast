@@ -1,6 +1,6 @@
 import { ThemedText } from '@/components/ThemedText';
 import { PageLayout } from '@/components/common/PageLayout';
-import { GOLD_THEME } from '@/constants/theme';
+import { Colors, Spacing, BorderRadius } from '@/constants/designTokens';
 import { useAuth } from '@/context/AuthProvider';
 import { useBetStatistics } from '@/lib/hooks/useBets';
 import { useSubscription } from '@/lib/hooks/useSubscription';
@@ -12,7 +12,7 @@ import React, { useState, useMemo } from 'react';
 import { StyleSheet, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { RACES } from '@/constants/mockData';
-import { Card, Section, StatCard, EmptyState, InfoBanner, Button } from '@/components/ui';
+import { Card, Section, StatCard, EmptyState } from '@/components/ui';
 import { TicketBadge } from '@/components/common/TicketBadge';
 
 // Mock 랭킹 데이터 (전체/주간/월간)
@@ -136,7 +136,7 @@ export default function HomeScreen() {
     const pricePerTicket = Math.round(plan.totalPrice / plan.totalTickets);
     const discount = Math.round(
       ((SINGLE_PRICE * plan.totalTickets - plan.totalPrice) / (SINGLE_PRICE * plan.totalTickets)) *
-        100
+        100,
     );
     const savings = SINGLE_PRICE * plan.totalTickets - plan.totalPrice;
 
@@ -178,7 +178,7 @@ export default function HomeScreen() {
           <View style={styles.headerRight}>
             <TicketBadge />
             <View style={styles.userAvatar}>
-              <Ionicons name='person-circle' size={32} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='person-circle' size={32} color={Colors.text.secondary} />
             </View>
           </View>
         </View>
@@ -215,21 +215,21 @@ export default function HomeScreen() {
       <Card variant='elevated' style={styles.quickActionsCard}>
         <View style={styles.quickActionsRow}>
           <TouchableOpacity style={styles.quickActionItem} onPress={() => router.push('/records')}>
-            <Ionicons name='document-text' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+            <Ionicons name='document-text' size={24} color={Colors.text.secondary} />
             <ThemedText type='caption' style={styles.quickActionText}>
               마권 기록
             </ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickActionItem} onPress={() => router.push('/races')}>
-            <Ionicons name='trophy' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+            <Ionicons name='trophy' size={24} color={Colors.text.secondary} />
             <ThemedText type='caption' style={styles.quickActionText}>
               경주 일정
             </ThemedText>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.quickActionItem} onPress={() => router.push('/results')}>
-            <Ionicons name='bar-chart' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+            <Ionicons name='bar-chart' size={24} color={Colors.text.secondary} />
             <ThemedText type='caption' style={styles.quickActionText}>
               경주 결과
             </ThemedText>
@@ -239,7 +239,7 @@ export default function HomeScreen() {
             style={styles.quickActionItem}
             onPress={() => router.push('/mypage/favorites')}
           >
-            <Ionicons name='heart' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+            <Ionicons name='heart' size={24} color={Colors.text.secondary} />
             <ThemedText type='caption' style={styles.quickActionText}>
               즐겨찾기
             </ThemedText>
@@ -295,13 +295,13 @@ export default function HomeScreen() {
                     race.trackCondition.weather === 'sunny'
                       ? 'sunny'
                       : race.trackCondition.weather === 'cloudy'
-                      ? 'cloudy'
-                      : race.trackCondition.weather === 'rainy'
-                      ? 'rainy'
-                      : 'cloud'
+                        ? 'cloudy'
+                        : race.trackCondition.weather === 'rainy'
+                          ? 'rainy'
+                          : 'cloud'
                   }
                   size={14}
-                  color={GOLD_THEME.TEXT.SECONDARY}
+                  color={Colors.text.secondary}
                 />
                 <ThemedText type='caption' style={styles.conditionText}>
                   {race.trackCondition.temperature}°C
@@ -309,22 +309,22 @@ export default function HomeScreen() {
                 <ThemedText type='caption' style={styles.conditionDivider}>
                   •
                 </ThemedText>
-                <Ionicons name='speedometer' size={14} color={GOLD_THEME.TEXT.SECONDARY} />
+                <Ionicons name='speedometer' size={14} color={Colors.text.secondary} />
                 <ThemedText type='caption' style={styles.conditionText}>
                   {race.trackCondition.surface === 'fast'
                     ? '빠름'
                     : race.trackCondition.surface === 'good'
-                    ? '양호'
-                    : race.trackCondition.surface === 'soft'
-                    ? '습함'
-                    : '무거움'}
+                      ? '양호'
+                      : race.trackCondition.surface === 'soft'
+                        ? '습함'
+                        : '무거움'}
                 </ThemedText>
               </View>
 
               {/* AI 예측 */}
               <View style={styles.raceAiSection}>
                 <View style={styles.aiIconRow}>
-                  <Ionicons name='analytics' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+                  <Ionicons name='analytics' size={16} color={Colors.text.secondary} />
                   <ThemedText type='caption' style={styles.aiLabel}>
                     AI 예측
                   </ThemedText>
@@ -341,13 +341,13 @@ export default function HomeScreen() {
                 {/* 시간과 상금 정보 */}
                 <View style={styles.raceTimePrizeRow}>
                   <View style={styles.raceTimeInfo}>
-                    <Ionicons name='time' size={14} color={GOLD_THEME.TEXT.SECONDARY} />
+                    <Ionicons name='time' size={14} color={Colors.text.secondary} />
                     <ThemedText type='caption' style={styles.raceTimeText}>
                       {race.date.split(' ')[1]}
                     </ThemedText>
                   </View>
                   <View style={styles.racePrizeInfo}>
-                    <Ionicons name='trophy' size={14} color={GOLD_THEME.TEXT.SECONDARY} />
+                    <Ionicons name='trophy' size={14} color={Colors.text.secondary} />
                     <ThemedText type='caption' style={styles.racePrizeText}>
                       {(race.prize / 10000).toLocaleString()}만원
                     </ThemedText>
@@ -425,13 +425,13 @@ export default function HomeScreen() {
           {/* 헤더 */}
           <View style={styles.bannerHeader}>
             <View style={styles.bannerTitleContainer}>
-              <Ionicons name='diamond' size={24} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='diamond' size={24} color={Colors.text.secondary} />
               <ThemedText type='title' style={styles.bannerTitle}>
                 AI 예측권 프리미엄
               </ThemedText>
             </View>
             <LinearGradient
-              colors={[GOLD_THEME.GOLD.LIGHT, GOLD_THEME.GOLD.DARK]}
+              colors={[Colors.primary.main, Colors.primary.dark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.badgeNew}
@@ -451,25 +451,25 @@ export default function HomeScreen() {
           {/* 주요 혜택 */}
           <View style={styles.features}>
             <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='checkmark-circle' size={20} color={Colors.text.secondary} />
               <ThemedText type='default' style={styles.featureText}>
                 월 24장 AI 예측권 (20+4)
               </ThemedText>
             </View>
             <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='checkmark-circle' size={20} color={Colors.text.secondary} />
               <ThemedText type='default' style={styles.featureText}>
                 장당 825원 (25% 할인)
               </ThemedText>
             </View>
             <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='checkmark-circle' size={20} color={Colors.text.secondary} />
               <ThemedText type='default' style={styles.featureText}>
                 평균 70%+ 정확도 목표
               </ThemedText>
             </View>
             <View style={styles.featureItem}>
-              <Ionicons name='checkmark-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
+              <Ionicons name='checkmark-circle' size={20} color={Colors.text.secondary} />
               <ThemedText type='default' style={styles.featureText}>
                 자동 갱신
               </ThemedText>
@@ -478,7 +478,7 @@ export default function HomeScreen() {
 
           {/* 절약 정보 */}
           <View style={styles.savings}>
-            <Ionicons name='bulb' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
+            <Ionicons name='bulb' size={16} color={Colors.text.secondary} />
             <ThemedText type='defaultSemiBold' style={styles.savingsText}>
               개별 구매 대비 월 10,200원 절약!
             </ThemedText>
@@ -571,14 +571,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   sectionTitle: {
-    marginBottom: 12,
-    color: GOLD_THEME.TEXT.SECONDARY,
+    marginBottom: Spacing.md,
+    color: Colors.text.secondary,
   },
   welcomeContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: Spacing.sm,
   },
   userInfo: {
     flex: 1,
@@ -586,55 +586,55 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: Spacing.md,
   },
   welcomeLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     marginBottom: 4,
     opacity: 0.8,
   },
   welcomeText: {
     marginBottom: 4,
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   welcomeSubtext: {
     opacity: 0.8,
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   userAvatar: {
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
+    backgroundColor: Colors.primary.dark,
     justifyContent: 'center',
     alignItems: 'center',
   },
   bettingSummary: {
     flexDirection: 'row',
     justifyContent: 'space-around',
-    gap: 12,
+    gap: Spacing.md,
   },
   racesSection: {
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   racesSectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: Spacing.lg,
   },
   racesSectionTitle: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   racesList: {
-    gap: 16,
+    gap: Spacing.lg,
   },
   raceCard: {
-    padding: 18,
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 16,
+    padding: Spacing.lg + 2,
+    backgroundColor: Colors.background.card,
+    borderRadius: BorderRadius.lg,
     borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    borderColor: Colors.border.gold,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -642,7 +642,7 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   raceCardHeader: {
-    marginBottom: 10,
+    marginBottom: Spacing.sm + 2,
   },
   raceInfo: {
     flex: 1,
@@ -654,22 +654,22 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   raceName: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '700',
     flex: 1,
   },
   raceGradeBadge: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
+    backgroundColor: Colors.primary.dark,
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 8,
   },
   raceGradeText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '700',
   },
   raceDetails: {
-    color: GOLD_THEME.TEXT.TERTIARY,
+    color: Colors.text.tertiary,
   },
   raceConditionRow: {
     flexDirection: 'row',
@@ -682,10 +682,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   conditionText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   conditionDivider: {
-    color: GOLD_THEME.TEXT.TERTIARY,
+    color: Colors.text.tertiary,
     marginHorizontal: 2,
   },
   raceAiSection: {
@@ -701,22 +701,22 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   aiLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     fontWeight: '600',
     flex: 1,
   },
   aiConfidenceBadge: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
+    backgroundColor: Colors.primary.dark,
     paddingHorizontal: 6,
     paddingVertical: 2,
     borderRadius: 8,
   },
   aiConfidenceText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '700',
   },
   aiRecommendationText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     lineHeight: 20,
     marginBottom: 8,
   },
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   raceTimeText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
   },
   racePrizeInfo: {
     flexDirection: 'row',
@@ -743,7 +743,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   racePrizeText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
   },
   popularHorseSection: {
     marginTop: 0,
@@ -758,7 +758,7 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   popularHorseLabel: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '700',
   },
   popularHorseItem: {
@@ -771,12 +771,12 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: GOLD_THEME.GOLD.DARK,
+    backgroundColor: Colors.primary.dark,
     justifyContent: 'center',
     alignItems: 'center',
   },
   popularHorseRankText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '700',
   },
   popularHorseInfo: {
@@ -784,23 +784,23 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   popularHorseName: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '600',
     marginBottom: 2,
   },
   popularHorseBets: {
-    color: GOLD_THEME.TEXT.TERTIARY,
+    color: Colors.text.tertiary,
   },
   popularHorseBar: {
     width: 60,
     height: 6,
-    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
+    backgroundColor: Colors.background.secondary,
     borderRadius: 3,
     overflow: 'hidden',
   },
   popularHorseBarFill: {
     height: '100%',
-    backgroundColor: GOLD_THEME.TEXT.SECONDARY,
+    backgroundColor: Colors.text.secondary,
     borderRadius: 3,
   },
   sectionHeader: {
@@ -810,7 +810,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   seeAllText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     textDecorationLine: 'underline',
   },
   // 랭킹 스타일
@@ -822,7 +822,7 @@ const styles = StyleSheet.create({
   },
   rankingTabs: {
     flexDirection: 'row',
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
+    backgroundColor: Colors.background.card,
     borderRadius: 8,
     padding: 4,
     marginBottom: 16,
@@ -838,16 +838,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 215, 0, 0.15)',
   },
   rankingTabActive: {
-    backgroundColor: GOLD_THEME.GOLD.LIGHT,
-    borderColor: GOLD_THEME.GOLD.MEDIUM,
+    backgroundColor: Colors.primary.main,
+    borderColor: Colors.primary.medium,
   },
   rankingTabText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     fontWeight: '600',
     fontSize: 14,
   },
   rankingTabTextActive: {
-    color: GOLD_THEME.BACKGROUND.PRIMARY,
+    color: Colors.background.primary,
     fontWeight: 'bold',
     fontSize: 14,
   },
@@ -858,9 +858,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     borderRadius: 12,
     overflow: 'hidden',
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
+    backgroundColor: Colors.background.card,
     borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    borderColor: Colors.border.gold,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -880,7 +880,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   rankingNumber: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     fontWeight: 'bold',
     fontSize: 16,
   },
@@ -898,7 +898,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: GOLD_THEME.BACKGROUND.PRIMARY,
+    backgroundColor: Colors.background.primary,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 10,
@@ -908,31 +908,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   rankingName: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '600',
     marginBottom: 4,
   },
   rankingStats: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     lineHeight: 16,
   },
   rankingWinningsSection: {
     backgroundColor: 'rgba(255, 215, 0, 0.05)',
     borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    borderColor: Colors.border.gold,
     borderTopWidth: 1,
-    borderTopColor: GOLD_THEME.BORDER.GOLD,
+    borderTopColor: Colors.border.gold,
     padding: 12,
     paddingTop: 12,
     alignItems: 'center',
   },
   rankingWinningsLabel: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     marginBottom: 6,
     textAlign: 'center',
   },
   rankingWinningsValue: {
-    color: GOLD_THEME.GOLD.LIGHT,
+    color: Colors.primary.main,
     fontWeight: 'bold',
     textAlign: 'center',
   },
@@ -940,10 +940,10 @@ const styles = StyleSheet.create({
   // 구독 배너 스타일
   subscriptionBanner: {
     marginBottom: 20,
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
+    backgroundColor: Colors.background.card,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    borderColor: Colors.border.gold,
     padding: 20,
     paddingVertical: 24,
     shadowColor: '#000',
@@ -965,7 +965,7 @@ const styles = StyleSheet.create({
   },
   bannerTitle: {
     fontWeight: '700',
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontSize: 18,
     lineHeight: 24,
   },
@@ -975,7 +975,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 12,
-    shadowColor: GOLD_THEME.GOLD.LIGHT,
+    shadowColor: Colors.primary.main,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -983,7 +983,7 @@ const styles = StyleSheet.create({
   },
   badgeText: {
     fontWeight: '800',
-    color: GOLD_THEME.BACKGROUND.PRIMARY,
+    color: Colors.background.primary,
     letterSpacing: 0.5,
     backgroundColor: 'transparent',
   },
@@ -994,12 +994,12 @@ const styles = StyleSheet.create({
   },
   priceAmount: {
     fontWeight: '700',
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     fontSize: 36,
     lineHeight: 44,
   },
   pricePeriod: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     marginLeft: 4,
     opacity: 0.7,
     fontSize: 18,
@@ -1016,7 +1016,7 @@ const styles = StyleSheet.create({
     minHeight: 28,
   },
   featureText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   savings: {
     flexDirection: 'row',
@@ -1030,7 +1030,7 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   savingsText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
     fontWeight: '600',
   },
   quickActionsCard: {
@@ -1048,7 +1048,7 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   quickActionText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
     fontWeight: '600',
     textAlign: 'center',
   },

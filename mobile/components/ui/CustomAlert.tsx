@@ -2,7 +2,6 @@ import { ThemedText } from '@/components/ThemedText';
 import { BlurView } from 'expo-blur';
 import React, { useEffect, useRef } from 'react';
 import {
-  Dimensions,
   Modal,
   Platform,
   StatusBar,
@@ -28,8 +27,6 @@ interface CustomAlertProps {
   onDismiss?: () => void;
   type?: 'success' | 'error' | 'warning' | 'info';
 }
-
-const { width: screenWidth } = Dimensions.get('window');
 
 export const CustomAlert: React.FC<CustomAlertProps> = ({
   visible,
@@ -73,7 +70,7 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
         }),
       ]).start();
     }
-  }, [visible]);
+  }, [visible, fadeAnim, scaleAnim]);
 
   const getIconForType = () => {
     switch (type) {
@@ -98,19 +95,6 @@ export const CustomAlert: React.FC<CustomAlertProps> = ({
         return GOLD_THEME.STATUS.WARNING;
       default:
         return GOLD_THEME.STATUS.INFO;
-    }
-  };
-
-  const getBackgroundGradient = () => {
-    switch (type) {
-      case 'success':
-        return 'rgba(255, 215, 0, 0.05)';
-      case 'error':
-        return 'rgba(255, 107, 107, 0.05)';
-      case 'warning':
-        return 'rgba(218, 165, 32, 0.05)';
-      default:
-        return 'rgba(205, 133, 63, 0.05)';
     }
   };
 

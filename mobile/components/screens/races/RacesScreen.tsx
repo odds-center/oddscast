@@ -1,80 +1,13 @@
-import { ThemedText } from '@/components/ThemedText';
-import { PageLayout } from '@/components/common/PageLayout';
-import { RACE_UTILS } from '@/constants/race';
-import { useRaces } from '@/lib/hooks/useRaces';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
-import { GOLD_THEME } from '@/constants/theme';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+
+// 디자인 시스템
+import { StyledText, Card, Badge, Section, EmptyState } from '@/components/ui';
+import { PageLayout } from '@/components/common';
+import { Colors, Spacing, BorderRadius } from '@/constants/designTokens';
 import { RACES } from '@/constants/mockData';
-
-// Mock 데이터 - 오늘의 경주 (진행중 + 예정)
-const getTodayDate = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}${month}${day}`;
-};
-
-const MOCK_TODAY_RACES = [
-  {
-    id: '1',
-    rcName: '코리안 더비',
-    meetName: '서울',
-    rcNo: '11',
-    rcDist: '1800',
-    rcGrade: 'G1',
-    rcStartTime: '15:30',
-    raceStatus: 'scheduled',
-    rcDate: getTodayDate(),
-  },
-  {
-    id: '2',
-    rcName: '대통령배',
-    meetName: '서울',
-    rcNo: '10',
-    rcDist: '2000',
-    rcGrade: 'G1',
-    rcStartTime: '15:00',
-    raceStatus: 'scheduled',
-    rcDate: getTodayDate(),
-  },
-  {
-    id: '3',
-    rcName: '부산배',
-    meetName: '부산',
-    rcNo: '9',
-    rcDist: '1400',
-    rcGrade: 'G2',
-    rcStartTime: '14:30',
-    raceStatus: 'in_progress',
-    rcDate: getTodayDate(),
-  },
-  {
-    id: '4',
-    rcName: '제주 스프린트',
-    meetName: '제주',
-    rcNo: '8',
-    rcDist: '1000',
-    rcGrade: 'G3',
-    rcStartTime: '14:00',
-    raceStatus: 'scheduled',
-    rcDate: getTodayDate(),
-  },
-  {
-    id: '5',
-    rcName: '서울 클래식',
-    meetName: '서울',
-    rcNo: '7',
-    rcDist: '1600',
-    rcGrade: 'G2',
-    rcStartTime: '13:30',
-    raceStatus: 'in_progress',
-    rcDate: getTodayDate(),
-  },
-];
 
 export default function RacesScreen() {
   const router = useRouter();
@@ -92,6 +25,32 @@ export default function RacesScreen() {
     router.push(`/race-detail/${raceId}`);
   };
 
+  const getTrackConditionIcon = (weather: string) => {
+    switch (weather) {
+      case 'sunny':
+        return 'sunny';
+      case 'cloudy':
+        return 'cloudy';
+      case 'rainy':
+        return 'rainy';
+      default:
+        return 'cloud';
+    }
+  };
+
+  const getSurfaceLabel = (surface: string) => {
+    switch (surface) {
+      case 'fast':
+        return '빠름';
+      case 'good':
+        return '양호';
+      case 'soft':
+        return '습함';
+      default:
+        return '무거움';
+    }
+  };
+
   return (
     <PageLayout>
       {/* 지역 필터 */}
@@ -107,324 +66,227 @@ export default function RacesScreen() {
               style={[styles.filterButton, selectedVenue === venue && styles.filterButtonActive]}
               onPress={() => setSelectedVenue(venue)}
             >
-              <ThemedText
-                type='defaultSemiBold'
+              <StyledText
+                variant='button'
                 style={[
                   styles.filterButtonText,
                   selectedVenue === venue && styles.filterButtonTextActive,
                 ]}
               >
                 {venue === 'all' ? '전체' : venue}
-              </ThemedText>
+              </StyledText>
             </TouchableOpacity>
           ))}
         </ScrollView>
       </View>
 
       {/* 경주 목록 */}
-      {filteredRaces.length > 0 ? (
-        filteredRaces.map((race) => (
-          <TouchableOpacity
-            key={race.id}
-            style={styles.raceCard}
-            onPress={() => handleRacePress(race.id)}
-            activeOpacity={0.7}
-          >
-            <View style={styles.raceHeader}>
-              <View style={styles.raceInfo}>
-                <ThemedText type='title' style={styles.raceName}>
-                  {race.raceName}
-                </ThemedText>
-                <ThemedText type='caption' style={styles.raceDetails}>
-                  {race.venue} • {race.raceNumber}경주 • {race.distance}m
-                </ThemedText>
+      <Section>
+        {filteredRaces.length > 0 ? (
+          filteredRaces.map((race) => (
+            <Card
+              key={race.id}
+              variant='base'
+              onPress={() => handleRacePress(race.id)}
+              style={styles.raceCard}
+            >
+              <View style={styles.raceHeader}>
+                <View style={styles.raceInfo}>
+                  <StyledText variant='h3' style={styles.raceName}>
+                    {race.raceName}
+                  </StyledText>
+                  <StyledText variant='caption' color={Colors.text.tertiary}>
+                    {race.venue} • {race.raceNumber}경주 • {race.distance}m
+                  </StyledText>
+                </View>
+                <Badge label={race.grade} variant='warning' />
               </View>
-              <View style={styles.raceGrade}>
-                <ThemedText type='caption' style={styles.gradeText}>
-                  {race.grade}
-                </ThemedText>
-              </View>
-            </View>
 
-            {/* 트랙 컨디션 */}
-            <View style={styles.trackConditionRow}>
-              <View style={styles.conditionItem}>
-                <Ionicons
-                  name={
-                    race.trackCondition.weather === 'sunny'
-                      ? 'sunny'
-                      : race.trackCondition.weather === 'cloudy'
-                      ? 'cloudy'
-                      : race.trackCondition.weather === 'rainy'
-                      ? 'rainy'
-                      : 'cloud'
-                  }
-                  size={16}
-                  color={GOLD_THEME.TEXT.SECONDARY}
-                />
-                <ThemedText type='caption' style={styles.conditionText}>
-                  {race.trackCondition.temperature}°C
-                </ThemedText>
-              </View>
-              <View style={styles.conditionItem}>
-                <Ionicons name='water' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-                <ThemedText type='caption' style={styles.conditionText}>
-                  습도 {race.trackCondition.humidity}%
-                </ThemedText>
-              </View>
-              <View style={styles.conditionItem}>
-                <Ionicons name='speedometer' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-                <ThemedText type='caption' style={styles.conditionText}>
-                  {race.trackCondition.surface === 'fast'
-                    ? '빠름'
-                    : race.trackCondition.surface === 'good'
-                    ? '양호'
-                    : race.trackCondition.surface === 'soft'
-                    ? '습함'
-                    : '무거움'}
-                </ThemedText>
-              </View>
-            </View>
-
-            {/* AI 예측 */}
-            <View style={styles.aiAnalysisSection}>
-              <View style={styles.aiHeader}>
-                <Ionicons name='analytics' size={18} color={GOLD_THEME.GOLD.LIGHT} />
-                <ThemedText type='defaultSemiBold' style={styles.aiTitle}>
-                  AI 예측
-                </ThemedText>
-                <View style={styles.confidenceBadge}>
-                  <ThemedText type='caption' style={styles.confidenceText}>
-                    신뢰도 {race.aiAnalysis.confidence}%
-                  </ThemedText>
+              {/* 트랙 컨디션 */}
+              <View style={styles.trackConditionRow}>
+                <View style={styles.conditionItem}>
+                  <Ionicons
+                    name={getTrackConditionIcon(race.trackCondition.weather) as any}
+                    size={16}
+                    color={Colors.text.secondary}
+                  />
+                  <StyledText variant='caption'>{race.trackCondition.temperature}°C</StyledText>
+                </View>
+                <View style={styles.conditionItem}>
+                  <Ionicons name='water' size={16} color={Colors.text.secondary} />
+                  <StyledText variant='caption'>습도 {race.trackCondition.humidity}%</StyledText>
+                </View>
+                <View style={styles.conditionItem}>
+                  <Ionicons name='speedometer' size={16} color={Colors.text.secondary} />
+                  <StyledText variant='caption'>
+                    {getSurfaceLabel(race.trackCondition.surface)}
+                  </StyledText>
                 </View>
               </View>
-              <ThemedText type='caption' style={styles.aiRecommendation}>
-                {race.aiAnalysis.recommendation}
-              </ThemedText>
-            </View>
 
-            <View style={styles.raceFooter}>
-              <View style={styles.raceTime}>
-                <Ionicons name='time' size={16} color={GOLD_THEME.TEXT.SECONDARY} />
-                <ThemedText type='caption' style={styles.timeText}>
-                  {race.date.split(' ')[1] || ''}
-                </ThemedText>
+              {/* AI 예측 */}
+              <View style={styles.aiAnalysisSection}>
+                <View style={styles.aiHeader}>
+                  <Ionicons name='analytics' size={18} color={Colors.primary.main} />
+                  <StyledText
+                    variant='bodySmall'
+                    color={Colors.primary.main}
+                    style={{ flex: 1, fontWeight: '600' }}
+                  >
+                    AI 예측
+                  </StyledText>
+                  <Badge label={`신뢰도 ${race.aiAnalysis.confidence}%`} variant='success' />
+                </View>
+                <StyledText variant='caption' style={styles.aiRecommendation}>
+                  {race.aiAnalysis.recommendation}
+                </StyledText>
               </View>
-              <View style={styles.prizeInfo}>
-                <Ionicons name='trophy' size={16} color={GOLD_THEME.GOLD.LIGHT} />
-                <ThemedText type='caption' style={styles.prizeText}>
-                  {(race.prize / 10000).toLocaleString()}만원
-                </ThemedText>
+
+              <View style={styles.raceFooter}>
+                <View style={styles.raceTime}>
+                  <Ionicons name='time' size={16} color={Colors.text.tertiary} />
+                  <StyledText
+                    variant='caption'
+                    color={Colors.text.tertiary}
+                    style={styles.timeText}
+                  >
+                    {race.date.split(' ')[1] || ''}
+                  </StyledText>
+                </View>
+                <View style={styles.prizeInfo}>
+                  <Ionicons name='trophy' size={16} color={Colors.primary.main} />
+                  <StyledText
+                    variant='caption'
+                    color={Colors.primary.main}
+                    style={{ fontWeight: '600' }}
+                  >
+                    {(race.prize / 10000).toLocaleString()}만원
+                  </StyledText>
+                </View>
               </View>
-            </View>
-          </TouchableOpacity>
-        ))
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Ionicons name='calendar-outline' size={48} color={GOLD_THEME.TEXT.SECONDARY} />
-          <ThemedText type='body' style={styles.emptyText}>
-            {selectedVenue === 'all'
-              ? '등록된 경주가 없습니다.'
-              : `${selectedVenue}에 등록된 경주가 없습니다.`}
-          </ThemedText>
-        </View>
-      )}
+            </Card>
+          ))
+        ) : (
+          <EmptyState
+            icon='calendar-outline'
+            title={
+              selectedVenue === 'all'
+                ? '등록된 경주가 없습니다.'
+                : `${selectedVenue}에 등록된 경주가 없습니다.`
+            }
+            message='다른 지역을 선택하거나 나중에 다시 확인해주세요.'
+          />
+        )}
+      </Section>
 
       {/* 오늘의 경주 안내 */}
-      <View style={styles.infoSection}>
-        <Ionicons name='information-circle' size={20} color={GOLD_THEME.TEXT.SECONDARY} />
-        <ThemedText type='caption' style={styles.infoText}>
+      <Card variant='compact' style={styles.infoSection}>
+        <Ionicons name='information-circle' size={20} color={Colors.text.tertiary} />
+        <StyledText variant='caption' color={Colors.text.tertiary} style={{ flex: 1 }}>
           오늘 진행되는 경주만 표시됩니다. 과거 기록은 &quot;결과&quot; 탭에서 확인하세요.
-        </ThemedText>
-      </View>
+        </StyledText>
+      </Card>
     </PageLayout>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    padding: 20,
-    paddingTop: 40,
-    alignItems: 'center',
-  },
-  title: {
-    marginBottom: 8,
-    color: GOLD_THEME.TEXT.SECONDARY,
-  },
-  subtitle: {
-    textAlign: 'center',
-    opacity: 0.8,
-    color: GOLD_THEME.TEXT.PRIMARY,
-  },
   filterSection: {
-    marginBottom: 20,
+    marginBottom: Spacing.lg,
   },
   filterScrollContent: {
-    paddingHorizontal: 4,
+    paddingHorizontal: Spacing.xs,
   },
   filterButton: {
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    marginHorizontal: 4,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
+    paddingHorizontal: Spacing.lg,
+    paddingVertical: Spacing.sm,
+    borderRadius: BorderRadius.xl,
+    marginHorizontal: Spacing.xs,
+    backgroundColor: `${Colors.primary.main}10`,
     borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    borderColor: Colors.border.gold,
   },
   filterButtonActive: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
+    backgroundColor: Colors.primary.dark,
   },
   filterButtonText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+    color: Colors.text.secondary,
+    fontSize: 14,
   },
   filterButtonTextActive: {
-    color: GOLD_THEME.TEXT.PRIMARY,
+    color: Colors.text.primary,
   },
   raceCard: {
-    backgroundColor: GOLD_THEME.BACKGROUND.CARD,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
+    marginBottom: Spacing.lg,
   },
   raceHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
+    marginBottom: Spacing.md,
   },
   raceInfo: {
     flex: 1,
   },
   raceName: {
-    marginBottom: 4,
-    color: GOLD_THEME.TEXT.PRIMARY,
+    marginBottom: Spacing.xs,
   },
-  raceDetails: {
-    opacity: 0.8,
-    color: GOLD_THEME.TEXT.PRIMARY,
+  trackConditionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: Spacing.sm,
+    paddingHorizontal: Spacing.xs,
+    marginVertical: Spacing.sm,
+    backgroundColor: Colors.background.secondary,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.border.primary,
   },
-  raceGrade: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    backgroundColor: 'rgba(255, 215, 0, 0.2)',
+  conditionItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.xs,
   },
-  gradeText: {
-    color: GOLD_THEME.TEXT.SECONDARY,
+  aiAnalysisSection: {
+    marginTop: Spacing.xs,
+    padding: Spacing.sm,
+    backgroundColor: `${Colors.primary.main}10`,
+    borderRadius: BorderRadius.sm,
+    borderWidth: 1,
+    borderColor: Colors.border.gold,
+  },
+  aiHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: Spacing.xs,
+    gap: Spacing.xs,
+  },
+  aiRecommendation: {
+    lineHeight: 18,
   },
   raceFooter: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: Spacing.md,
   },
   raceTime: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   timeText: {
-    marginLeft: 4,
-    color: GOLD_THEME.TEXT.SECONDARY,
-  },
-  raceStatus: {
-    alignItems: 'flex-end',
-  },
-  statusBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  statusText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: '500',
-  },
-  emptyContainer: {
-    padding: 40,
-    alignItems: 'center',
-  },
-  emptyText: {
-    marginTop: 16,
-    textAlign: 'center',
-    opacity: 0.6,
-    color: GOLD_THEME.TEXT.PRIMARY,
-  },
-  infoSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 16,
-    marginBottom: 32,
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
-    gap: 10,
-  },
-  infoText: {
-    flex: 1,
-    color: GOLD_THEME.TEXT.SECONDARY,
-    lineHeight: 20,
-  },
-  trackConditionRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    paddingHorizontal: 6,
-    marginVertical: 6,
-    backgroundColor: GOLD_THEME.BACKGROUND.SECONDARY,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.BORDER.GOLD,
-  },
-  conditionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  conditionText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-  },
-  aiAnalysisSection: {
-    marginTop: 6,
-    padding: 10,
-    backgroundColor: 'rgba(255, 215, 0, 0.1)',
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: GOLD_THEME.GOLD.LIGHT,
-  },
-  aiHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-    gap: 6,
-  },
-  aiTitle: {
-    color: GOLD_THEME.GOLD.LIGHT,
-    flex: 1,
-  },
-  confidenceBadge: {
-    backgroundColor: GOLD_THEME.GOLD.DARK,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 10,
-  },
-  confidenceText: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    fontWeight: '600',
-  },
-  aiRecommendation: {
-    color: GOLD_THEME.TEXT.PRIMARY,
-    lineHeight: 18,
+    marginLeft: Spacing.xs,
   },
   prizeInfo: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: Spacing.xs,
   },
-  prizeText: {
-    color: GOLD_THEME.GOLD.LIGHT,
-    fontWeight: '600',
+  infoSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    backgroundColor: `${Colors.primary.main}10`,
+    borderColor: Colors.border.gold,
   },
 });

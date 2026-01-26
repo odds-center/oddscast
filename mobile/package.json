@@ -22,6 +22,7 @@
     "@expo-google-fonts/playfair-display": "^0.4.1",
     "@expo/vector-icons": "^14.1.0",
     "@gorhom/bottom-sheet": "^5.2.6",
+    "@hookform/resolvers": "^5.2.2",
     "@react-native-async-storage/async-storage": "2.1.2",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
@@ -53,6 +54,7 @@
     "qs": "^6.14.0",
     "react": "19.0.0",
     "react-dom": "19.0.0",
+    "react-hook-form": "^7.71.1",
     "react-native": "0.79.5",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-reanimated": "~3.17.4",
@@ -62,7 +64,8 @@
     "react-native-toast-message": "^2.3.3",
     "react-native-web": "~0.20.0",
     "react-native-webview": "^13.16.0",
-    "react-redux": "^9.2.0"
+    "react-redux": "^9.2.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -71,8 +74,9 @@
     "@types/react": "~19.0.10",
     "@types/react-native": "^0.73.0",
     "babel-plugin-module-resolver": "^5.0.2",
-    "eslint": "^9.25.0",
+    "eslint": "^9.39.2",
     "eslint-config-expo": "~9.2.0",
+    "eslint-import-resolver-typescript": "^4.4.4",
     "msw": "^2.11.4",
     "typescript": "~5.8.3"
   },

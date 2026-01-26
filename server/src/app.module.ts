@@ -2,6 +2,10 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import * as dns from 'dns';
+
+// DNS 서버 설정 (공용 DNS 사용)
+dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
 import { AdminModule } from './admin/admin.module';
 import { AuthModule } from './auth/auth.module';
 import { BatchModule } from './batch/batch.module';
@@ -44,23 +48,48 @@ import { CacheModule } from './cache/cache.module';
       ? [ScheduleModule.forRoot()]
       : []),
 
-    // TypeORM 설정
+    // TypeORM 설정 - Supabase PostgreSQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('DB_HOST', 'localhost'),
-        port: configService.get('DB_PORT', 3306),
-        username: configService.get('DB_USERNAME', 'goldenrace_user'),
-        password: configService.get('DB_PASSWORD', 'goldenrace_password'),
-        database: configService.get('DB_DATABASE', 'goldenrace'),
-        entities: [__dirname + '/**/*.entity{.ts,.js}', SubscriptionPlanEntity],
-        synchronize: false, // 개발 환경에서도 안전하게 false로 설정
-        migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
-        migrationsRun: false, // 자동 마이그레이션 비활성화
-        logging: process.env.DB_LOGGING === 'true' ? ['query', 'error'] : false, // 환경변수로 제어
-        charset: 'utf8mb4',
-      }),
+      useFactory: (configService: ConfigService) => {
+        // DATABASE_URL 우선 사용, 없으면 개별 환경변수로 조합
+        const dbUrl =
+          configService.get('DATABASE_URL') ||
+          `postgresql://${configService.get('SUPABASE_DB_USER')}:${configService.get('SUPABASE_DB_PASSWORD')}@${configService.get('SUPABASE_DB_HOST')}:${configService.get('SUPABASE_DB_PORT')}/${configService.get('SUPABASE_DB_NAME')}?sslmode=require`;
+
+        const isDevelopment = configService.get('NODE_ENV') !== 'production';
+        const isProduction = configService.get('NODE_ENV') === 'production';
+
+        return {
+          type: 'postgres',
+          url: dbUrl,
+          entities: [
+            __dirname + '/**/*.entity{.ts,.js}',
+            SubscriptionPlanEntity,
+          ],
+          // 프로덕션에서는 절대 synchronize를 true로 설정하지 않음!
+          synchronize: isDevelopment && configService.get('DB_SYNC') === 'true',
+          migrations: [__dirname + '/migrations/**/*{.ts,.js}'],
+          migrationsRun: isProduction, // 프로덕션에서는 마이그레이션 자동 실행
+          logging:
+            configService.get('DB_LOGGING') === 'true'
+              ? ['query', 'error']
+              : isDevelopment
+                ? ['error']
+                : false,
+          // Supabase는 SSL 필수
+          ssl: { rejectUnauthorized: false },
+          extra: {
+            // Connection pool 설정 (Supabase 권장)
+            max: 20, // 최대 연결 수
+            connectionTimeoutMillis: 20000, // 연결 타임아웃 (증가)
+            idleTimeoutMillis: 30000, // 유휴 연결 타임아웃
+            // DNS 해석 문제 해결을 위한 추가 설정
+            keepAlive: true,
+            keepAliveInitialDelayMillis: 10000,
+          },
+        };
+      },
       inject: [ConfigService],
     }),
 

@@ -1,6 +1,5 @@
 import { ThemedText, ThemedTextProps } from '@/components/ThemedText';
 import React from 'react';
-import { StyleProp, TextStyle } from 'react-native';
 
 export const Subtitle = (props: ThemedTextProps) => {
   return (

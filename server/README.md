@@ -2,7 +2,7 @@
 
 **NestJS 기반 경마 예측 게임 백엔드 API 서버**
 
-> TypeScript + MySQL + TypeORM
+> TypeScript + Supabase PostgreSQL + TypeORM
 
 ---
 
@@ -61,7 +61,7 @@ Runtime: Node.js 18+
 ### Database
 
 ```sql
-Database: MySQL 8.0
+Database: Supabase PostgreSQL 15
 ORM: TypeORM
 Migration: TypeORM CLI
 ```
@@ -92,8 +92,7 @@ Logger: Winston
 ```bash
 Node.js 18+
 npm or yarn
-Docker & Docker Compose
-MySQL 8.0+ (또는 Docker)
+Supabase Account (무료)
 ```
 
 ### 1. 의존성 설치
@@ -107,38 +106,48 @@ npm install
 
 ```bash
 # .env 파일 생성
-cp env.example .env
+cp .env.example .env
 
-# .env 파일 편집
-# - DB 설정
+# .env 파일 편집 (Supabase 연결 정보 필수!)
+# - Supabase DB 설정 (SUPABASE_DB_HOST, PASSWORD 등)
 # - Google OAuth 설정
 # - JWT Secret
 # - KRA API Key
 ```
 
+**⚠️ Supabase 설정 필수**: [SUPABASE_REQUIREMENTS.md](../SUPABASE_REQUIREMENTS.md) 참고
+
 **환경변수 가이드**: [환경 변수 설정](../docs/setup/ENVIRONMENT.md)
 
-### 3. 데이터베이스 시작
+### 3. 환경변수 설정
+
+시스템 환경변수로 Supabase 연결 정보를 설정합니다.
+
+**자세한 가이드**: [ENV_SETUP.md](ENV_SETUP.md) 참고
 
 ```bash
-# Docker로 MySQL 시작
-npm run docker:mysql
-
-# 또는 전체 Docker Compose
-docker-compose up -d
+# 예시: Supabase 환경변수
+export SUPABASE_DB_HOST=db.your-project.supabase.co
+export SUPABASE_DB_PASSWORD=your-password
+export KRA_API_KEY=your-kra-key
+# ... 나머지 환경변수
 ```
 
-### 4. 데이터베이스 초기화
+### 4. 데이터베이스 스키마 생성
+
+**자동 동기화 (개발 - 빠른 테스트)**
+
+`src/app.module.ts`에서 일시적으로:
+
+```typescript
+synchronize: true; // 개발 환경에서만!
+```
+
+**마이그레이션 (프로덕션 권장)**
 
 ```bash
-# 완전한 초기화 (권장)
-npm run db:complete
-
-# 기존 데이터 유지하면서 스키마만 업데이트
-npm run db:init
-
-# 데이터베이스 완전 리셋 (주의: 모든 데이터 삭제)
-npm run db:reset
+npm run typeorm migration:generate -- -n InitialSchema
+npm run typeorm migration:run
 ```
 
 ### 5. 서버 시작
@@ -219,30 +228,31 @@ server/src/
 ### 데이터베이스 관리 명령어
 
 ```bash
-# MySQL 컨테이너 관리
-npm run docker:mysql         # 시작
-npm run docker:mysql:down    # 중지
+# 로컬 PostgreSQL 컨테이너 관리 (로컬 개발용)
+npm run docker:postgres      # 시작
+npm run docker:postgres:stop # 중지
 npm run db:logs              # 로그 확인
 
-# 데이터베이스 초기화
-npm run db:complete          # 완전 초기화
-npm run db:init              # 스키마만 업데이트
+# 데이터베이스 초기화 (로컬 PostgreSQL)
+npm run db:drop              # 드롭
+npm run db:create            # 생성
 npm run db:reset             # 전체 리셋
-
-# 데이터베이스 접속
-npm run db:shell             # MySQL CLI
+npm run db:status            # 상태 확인
 ```
 
-### phpMyAdmin
+**Supabase 사용 시**: Supabase Dashboard → Table Editor에서 관리
+
+### Supabase Dashboard
 
 ```
-URL: http://localhost:8080
-서버: mysql
-사용자: goldenrace_user
-비밀번호: goldenrace_password
+URL: https://app.supabase.com
+기능: Table Editor, SQL Editor, Database 관리
 ```
 
-자세한 내용: [데이터 저장소 가이드](DATA_STORAGE.md)
+**상세 가이드**:
+
+- [Supabase 설정 가이드](SUPABASE_SETUP.md)
+- [Supabase 필요 정보](../SUPABASE_REQUIREMENTS.md)
 
 ---
 
@@ -536,8 +546,8 @@ NODE_ENV=production npm run start:prod
 
 <div align="center">
 
-**마지막 업데이트**: 2025년 10월 10일
+**마지막 업데이트**: 2026년 1월 26일 - Supabase PostgreSQL 마이그레이션
 
-🖥️ **Golden Race Server** - NestJS Backend API
+🖥️ **Golden Race Server** - NestJS + Supabase Backend API
 
 </div>

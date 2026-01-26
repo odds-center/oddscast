@@ -1,8 +1,19 @@
 import React from 'react';
-import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
-import { Section, Card, Button, StatCard, LoadingSpinner, EmptyState } from '@/components/ui';
+import {
+  Section,
+  Card,
+  Button,
+  StatCard,
+  LoadingSpinner,
+  EmptyState,
+  SectionHeader,
+  Divider,
+  Badge,
+} from '@/components/ui';
+import { Colors, Spacing, Layout } from '@/constants/designTokens';
 import { useSubscription } from '@/lib/hooks/useSubscription';
 import { usePredictions } from '@/lib/hooks/usePredictions';
 import { subscriptionsApi } from '@/lib/api/subscriptions';
@@ -33,7 +44,7 @@ export default function SubscriptionManageScreen() {
         } catch (error: any) {
           showErrorMessage(error.response?.data?.message || '구독 취소에 실패했습니다.', '오류');
         }
-      }
+      },
     );
   };
 
@@ -43,12 +54,14 @@ export default function SubscriptionManageScreen() {
 
   if (!isSubscribed || !subscription) {
     return (
-      <ScrollView style={styles.container}>
+      <ScrollView style={Layout.container}>
         <Section>
           <EmptyState icon='ticket' title='구독 없음' message='활성화된 구독이 없습니다' />
           <Button
             title='구독 플랜 보기'
             onPress={() => router.push('/mypage/subscription/plans')}
+            fullWidth
+            style={{ marginTop: Spacing.lg }}
           />
         </Section>
       </ScrollView>
@@ -59,39 +72,47 @@ export default function SubscriptionManageScreen() {
   const daysUntilRenewal = subscription.daysUntilRenewal || 0;
 
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={Layout.container}>
       <Section>
         <ThemedText type='title'>구독 관리</ThemedText>
       </Section>
 
       {/* 구독 상태 카드 */}
       <Section>
-        <Card style={styles.statusCard}>
+        <Card variant='elevated'>
           <View style={styles.statusHeader}>
-            <Ionicons name='checkmark-circle' size={32} color='#4CAF50' />
+            <Ionicons name='checkmark-circle' size={32} color={Colors.status.success} />
             <View style={styles.statusInfo}>
               <ThemedText type='subtitle'>{subscription.planId} 구독 중</ThemedText>
-              <View style={styles.statusBadge}>
-                <ThemedText style={styles.statusBadgeText}>활성화</ThemedText>
-              </View>
+              <Badge
+                label='활성화'
+                variant='success'
+                style={{ alignSelf: 'flex-start', marginTop: Spacing.xs }}
+              />
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <Divider spacing={Spacing.lg} />
 
           <View style={styles.infoRow}>
-            <ThemedText type='caption'>다음 결제일</ThemedText>
-            <ThemedText type='defaultSemiBold'>{nextBillingDate}</ThemedText>
+            <ThemedText type='caption' style={{ color: Colors.text.tertiary }}>
+              다음 결제일
+            </ThemedText>
+            <ThemedText type='body'>{nextBillingDate}</ThemedText>
           </View>
 
           <View style={styles.infoRow}>
-            <ThemedText type='caption'>남은 기간</ThemedText>
-            <ThemedText type='defaultSemiBold'>{daysUntilRenewal}일</ThemedText>
+            <ThemedText type='caption' style={{ color: Colors.text.tertiary }}>
+              남은 기간
+            </ThemedText>
+            <ThemedText type='body'>{daysUntilRenewal}일</ThemedText>
           </View>
 
           <View style={styles.infoRow}>
-            <ThemedText type='caption'>월 결제 금액</ThemedText>
-            <ThemedText type='defaultSemiBold' style={styles.price}>
+            <ThemedText type='caption' style={{ color: Colors.text.tertiary }}>
+              월 결제 금액
+            </ThemedText>
+            <ThemedText type='body' style={{ color: Colors.text.secondary }}>
               ₩{subscription.price.toLocaleString()}
             </ThemedText>
           </View>
@@ -100,9 +121,7 @@ export default function SubscriptionManageScreen() {
 
       {/* 예측권 통계 */}
       <Section>
-        <ThemedText type='subtitle' style={styles.sectionTitle}>
-          예측권 현황
-        </ThemedText>
+        <SectionHeader title='예측권 현황' />
         <View style={styles.statsGrid}>
           <StatCard
             icon='ticket'
@@ -117,22 +136,22 @@ export default function SubscriptionManageScreen() {
 
       {/* 결제 정보 */}
       <Section>
-        <Card>
-          <ThemedText type='subtitle' style={styles.sectionTitle}>
-            💳 결제 수단
-          </ThemedText>
+        <Card variant='base'>
+          <SectionHeader title='💳 결제 수단' />
 
           <View style={styles.paymentMethod}>
-            <Ionicons name='card' size={24} color='#333' />
+            <Ionicons name='card' size={24} color={Colors.text.primary} />
             <View style={styles.paymentInfo}>
-              <ThemedText type='defaultSemiBold'>신용/체크카드</ThemedText>
-              <ThemedText type='caption'>**** **** **** ****</ThemedText>
+              <ThemedText type='body'>신용/체크카드</ThemedText>
+              <ThemedText type='caption' style={{ color: Colors.text.tertiary }}>
+                **** **** **** ****
+              </ThemedText>
             </View>
           </View>
 
           <View style={styles.notice}>
-            <Ionicons name='information-circle' size={16} color='#666' />
-            <ThemedText type='caption' style={styles.noticeText}>
+            <Ionicons name='information-circle' size={16} color={Colors.text.tertiary} />
+            <ThemedText type='caption' style={{ flex: 1 }}>
               자동 갱신: 매월 1일 자동 결제됩니다
             </ThemedText>
           </View>
@@ -141,31 +160,29 @@ export default function SubscriptionManageScreen() {
 
       {/* 혜택 안내 */}
       <Section>
-        <Card style={styles.benefitsCard}>
-          <ThemedText type='subtitle' style={styles.sectionTitle}>
-            ✨ 현재 혜택
-          </ThemedText>
+        <Card variant='base' style={{ backgroundColor: `${Colors.primary.main}05` }}>
+          <SectionHeader title='✨ 현재 혜택' />
 
           <View style={styles.benefit}>
-            <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-            <ThemedText style={styles.benefitText}>
+            <Ionicons name='checkmark-circle' size={20} color={Colors.status.success} />
+            <ThemedText type='body' style={styles.benefitText}>
               월 {subscription.monthlyTickets}장 AI 예측권
             </ThemedText>
           </View>
 
           <View style={styles.benefit}>
-            <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-            <ThemedText style={styles.benefitText}>평균 70%+ 정확도 목표</ThemedText>
+            <Ionicons name='checkmark-circle' size={20} color={Colors.status.success} />
+            <ThemedText type='body' style={styles.benefitText}>평균 70%+ 정확도 목표</ThemedText>
           </View>
 
           <View style={styles.benefit}>
-            <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-            <ThemedText style={styles.benefitText}>상세 예측 근거 제공</ThemedText>
+            <Ionicons name='checkmark-circle' size={20} color={Colors.status.success} />
+            <ThemedText type='body' style={styles.benefitText}>상세 예측 근거 제공</ThemedText>
           </View>
 
           <View style={styles.benefit}>
-            <Ionicons name='checkmark-circle' size={20} color='#4CAF50' />
-            <ThemedText style={styles.benefitText}>맞춤 알림 서비스</ThemedText>
+            <Ionicons name='checkmark-circle' size={20} color={Colors.status.success} />
+            <ThemedText type='body' style={styles.benefitText}>맞춤 알림 서비스</ThemedText>
           </View>
         </Card>
       </Section>
@@ -175,25 +192,32 @@ export default function SubscriptionManageScreen() {
         <Button
           title='결제 내역 보기'
           onPress={() => router.push('/mypage/subscription/history')}
-          variant='outline'
-          size='medium'
+          variant='secondary'
           icon='receipt'
+          fullWidth
         />
 
         <Button
           title='구독 취소'
           onPress={handleCancelSubscription}
-          variant='danger'
-          size='medium'
+          variant='ghost'
           icon='close-circle'
-          style={{ marginTop: 12 }}
+          fullWidth
+          style={{ marginTop: Spacing.md }}
+          textStyle={{ color: Colors.status.error }}
         />
       </Section>
 
       {/* 주의사항 */}
       <Section>
-        <Card style={styles.warningCard}>
-          <ThemedText type='caption' style={styles.warningText}>
+        <Card
+          variant='compact'
+          style={{
+            backgroundColor: `${Colors.status.warning}10`,
+            borderColor: Colors.status.warning,
+          }}
+        >
+          <ThemedText type='caption' style={{ color: Colors.status.warning }}>
             ⚠️ 구독 취소 시 다음 결제일까지 예측권을 사용할 수 있습니다. 취소 후 환불은
             불가능합니다.
           </ThemedText>
@@ -204,67 +228,33 @@ export default function SubscriptionManageScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  subtitle: {
-    marginTop: 8,
-    color: '#666',
-  },
-  sectionTitle: {
-    marginBottom: 16,
-  },
-  statusCard: {
-    backgroundColor: '#fff',
-  },
   statusHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    marginBottom: 16,
+    gap: Spacing.lg,
+    marginBottom: Spacing.md,
   },
   statusInfo: {
     flex: 1,
-  },
-  statusBadge: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginTop: 4,
-  },
-  statusBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
-  divider: {
-    height: 1,
-    backgroundColor: '#eee',
-    marginVertical: 16,
   },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 8,
-  },
-  price: {
-    color: '#FFD700',
+    paddingVertical: Spacing.xs,
   },
   statsGrid: {
     flexDirection: 'row',
-    gap: 12,
+    gap: Spacing.md,
   },
   paymentMethod: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
+    gap: Spacing.md,
+    padding: Spacing.md,
+    backgroundColor: Colors.background.secondary,
+    borderRadius: Spacing.sm,
+    marginBottom: Spacing.md,
   },
   paymentInfo: {
     flex: 1,
@@ -272,33 +262,19 @@ const styles = StyleSheet.create({
   notice: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-  },
-  noticeText: {
-    flex: 1,
-  },
-  benefitsCard: {
-    backgroundColor: '#f8faf5',
+    gap: Spacing.sm,
+    padding: Spacing.md,
+    backgroundColor: `${Colors.border.primary}50`,
+    borderRadius: Spacing.sm,
   },
   benefit: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
-    paddingVertical: 8,
+    gap: Spacing.md,
+    paddingVertical: Spacing.xs,
   },
   benefitText: {
     flex: 1,
-    color: '#333',
-  },
-  warningCard: {
-    backgroundColor: '#FFF3CD',
-  },
-  warningText: {
-    color: '#856404',
-    lineHeight: 20,
+    color: Colors.text.primary,
   },
 });

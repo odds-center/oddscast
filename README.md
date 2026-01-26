@@ -99,8 +99,7 @@ Golden Race는 **AI 기반 경마 예측 정보 구독 서비스**입니다.
 
 ```bash
 Node.js 18+
-Docker & Docker Compose
-MySQL 8.0+
+Supabase Account (무료)
 npm or yarn
 ```
 
@@ -116,20 +115,14 @@ cd goldenrace
 ```bash
 cd server
 
-# 환경 변수 설정
-cp env.example .env
-# .env 파일에서 필요한 값 설정:
-# - DB 설정
-# - KRA_API_KEY
-# - GOOGLE_CLIENT_ID/SECRET
-# - OPENAI_API_KEY (AI 예측용)
-# - TOSS_CLIENT_KEY/SECRET (결제용)
+# 환경변수 설정 (ENV_SETUP.md 참고)
+# 시스템 환경변수로 설정
+export SUPABASE_DB_HOST=db.your-project.supabase.co
+export SUPABASE_DB_PASSWORD=your-password
+# ... 나머지 환경변수
 
 # 의존성 설치
 npm install
-
-# Docker로 MySQL 시작
-docker-compose up -d
 
 # 개발 서버 시작
 npm run start:dev
@@ -170,7 +163,7 @@ curl http://localhost:3002/kra-api/status
 ```typescript
 Framework: NestJS 10.x
 Language: TypeScript 5.x
-Database: MySQL 8.0 + TypeORM
+Database: Supabase PostgreSQL + TypeORM
 Authentication: Passport.js + JWT (Google OAuth)
 API: RESTful + Swagger
 Payment: 토스페이먼츠 (정기 결제)
@@ -190,8 +183,7 @@ UI: Custom Components + Theming
 ### Infrastructure
 
 ```yaml
-Container: Docker + Docker Compose
-Database: MySQL 8.0
+Database: Supabase PostgreSQL 15
 Cache: Redis (예정)
 Scheduler: NestJS Schedule (매일 06:00)
 Payment: 토스페이먼츠
@@ -370,7 +362,7 @@ goldenrace/
 **⚖️ Golden Race는 AI 예측 정보를 제공하는 구독 서비스입니다.**  
 **실제 마권 구매는 한국마사회 공식 채널에서 사용자가 직접 진행합니다.**
 
-**마지막 업데이트**: 2025년 10월 14일
+**마지막 업데이트**: 2026년 1월 26일 - Supabase PostgreSQL 마이그레이션 완료
 
 ---
 

@@ -5,8 +5,7 @@
  */
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { TabBar } from '@/components/ui';
 import FilterDateBar from '@/components/page/FilterDateBar';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -49,10 +48,8 @@ export default function PredictionMatrixPage() {
   });
 
   return (
-    <Layout title='종합 예상표 — GOLDEN RACE'>
-      <BackLink href={routes.home} label='목록으로' className='mb-4 block' />
-
-      <PageHeader icon='BarChart2' title='종합 예상표' />
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='종합 예상표' backHref={routes.home} />
 
       {!isLoggedIn ? (
         <div className='rounded-xl border border-primary/30 bg-primary/5 p-6 text-center'>

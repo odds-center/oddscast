@@ -209,7 +209,7 @@ webapp/
 │   │   ├── FormInput.tsx             # 폼 입력 필드
 │   │   ├── FilterDateBar.tsx         # 필터 칩 + 날짜 선택
 │   │   ├── FilterChips.tsx          # 필터 칩
-│   │   ├── Pagination.tsx            # 이전/다음 페이지
+│   │   ├── Pagination.tsx            # 여러 페이지 이동 (1 … 2 3 4 … 5)
 │   │   ├── BackLink.tsx              # 뒤로가기 링크 (ChevronLeft 아이콘)
 │   │   └── PageContent.tsx           # 페이지 콘텐츠 래퍼
 │   └── ui/                           # 범용 UI 컴포넌트

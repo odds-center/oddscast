@@ -79,7 +79,7 @@ export default class PaymentsApi {
   ): Promise<{ billing: BillingHistory; planName: string }> {
     if (CONFIG.useMock) return { billing: { id: 'mock', amount: 0, billingDate: new Date().toISOString(), status: 'SUCCESS', pgProvider: 'MOCK', pgTransactionId: '' }, planName: 'Mock' };
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/payments/subscribe', data);
+      const response = await axiosInstance.post<ApiResponse<{ billing: BillingHistory; planName: string }>>('/payments/subscribe', data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -95,8 +95,8 @@ export default class PaymentsApi {
       '/payments/subscribe',
       data,
     );
-    const body = response.data as any;
-    return body?.data ?? body;
+    const body = response.data as { data?: SubscribeResponse } | SubscribeResponse;
+    return (body as { data?: SubscribeResponse })?.data ?? (body as SubscribeResponse);
   }
 
   /**

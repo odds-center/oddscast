@@ -56,7 +56,7 @@ export default class PredictionTicketsApi {
    */
   static async use(raceId: string): Promise<UseTicketResult> {
     if (CONFIG.useMock) {
-      const pred = mockPredictions.find((p: any) => p.raceId === raceId) ?? mockPredictions[0];
+      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId) ?? mockPredictions[0];
       return {
         prediction: pred as unknown as PredictionResultDto,
         ticketUsed: true,

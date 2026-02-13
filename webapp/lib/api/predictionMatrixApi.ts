@@ -97,7 +97,8 @@ export default class PredictionMatrixApi {
         preview = null;
       }
 
-      const scores = (preview as any)?.scores?.horseScores ?? [];
+      const scores =
+        (preview as { scores?: { horseScores?: { hrNo?: string }[] } })?.scores?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
@@ -110,7 +111,7 @@ export default class PredictionMatrixApi {
         stTime: race.stTime,
         predictions: {
           ai_consensus: consensus,
-          expert_1: top1 && top2 ? [top1, top2] : [top1].filter(Boolean),
+          expert_1: top1 && top2 ? [top1, top2] : (top1 ? [top1] : []),
         },
         aiConsensus: consensus,
         consensusLabel: top1 ? '축' : undefined,

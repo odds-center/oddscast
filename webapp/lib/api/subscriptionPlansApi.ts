@@ -7,8 +7,8 @@ import { mockSubscriptionPlans } from '@/lib/mocks/data';
  */
 export interface SubscriptionPlan {
   id: string;
-  planName: string; // LIGHT, PREMIUM
-  displayName: string; // 라이트 플랜, 프리미엄 플랜
+  planName: string; // LIGHT, STANDARD, PREMIUM
+  displayName: string; // 라이트, 스탠다드, 프리미엄
   description: string;
   originalPrice: number; // VAT 전 가격
   vat: number; // 부가세
@@ -30,9 +30,9 @@ export default class SubscriptionPlansApi {
    * 구독 플랜 목록 조회 (인증 불필요)
    */
   static async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-    if (CONFIG.useMock) return mockSubscriptionPlans as any;
+    if (CONFIG.useMock) return mockSubscriptionPlans as SubscriptionPlan[];
     const response = await axiosInstance.get('/subscriptions/plans');
-    const data = handleApiResponse(response) as SubscriptionPlan[] | { plans?: SubscriptionPlan[] };
-    return Array.isArray(data) ? data : (data as any)?.plans ?? [];
+    const data = handleApiResponse<SubscriptionPlan[] | { plans?: SubscriptionPlan[] }>(response);
+    return Array.isArray(data) ? data : (data as { plans?: SubscriptionPlan[] })?.plans ?? [];
   }
 }

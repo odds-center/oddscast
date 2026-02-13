@@ -1,18 +1,13 @@
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
 import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { routes } from '@/lib/routes';
 
 export default function PrivacyPage() {
   return (
-    <Layout title='개인정보 처리방침 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-2xl mx-auto'>
-        <PageHeader
-          icon='AlertCircle'
-          title='개인정보 처리방침'
-          description='GOLDEN RACE 서비스의 개인정보 수집 및 이용에 관한 안내입니다.'
-        />
-
+        <CompactPageTitle title='개인정보 처리방침' backHref={routes.home} />
         <div className='card space-y-6 text-sm text-foreground'>
           <section>
             <h2 className='text-base font-semibold mb-2'>1. 수집하는 개인정보</h2>

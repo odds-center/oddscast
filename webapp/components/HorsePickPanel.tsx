@@ -80,7 +80,7 @@ export default function HorsePickPanel({
           className={`flex gap-1.5 overflow-x-auto pb-1 -mx-0.5 ${
             compact ? 'flex-nowrap' : 'flex-wrap'
           }`}
-          style={{ scrollbarWidth: 'thin' }}
+          style={{ scrollbarWidth: 'none' }}
         >
           {PICK_TYPES.map((t) => {
             const isActive = pickType === t;

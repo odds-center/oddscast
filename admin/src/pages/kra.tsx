@@ -49,7 +49,7 @@ export default function KraPage() {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success('출전표 동기화 완료 (경주 + 출전마 정보)');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error( '동기화 실패'),
   });
 
   const syncResultsMutation = useMutation({
@@ -58,7 +58,7 @@ export default function KraPage() {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success('경주 결과 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error( '동기화 실패'),
   });
 
   const syncDetailsMutation = useMutation({
@@ -67,7 +67,7 @@ export default function KraPage() {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success('상세정보(훈련·장구 등) 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error( '동기화 실패'),
   });
 
   const syncJockeysMutation = useMutation({
@@ -76,35 +76,36 @@ export default function KraPage() {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success('기수 통산전적 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error( '동기화 실패'),
   });
 
   const syncAllMutation = useMutation({
     mutationFn: (date: string) => adminKraApi.syncAll(toYyyyMmDd(date)),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      toast.success(res?.message || '전체 적재 완료');
+      toast.success((res as { message?: string })?.message ?? '전체 적재 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '전체 적재 실패'),
+    onError: (err: unknown) => toast.error( '전체 적재 실패'),
   });
 
   const seedSampleMutation = useMutation({
     mutationFn: (date?: string) => adminKraApi.seedSample(date ? toYyyyMmDd(date) : undefined),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      toast.success(`샘플 데이터 적재: ${res?.races ?? 0}경주, ${res?.entries ?? 0}출마`);
+      const r = res as { races?: number; entries?: number };
+      toast.success(`샘플 데이터 적재: ${r?.races ?? 0}경주, ${r?.entries ?? 0}출마`);
     },
-    onError: (err: any) => toast.error(err?.message || '샘플 적재 실패'),
+    onError: (err: unknown) => toast.error( '샘플 적재 실패'),
   });
 
   const syncHistoricalMutation = useMutation({
     mutationFn: ({ from, to }: { from: string; to: string }) =>
       adminKraApi.syncHistorical(toYyyyMmDd(from), toYyyyMmDd(to)),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      toast.success(`과거 데이터 적재 완료: ${res?.processed ?? 0}일`);
+      toast.success(`과거 데이터 적재 완료: ${(res as { processed?: number })?.processed ?? 0}일`);
     },
-    onError: (err: any) => toast.error(err?.message || '과거 데이터 적재 실패'),
+    onError: (err: unknown) => toast.error( '과거 데이터 적재 실패'),
   });
 
   const { data: logsData, isLoading: logsLoading } = useQuery({

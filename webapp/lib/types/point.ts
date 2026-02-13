@@ -105,7 +105,7 @@ export interface PointPromotion {
     validBetTypes?: string[];
     validRaces?: string[];
     validUsers?: string[];
-    [key: string]: any;
+    [key: string]: unknown;
   };
   startDate: Date; // 직접 만든 스키마 - Date
   endDate: Date; // 직접 만든 스키마 - Date
@@ -140,7 +140,7 @@ export interface PointAuditLog {
     newBalance?: number;
     adjustmentReason?: string;
     adminUserId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   ipAddress?: string;
   userAgent?: string;

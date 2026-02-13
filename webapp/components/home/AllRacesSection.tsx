@@ -1,16 +1,19 @@
 /**
- * 전체 경주 미리보기 섹션 — 필터 + 소수 항목만 (페이지네이션 없음)
+ * 전체 경주 미리보기 섹션 — KRA 발매경주표 스타일 테이블
  */
+import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import { useQuery } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
-import RaceCard from '@/components/RaceCard';
+import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import FilterDateBar from '@/components/page/FilterDateBar';
 import { routes } from '@/lib/routes';
 import DataFetchState from '@/components/page/DataFetchState';
+import { StatusBadge } from '@/components/ui';
 import type { RaceDto } from '@/lib/types/race';
+import type { RaceDetailDto } from '@goldenrace/shared';
 
 const PREVIEW_LIMIT = 5;
 
@@ -31,7 +34,9 @@ export default function AllRacesSection() {
     queryKey: ['races', 'all', dateFilter],
     queryFn: () => {
       const date =
-        dateFilter === 'today' ? new Date().toISOString().slice(0, 10).replace(/-/g, '') : dateFilter;
+        dateFilter === 'today'
+          ? new Date().toISOString().slice(0, 10).replace(/-/g, '')
+          : dateFilter;
       return RaceApi.getRaces({
         limit: PREVIEW_LIMIT,
         page: 1,
@@ -43,7 +48,12 @@ export default function AllRacesSection() {
   const races = (data?.races ?? []) as RaceDto[];
 
   return (
-    <HomeSection title='전체 경주' icon='ClipboardList' viewAllHref={routes.races.list} viewAllLabel='전체보기'>
+    <HomeSection
+      title='전체 경주'
+      icon='ClipboardList'
+      viewAllHref={routes.races.list}
+      viewAllLabel='전체보기'
+    >
       <FilterDateBar
         filterOptions={[
           { value: '', label: '전체' },
@@ -68,11 +78,97 @@ export default function AllRacesSection() {
         loadingLabel='경주 정보를 불러오는 중...'
         errorTitle='경주 정보를 불러오지 못했습니다'
       >
-        <div className='flex flex-col gap-3'>
-          {races.map((race) => (
-            <RaceCard key={race.id} race={race} />
-          ))}
-        </div>
+        <DataTable
+          className='data-table-kra'
+          columns={[
+            {
+              key: 'meet',
+              header: '지역',
+              headerClassName: 'w-16 cell-center',
+              align: 'center',
+              render: (row) => (
+                <span className='font-medium text-foreground'>
+                  {row.meetName ?? row.meet ?? '-'}
+                </span>
+              ),
+            },
+            {
+              key: 'date',
+              header: '날짜',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => {
+                const d = (row.rcDate ?? '').replace(/-/g, '');
+                const str = d.length >= 8 ? `${d.slice(4, 6)}/${d.slice(6, 8)}` : '-';
+                return <span className='text-text-secondary'>{str}</span>;
+              },
+            },
+            {
+              key: 'rcNo',
+              header: '경주번호',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => (
+                <Link
+                  href={routes.races.detail(row.id)}
+                  className='text-primary font-semibold hover:underline'
+                >
+                  {row.rcNo}R
+                </Link>
+              ),
+            },
+            {
+              key: 'dist',
+              header: '거리',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => (
+                <Link href={routes.races.detail(row.id)} className='text-primary hover:underline'>
+                  {row.rcDist ? `${row.rcDist}M` : '-'}
+                </Link>
+              ),
+            },
+            {
+              key: 'entries',
+              header: '출전',
+              headerClassName: 'w-14 cell-center',
+              align: 'center',
+              render: (row) => {
+                const detail = row as RaceDetailDto;
+                const entries = detail.entries ?? detail.entryDetails ?? [];
+                const count = entries.length;
+                return (
+                  <span className='text-text-secondary'>{count > 0 ? `${count}두` : '-'}</span>
+                );
+              },
+            },
+            {
+              key: 'status',
+              header: '상태',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => <StatusBadge status={row.status ?? row.raceStatus ?? ''} />,
+            },
+            {
+              key: 'detail',
+              header: '상세',
+              headerClassName: 'w-16 cell-center',
+              align: 'center',
+              render: (row) => (
+                <Link
+                  href={routes.races.detail(row.id)}
+                  className='text-primary text-sm font-medium hover:underline'
+                >
+                  보기
+                </Link>
+              ),
+            },
+          ]}
+          data={races}
+          getRowKey={(row) => row.id}
+          getRowHref={(row) => routes.races.detail(row.id)}
+          compact
+        />
       </DataFetchState>
     </HomeSection>
   );

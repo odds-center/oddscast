@@ -113,21 +113,21 @@ export const mockRaces = [
   },
 ];
 
-export const mockRaceResults: Record<string, any[]> = {
+export const mockRaceResults = {
   [`${MOCK_PREFIX}race-2`]: [
     { id: 'r1', ord: '1', hrNo: '2', hrName: '레드에이스', jkName: '윤서진', rcRank: '1', rcTime: '1:24.5' },
     { id: 'r2', ord: '2', hrNo: '1', hrName: '블루칩', jkName: '김준영', rcRank: '2', rcTime: '1:24.8' },
     { id: 'r3', ord: '3', hrNo: '3', hrName: '그린라이트', jkName: '한동훈', rcRank: '3', rcTime: '1:25.1' },
   ],
-};
+} as unknown as Record<string, import('@goldenrace/shared').RaceResultDto[]>;
 
-export const mockDividends: Record<string, any[]> = {
+export const mockDividends = {
   [`${MOCK_PREFIX}race-2`]: [
     { id: 'd1', poolName: '단승식', chulNo: '2', odds: 4500 },
     { id: 'd2', poolName: '복승식', chulNo: '2', chulNo2: '1', odds: 3200 },
     { id: 'd3', poolName: '연승식', chulNo: '2', chulNo2: '1', odds: 8500 },
   ],
-};
+} as unknown as Record<string, import('@goldenrace/shared').DividendDto[]>;
 
 export const mockPredictions = [
   {
@@ -217,23 +217,39 @@ export const mockTicketBalance = {
 export const mockSubscriptionPlans = [
   {
     id: 'mock-plan-1',
-    planName: 'PREMIUM',
-    displayName: '프리미엄 플랜',
-    description: '매월 30장 예측권 + AI 분석',
-    totalPrice: 9900,
-    baseTickets: 25,
-    bonusTickets: 5,
-    totalTickets: 30,
+    planName: 'LIGHT',
+    displayName: '라이트',
+    description: '월 5장 예측권',
+    originalPrice: 9900,
+    vat: 990,
+    totalPrice: 10890,
+    baseTickets: 5,
+    bonusTickets: 0,
+    totalTickets: 5,
   },
   {
     id: 'mock-plan-2',
-    planName: 'LIGHT',
-    displayName: '라이트 플랜',
-    description: '매월 10장 예측권',
-    totalPrice: 4900,
+    planName: 'STANDARD',
+    displayName: '스탠다드',
+    description: '월 10장 예측권',
+    originalPrice: 14900,
+    vat: 1490,
+    totalPrice: 16390,
     baseTickets: 10,
     bonusTickets: 0,
     totalTickets: 10,
+  },
+  {
+    id: 'mock-plan-3',
+    planName: 'PREMIUM',
+    displayName: '프리미엄',
+    description: '월 18장 예측권 (15+3 보너스)',
+    originalPrice: 19900,
+    vat: 1990,
+    totalPrice: 21890,
+    baseTickets: 15,
+    bonusTickets: 3,
+    totalTickets: 18,
   },
 ];
 

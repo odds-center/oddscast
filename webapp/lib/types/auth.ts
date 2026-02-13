@@ -40,7 +40,7 @@ export interface UpdateProfileRequest {
 
 export interface AuthState {
   isAuthenticated: boolean;
-  user: any | null; // User 타입은 user.ts에서 import
+  user: import('./user').User | null;
   accessToken: string | null;
   refreshToken: string | null;
   isLoading: boolean;

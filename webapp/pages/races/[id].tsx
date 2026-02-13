@@ -221,7 +221,7 @@ export default function RaceDetailPage() {
   const entries = (r.entries ?? r.entryDetails ?? []) as Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
 
   return (
-    <Layout title={`${r.meetName ?? ''} - ${name}`}>
+    <Layout title='GOLDEN RACE'>
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         {/* 메인 콘텐츠 */}
         <div className='flex-1 min-w-0 w-full'>

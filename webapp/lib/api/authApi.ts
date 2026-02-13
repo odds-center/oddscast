@@ -27,7 +27,7 @@ export default class AuthApi {
           refreshToken: 'mock-refresh',
           expiresIn: 3600,
           tokenType: 'Bearer',
-          user: mockUser as any,
+          user: mockUser as unknown as User,
         };
       }
       throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
@@ -50,7 +50,7 @@ export default class AuthApi {
         refreshToken: 'mock-refresh',
         expiresIn: 3600,
         tokenType: 'Bearer',
-        user: { ...mockUser, name: userData.name, nickname: userData.nickname } as any,
+        user: { ...mockUser, name: userData.name, nickname: userData.nickname } as unknown as User,
       };
     }
     try {

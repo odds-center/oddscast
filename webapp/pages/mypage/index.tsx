@@ -1,7 +1,7 @@
 import Layout from '@/components/Layout';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
-import PageHeader from '@/components/page/PageHeader';
 import MenuList from '@/components/page/MenuList';
 import RequireLogin from '@/components/page/RequireLogin';
 
@@ -10,20 +10,16 @@ export default function MypageIndex() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='마이페이지 — GOLDEN RACE'>
-        <PageHeader
-          icon='User'
-          title='마이페이지'
-          description='내 정보, 알림 등을 확인할 수 있습니다.'
-        />
+      <Layout title='GOLDEN RACE'>
+        <CompactPageTitle title='마이페이지' backHref={routes.profile.index} />
         <RequireLogin suffix='내 정보, 알림 등을 확인할 수 있습니다.' />
       </Layout>
     );
   }
 
   return (
-    <Layout title='마이페이지 — GOLDEN RACE'>
-      <PageHeader icon='User' title='마이페이지' description='내 정보와 관련 메뉴를 확인하세요.' />
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='마이페이지' backHref={routes.profile.index} />
       <MenuList
         items={[
           { href: routes.profile.index, icon: 'User', label: '내 정보 (포인트, 예측권)' },

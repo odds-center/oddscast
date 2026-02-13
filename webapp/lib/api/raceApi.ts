@@ -128,7 +128,7 @@ export default class RaceApi {
 
   static async getRaceResults(raceId: string): Promise<RaceResultDto[]> {
     if (CONFIG.useMock) {
-      return (mockRaceResults as any)[raceId] ?? [];
+      return (mockRaceResults as Record<string, RaceResultDto[]>)[raceId] ?? [];
     }
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceResultDto[]>>(
@@ -154,7 +154,7 @@ export default class RaceApi {
 
   static async getRaceDividends(raceId: string): Promise<DividendDto[]> {
     if (CONFIG.useMock) {
-      return (mockDividends as any)[raceId] ?? [];
+      return (mockDividends as Record<string, DividendDto[]>)[raceId] ?? [];
     }
     try {
       const response = await axiosInstance.get<ApiResponseDto<DividendDto[]>>(
@@ -182,7 +182,7 @@ export default class RaceApi {
     date?: string;
     month?: string;
     year?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     try {
       const params = new URLSearchParams();
 
@@ -200,7 +200,7 @@ export default class RaceApi {
     }
   }
 
-  static async getRaceAnalysis(raceId: string): Promise<any> {
+  static async getRaceAnalysis(raceId: string): Promise<Record<string, unknown>> {
     try {
       const response = await axiosInstance.get<ApiResponseDto<unknown>>(`/races/${raceId}/analysis`);
       return handleApiResponse(response);
@@ -214,7 +214,7 @@ export default class RaceApi {
     date?: string;
     month?: string;
     year?: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     try {
       const params = new URLSearchParams();
 
@@ -232,7 +232,7 @@ export default class RaceApi {
     }
   }
 
-  static async getRaceCalendar(year: number, month?: number): Promise<any> {
+  static async getRaceCalendar(year: number, month?: number): Promise<Record<string, unknown>> {
     try {
       const params = new URLSearchParams();
       params.append('year', year.toString());
@@ -313,11 +313,11 @@ export default class RaceApi {
     date?: string;
     month?: string;
     year?: string;
-  }): Promise<any> {
+  }): Promise<Record<string, unknown>> {
     return RaceApi.getRaceStatistics(filters);
   }
 
-  async getRaceAnalysisInstance(raceId: string): Promise<any> {
+  async getRaceAnalysisInstance(raceId: string): Promise<Record<string, unknown>> {
     return RaceApi.getRaceAnalysis(raceId);
   }
 
@@ -326,11 +326,11 @@ export default class RaceApi {
     date?: string;
     month?: string;
     year?: string;
-  }): Promise<any[]> {
+  }): Promise<Record<string, unknown>[]> {
     return RaceApi.getRaceSchedule(filters);
   }
 
-  async getRaceCalendarInstance(year: number, month?: number): Promise<any> {
+  async getRaceCalendarInstance(year: number, month?: number): Promise<Record<string, unknown>> {
     return RaceApi.getRaceCalendar(year, month);
   }
 

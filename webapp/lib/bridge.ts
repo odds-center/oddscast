@@ -9,7 +9,7 @@ export type NativeMessageType =
 
 interface NativeMessage {
   type: NativeMessageType;
-  payload?: any;
+  payload?: unknown;
 }
 
 declare global {
@@ -26,7 +26,7 @@ declare global {
 
 class NativeBridge {
   private static instance: NativeBridge;
-  private listeners: { [key: string]: ((payload: any) => void)[] } = {};
+  private listeners: { [key: string]: ((payload: unknown) => void)[] } = {};
 
   private constructor() {
     if (typeof window !== 'undefined') {
@@ -68,7 +68,7 @@ class NativeBridge {
   }
 
   /** Native 앱으로 메시지 전송 */
-  public send(type: NativeMessageType, payload?: any) {
+  public send(type: NativeMessageType, payload?: unknown) {
     if (this.canSendToNative()) {
       window.ReactNativeWebView!.postMessage(JSON.stringify({ type, payload }));
     } else if (this.isNativeApp()) {
@@ -79,7 +79,7 @@ class NativeBridge {
   }
 
   // Subscribe to messages from native app
-  public subscribe(type: NativeMessageType, callback: (payload: any) => void) {
+  public subscribe(type: NativeMessageType, callback: (payload: unknown) => void) {
     if (!this.listeners[type]) {
       this.listeners[type] = [];
     }

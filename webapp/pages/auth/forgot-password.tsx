@@ -5,10 +5,10 @@ import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 import Link from 'next/link';
 import BackLink from '@/components/page/BackLink';
-import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
 import SectionCard from '@/components/page/SectionCard';
 import AuthApi from '@/lib/api/authApi';
+import { getErrorMessage } from '@/lib/utils/error';
 import { useMutation } from '@tanstack/react-query';
 
 type ForgotPasswordForm = {
@@ -32,14 +32,8 @@ export default function ForgotPasswordPage() {
   const email = watch('email', '');
 
   return (
-    <Layout title='비밀번호 찾기 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        <PageHeader
-          icon='User'
-          title='비밀번호 찾기'
-          description='가입한 이메일 주소를 입력하면 비밀번호 재설정 링크를 보내드립니다.'
-        />
-
         {sent ? (
           <SectionCard>
             <p className='text-foreground font-medium mb-2'>
@@ -63,7 +57,7 @@ export default function ForgotPasswordPage() {
             />
             {mutation.isError && (
               <p className='msg-error'>
-                {(mutation.error as any)?.message || '전송에 실패했습니다.'}
+                {getErrorMessage(mutation.error)}
               </p>
             )}
             <button

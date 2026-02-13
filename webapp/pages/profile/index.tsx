@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import MenuList from '@/components/page/MenuList';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -58,12 +58,8 @@ export default function Profile() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='내 정보 — GOLDEN RACE'>
-        <PageHeader
-          icon='User'
-          title='내 정보'
-          description='포인트, 예측권, 구독 정보를 확인할 수 있습니다.'
-        />
+      <Layout title='GOLDEN RACE'>
+        <CompactPageTitle title='내 정보' backHref={routes.home} />
         <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
       </Layout>
     );
@@ -77,23 +73,9 @@ export default function Profile() {
     balanceLoading || ticketPriceLoading || ticketBalanceLoading || subscriptionLoading;
 
   return (
-    <Layout title='내 정보 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div>
-        <PageHeader
-          icon='User'
-          title='내 정보'
-          subtitle={
-            (user as { name?: string })?.name && (
-              <>
-                {(user as { name?: string }).name}
-                {(user as { nickname?: string }).nickname && (
-                  <span className='text-text-secondary text-sm ml-2 font-normal'>@{(user as { nickname?: string }).nickname}</span>
-                )}
-              </>
-            )
-          }
-        />
-
+        <CompactPageTitle title='내 정보' backHref={routes.home} />
         <DataFetchState
           isLoading={isLoading}
           error={null}
@@ -173,11 +155,11 @@ export default function Profile() {
               title='메뉴'
               items={[
                 { href: routes.profile.edit, icon: 'User', label: '프로필 수정' },
+                { href: routes.ranking, icon: 'Medal', label: '랭킹' },
                 { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독 플랜' },
                 { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
                 { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
                 { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
-                { href: routes.ranking, icon: 'Medal', label: '랭킹' },
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />

@@ -23,7 +23,7 @@ export default class NotificationApi {
   }> {
     if (CONFIG.useMock) {
       return {
-        notifications: mockNotifications as any,
+        notifications: mockNotifications as unknown as Notification[],
         total: mockNotifications.length,
         page: 1,
         totalPages: 1,
@@ -247,10 +247,10 @@ export default class NotificationApi {
   static async sendBulkNotifications(
     templateId: string,
     recipients: string[],
-    variables?: Record<string, any>,
+    variables?: Record<string, unknown>,
   ): Promise<{ sentCount: number; failedCount: number }> {
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>(
+      const response = await axiosInstance.post<ApiResponse<{ sentCount: number; failedCount: number }>>(
         `${NotificationApi.baseUrl}/bulk-send`,
         {
           templateId,

@@ -59,11 +59,13 @@ export default function GoogleSignInButton({
   // Mobile WebView: Native 구글 로그인 사용 (GSI는 WebView에서 제한 있음)
   useEffect(() => {
     if (!nativeBridge.isNativeApp()) return;
-    const unsubSuccess = nativeBridge.subscribe('LOGIN_SUCCESS', (payload: { token?: string }) => {
-      if (payload?.token) onSuccessRef.current?.(payload.token);
+    const unsubSuccess = nativeBridge.subscribe('LOGIN_SUCCESS', (payload: unknown) => {
+      const p = payload as { token?: string };
+      if (p?.token) onSuccessRef.current?.(p.token);
     });
-    const unsubFail = nativeBridge.subscribe('LOGIN_FAILURE', (payload: { error?: string }) => {
-      onErrorRef.current?.(payload?.error || '로그인에 실패했습니다.');
+    const unsubFail = nativeBridge.subscribe('LOGIN_FAILURE', (payload: unknown) => {
+      const p = payload as { error?: string };
+      onErrorRef.current?.(p?.error ?? '로그인에 실패했습니다.');
     });
     return () => {
       unsubSuccess();

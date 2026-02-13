@@ -3,8 +3,7 @@ import { useForm } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
-import PageHeader from '@/components/page/PageHeader';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { TabBar } from '@/components/ui';
 import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
@@ -84,7 +83,7 @@ export default function ProfileEditPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='프로필 수정 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto'>
           <RequireLogin suffix='프로필을 수정할 수 있습니다.' />
         </div>
@@ -93,14 +92,9 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <Layout title='프로필 수정 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-md mx-auto'>
-        <PageHeader
-          icon='User'
-          title='프로필 수정'
-          description='기본 정보와 비밀번호를 수정할 수 있습니다.'
-        />
-
+        <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
         <TabBar
           options={[
             { value: 'profile', label: '기본 정보' },
@@ -212,8 +206,6 @@ export default function ProfileEditPage() {
             </button>
           </form>
         )}
-
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

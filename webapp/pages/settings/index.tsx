@@ -1,5 +1,5 @@
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import MenuList from '@/components/page/MenuList';
 import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -10,9 +10,8 @@ export default function SettingsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
   return (
-    <Layout title='설정 — GOLDEN RACE'>
-      <PageHeader icon='Settings' title='설정' description='앱 설정을 관리합니다.' />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='설정' backHref={routes.profile.index} />
         {isLoggedIn ? (
           <MenuList
             items={[

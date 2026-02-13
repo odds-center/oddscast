@@ -113,8 +113,8 @@ body {
 
 * {
   box-sizing: border-box;
-  scrollbar-width: thin;
-  scrollbar-color: var(--border) var(--background);
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 /* 타이포그래피 — 로고는 Syne, 본문은 Pretendard */
@@ -250,6 +250,14 @@ h1, h2, h3 {
   padding: 0.5rem 0.5rem !important;
   vertical-align: middle;
 }
+@media (max-width: 768px) {
+  .data-table tbody tr {
+    min-height: 44px;
+  }
+  .data-table tbody td {
+    padding: 0.5rem 0.375rem !important;
+  }
+}
 /* 셀 정렬 — .cell-center, .cell-right 사용 */
 .data-table th.cell-center,
 .data-table td.cell-center {
@@ -322,6 +330,13 @@ h1, h2, h3 {
   justify-content: space-around;
   padding: 0.5rem 0.5rem;
 }
+@media (max-width: 768px) {
+  .nav-mobile-bar {
+    border-radius: 16px;
+    padding: 0.375rem 0.25rem;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1), 0 0 1px rgba(201, 162, 39, 0.2);
+  }
+}
 .nav-mobile-item {
   flex: 1;
   display: flex;
@@ -330,10 +345,18 @@ h1, h2, h3 {
   justify-content: center;
   gap: 0.25rem;
   padding: 0.5rem 0.25rem;
+  min-height: 52px;
   border-radius: 14px;
   transition: all 0.25s ease;
   color: var(--text-secondary);
   -webkit-tap-highlight-color: transparent;
+}
+@media (max-width: 768px) {
+  .nav-mobile-item {
+    min-height: 48px;
+    padding: 0.375rem 0.125rem;
+    gap: 0.125rem;
+  }
 }
 .nav-mobile-item:hover, .nav-mobile-item:active {
   color: var(--primary);
@@ -347,6 +370,11 @@ h1, h2, h3 {
   border-radius: 12px;
   transition: background 0.25s ease;
 }
+@media (max-width: 768px) {
+  .nav-mobile-icon-wrap {
+    padding: 0.25rem;
+  }
+}
 .nav-mobile-item-active .nav-mobile-icon-wrap {
   background: linear-gradient(135deg, rgba(201, 162, 39, 0.2) 0%, rgba(201, 162, 39, 0.3) 100%);
 }
@@ -356,6 +384,72 @@ h1, h2, h3 {
   border-top: 2px solid transparent;
   border-image: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.4), transparent) 1;
   background: linear-gradient(180deg, rgba(250, 250, 250, 0.6) 0%, rgba(250, 248, 244, 0.9) 100%);
+}
+
+/* 푸터 — fixed, 하단 고정. 네비 바로 아래(화면 맨 아래)에 배치해 항상 보임 */
+.site-footer-fixed {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9;
+  padding: 0.4rem 1rem;
+  padding-bottom: max(0.4rem, env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(250, 250, 250, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--border);
+}
+@media (max-width: 768px) {
+  .site-footer-fixed {
+    padding: 0.5rem 0.75rem;
+    padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+  }
+}
+
+/* ============================================
+   날짜 헤더 — KRA 스타일 (발매경주 상단)
+   ============================================ */
+.date-header-kra {
+  padding-bottom: 0.75rem;
+}
+
+/* ============================================
+   KRA 스타일 테이블 — 발매경주표 느낌, 격자형
+   ============================================ */
+.data-table-kra .data-table thead tr {
+  background: #f8f8f8;
+  border-bottom: 2px solid var(--border);
+}
+.data-table-kra .data-table thead th {
+  color: var(--foreground);
+  font-weight: 600;
+  font-size: 13px !important;
+  padding: 0.5rem 0.625rem !important;
+  border-right: 1px solid var(--border);
+}
+.data-table-kra .data-table thead th:last-child {
+  border-right: none;
+}
+.data-table-kra .data-table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+.data-table-kra .data-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+.data-table-kra .data-table tbody tr:hover {
+  background: var(--primary-muted);
+}
+.data-table-kra .data-table tbody td {
+  padding: 0.5rem 0.625rem !important;
+  font-size: 14px !important;
+  border-right: 1px solid rgba(0, 0, 0, 0.05);
+}
+.data-table-kra .data-table tbody td:last-child {
+  border-right: none;
+}
+.data-table-kra .data-table-wrapper {
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 /* ============================================
@@ -539,7 +633,7 @@ input:focus, select:focus, textarea:focus {
   font-family: var(--font-sans);
 }
 .dropdown-list {
-  scrollbar-width: thin;
+  scrollbar-width: none;
 }
 .dropdown-option {
   min-height: 44px;
@@ -551,7 +645,6 @@ input:focus, select:focus, textarea:focus {
 .page-header {
   margin-bottom: 1.5rem;
   padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--border);
 }
 @media (min-width: 768px) {
   .page-header {
@@ -579,24 +672,12 @@ input:focus, select:focus, textarea:focus {
 }
 
 /* ============================================
-   스크롤바 — 얇고 세련된 스타일
+   스크롤바 — 숨김 (스크롤은 유지)
    ============================================ */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: var(--background);
-}
-::-webkit-scrollbar-thumb {
-  background: var(--border);
-  border-radius: 9998px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: var(--text-tertiary);
-}
-::-webkit-scrollbar-thumb:active {
-  background: var(--primary-dark);
+  width: 0;
+  height: 0;
+  display: none;
 }
 
 /* ============================================
@@ -617,21 +698,32 @@ input:focus, select:focus, textarea:focus {
   input, select, textarea {
     font-size: 16px !important;
   }
-  /* 터치 타겟 최소 48px (버튼/CTA) */
+  /* 터치 타겟 최소 44px (버튼/CTA) — 40~60대 가독성·편의 */
   button,
   .btn-primary,
   .btn-secondary,
   [role='button'] {
-    min-height: 48px;
+    min-height: 44px;
   }
   /* 부드러운 스크롤 */
   .overflow-y-auto,
   .overflow-auto,
+  .data-table-wrapper,
   [style*='overflow'] {
     -webkit-overflow-scrolling: touch;
     overflow-scrolling: touch;
   }
-  /* 카드 모바일 패딩 */
+  /* 테이블 가로 스크롤 — 모바일 터치 스크롤 개선 */
+  .data-table-wrapper {
+    -webkit-overflow-scrolling: touch;
+    overflow-x: auto;
+    margin-left: -0.25rem;
+    margin-right: -0.25rem;
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    border-radius: var(--radius-lg);
+  }
+  /* 카드 모바일 — 타이트 패딩 */
   .card {
     padding: 1rem 1rem;
   }
@@ -639,10 +731,18 @@ input:focus, select:focus, textarea:focus {
   .page-header {
     margin-bottom: 1.25rem;
   }
-  /* 버튼 모바일 — 약간 더 큰 터치 영역 */
+  /* 버튼 모바일 — 터치 영역 확보 */
   .btn-primary, .btn-secondary {
-    padding: 0.75rem 1.25rem;
-    min-height: 48px;
+    padding: 0.625rem 1rem;
+    min-height: 44px;
+  }
+  /* 섹션·카드 간격 모바일 */
+  .section-gap {
+    margin-top: 1.25rem;
+  }
+  /* 모바일 타이포 — 본문 가독성 */
+  body {
+    line-height: 1.6;
   }
 }
 

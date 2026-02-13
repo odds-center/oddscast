@@ -1,8 +1,10 @@
 /**
  * 공용 테이블 컴포넌트
  * data-table-wrapper + data-table 스타일, columns 정의로 일관된 테이블 렌더링
+ * getRowHref 제공 시 행 전체 클릭으로 이동
  */
-import type { ReactNode } from 'react';
+import { useRouter } from 'next/router';
+import type { ReactNode, MouseEvent } from 'react';
 
 export type DataTableAlign = 'left' | 'center' | 'right';
 
@@ -19,6 +21,8 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowKey: (row: T, index: number) => string | number;
+  /** 행 클릭 시 이동할 href (있으면 행 전체 클릭 가능) */
+  getRowHref?: (row: T, index: number) => string | undefined;
   compact?: boolean;
   emptyMessage?: string;
   className?: string;
@@ -35,11 +39,13 @@ export default function DataTable<T>({
   columns,
   data,
   getRowKey,
+  getRowHref,
   compact = false,
   emptyMessage,
   className = '',
   rowClassName,
 }: DataTableProps<T>) {
+  const router = useRouter();
   const tableClass = compact ? 'data-table data-table-compact' : 'data-table';
 
   return (
@@ -61,9 +67,26 @@ export default function DataTable<T>({
         <tbody>
           {data.map((row, i) => {
             const key = getRowKey(row, i);
-            const trClass = rowClassName?.(row, i);
+            const href = getRowHref?.(row, i);
+            const trClass = [
+              rowClassName?.(row, i),
+              href ? 'cursor-pointer hover:bg-primary/10' : '',
+            ].filter(Boolean).join(' ');
+            const handleRowClick = href
+              ? (e: MouseEvent<HTMLTableRowElement>) => {
+                  if ((e.target as HTMLElement).closest('a')) return;
+                  router.push(href);
+                }
+              : undefined;
             return (
-              <tr key={key} className={trClass}>
+              <tr
+                key={key}
+                className={trClass || undefined}
+                onClick={handleRowClick}
+                onKeyDown={handleRowClick && href ? (e) => e.key === 'Enter' && router.push(href) : undefined}
+                role={handleRowClick ? 'button' : undefined}
+                tabIndex={handleRowClick ? 0 : undefined}
+              >
                 {columns.map((col) => {
                   const alignClass = alignToClass[col.align ?? 'left'];
                   const cellClass =

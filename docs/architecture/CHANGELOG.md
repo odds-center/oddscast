@@ -4,6 +4,95 @@
 
 ---
 
+## 2026-02-13 (금) — TypeScript `any` 타입 제거 & 규칙 강화
+
+### 변경 사항
+
+- **any 금지 규칙**: `.cursorrules`, `docs/CURSOR_RULES.md`, `docs/COMPATIBILITY_RULES.md`에 **각각의 구체적 타입 필수** 규칙 추가
+- **webapp**: `handleApiResponse`/`handleApiError`(axios), API 클라이언트, 페이지(`catch (err: unknown)` + `getErrorMessage`), 타입 정의(`[key: string]: unknown` 등) 수정
+- **admin**: `handleApiError(error: unknown)`, `getErrorMessage` 유틸, Table `T extends object`, mutation `onError`/`onSuccess` 타입 수정
+- **에러 처리**: `catch (err: any)` → `catch (err: unknown)` + `getErrorMessage(err)` (webapp/lib/utils/error.ts, admin/src/lib/utils.ts)
+- **인덱스 시그니처**: `[key: string]: any` → `[key: string]: unknown`
+- **타입 단언**: `as any` 금지, 필요한 경우 `as unknown as Type` 사용
+- **문서**: CURSOR_RULES, COMPATIBILITY_RULES, WEBAPP_DEVELOPMENT에 타입 안전성 섹션 추가
+
+---
+
+## 2026-02-13 (금) — 구독 플랜 3종 (라이트/스탠다드/프리미엄)
+
+### 변경 사항
+
+- **subscription_plans**: LIGHT, PREMIUM → **LIGHT, STANDARD, PREMIUM** 3플랜
+- **표시명**: 라이트 / 스탠다드 / 프리미엄
+- **seed.sql**: LIGHT(5장/9,900원), STANDARD(10장/14,900원), PREMIUM(18장/19,900원), ON CONFLICT DO UPDATE로 기존 플랜 동기화
+- **webapp mock**: 3플랜 mockSubscriptionPlans
+- **admin**: grid md:grid-cols-3 (3열)
+- **문서**: PREDICTION_TICKET_PRICING_SIMULATION, DATABASE_SCHEMA, BUSINESS_LOGIC 반영
+
+---
+
+## 2026-02-13 (금) — main·header 패딩 조정
+
+### 변경 사항
+
+- **main 패딩**: 모바일 `1rem` (16px) + safe-area, 데스크 `2rem` (32px) 가로, `1.5rem` 세로
+- **내부 div**: `px-0`, `py-4` (모바일) — 가로 패딩은 main에서만 처리
+- **CompactPageTitle**: `-mt-4` (div의 py 상쇄), `pt-[max(0.75rem,env(safe-area-inset-top))]`, `mb-3`
+
+---
+
+## 2026-02-13 (금) — BackLink 제거 & CompactPageTitle 모바일 sticky GNB
+
+### 변경 사항
+
+- **BackLink "내 정보로" 제거**: 프로필·알림·예측권 이력·포인트 거래·picks·구독·프로필 수정 등 하위 페이지에서 제거 (CompactPageTitle 뒤로가기로 충분)
+- **CompactPageTitle 모바일 sticky**: `max-md:sticky max-md:top-0` — 뒤로가기+제목 상단 고정, GNB 스타일
+- **모바일 스타일**: `bg-background/98 backdrop-blur-sm border-b`, safe-area 대응 `pt-[max(0.5rem,env(safe-area-inset-top))]`
+
+---
+
+## 2026-02-13 (금) — 모바일 친화적 UI 강화
+
+### 변경 사항
+
+- **Layout**: 모바일 `px-3 py-3`, `pb-[200px]` (콘텐츠 하단 여백), `pl/pr 0.75rem` (safe area)
+- **하단 네비**: `min-height: 48px` 터치 영역, 모바일 패딩·라운드 조정
+- **푸터**: 모바일 `text-[11px]`, `gap-x-3`, `px-2`
+- **홈**: `gap-4` (모바일), `gap-6` (데스크), 섹션 `mb-5` (모바일)
+- **FilterChips**: `min-h-[44px]` (모바일 터치)
+- **FilterDateBar**: date input `min-h-[44px]`
+- **CompactPageTitle**: 뒤로가기 `w-11 h-11` (모바일), `text-[15px]`
+- **SectionTitle**: `text-[15px]` (모바일), 아이콘 `w-8 h-8`
+- **BackLink**: `py-2 min-h-[44px]`
+- **테이블**: `min-height: 44px` 행, `-webkit-overflow-scrolling: touch` 가로 스크롤
+- **globals.css**: `@media (max-width: 768px)` 모바일 전용 스타일 확장
+
+---
+
+## 2026-02-13 (금) — 모바일 네비 5개로 축소 & 페이지네이션 개선
+
+### 모바일·하단 네비 개선
+
+- **5개 고정**: 홈 / 경주 / 종합 / 결과 / 내 정보
+- **제외**: 랭킹 → 내 정보 → 메뉴에서 진입 (랭킹을 프로필 메뉴 상단에 배치)
+- **라벨 변경**: "종합 예상" → "종합" (모바일 공간 절약)
+- **문서**: UI_PATTERNS에 하단 네비 섹션 추가
+
+---
+
+## 2026-02-13 (금) — 페이지네이션 개선 & URL 동기화 (뒤로가기 시 복귀)
+
+### 변경 사항
+
+- **Pagination 컴포넌트**: `onPrev`/`onNext` → `onPageChange(page: number)` 단일 콜백
+- **형식**: `< 1 ... 2 3 4 ... 5 >` — 여러 페이지로 직접 이동, `...`로 구간 생략
+- **URL 동기화**: 경주 목록(/races), 경주 결과(/results), 내가 고른 말(/mypage/picks) — `page`를 query로 관리
+- **뒤로가기 복귀**: 목록 3페이지 → 상세 → 브라우저 뒤로가기 시 3페이지로 복귀
+- **적용 페이지**: races/index, results, mypage/picks — `router.replace`로 URL 갱신
+- **문서**: UI_PATTERNS, WEBAPP_DEVELOPMENT, PROJECT_STRUCTURE, CHANGELOG 반영
+
+---
+
 ## 2026-02-13 (금) — 홈 섹션 리뉴얼 & /races 페이지
 
 ### 변경 사항
@@ -13,7 +102,7 @@
 - **인덱스 페이지네이션 제거**: 각 섹션 소수 항목만 표시, 전체보기 링크로 상세 페이지 이동
 - **전체 경주 페이지**: `/races` — 필터 + DataTable + 페이지네이션 (BackLink → 홈)
 - **라우트**: `routes.races.list = '/races'` 추가
-- **Layout 네비**: 홈, 경주(/races), 종합 예상, 결과, 랭킹 분리
+- **Layout 네비**: 홈, 경주(/races), 종합 예상, 결과, 랭킹 분리 (→ 이후 5개로 축소, CHANGELOG 하단 참조)
 
 ---
 
@@ -235,7 +324,7 @@
   - `MenuList` — 메뉴 링크 목록 (items)
   - `FilterChips` — 필터 칩 (전체, 오늘 등)
   - `FormInput` — 라벨 + 입력 + 에러 메시지
-  - `Pagination` — 이전/다음 페이지
+  - `Pagination` — 여러 페이지 이동 (1 … 2 3 4 … 5), `onPageChange(page)`
   - `BackLink` — "← XXX로" 링크
 
 ### 2. 모바일 레이아웃 & CSS
@@ -403,7 +492,7 @@
 - **Seed 기본값**:
   - `point_configs` — 승식별 포인트 배율
   - `point_ticket_prices` — 1장 = 1200pt
-  - `subscription_plans` — LIGHT(라이트), PREMIUM(프리미엄)
+  - `subscription_plans` — LIGHT(라이트), STANDARD(스탠다드), PREMIUM(프리미엄)
   - `global_config` — show_google_login 등 기능 플래그
 - **멱등성**: `ON CONFLICT DO NOTHING` / `WHERE NOT EXISTS`로 재실행 시 중복 없음
 - **파일**: `server/prisma/seed.sql`, `docs/architecture/DATABASE_SCHEMA.md`

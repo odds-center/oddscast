@@ -1,5 +1,5 @@
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -73,8 +73,8 @@ export default function NotificationSettingsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='알림 설정 — GOLDEN RACE'>
-        <PageHeader icon='Bell' title='알림 설정' description='알림 수신 여부를 설정합니다.' />
+      <Layout title='GOLDEN RACE'>
+        <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         <RequireLogin suffix='설정할 수 있습니다' />
         <BackLink href={routes.settings} label='설정으로' />
       </Layout>
@@ -82,14 +82,9 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <Layout title='알림 설정 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='space-y-6'>
-        <PageHeader
-          icon='Bell'
-          title='알림 설정'
-          description='수신할 알림 유형을 선택하세요.'
-        />
-
+        <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         {isLoading ? (
         <div className='py-16'>
           <LoadingSpinner size={28} label='설정을 불러오는 중...' />

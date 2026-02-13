@@ -57,7 +57,7 @@ export interface Notification {
     achievementId?: string;
     actionUrl?: string;
     imageUrl?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   isRead: boolean;
   readAt?: Date; // 직접 만든 스키마 - Date
@@ -243,7 +243,7 @@ export interface NotificationChannel {
     apiKey?: string;
     endpoint?: string;
     template?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   isActive: boolean;
   priority: number;
@@ -266,7 +266,7 @@ export interface NotificationDelivery {
     deviceId?: string;
     ipAddress?: string;
     userAgent?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: string;
   updatedAt: string;

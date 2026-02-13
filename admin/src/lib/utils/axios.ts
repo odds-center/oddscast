@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 
 // Admin 전용 API Base URL — /api/admin prefix
 const ADMIN_API_URL =
@@ -69,27 +69,33 @@ export const axiosInstance = createApiClient();
  * API 응답 래퍼 함수
  * NestJS ResponseInterceptor 형식 { data, status } 언래핑
  */
-export const handleApiResponse = <T>(response: AxiosResponse<T>): T => {
-  const body = response.data as any;
-  return (body?.data !== undefined && body?.status !== undefined ? body.data : body) as T;
+export const handleApiResponse = <T>(response: AxiosResponse<unknown>): T => {
+  const body = response.data as { data?: T; status?: number } | T;
+  if (body && typeof body === 'object' && 'data' in body && 'status' in body) {
+    return (body as { data: T }).data;
+  }
+  return body as T;
 };
 
 /**
  * API 에러 처리 함수
  */
-export const handleApiError = (error: any): never => {
-  if (error.response) {
-    const apiError = {
-      status: error.response.status,
-      message: error.response.data?.message || '서버 오류가 발생했습니다.',
-      errors: error.response.data?.errors,
-    };
-    throw apiError;
+export const handleApiError = (error: unknown): never => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const axiosErr = error as AxiosError<{ message?: string; errors?: unknown }>;
+    const res = axiosErr.response;
+    if (res) {
+      const data = res.data as { message?: string; errors?: unknown } | undefined;
+      throw {
+        status: res.status,
+        message: data?.message ?? '서버 오류가 발생했습니다.',
+        errors: data?.errors,
+      };
+    }
   }
-
-  if (error.request) {
+  if (error && typeof error === 'object' && 'request' in error) {
     throw new Error('네트워크 연결을 확인해주세요.');
   }
-
-  throw new Error(error.message || '알 수 없는 오류가 발생했습니다.');
+  const msg = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+  throw new Error(msg);
 };

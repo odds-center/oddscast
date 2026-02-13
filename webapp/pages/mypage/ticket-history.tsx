@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Pagination from '@/components/page/Pagination';
-import BackLink from '@/components/page/BackLink';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
 import { Badge, Card } from '@/components/ui';
@@ -57,22 +56,16 @@ export default function TicketHistoryPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='예측권 이력 — GOLDEN RACE'>
-        <PageHeader icon='Ticket' title='예측권 이력' description='예측권 구매·사용 내역입니다.' />
+      <Layout title='GOLDEN RACE'>
+        <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
         <RequireLogin />
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </Layout>
     );
   }
 
   return (
-    <Layout title='예측권 이력 — GOLDEN RACE'>
-      <PageHeader
-        icon='Ticket'
-        title='예측권 이력'
-        description='예측권 구매·사용 내역입니다.'
-      />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
         error={error as Error | null}
@@ -113,13 +106,10 @@ export default function TicketHistoryPage() {
         <Pagination
           page={page}
           totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          onPageChange={(p) => setPage(p)}
           className='mt-6'
         />
       </DataFetchState>
-
-      <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

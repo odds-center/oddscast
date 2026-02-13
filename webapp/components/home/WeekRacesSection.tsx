@@ -1,13 +1,16 @@
 /**
- * 금주의 경주 섹션 — 이번 주 경주 미리보기
+ * 금주의 경주 섹션 — KRA 발매경주표 스타일 테이블
  */
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
-import RaceCard from '@/components/RaceCard';
+import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
+import { StatusBadge } from '@/components/ui';
 import type { RaceDto } from '@/lib/types/race';
+import type { RaceDetailDto } from '@goldenrace/shared';
 
 function getWeekDates(): string[] {
   const dates: string[] = [];
@@ -34,7 +37,7 @@ export default function WeekRacesSection() {
     },
   });
 
-  const races = useMemo(() => (data ?? []).slice(0, 3), [data]);
+  const races = useMemo(() => (data ?? []).slice(0, 5), [data]);
 
   return (
     <HomeSection
@@ -48,11 +51,78 @@ export default function WeekRacesSection() {
       ) : races.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
       ) : (
-        <div className='flex flex-col gap-3'>
-          {races.map((race) => (
-            <RaceCard key={race.id} race={race} />
-          ))}
-        </div>
+        <DataTable
+          className='data-table-kra'
+          columns={[
+            {
+              key: 'meet',
+              header: '지역',
+              headerClassName: 'w-16 cell-center',
+              align: 'center',
+              render: (row) => (
+                <span className='font-medium text-foreground'>{row.meetName ?? row.meet ?? '-'}</span>
+              ),
+            },
+            {
+              key: 'date',
+              header: '날짜',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => {
+                const d = (row.rcDate ?? '').replace(/-/g, '');
+                const str = d.length >= 8 ? `${d.slice(4, 6)}/${d.slice(6, 8)}` : '-';
+                return <span className='text-text-secondary'>{str}</span>;
+              },
+            },
+            {
+              key: 'rcNo',
+              header: '경주번호',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => (
+                <Link href={routes.races.detail(row.id)} className='text-primary font-semibold hover:underline'>
+                  {row.rcNo}R
+                </Link>
+              ),
+            },
+            {
+              key: 'dist',
+              header: '거리',
+              headerClassName: 'w-20 cell-center',
+              align: 'center',
+              render: (row) => (
+                <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
+              ),
+            },
+            {
+              key: 'entries',
+              header: '출전',
+              headerClassName: 'w-14 cell-center',
+              align: 'center',
+              render: (row) => {
+                const detail = row as RaceDetailDto;
+                const entries = detail.entries ?? detail.entryDetails ?? [];
+                const count = entries.length;
+                return <span className='text-text-secondary'>{count > 0 ? `${count}두` : '-'}</span>;
+              },
+            },
+            {
+              key: 'detail',
+              header: '상세',
+              headerClassName: 'w-16 cell-center',
+              align: 'center',
+              render: (row) => (
+                <Link href={routes.races.detail(row.id)} className='text-primary text-sm font-medium hover:underline'>
+                  보기
+                </Link>
+              ),
+            },
+          ]}
+          data={races}
+          getRowKey={(row) => row.id}
+          getRowHref={(row) => routes.races.detail(row.id)}
+          compact
+        />
       )}
     </HomeSection>
   );

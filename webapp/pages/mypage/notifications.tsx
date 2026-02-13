@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
 import Pagination from '@/components/page/Pagination';
-import BackLink from '@/components/page/BackLink';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
 import { Card } from '@/components/ui';
@@ -12,6 +11,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
+import type { Notification } from '@/lib/types/notification';
 
 export default function NotificationsPage() {
   const [page, setPage] = useState(1);
@@ -50,22 +50,17 @@ export default function NotificationsPage() {
   });
 
   const notifications = data?.notifications ?? [];
-  const hasUnread = notifications.some((n: any) => n.isRead === false);
+  const hasUnread = notifications.some((n: Notification) => n.isRead === false);
 
-  const getLink = (n: any) => {
+  const getLink = (n: Notification) => {
     const raceId = n.metadata?.raceId;
     if (raceId) return routes.races.detail(raceId);
     return null;
   };
 
   return (
-    <Layout title='알림 — GOLDEN RACE'>
-      <PageHeader
-        icon='Bell'
-        title='알림'
-        description='경주 결과, 포인트 만료 등 알림을 확인하세요.'
-      />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='알림' backHref={routes.profile.index} />
       {!isLoggedIn && <RequireLogin />}
 
       {isLoggedIn && (
@@ -91,7 +86,7 @@ export default function NotificationsPage() {
             loadingLabel='알림을 불러오는 중...'
           >
             <div className='space-y-3'>
-              {notifications.map((n: any) => {
+              {notifications.map((n: Notification) => {
                 const link = getLink(n);
                 const isUnread = !n.isRead;
 
@@ -161,15 +156,13 @@ export default function NotificationsPage() {
             <Pagination
               page={page}
               totalPages={data?.totalPages ?? 1}
-              onPrev={() => setPage((p) => Math.max(1, p - 1))}
-              onNext={() => setPage((p) => Math.min(data?.totalPages ?? 1, p + 1))}
+              onPageChange={(p) => setPage(p)}
               className='mt-6'
             />
           </DataFetchState>
           </>
         )}
 
-      <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

@@ -44,6 +44,7 @@
 | 알림 설정 관련 | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
 | 즐겨찾기 관련 | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
 | 출전마/KRA 데이터 적재 | `DATA_LOADING.md` + `guides/ADMIN_GUIDE.md` |
+| TypeScript/타입 안전성 | `COMPATIBILITY_RULES.md` §6 + `WEBAPP_DEVELOPMENT.md` §6 |
 
 ---
 
@@ -112,11 +113,19 @@ goldenrace/
 
 ---
 
-## TypeScript / 코드 규칙
+## TypeScript / 코드 규칙 (최우선)
 
-- **any 금지** — `unknown` + type guard
-- **에러**: `catch (err: unknown)` + `getErrorMessage(err)`
-- **인덱스 시그니처**: `Record<string, unknown>`
+### any 금지
+- **`any` 타입 사용 금지.** 모든 변수·매개변수·반환값에 각각의 구체적 타입을 반드시 적어야 함.
+- `unknown` + type guard 또는 명시적 타입 정의만 사용.
+- API 응답: `ApiResponseDto<T>` 또는 shared DTO 사용.
+- **에러**: `catch (err: unknown)` → `getErrorMessage(err)` (webapp: `lib/utils/error.ts`, admin: `lib/utils.ts`).
+- mutation.error: `getErrorMessage(mutation.error)` 또는 `(error as Error)?.message`.
+
+### 인덱스 시그니처·타입 단언
+- `[key: string]: any` → `[key: string]: unknown` 또는 구체적 타입.
+- 확장 가능 객체: `Record<string, unknown>`.
+- `as any` 금지. 필요한 경우 `as unknown as Type`.
 
 ---
 
@@ -133,6 +142,14 @@ goldenrace/
 - 탭바: `TabBar` (variant: filled|subtle, size: sm|md)
 - 뒤로가기: `BackLink`
 - 버튼: `btn-primary`, `btn-secondary`
+
+### 페이지네이션 · 목록→상세→뒤로가기
+- **Pagination**: `onPageChange(page: number)` 사용. 형식: `< 1 ... 2 3 4 ... 5 >`
+- **URL 동기화**: 목록→상세→뒤로가기 시 이전 페이지 복귀 — `page`를 `router.query`로 관리
+- 적용: `/races`, `/results`, `/mypage/picks`. 변경 시 `router.replace`로 query 갱신
+
+### 하단 네비게이션
+- **5개 고정**: 홈 / 경주 / 종합 / 결과 / 내 정보. 랭킹·알림·구독·설정은 내 정보 → 메뉴에서 진입
 
 ### 컴포넌트 구조
 - **page/**: PageHeader, SectionCard, DataFetchState, FormInput, BackLink, FilterDateBar, FilterChips, Pagination

@@ -5,9 +5,9 @@ import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
+import { getErrorMessage } from '@/lib/utils/error';
 import ConfigApi from '@/lib/api/configApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
@@ -49,8 +49,8 @@ export default function Register() {
         setAuth(res.accessToken, res.user);
         router.push(routes.home);
       }
-    } catch (err: any) {
-      setError('root', { message: err?.message || '회원가입에 실패했습니다.' });
+    } catch (err: unknown) {
+      setError('root', { message: getErrorMessage(err) });
     }
   };
 
@@ -62,16 +62,14 @@ export default function Register() {
         setAuth(res.accessToken, res.user);
         router.push(routes.home);
       }
-    } catch (err: any) {
-      setError('root', { message: err?.message || 'Google 로그인에 실패했습니다.' });
+    } catch (err: unknown) {
+      setError('root', { message: getErrorMessage(err) });
     }
   };
 
   return (
-    <Layout title='회원가입 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        <PageHeader icon='UserPlus' title='회원가입' />
-
         {showGoogleLogin && (
           <>
             <div className='mb-4'>

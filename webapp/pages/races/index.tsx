@@ -1,11 +1,9 @@
 /**
  * 전체 경주 목록 페이지 — 필터 + 테이블 + 페이지네이션
  */
-import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import FilterDateBar from '@/components/page/FilterDateBar';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -20,17 +18,24 @@ const RACES_PER_PAGE = 20;
 
 export default function RacesListPage() {
   const router = useRouter();
-  const [dateFilter, setDateFilter] = useState<string>('');
-  const [page, setPage] = useState(1);
+  const qDate = router.query?.date as string | undefined;
+  const dateFilter =
+    qDate === 'today'
+      ? 'today'
+      : qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))
+        ? qDate.includes('-')
+          ? qDate
+          : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`
+        : '';
+  const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
 
-  useEffect(() => {
-    const q = router.query?.date as string | undefined;
-    if (q === 'today') setDateFilter('today');
-    else if (q && /^\d{4}-?\d{2}-?\d{2}$/.test(q.replace(/-/g, ''))) {
-      const normalized = q.includes('-') ? q : `${q.slice(0, 4)}-${q.slice(4, 6)}-${q.slice(6, 8)}`;
-      setDateFilter(normalized);
-    }
-  }, [router.query?.date]);
+  const updateQuery = (updates: Record<string, string | number | undefined>) => {
+    const next = { ...router.query, ...updates };
+    Object.keys(updates).forEach((k) => {
+      if (updates[k] === undefined || updates[k] === '') delete next[k];
+    });
+    router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'list', dateFilter, page],
@@ -46,28 +51,17 @@ export default function RacesListPage() {
   });
 
   return (
-    <Layout title='전체 경주 — GOLDEN RACE'>
-      <BackLink href={routes.home} label='홈으로' className='mb-4' />
-      <PageHeader
-        icon='ClipboardList'
-        title='전체 경주'
-        description='날짜별 경주 목록을 확인할 수 있습니다.'
-      />
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='전체 경주' backHref={routes.home} />
       <FilterDateBar
         filterOptions={[
           { value: '', label: '전체' },
           { value: 'today', label: '오늘' },
         ]}
         filterValue={dateFilter === 'today' ? 'today' : dateFilter || ''}
-        onFilterChange={(v) => {
-          setDateFilter(v);
-          setPage(1);
-        }}
+        onFilterChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateValue={dateFilter && dateFilter !== 'today' ? dateFilter : ''}
-        onDateChange={(v) => {
-          setDateFilter(v || '');
-          setPage(1);
-        }}
+        onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateId='races-list-date'
       />
 
@@ -166,14 +160,14 @@ export default function RacesListPage() {
           ]}
           data={data?.races ?? []}
           getRowKey={(race) => race.id}
+          getRowHref={(race) => routes.races.detail(race.id)}
           rowClassName={() => 'group'}
-          className='text-[14px]'
+          className='data-table-kra text-[14px]'
         />
         <Pagination
           page={page}
           totalPages={data?.totalPages ?? 1}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => Math.min(data?.totalPages ?? 1, p + 1))}
+          onPageChange={(p) => updateQuery({ page: p })}
           className='mt-4'
         />
       </DataFetchState>

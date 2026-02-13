@@ -24,11 +24,22 @@ INSERT INTO "point_ticket_prices" ("pointsPerTicket", "isActive", "effectiveFrom
 SELECT 1200, true, NOW(), NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM "point_ticket_prices" LIMIT 1);
 
--- SubscriptionPlan (LIGHT, PREMIUM)
+-- SubscriptionPlan (라이트 / 스탠다드 / 프리미엄)
 INSERT INTO "subscription_plans" ("planName", "displayName", "description", "originalPrice", "vat", "totalPrice", "baseTickets", "bonusTickets", "totalTickets", "isActive", "sortOrder", "createdAt", "updatedAt") VALUES
-('LIGHT', '라이트', '주간 5장 예측권', 9900, 990, 10890, 5, 0, 5, true, 1, NOW(), NOW()),
-('PREMIUM', '프리미엄', '주간 15장 예측권 (월 2만원)', 19900, 1990, 21890, 15, 3, 18, true, 2, NOW(), NOW())
-ON CONFLICT ("planName") DO NOTHING;
+('LIGHT', '라이트', '월 5장 예측권', 9900, 990, 10890, 5, 0, 5, true, 1, NOW(), NOW()),
+('STANDARD', '스탠다드', '월 10장 예측권', 14900, 1490, 16390, 10, 0, 10, true, 2, NOW(), NOW()),
+('PREMIUM', '프리미엄', '월 18장 예측권 (15+3 보너스)', 19900, 1990, 21890, 15, 3, 18, true, 3, NOW(), NOW())
+ON CONFLICT ("planName") DO UPDATE SET
+  "displayName" = EXCLUDED."displayName",
+  "description" = EXCLUDED."description",
+  "originalPrice" = EXCLUDED."originalPrice",
+  "vat" = EXCLUDED."vat",
+  "totalPrice" = EXCLUDED."totalPrice",
+  "baseTickets" = EXCLUDED."baseTickets",
+  "bonusTickets" = EXCLUDED."bonusTickets",
+  "totalTickets" = EXCLUDED."totalTickets",
+  "sortOrder" = EXCLUDED."sortOrder",
+  "updatedAt" = NOW();
 
 -- GlobalConfig (기능 플래그)
 INSERT INTO "global_config" ("key", "value", "updatedAt") VALUES

@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import CONFIG from '../config';
 import { emitUnauthorized } from '@/lib/authEvents';
 
@@ -35,16 +35,21 @@ axiosInstance.interceptors.response.use(
   },
 );
 
-export const handleApiResponse = <T>(response: AxiosResponse<any>): T => {
-  return response.data?.data ?? response.data;
+export const handleApiResponse = <T>(response: AxiosResponse<unknown>): T => {
+  const data = response.data as Record<string, unknown> | T;
+  if (data && typeof data === 'object' && 'data' in data) {
+    return (data as { data: T }).data;
+  }
+  return data as T;
 };
 
-export const handleApiError = (error: any): never => {
-  if (error.response) {
-    throw {
-      status: error.response.status,
-      message: error.response.data?.message || '서버 오류가 발생했습니다.',
-    };
+export const handleApiError = (error: unknown): never => {
+  if (error && typeof error === 'object' && 'response' in error) {
+    const axiosErr = error as AxiosError<{ message?: string }>;
+    const status = (axiosErr.response as { status?: number })?.status;
+    const message = (axiosErr.response?.data as { message?: string })?.message ?? '서버 오류가 발생했습니다.';
+    throw { status, message };
   }
-  throw new Error(error.message || '알 수 없는 오류가 발생했습니다.');
+  const msg = error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.';
+  throw new Error(msg);
 };

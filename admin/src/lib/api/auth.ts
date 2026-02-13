@@ -19,11 +19,12 @@ export interface LoginResponse {
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await axiosInstance.post<{ data?: LoginResponse } & LoginResponse>(
+    const response = await axiosInstance.post<{ data?: LoginResponse } | LoginResponse>(
       '/auth/login',
       data
     );
-    const payload = (response.data as any)?.data ?? response.data;
+    const raw = response.data as { data?: LoginResponse } | LoginResponse;
+    const payload = (raw as { data?: LoginResponse })?.data ?? (raw as LoginResponse);
 
     if (payload?.accessToken && typeof window !== 'undefined') {
       localStorage.setItem('accessToken', payload.accessToken);
@@ -45,7 +46,8 @@ export const authApi = {
 
   refreshToken: async (refreshToken: string): Promise<LoginResponse> => {
     const response = await axiosInstance.post<LoginResponse>('/auth/refresh', { refreshToken });
-    const payload = (response.data as any)?.data ?? response.data;
+    const raw = response.data as { data?: LoginResponse } | LoginResponse;
+    const payload = (raw as { data?: LoginResponse })?.data ?? (raw as LoginResponse);
     return payload;
   },
 

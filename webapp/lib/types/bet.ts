@@ -57,12 +57,12 @@ export interface Bet {
   confidenceLevel?: number;
   betReason?: string;
   analysisData?: {
-    horseForm: Record<string, any>;
+    horseForm: Record<string, unknown>;
     trackCondition: string;
     weather: string;
-    jockeyForm: Record<string, any>;
-    trainerForm: Record<string, any>;
-    historicalPerformance: Record<string, any>;
+    jockeyForm: Record<string, unknown>;
+    trainerForm: Record<string, unknown>;
+    historicalPerformance: Record<string, unknown>;
   };
   apiVersion: string;
   dataSource: string;
@@ -128,7 +128,7 @@ export interface BetStatistics {
   roi: number;
   averageBetAmount: number;
   favoriteBetType?: string;
-  recentPerformance?: any[];
+  recentPerformance?: Record<string, unknown>[];
   totalAmount?: number;
   averageOdds?: number;
   byType?: Record<BetType, { count: number; amount: number; winnings: number }>;

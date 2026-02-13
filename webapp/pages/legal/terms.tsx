@@ -1,18 +1,13 @@
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
 import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { routes } from '@/lib/routes';
 
 export default function TermsPage() {
   return (
-    <Layout title='서비스 이용 약관 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-2xl mx-auto'>
-        <PageHeader
-          icon='AlertCircle'
-          title='서비스 이용 약관'
-          description='GOLDEN RACE AI 경마 예측 서비스 이용 약관입니다.'
-        />
-
+        <CompactPageTitle title='서비스 이용 약관' backHref={routes.home} />
         <div className='card space-y-6 text-sm text-foreground'>
           <section>
             <h2 className='text-base font-semibold mb-2'>1. 서비스 개요</h2>

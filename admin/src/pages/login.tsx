@@ -26,9 +26,11 @@ export default function LoginPage() {
       // 쿠키/스토어 반영 후 전체 페이지 로드로 이동 (미들웨어 인식 보장)
       const redirect = (router.query.redirect as string) || '/';
       window.location.href = redirect.startsWith('/') ? redirect : `/${redirect}`;
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Login error:', err);
-      const msg = err.response?.data?.message;
+      const msg = err && typeof err === 'object' && 'response' in err
+        ? (err as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
+        : undefined;
       const text = Array.isArray(msg) ? msg.join(', ') : msg;
       setError(text || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
     } finally {

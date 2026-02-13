@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Pagination from '@/components/page/Pagination';
 import { DataTable } from '@/components/ui';
-import BackLink from '@/components/page/BackLink';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
 import PointApi from '@/lib/api/pointApi';
@@ -46,22 +45,16 @@ export default function PointTransactionsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='포인트 거래 내역 — GOLDEN RACE'>
-        <PageHeader icon='Gem' title='포인트 거래 내역' description='포인트 적립·사용 내역입니다.' />
+      <Layout title='GOLDEN RACE'>
+        <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
         <RequireLogin />
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </Layout>
     );
   }
 
   return (
-    <Layout title='포인트 거래 내역 — GOLDEN RACE'>
-      <PageHeader
-        icon='Gem'
-        title='포인트 거래 내역'
-        description='포인트 적립·사용 내역입니다.'
-      />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
         error={error as Error | null}
@@ -85,13 +78,10 @@ export default function PointTransactionsPage() {
         <Pagination
           page={page}
           totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          onPageChange={(p) => setPage(p)}
           className='mt-6'
         />
       </DataFetchState>
-
-      <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

@@ -313,7 +313,7 @@ enum TicketStatus {
 // ============================================
 model SubscriptionPlan {
   id            Int      @id @default(autoincrement())
-  planName      String   @unique // LIGHT, PREMIUM
+  planName      String   @unique // LIGHT, STANDARD, PREMIUM
   displayName   String
   description   String?
   originalPrice Int

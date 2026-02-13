@@ -65,3 +65,23 @@ interface ApiResponse<T> {
 
 - **Client**: Prefix with `EXPO_PUBLIC_` for variables exposed to the mobile app.
 - **Server**: Use standard `.env` variables safely accessed via `ConfigService`.
+
+## 6. TypeScript Type Safety (필수)
+
+### any 금지
+- **`any` 타입 사용 금지.** 모든 변수·매개변수·반환값에 구체적 타입을 반드시 명시.
+- `unknown` + type guard 또는 명시적 타입 정의만 사용.
+- API 응답: `ApiResponseDto<T>` 또는 shared DTO 사용.
+
+### 에러 처리
+- `catch (err: unknown)` 사용. `catch (err: any)` 금지.
+- mutation.error: `getErrorMessage(err)` 유틸 사용.
+- 예: `webapp/lib/utils/error.ts`, `admin/src/lib/utils.ts` — `getErrorMessage(err: unknown): string`
+
+### 인덱스 시그니처
+- `[key: string]: any` → `[key: string]: unknown` 또는 구체적 타입.
+- 확장 객체: `Record<string, unknown>`.
+
+### 타입 단언
+- `as any` 금지. 필요한 경우 `as unknown as Type`.
+- `handleApiResponse<T>(response)` 제네릭으로 반환 타입 명시.

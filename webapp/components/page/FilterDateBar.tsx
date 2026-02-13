@@ -5,7 +5,7 @@
 import FilterChips from './FilterChips';
 
 const dateInputClass =
-  'h-9 px-2.5 rounded-lg text-sm border border-border bg-card text-foreground focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[120px] max-w-[150px] transition-all duration-200';
+  'min-h-[44px] sm:h-9 px-2.5 rounded-lg text-sm border border-border bg-card text-foreground focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[110px] sm:min-w-[120px] max-w-[150px] transition-all duration-200';
 
 export interface FilterDateBarProps {
   /** 필터 옵션 (전체/오늘 등) */

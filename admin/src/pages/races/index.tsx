@@ -39,16 +39,17 @@ export default function RacesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('출전표 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
   });
 
   const seedSampleMutation = useMutation({
     mutationFn: (date?: string) => adminKraApi.seedSample(date),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      toast.success(`샘플 데이터 적재 완료: ${res?.races ?? 0}경주, ${res?.entries ?? 0}건`);
+      const r = res as { races?: number; entries?: number };
+      toast.success(`샘플 데이터 적재 완료: ${r?.races ?? 0}경주, ${r?.entries ?? 0}건`);
     },
-    onError: (err: any) => toast.error(err?.message || '샘플 적재 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '샘플 적재 실패'),
   });
 
   const syncResultsMutation = useMutation({
@@ -57,7 +58,7 @@ export default function RacesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('경주 결과 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
   });
 
   const syncDetailsMutation = useMutation({
@@ -66,16 +67,16 @@ export default function RacesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('상세정보(훈련·장구 등) 동기화 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
   });
 
   const syncAllMutation = useMutation({
     mutationFn: (date: string) => adminKraApi.syncAll(date),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      toast.success(res?.message || '전체 적재 완료');
+      toast.success((res as { message?: string })?.message ?? '전체 적재 완료');
     },
-    onError: (err: any) => toast.error(err?.message || '전체 적재 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '전체 적재 실패'),
   });
 
   const [histFrom, setHistFrom] = useState('20230101');
@@ -86,13 +87,12 @@ export default function RacesPage() {
   const syncHistoricalMutation = useMutation({
     mutationFn: ({ from, to }: { from: string; to: string }) =>
       adminKraApi.syncHistorical(from, to),
-    onSuccess: (res: any) => {
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      toast.success(
-        `과거 데이터 적재 완료: ${res?.processed ?? 0}일, ${res?.totalResults ?? 0}건 결과`
-      );
+      const r = res as { processed?: number; totalResults?: number };
+      toast.success(`과거 데이터 적재 완료: ${r?.processed ?? 0}일, ${r?.totalResults ?? 0}건 결과`);
     },
-    onError: (err: any) => toast.error(err?.message || '과거 데이터 적재 실패'),
+    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '과거 데이터 적재 실패'),
   });
 
   const { data, isLoading } = useQuery({

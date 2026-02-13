@@ -46,7 +46,7 @@ export default class PointApi {
   }> {
     if (CONFIG.useMock) return mockPointsBalance;
     try {
-      const response = await axiosInstance.get<ApiResponse<any>>('/points/me/balance');
+      const response = await axiosInstance.get<ApiResponse<UserPointBalance>>('/points/me/balance');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -58,12 +58,7 @@ export default class PointApi {
     page?: number;
     limit?: number;
     type?: string;
-  }): Promise<{
-    transactions: any[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
+  }): Promise<PointListResponse> {
     if (CONFIG.useMock) {
       return { transactions: [], total: 0, page: 1, totalPages: 1 };
     }
@@ -73,7 +68,7 @@ export default class PointApi {
         arrayFormat: 'brackets',
         addQueryPrefix: true,
       });
-      const response = await axiosInstance.get<ApiResponse<any>>(
+      const response = await axiosInstance.get<ApiResponse<PointListResponse>>(
         `/points/me/transactions${queryString}`,
       );
       return handleApiResponse(response);
@@ -95,7 +90,7 @@ export default class PointApi {
   }
 
   static async purchaseTicket(quantity: number): Promise<{
-    tickets: any[];
+    tickets: { id: string }[];
     pointsSpent: number;
     remainingPoints: number;
   }> {
@@ -109,7 +104,7 @@ export default class PointApi {
       };
     }
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/points/purchase-ticket', {
+      const response = await axiosInstance.post<ApiResponse<{ tickets: { id: string }[]; pointsSpent: number; remainingPoints: number }>>('/points/purchase-ticket', {
         quantity,
       });
       return handleApiResponse(response);

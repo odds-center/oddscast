@@ -5,9 +5,9 @@ import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
+import { getErrorMessage } from '@/lib/utils/error';
 import ConfigApi from '@/lib/api/configApi';
 import CONFIG from '@/lib/config';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -43,8 +43,8 @@ export default function Login() {
         setAuth(res.accessToken, res.user);
         router.push(routes.home);
       }
-    } catch (err: any) {
-      setError('root', { message: err?.message || '로그인에 실패했습니다.' });
+    } catch (err: unknown) {
+      setError('root', { message: getErrorMessage(err) });
     }
   };
 
@@ -56,19 +56,14 @@ export default function Login() {
         setAuth(res.accessToken, res.user);
         router.push(routes.home);
       }
-    } catch (err: any) {
-      setError('root', { message: err?.message || 'Google 로그인에 실패했습니다.' });
+    } catch (err: unknown) {
+      setError('root', { message: getErrorMessage(err) });
     }
   };
 
   return (
-    <Layout title='로그인 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        <PageHeader
-          icon='LogIn'
-          title='로그인'
-          description='AI 경마 예측 서비스를 이용하세요'
-        />
         {CONFIG.useMock && (
           <p className='text-text-secondary text-sm mb-4 p-3 rounded-lg bg-secondary border border-border'>
             데모: demo@goldenrace.com / demo123

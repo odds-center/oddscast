@@ -130,7 +130,7 @@ export default function SubscriptionPlansPage() {
         <div className='space-y-4'>
           <PageHeader title='구독 플랜 관리' />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-4'>
             {plans &&
               plans.map((plan) => (
                 <div key={plan.id} className='bg-white rounded-md shadow p-4'>

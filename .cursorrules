@@ -24,7 +24,7 @@
 - `docs/specs/COST_ANALYSIS.md` — Gemini API 비용 분석 & 서버 캐싱 전략
 
 ### 🎨 UI 패턴 (프론트엔드 작업 시 참조)
-- `docs/features/UI_PATTERNS.md` — 공용 테이블, 페이지네이션, TabBar, LinkBadge, FilterDateBar
+- `docs/features/UI_PATTERNS.md` — 공용 테이블, 페이지네이션(1…2 3 4…5), TabBar, LinkBadge, FilterDateBar, URL 동기화
 
 ### ⚖️ 법적 고지
 - `docs/legal/LEGAL_NOTICE.md` — 서비스 법적 고지사항
@@ -41,12 +41,13 @@
 | **모바일 API 호출 추가** | `API_SPECIFICATION.md` + `PROJECT_STRUCTURE.md` |
 | **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
 | **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
-| **결제/구독 관련** | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` |
+| **결제/구독 관련** | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` + `PREDICTION_TICKET_PRICING_SIMULATION.md` |
 | **AI 예측 관련** | `BUSINESS_LOGIC.md` + `HORSE_RACING_SPEC.md` |
 | **알림 설정 관련** | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
 | **즐겨찾기 관련** | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
 | **UI 컴포넌트/테이블/페이지네이션** | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md` |
 | **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` |
+| **TypeScript/타입 안전성** | `COMPATIBILITY_RULES.md` §6, `WEBAPP_DEVELOPMENT.md` §6 |
 
 ---
 
@@ -131,11 +132,14 @@ goldenrace/
 
 ## 📐 TypeScript / 코드 규칙 (필수)
 
-### any 금지
-- **`any` 타입 사용 금지.** `unknown` + type guard 또는 명시적 타입 정의 사용.
+> 상세: `docs/CURSOR_RULES.md`, `docs/COMPATIBILITY_RULES.md` §6, `docs/guides/WEBAPP_DEVELOPMENT.md` §6
+
+### any 금지 (최우선 규칙)
+- **`any` 타입 사용 금지.** 모든 변수·매개변수·반환값에 각각의 구체적 타입을 반드시 적어야 함.
+- `unknown` + type guard 또는 명시적 타입 정의만 사용.
 - API 응답: `ApiResponseDto<T>` 또는 shared DTO 사용.
 - 에러: `catch (err: unknown)` → `err instanceof Error ? err.message : String(err)` 패턴.
-- mutation.error: `(error as Error)?.message` 또는 유틸 함수 사용.
+- mutation.error: `getErrorMessage(error)` 또는 `(error as Error)?.message` 유틸 사용.
 
 ### 타입 정의 위치
 - **공통 타입**: `shared/types/` — webapp·mobile·admin·server 공용.
@@ -237,7 +241,9 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 - **버튼**: `btn-primary`, `btn-secondary` 등 globals.css에 정의된 클래스 사용.
 - **테이블**: `DataTable` 컴포넌트 사용. columns 정의로 일관된 테이블. 셀 내 경주/결과 링크는 `LinkBadge` 사용.
 - **탭바**: 세그먼트 스타일 탭은 `TabBar` 사용 (`variant`: filled|subtle, `size`: sm|md).
-- **뒤로가기**: `BackLink` 사용 (커스텀 `← 텍스트` 링크 대신).
+- **페이지네이션**: `Pagination` — `onPageChange(page)`. 형식: `< 1 ... 2 3 4 ... 5 >`. 목록→상세→뒤로가기 복귀 시 `page`를 `router.query`로 URL 동기화 (races, results, picks).
+- **뒤로가기**: `BackLink` 사용. 내 정보 하위 페이지(알림·예측권·포인트 등)에서는 "내 정보로" BackLink 미사용 — CompactPageTitle 뒤로가기로 충분.
+- **CompactPageTitle 모바일**: `sticky top-0` GNB 스타일 (뒤로가기+제목 상단 고정).
 - **메시지**: `msg-error`, `msg-success`.
 - **반응형**: `lg:`, `sm:` 브레이크포인트 활용.
 
@@ -261,6 +267,7 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 
 ### 컴포넌트 구조
 
+- **하단 네비**: 5개 고정 (홈/경주/종합/결과/내 정보). 랭킹·알림·구독·설정은 내 정보 메뉴에서 진입.
 - **page/**: 페이지 공통 (`PageHeader`, `SectionCard`, `DataFetchState`, `FormInput`, `BackLink`, `FilterDateBar`, `FilterChips`, `Pagination` 등).
 - **ui/**: 범용 UI (`Card`, `Badge`, `Toggle`, `Dropdown`, `SectionTitle`, `TabBar`, `LinkBadge`, `StatusBadge`, `RankBadge` 등).
 - **도메인별**: `race/`, `results/`, `predictions/` — 해당 도메인 전용.

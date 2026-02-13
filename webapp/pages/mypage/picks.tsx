@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Pagination from '@/components/page/Pagination';
-import BackLink from '@/components/page/BackLink';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable } from '@/components/ui';
 import Link from 'next/link';
@@ -13,8 +12,17 @@ import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 
 export default function PicksPage() {
-  const [page, setPage] = useState(1);
+  const router = useRouter();
+  const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+
+  const updateQuery = (updates: Record<string, string | number | undefined>) => {
+    const next = { ...router.query, ...updates };
+    Object.keys(updates).forEach((k) => {
+      if (updates[k] === undefined || updates[k] === '') delete next[k];
+    });
+    router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['picks', page],
@@ -23,13 +31,8 @@ export default function PicksPage() {
   });
 
   return (
-    <Layout title='내가 고른 말 — GOLDEN RACE'>
-      <PageHeader
-        icon='Bookmark'
-        title='내가 고른 말'
-        description='경주별로 고른 말을 저장한 기록입니다. (사행성 없음 — 기록만 저장)'
-      />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='내가 고른 말' backHref={routes.profile.index} />
       {!isLoggedIn && <RequireLogin />}
 
         {isLoggedIn && (
@@ -65,18 +68,16 @@ export default function PicksPage() {
               ]}
               data={data?.picks ?? []}
               getRowKey={(pick) => pick.id}
+              getRowHref={(pick) => routes.races.detail(pick.raceId)}
             />
             <Pagination
-          page={page}
-          totalPages={data?.totalPages ?? 1}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => Math.min(data?.totalPages ?? 1, p + 1))}
-          className='mt-6'
-        />
+              page={page}
+              totalPages={data?.totalPages ?? 1}
+              onPageChange={(p) => updateQuery({ page: p })}
+              className='mt-6'
+            />
           </DataFetchState>
         )}
-
-        <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

@@ -1,6 +1,7 @@
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import FilterDateBar from '@/components/page/FilterDateBar';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -28,8 +29,25 @@ interface GroupedRace {
 }
 
 export default function Results() {
-  const [page, setPage] = useState(1);
-  const [dateFilter, setDateFilter] = useState<string>('');
+  const router = useRouter();
+  const qDate = router.query?.date as string | undefined;
+  const dateFilter =
+    qDate === 'today'
+      ? 'today'
+      : qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))
+        ? qDate.includes('-')
+          ? qDate
+          : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`
+        : '';
+  const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
+
+  const updateQuery = (updates: Record<string, string | number | undefined>) => {
+    const next = { ...router.query, ...updates };
+    Object.keys(updates).forEach((k) => {
+      if (updates[k] === undefined || updates[k] === '') delete next[k];
+    });
+    router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
+  };
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['results', page, dateFilter],
@@ -105,14 +123,14 @@ export default function Results() {
   }
 
   return (
-    <Layout title='경주 결과 — GOLDEN RACE'>
-      <PageHeader icon='TrendingUp' title='경주 결과' description='종료된 경주의 결과를 확인할 수 있습니다.' />
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='경주 결과' />
       <FilterDateBar
         filterOptions={[{ value: '', label: '전체' }]}
         filterValue={dateFilter || ''}
-        onFilterChange={(v) => { setDateFilter(v); setPage(1); }}
+        onFilterChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateValue={dateFilter}
-        onDateChange={(v) => { setDateFilter(v); setPage(1); }}
+        onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateId='result-date'
       />
 
@@ -142,6 +160,7 @@ export default function Results() {
           ]}
           data={groupedRaces}
           getRowKey={(row) => row.raceId}
+          getRowHref={(row) => routes.resultsDetail(row.raceId)}
           rowClassName={() => 'group'}
           className='text-[14px]'
         />
@@ -149,8 +168,7 @@ export default function Results() {
         <Pagination
           page={page}
           totalPages={totalPages}
-          onPrev={() => setPage((p) => Math.max(1, p - 1))}
-          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          onPageChange={(p) => updateQuery({ page: p })}
           className='mt-4'
         />
       </DataFetchState>

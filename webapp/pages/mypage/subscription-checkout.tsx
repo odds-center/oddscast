@@ -8,7 +8,7 @@ import { useRouter } from 'next/router';
 import { useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -87,15 +87,15 @@ export default function SubscriptionCheckoutPage() {
 
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
       setStep('success');
-    } catch (err: any) {
+    } catch (err: unknown) {
       setStep('error');
-      setErrorMsg(err?.message || '결제 처리에 실패했습니다.');
+      setErrorMsg(err instanceof Error ? err.message : '결제 처리에 실패했습니다.');
     }
   };
 
   if (!isLoggedIn) {
     return (
-      <Layout title='구독 결제 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto'>
           <p className='text-text-secondary mb-6'>
             <Link href={routes.auth.login} className='link-primary'>
@@ -111,7 +111,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'loading') {
     return (
-      <Layout title='구독 결제 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='flex justify-center py-12'>
           <LoadingSpinner size={28} label='플랜 정보를 불러오는 중...' />
         </div>
@@ -121,7 +121,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'error') {
     return (
-      <Layout title='구독 결제 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto'>
           <EmptyState icon='AlertCircle' title='오류' description={errorMsg} />
           <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block text-center' />
@@ -132,7 +132,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'success') {
     return (
-      <Layout title='구독 완료 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto text-center'>
           <div className='card border-primary/50 mb-6'>
             <Icon name='CheckCircle' size={48} className='text-success mx-auto mb-3' />
@@ -156,10 +156,9 @@ export default function SubscriptionCheckoutPage() {
   if (!plan) return null;
 
   return (
-    <Layout title='구독 결제 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-md mx-auto'>
-        <PageHeader icon='Crown' title='구독 결제' />
-
+        <CompactPageTitle title='구독 결제' backHref={routes.mypage.subscriptions} />
         <SectionCard className='mb-6'>
           <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
           <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>

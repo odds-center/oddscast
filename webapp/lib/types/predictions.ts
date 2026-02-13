@@ -143,5 +143,5 @@ export interface AnalyticsDashboard {
   };
   daily: DailyPredictionStats[];
   models: ModelPerformance[];
-  recentFailures: any[];
+  recentFailures: Record<string, unknown>[];
 }

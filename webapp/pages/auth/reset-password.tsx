@@ -5,9 +5,9 @@ import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import BackLink from '@/components/page/BackLink';
 import Icon from '@/components/icons';
-import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
+import { getErrorMessage } from '@/lib/utils/error';
 import { useMutation } from '@tanstack/react-query';
 
 type ResetPasswordForm = {
@@ -33,8 +33,8 @@ export default function ResetPasswordPage() {
     onSuccess: () => {
       router.push(routes.auth.login);
     },
-    onError: (err: any) => {
-      setError('root', { message: err?.message || '비밀번호 재설정에 실패했습니다.' });
+    onError: (err: unknown) => {
+      setError('root', { message: getErrorMessage(err) });
     },
   });
 
@@ -50,13 +50,9 @@ export default function ResetPasswordPage() {
 
   if (!token && typeof window !== 'undefined' && router.isReady) {
     return (
-      <Layout title='비밀번호 재설정 — GOLDEN RACE'>
+      <Layout title='GOLDEN RACE'>
         <div className='max-w-sm md:max-w-md mx-auto'>
-          <PageHeader
-            icon='AlertCircle'
-            title='링크가 올바르지 않습니다'
-            description='비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.'
-          />
+          <p className='text-text-secondary text-sm mb-4'>비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.</p>
           <Link href={routes.auth.forgotPassword} className='btn-primary inline-flex items-center gap-2'>
             <Icon name='Mail' size={18} />
             비밀번호 찾기
@@ -67,14 +63,8 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Layout title='비밀번호 재설정 — GOLDEN RACE'>
+    <Layout title='GOLDEN RACE'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        <PageHeader
-          icon='Key'
-          title='비밀번호 재설정'
-          description='새 비밀번호를 입력해주세요. (6자 이상)'
-        />
-
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <FormInput
             label='새 비밀번호'

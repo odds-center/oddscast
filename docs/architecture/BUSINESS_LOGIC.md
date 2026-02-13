@@ -126,8 +126,7 @@ flowchart LR
 
 | 획득 방법      | 수량                       | 만료         |
 | -------------- | -------------------------- | ------------ |
-| 구독 (LIGHT)   | 플랜에 정의된 totalTickets | 구독 기간 내 |
-| 구독 (PREMIUM) | 플랜에 정의된 totalTickets | 구독 기간 내 |
+| 구독 (LIGHT/STANDARD/PREMIUM) | 플랜에 정의된 totalTickets | 구독 기간 내 |
 | 개별 구매      | 구매 수량                  | 30일 후 만료 |
 
 ### 2.2 예측권 사용 플로우
@@ -161,8 +160,7 @@ AVAILABLE → (기간 만료) → EXPIRED
 
 | 획득 방법      | 수량                       | 만료         |
 | -------------- | -------------------------- | ------------ |
-| 구독 (LIGHT)   | 플랜에 정의된 totalTickets | 구독 기간 내 |
-| 구독 (PREMIUM) | 플랜에 정의된 totalTickets | 구독 기간 내 |
+| 구독 (LIGHT/STANDARD/PREMIUM) | 플랜에 정의된 totalTickets | 구독 기간 내 |
 | 개별 구매      | 구매 수량                  | 30일 후 만료 |
 | **포인트 구매**| 1장=1200pt                 | 30일 후 만료 |
 

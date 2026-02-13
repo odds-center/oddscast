@@ -13,13 +13,16 @@ interface TableProps<T> {
   columns: Column<T>[];
   isLoading?: boolean;
   emptyMessage?: string;
+  /** 행 고유 키 (없으면 index 사용) */
+  getRowKey?: (item: T, index: number) => string | number;
 }
 
-export default function Table<T extends Record<string, any>>({
+export default function Table<T extends object>({
   data,
   columns,
   isLoading = false,
   emptyMessage = '데이터가 없습니다.',
+  getRowKey,
 }: TableProps<T>) {
   if (isLoading) {
     return (
@@ -57,13 +60,13 @@ export default function Table<T extends Record<string, any>>({
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
           {data.map((item, index) => (
-            <tr key={index} className='hover:bg-gray-50'>
+            <tr key={getRowKey ? getRowKey(item, index) : index} className='hover:bg-gray-50'>
               {columns.map((column) => (
                 <td
                   key={column.key}
                   className={cn('px-4 py-2.5 whitespace-nowrap text-sm', column.className)}
                 >
-                  {column.render ? column.render(item) : item[column.key]}
+                  {column.render ? column.render(item) : (item as Record<string, ReactNode>)[column.key]}
                 </td>
               ))}
             </tr>

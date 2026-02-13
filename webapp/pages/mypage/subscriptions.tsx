@@ -1,14 +1,15 @@
 import Layout from '@/components/Layout';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Icon from '@/components/icons';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
-import PageHeader from '@/components/page/PageHeader';
 import SectionCard from '@/components/page/SectionCard';
-import BackLink from '@/components/page/BackLink';
 import { routes } from '@/lib/routes';
 import SubscriptionPlansApi from '@/lib/api/subscriptionPlansApi';
+import type { SubscriptionPlan } from '@/lib/api/subscriptionPlansApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
+import type { SubscriptionHistoryItem } from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
@@ -42,23 +43,18 @@ export default function SubscriptionsPage() {
   });
 
   return (
-    <Layout title='구독 — GOLDEN RACE'>
-      <PageHeader
-        icon='Crown'
-        title='구독 플랜'
-        description='구독으로 매월 예측권을 받아 AI 예측을 이용하세요.'
-      />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='구독 플랜' backHref={routes.profile.index} />
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm mb-6'>
             <Link href={routes.auth.login} className='link-primary'>로그인</Link> 후 구독할 수 있습니다.
           </p>
         )}
 
-        {isLoggedIn && Array.isArray((history as any)?.subscriptions) && (history as any).subscriptions.length > 0 && (
+        {isLoggedIn && Array.isArray(history?.subscriptions) && history.subscriptions.length > 0 && (
           <SectionCard title='구독 이력' icon='Crown' className='mb-6'>
             <div className='space-y-2 max-h-40 overflow-y-auto'>
-              {(history as any).subscriptions.slice(0, 5).map((h: any) => (
+              {history.subscriptions.slice(0, 5).map((h: SubscriptionHistoryItem) => (
                 <div
                   key={h.id}
                   className='flex items-center justify-between py-2 border-b border-border last:border-0 text-sm'
@@ -120,7 +116,7 @@ export default function SubscriptionsPage() {
           />
         ) : (
           <div className='space-y-4'>
-            {(plans ?? []).map((plan: any) => (
+            {(plans ?? []).map((plan: SubscriptionPlan) => (
               <SectionCard key={plan.id}>
                 <div className='flex justify-between items-start gap-2'>
                   <div>
@@ -153,8 +149,6 @@ export default function SubscriptionsPage() {
             )}
           </div>
         )}
-
-        <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

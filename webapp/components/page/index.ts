@@ -2,6 +2,7 @@
  * 페이지 레이아웃/공통 컴포넌트
  */
 export { default as BackLink } from './BackLink';
+export { default as CompactPageTitle } from './CompactPageTitle';
 export { default as RequireLogin } from './RequireLogin';
 export { default as DataFetchState } from './DataFetchState';
 export { default as FilterChips } from './FilterChips';

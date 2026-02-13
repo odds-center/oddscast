@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -9,7 +9,7 @@ import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { adminResultsApi } from '@/lib/api/admin';
-import { formatDate } from '@/lib/utils';
+import { formatDate, getErrorMessage } from '@/lib/utils';
 
 interface RaceResult {
   id?: string;
@@ -28,8 +28,12 @@ interface RaceResult {
   trName: string;
   rcTime: string;
   chaksun1?: number;
+  rcRank?: string;
+  rcPrize?: number;
   createdAt: string;
 }
+
+type ResultUpdateDto = { ord?: string; rcTime?: string; chaksun1?: number };
 
 // 결과 수정 모달
 function EditResultModal({
@@ -40,12 +44,12 @@ function EditResultModal({
 }: {
   result: RaceResult;
   onClose: () => void;
-  onSave: (dto: { ord?: string; rcTime?: string; chaksun1?: number }) => void;
+  onSave: (dto: ResultUpdateDto) => void;
   isPending: boolean;
 }) {
-  const [ord, setOrd] = useState(result.ord || (result as any).rcRank || '');
+  const [ord, setOrd] = useState(result.ord || result.rcRank || '');
   const [rcTime, setRcTime] = useState(result.rcTime || '');
-  const [chaksun1, setChaksun1] = useState(String(result.chaksun1 ?? (result as any).rcPrize ?? ''));
+  const [chaksun1, setChaksun1] = useState(String(result.chaksun1 ?? result.rcPrize ?? ''));
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
@@ -104,7 +108,16 @@ function CreateResultModal({
   isPending,
 }: {
   onClose: () => void;
-  onSave: (dto: any) => void;
+  onSave: (dto: {
+    raceId: string;
+    hrNo: string;
+    hrName: string;
+    jkName?: string;
+    trName?: string;
+    ord?: string;
+    rcTime?: string;
+    chaksun1?: number;
+  }) => void;
   isPending: boolean;
 }) {
   const [raceId, setRaceId] = useState('');
@@ -230,45 +243,99 @@ function CreateResultModal({
 }
 
 // API 응답을 RaceResult 형식으로 정규화
-function normalizeResult(raw: any): RaceResult {
-  const race = raw.race || {};
+function normalizeResult(raw: Record<string, unknown>): RaceResult {
+  const race = (raw.race as Record<string, unknown>) || {};
   return {
-    id: raw.id,
-    resultId: raw.id || raw.resultId,
-    raceId: raw.raceId,
-    rcDate: race.rcDate || raw.rcDate || '',
-    rcNo: race.rcNo || raw.rcNo || '',
-    rcName: race.rcName || race.raceName || raw.rcName || '',
-    meet: race.meet || raw.meet || '',
-    meetName: race.meetName || raw.meetName || '',
-    rcDist: raw.rcDist || '',
-    ord: raw.ord || raw.rcRank || '',
-    hrName: raw.hrName || '',
-    hrNo: raw.hrNo || '',
-    jkName: raw.jkName || '',
-    trName: raw.trName || '',
-    rcTime: raw.rcTime || '',
-    chaksun1: raw.chaksun1 ?? raw.rcPrize,
-    createdAt: raw.createdAt,
+    id: raw.id as string,
+    resultId: (raw.id ?? raw.resultId) as string,
+    raceId: String(raw.raceId ?? ''),
+    rcDate: String(race.rcDate ?? raw.rcDate ?? ''),
+    rcNo: String(race.rcNo ?? raw.rcNo ?? ''),
+    rcName: String(race.rcName ?? race.raceName ?? raw.rcName ?? ''),
+    meet: String(race.meet ?? raw.meet ?? ''),
+    meetName: String(race.meetName ?? raw.meetName ?? ''),
+    rcDist: String(raw.rcDist ?? ''),
+    ord: String(raw.ord ?? raw.rcRank ?? ''),
+    hrName: String(raw.hrName ?? ''),
+    hrNo: String(raw.hrNo ?? ''),
+    jkName: String(raw.jkName ?? ''),
+    trName: String(raw.trName ?? ''),
+    rcTime: String(raw.rcTime ?? ''),
+    chaksun1: (raw.chaksun1 ?? raw.rcPrize) as number | undefined,
+    createdAt: raw.createdAt as string,
   };
 }
+
+// 경주별 결과 그룹화 (웹앱과 동일 — 1·2·3위 한 행)
+interface GroupedRace {
+  raceId: string;
+  meetName: string;
+  rcNo: string;
+  rcDate: string;
+  rcDist: string;
+  results: RaceResult[];
+}
+
+function groupResultsByRace(raw: RaceResult[]): GroupedRace[] {
+  const byRace = new Map<string, { meetName: string; rcNo: string; rcDate: string; rcDist: string; results: RaceResult[] }>();
+
+  for (const r of raw) {
+    const ord = parseInt(r.ord ?? '99', 10) || 99;
+    if (ord > 3) continue;
+
+    const raceId = String(r.raceId ?? '');
+    const meetName = r.meetName || r.meet || '-';
+    const rcNo = r.rcNo || '-';
+    const rcDate = r.rcDate || '';
+    const rcDist = r.rcDist || '';
+
+    if (!byRace.has(raceId)) {
+      byRace.set(raceId, { meetName, rcNo, rcDate, rcDist, results: [] });
+    }
+    byRace.get(raceId)!.results.push(r);
+  }
+
+  const list: GroupedRace[] = [];
+  for (const [raceId, { meetName, rcNo, rcDate, rcDist, results }] of byRace.entries()) {
+    results.sort((a, b) => (parseInt(a.ord, 10) || 99) - (parseInt(b.ord, 10) || 99));
+    list.push({ raceId, meetName, rcNo, rcDate, rcDist, results });
+  }
+
+  list.sort((a, b) => {
+    const dateCmp = (a.rcDate || '').localeCompare(b.rcDate || '');
+    if (dateCmp !== 0) return -dateCmp;
+    return (a.rcNo || '').localeCompare(b.rcNo || '');
+  });
+  return list;
+}
+
+const GROUPS_PER_PAGE = 20;
 
 export default function ResultsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('');
   const [selectedResult, setSelectedResult] = useState<RaceResult | null>(null);
+  const [selectedGroup, setSelectedGroup] = useState<GroupedRace | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-results', page, dateFilter],
+    queryKey: ['admin-results', dateFilter],
     queryFn: async () => {
-      const res = await adminResultsApi.getAll({ page, limit: 20, date: dateFilter });
+      const res = await adminResultsApi.getAll({ page: 1, limit: 250, date: dateFilter });
       const normalized = (res.data || []).map(normalizeResult);
-      return { ...res, data: normalized };
+      return { data: normalized };
     },
   });
+
+  const groupedRaces = useMemo(() => groupResultsByRace(data?.data || []), [data?.data]);
+  const totalGroupPages = Math.ceil(groupedRaces.length / GROUPS_PER_PAGE) || 1;
+  const paginatedGroups = useMemo(
+    () =>
+      groupedRaces.slice((page - 1) * GROUPS_PER_PAGE, page * GROUPS_PER_PAGE),
+    [groupedRaces, page]
+  );
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminResultsApi.delete(id),
@@ -277,36 +344,62 @@ export default function ResultsPage() {
       setSelectedResult(null);
       toast.success('결과가 삭제되었습니다');
     },
-    onError: (err: any) => toast.error(err?.message || '삭제 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: any }) => adminResultsApi.update(id, dto),
+    mutationFn: ({ id, dto }: { id: string; dto: ResultUpdateDto }) => adminResultsApi.update(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-results'] });
       setEditModalOpen(false);
       setSelectedResult(null);
       toast.success('수정되었습니다');
     },
-    onError: (err: any) => toast.error(err?.message || '수정 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
   const createMutation = useMutation({
-    mutationFn: (dto: any) => adminResultsApi.create(dto),
+    mutationFn: (dto: { raceId: string; hrNo: string; hrName: string; jkName?: string; trName?: string; ord?: string; rcTime?: string; chaksun1?: number }) => adminResultsApi.create(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-results'] });
       setCreateModalOpen(false);
       toast.success('결과가 등록되었습니다');
     },
-    onError: (err: any) => toast.error(err?.message || '등록 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
+
+  function renderRankCell(group: GroupedRace, ord: '1' | '2' | '3') {
+    const r = group.results.find((x) => x.ord === ord);
+    if (!r) return <span className='text-gray-400'>-</span>;
+    const no = r.hrNo && r.hrNo.length <= 3 ? r.hrNo : '-';
+    return (
+      <span className='inline-flex items-center gap-1.5'>
+        <span className='inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium'>
+          {no}번
+        </span>
+        <span className='font-medium'>{r.hrName}</span>
+        <span className='text-gray-500 text-sm'>({r.jkName})</span>
+      </span>
+    );
+  }
 
   const columns = [
     {
+      key: 'race',
+      header: '경주',
+      className: 'w-28',
+      render: (group: GroupedRace) => (
+        <span className='font-medium'>
+          {group.meetName} {group.rcNo}경
+        </span>
+      ),
+    },
+    {
       key: 'rcDate',
       header: '날짜',
-      render: (result: RaceResult) => {
-        const dateStr = result.rcDate;
+      className: 'w-24',
+      render: (group: GroupedRace) => {
+        const dateStr = group.rcDate;
         if (dateStr && dateStr.length === 8) {
           return `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
         }
@@ -314,87 +407,31 @@ export default function ResultsPage() {
       },
     },
     {
-      key: 'meetName',
-      header: '경주장',
+      key: 'ord1',
+      header: '1위',
+      className: 'min-w-[140px]',
+      render: (group: GroupedRace) => renderRankCell(group, '1'),
     },
     {
-      key: 'rcNo',
-      header: '경주',
-      className: 'w-20',
-      render: (result: RaceResult) => `${result.rcNo}R`,
+      key: 'ord2',
+      header: '2위',
+      className: 'min-w-[140px]',
+      render: (group: GroupedRace) => renderRankCell(group, '2'),
     },
     {
-      key: 'rcName',
-      header: '경주명',
-    },
-    {
-      key: 'rcDist',
-      header: '거리',
-      render: (result: RaceResult) => `${result.rcDist}m`,
-    },
-    {
-      key: 'rank',
-      header: '순위',
-      className: 'w-16',
-      render: (result: RaceResult) => {
-        const rank = parseInt(result.ord || '0');
-        const colors: any = {
-          1: 'bg-yellow-500',
-          2: 'bg-gray-400',
-          3: 'bg-orange-600',
-        };
-        return (
-          <span
-            className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
-              colors[rank] || 'bg-gray-300'
-            } text-white font-bold`}
-          >
-            {rank}
-          </span>
-        );
-      },
-    },
-    {
-      key: 'horse',
-      header: '말',
-      render: (result: RaceResult) => (
-        <div>
-          <div className='font-semibold'>{result.hrName}</div>
-          <div className='text-sm text-gray-500'>#{result.hrNo}</div>
-        </div>
-      ),
-    },
-    {
-      key: 'jockey',
-      header: '기수',
-      render: (result: RaceResult) => result.jkName,
-    },
-    {
-      key: 'time',
-      header: '기록',
-      render: (result: RaceResult) => result.rcTime || '-',
+      key: 'ord3',
+      header: '3위',
+      className: 'min-w-[140px]',
+      render: (group: GroupedRace) => renderRankCell(group, '3'),
     },
     {
       key: 'actions',
       header: '작업',
-      render: (result: RaceResult) => (
-        <div className='flex gap-2'>
-          <Button size='sm' variant='ghost' onClick={() => setSelectedResult(result)}>
-            상세
-          </Button>
-          <Button
-            size='sm'
-            variant='danger'
-            onClick={() => {
-              if (confirm('정말 삭제하시겠습니까?')) {
-                deleteMutation.mutate(result.id || result.resultId || '');
-              }
-            }}
-            disabled={deleteMutation.isPending}
-          >
-            삭제
-          </Button>
-        </div>
+      className: 'w-24',
+      render: (group: GroupedRace) => (
+        <Button size='sm' variant='ghost' onClick={() => setSelectedGroup(group)}>
+          관리
+        </Button>
       ),
     },
   ];
@@ -422,27 +459,31 @@ export default function ResultsPage() {
                     ? `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
                     : ''
                 }
-                onChange={(e) => setDateFilter(e.target.value.replace(/-/g, ''))}
+                onChange={(e) => {
+                  setDateFilter(e.target.value.replace(/-/g, ''));
+                  setPage(1);
+                }}
                 className='px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
               />
               {dateFilter && (
-                <Button variant='ghost' onClick={() => setDateFilter('')}>
+                <Button variant='ghost' onClick={() => { setDateFilter(''); setPage(1); }}>
                   필터 초기화
                 </Button>
               )}
             </div>
 
             <Table
-              data={data?.data || []}
+              data={paginatedGroups}
               columns={columns}
               isLoading={isLoading}
               emptyMessage='경기 결과가 없습니다.'
+              getRowKey={(group) => group.raceId}
             />
 
-            {data && data.meta && (
+            {totalGroupPages > 1 && (
               <Pagination
                 currentPage={page}
-                totalPages={data.meta.totalPages}
+                totalPages={totalGroupPages}
                 onPageChange={setPage}
               />
             )}
@@ -474,6 +515,86 @@ export default function ResultsPage() {
             onSave={(dto) => createMutation.mutate(dto)}
             isPending={createMutation.isPending}
           />
+        )}
+
+        {/* 경주별 결과 관리 모달 (1·2·3위 묶어서 표시) */}
+        {selectedGroup && (
+          <div
+            className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
+            onClick={() => setSelectedGroup(null)}
+          >
+            <div
+              className='bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto'
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className='flex justify-between items-start mb-4'>
+                <h2 className='text-xl font-bold'>
+                  {selectedGroup.meetName} {selectedGroup.rcNo}경 · 결과 관리
+                </h2>
+                <button
+                  onClick={() => setSelectedGroup(null)}
+                  className='text-gray-400 hover:text-gray-600'
+                >
+                  <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                  </svg>
+                </button>
+              </div>
+              <div className='space-y-3'>
+                {selectedGroup.results.map((result) => (
+                  <div
+                    key={result.id || result.resultId}
+                    className='flex items-center justify-between py-3 px-4 border border-gray-200 rounded-lg'
+                  >
+                    <div className='flex items-center gap-4'>
+                      <span
+                        className={`inline-flex items-center justify-center w-8 h-8 rounded-full ${
+                          parseInt(result.ord) === 1
+                            ? 'bg-yellow-500'
+                            : parseInt(result.ord) === 2
+                            ? 'bg-gray-400'
+                            : parseInt(result.ord) === 3
+                            ? 'bg-orange-600'
+                            : 'bg-gray-300'
+                        } text-white font-bold text-sm`}
+                      >
+                        {result.ord}
+                      </span>
+                      <div>
+                        <div className='font-semibold'>{result.hrName} (#{result.hrNo})</div>
+                        <div className='text-sm text-gray-500'>{result.jkName} · {result.rcTime || '-'}</div>
+                      </div>
+                    </div>
+                    <div className='flex gap-2'>
+                      <Button
+                        size='sm'
+                        variant='ghost'
+                        onClick={() => {
+                          setSelectedResult(result);
+                          setEditModalOpen(true);
+                        }}
+                      >
+                        수정
+                      </Button>
+                      <Button
+                        size='sm'
+                        variant='danger'
+                        onClick={() => {
+                          if (confirm('정말 삭제하시겠습니까?')) {
+                            deleteMutation.mutate(result.id || result.resultId || '');
+                            setSelectedGroup(null);
+                          }
+                        }}
+                        disabled={deleteMutation.isPending}
+                      >
+                        삭제
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* 결과 상세 모달 */}

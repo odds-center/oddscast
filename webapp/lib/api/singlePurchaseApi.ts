@@ -15,7 +15,7 @@ export interface PurchaseTicketRequest {
  */
 export interface PurchaseResult {
   purchaseId: string;
-  tickets: any[];
+  tickets: { id: string; [key: string]: unknown }[];
   totalAmount: number;
   paymentMethod: string;
   pgTransactionId: string;

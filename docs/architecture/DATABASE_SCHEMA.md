@@ -207,7 +207,7 @@ SinglePurchase[]
 | 필드            | 타입          | 설명             | 비고                    |
 | --------------- | ------------- | ---------------- | ----------------------- |
 | `id`            | String (UUID) | 고유 ID          | PK                      |
-| `planName`      | String        | 플랜 코드        | unique (LIGHT, PREMIUM) |
+| `planName`      | String        | 플랜 코드        | unique (LIGHT, STANDARD, PREMIUM) |
 | `displayName`   | String        | 표시명           |                         |
 | `description`   | String?       | 설명             |                         |
 | `originalPrice` | Int           | 원가             |                         |

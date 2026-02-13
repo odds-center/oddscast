@@ -75,7 +75,7 @@ import EmptyState from '@/components/EmptyState';
 | MenuList | `@/components/page/MenuList` | 메뉴 링크 목록 (items) |
 | FilterChips | `@/components/page/FilterChips` | 필터 칩 (전체, 오늘 등) |
 | FormInput | `@/components/page/FormInput` | 라벨 + 입력 + 에러 |
-| Pagination | `@/components/page/Pagination` | 이전/다음 페이지 |
+| Pagination | `@/components/page/Pagination` | 여러 페이지 이동 (1 … 2 3 4 … 5) |
 | BackLink | `@/components/page/BackLink` | "← XXX로" 링크 |
 
 ```tsx
@@ -92,7 +92,7 @@ import BackLink from '@/components/page/BackLink';
 <MenuList items={[{ href: '/profile', icon: 'User', label: '내 정보' }]} />
 <FilterChips options={[{ value: '', label: '전체' }]} value={val} onChange={setVal} />
 <FormInput label='이메일' {...register('email')} error={errors.email?.message} />
-<Pagination page={1} totalPages={5} onPrev={...} onNext={...} />
+<Pagination page={1} totalPages={5} onPageChange={(p) => setPage(p)} />
 <BackLink href='/profile' label='내 정보로' />
 ```
 
@@ -112,7 +112,7 @@ import BackLink from '@/components/page/BackLink';
 - **터치 타겟**: 버튼/링크 최소 44×44px
 - **touch-manipulation**: `touch-action: manipulation`, 탭 하이라이트 제거
 - **input**: `font-size: 16px` (iOS 줌 방지)
-- **nav-item-mobile**: 56px 높이, 6개 메뉴 균등 배치
+- **nav-item-mobile**: 56px 높이, 5개 메뉴 균등 배치 (홈/경주/종합/결과/내 정보)
 
 ### 모바일 전용 CSS (`globals.css`)
 
@@ -123,7 +123,21 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 6. 페이지별 API & 상태 처리
+## 6. 타입 안전성 (TypeScript)
+
+### any 금지
+- **`any` 사용 금지.** 변수·매개변수·반환값에 구체적 타입 필수.
+- 에러: `catch (err: unknown)` + `getErrorMessage(err)` (`lib/utils/error.ts`).
+- mutation 에러: `getErrorMessage(mutation.error)`.
+- 인덱스 시그니처: `[key: string]: unknown`.
+
+### API 응답 처리
+- `handleApiResponse<T>(response)` 제네릭으로 반환 타입 명시.
+- `(response.data as { data?: T })?.data ?? (response.data as T)` 패턴.
+
+---
+
+## 7. 페이지별 API & 상태 처리
 
 | 페이지 | API | 로딩 | 에러 | 빈 상태 |
 |--------|-----|------|------|---------|
@@ -140,7 +154,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 7. 구독 결제 플로우
+## 8. 구독 결제 플로우
 
 플랜 선택 → 결제 → 활성화 순서:
 
@@ -152,7 +166,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 8. 환경 변수
+## 9. 환경 변수
 
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
@@ -163,7 +177,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 9. 알림 설정 (settings/notifications)
+## 10. 알림 설정 (settings/notifications)
 
 - **경로**: `/settings/notifications` — `routes.settingsNotifications`
 - **API**: `NotificationApi.getNotificationPreferences()`, `updateNotificationPreferences()`
@@ -173,7 +187,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 10. Mobile WebView 연동
+## 11. Mobile WebView 연동
 
 Mobile 앱은 WebView로 WebApp을 로드합니다.
 

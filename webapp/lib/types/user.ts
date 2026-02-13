@@ -244,7 +244,7 @@ export interface UserActivity {
     userAgent?: string;
     betId?: string;
     betAmount?: number;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: Date; // 직접 만든 스키마 - Date
 }
@@ -260,7 +260,7 @@ export interface UserNotification {
     betId?: string;
     raceId?: string;
     promotionId?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
   createdAt: Date; // 직접 만든 스키마 - Date
   readAt?: Date; // 직접 만든 스키마 - Date

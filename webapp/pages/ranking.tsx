@@ -1,5 +1,5 @@
 import Layout from '@/components/Layout';
-import PageHeader from '@/components/page/PageHeader';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import { DataTable } from '@/components/ui';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -20,9 +20,8 @@ export default function Ranking() {
   });
 
   return (
-    <Layout title='랭킹 — GOLDEN RACE'>
-      <PageHeader icon='Medal' title='예측 랭킹' description='AI 예측 적중 횟수 기준 상위 랭킹입니다.' />
-
+    <Layout title='GOLDEN RACE'>
+      <CompactPageTitle title='예측 랭킹' />
       {isLoggedIn && myRanking && (
         <SectionCard title='내 랭킹' icon='User' accent className='mb-6'>
           <div className='flex items-center justify-between'>

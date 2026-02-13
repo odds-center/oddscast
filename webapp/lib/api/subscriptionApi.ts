@@ -22,6 +22,16 @@ export interface SubscriptionStatus {
 }
 
 /**
+ * 구독 이력 항목
+ */
+export interface SubscriptionHistoryItem {
+  id: string;
+  planId: string;
+  status: 'PENDING' | 'ACTIVE' | 'CANCELLED' | 'EXPIRED';
+  plan?: { displayName?: string; planName?: string };
+}
+
+/**
  * 구독 생성 요청
  */
 export interface CreateSubscriptionRequest {
@@ -39,7 +49,7 @@ export default class SubscriptionsApi {
   static async subscribe(data: CreateSubscriptionRequest) {
     if (CONFIG.useMock) return { id: 'mock-sub', status: 'PENDING', planId: data.planId };
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/subscriptions/subscribe', data);
+      const response = await axiosInstance.post<ApiResponse<SubscriptionStatus>>('/subscriptions/subscribe', data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -52,7 +62,7 @@ export default class SubscriptionsApi {
   static async activate(subscriptionId: string, billingKey: string) {
     if (CONFIG.useMock) return { id: subscriptionId, status: 'ACTIVE' };
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>(
+      const response = await axiosInstance.post<ApiResponse<SubscriptionStatus>>(
         `/subscriptions/${subscriptionId}/activate`,
         { billingKey },
       );
@@ -68,7 +78,7 @@ export default class SubscriptionsApi {
   static async cancel(reason?: string) {
     if (CONFIG.useMock) return { message: 'OK' };
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>('/subscriptions/cancel', {
+      const response = await axiosInstance.post<ApiResponse<{ message?: string }>>('/subscriptions/cancel', {
         reason,
       });
       return handleApiResponse(response);
@@ -95,10 +105,13 @@ export default class SubscriptionsApi {
    * 구독 내역 조회 (페이지네이션)
    * @returns { subscriptions, total, page, totalPages }
    */
-  static async getHistory(limit = 10, offset = 0) {
+  static async getHistory(
+    limit = 10,
+    offset = 0,
+  ): Promise<{ subscriptions: SubscriptionHistoryItem[]; total: number; page: number; totalPages: number }> {
     try {
       const response = await axiosInstance.get<
-        ApiResponse<{ subscriptions: any[]; total: number; page: number; totalPages: number }>
+        ApiResponse<{ subscriptions: SubscriptionHistoryItem[]; total: number; page: number; totalPages: number }>
       >('/subscriptions/history', {
         params: { limit, offset },
       });

@@ -1,7 +1,9 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
 // API 기본 설정
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000/api';
+// Server API (NestJS) — base + /api
+const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+const API_BASE_URL = SERVER_BASE.endsWith('/api') ? SERVER_BASE : `${SERVER_BASE}/api`;
 
 /**
  * API 클라이언트 생성
@@ -22,7 +24,7 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
   client.interceptors.request.use(
     async (config) => {
       // Admin 토큰 추가 (필요시)
-      const token = localStorage.getItem('admin_token');
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('admin_token');
       if (token) {
         config.headers['Authorization'] = `Bearer ${token}`;
       }
@@ -46,6 +48,7 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
 
         if (!isAuthRequest) {
           console.log('🚫 401 Unauthorized - Redirecting to login');
+          localStorage.removeItem('accessToken');
           localStorage.removeItem('admin_token');
 
           // 브라우저 환경에서만 리다이렉트
@@ -67,9 +70,11 @@ export const axiosInstance = createApiClient();
 
 /**
  * API 응답 래퍼 함수
+ * NestJS ResponseInterceptor 형식 { data, status } 언래핑
  */
 export const handleApiResponse = <T>(response: AxiosResponse<T>): T => {
-  return response.data;
+  const body = response.data as any;
+  return (body?.data !== undefined && body?.status !== undefined ? body.data : body) as T;
 };
 
 /**

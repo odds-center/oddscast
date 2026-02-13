@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PointsService } from './points.service';
 import { PointsController } from './points.controller';
-import { UserPointBalance } from './entities/user-point-balance.entity';
-import { UserPoints } from './entities/user-points.entity';
+import { PointsService } from './points.service';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PicksModule } from '../picks/picks.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([UserPointBalance, UserPoints])],
+  imports: [PrismaModule, PicksModule],
   controllers: [PointsController],
   providers: [PointsService],
   exports: [PointsService],

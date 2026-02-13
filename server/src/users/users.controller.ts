@@ -1,109 +1,134 @@
 import {
-  Body,
   Controller,
-  Delete,
   Get,
-  Param,
-  Post,
   Put,
-  Request,
+  Delete,
+  Body,
+  Param,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import {
-  ApiBearerAuth,
-  ApiOperation,
-  ApiParam,
-  ApiResponse,
-  ApiTags,
-} from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
-import { CreateUserDto, UpdateUserDto } from './dto';
-import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import { UpdateUserDto } from './dto/user.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { UserRole } from '@prisma/client';
 
-@ApiTags('users')
+@ApiTags('Users')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @Controller('users')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private usersService: UsersService) {}
 
-  @Get('profile')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '현재 사용자 프로필 조회' })
-  @ApiResponse({ status: 200, description: '사용자 프로필', type: User })
-  async getProfile(@Request() req: any): Promise<User | null> {
-    // JWT 토큰에서 사용자 ID 추출 (인증 미들웨어 필요)
-    const userId = req.user?.id;
-    if (!userId) {
-      throw new Error('인증되지 않은 사용자입니다.');
-    }
-    return this.usersService.findById(userId);
+  @Get()
+  @ApiOperation({ summary: '사용자 목록 조회' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  findAll(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('role') role?: string,
+  ) {
+    return this.usersService.findAll({ page, limit, role });
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: '사용자 검색' })
+  search(@Query('q') query: string) {
+    return this.usersService.findAll({ query } as any);
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: '내 정보 조회' })
+  getMe(@CurrentUser() user: JwtPayload) {
+    return this.usersService.findOne(user.sub);
+  }
+
+  @Get('me/stats')
+  @ApiOperation({ summary: '내 통계 조회' })
+  getMyStats(@CurrentUser() user: JwtPayload) {
+    return this.usersService.getStats(user.sub);
+  }
+
+  @Get(':id/profile')
+  @ApiOperation({ summary: '사용자 프로필 조회' })
+  getProfile(@Param('id') id: string) {
+    return this.usersService.findOne(id);
+  }
+
+  @Put(':id/profile')
+  @ApiOperation({ summary: '사용자 프로필 수정' })
+  updateProfile(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: '사용자 상세 조회' })
-  @ApiParam({ name: 'id', description: '사용자 ID' })
-  @ApiResponse({ status: 200, description: '사용자 정보', type: User })
-  async findById(@Param('id') id: string): Promise<User | null> {
-    return this.usersService.findById(id);
+  findOne(@Param('id') id: string) {
+    return this.usersService.findOne(id);
   }
 
-  @Post()
-  @ApiOperation({ summary: '새 사용자 생성' })
-  @ApiResponse({ status: 201, description: '사용자 생성 완료', type: User })
-  async create(@Body() createUserDto: CreateUserDto): Promise<User> {
-    return this.usersService.create(createUserDto);
+  @Get(':id/stats')
+  @ApiOperation({ summary: '사용자 통계 조회' })
+  getStats(@Param('id') id: string) {
+    return this.usersService.getStats(id);
+  }
+
+  @Get(':id/statistics')
+  @ApiOperation({ summary: '사용자 통계 조회 (alias)' })
+  getStatistics(@Param('id') id: string) {
+    return this.usersService.getStats(id);
+  }
+
+  @Get(':id/achievements')
+  @ApiOperation({ summary: '사용자 업적 조회' })
+  getAchievements(@Param('id') _id: string) {
+    // 임시 구현: 실제 서비스 메서드 필요. 일단 빈 배열 반환
+    return [];
+  }
+
+  @Get(':id/activities')
+  @ApiOperation({ summary: '사용자 활동 내역 조회' })
+  getActivities(@Param('id') _id: string) {
+    return { activities: [], total: 0, page: 1, totalPages: 1 };
+  }
+
+  @Get(':id/notifications')
+  @ApiOperation({ summary: '사용자 알림 조회' })
+  getNotifications(@Param('id') _id: string) {
+    return { notifications: [], total: 0, page: 1, totalPages: 1 };
+  }
+
+  @Get(':id/preferences')
+  @ApiOperation({ summary: '사용자 설정 조회' })
+  getPreferences(@Param('id') _id: string) {
+    return { marketing: true, notifications: true };
+  }
+
+  @Put(':id/preferences')
+  @ApiOperation({ summary: '사용자 설정 수정' })
+  updatePreferences(@Param('id') _id: string, @Body() _body: any) {
+    return { marketing: true, notifications: true };
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
   @ApiOperation({ summary: '사용자 정보 수정' })
-  @ApiParam({ name: 'id', description: '사용자 ID' })
-  @ApiResponse({ status: 200, description: '사용자 수정 완료', type: User })
-  async update(
-    @Param('id') id: string,
-    @Body() updateUserDto: UpdateUserDto
-  ): Promise<User | null> {
-    return this.usersService.update(id, updateUserDto);
-  }
-
-  @Put(':id/deactivate')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '사용자 비활성화' })
-  @ApiParam({ name: 'id', description: '사용자 ID' })
-  @ApiResponse({ status: 200, description: '사용자 비활성화 완료' })
-  async deactivate(@Param('id') id: string): Promise<void> {
-    return this.usersService.deactivate(id);
-  }
-
-  @Put(':id/activate')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '사용자 활성화' })
-  @ApiParam({ name: 'id', description: '사용자 ID' })
-  @ApiResponse({ status: 200, description: '사용자 활성화 완료' })
-  async activate(@Param('id') id: string): Promise<void> {
-    return this.usersService.activate(id);
+  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+    return this.usersService.update(id, dto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: '사용자 삭제' })
-  @ApiParam({ name: 'id', description: '사용자 ID' })
-  @ApiResponse({ status: 200, description: '사용자 삭제 완료' })
-  async delete(@Param('id') id: string): Promise<void> {
-    return this.usersService.delete(id);
-  }
-
-  @Post('google-auth')
-  @ApiOperation({ summary: '구글 로그인/회원가입' })
-  @ApiResponse({ status: 200, description: '구글 인증 완료', type: User })
-  async googleAuth(@Body() googleUser: any): Promise<User> {
-    return this.usersService.findOrCreateByGoogle(googleUser);
+  @ApiOperation({ summary: '사용자 비활성화' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
+  remove(@Param('id') id: string) {
+    return this.usersService.remove(id);
   }
 }

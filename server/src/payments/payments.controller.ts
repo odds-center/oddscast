@@ -1,68 +1,44 @@
+import { Controller, Get, Post, Body, UseGuards } from '@nestjs/common';
+import { PaymentsService } from './payments.service';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
-  Controller,
-  Post,
-  Get,
-  Body,
-  Req,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-  Logger,
-} from '@nestjs/common';
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
 import {
-  PaymentsService,
-  SubscribeRequest,
-  SinglePurchaseRequest,
-} from './payments.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+  PaymentSubscribeDto,
+  PaymentPurchaseDto,
+} from '../common/dto/payment.dto';
 
-/**
- * 결제 API Controller
- */
-@Controller('payments')
+@ApiTags('Payments')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Controller('payments')
 export class PaymentsController {
-  private readonly logger = new Logger(PaymentsController.name);
+  constructor(private paymentsService: PaymentsService) {}
 
-  constructor(private readonly paymentsService: PaymentsService) {}
-
-  /**
-   * 구독 시작 (빌링키 발급 + 첫 결제)
-   * POST /api/payments/subscribe
-   */
   @Post('subscribe')
-  @HttpCode(HttpStatus.CREATED)
-  async subscribe(@Body() body: SubscribeRequest, @Req() req: any) {
-    const userId = req.user.id;
-
-    return this.paymentsService.startSubscription({
-      ...body,
-      userId,
-    });
+  @ApiOperation({ summary: '구독 결제' })
+  processSubscription(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PaymentSubscribeDto,
+  ) {
+    return this.paymentsService.processSubscription(user.sub, dto);
   }
 
-  /**
-   * 개별 예측권 구매 (즉시 결제)
-   * POST /api/payments/purchase
-   */
   @Post('purchase')
-  @HttpCode(HttpStatus.CREATED)
-  async purchaseTickets(@Body() body: SinglePurchaseRequest, @Req() req: any) {
-    const userId = req.user.id;
-
-    return this.paymentsService.purchaseSingleTickets({
-      ...body,
-      userId,
-    });
+  @ApiOperation({ summary: '단건 결제' })
+  processPurchase(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PaymentPurchaseDto,
+  ) {
+    return this.paymentsService.processPurchase(user.sub, dto);
   }
 
-  /**
-   * 결제 내역 조회
-   * GET /api/payments/history
-   */
   @Get('history')
-  async getHistory(@Req() req: any) {
-    const userId = req.user.id;
-    return this.paymentsService.getBillingHistory(userId);
+  @ApiOperation({ summary: '결제 이력 조회' })
+  getHistory(@CurrentUser() user: JwtPayload) {
+    return this.paymentsService.getHistory(user.sub);
   }
 }

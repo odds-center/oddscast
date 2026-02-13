@@ -47,10 +47,17 @@ export interface Bet {
   userId: string;
   raceId: string;
   betType: string;
+  betName?: string;
   betAmount: number;
   betStatus: string;
-  actualWin: number;
+  betResult?: string;
+  actualWin?: number;
+  potentialWin?: number;
+  odds?: number;
   betTime: string;
+  createdAt?: string;
+  race?: { id: string; rcDate: string; meet: string; rcNo: string };
+  user?: { id: string; email: string; name: string };
 }
 
 export interface BetListResponse {

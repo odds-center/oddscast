@@ -247,7 +247,9 @@ export class AdminSubscriptionsApi {
 export class AdminSinglePurchaseApi {
   static async getConfig(): Promise<SinglePurchaseConfig> {
     try {
-      const response = await axiosInstance.get<SinglePurchaseConfig>('/single-purchases/config');
+      const response = await axiosInstance.get<SinglePurchaseConfig>(
+        '/admin/single-purchase/config'
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -257,7 +259,7 @@ export class AdminSinglePurchaseApi {
   static async updateConfig(data: Partial<SinglePurchaseConfig>): Promise<SinglePurchaseConfig> {
     try {
       const response = await axiosInstance.patch<SinglePurchaseConfig>(
-        '/single-purchases/config',
+        '/admin/single-purchase/config',
         data
       );
       return handleApiResponse(response);
@@ -345,6 +347,35 @@ export class AdminAIApi {
 }
 
 /**
+ * System Config API
+ */
+export class AdminSystemConfigApi {
+  static async getConfig(): Promise<{
+    show_google_login: boolean;
+    kra_base_url_override: string;
+  }> {
+    try {
+      const response = await axiosInstance.get('/admin/config/system');
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async updateConfig(data: {
+    show_google_login?: boolean;
+    kra_base_url_override?: string;
+  }): Promise<any> {
+    try {
+      const response = await axiosInstance.patch('/admin/config/system', data);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+}
+
+/**
  * AI Config API
  */
 export class AdminAIConfigApi {
@@ -377,21 +408,51 @@ export class AdminAIConfigApi {
 }
 
 /**
- * Races API
+ * KRA 동기화 API
  */
-export class AdminRacesApi {
-  static async getAll(params?: { page?: number; limit?: number }): Promise<any> {
+export class AdminKraApi {
+  static async syncSchedule(date: string): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/races', { params });
+      const response = await axiosInstance.post(`/admin/kra/sync/schedule?date=${date}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
     }
   }
 
-  static async getOne(id: string): Promise<any> {
+  static async syncResults(date: string): Promise<any> {
     try {
-      const response = await axiosInstance.get(`/admin/races/${id}`);
+      const response = await axiosInstance.post(`/admin/kra/sync/results?date=${date}`);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async syncDetails(date: string): Promise<any> {
+    try {
+      const response = await axiosInstance.post(`/admin/kra/sync/details?date=${date}`);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async syncJockeys(meet?: string): Promise<any> {
+    try {
+      const url = meet ? `/admin/kra/sync/jockeys?meet=${meet}` : '/admin/kra/sync/jockeys';
+      const response = await axiosInstance.post(url);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async syncHistorical(dateFrom: string, dateTo: string): Promise<any> {
+    try {
+      const response = await axiosInstance.post(
+        `/admin/kra/sync/historical?dateFrom=${dateFrom}&dateTo=${dateTo}`
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -400,13 +461,21 @@ export class AdminRacesApi {
 }
 
 /**
- * Results API
+ * Races API — Server /api/races 사용
  */
-export class AdminResultsApi {
-  static async getAll(params?: { page?: number; limit?: number; date?: string }): Promise<any> {
+export class AdminRacesApi {
+  static async getAll(params?: { page?: number; limit?: number }): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/results', { params });
-      return handleApiResponse(response);
+      const response = await axiosInstance.get<{ data: { races: any[]; total: number; page: number; totalPages: number } }>(
+        '/races',
+        { params }
+      );
+      const body = response.data as any;
+      const payload = body?.data ?? body;
+      return {
+        data: payload?.races ?? [],
+        meta: { totalPages: payload?.totalPages ?? 1 },
+      };
     } catch (error) {
       throw handleApiError(error);
     }
@@ -414,8 +483,79 @@ export class AdminResultsApi {
 
   static async getOne(id: string): Promise<any> {
     try {
-      const response = await axiosInstance.get(`/admin/results/${id}`);
+      const response = await axiosInstance.get(`/races/${id}`);
+      const body = response.data as any;
+      return body?.data ?? body;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+}
+
+/**
+ * Results API — Server /api/results 사용
+ */
+export class AdminResultsApi {
+  static async getAll(params?: { page?: number; limit?: number; date?: string }): Promise<any> {
+    try {
+      const response = await axiosInstance.get('/results', { params });
+      const payload = handleApiResponse(response) as any;
+      const results = payload?.results ?? payload?.data ?? [];
+      return {
+        data: Array.isArray(results) ? results : [],
+        meta: {
+          total: payload?.total ?? 0,
+          totalPages: payload?.totalPages ?? 1,
+          page: payload?.page ?? 1,
+        },
+      };
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async getOne(id: string): Promise<any> {
+    try {
+      const response = await axiosInstance.get(`/results/${id}`);
+      const data = handleApiResponse(response);
+      return (data as any)?.data ?? data;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async create(dto: {
+    raceId: string;
+    hrNo: string;
+    hrName: string;
+    ord?: string;
+    jkName?: string;
+    trName?: string;
+    owName?: string;
+    rcRank?: string;
+    rcTime?: string;
+    rcPrize?: number;
+  }): Promise<any> {
+    try {
+      const response = await axiosInstance.post('/results', dto);
       return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async update(id: string, dto: { rcRank?: string; rcTime?: string; rcPrize?: number }): Promise<any> {
+    try {
+      const response = await axiosInstance.put(`/results/${id}`, dto);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async delete(id: string): Promise<void> {
+    try {
+      await axiosInstance.delete(`/results/${id}`);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -500,9 +640,19 @@ export class AdminStatisticsApi {
     }
   }
 
-  static async getRevenue(period?: string): Promise<Revenue[]> {
+  static async getRevenue(period?: string): Promise<{
+    monthlyRevenue: number;
+    singleRevenue: number;
+    totalRevenue: number;
+    monthlyCost: number;
+    monthlyProfit: number;
+    margin: number;
+    activeSubscribers: number;
+    avgRevenuePerUser: number;
+    rows: Revenue[];
+  }> {
     try {
-      const response = await axiosInstance.get<Revenue[]>('/admin/statistics/revenue', {
+      const response = await axiosInstance.get('/admin/statistics/revenue', {
         params: { period },
       });
       return handleApiResponse(response);
@@ -519,7 +669,9 @@ export const adminBetsApi = AdminBetsApi;
 export const adminSubscriptionsApi = AdminSubscriptionsApi;
 export const adminSinglePurchaseApi = AdminSinglePurchaseApi;
 export const adminAIApi = AdminAIApi;
+export const adminSystemConfigApi = AdminSystemConfigApi;
 export const adminAIConfigApi = AdminAIConfigApi;
+export const adminKraApi = AdminKraApi;
 export const adminRacesApi = AdminRacesApi;
 export const adminResultsApi = AdminResultsApi;
 export const adminNotificationsApi = AdminNotificationsApi;

@@ -1,264 +1,300 @@
 import {
   Injectable,
-  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { PrismaService } from '../prisma/prisma.service';
+import { PicksService } from '../picks/picks.service';
 import {
-  UserPointBalance,
-  UserPoints,
-  TransactionType,
-  TransactionStatus,
-} from './entities';
-import { User } from '../users/entities/user.entity';
+  CreatePointTransactionDto,
+  PointTransferDto,
+  PurchaseTicketDto,
+} from './dto/point.dto';
+import { PointTransactionType, PointStatus } from '@prisma/client';
+import { PickType } from '@prisma/client';
+
+const PICK_TYPE_CONFIG_KEYS: Record<PickType, string> = {
+  SINGLE: 'SINGLE_MULTIPLIER',
+  PLACE: 'PLACE_MULTIPLIER',
+  QUINELLA: 'QUINELLA_MULTIPLIER',
+  EXACTA: 'EXACTA_MULTIPLIER',
+  QUINELLA_PLACE: 'QUINELLA_PLACE_MULTIPLIER',
+  TRIFECTA: 'TRIFECTA_MULTIPLIER',
+  TRIPLE: 'TRIPLE_MULTIPLIER',
+};
 
 @Injectable()
 export class PointsService {
-  private readonly logger = new Logger(PointsService.name);
-
   constructor(
-    @InjectRepository(UserPointBalance)
-    private readonly pointBalanceRepository: Repository<UserPointBalance>,
-    @InjectRepository(UserPoints)
-    private readonly pointsRepository: Repository<UserPoints>
+    private prisma: PrismaService,
+    private picksService: PicksService,
   ) {}
 
-  /**
-   * 사용자의 포인트 잔액을 조회합니다.
-   */
-  async getUserPointBalance(userId: string): Promise<UserPointBalance> {
-    try {
-      const balance = await this.pointBalanceRepository.findOne({
-        where: { userId },
-      });
-
-      if (!balance) {
-        // 사용자가 없으면 기본 포인트 잔액 생성
-        this.logger.log(`Creating default point balance for user: ${userId}`);
-
-        const defaultBalance = this.pointBalanceRepository.create({
-          userId,
-          currentPoints: 0,
-          totalPointsEarned: 0,
-          totalPointsSpent: 0,
-          bonusPoints: 0,
-          lastUpdated: new Date(),
-        });
-
-        return await this.pointBalanceRepository.save(defaultBalance);
-      }
-
-      return balance;
-    } catch (error) {
-      this.logger.error(`Error getting user point balance: ${error.message}`);
-      throw error;
-    }
-  }
-
-  /**
-   * 사용자의 포인트 거래 내역을 조회합니다.
-   */
-  async getUserPointHistory(userId: string): Promise<UserPoints[]> {
-    return await this.pointsRepository.find({
-      where: { userId },
-      order: { transactionTime: 'DESC' },
+  async getBalance(userId: string) {
+    const transactions = await this.prisma.pointTransaction.findMany({
+      where: { userId, status: 'ACTIVE' },
     });
-  }
 
-  /**
-   * 포인트를 적립합니다.
-   */
-  async addPoints(
-    userId: string,
-    transactionData: {
-      amount: number;
-      type: string;
-      description: string;
-      referenceId?: string;
-      referenceType?: string;
-    }
-  ): Promise<UserPoints> {
-    const { amount, type, description, referenceId, referenceType } =
-      transactionData;
+    const totalEarned = transactions
+      .filter((t) =>
+        [
+          'EARNED',
+          'BONUS',
+          'PROMOTION',
+          'TRANSFER_IN',
+          'ADMIN_ADJUSTMENT',
+        ].includes(t.transactionType),
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
 
-    // 포인트 거래 내역 생성
-    const pointTransaction = this.pointsRepository.create({
+    const totalSpent = transactions
+      .filter((t) =>
+        ['SPENT', 'TRANSFER_OUT', 'EXPIRED'].includes(t.transactionType),
+      )
+      .reduce((sum, t) => sum + t.amount, 0);
+
+    return {
       userId,
-      amount,
-      transactionType: this.mapTransactionType(type),
-      description,
-      balanceAfter: amount,
-      transactionTime: new Date(),
-      status: TransactionStatus.ACTIVE,
-      metadata: {
-        betId: referenceType === 'BET' ? referenceId : undefined,
-        raceId: referenceType === 'RACE' ? referenceId : undefined,
-        adminNote: referenceType === 'ADMIN' ? referenceId : undefined,
-      },
-    });
-
-    const savedTransaction = await this.pointsRepository.save(pointTransaction);
-
-    // 포인트 잔액 업데이트
-    await this.updatePointBalance(userId, amount);
-
-    this.logger.log(
-      `포인트 적립: 사용자 ${userId}, 금액 ${amount}, 사유 ${description}`
-    );
-    return savedTransaction;
+      currentPoints: totalEarned - totalSpent,
+      totalPointsEarned: totalEarned,
+      totalPointsSpent: totalSpent,
+      bonusPoints: 0, // 로직 추가 필요
+      expiringPoints: 0, // 로직 추가 필요
+      lastUpdated: new Date(),
+    };
   }
 
-  /**
-   * 포인트를 사용합니다.
-   */
-  async usePoints(
-    userId: string,
-    amount: number,
-    reason: string
-  ): Promise<UserPoints> {
-    const balance = await this.getUserPointBalance(userId);
+  async getTransactions(userId: string, filters: any) {
+    const where: any = { userId };
+    if (filters.type) where.transactionType = filters.type;
+    if (filters.status) where.status = filters.status;
 
-    if (balance.currentPoints < amount) {
-      throw new Error('포인트가 부족합니다.');
-    }
-
-    // 포인트 거래 내역 생성
-    const pointTransaction = this.pointsRepository.create({
-      userId,
-      amount: -amount,
-      transactionType: TransactionType.BET_PLACED,
-      description: reason,
-      balanceAfter: balance.currentPoints - amount,
-    });
-
-    const savedTransaction = await this.pointsRepository.save(pointTransaction);
-
-    // 포인트 잔액 업데이트
-    await this.updatePointBalance(userId, -amount);
-
-    this.logger.log(
-      `포인트 사용: 사용자 ${userId}, 금액 ${amount}, 사유 ${reason}`
-    );
-    return savedTransaction;
-  }
-
-  /**
-   * 사용자 포인트 거래 내역을 조회합니다.
-   */
-  async getUserPointTransactions(
-    userId: string,
-    page: number = 1,
-    limit: number = 20,
-    type?: string
-  ) {
-    const skip = (page - 1) * limit;
-
-    const queryBuilder = this.pointsRepository
-      .createQueryBuilder('transaction')
-      .where('transaction.userId = :userId', { userId })
-      .orderBy('transaction.transactionTime', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    if (type) {
-      queryBuilder.andWhere('transaction.transactionType = :type', { type });
-    }
-
-    const [transactions, total] = await queryBuilder.getManyAndCount();
+    const [transactions, total] = await Promise.all([
+      this.prisma.pointTransaction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (filters.page - 1) * filters.limit || 0,
+        take: filters.limit || 20,
+      }),
+      this.prisma.pointTransaction.count({ where }),
+    ]);
 
     return {
       transactions,
       total,
-      page,
-      totalPages: Math.ceil(total / limit),
+      page: filters.page || 1,
+      totalPages: Math.ceil(total / (filters.limit || 20)),
     };
   }
 
-  /**
-   * 사용자 포인트 통계를 조회합니다.
-   */
-  async getUserPointStatistics(userId: string) {
-    const balance = await this.getUserPointBalance(userId);
-    const transactions = await this.pointsRepository.find({
-      where: { userId },
-    });
+  async createTransaction(userId: string, dto: CreatePointTransactionDto) {
+    // 잔액 확인 및 업데이트 로직 필요하나, 일단 단순 기록
+    const currentBalance = (await this.getBalance(userId)).currentPoints;
+    let balanceAfter = currentBalance;
 
-    const totalTransactions = transactions.length;
-    const totalEarned = transactions
-      .filter(t => t.amount > 0)
-      .reduce((sum, t) => sum + t.amount, 0);
-    const totalSpent = Math.abs(
-      transactions
-        .filter(t => t.amount < 0)
-        .reduce((sum, t) => sum + t.amount, 0)
-    );
-    const averageTransaction =
-      totalTransactions > 0
-        ? (totalEarned + totalSpent) / totalTransactions
-        : 0;
-    const lastTransaction = transactions[0]; // 이미 DESC로 정렬되어 있음
+    if (['SPENT', 'TRANSFER_OUT'].includes(dto.type)) {
+      balanceAfter -= dto.amount;
+    } else {
+      balanceAfter += dto.amount;
+    }
+
+    return this.prisma.pointTransaction.create({
+      data: {
+        userId,
+        transactionType: dto.type,
+        amount: dto.amount,
+        balanceAfter,
+        description: dto.description,
+        metadata: dto.metadata,
+        status: PointStatus.ACTIVE,
+      },
+    });
+  }
+
+  async transfer(fromUserId: string, dto: PointTransferDto) {
+    const fromBalance = await this.getBalance(fromUserId);
+    if (fromBalance.currentPoints < dto.amount) {
+      throw new BadRequestException('잔액이 부족합니다.');
+    }
+
+    // 트랜잭션으로 처리해야 함
+    return this.prisma.$transaction(async (prisma) => {
+      // 출금
+      await prisma.pointTransaction.create({
+        data: {
+          userId: fromUserId,
+          transactionType: PointTransactionType.TRANSFER_OUT,
+          amount: dto.amount,
+          balanceAfter: fromBalance.currentPoints - dto.amount,
+          description: `Transfer to ${dto.toUserId}: ${dto.description}`,
+          status: PointStatus.ACTIVE,
+        },
+      });
+
+      // 입금
+      const toBalance = await this.getBalance(dto.toUserId);
+      await prisma.pointTransaction.create({
+        data: {
+          userId: dto.toUserId,
+          transactionType: PointTransactionType.TRANSFER_IN,
+          amount: dto.amount,
+          balanceAfter: toBalance.currentPoints + dto.amount,
+          description: `Transfer from ${fromUserId}: ${dto.description}`,
+          status: PointStatus.ACTIVE,
+        },
+      });
+
+      return { status: 'COMPLETED' };
+    });
+  }
+
+  async getPromotions(_filters: any) {
+    return this.prisma.pointPromotion.findMany({
+      where: { isActive: true },
+    });
+  }
+
+  async applyPromotion(userId: string, promotionId: string) {
+    const promotion = await this.prisma.pointPromotion.findUnique({
+      where: { id: promotionId },
+    });
+    if (!promotion || !promotion.isActive) {
+      throw new NotFoundException('프로모션을 찾을 수 없거나 만료되었습니다.');
+    }
+
+    // 중복 적용 체크 등 로직 필요
+
+    await this.createTransaction(userId, {
+      type: PointTransactionType.PROMOTION,
+      amount: promotion.points,
+      description: `Promotion applied: ${promotion.name}`,
+    });
 
     return {
-      totalTransactions,
-      totalEarned,
-      totalSpent,
-      currentBalance: balance.currentPoints,
-      averageTransaction,
-      lastTransactionDate: lastTransaction?.transactionTime || null,
+      message: '프로모션이 적용되었습니다.',
+      pointsEarned: promotion.points,
     };
   }
 
-  /**
-   * 거래 타입을 매핑합니다.
-   */
-  private mapTransactionType(type: string): TransactionType {
-    switch (type.toUpperCase()) {
-      case 'EARNED':
-        return TransactionType.ADMIN_ADJUSTMENT;
-      case 'SPENT':
-        return TransactionType.BET_PLACED;
-      case 'REFUNDED':
-        return TransactionType.BET_WON; // 환불은 당첨으로 처리
-      case 'BONUS':
-        return TransactionType.EVENT_BONUS; // 보너스는 이벤트 보너스로 처리
-      case 'EXPIRED':
-        return TransactionType.EXPIRY; // 만료는 EXPIRY로 처리
-      default:
-        return TransactionType.ADMIN_ADJUSTMENT;
+  async getExpirySettings() {
+    return {
+      defaultExpiryDays: 365,
+      allowExtension: true,
+      maxExtensionDays: 30,
+    };
+  }
+
+  async getTicketPrice(): Promise<{ pointsPerTicket: number }> {
+    const price = await this.prisma.pointTicketPrice.findFirst({
+      where: { isActive: true, effectiveTo: null },
+      orderBy: { effectiveFrom: 'desc' },
+    });
+    return { pointsPerTicket: price?.pointsPerTicket ?? 1200 };
+  }
+
+  async purchaseTicket(userId: string, dto: PurchaseTicketDto) {
+    const { pointsPerTicket } = await this.getTicketPrice();
+    const totalCost = pointsPerTicket * dto.quantity;
+    const balance = await this.getBalance(userId);
+    if (balance.currentPoints < totalCost) {
+      throw new BadRequestException(
+        `포인트가 부족합니다. 필요: ${totalCost}pt, 보유: ${balance.currentPoints}pt`,
+      );
     }
+
+    const tickets: any[] = [];
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 30);
+
+    return this.prisma.$transaction(async (tx) => {
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          transactionType: PointTransactionType.SPENT,
+          amount: totalCost,
+          balanceAfter: balance.currentPoints - totalCost,
+          description: `예측권 ${dto.quantity}장 구매 (포인트)`,
+          metadata: { quantity: dto.quantity },
+          status: PointStatus.ACTIVE,
+        },
+      });
+
+      for (let i = 0; i < dto.quantity; i++) {
+        const ticket = await tx.predictionTicket.create({
+          data: {
+            userId,
+            status: 'AVAILABLE',
+            expiresAt,
+          },
+        });
+        tickets.push(ticket);
+      }
+
+      const newBalance = await this.getBalance(userId);
+      return {
+        tickets,
+        pointsSpent: totalCost,
+        remainingPoints: newBalance.currentPoints,
+      };
+    });
   }
 
   /**
-   * 포인트 잔액을 업데이트합니다.
+   * 경주 결과 확정 후, 적중한 UserPick에 포인트 지급
    */
-  private async updatePointBalance(
-    userId: string,
-    amount: number
-  ): Promise<void> {
-    let balance = await this.pointBalanceRepository.findOne({
-      where: { userId },
+  async awardPickPointsForRace(raceId: string): Promise<{ awarded: number }> {
+    const picks = await this.prisma.userPick.findMany({
+      where: { raceId },
+      include: {
+        race: { include: { results: { orderBy: { rcRank: 'asc' } } } },
+      },
     });
 
-    if (!balance) {
-      // 새 포인트 잔액 생성
-      balance = this.pointBalanceRepository.create({
-        userId,
-        currentPoints: amount,
-        totalPointsEarned: amount > 0 ? amount : 0,
-        totalPointsSpent: amount < 0 ? Math.abs(amount) : 0,
+    const configMap = await this.getPointConfigMap();
+    const basePoints = parseInt(configMap['BASE_POINTS'] ?? '100', 10);
+    let awardedCount = 0;
+
+    for (const pick of picks) {
+      if (pick.pointsAwarded != null && pick.pointsAwarded > 0) continue;
+      const results = pick.race?.results ?? [];
+      if (results.length === 0) continue;
+
+      const isHit = this.picksService.checkPickHit(
+        pick.pickType,
+        pick.hrNos,
+        results.map((r) => ({ hrNo: r.hrNo, rcRank: r.rcRank })),
+      );
+      if (!isHit) continue;
+
+      const multKey = PICK_TYPE_CONFIG_KEYS[pick.pickType];
+      const mult = parseFloat(configMap[multKey] ?? '1');
+      const points = Math.round(basePoints * mult);
+
+      const balance = await this.getBalance(pick.userId);
+      await this.prisma.pointTransaction.create({
+        data: {
+          userId: pick.userId,
+          transactionType: PointTransactionType.EARNED,
+          amount: points,
+          balanceAfter: balance.currentPoints + points,
+          description: `경주 적중 보상 (${pick.pickType})`,
+          metadata: { raceId, pickId: pick.id },
+          status: PointStatus.ACTIVE,
+        },
       });
-    } else {
-      // 기존 잔액 업데이트
-      balance.currentPoints += amount;
-      if (amount > 0) {
-        balance.totalPointsEarned += amount;
-      } else {
-        balance.totalPointsSpent += Math.abs(amount);
-      }
+
+      await this.prisma.userPick.update({
+        where: { id: pick.id },
+        data: { pointsAwarded: points },
+      });
+      awardedCount++;
     }
 
-    await this.pointBalanceRepository.save(balance);
+    return { awarded: awardedCount };
+  }
+
+  private async getPointConfigMap(): Promise<Record<string, string>> {
+    const configs = await this.prisma.pointConfig.findMany();
+    return Object.fromEntries(configs.map((c) => [c.configKey, c.configValue]));
   }
 }

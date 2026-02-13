@@ -2,214 +2,126 @@ import {
   Controller,
   Get,
   Post,
-  Put,
-  Param,
   Body,
+  Param,
   Query,
   UseGuards,
-  Request,
-  ParseIntPipe,
-  DefaultValuePipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiParam,
-  ApiQuery,
-  ApiBearerAuth,
-  ApiBody,
-} from '@nestjs/swagger';
 import { PointsService } from './points.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import {
+  CreatePointTransactionDto,
+  PointTransferDto,
+  PurchaseTicketDto,
+} from './dto/point.dto';
 
-@ApiTags('포인트')
+@ApiTags('Points')
 @Controller('points')
-@UseGuards(JwtAuthGuard)
-@ApiBearerAuth()
 export class PointsController {
-  constructor(private readonly pointsService: PointsService) {}
+  constructor(private pointsService: PointsService) {}
+
+  @Get('promotions')
+  @ApiOperation({ summary: '프로모션 목록 조회' })
+  getPromotions(@Query() filters: any) {
+    return this.pointsService.getPromotions(filters);
+  }
+
+  @Get('expiry-settings')
+  @ApiOperation({ summary: '포인트 만료 설정 조회' })
+  getExpirySettings() {
+    return this.pointsService.getExpirySettings();
+  }
+
+  @Get('ticket-price')
+  @ApiOperation({ summary: '포인트 예측권 가격 조회' })
+  getTicketPrice() {
+    return this.pointsService.getTicketPrice();
+  }
+
+  @Get('me/balance')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 포인트 잔액 조회' })
+  getMyBalance(@CurrentUser() user: JwtPayload) {
+    return this.pointsService.getBalance(user.sub);
+  }
+
+  @Get('me/transactions')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '내 포인트 거래 내역 조회' })
+  getMyTransactions(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('type') type?: string,
+  ) {
+    return this.pointsService.getTransactions(user.sub, {
+      page: page || 1,
+      limit: limit || 20,
+      type,
+    });
+  }
+
+  @Post('purchase-ticket')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '포인트로 예측권 구매' })
+  purchaseTicket(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PurchaseTicketDto,
+  ) {
+    return this.pointsService.purchaseTicket(user.sub, dto);
+  }
+
+  @Post('transfer')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '포인트 이체' })
+  transfer(@CurrentUser() user: JwtPayload, @Body() dto: PointTransferDto) {
+    return this.pointsService.transfer(user.sub, dto);
+  }
 
   @Get(':userId/balance')
-  @ApiOperation({
-    summary: '사용자 포인트 잔액 조회',
-    description: '특정 사용자의 포인트 잔액을 조회합니다.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description: '사용자 ID',
-    example: 'user-uuid',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '포인트 잔액 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        id: { type: 'string', example: 'balance-uuid' },
-        userId: { type: 'string', example: 'user-uuid' },
-        currentPoints: { type: 'number', example: 1000 },
-        totalPointsEarned: { type: 'number', example: 5000 },
-        totalPointsSpent: { type: 'number', example: 4000 },
-        lastUpdated: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  async getUserPointBalance(@Param('userId') userId: string) {
-    return this.pointsService.getUserPointBalance(userId);
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '포인트 잔액 조회' })
+  getBalance(@Param('userId') userId: string) {
+    return this.pointsService.getBalance(userId);
   }
 
   @Get(':userId/transactions')
-  @ApiOperation({
-    summary: '사용자 포인트 거래 내역 조회',
-    description: '특정 사용자의 포인트 거래 내역을 조회합니다.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description: '사용자 ID',
-    example: 'user-uuid',
-  })
-  @ApiQuery({
-    name: 'page',
-    required: false,
-    description: '페이지 번호',
-    example: 1,
-  })
-  @ApiQuery({
-    name: 'limit',
-    required: false,
-    description: '한 페이지당 결과 수',
-    example: 20,
-  })
-  @ApiQuery({
-    name: 'type',
-    required: false,
-    description: '거래 타입 필터',
-    example: 'EARNED',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '포인트 거래 내역 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        transactions: {
-          type: 'array',
-          items: {
-            type: 'object',
-            properties: {
-              id: { type: 'string', example: 'transaction-uuid' },
-              userId: { type: 'string', example: 'user-uuid' },
-              amount: { type: 'number', example: 100 },
-              type: { type: 'string', example: 'EARNED' },
-              description: { type: 'string', example: '포인트 적립' },
-              balanceAfter: { type: 'number', example: 1100 },
-              createdAt: { type: 'string', format: 'date-time' },
-            },
-          },
-        },
-        total: { type: 'number', example: 50 },
-        page: { type: 'number', example: 1 },
-        totalPages: { type: 'number', example: 3 },
-      },
-    },
-  })
-  async getPointTransactions(
-    @Param('userId') userId: string,
-    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page: number = 1,
-    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number = 20,
-    @Query('type') type?: string
-  ) {
-    return this.pointsService.getUserPointTransactions(
-      userId,
-      page,
-      limit,
-      type
-    );
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '포인트 트랜잭션 조회' })
+  getTransactions(@Param('userId') userId: string, @Query() filters: any) {
+    return this.pointsService.getTransactions(userId, filters);
   }
 
   @Post(':userId/transactions')
-  @ApiOperation({
-    summary: '포인트 거래 생성',
-    description: '새로운 포인트 거래를 생성합니다.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description: '사용자 ID',
-    example: 'user-uuid',
-  })
-  @ApiBody({
-    description: '포인트 거래 정보',
-    schema: {
-      type: 'object',
-      properties: {
-        amount: {
-          type: 'number',
-          description: '포인트 금액',
-          example: 100,
-        },
-        type: {
-          type: 'string',
-          enum: ['EARNED', 'SPENT', 'REFUNDED', 'BONUS', 'EXPIRED'],
-          description: '거래 타입',
-          example: 'EARNED',
-        },
-        description: {
-          type: 'string',
-          description: '거래 설명',
-          example: '포인트 적립',
-        },
-        referenceId: {
-          type: 'string',
-          description: '참조 ID (마권 ID 등)',
-          example: 'bet-uuid',
-        },
-        referenceType: {
-          type: 'string',
-          description: '참조 타입',
-          example: 'BET',
-        },
-      },
-      required: ['amount', 'type', 'description'],
-    },
-  })
-  @ApiResponse({
-    status: 201,
-    description: '포인트 거래 생성 성공',
-  })
-  async createPointTransaction(
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '포인트 트랜잭션 생성 (관리자용?)' })
+  createTransaction(
     @Param('userId') userId: string,
-    @Body() createTransactionDto: any
+    @Body() dto: CreatePointTransactionDto,
   ) {
-    return this.pointsService.addPoints(userId, createTransactionDto);
+    return this.pointsService.createTransaction(userId, dto);
   }
 
-  @Get(':userId/statistics')
-  @ApiOperation({
-    summary: '사용자 포인트 통계 조회',
-    description: '특정 사용자의 포인트 통계를 조회합니다.',
-  })
-  @ApiParam({
-    name: 'userId',
-    description: '사용자 ID',
-    example: 'user-uuid',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '포인트 통계 조회 성공',
-    schema: {
-      type: 'object',
-      properties: {
-        totalTransactions: { type: 'number', example: 50 },
-        totalEarned: { type: 'number', example: 5000 },
-        totalSpent: { type: 'number', example: 4000 },
-        currentBalance: { type: 'number', example: 1000 },
-        averageTransaction: { type: 'number', example: 100 },
-        lastTransactionDate: { type: 'string', format: 'date-time' },
-      },
-    },
-  })
-  async getPointStatistics(@Param('userId') userId: string) {
-    return this.pointsService.getUserPointStatistics(userId);
+  @Post(':userId/promotions/:promotionId/apply')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '프로모션 적용' })
+  applyPromotion(
+    @Param('userId') userId: string,
+    @Param('promotionId') promotionId: string,
+  ) {
+    return this.pointsService.applyPromotion(userId, promotionId);
   }
 }

@@ -1,12 +1,9 @@
 import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('health')
+/** nginx / 로드밸런서용 헬스체크 */
 @Controller('health')
 export class HealthController {
   @Get()
-  @ApiOperation({ summary: '기본 헬스체크' })
-  @ApiResponse({ status: 200, description: '서버 상태 확인' })
   check() {
     return {
       status: 'ok',
@@ -17,9 +14,7 @@ export class HealthController {
   }
 
   @Get('detailed')
-  @ApiOperation({ summary: '상세 헬스체크' })
-  @ApiResponse({ status: 200, description: '상세 서버 상태 정보' })
-  detailedCheck() {
+  detailed() {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),

@@ -9,10 +9,10 @@ import Layout from '@/components/layout/Layout';
 import { adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
 
-// Zod 스키마 (OpenAI 전용)
+// Zod 스키마 (Gemini 전용)
 const aiConfigSchema = z.object({
-  llmProvider: z.enum(['openai']),
-  primaryModel: z.enum(['gpt-4-turbo', 'gpt-4', 'gpt-4o', 'gpt-3.5-turbo']),
+  llmProvider: z.enum(['gemini']),
+  primaryModel: z.string().min(1, '모델을 선택하세요'),
   fallbackModels: z.array(z.string()),
   costStrategy: z.enum(['premium', 'balanced', 'budget']),
   temperature: z.number().min(0).max(1),
@@ -30,29 +30,60 @@ const aiConfigSchema = z.object({
 
 type AIConfigFormData = z.infer<typeof aiConfigSchema>;
 
-// 모델 정보 (OpenAI 전용)
-const MODEL_INFO = {
-  'gpt-4-turbo': { cost: 54, speed: 4, accuracy: 30, provider: 'openai' },
-  'gpt-4': { cost: 90, speed: 3, accuracy: 31, provider: 'openai' },
-  'gpt-4o': { cost: 15, speed: 5, accuracy: 29, provider: 'openai' },
-  'gpt-3.5-turbo': { cost: 10, speed: 5, accuracy: 24, provider: 'openai' },
+// 모델 정보 (Gemini - Admin에서 선택 가능)
+const GEMINI_MODELS = [
+  { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (실험)', cost: 5, accuracy: 28 },
+  { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', cost: 12, accuracy: 30 },
+  { id: 'gemini-1.5-pro-002', name: 'Gemini 1.5 Pro 002', cost: 12, accuracy: 30 },
+  { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', cost: 4, accuracy: 27 },
+  { id: 'gemini-1.5-flash-8b', name: 'Gemini 1.5 Flash 8B', cost: 2, accuracy: 24 },
+  { id: 'gemini-pro', name: 'Gemini Pro (레거시)', cost: 8, accuracy: 25 },
+] as const;
+
+const MODEL_INFO: Record<string, { cost: number; speed: number; accuracy: number; provider: string }> = {
+  'gemini-2.0-flash-exp': { cost: 5, speed: 5, accuracy: 28, provider: 'gemini' },
+  'gemini-1.5-pro': { cost: 12, speed: 4, accuracy: 30, provider: 'gemini' },
+  'gemini-1.5-pro-002': { cost: 12, speed: 4, accuracy: 30, provider: 'gemini' },
+  'gemini-1.5-flash': { cost: 4, speed: 5, accuracy: 27, provider: 'gemini' },
+  'gemini-1.5-flash-8b': { cost: 2, speed: 5, accuracy: 24, provider: 'gemini' },
+  'gemini-pro': { cost: 8, speed: 4, accuracy: 25, provider: 'gemini' },
 };
 
-// 비용 전략 (OpenAI 전용)
+/** 예상 비용 계산 설명 텍스트 */
+function getCostCalculationText(
+  primaryModel: string,
+  enableCaching: boolean,
+  estimatedMonthly: number
+): string {
+  const modelCost = MODEL_INFO[primaryModel]?.cost ?? 12;
+  const racesPerMonth = 50; // 금/토/일 × 4주 ≈ 50경기
+  const rawMonthly = modelCost * racesPerMonth;
+  if (enableCaching) {
+    return `경주당 ₩${modelCost} × ${racesPerMonth}경기/월 × 1%(캐싱) ≈ ₩${estimatedMonthly.toLocaleString()}`;
+  }
+  return `경주당 ₩${modelCost} × ${racesPerMonth}경기/월 ≈ ₩${rawMonthly.toLocaleString()} (캐싱 ON 시 99%↓)`;
+}
+
+// 비용 전략 (Gemini 전용)
 const COST_STRATEGIES = {
   premium: {
     name: 'Premium',
-    cost: 30240,
+    cost: 7200,
     accuracy: 30,
-    description: 'GPT-4만 사용 (최고 정확도)',
+    description: 'Gemini 1.5 Pro만 사용 (최고 정확도)',
   },
   balanced: {
     name: 'Balanced',
-    cost: 18360,
+    cost: 3600,
     accuracy: 27,
-    description: 'GPT-4 + GPT-3.5 혼용 (추천)',
+    description: 'Gemini 1.5 Pro + Flash 혼용 (추천)',
   },
-  budget: { name: 'Budget', cost: 12960, accuracy: 24, description: 'GPT-3.5 위주 (최저 비용)' },
+  budget: {
+    name: 'Budget',
+    cost: 1200,
+    accuracy: 25,
+    description: 'Gemini 1.5 Flash / Pro 위주 (최저 비용)',
+  },
 };
 
 export default function AIConfigPage() {
@@ -75,16 +106,16 @@ export default function AIConfigPage() {
   } = useForm<AIConfigFormData>({
     resolver: zodResolver(aiConfigSchema),
     defaultValues: {
-      llmProvider: 'openai',
-      primaryModel: 'gpt-4-turbo',
-      fallbackModels: ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo'],
+      llmProvider: 'gemini',
+      primaryModel: 'gemini-1.5-pro',
+      fallbackModels: ['gemini-1.5-flash', 'gemini-pro'],
       costStrategy: 'balanced',
       temperature: 0.7,
       maxTokens: 1000,
       enableCaching: true,
       cacheTTL: 3600,
       enableBatchPrediction: true,
-      batchCronSchedule: '0 9 * * *',
+      batchCronSchedule: '0 9 * * 5,6,0',
       enableAutoUpdate: true,
       updateIntervalMinutes: 10,
       oddsChangeThreshold: 10,
@@ -97,9 +128,9 @@ export default function AIConfigPage() {
   useEffect(() => {
     if (configData) {
       reset({
-        llmProvider: configData.llmProvider || 'openai',
-        primaryModel: configData.primaryModel || 'gpt-4-turbo',
-        fallbackModels: configData.fallbackModels || ['gpt-4o', 'gpt-4', 'gpt-3.5-turbo'],
+        llmProvider: configData.llmProvider || 'gemini',
+        primaryModel: configData.primaryModel || 'gemini-1.5-pro',
+        fallbackModels: configData.fallbackModels || ['gemini-1.5-flash', 'gemini-pro'],
         costStrategy: configData.costStrategy || 'balanced',
         temperature: configData.temperature || 0.7,
         maxTokens: configData.maxTokens || 1000,
@@ -107,7 +138,7 @@ export default function AIConfigPage() {
         cacheTTL: configData.cacheTTL || 3600,
         enableBatchPrediction:
           configData.enableBatchPrediction !== undefined ? configData.enableBatchPrediction : true,
-        batchCronSchedule: configData.batchCronSchedule || '0 9 * * *',
+        batchCronSchedule: configData.batchCronSchedule || '0 9 * * 5,6,0',
         enableAutoUpdate:
           configData.enableAutoUpdate !== undefined ? configData.enableAutoUpdate : true,
         updateIntervalMinutes: configData.updateIntervalMinutes || 10,
@@ -147,7 +178,7 @@ export default function AIConfigPage() {
     updateConfigMutation.mutate(data);
   };
 
-  // Provider는 항상 OpenAI (변경 불필요)
+  // Provider는 항상 Gemini (변경 불필요)
 
   if (configLoading) {
     return (
@@ -191,6 +222,13 @@ export default function AIConfigPage() {
                   <div className='text-3xl font-bold'>₩{estimatedMonthlyCost.toLocaleString()}</div>
                 </div>
                 <div className='text-sm opacity-90'>전략: {selectedStrategy.name}</div>
+                <div className='text-xs opacity-80 pt-2 border-t border-white/30'>
+                  {getCostCalculationText(
+                    watchedPrimaryModel,
+                    watchedEnableCaching,
+                    estimatedMonthlyCost
+                  )}
+                </div>
               </div>
             </div>
 
@@ -206,9 +244,7 @@ export default function AIConfigPage() {
                 </div>
                 <div className='text-sm opacity-90'>
                   모델:{' '}
-                  {MODEL_INFO[
-                    watchedPrimaryModel as keyof typeof MODEL_INFO
-                  ].provider.toUpperCase()}
+                  {MODEL_INFO[watchedPrimaryModel]?.provider?.toUpperCase() ?? 'GEMINI'}
                 </div>
               </div>
             </div>
@@ -238,17 +274,19 @@ export default function AIConfigPage() {
           {/* 설정 폼 */}
           <div className='bg-white rounded-lg shadow p-8'>
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-8'>
-              {/* LLM Provider (OpenAI 전용) */}
+              {/* LLM Provider (Gemini 전용) */}
               <div>
                 <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
                   <Bot className='w-5 h-5' />
-                  LLM Provider (OpenAI 전용)
+                  LLM Provider (Google Gemini)
                 </h3>
                 <div className='bg-blue-50 border-2 border-blue-500 rounded-lg p-4'>
                   <div className='flex items-center justify-between'>
                     <div>
-                      <div className='font-semibold text-blue-900'>OpenAI GPT-4o</div>
-                      <div className='text-sm text-blue-700'>GPT-4 Turbo, GPT-4, GPT-3.5</div>
+                      <div className='font-semibold text-blue-900'>Google Gemini</div>
+                      <div className='text-sm text-blue-700'>
+                        Gemini 1.5 Pro, 1.5 Flash, Pro (무료 tier + 저비용)
+                      </div>
                     </div>
                     <div className='px-3 py-1 bg-blue-600 text-white text-sm font-semibold rounded-full'>
                       활성화
@@ -270,16 +308,25 @@ export default function AIConfigPage() {
                       {...register('primaryModel')}
                       className='w-full px-4 py-2 border rounded-lg'
                     >
-                      <option value='gpt-4-turbo'>GPT-4 Turbo (추천, ₩54)</option>
-                      <option value='gpt-4o'>GPT-4o (빠름, ₩15)</option>
-                      <option value='gpt-4'>GPT-4 (느림, ₩90)</option>
-                      <option value='gpt-3.5-turbo'>GPT-3.5 Turbo (저렴, ₩10)</option>
+                      {GEMINI_MODELS.map((m) => (
+                        <option key={m.id} value={m.id}>
+                          {m.name} (₩{m.cost} / 정확도 {m.accuracy}%)
+                        </option>
+                      ))}
                     </select>
                     <div className='mt-2 text-sm text-gray-500'>
-                      비용: ₩{MODEL_INFO[watchedPrimaryModel as keyof typeof MODEL_INFO].cost} /
-                      예상 정확도:{' '}
-                      {MODEL_INFO[watchedPrimaryModel as keyof typeof MODEL_INFO].accuracy}%
+                      {MODEL_INFO[watchedPrimaryModel] ? (
+                        <>
+                          비용: ₩{MODEL_INFO[watchedPrimaryModel].cost} / 예상 정확도:{' '}
+                          {MODEL_INFO[watchedPrimaryModel].accuracy}%
+                        </>
+                      ) : (
+                        '선택한 모델: ' + watchedPrimaryModel
+                      )}
                     </div>
+                    {errors.primaryModel && (
+                      <p className='text-red-500 text-sm mt-1'>{errors.primaryModel.message}</p>
+                    )}
                   </div>
 
                   <div>
@@ -427,7 +474,9 @@ export default function AIConfigPage() {
                       disabled={!watch('enableBatchPrediction')}
                       className='w-full px-4 py-2 border rounded-lg font-mono disabled:bg-gray-100'
                     />
-                    <p className='text-xs text-gray-500 mt-1'>0 9 * * * = 매일 오전 9시</p>
+                    <p className='text-xs text-gray-500 mt-1'>
+                      0 9 * * 5,6,0 = 금/토/일 09:00 (경기일)
+                    </p>
                   </div>
                 </div>
               </div>
@@ -519,22 +568,34 @@ export default function AIConfigPage() {
             </form>
           </div>
 
-          {/* 도움말 */}
+          {/* 도움말 & 예상 비용 계산 */}
           <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
-            <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 (OpenAI 전용)</h4>
+            <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 & 예상 비용 계산</h4>
             <div className='space-y-2 text-sm text-blue-800'>
               <p>
-                <strong>• Premium 전략:</strong> GPT-4만 사용, 최고 정확도 (30%), 월 ₩30,240
+                <strong>• Premium 전략:</strong> Gemini 1.5 Pro만 사용, 최고 정확도 (30%), 월 ₩7,200
               </p>
               <p>
-                <strong>• Balanced 전략 (추천):</strong> GPT-4 + GPT-3.5 혼용, 정확도 27%, 월
-                ₩18,360
+                <strong>• Balanced 전략 (추천):</strong> Pro + Flash 혼용, 정확도 27%, 월 ₩3,600
               </p>
               <p>
-                <strong>• Budget 전략:</strong> GPT-3.5 위주, 정확도 24%, 월 ₩12,960
+                <strong>• Budget 전략:</strong> Flash 위주, 정확도 25%, 월 ₩1,200
               </p>
-              <p className='mt-3 pt-3 border-t border-blue-200'>
-                <strong>⚠️ 캐싱 활성화 시:</strong> 실제 비용은 1% 수준 (월 ₩300 내외)
+              <div className='mt-3 pt-3 border-t border-blue-200'>
+                <strong>📊 예상 비용 계산식</strong>
+                <pre className='mt-2 p-2 bg-white rounded text-xs overflow-x-auto'>
+{`경주당 비용(모델별) × 월 경기 수(≈50) = 월 비용(캐싱 OFF)
+  - gemini-1.5-pro: ₩12 × 50 = ₩600
+  - gemini-1.5-flash: ₩4 × 50 = ₩200
+  - gemini-2.0-flash-exp: ₩5 × 50 = ₩250
+
+캐싱 ON 시: 위 금액 × 1% ≈ 월 ₩2~₩6 (99% 절감)
+무료 tier(1,500 RPD) 내면 $0`}
+                </pre>
+              </div>
+              <p className='mt-2'>
+                <strong>⚠️ 캐싱 활성화 시:</strong> 실제 비용은 1% 수준. 무료 tier (1,500 RPD)
+                활용 가능
               </p>
             </div>
           </div>

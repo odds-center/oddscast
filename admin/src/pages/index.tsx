@@ -1,4 +1,5 @@
 import Head from 'next/head';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import { adminDashboardApi } from '@/lib/api/admin';
@@ -141,38 +142,38 @@ export default function DashboardPage() {
               <div className='bg-white rounded-lg shadow p-6'>
                 <h3 className='text-lg font-semibold mb-4'>빠른 링크</h3>
                 <div className='grid grid-cols-2 gap-4'>
-                  <a
+                  <Link
                     href='/users'
-                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors'
+                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors block'
                   >
                     <Users className='h-8 w-8 text-blue-500 mb-2' />
                     <div className='font-semibold'>회원 관리</div>
                     <div className='text-sm text-gray-500'>회원 목록 조회</div>
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href='/races'
-                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors'
+                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors block'
                   >
                     <CalendarDays className='h-8 w-8 text-green-500 mb-2' />
                     <div className='font-semibold'>경주 관리</div>
                     <div className='text-sm text-gray-500'>경주 일정 관리</div>
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href='/bets'
-                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors'
+                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors block'
                   >
                     <DollarSign className='h-8 w-8 text-yellow-500 mb-2' />
                     <div className='font-semibold'>마권 관리</div>
                     <div className='text-sm text-gray-500'>마권 내역 조회</div>
-                  </a>
-                  <a
+                  </Link>
+                  <Link
                     href='/statistics'
-                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors'
+                    className='p-4 border rounded-lg hover:bg-gray-50 transition-colors block'
                   >
                     <TrendingUp className='h-8 w-8 text-purple-500 mb-2' />
                     <div className='font-semibold'>통계</div>
                     <div className='text-sm text-gray-500'>상세 통계 보기</div>
-                  </a>
+                  </Link>
                 </div>
               </div>
             </div>

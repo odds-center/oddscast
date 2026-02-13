@@ -1,97 +1,63 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Param,
-  Query,
-  UseGuards,
-  HttpCode,
-  HttpStatus,
-  Req,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Query, UseGuards } from '@nestjs/common';
 import { SinglePurchasesService } from './single-purchases.service';
-import { PurchaseTicketDto, PurchaseResultDto } from './dto';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
+import { PurchaseDto } from '../common/dto/payment.dto';
 
-/**
- * 개별 구매 API 컨트롤러
- */
-@Controller('single-purchases')
+@ApiTags('Single Purchases')
+@ApiBearerAuth()
 @UseGuards(JwtAuthGuard)
+@Controller('single-purchases')
 export class SinglePurchasesController {
-  constructor(
-    private readonly singlePurchasesService: SinglePurchasesService
-  ) {}
+  constructor(private singlePurchasesService: SinglePurchasesService) {}
 
-  /**
-   * 예측권 구매 (1,000원/장)
-   * POST /api/single-purchases/purchase
-   */
+  @Post()
+  @ApiOperation({ summary: '예측권 개별 구매' })
+  purchase(@CurrentUser() user: JwtPayload, @Body() dto: PurchaseDto) {
+    return this.singlePurchasesService.purchase(user.sub, dto);
+  }
+
   @Post('purchase')
-  @HttpCode(HttpStatus.CREATED)
-  async purchase(
-    @Req() req: any,
-    @Body() dto: PurchaseTicketDto
-  ): Promise<PurchaseResultDto> {
-    const userId = req.user.id;
-    return this.singlePurchasesService.purchaseTickets(userId, dto);
+  @ApiOperation({ summary: '예측권 개별 구매 (alias)' })
+  purchaseAlias(@CurrentUser() user: JwtPayload, @Body() dto: PurchaseDto) {
+    return this.singlePurchasesService.purchase(user.sub, dto);
   }
 
-  /**
-   * 가격 계산
-   * GET /api/single-purchases/calculate-price?quantity=5
-   */
-  @Get('calculate-price')
-  async calculatePrice(@Query('quantity') quantity = 1) {
-    return this.singlePurchasesService.calculateTotalPrice(Number(quantity));
-  }
-
-  /**
-   * 개별 구매 설정 조회
-   * GET /api/single-purchases/config
-   */
   @Get('config')
-  async getConfig() {
+  @ApiOperation({ summary: '구매 설정 조회' })
+  getConfig() {
     return this.singlePurchasesService.getConfig();
   }
 
-  /**
-   * 구매 내역 조회
-   * GET /api/single-purchases/history
-   */
+  @Get('price')
+  @ApiOperation({ summary: '가격 계산' })
+  calculatePrice(@Query('quantity') quantity: number = 1) {
+    return this.singlePurchasesService.calculatePrice(Number(quantity));
+  }
+
+  @Get('calculate-price')
+  @ApiOperation({ summary: '가격 계산 (alias)' })
+  calculatePriceAlias(@Query('quantity') quantity: number = 1) {
+    return this.singlePurchasesService.calculatePrice(Number(quantity));
+  }
+
   @Get('history')
-  async getHistory(
-    @Req() req: any,
-    @Query('limit') limit = 50,
-    @Query('offset') offset = 0
+  @ApiOperation({ summary: '구매 이력' })
+  getHistory(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
   ) {
-    const userId = req.user.id;
-    return this.singlePurchasesService.getPurchaseHistory(
-      userId,
-      Number(limit),
-      Number(offset)
-    );
+    return this.singlePurchasesService.getHistory(user.sub, page, limit);
   }
 
-  /**
-   * 총 구매액 조회
-   * GET /api/single-purchases/total-spent
-   */
   @Get('total-spent')
-  async getTotalSpent(@Req() req: any): Promise<{ totalSpent: number }> {
-    const userId = req.user.id;
-    const totalSpent = await this.singlePurchasesService.getTotalSpent(userId);
-    return { totalSpent };
-  }
-
-  /**
-   * 환불 처리 (관리자용)
-   * POST /api/single-purchases/:id/refund
-   */
-  @Post(':id/refund')
-  @HttpCode(HttpStatus.OK)
-  async refund(@Param('id') id: string) {
-    return this.singlePurchasesService.refundPurchase(id);
+  @ApiOperation({ summary: '총 지출 금액' })
+  getTotalSpent(@CurrentUser() user: JwtPayload) {
+    return this.singlePurchasesService.getTotalSpent(user.sub);
   }
 }

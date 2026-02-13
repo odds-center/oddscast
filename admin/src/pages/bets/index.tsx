@@ -7,21 +7,8 @@ import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { adminBetsApi } from '@/lib/api/admin';
+import type { Bet } from '@/lib/types/admin';
 import { formatDateTime, formatCurrency } from '@/lib/utils';
-
-interface Bet {
-  id: string;
-  userId: string;
-  raceId: string;
-  betType: string;
-  betAmount: number;
-  odds: number;
-  potentialWin: number;
-  betStatus: string;
-  betResult: string;
-  actualWin?: number;
-  createdAt: string;
-}
 
 export default function BetsPage() {
   const [page, setPage] = useState(1);
@@ -63,12 +50,12 @@ export default function BetsPage() {
     {
       key: 'odds',
       header: '배당률',
-      render: (bet: Bet) => `${bet.odds.toFixed(2)}`,
+      render: (bet: Bet) => (bet.odds != null ? `${bet.odds.toFixed(2)}` : '-'),
     },
     {
       key: 'potentialWin',
       header: '예상 당첨금',
-      render: (bet: Bet) => formatCurrency(bet.potentialWin),
+      render: (bet: Bet) => formatCurrency(bet.potentialWin ?? 0),
     },
     {
       key: 'betStatus',
@@ -119,7 +106,7 @@ export default function BetsPage() {
               'bg-gray-100 text-gray-800'
             }`}
           >
-            {resultLabels[bet.betResult as keyof typeof resultLabels] || bet.betResult}
+            {resultLabels[bet.betResult as keyof typeof resultLabels] || bet.betResult || '-'}
           </span>
         );
       },
@@ -127,7 +114,7 @@ export default function BetsPage() {
     {
       key: 'createdAt',
       header: '생성일',
-      render: (bet: Bet) => formatDateTime(bet.createdAt),
+      render: (bet: Bet) => formatDateTime(bet.betTime ?? bet.createdAt ?? ''),
     },
   ];
 

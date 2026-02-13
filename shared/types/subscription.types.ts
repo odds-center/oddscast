@@ -55,38 +55,34 @@ export interface CreateSubscriptionRequest {
 }
 
 /**
- * 예측권
+ * 예측권 (서버 Prisma/API 응답 형식)
  */
 export interface PredictionTicket {
   id: string;
   userId: string;
-
-  // 티켓 정보
-  source: 'subscription' | 'single_purchase' | 'bonus';
-  sourceId?: string; // 구독 ID 또는 개별 구매 ID
-
-  // 상태
-  isUsed: boolean;
-  usedAt?: Date;
-  usedForRaceId?: string;
-  usedForPredictionId?: string;
-
-  // 유효기간
-  expiresAt?: Date;
-
-  // 타임스탬프
-  createdAt: Date;
-  updatedAt?: Date;
+  subscriptionId?: string | null;
+  status: 'AVAILABLE' | 'USED' | 'EXPIRED';
+  usedAt?: string | null;
+  raceId?: string | null;
+  predictionId?: string | null;
+  issuedAt: string;
+  expiresAt: string;
+  createdAt?: Date | string;
+  updatedAt?: Date | string;
 }
 
 /**
- * 예측권 잔액
+ * 예측권 잔액 (available/used/expired/total 호환)
  */
 export interface TicketBalance {
-  totalTickets: number;
-  availableTickets: number;
-  usedTickets: number;
-  expiredTickets: number;
+  totalTickets?: number;
+  total?: number;
+  availableTickets?: number;
+  available?: number;
+  usedTickets?: number;
+  used?: number;
+  expiredTickets?: number;
+  expired?: number;
 }
 
 /**

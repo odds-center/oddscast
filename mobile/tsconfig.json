@@ -4,15 +4,7 @@
     "strict": true,
     "paths": {
       "@/*": ["./*"],
-      "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"],
-      "@/constants/*": ["./constants/*"],
-      "@/hooks/*": ["./hooks/*"],
-      "@/utils/*": ["./utils/*"],
-      "@/context/*": ["./context/*"],
-      "@/store/*": ["./store/*"],
-      "@/assets/*": ["./assets/*"],
-      "@/config/*": ["./config/*"]
+      "@/assets/*": ["./assets/*"]
     }
   },
   "include": ["**/*.ts", "**/*.tsx"]

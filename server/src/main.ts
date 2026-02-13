@@ -1,61 +1,48 @@
 import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import { logger } from './utils/logger';
+import { ValidationPipe, RequestMethod } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
-    logger: ['error', 'warn', 'log', 'debug', 'verbose'],
+  const app = await NestFactory.create(AppModule);
+
+  // Global API Prefix — 모바일 앱의 baseURL이 /api를 사용
+  // health는 nginx/LB 헬스체크용으로 /health에 노출 (prefix 제외)
+  app.setGlobalPrefix('api', {
+    exclude: [
+      { path: 'health', method: RequestMethod.GET },
+      { path: 'health/detailed', method: RequestMethod.GET },
+    ],
   });
 
-  // 글로벌 프리픽스 설정
-  app.setGlobalPrefix('api');
-
-  // CORS 설정
+  // CORS
   app.enableCors({
-    origin:
-      process.env.NODE_ENV === 'production'
-        ? ['https://yourdomain.com']
-        : [
-            'http://localhost:3000',
-            'http://localhost:3001',
-            'exp://localhost:19000',
-          ],
+    origin: true,
     credentials: true,
   });
 
-  // 글로벌 파이프 설정
+  // Global validation pipe
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
-      forbidNonWhitelisted: true,
       transform: true,
-    })
+      transformOptions: { enableImplicitConversion: true },
+    }),
   );
 
-  // Swagger 설정
+  // Swagger (Global prefix와 충돌 방지를 위해 /docs로 설정)
   const config = new DocumentBuilder()
     .setTitle('Golden Race API')
-    .setDescription('한국마사회 API 통합 서버')
+    .setDescription('AI 경마 승부예측 서비스 API')
     .setVersion('1.0')
-    .addTag('races', '경마 관련 API')
-    .addTag('results', '경마 결과 API')
-    .addTag('race-plans', '경주계획표 API')
-    .addTag('health', '헬스체크 API')
+    .addBearerAuth()
     .build();
-
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  SwaggerModule.setup('docs', app, document);
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 3001;
   await app.listen(port);
-
-  logger.info(`🚀 Golden Race 서버가 포트 ${port}에서 실행 중입니다.`);
-  logger.info(`📚 API 문서: http://localhost:${port}/api/docs`);
+  console.log(`🏇 Golden Race server running on http://localhost:${port}`);
+  console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }
-
-bootstrap().catch(error => {
-  logger.error('서버 시작 실패:', error);
-  process.exit(1);
-});
+bootstrap();

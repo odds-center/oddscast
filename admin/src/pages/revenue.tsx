@@ -9,26 +9,20 @@ import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Ticket, Zap } 
 export default function RevenuePage() {
   const [period, setPeriod] = useState('month');
 
-  // 수익 통계
-  const { data: revenue, isLoading } = useQuery({
+  // 수익 통계 (카드 + 테이블)
+  const { data: revenueData, isLoading } = useQuery({
     queryKey: ['revenue-stats', period],
     queryFn: () => adminStatisticsApi.getRevenue(period),
   });
 
-  // 대시보드 통계
-  const { data: dashboardData } = useQuery({
-    queryKey: ['dashboard-stats'],
-    queryFn: () => adminStatisticsApi.getDashboard(),
-  });
-
-  // 에러 시 기본값 설정
-  const dashboard = dashboardData || {
-    monthlyRevenue: 1940000,
-    monthlyCost: 62140,
-    monthlyProfit: 1877860,
-    margin: 96.8,
-    activeSubscribers: 100,
-    avgRevenuePerUser: 19400,
+  const revenueRows = revenueData?.rows ?? [];
+  const dashboard = revenueData || {
+    monthlyRevenue: 0,
+    monthlyCost: 0,
+    monthlyProfit: 0,
+    margin: 0,
+    activeSubscribers: 0,
+    avgRevenuePerUser: 0,
   };
 
   if (isLoading) {
@@ -119,7 +113,7 @@ export default function RevenuePage() {
                 </div>
               </div>
               <div className='flex items-center gap-1 text-sm'>
-                <span>마진 {dashboard?.margin.toFixed(1)}%</span>
+                <span>마진 {(dashboard?.margin ?? 0).toFixed(1)}%</span>
               </div>
             </div>
 
@@ -241,8 +235,8 @@ export default function RevenuePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {revenue && revenue.length > 0 ? (
-                    revenue.map((row, idx) => (
+                  {revenueRows.length > 0 ? (
+                    revenueRows.map((row, idx) => (
                       <tr key={idx} className='border-b hover:bg-gray-50'>
                         <td className='py-3 px-4 font-medium'>{row.period}</td>
                         <td className='py-3 px-4 text-right'>₩{formatNumber(row.revenue)}</td>
@@ -258,7 +252,10 @@ export default function RevenuePage() {
                               row.profit > 0 ? 'text-green-600' : 'text-red-600'
                             }`}
                           >
-                            {((row.profit / row.revenue) * 100).toFixed(1)}%
+                            {row.revenue > 0
+                              ? ((row.profit / row.revenue) * 100).toFixed(1)
+                              : '0'}
+                            %
                           </span>
                         </td>
                         <td className='py-3 px-4 text-right'>-</td>

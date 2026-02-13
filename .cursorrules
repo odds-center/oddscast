@@ -1,311 +1,119 @@
 # Golden Race 프로젝트 AI 규칙
 
-## 📚 전체 문서 목록 (61개)
+## 🚨 최우선 원칙: 문서 우선 (Documentation First)
 
-Golden Race 프로젝트의 모든 문서를 참고하세요. 질문에 가장 적합한 문서를 선택하여 답변하세요.
-
-### 📅 개발 일지 (2개)
-- `docs/daily/2025-10-11-notification-system.md` - Push Notification 시스템, 커스텀 Alert
-- `docs/daily/2025-10-11-development-summary.md` - DB 스키마 통일, 구독 시스템
-
-### 🔧 설정 가이드 (4개) ⭐ 중요
-- `docs/setup/QUICK_START.md` - 5분 안에 프로젝트 실행하기
-- `docs/setup/DOCKER_SETUP.md` - Docker 환경 구축 및 관리
-- `docs/setup/GOOGLE_CLOUD_SETUP.md` - OAuth 2.0 인증 설정
-- `docs/setup/ENVIRONMENT.md` - 환경변수 상세 가이드
-
-### 🏗️ 아키텍처 (6개) ⭐ 중요
-- `docs/architecture/PROJECT_OVERVIEW.md` - 프로젝트 전체 개요
-- `docs/architecture/mobile/ARCHITECTURE.md` - React Native 앱 구조
-- `docs/architecture/mobile/NAVIGATION.md` - 화면 구조 및 라우팅
-- `docs/architecture/mobile/STATE_MANAGEMENT.md` - Redux + React Query
-- `docs/architecture/server/DATA_STORAGE.md` - 데이터베이스 구조
-- `docs/architecture/server/ENTITY_STATUS.md` - 엔티티 상태 관리
-
-### 🎯 기능 문서 (18개)
-
-#### AI 시스템 (7개)
-- `docs/features/ai/README.md` - AI 시스템 문서 허브
-- `docs/features/ai/AI_CACHING_STRATEGY.md` - 캐싱 전략 및 비용 99% 절감 (필수!)
-- `docs/features/ai/AI_PREDICTION_IMPLEMENTATION.md` - LLM 기반 예측 구현 가이드
-- `docs/features/ai/AI_PREDICTION_ANALYSIS.md` - AI 예측 성과 분석
-- `docs/features/ai/AI_FEATURES.md` - AI 기능 설계 및 UI/UX
-- `docs/features/ai/AI_PREDICTION_ROADMAP.md` - AI 시스템 로드맵
-- `docs/features/ai/AI_PREDICTION_COST_MODEL.md` - 구독 및 비용 모델
-
-#### 게임 시스템 (8개)
-- `docs/features/game/SUBSCRIPTION_PLANS.md` - 구독 플랜 설계
-- `docs/features/game/PAYMENT_INTEGRATION.md` - 결제 연동 (Toss Payments)
-- `docs/features/game/BETTING_SYSTEM.md` - 베팅 시스템 설계
-- `docs/features/game/POINT_SYSTEM.md` - 포인트 시스템
-- `docs/features/game/USER_LEVELS.md` - 사용자 레벨 시스템
-- `docs/features/game/REVENUE_MODEL.md` - 수익 모델 및 마진 계산
-- `docs/features/game/COST_ANALYSIS.md` - 전체 비용 분석
-- `docs/features/game/NOTIFICATION_SYSTEM.md` - 알림 시스템
-
-#### 모바일 기능 (3개)
-- `docs/features/mobile/FAVORITES_SYSTEM.md` - 즐겨찾기 기능
-- `docs/features/mobile/ONBOARDING_FLOW.md` - 온보딩 플로우
-- `docs/features/mobile/USER_PROFILE.md` - 사용자 프로필
-
-### 📖 개발 가이드 (14개) ⭐⭐⭐ 매우 중요
-
-#### 인증 (2개)
-- `docs/guides/authentication/GOOGLE_OAUTH_IMPLEMENTATION.md` - Google OAuth 구현
-- `docs/guides/authentication/JWT_TOKEN_MANAGEMENT.md` - JWT 토큰 관리
-
-#### 모바일 (3개)
-- `docs/guides/mobile/UI_COMPONENTS.md` - UI 컴포넌트 가이드
-- `docs/guides/mobile/Theming.md` - 테마 시스템
-- `docs/guides/mobile/DATABASE.md` - 로컬 DB (SQLite)
-
-#### 서버 (2개)
-- `docs/guides/server/DATA_COLLECTION_GUIDE.md` - KRA API 데이터 수집
-- `docs/guides/server/KRA_API_MIGRATION_GUIDE.md` - KRA API 마이그레이션
-
-#### 배포 (7개) ⭐⭐⭐ 가장 중요!
-- `docs/guides/deployment/README.md` - 배포 가이드 허브
-- `docs/guides/deployment/RAILWAY_DETAILED_GUIDE.md` - Railway 완벽 설정 가이드 (필수!)
-- `docs/guides/deployment/RAILWAY_VS_EC2.md` - Railway vs EC2 상세 비교 (필수!)
-- `docs/guides/deployment/CLOUDFLARE_GUIDE.md` - Cloudflare 활용 가이드 (필수!)
-- `docs/guides/deployment/INFRASTRUCTURE_COMPARISON.md` - 전체 인프라 옵션 비교
-- `docs/guides/deployment/mobile.md` - iOS/Android 앱 배포
-- `docs/guides/deployment/SELF_HOSTED_SERVER.md` - EC2/VPS 자체 호스팅
-
-#### 테스트 (1개)
-- `docs/guides/INTEGRATION_TEST_GUIDE.md` - 통합 테스트 가이드
-
-### 📡 API 문서 (4개)
-- `docs/api/README.md` - API 문서 허브
-- `docs/api/rest/SERVER_MOBILE_API_MAPPING.md` - 서버-모바일 API 매핑
-- `docs/api/kra/API_INTEGRATION.md` - KRA API 통합 가이드
-- `docs/api/kra/API_REFERENCE.md` - KRA API 레퍼런스
-- `docs/api/kra/API_SCHEDULE.md` - API 데이터 수집 스케줄
-
-### 📚 레퍼런스 (4개) ⭐⭐⭐ 매우 중요
-- `docs/reference/README.md` - 레퍼런스 허브
-- `docs/reference/KRA_SYSTEM_GUIDE.md` - 한국마사회 시스템 완벽 가이드 (신규!)
-- `docs/reference/BETTING_SYSTEM_DETAILED.md` - 베팅 시스템 완벽 가이드 (신규!)
-- `docs/reference/HORSE_RACING_TERMINOLOGY.md` - 경마 용어 완전 가이드
-
-### 📦 아카이브 (8개)
-- `docs/archive/CHANGELOG.md` - 변경 이력
-- `docs/archive/MIGRATION_REPORT.md` - Express → NestJS 마이그레이션
-- `docs/archive/API_INTEGRATION_SUMMARY.md` - KRA API 통합 완료 보고서
-- `docs/archive/IMPROVEMENTS.md` - 프로젝트 개선 내역
-- `docs/archive/IMPLEMENTATION_ROADMAP.md` - 8주 개발 계획
-- `docs/archive/FINAL_CONSISTENCY_REPORT.md` - 코드 일관성 검증
-- `docs/archive/DOCS_INTEGRATION_COMPLETE.md` - 문서 통합 완료
-- `docs/archive/UNIFIED_DOCS_REPORT.md` - 전체 문서 통합 리포트
-
-### 📋 기타 문서
-- `docs/README.md` - 문서 허브 (전체 인덱스)
-- `docs/SUMMARY.md` - 문서 요약
-- `docs/CONSISTENCY_REPORT.md` - 일관성 보고서
-- `docs/DOCUMENTATION_UPDATE_2025-10-11.md` - 문서 업데이트 (오전)
-- `docs/DOCUMENTATION_UPDATE_2025-10-11-PM.md` - 문서 업데이트 (오후)
+**모든 Planning 단계 시작 전, 반드시 `docs/` 폴더 내의 관련 문서를 먼저 읽으세요.**
+사용자의 요구사항이 문서에 정의된 내용과 일치하는지 확인하고, 기존 아키텍처나 규칙을 준수해야 합니다.
 
 ---
 
-## 🎯 프로젝트 컨텍스트
+## 📚 프로젝트 핵심 문서
 
-### 기술 스택
-- **백엔드**: NestJS + TypeORM + MySQL 8.0 + Redis
-- **프론트엔드 (모바일)**: React Native + Expo
-- **프론트엔드 (관리자)**: Next.js
-- **인프라**: Railway.app (추천) + Cloudflare
-- **인증**: Google OAuth 2.0 + JWT
+### 📋 서비스 명세 (기능 개발 시 우선 참조)
+- `docs/SERVICE_SPECIFICATION.md` — 서비스 개요, 제공 기능 총괄, 기능별 상세, 사용자 플로우, 구현 체크리스트
 
-### 프로젝트 특징
-- 경마 정보 및 베팅 플랫폼
-- KRA (한국마사회) API 연동
-- LLM 기반 예측 시스템 (계획)
-- 구독 기반 수익 모델
+### 🏗️ 아키텍처 문서 (작업 전 반드시 읽기)
+- `docs/architecture/ARCHITECTURE.md` — 시스템 아키텍처, 데이터 흐름, 인증 플로우, 응답 포맷
+- `docs/architecture/DATABASE_SCHEMA.md` — Prisma 12개 모델, ERD, 필드 설명, Enum 목록
+- `docs/architecture/API_SPECIFICATION.md` — **전체 API 엔드포인트 명세 (서버↔모바일 매핑)**
+- `docs/architecture/BUSINESS_LOGIC.md` — AI 예측, 예측권, 구독, 결제, 알림 비즈니스 규칙
+- `docs/architecture/PROJECT_STRUCTURE.md` — 디렉토리 구조, 모듈별 역할
 
-### 팀 구성
-- 소규모 팀 (1-3명)
-- 초기 스타트업
-- DevOps 전문 인력 없음
+### 📝 기술 명세 (필수 숙지)
+- `docs/specs/HORSE_RACING_SPEC.md` — 기술 스택 및 아키텍처 명세 (T-N-P-P 전략)
+- `docs/specs/COST_ANALYSIS.md` — Gemini API 비용 분석 & 서버 캐싱 전략
 
-### 현재 상태
-- 초기 개발 단계
-- 예상 사용자: 0~1,000명
-- MVP 개발 중
+### ⚖️ 법적 고지
+- `docs/legal/LEGAL_NOTICE.md` — 서비스 법적 고지사항
 
 ---
 
-## 💡 답변 시 지침
+## 📖 작업별 필수 참조 문서
 
-### 1. 인프라 관련 질문
-- **항상 Railway.app을 1순위로 추천**
-  - 이유: 소규모 팀, 관리 편의성, 비용 효율성
-  - 근거: `docs/guides/deployment/RAILWAY_VS_EC2.md` 참고
-- Cloudflare 무료 플랜 함께 추천
-- EC2는 5,000명 이상 사용자가 생긴 후에만 고려
-
-### 2. 비용 계산
-- 초기 예산: 월 10만원 이하 목표
-- Railway + Cloudflare: ₩54,160/월
-- 마진율 계산 시 항상 포함
-
-### 3. 코드 작성 규칙
-- **TypeScript** 사용 (엄격한 타입)
-- **camelCase** 변수명 (TypeScript/JavaScript)
-- **snake_case** DB 컬럼명 (MySQL)
-- 한글 주석 사용 (한국 팀이므로)
-- 에러 처리 필수
-
-### 4. 데이터베이스
-- MySQL 8.0 사용
-- TypeORM으로 관리
-- snake_case 네이밍
-- UTF-8mb4 인코딩 필수
-
-### 5. API 설계
-- RESTful API
-- Swagger 문서화
-- 인증: JWT Bearer Token
-- 에러 응답 표준화
-
-### 6. 모바일 앱
-- Expo 사용
-- React Query로 상태 관리
-- Google OAuth 로그인
-- Android + iOS 동시 지원
+| 작업 유형 | 반드시 읽어야 할 문서 |
+|-----------|----------------------|
+| **새 기능 기획/추가** | `SERVICE_SPECIFICATION.md` + `BUSINESS_LOGIC.md` |
+| **서버 API 추가/수정** | `API_SPECIFICATION.md` + `ARCHITECTURE.md` |
+| **DB 스키마 변경** | `DATABASE_SCHEMA.md` + `BUSINESS_LOGIC.md` |
+| **모바일 API 호출 추가** | `API_SPECIFICATION.md` + `PROJECT_STRUCTURE.md` |
+| **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
+| **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
+| **결제/구독 관련** | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` |
+| **AI 예측 관련** | `BUSINESS_LOGIC.md` + `HORSE_RACING_SPEC.md` |
+| **알림 설정 관련** | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
+| **즐겨찾기 관련** | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
 
 ---
 
-## 🚫 하지 말아야 할 것
+## 🏗️ 기술 스택 (T-N-P-P)
 
-### 인프라
-- ❌ Kubernetes 추천 금지 (초기에는 과도함)
-- ❌ AWS EC2 직접 관리 권장 금지 (초기에는 비효율)
-- ❌ 복잡한 마이크로서비스 아키텍처 제안 금지
-
-### 코드
-- ❌ any 타입 사용 금지
-- ❌ console.log 프로덕션 코드에 남기지 않기
-- ❌ 하드코딩된 설정값 금지 (환경변수 사용)
-- ❌ SQL Injection 취약점 주의
-
-### 보안
-- ❌ API 키를 코드에 직접 포함 금지
-- ❌ 민감한 정보를 Git에 커밋 금지
-- ❌ CORS를 "*"로 열어두지 않기
+| 구분 | 기술 |
+|------|------|
+| **App** | React Native (Expo) — TypeScript |
+| **Backend** | NestJS (Node.js) — API 서버 + Control Tower |
+| **Analysis** | Python (pandas, numpy) — python-shell로 실행 |
+| **Database** | PostgreSQL (Supabase) — Prisma ORM |
+| **AI** | Google Gemini API |
+| **Admin** | Next.js |
 
 ---
 
-## 📖 문서 우선순위
-
-질문 유형별 참고 문서:
-
-### "인프라를 어떻게 구축하나요?"
-1. `docs/guides/deployment/RAILWAY_DETAILED_GUIDE.md` - Railway 실전 설정 (필수!)
-2. `docs/guides/deployment/RAILWAY_VS_EC2.md` - Railway vs EC2 비교 (필수!)
-3. `docs/guides/deployment/CLOUDFLARE_GUIDE.md` - Cloudflare 설정
-4. `docs/guides/deployment/INFRASTRUCTURE_COMPARISON.md` - 전체 옵션 비교
-
-### "프로젝트를 어떻게 시작하나요?"
-1. `docs/setup/QUICK_START.md`
-2. `docs/setup/DOCKER_SETUP.md`
-3. `docs/setup/ENVIRONMENT.md`
-
-### "데이터베이스 구조는?"
-1. `docs/architecture/server/DATA_STORAGE.md`
-2. `docs/architecture/server/ENTITY_STATUS.md`
-
-### "모바일 앱 구조는?"
-1. `docs/architecture/mobile/ARCHITECTURE.md`
-2. `docs/architecture/mobile/NAVIGATION.md`
-3. `docs/architecture/mobile/STATE_MANAGEMENT.md`
-
-### "KRA API는 어떻게 사용하나요?"
-1. `docs/guides/server/DATA_COLLECTION_GUIDE.md`
-2. `docs/guides/server/KRA_API_MIGRATION_GUIDE.md`
-3. `docs/api/kra/` 폴더 내 문서들
-
----
-
-## 💬 답변 스타일
-
-- **한국어로 답변** (user_rules에 명시됨)
-- 실용적이고 구체적으로
-- 코드 예제 포함
-- 비용 계산 시 항상 원화(₩) 표시
-- 문서 링크 적극 활용
-- 이모지 적절히 사용 (가독성 향상)
-
----
-
-## 🔄 문서 업데이트 정보
-
-- **최종 업데이트**: 2025년 10월 12일
-- **총 문서 수**: 61개
-- **최신 추가 문서** (중요!):
-  - Railway 상세 설정 가이드 (Redis, MySQL, CI/CD)
-  - Railway vs EC2 비교 가이드
-  - Cloudflare 활용 가이드
-  - 인프라 비교 문서
-  - KRA 시스템 완벽 가이드 (한국 경마 필수!)
-  - 베팅 시스템 완벽 가이드 (승식별 전략)
-  - AI 예측 성과 분석 시스템 (필수!)
-  - **AI 캐싱 전략 (비용 99% 절감!) ⭐⭐⭐**
-  - 레퍼런스 허브
-
----
-
-## 📝 특별 지시사항
-
-### 배포 관련 질문 시
-1. 먼저 팀 규모와 예상 사용자 수 확인
-2. 초기(0~1,000명)라면 무조건 Railway 추천
-3. 비용 대비 효과 설명 (ROI)
-4. Cloudflare 무료 플랜 함께 추천
-
-### 코드 수정 시
-1. 기존 코드 스타일 유지
-2. TypeScript 타입 엄격히 지정
-3. 에러 처리 추가
-4. 주석 한글로 작성
-
-### 새로운 기능 제안 시
-1. 현재 아키텍처와 호환성 확인
-2. 비용 영향 분석
-3. 구현 난이도 평가
-4. 관련 문서 참조
-
----
-
-## 🎓 참고: 주요 파일 경로
+## 📂 디렉토리 구조
 
 ```
 goldenrace/
-├── server/                 # NestJS 백엔드
-│   ├── src/
-│   │   ├── auth/          # 인증 (Google OAuth, JWT)
-│   │   ├── kra-api/       # KRA API 연동
-│   │   ├── users/         # 사용자 관리
-│   │   └── subscriptions/ # 구독 관리
-│   └── .env               # 환경변수
-│
-├── mobile/                # React Native 앱
-│   ├── app/              # Expo Router
-│   ├── components/       # 공통 컴포넌트
-│   ├── lib/             # API 클라이언트
-│   └── store/           # Redux 상태 관리
-│
-├── admin/               # Next.js 관리자
-│   └── src/
-│
-└── docs/                # 📚 모든 문서 (이 폴더 우선 참고!)
-    ├── guides/
-    │   └── deployment/  # 배포 가이드 (중요!)
-    ├── architecture/    # 아키텍처
-    ├── setup/          # 설정 가이드
-    └── README.md       # 문서 허브
+├── server/                     # NestJS 백엔드 (메인)
+│   ├── src/                    # NestJS 모듈 (12개)
+│   ├── scripts/                # Python 분석 스크립트
+│   └── prisma/                 # Prisma 스키마
+├── webapp/                     # Next.js 웹앱 (메인 클라이언트, mobile WebView에서 로드)
+├── mobile/                     # React Native Expo 앱 (WebView → webapp)
+├── admin/                      # Next.js 관리자 패널
+├── shared/                     # @goldenrace/shared — webapp·mobile·admin·server 공용 타입
+├── docs/                       # 문서
+│   ├── architecture/           # 🏗️ 아키텍처 문서 (5개)
+│   ├── features/               # 기능 명세 (알림 설정, 포인트·승식 등)
+│   ├── specs/                  # 기술 명세
+│   └── legal/                  # 법적 고지
+└── server_legacy_nestjs/       # 이전 NestJS 서버 (참고용)
 ```
 
 ---
 
-이 규칙들을 항상 염두에 두고 Golden Race 프로젝트에 최적화된 답변을 제공하세요.
+## ⚠️ 주의사항 (필수 준수)
 
+1. **NestJS가 Control Tower:** NestJS가 Python 스크립트를 `python-shell`로 실행하고, Gemini API를 호출합니다.
+2. **Python은 순수 계산만:** DB 접근 없이 NestJS가 주는 JSON을 받아 처리 후 반환합니다.
+3. **Server-Side Caching:** 스케줄러(cron)로 Gemini 분석을 미리 실행하고 DB에 저장. 사용자는 DB만 읽습니다.
+4. **Prisma ORM:** DB 스키마는 `prisma/schema.prisma`에서 관리합니다.
+5. **Global API Prefix:** `main.ts`에서 `app.setGlobalPrefix('api')` 설정. 모든 라우트에 `/api` prefix 적용.
+6. **응답 포맷:** `ResponseInterceptor`가 `{ data, status, message? }` 형태로 래핑합니다.
+7. **사행성 제거:** 베팅/배팅 기능 없음. AI 분석 콘텐츠 제공 서비스입니다.
+8. **폼(Form):** 모든 폼은 `react-hook-form`을 사용합니다. (useForm, register, handleSubmit 등)
+
+---
+
+## 🔒 핵심 규칙 요약 (코드 작성 시 반드시 적용)
+
+### 즐겨찾기 (Favorites)
+- **type은 RACE만 지원.** 말·기수·조교사 즐겨찾기 없음.
+- DTO: `@IsIn(['RACE'])`, 서비스: type 기본값·필터 모두 RACE.
+
+### 알림 설정 (Notification Preferences)
+- **이메일 알림 없음.** 푸시만 채널로 사용.
+- **푸시 토글**: mobile(native WebView)에서만 UI 노출. Web에서는 숨김.
+- 플랫폼 감지: `window.__IS_NATIVE_APP__=true` (webview.tsx에서 주입) → `useIsNativeApp()`.
+- 플래그: `pushEnabled`, `raceEnabled`, `predictionEnabled`, `subscriptionEnabled`, `systemEnabled`, `promotionEnabled`.
+
+### WebApp 클라이언트
+- **webapp** = 메인 클라이언트. mobile은 WebView로 webapp 로드.
+- 라우트: `lib/routes.ts`에서 중앙 관리.
+- 새 페이지 추가 시 `Layout`, `PageHeader`, `BackLink` 등 공통 컴포넌트 사용.
+
+### 타입 (Shared)
+- **새 타입 추가 시** `shared/types/`에 정의. webapp·mobile·admin·server 공용.
+- 사용: `import type { ApiResponse, Favorite, ... } from '@goldenrace/shared'`
+
+### 기타
+- **기본 폰트 16px**, px는 짝수 사용 (40~60대 가독성).
+- **prediction 페이지**: 제거됨. 예측 목록은 경주 상세에서 확인.

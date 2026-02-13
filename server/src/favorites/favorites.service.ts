@@ -1,324 +1,176 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-  ConflictException,
-  BadRequestException,
-} from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { Favorite, FavoriteType } from './entities/favorite.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, FavoriteType } from '@prisma/client';
 import {
   CreateFavoriteDto,
   UpdateFavoriteDto,
-  FavoriteResponseDto,
-  FavoriteListResponseDto,
-  FavoriteToggleDto,
-  FavoriteCheckDto,
-  FavoriteStatisticsDto,
-} from './dto/index';
+  ToggleFavoriteDto,
+} from './dto/favorite.dto';
 
 @Injectable()
 export class FavoritesService {
-  private readonly logger = new Logger(FavoritesService.name);
+  constructor(private prisma: PrismaService) {}
 
-  constructor(
-    @InjectRepository(Favorite)
-    private readonly favoriteRepo: Repository<Favorite>
-  ) {}
-
-  /**
-   * 즐겨찾기 목록 조회
-   */
-  async getFavorites(
+  async findAll(
     userId: string,
-    filters?: {
-      type?: string;
-      page?: number;
-      limit?: number;
-    }
-  ): Promise<FavoriteListResponseDto> {
-    const { type, page = 1, limit = 20 } = filters || {};
+    filters: { type?: string; page?: number; limit?: number },
+  ) {
+    const { page = 1, limit = 20, type = 'RACE' } = filters;
+    const where: Prisma.FavoriteWhereInput = { userId };
+    // 즐겨찾기 = 경주만. type 미지정 시 RACE 기본
+    where.type = (type || 'RACE') as FavoriteType;
 
-    const queryBuilder = this.favoriteRepo
-      .createQueryBuilder('favorite')
-      .where('favorite.userId = :userId', { userId });
+    const [favorites, total] = await Promise.all([
+      this.prisma.favorite.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.favorite.count({ where }),
+    ]);
 
-    if (type) {
-      queryBuilder.andWhere('favorite.type = :type', { type });
-    }
-
-    const [favorites, total] = await queryBuilder
-      .orderBy('favorite.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      favorites: favorites.map(f => new FavoriteResponseDto(f)),
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { favorites, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  /**
-   * 즐겨찾기 상세 조회
-   */
-  async getFavorite(userId: string, id: string): Promise<FavoriteResponseDto> {
-    const favorite = await this.favoriteRepo.findOne({
-      where: { id, userId },
-    });
-
-    if (!favorite) {
-      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
-    }
-
-    return new FavoriteResponseDto(favorite);
+  async findOne(id: string) {
+    const fav = await this.prisma.favorite.findUnique({ where: { id } });
+    if (!fav) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
+    return fav;
   }
 
-  /**
-   * 즐겨찾기 생성
-   */
-  async createFavorite(
-    userId: string,
-    createFavoriteDto: CreateFavoriteDto
-  ): Promise<FavoriteResponseDto> {
-    const { type, targetId, targetName, targetData, notes, tags } =
-      createFavoriteDto;
-
-    // 중복 확인
-    const existing = await this.favoriteRepo.findOne({
-      where: { userId, type, targetId },
-    });
-
-    if (existing) {
-      throw new ConflictException('이미 즐겨찾기에 추가된 항목입니다.');
-    }
-
-    const favorite = this.favoriteRepo.create({
-      userId,
-      type,
-      targetId,
-      targetName,
-      targetData,
-      notes,
-      tags,
-    });
-
-    const saved = await this.favoriteRepo.save(favorite);
-    this.logger.log(`즐겨찾기 생성: ${saved.id}`);
-
-    return new FavoriteResponseDto(saved);
-  }
-
-  /**
-   * 즐겨찾기 수정
-   */
-  async updateFavorite(
-    userId: string,
-    id: string,
-    updateFavoriteDto: UpdateFavoriteDto
-  ): Promise<FavoriteResponseDto> {
-    const favorite = await this.favoriteRepo.findOne({
-      where: { id, userId },
-    });
-
-    if (!favorite) {
-      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
-    }
-
-    Object.assign(favorite, updateFavoriteDto);
-    const saved = await this.favoriteRepo.save(favorite);
-
-    this.logger.log(`즐겨찾기 수정: ${saved.id}`);
-    return new FavoriteResponseDto(saved);
-  }
-
-  /**
-   * 즐겨찾기 삭제
-   */
-  async deleteFavorite(
-    userId: string,
-    id: string
-  ): Promise<{ message: string }> {
-    const favorite = await this.favoriteRepo.findOne({
-      where: { id, userId },
-    });
-
-    if (!favorite) {
-      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다.');
-    }
-
-    await this.favoriteRepo.remove(favorite);
-    this.logger.log(`즐겨찾기 삭제: ${id}`);
-
-    return { message: '즐겨찾기가 삭제되었습니다.' };
-  }
-
-  /**
-   * 즐겨찾기 토글 (추가/삭제)
-   */
-  async toggleFavorite(
-    userId: string,
-    toggleDto: FavoriteToggleDto
-  ): Promise<{ action: 'ADDED' | 'REMOVED'; favorite?: FavoriteResponseDto }> {
-    const { type, targetId, targetName, targetData } = toggleDto;
-
-    const existing = await this.favoriteRepo.findOne({
-      where: { userId, type, targetId },
-    });
-
-    if (existing) {
-      // 기존 즐겨찾기 삭제
-      await this.favoriteRepo.remove(existing);
-      this.logger.log(`즐겨찾기 토글 - 삭제: ${existing.id}`);
-      return { action: 'REMOVED' };
-    } else {
-      // 새 즐겨찾기 추가
-      const favorite = this.favoriteRepo.create({
+  async create(userId: string, dto: CreateFavoriteDto) {
+    return this.prisma.favorite.create({
+      data: {
         userId,
-        type,
-        targetId,
-        targetName,
-        targetData,
-      });
-
-      const saved = await this.favoriteRepo.save(favorite);
-      this.logger.log(`즐겨찾기 토글 - 추가: ${saved.id}`);
-      return { action: 'ADDED', favorite: new FavoriteResponseDto(saved) };
-    }
+        type: dto.type as FavoriteType,
+        targetId: dto.targetId,
+        targetName: dto.targetName,
+        targetData: dto.targetData as Prisma.InputJsonValue | undefined,
+        memo: dto.memo,
+        priority: dto.priority as any, // Cast to any to avoid enum issues, validated by DTO
+        tags: dto.tags,
+      },
+    });
   }
 
-  /**
-   * 즐겨찾기 확인
-   */
-  async checkFavorite(
-    userId: string,
-    type: string,
-    targetId: string
-  ): Promise<FavoriteCheckDto> {
-    const favorite = await this.favoriteRepo.findOne({
-      where: { userId, type: type as FavoriteType, targetId },
+  async update(id: string, dto: UpdateFavoriteDto) {
+    return this.prisma.favorite.update({
+      where: { id },
+      data: {
+        targetName: dto.targetName,
+        targetData: dto.targetData as Prisma.InputJsonValue | undefined,
+        memo: dto.memo,
+        priority: dto.priority as any,
+        tags: dto.tags,
+      },
     });
-
-    return {
-      isFavorite: !!favorite,
-      favorite: favorite ? new FavoriteResponseDto(favorite) : undefined,
-    };
   }
 
-  /**
-   * 즐겨찾기 통계 조회
-   */
-  async getFavoriteStatistics(userId: string): Promise<FavoriteStatisticsDto> {
-    const totalFavorites = await this.favoriteRepo.count({
-      where: { userId },
-    });
+  async remove(id: string) {
+    await this.prisma.favorite.delete({ where: { id } });
+    return { message: '즐겨찾기가 삭제되었습니다' };
+  }
 
-    // 타입별 통계
-    const favoritesByType = await this.favoriteRepo
-      .createQueryBuilder('favorite')
-      .select('favorite.type', 'type')
-      .addSelect('COUNT(*)', 'count')
-      .where('favorite.userId = :userId', { userId })
-      .groupBy('favorite.type')
-      .getRawMany();
-
-    const typeStats: Record<FavoriteType, number> = {
-      [FavoriteType.HORSE]: 0,
-      [FavoriteType.JOCKEY]: 0,
-      [FavoriteType.TRAINER]: 0,
-      [FavoriteType.RACE]: 0,
-    };
-
-    favoritesByType.forEach(stat => {
-      typeStats[stat.type] = parseInt(stat.count);
-    });
-
-    // 최근 7일간 추가된 즐겨찾기
-    const weekAgo = new Date();
-    weekAgo.setDate(weekAgo.getDate() - 7);
-
-    const recentFavorites = await this.favoriteRepo.count({
+  async toggle(userId: string, dto: ToggleFavoriteDto) {
+    const existing = await this.prisma.favorite.findUnique({
       where: {
-        userId,
-        createdAt: { $gte: weekAgo } as any,
+        userId_type_targetId: {
+          userId,
+          type: dto.type as FavoriteType,
+          targetId: dto.targetId,
+        },
       },
     });
 
-    // 가장 많이 즐겨찾기된 타입
-    const mostFavoritedType = Object.entries(typeStats).reduce((a, b) =>
-      typeStats[a[0] as FavoriteType] > typeStats[b[0] as FavoriteType] ? a : b
-    )[0] as FavoriteType;
+    if (existing) {
+      await this.prisma.favorite.delete({ where: { id: existing.id } });
+      return { action: 'REMOVED' as const };
+    } else {
+      const fav = await this.prisma.favorite.create({
+        data: {
+          userId,
+          type: dto.type as FavoriteType,
+          targetId: dto.targetId,
+          targetName: dto.targetName,
+          targetData: dto.targetData as Prisma.InputJsonValue | undefined,
+          priority: dto.priority as any,
+          tags: dto.tags,
+        },
+      });
+      return { action: 'ADDED' as const, favorite: fav };
+    }
+  }
 
+  async check(userId: string, type: string, targetId: string) {
+    const fav = await this.prisma.favorite.findUnique({
+      where: {
+        userId_type_targetId: {
+          userId,
+          type: type as FavoriteType,
+          targetId,
+        },
+      },
+    });
+    return { isFavorite: !!fav, favorite: fav || undefined };
+  }
+
+  async getStatistics(userId: string) {
+    const counts = await this.prisma.favorite.groupBy({
+      by: ['type'],
+      where: { userId },
+      _count: true,
+    });
     return {
-      totalFavorites,
-      favoritesByType: typeStats,
-      recentFavorites,
-      mostFavoritedType,
+      byType: counts,
+      total: counts.reduce((sum, c) => sum + c._count, 0),
     };
   }
 
-  /**
-   * 즐겨찾기 일괄 추가
-   */
-  async bulkAddFavorites(
-    userId: string,
-    favorites: CreateFavoriteDto[]
-  ): Promise<{
-    added: number;
-    failed: number;
-    errors: { index: number; error: string }[];
-  }> {
-    let added = 0;
-    let failed = 0;
-    const errors: { index: number; error: string }[] = [];
-
-    for (let i = 0; i < favorites.length; i++) {
-      try {
-        await this.createFavorite(userId, favorites[i]);
-        added++;
-      } catch (error) {
-        failed++;
-        errors.push({
-          index: i,
-          error: error instanceof Error ? error.message : '알 수 없는 오류',
-        });
-      }
-    }
-
-    return { added, failed, errors };
+  async search(userId: string, query: string) {
+    return this.prisma.favorite.findMany({
+      where: {
+        userId,
+        type: 'RACE',
+        OR: [
+          { targetName: { contains: query, mode: 'insensitive' } },
+          { memo: { contains: query, mode: 'insensitive' } },
+        ],
+      },
+      orderBy: { createdAt: 'desc' },
+    });
   }
 
-  /**
-   * 즐겨찾기 일괄 삭제
-   */
-  async bulkDeleteFavorites(
-    userId: string,
-    favoriteIds: string[]
-  ): Promise<{
-    deleted: number;
-    failed: number;
-    errors: { favoriteId: string; error: string }[];
-  }> {
-    let deleted = 0;
-    let failed = 0;
-    const errors: { favoriteId: string; error: string }[] = [];
+  async export(userId: string) {
+    return this.prisma.favorite.findMany({
+      where: { userId, type: 'RACE' },
+    });
+  }
 
-    for (const favoriteId of favoriteIds) {
-      try {
-        await this.deleteFavorite(userId, favoriteId);
-        deleted++;
-      } catch (error) {
-        failed++;
-        errors.push({
-          favoriteId,
-          error: error instanceof Error ? error.message : '알 수 없는 오류',
-        });
-      }
-    }
+  async bulkAdd(userId: string, items: CreateFavoriteDto[]) {
+    // RACE만 허용 (DTO 검증 통과된 항목만)
+    const raceItems = items.filter((item) => item.type === 'RACE');
+    return this.prisma.favorite.createMany({
+      data: raceItems.map((item) => ({
+        userId,
+        type: 'RACE' as FavoriteType,
+        targetId: item.targetId,
+        targetName: item.targetName,
+        targetData: item.targetData as Prisma.InputJsonValue | undefined,
+        memo: item.memo,
+        priority: item.priority as any,
+        tags: item.tags,
+      })),
+      skipDuplicates: true,
+    });
+  }
 
-    return { deleted, failed, errors };
+  async bulkDelete(userId: string, ids: string[]) {
+    return this.prisma.favorite.deleteMany({
+      where: {
+        userId,
+        id: { in: ids },
+      },
+    });
   }
 }

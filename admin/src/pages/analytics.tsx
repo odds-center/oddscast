@@ -77,7 +77,7 @@ export default function AnalyticsPage() {
                 <div>
                   <p className='text-sm text-gray-600'>전체 정확도</p>
                   <p className='text-3xl font-bold text-blue-600 mt-2'>
-                    {dashboard?.overall.accuracy.toFixed(1) || '0.0'}%
+                    {(dashboard?.overall?.accuracy ?? 0).toFixed(1)}%
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>
                     {dashboard?.overall.correctPredictions || 0}/
@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
                 <div>
                   <p className='text-sm text-gray-600'>평균 신뢰도</p>
                   <p className='text-3xl font-bold text-green-600 mt-2'>
-                    {dashboard?.overall.avgConfidence.toFixed(1) || '0.0'}%
+                    {(dashboard?.overall?.avgConfidence ?? 0).toFixed(1)}%
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>AI 확신 수준</p>
                 </div>
@@ -142,34 +142,34 @@ export default function AnalyticsPage() {
             <div className='grid grid-cols-3 gap-6'>
               <div className='text-center'>
                 <div className='text-4xl font-bold text-blue-600 mb-2'>
-                  {dashboard?.byPosition.first.accuracy.toFixed(1) || '0.0'}%
+                  {(dashboard?.byPosition?.first?.accuracy ?? 0).toFixed(1)}%
                 </div>
                 <div className='text-sm text-gray-600'>1위 예측</div>
                 <div className='text-xs text-gray-500 mt-1'>
-                  {dashboard?.byPosition.first.correct || 0}/
-                  {dashboard?.byPosition.first.total || 0}
+                  {dashboard?.byPosition?.first?.correct ?? 0}/
+                  {dashboard?.byPosition?.first?.total ?? 0}
                 </div>
               </div>
 
               <div className='text-center'>
                 <div className='text-4xl font-bold text-green-600 mb-2'>
-                  {dashboard?.byPosition.second.accuracy.toFixed(1) || '0.0'}%
+                  {(dashboard?.byPosition?.second?.accuracy ?? 0).toFixed(1)}%
                 </div>
                 <div className='text-sm text-gray-600'>2위 예측</div>
                 <div className='text-xs text-gray-500 mt-1'>
-                  {dashboard?.byPosition.second.correct || 0}/
-                  {dashboard?.byPosition.second.total || 0}
+                  {dashboard?.byPosition?.second?.correct ?? 0}/
+                  {dashboard?.byPosition?.second?.total ?? 0}
                 </div>
               </div>
 
               <div className='text-center'>
                 <div className='text-4xl font-bold text-yellow-600 mb-2'>
-                  {dashboard?.byPosition.third.accuracy.toFixed(1) || '0.0'}%
+                  {(dashboard?.byPosition?.third?.accuracy ?? 0).toFixed(1)}%
                 </div>
                 <div className='text-sm text-gray-600'>3위 예측</div>
                 <div className='text-xs text-gray-500 mt-1'>
-                  {dashboard?.byPosition.third.correct || 0}/
-                  {dashboard?.byPosition.third.total || 0}
+                  {dashboard?.byPosition?.third?.correct ?? 0}/
+                  {dashboard?.byPosition?.third?.total ?? 0}
                 </div>
               </div>
             </div>
@@ -179,7 +179,7 @@ export default function AnalyticsPage() {
           <div className='bg-white rounded-lg shadow p-6'>
             <h3 className='text-lg font-semibold mb-4'>최근 7일 정확도 트렌드</h3>
             <div className='space-y-3'>
-              {dashboard?.recent7Days.map((day, idx) => (
+              {(dashboard?.recent7Days ?? []).map((day, idx) => (
                 <div key={idx} className='flex items-center gap-4'>
                   <div className='w-24 text-sm text-gray-600'>{day.date}</div>
                   <div className='flex-1'>
@@ -187,11 +187,11 @@ export default function AnalyticsPage() {
                       <div className='flex-1 bg-gray-200 rounded-full h-4'>
                         <div
                           className='bg-blue-600 h-4 rounded-full'
-                          style={{ width: `${day.accuracy}%` }}
+                          style={{ width: `${day.accuracy ?? 0}%` }}
                         ></div>
                       </div>
                       <div className='w-16 text-sm font-semibold text-right'>
-                        {day.accuracy.toFixed(1)}%
+                        {(day.accuracy ?? 0).toFixed(1)}%
                       </div>
                     </div>
                   </div>
@@ -216,26 +216,26 @@ export default function AnalyticsPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {dashboard?.byProvider.map((provider, idx) => (
+                  {(dashboard?.byProvider ?? []).map((provider, idx) => (
                     <tr key={idx} className='border-b hover:bg-gray-50'>
                       <td className='py-3 px-4 font-medium'>{provider.provider}</td>
                       <td className='py-3 px-4 text-right'>
                         <span
                           className={`font-semibold ${
-                            provider.accuracy >= 35
+                            (provider.accuracy ?? 0) >= 35
                               ? 'text-green-600'
-                              : provider.accuracy >= 25
+                              : (provider.accuracy ?? 0) >= 25
                               ? 'text-yellow-600'
                               : 'text-red-600'
                           }`}
                         >
-                          {provider.accuracy.toFixed(1)}%
+                          {(provider.accuracy ?? 0).toFixed(1)}%
                         </span>
                       </td>
                       <td className='py-3 px-4 text-right'>{provider.count}</td>
-                      <td className='py-3 px-4 text-right'>₩{provider.avgCost.toFixed(0)}</td>
+                      <td className='py-3 px-4 text-right'>₩{(provider.avgCost ?? 0).toFixed(0)}</td>
                       <td className='py-3 px-4 text-right font-semibold'>
-                        ₩{(provider.avgCost * provider.count).toFixed(0)}
+                        ₩{((provider.avgCost ?? 0) * (provider.count ?? 0)).toFixed(0)}
                       </td>
                     </tr>
                   ))}
@@ -262,7 +262,7 @@ export default function AnalyticsPage() {
                   <div>
                     <div className='text-sm text-gray-600'>평균 오차 거리</div>
                     <div className='text-2xl font-bold text-gray-900'>
-                      {failureAnalysis.avgMissDistance.toFixed(1)}위
+                      {(failureAnalysis?.avgMissDistance ?? 0).toFixed(1)}위
                     </div>
                   </div>
                 </div>
@@ -270,7 +270,7 @@ export default function AnalyticsPage() {
                 <div className='border-t pt-4'>
                   <h4 className='font-semibold mb-3'>주요 실패 원인</h4>
                   <div className='space-y-2'>
-                    {failureAnalysis.byReason.map((reason, idx) => (
+                    {(failureAnalysis?.byReason ?? []).map((reason, idx) => (
                       <div key={idx} className='flex items-center gap-3'>
                         <div className='flex-1'>
                           <div className='flex justify-between items-center mb-1'>
@@ -295,7 +295,7 @@ export default function AnalyticsPage() {
                 <div className='border-t pt-4'>
                   <h4 className='font-semibold mb-2'>공통 패턴</h4>
                   <div className='flex flex-wrap gap-2'>
-                    {failureAnalysis.commonPatterns.map((pattern, idx) => (
+                    {(failureAnalysis?.commonPatterns ?? []).map((pattern, idx) => (
                       <span
                         key={idx}
                         className='px-3 py-1 bg-gray-100 text-sm rounded-full text-gray-700'

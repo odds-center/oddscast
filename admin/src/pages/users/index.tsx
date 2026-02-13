@@ -15,10 +15,10 @@ interface User {
   name: string;
   role: string;
   isActive: boolean;
-  totalBets: number;
-  wonBets: number;
-  totalBetAmount: number;
-  totalWinAmount: number;
+  totalBets?: number;
+  wonBets?: number;
+  totalBetAmount?: number;
+  totalWinAmount?: number;
   createdAt: string;
 }
 
@@ -73,9 +73,13 @@ export default function UsersPage() {
       header: '베팅 통계',
       render: (user: User) => (
         <div className='text-sm'>
-          <div>{user.totalBets}건</div>
+          <div>{(user.totalBets ?? 0)}건</div>
           <div className='text-gray-500'>
-            승률: {user.totalBets > 0 ? ((user.wonBets / user.totalBets) * 100).toFixed(1) : 0}%
+            승률:{' '}
+            {(user.totalBets ?? 0) > 0
+              ? (((user.wonBets ?? 0) / (user.totalBets ?? 1)) * 100).toFixed(1)
+              : 0}
+            %
           </div>
         </div>
       ),
@@ -235,32 +239,35 @@ export default function UsersPage() {
                   <div className='grid grid-cols-2 gap-4'>
                     <div className='bg-gray-50 p-3 rounded'>
                       <div className='text-sm text-gray-600'>총 베팅 수</div>
-                      <div className='text-2xl font-bold'>{selectedUser.totalBets}건</div>
+                      <div className='text-2xl font-bold'>{selectedUser.totalBets ?? 0}건</div>
                     </div>
                     <div className='bg-gray-50 p-3 rounded'>
                       <div className='text-sm text-gray-600'>승리 횟수</div>
                       <div className='text-2xl font-bold text-green-600'>
-                        {selectedUser.wonBets}건
+                        {selectedUser.wonBets ?? 0}건
                       </div>
                     </div>
                     <div className='bg-gray-50 p-3 rounded'>
                       <div className='text-sm text-gray-600'>총 베팅 금액</div>
                       <div className='text-2xl font-bold'>
-                        {selectedUser.totalBetAmount.toLocaleString()}원
+                        {(selectedUser.totalBetAmount ?? 0).toLocaleString()}원
                       </div>
                     </div>
                     <div className='bg-gray-50 p-3 rounded'>
                       <div className='text-sm text-gray-600'>총 당첨 금액</div>
                       <div className='text-2xl font-bold text-green-600'>
-                        {selectedUser.totalWinAmount.toLocaleString()}원
+                        {(selectedUser.totalWinAmount ?? 0).toLocaleString()}원
                       </div>
                     </div>
                   </div>
                   <div className='mt-3 bg-blue-50 p-3 rounded'>
                     <div className='text-sm text-gray-600'>승률</div>
                     <div className='text-2xl font-bold text-blue-600'>
-                      {selectedUser.totalBets > 0
-                        ? ((selectedUser.wonBets / selectedUser.totalBets) * 100).toFixed(1)
+                      {(selectedUser.totalBets ?? 0) > 0
+                        ? (
+                            ((selectedUser.wonBets ?? 0) / (selectedUser.totalBets ?? 1)) *
+                            100
+                          ).toFixed(1)
                         : 0}
                       %
                     </div>

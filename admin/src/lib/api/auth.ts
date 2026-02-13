@@ -9,43 +9,48 @@ export interface LoginResponse {
   accessToken: string;
   refreshToken: string;
   user: {
-    id: number;
+    id: string;
     email: string;
-    username: string;
+    name: string;
     role: string;
   };
 }
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<LoginResponse>('/api/admin/login', data);
+    const response = await apiClient.post<{ data?: LoginResponse } & LoginResponse>(
+      '/api/auth/admin/login',
+      data
+    );
+    // NestJS ResponseInterceptor 래핑 { data, status } 처리
+    const payload = (response as any)?.data ?? response;
 
     // 토큰 저장
-    if (response.accessToken) {
-      apiClient.setToken(response.accessToken);
+    if (payload?.accessToken) {
+      apiClient.setToken(payload.accessToken);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('refreshToken', response.refreshToken);
-        // 쿠키에도 저장 (미들웨어용)
-        document.cookie = `accessToken=${response.accessToken}; path=/; max-age=86400`;
+        localStorage.setItem('refreshToken', payload.refreshToken || '');
+        document.cookie = `accessToken=${payload.accessToken}; path=/; max-age=86400`;
       }
     }
 
-    return response;
+    return payload;
   },
 
   logout: async (): Promise<void> => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
+      localStorage.removeItem('admin_token');
       document.cookie = 'accessToken=; path=/; max-age=0';
     }
   },
 
   refreshToken: async (refreshToken: string): Promise<LoginResponse> => {
-    return apiClient.post<LoginResponse>('/api/admin/refresh', { refreshToken });
+    return apiClient.post<LoginResponse>('/api/auth/refresh', { refreshToken });
   },
 
   getProfile: async () => {
-    return apiClient.get('/api/admin/profile');
+    return apiClient.get('/api/auth/me');
   },
 };

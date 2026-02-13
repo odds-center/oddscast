@@ -1,15 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { Notification } from './entities/notification.entity';
-import { User } from '../users/entities/user.entity';
-import { NotificationsController } from './notifications.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 import { NotificationsService } from './notifications.service';
+import { NotificationsController } from './notifications.controller';
 
-/**
- * 알림 모듈
- */
 @Module({
-  imports: [TypeOrmModule.forFeature([Notification, User])],
+  imports: [PrismaModule],
   controllers: [NotificationsController],
   providers: [NotificationsService],
   exports: [NotificationsService],

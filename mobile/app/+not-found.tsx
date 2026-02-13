@@ -1,38 +1,37 @@
-import { ThemedText } from '@/components/ThemedText';
-import { PageLayout } from '@/components/common/PageLayout';
-import { Title } from '@/components/ui';
-import { useAuth } from '@/context/AuthProvider';
-import { Link, Stack, useRouter } from 'expo-router';
-import React, { useEffect } from 'react';
-import { StyleSheet } from 'react-native';
+import { Link } from 'expo-router';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function NotFoundScreen() {
-  const router = useRouter();
-  const { user } = useAuth();
-
-  useEffect(() => {
-    // 이미 로그인된 상태라면 홈으로 리다이렉션
-    if (user) {
-      router.replace('/home');
-    }
-  }, [user, router]);
 
   return (
-    <>
-      <Stack.Screen options={{ title: 'Oops!' }} />
-      <PageLayout>
-        <Title>존재하지 않는 화면입니다.</Title>
-        <Link href={user ? '/home' : '/login'} style={styles.link}>
-          <ThemedText type='link'>{user ? '홈으로 이동' : '로그인 화면으로 이동'}</ThemedText>
-        </Link>
-      </PageLayout>
-    </>
+    <View style={styles.container}>
+      <Text style={styles.title}>존재하지 않는 화면입니다.</Text>
+      <Link href='/webview' style={styles.link}>
+        <Text style={styles.linkText}>홈으로 이동</Text>
+      </Link>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0c0c0c',
+  },
+  title: {
+    color: '#fff',
+    fontSize: 18,
+    marginBottom: 16,
+  },
   link: {
-    marginTop: 15,
-    paddingVertical: 15,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+  },
+  linkText: {
+    color: '#FFD700',
+    fontSize: 16,
   },
 });

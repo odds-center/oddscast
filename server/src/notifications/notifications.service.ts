@@ -1,318 +1,200 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import {
-  Notification,
-  NotificationType,
-  NotificationCategory,
-} from './entities/notification.entity';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { Prisma, NotificationType, NotificationCategory } from '@prisma/client';
 import {
   CreateNotificationDto,
   UpdateNotificationDto,
-  NotificationResponseDto,
-  NotificationListResponseDto,
-  NotificationPreferencesDto,
-  UnreadCountResponseDto,
-} from './dto/index';
-import { User } from '../users/entities/user.entity';
+  BulkSendDto,
+  UpdateNotificationPreferenceDto,
+} from './dto/notification.dto';
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  constructor(private prisma: PrismaService) {}
 
-  constructor(
-    @InjectRepository(Notification)
-    private readonly notificationRepo: Repository<Notification>,
-    @InjectRepository(User)
-    private readonly userRepo: Repository<User>
-  ) {}
-
-  /**
-   * 알림 목록 조회
-   */
-  async getNotifications(
+  async findAll(
     userId: string,
-    filters?: {
-      type?: string;
-      category?: string;
-      isRead?: boolean;
-      page?: number;
-      limit?: number;
-    }
-  ): Promise<NotificationListResponseDto> {
-    const { type, category, isRead, page = 1, limit = 20 } = filters || {};
+    filters: { page?: number; limit?: number; isRead?: boolean },
+  ) {
+    const { page = 1, limit = 20, isRead } = filters;
+    const where: Prisma.NotificationWhereInput = { userId };
+    if (isRead !== undefined) where.isRead = isRead;
 
-    const queryBuilder = this.notificationRepo
-      .createQueryBuilder('notification')
-      .where('notification.userId = :userId', { userId });
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.notification.count({ where }),
+    ]);
 
-    if (type) {
-      queryBuilder.andWhere('notification.type = :type', { type });
-    }
-
-    if (category) {
-      queryBuilder.andWhere('notification.category = :category', { category });
-    }
-
-    if (typeof isRead === 'boolean') {
-      queryBuilder.andWhere('notification.isRead = :isRead', { isRead });
-    }
-
-    const [notifications, total] = await queryBuilder
-      .orderBy('notification.createdAt', 'DESC')
-      .skip((page - 1) * limit)
-      .take(limit)
-      .getManyAndCount();
-
-    return {
-      notifications: notifications.map(n => new NotificationResponseDto(n)),
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    };
+    return { notifications, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  /**
-   * 알림 상세 조회
-   */
-  async getNotification(
-    userId: string,
-    id: string
-  ): Promise<NotificationResponseDto> {
-    const notification = await this.notificationRepo.findOne({
-      where: { id, userId },
+  async findOne(id: string) {
+    const notification = await this.prisma.notification.findUnique({
+      where: { id },
     });
-
-    if (!notification) {
-      throw new NotFoundException('알림을 찾을 수 없습니다.');
-    }
-
-    return new NotificationResponseDto(notification);
+    if (!notification) throw new NotFoundException('알림을 찾을 수 없습니다');
+    return notification;
   }
 
-  /**
-   * 알림 생성
-   */
-  async createNotification(
-    userId: string,
-    createNotificationDto: CreateNotificationDto
-  ): Promise<NotificationResponseDto> {
-    const {
-      type,
-      category,
-      title,
-      message,
-      targetId,
-      targetType,
-      targetData,
-      scheduledAt,
-      priority = 'NORMAL',
-    } = createNotificationDto;
-
-    const notification = this.notificationRepo.create({
-      userId,
-      type,
-      category,
-      title,
-      message,
-      targetId,
-      targetType,
-      targetData,
-      scheduledAt: scheduledAt ? new Date(scheduledAt) : undefined,
-      priority,
+  async create(dto: CreateNotificationDto) {
+    return this.prisma.notification.create({
+      data: {
+        userId: dto.userId,
+        title: dto.title,
+        message: dto.message,
+        type: (dto.type as NotificationType) || 'SYSTEM',
+        category: (dto.category as NotificationCategory) || 'GENERAL',
+        data: dto.data as Prisma.InputJsonValue | undefined,
+      },
     });
-
-    const saved = await this.notificationRepo.save(notification);
-    this.logger.log(`알림 생성: ${saved.id}`);
-
-    return new NotificationResponseDto(saved);
   }
 
-  /**
-   * 알림 수정
-   */
-  async updateNotification(
-    userId: string,
-    id: string,
-    updateNotificationDto: UpdateNotificationDto
-  ): Promise<NotificationResponseDto> {
-    const notification = await this.notificationRepo.findOne({
-      where: { id, userId },
+  async update(id: string, dto: UpdateNotificationDto) {
+    return this.prisma.notification.update({
+      where: { id },
+      data: {
+        title: dto.title,
+        message: dto.message,
+        isRead: dto.isRead,
+        readAt: dto.isRead ? new Date() : undefined,
+      },
     });
-
-    if (!notification) {
-      throw new NotFoundException('알림을 찾을 수 없습니다.');
-    }
-
-    Object.assign(notification, updateNotificationDto);
-    const saved = await this.notificationRepo.save(notification);
-
-    this.logger.log(`알림 수정: ${saved.id}`);
-    return new NotificationResponseDto(saved);
   }
 
-  /**
-   * 알림 읽음 처리
-   */
-  async markAsRead(
-    userId: string,
-    id: string
-  ): Promise<NotificationResponseDto> {
-    const notification = await this.notificationRepo.findOne({
-      where: { id, userId },
+  async remove(id: string) {
+    await this.prisma.notification.delete({ where: { id } });
+    return { message: '알림이 삭제되었습니다' };
+  }
+
+  async markAsRead(id: string) {
+    return this.prisma.notification.update({
+      where: { id },
+      data: { isRead: true, readAt: new Date() },
     });
-
-    if (!notification) {
-      throw new NotFoundException('알림을 찾을 수 없습니다.');
-    }
-
-    notification.isRead = true;
-    notification.readAt = new Date();
-    const saved = await this.notificationRepo.save(notification);
-
-    this.logger.log(`알림 읽음 처리: ${saved.id}`);
-    return new NotificationResponseDto(saved);
   }
 
-  /**
-   * 모든 알림 읽음 처리
-   */
-  async markAllAsRead(userId: string): Promise<{ updatedCount: number }> {
-    const result = await this.notificationRepo.update(
-      { userId, isRead: false },
-      { isRead: true, readAt: new Date() }
-    );
-
-    this.logger.log(
-      `모든 알림 읽음 처리: userId=${userId}, updatedCount=${result.affected}`
-    );
-    return { updatedCount: result.affected || 0 };
-  }
-
-  /**
-   * 알림 삭제
-   */
-  async deleteNotification(
-    userId: string,
-    id: string
-  ): Promise<{ message: string }> {
-    const notification = await this.notificationRepo.findOne({
-      where: { id, userId },
+  async markAllAsRead(userId: string) {
+    const result = await this.prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true, readAt: new Date() },
     });
-
-    if (!notification) {
-      throw new NotFoundException('알림을 찾을 수 없습니다.');
-    }
-
-    await this.notificationRepo.remove(notification);
-    this.logger.log(`알림 삭제: ${id}`);
-
-    return { message: '알림이 삭제되었습니다.' };
+    return { count: result.count };
   }
 
-  /**
-   * 읽지 않은 알림 개수 조회
-   */
-  async getUnreadCount(userId: string): Promise<UnreadCountResponseDto> {
-    const count = await this.notificationRepo.count({
+  async getUnreadCount(userId: string) {
+    const count = await this.prisma.notification.count({
       where: { userId, isRead: false },
     });
-
     return { count };
   }
 
-  /**
-   * 알림 설정 조회 (기본값 반환)
-   */
-  async getNotificationPreferences(
-    userId: string
-  ): Promise<NotificationPreferencesDto> {
-    // 실제로는 사용자별 설정을 DB에서 조회해야 하지만,
-    // 현재는 기본값을 반환
-    return {
-      betResult: true,
-      raceStart: true,
-      raceResult: true,
-      prediction: false,
-      subscription: true,
-      system: true,
-      promotion: false,
-      pushNotification: true,
-      emailNotification: false,
-      smsNotification: false,
-    };
+  async bulkSend(dto: BulkSendDto) {
+    const created = await this.prisma.notification.createMany({
+      data: dto.recipients.map((userId) => ({
+        userId,
+        title: `Template: ${dto.templateId}`,
+        message: JSON.stringify(dto.variables || {}),
+        type: 'SYSTEM' as NotificationType,
+        category: 'GENERAL' as NotificationCategory,
+      })),
+    });
+    return { count: created.count };
   }
 
-  /**
-   * 알림 설정 업데이트 (현재는 로그만 출력)
-   */
-  async updateNotificationPreferences(
-    userId: string,
-    preferences: NotificationPreferencesDto
-  ): Promise<NotificationPreferencesDto> {
-    this.logger.log(
-      `알림 설정 업데이트: userId=${userId}, preferences=`,
-      preferences
-    );
-
-    // 실제로는 사용자별 설정을 DB에 저장해야 함
-    return preferences;
+  async deleteAll(userId: string) {
+    const result = await this.prisma.notification.deleteMany({
+      where: { userId },
+    });
+    return { count: result.count };
   }
 
-  /**
-   * Push 알림 구독 (현재는 로그만 출력)
-   */
-  async subscribeToPushNotifications(
-    userId: string,
-    deviceToken: string,
-    platform?: string
-  ): Promise<{ message: string }> {
-    try {
-      this.logger.log(
-        `Push 알림 구독: userId=${userId}, deviceToken=${deviceToken}, platform=${platform}`
-      );
-
-      // User 엔티티에 deviceToken 저장
-      await this.userRepo.update(userId, {
-        deviceToken,
-        devicePlatform: platform,
-        tokenUpdatedAt: new Date(),
+  /** 알림 설정 조회 (없으면 기본값으로 생성) */
+  async getPreferences(userId: string) {
+    let pref = await this.prisma.userNotificationPreference.findUnique({
+      where: { userId },
+    });
+    if (!pref) {
+      pref = await this.prisma.userNotificationPreference.create({
+        data: { userId },
       });
-
-      this.logger.log(`✅ Device Token 저장 완료: ${userId}`);
-
-      return { message: 'Push 알림 구독이 완료되었습니다.' };
-    } catch (error) {
-      this.logger.error(`Push 알림 구독 실패: ${error.message}`);
-      throw error;
     }
+    return pref;
   }
 
-  /**
-   * Push 알림 구독 해제
-   */
-  async unsubscribeFromPushNotifications(
-    userId: string,
-    deviceToken: string
-  ): Promise<{ message: string }> {
-    try {
-      this.logger.log(
-        `Push 알림 구독 해제: userId=${userId}, deviceToken=${deviceToken}`
-      );
+  /** 알림 설정 수정 */
+  async updatePreferences(userId: string, dto: UpdateNotificationPreferenceDto) {
+    const data: Record<string, boolean> = {};
+    if (dto.pushEnabled !== undefined) data.pushEnabled = dto.pushEnabled;
+    if (dto.raceEnabled !== undefined) data.raceEnabled = dto.raceEnabled;
+    if (dto.predictionEnabled !== undefined) data.predictionEnabled = dto.predictionEnabled;
+    if (dto.subscriptionEnabled !== undefined) data.subscriptionEnabled = dto.subscriptionEnabled;
+    if (dto.systemEnabled !== undefined) data.systemEnabled = dto.systemEnabled;
+    if (dto.promotionEnabled !== undefined) data.promotionEnabled = dto.promotionEnabled;
 
-      // User 엔티티에서 deviceToken 제거
-      await this.userRepo.update(userId, {
-        deviceToken: null,
-        devicePlatform: null,
-        tokenUpdatedAt: new Date(),
+    return this.prisma.userNotificationPreference.upsert({
+      where: { userId },
+      create: { userId, ...data },
+      update: data,
+    });
+  }
+
+  /** Admin: 전체 알림 목록 */
+  async findAllAdmin(filters: { page?: number; limit?: number }) {
+    const { page = 1, limit = 20 } = filters;
+    const [notifications, total] = await Promise.all([
+      this.prisma.notification.findMany({
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: { user: { select: { id: true, email: true, name: true } } },
+      }),
+      this.prisma.notification.count(),
+    ]);
+    return { data: notifications, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+  }
+
+  /** Admin: 대상별 알림 발송 (all | active | subscribers) */
+  async adminSend(data: { title: string; message: string; target: string }) {
+    let userIds: string[] = [];
+    if (data.target === 'all') {
+      const users = await this.prisma.user.findMany({
+        where: { isActive: true },
+        select: { id: true },
       });
-
-      this.logger.log(`✅ Device Token 제거 완료: ${userId}`);
-
-      return { message: 'Push 알림 구독이 해제되었습니다.' };
-    } catch (error) {
-      this.logger.error(`Push 알림 구독 해제 실패: ${error.message}`);
-      throw error;
+      userIds = users.map((u) => u.id);
+    } else if (data.target === 'active') {
+      const users = await this.prisma.user.findMany({
+        where: { isActive: true, lastLoginAt: { not: null } },
+        select: { id: true },
+      });
+      userIds = users.map((u) => u.id);
+    } else if (data.target === 'subscribers') {
+      const subs = await this.prisma.subscription.findMany({
+        where: { status: 'ACTIVE' },
+        select: { userId: true },
+        distinct: ['userId'],
+      });
+      userIds = subs.map((s) => s.userId);
     }
+
+    if (userIds.length === 0) {
+      return { count: 0, message: '발송 대상이 없습니다.' };
+    }
+
+    const created = await this.prisma.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        title: data.title,
+        message: data.message,
+        type: 'SYSTEM',
+        category: 'GENERAL',
+      })),
+    });
+    return { count: created.count };
   }
 }

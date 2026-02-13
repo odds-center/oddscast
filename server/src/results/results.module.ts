@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { Result, DividendRate } from './entities';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { ResultsController } from './results.controller';
 import { ResultsService } from './results.service';
-import { DividendRatesService } from './dividend-rates.service';
-import { KraApiModule } from '../kra-api/kra-api.module';
+import { ResultsController } from './results.controller';
+import { PrismaModule } from '../prisma/prisma.module';
+import { PointsModule } from '../points/points.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Result, DividendRate]), KraApiModule],
+  imports: [PrismaModule, PointsModule],
   controllers: [ResultsController],
-  providers: [ResultsService, DividendRatesService],
-  exports: [ResultsService, DividendRatesService],
+  providers: [ResultsService],
+  exports: [ResultsService],
 })
 export class ResultsModule {}

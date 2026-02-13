@@ -1,19 +1,10 @@
 import { Module } from '@nestjs/common';
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
-import { SubscriptionPlanEntity } from './entities/subscription-plan.entity';
-import { Subscription } from './entities/subscription.entity';
-import { SubscriptionsController } from './subscriptions.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 import { SubscriptionsService } from './subscriptions.service';
+import { SubscriptionsController } from './subscriptions.controller';
 
-/**
- * 구독 모듈
- */
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Subscription, SubscriptionPlanEntity]),
-    PredictionTicketsModule,
-  ],
+  imports: [PrismaModule],
   controllers: [SubscriptionsController],
   providers: [SubscriptionsService],
   exports: [SubscriptionsService],

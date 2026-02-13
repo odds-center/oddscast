@@ -4,10 +4,10 @@
 
 ---
 
-## 테마
+## 테마 (라이트)
 
-- **primary**: `#ffd700` (금색)
-- **background**: `#0c0c0c` (검정)
+- **primary**: `#c9a227` (골드)
+- **background**: `#fafafa`
 - **폰트**: Syne (제목), Plus Jakarta Sans (본문)
 - **아이콘**: Lucide React
 
@@ -42,7 +42,7 @@ npm run dev
 | `/races/[id]` | 경주 상세 |
 | `/auth/login`, `/auth/register`, `/auth/forgot-password` | 인증 |
 | `/profile`, `/profile/edit` | 내 정보 |
-| `/mypage/picks`, `/mypage/favorites`, `/mypage/subscriptions`, `/mypage/subscription-checkout/[planId]`, `/mypage/notifications` | 마이페이지 |
+| `/mypage/subscriptions`, `/mypage/subscription-checkout?planId=`, `/mypage/notifications`, `/mypage/ticket-history`, `/mypage/point-transactions` | 마이페이지 |
 | `/settings`, `/settings/notifications` | 설정 (알림 설정 포함) |
 | `/ranking`, `/results` | 기타 |
 

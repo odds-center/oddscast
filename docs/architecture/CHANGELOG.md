@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-02-13 (금) — 홈 섹션 리뉴얼 & /races 페이지
+
+### 변경 사항
+
+- **홈 첫 화면**: QuickLinks 제거, 섹션 미리보기 중심 구성
+- **섹션 구성**: 오늘의 경주(3), 금주의 경주(3), 경주 결과(3행), 종합 예상지(3행), 경주 예상지(3), 랭킹(3명), 전체 경주(5)
+- **인덱스 페이지네이션 제거**: 각 섹션 소수 항목만 표시, 전체보기 링크로 상세 페이지 이동
+- **전체 경주 페이지**: `/races` — 필터 + DataTable + 페이지네이션 (BackLink → 홈)
+- **라우트**: `routes.races.list = '/races'` 추가
+- **Layout 네비**: 홈, 경주(/races), 종합 예상, 결과, 랭킹 분리
+
+---
+
+## 2026-02-13 (금) — 빌드·환경·문서 정리
+
+### 변경 사항
+
+- **Picks UI 비노출**: `CONFIG.picksEnabled = false` — 경주 상세 HorsePickPanel·출전마 선택 숨김
+- **Server 빌드**: `prisma generate`를 build 스크립트에 포함
+- **루트 package.json**: `pnpm run build` — server+webapp+admin 전체 빌드
+- **Admin next.config.js**: API rewrite fallback `localhost:3000` → `localhost:3001/api`
+- **README.md**: pnpm 기반 실행 방법, 빌드 절차 정리
+- **WEBAPP_README.md**: 테마 라이트 (#fafafa, #c9a227) 반영
+
+---
+
+## 2026-02-13 (금) — 내가 고른 말 (Picks) 서비스에서 제외
+
+### 변경 사항
+
+- **내가 고른 말 제외**: WebApp/Mobile에서 메뉴·페이지 미노출
+- **Server API 유지**: `POST/GET/DELETE /api/picks` 엔드포인트는 존재하나 클라이언트에서 미사용
+- **문서 업데이트**: SERVICE_SPECIFICATION, API_SPECIFICATION, BUSINESS_LOGIC, PROJECT_STRUCTURE, UI_PATTERNS, WEBAPP_README, WEBAPP_DEVELOPMENT, POINT_PICK_SYSTEM, DATABASE_SCHEMA, ARCHITECTURE
+
+---
+
 ## 2026-02-13 (금) — WebApp 라이트 테마 & UI/UX & 결과 그룹화 & Admin KRA 전용 페이지
 
 ### 1. WebApp 테마 — 다크 → 라이트 전환

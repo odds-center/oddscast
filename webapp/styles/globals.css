@@ -1,5 +1,10 @@
 @import 'tailwindcss';
 
+/* Tailwind v4: 스캔 범위 제한 — Turbopack + PostCSS 병목 완화 */
+@source "../components/**/*.tsx";
+@source "../components/**/*.ts";
+@source "../pages/**/*.tsx";
+
 /* ============================================
    GOLDEN RACE 프리미엄 테마 — 금색 & 라이트 (Tailwind v4)
    경마 서비스에 어울리는 밝고 고급스러운 느낌
@@ -76,6 +81,7 @@ html {
 }
 body {
   color: var(--foreground);
+  background: linear-gradient(180deg, #fefdf9 0%, #faf8f0 30%, #fafafa 100%);
   background-color: var(--background);
   font-family: var(--font-sans);
   font-size: 1rem;
@@ -111,10 +117,14 @@ body {
   scrollbar-color: var(--border) var(--background);
 }
 
-/* 타이포그래피 — Pretendard 전역 */
-h1, h2, h3, .font-display {
+/* 타이포그래피 — 로고는 Syne, 본문은 Pretendard */
+h1, h2, h3 {
   font-family: var(--font-display);
   letter-spacing: -0.02em;
+}
+.font-display {
+  font-family: 'Syne', var(--font-display);
+  letter-spacing: 0.08em;
 }
 
 /* ============================================
@@ -217,7 +227,7 @@ h1, h2, h3, .font-display {
   white-space: nowrap;
 }
 .data-table thead tr {
-  background: var(--primary-muted);
+  background: linear-gradient(180deg, rgba(201, 162, 39, 0.12) 0%, rgba(201, 162, 39, 0.06) 100%);
   border-bottom: 1px solid var(--border-gold);
 }
 .data-table thead th {
@@ -258,6 +268,97 @@ h1, h2, h3, .font-display {
 }
 
 /* ============================================
+   사이트 헤더/네비 — 프리미엄 스타일
+   ============================================ */
+.site-header-inner {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2520 50%, #1f1c18 100%);
+  border-bottom: 1px solid rgba(201, 162, 39, 0.25);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+.site-header-inner .logo-link {
+  font-family: 'Syne', var(--font-display);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: 0.12em;
+  background: linear-gradient(135deg, #e8c547 0%, #c9a227 40%, #e8d070 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  transition: opacity 0.2s;
+}
+.site-header-inner .logo-link:hover {
+  opacity: 0.9;
+}
+.site-header-inner .nav-pill {
+  color: rgba(255, 255, 255, 0.85);
+  font-weight: 500;
+  font-size: 0.875rem;
+  padding: 0.5rem 1rem;
+  border-radius: 9999px;
+  transition: all 0.25s ease;
+}
+.site-header-inner .nav-pill:hover {
+  color: #fff;
+  background: rgba(201, 162, 39, 0.2);
+}
+.site-header-inner .nav-pill-active {
+  color: #1a1a1a;
+  background: linear-gradient(135deg, #e8c547 0%, #c9a227 100%);
+}
+.site-header-inner .nav-pill-active:hover {
+  background: linear-gradient(135deg, #ecd56b 0%, #d4a84b 100%);
+  color: #1a1a1a;
+}
+
+/* 모바일 플로팅 네비 바 */
+.nav-mobile-bar {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.95) 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(201, 162, 39, 0.15);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 0 1px rgba(201, 162, 39, 0.2);
+  display: flex;
+  justify-content: space-around;
+  padding: 0.5rem 0.5rem;
+}
+.nav-mobile-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: 14px;
+  transition: all 0.25s ease;
+  color: var(--text-secondary);
+  -webkit-tap-highlight-color: transparent;
+}
+.nav-mobile-item:hover, .nav-mobile-item:active {
+  color: var(--primary);
+}
+.nav-mobile-item-active {
+  color: var(--primary) !important;
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.12) 0%, rgba(201, 162, 39, 0.18) 100%);
+}
+.nav-mobile-icon-wrap {
+  padding: 0.35rem;
+  border-radius: 12px;
+  transition: background 0.25s ease;
+}
+.nav-mobile-item-active .nav-mobile-icon-wrap {
+  background: linear-gradient(135deg, rgba(201, 162, 39, 0.2) 0%, rgba(201, 162, 39, 0.3) 100%);
+}
+
+/* 푸터 — 그라데이션 라인 */
+.site-footer {
+  border-top: 2px solid transparent;
+  border-image: linear-gradient(90deg, transparent, rgba(201, 162, 39, 0.4), transparent) 1;
+  background: linear-gradient(180deg, rgba(250, 250, 250, 0.6) 0%, rgba(250, 248, 244, 0.9) 100%);
+}
+
+/* ============================================
    카드 — 자연스러운 둥근 모서리, 부드러운 전환
    ============================================ */
 .card {
@@ -265,12 +366,13 @@ h1, h2, h3, .font-display {
   border: 1px solid var(--border);
   border-radius: var(--radius-xl);
   padding: 1.25rem 1.25rem;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-card);
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(201, 162, 39, 0.08);
 }
 @media (min-width: 768px) {
   .card {
     padding: 1.375rem 1.5rem;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 0 1px rgba(201, 162, 39, 0.06);
   }
 }
 
@@ -280,7 +382,7 @@ h1, h2, h3, .font-display {
 .card-hover:hover {
   border-color: var(--border-gold);
   background: var(--card-hover);
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08), 0 0 0 1px rgba(201, 162, 39, 0.15);
 }
 
 /* 카드 좌측 금색 악센트 — 더 굵게 */

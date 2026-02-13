@@ -40,15 +40,21 @@ goldenrace/
 
 ## 🚀 시작하기
 
+```bash
+# 루트에서 의존성 설치
+pnpm install
+
+# Prisma Client 생성 (server 빌드 시 자동 포함)
+cd server && npx prisma generate && cd ..
+```
+
 ### 1. Server (NestJS)
 
 ```bash
 cd server
-npm install
-cp .env.example .env  # DATABASE_URL, PORT=3001 등 설정
-npm run db:generate   # Prisma Client 생성
-npm run db:init      # 스키마 반영 + seed.sql 초기 데이터
-npm run dev
+cp .env.example .env  # DATABASE_URL, PORT=3001, KRA_SERVICE_KEY 등 설정
+pnpm run db:init     # 스키마 반영 + seed.sql 초기 데이터
+pnpm run dev
 # → http://localhost:3001
 # Swagger: http://localhost:3001/docs
 ```
@@ -56,18 +62,14 @@ npm run dev
 ### 2. WebApp (Next.js)
 
 ```bash
-cd webapp
-npm install
-npm run dev
+pnpm run dev:webapp
 # → http://localhost:3000
 ```
 
 ### 3. Admin
 
 ```bash
-cd admin
-pnpm install
-pnpm dev
+pnpm run dev:admin
 # → http://localhost:3002
 ```
 
@@ -75,9 +77,16 @@ pnpm dev
 
 ```bash
 cd mobile
-npm install
-npm run start
+pnpm install
+pnpm run start
 # Metro: port 3006, WebView에서 WebApp 로드 (dev: http://localhost:3000)
+```
+
+### 빌드
+
+```bash
+pnpm run build        # server + webapp + admin 전체 빌드
+pnpm run build:server # server만 (prisma generate 자동 실행)
 ```
 
 ---

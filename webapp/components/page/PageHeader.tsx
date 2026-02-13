@@ -14,11 +14,11 @@ export default function PageHeader({ icon, title, description, subtitle, childre
     <div className='page-header'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4'>
         <div className='min-w-0 flex-1'>
-          <h1 className='font-display text-xl sm:text-2xl lg:text-[1.625rem] font-bold text-primary flex items-center gap-3 flex-wrap'>
-            <span className='inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-primary/12 border border-primary/25 shrink-0'>
+          <h1 className='font-display text-xl sm:text-2xl lg:text-[1.625rem] font-bold flex items-center gap-3 flex-wrap'>
+            <span className='inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-linear-to-br from-primary/15 to-primary/8 border border-primary/25 shadow-[0_2px_8px_rgba(201,162,39,0.12)] shrink-0'>
               <Icon name={icon} size={24} className='text-primary' strokeWidth={2.5} />
             </span>
-            <span className='truncate'>{title}</span>
+            <span className='text-primary truncate'>{title}</span>
           </h1>
           {subtitle && <div className='text-foreground font-semibold mt-2 text-base'>{subtitle}</div>}
           {description && <p className='text-text-secondary text-base mt-2 max-w-2xl leading-relaxed'>{description}</p>}

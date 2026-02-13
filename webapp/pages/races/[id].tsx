@@ -12,6 +12,7 @@ import PredictionSymbol, { scoreToSymbol } from '@/components/race/PredictionSym
 import RaceApi from '@/lib/api/raceApi';
 import PicksApi, { PICK_TYPE_HORSE_COUNTS } from '@/lib/api/picksApi';
 import HorsePickPanel from '@/components/HorsePickPanel';
+import { CONFIG } from '@/lib/config';
 import PredictionApi from '@/lib/api/predictionApi';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import AnalysisApi from '@/lib/api/analysisApi';
@@ -48,7 +49,7 @@ export default function RaceDetailPage() {
   const { data: myPick } = useQuery({
     queryKey: ['picks', 'race', id],
     queryFn: () => PicksApi.getByRace(id as string),
-    enabled: !!id && isLoggedIn,
+    enabled: !!id && isLoggedIn && CONFIG.picksEnabled,
   });
 
   const { data: ticketBalance } = useQuery({
@@ -251,7 +252,7 @@ export default function RaceDetailPage() {
         {entries.length > 0 ? (
           <HorseEntryTable
             entries={entries}
-            onSelectHorse={!isResultView && isLoggedIn ? handleSelectHorse : undefined}
+            onSelectHorse={!isResultView && isLoggedIn && CONFIG.picksEnabled ? handleSelectHorse : undefined}
             isSelected={isHorseSelected}
           />
         ) : (
@@ -507,8 +508,8 @@ export default function RaceDetailPage() {
       )}
         </div>
 
-        {/* 데스크톱: 출전마 선택 사이드바 (경주 뷰 + 로그인 시에만) */}
-        {isLoggedIn && !isResultView && (
+        {/* 데스크톱: 출전마 선택 사이드바 (경주 뷰 + 로그인 시에만, Picks 활성화 시) */}
+        {isLoggedIn && !isResultView && CONFIG.picksEnabled && (
           <aside className='hidden lg:block w-80 shrink-0'>
             <div className='lg:sticky lg:top-24 rounded-2xl border border-border bg-card p-4'>
               <HorsePickPanel
@@ -529,8 +530,8 @@ export default function RaceDetailPage() {
           </aside>
         )}
 
-        {/* 모바일: 출전마 고르기 Drawer 트리거 + Drawer (경주 뷰 + 로그인 시에만) */}
-        {isLoggedIn && !isResultView && (
+        {/* 모바일: 출전마 고르기 Drawer 트리거 + Drawer (경주 뷰 + 로그인 시에만, Picks 활성화 시) */}
+        {isLoggedIn && !isResultView && CONFIG.picksEnabled && (
           <>
             <button
               onClick={() => setDrawerOpen(true)}

@@ -290,22 +290,20 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 
 ---
 
-## 6.5 내가 고른 말 (UserPick) — 승식별 기록 + 포인트
+## 6.5 ~~내가 고른 말 (UserPick)~~ — **서비스에서 제외**
 
 | 항목       | 설명                                                      |
 | ---------- | --------------------------------------------------------- |
-| 목적       | 승식별로 "내가 어떤 말을 골랐는지" 기록, 적중 시 포인트 지급 |
-| 사행성     | 없음. 가상 포인트만 사용, 예측권 구매용                   |
+| 상태       | **제외** — WebApp/Mobile에서 메뉴·UI 미노출. Server API는 존재. |
+| 원래 목적  | 승식별로 "내가 어떤 말을 골랐는지" 기록, 적중 시 포인트 지급 |
 | Unique     | `[userId, raceId]` — 경주당 1개 선택                       |
-| 필드       | `pickType`, `hrNos[]`, `hrNames[]`, `pointsAwarded`        |
-| 승식       | SINGLE, PLACE, QUINELLA, EXACTA, QUINELLA_PLACE, TRIFECTA, TRIPLE |
-| API        | `POST /picks`, `GET /picks`, `GET /picks/race/:raceId`, `DELETE /picks/race/:raceId` |
+| API        | `POST /picks`, `GET /picks`, `GET /picks/race/:raceId`, `DELETE /picks/race/:raceId` (미사용) |
 
 ### 6.6 포인트 시스템
 
 | 구분       | 설명                                                      |
 | ---------- | --------------------------------------------------------- |
-| 적중 지급  | 경주 결과 등록 시 UserPick 적중 여부 판정 → 포인트 지급   |
+| 적중 지급  | (내가 고른 말 제외) — 프로모션·이벤트 등으로 지급 가능    |
 | 배율       | PointConfig (BASE_POINTS, SINGLE_MULTIPLIER 등)           |
 | 예측권 구매| 포인트로 예측권 구매 (PointTicketPrice, 1장=1200pt)        |
 | API        | `GET /points/me/balance`, `POST /points/purchase-ticket`, `GET /points/ticket-price` |
@@ -316,7 +314,7 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 
 ### 7.1 랭킹 기준
 
-- **UserPick(내가 고른 말)**과 **RaceResult**를 승식별로 비교하여 맞춘 횟수(`correctCount`) 계산
+- **(내가 고른 말 제외)** — 원래는 UserPick과 RaceResult 비교로 `correctCount` 계산. 현재는 랭킹 기준 별도 적용.
 - 사행성 없음 — 베팅/배당 없이, "몇 번 맞췄는지" 기록만 랭킹으로 표시
 
 ### 7.2 랭킹 계산

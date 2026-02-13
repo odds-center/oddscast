@@ -1,0 +1,21 @@
+/**
+ * 홈 페이지 섹션 래퍼 — SectionCard 기반
+ */
+import SectionCard from '@/components/page/SectionCard';
+import type { IconName } from '../icons';
+
+interface HomeSectionProps {
+  title: string;
+  icon?: IconName;
+  /** 더보기 링크 (href + label) */
+  viewAllHref?: string;
+  viewAllLabel?: string;
+  children: React.ReactNode;
+  /** accent 스타일 (좌측 금색 라인) */
+  accent?: boolean;
+  className?: string;
+}
+
+export default function HomeSection(props: HomeSectionProps) {
+  return <SectionCard {...props} />;
+}

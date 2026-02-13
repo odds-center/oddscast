@@ -32,7 +32,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
   };
 
   const navLinks: { href: string; icon: IconName; label: string }[] = [
-    { href: routes.home, icon: 'Flag', label: '경주' },
+    { href: routes.home, icon: 'Flag', label: '홈' },
+    { href: routes.races.list, icon: 'ClipboardList', label: '경주' },
     { href: routes.predictions.matrix, icon: 'BarChart2', label: '종합 예상' },
     { href: routes.results, icon: 'TrendingUp', label: '결과' },
     { href: routes.ranking, icon: 'Medal', label: '랭킹' },
@@ -55,76 +56,69 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
       </Head>
 
-      {/* Desktop: 상단 네비게이션 */}
-      <header className='hidden lg:block sticky top-0 z-20'>
-        <div className='bg-background-elevated border-b border-border'>
-          <div className='max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between'>
-            <Link
-              href={routes.home}
-              className='font-display font-bold text-xl tracking-[0.2em] text-primary hover:text-primary/90 transition-all duration-200'
-            >
-              GOLDEN RACE
-            </Link>
-            <nav className='flex items-center gap-1'>
-              {navLinks.map(({ href, icon, label }) => (
+      {/* Desktop: 상단 네비게이션 — 다크 그라데이션 프리미엄 스타일 */}
+      <header className='hidden lg:block sticky top-0 z-20 site-header-inner'>
+        <div className='max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between'>
+          <Link href={routes.home} className='logo-link font-display'>
+            GOLDEN RACE
+          </Link>
+          <nav className='flex items-center gap-2'>
+            {navLinks.map(({ href, icon, label }) => {
+              const active = pathname === href;
+              return (
                 <Link
                   key={href}
                   href={href}
-                  className={`nav-item-desktop flex items-center gap-1.5 px-3 py-2 rounded-xl ${
-                    pathname === href ? 'text-primary bg-primary/10' : ''
-                  }`}
+                  className={`nav-pill flex items-center gap-1.5 ${active ? 'nav-pill-active' : ''}`}
                 >
-                  <Icon name={icon} size={17} />
+                  <Icon name={icon} size={16} className={active ? 'opacity-90' : ''} />
                   {label}
                 </Link>
-              ))}
-              {navLinksMore.map(({ href, icon, label }) => {
-                const isActive = pathname === href || (href === routes.profile.index && (pathname.startsWith('/profile') || pathname.startsWith('/mypage')));
-                return (
-                  <Link
-                    key={href}
-                    href={href}
-                    className={`nav-item-desktop flex items-center gap-1.5 px-3 py-2 rounded-xl ${
-                      isActive ? 'text-primary bg-primary/10' : ''
-                    }`}
-                  >
-                    <Icon name={icon} size={17} />
-                    {label}
-                  </Link>
-                );
-              })}
-              {isLoggedIn ? (
-                <button
-                  onClick={handleLogout}
-                  className='btn-secondary ml-2 flex items-center gap-1.5 px-3 py-1.5 text-sm'
-                >
-                  로그아웃
-                </button>
-              ) : (
+              );
+            })}
+            {navLinksMore.map(({ href, icon, label }) => {
+              const active = pathname === href || (href === routes.profile.index && (pathname.startsWith('/profile') || pathname.startsWith('/mypage')));
+              return (
                 <Link
-                  href={routes.auth.login}
-                  className='btn-primary ml-2 flex items-center gap-1.5 px-4 py-2 text-sm'
+                  key={href}
+                  href={href}
+                  className={`nav-pill flex items-center gap-1.5 ${active ? 'nav-pill-active' : ''}`}
                 >
-                  <Icon name='LogIn' size={17} />
-                  로그인
+                  <Icon name={icon} size={16} className={active ? 'opacity-90' : ''} />
+                  {label}
                 </Link>
-              )}
-            </nav>
-          </div>
-          <div className='h-1 bg-primary/30' />
+              );
+            })}
+            {isLoggedIn ? (
+              <button
+                onClick={handleLogout}
+                className='nav-pill ml-2 bg-white/10 hover:bg-white/20 text-white border border-white/20'
+              >
+                로그아웃
+              </button>
+            ) : (
+              <Link
+                href={routes.auth.login}
+                className='nav-pill-active ml-2 flex items-center gap-1.5 px-4 py-2'
+              >
+                <Icon name='LogIn' size={16} />
+                로그인
+              </Link>
+            )}
+          </nav>
         </div>
       </header>
 
       {/* Mobile/Tablet: 상단 헤더 (Native WebView에서는 mobile 앱이 제공하므로 숨김) */}
       {!hideTopHeader && (
-      <header className='lg:hidden sticky top-0 z-20 bg-background-elevated border-b border-border pt-[env(safe-area-inset-top)]'>
+      <header className='lg:hidden sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-border pt-[env(safe-area-inset-top)] shadow-sm'>
         <div className='h-14 flex items-center px-4'>
           <div className='flex-1 flex items-center min-w-0'>
             {showBackButton ? (
               <button
                 type='button'
                 onClick={handleBack}
-                className='flex items-center justify-center w-10 h-10 -ml-2 shrink-0 text-foreground touch-manipulation rounded-lg hover:bg-primary/10 active:opacity-80'
+                className='flex items-center justify-center w-10 h-10 -ml-2 shrink-0 text-foreground touch-manipulation rounded-xl hover:bg-primary/10 active:opacity-80'
                 aria-label='뒤로'
               >
                 <Icon name='ChevronLeft' size={24} />
@@ -134,14 +128,14 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
             )}
             <Link
               href={routes.home}
-              className='flex-1 flex justify-center min-w-0 font-display font-bold text-lg tracking-[0.15em] text-primary touch-manipulation'
+              className='flex-1 flex justify-center min-w-0 font-display font-bold text-base tracking-[0.12em] text-primary touch-manipulation'
             >
               <span className='truncate'>GOLDEN RACE</span>
             </Link>
             <div className='w-10 shrink-0' />
           </div>
         </div>
-        <div className='h-1 bg-primary/30' />
+        <div className='h-0.5 bg-linear-to-r from-transparent via-primary/40 to-transparent' />
       </header>
       )}
 
@@ -154,44 +148,54 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
         {children}
       </main>
 
-      {/* Mobile/Tablet: 하단 네비게이션 */}
+      {/* Mobile/Tablet: 하단 네비게이션 — 플로팅 카드 스타일 */}
       <nav
-        className='lg:hidden fixed bottom-0 left-0 right-0 z-10 bg-background-elevated border-t border-border safe-area-bottom'
+        className='lg:hidden fixed bottom-0 left-0 right-0 z-10 safe-area-bottom px-4 pb-3 pt-2'
         aria-label='하단 메뉴'
       >
-        <div className='w-full mx-auto h-14 min-h-[56px] flex items-stretch justify-around pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]'>
-          {navLinks.map(({ href, icon, label }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`nav-item-mobile flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 touch-manipulation ${pathname === href ? 'text-primary' : ''}`}
-            >
-              <Icon name={icon} size={22} className={`shrink-0 ${pathname === href ? 'text-primary' : ''}`} />
-              <span className='text-xs truncate block text-center w-full px-0.5'>{label}</span>
-            </Link>
-          ))}
+        <div className='nav-mobile-bar max-w-[400px] mx-auto pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)]'>
+          {navLinks.map(({ href, icon, label }) => {
+            const active = pathname === href;
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`nav-mobile-item ${active ? 'nav-mobile-item-active' : ''}`}
+              >
+                <span className='nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0'>
+                  <Icon name={icon} size={20} strokeWidth={active ? 2.5 : 2} />
+                </span>
+                <span className='nav-mobile-label text-xs font-medium truncate w-full text-center'>{label}</span>
+              </Link>
+            );
+          })}
           <Link
             href={routes.profile.index}
-            className={`nav-item-mobile flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 touch-manipulation ${pathname === routes.profile.index || pathname.startsWith('/profile') || pathname.startsWith('/mypage') ? 'text-primary' : ''}`}
+            className={`nav-mobile-item ${pathname === routes.profile.index || pathname.startsWith('/profile') || pathname.startsWith('/mypage') ? 'nav-mobile-item-active' : ''}`}
           >
-            <Icon name='User' size={22} className={`shrink-0 ${pathname === routes.profile.index || pathname.startsWith('/profile') || pathname.startsWith('/mypage') ? 'text-primary' : ''}`} />
-            <span className='text-xs truncate block text-center w-full px-0.5'>내 정보</span>
+            <span className='nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0'>
+              <Icon name='User' size={20} strokeWidth={pathname === routes.profile.index || pathname.startsWith('/profile') || pathname.startsWith('/mypage') ? 2.5 : 2} />
+            </span>
+            <span className='nav-mobile-label text-xs font-medium truncate w-full text-center'>내 정보</span>
           </Link>
         </div>
       </nav>
 
-      {/* Desktop: 푸터 */}
-      <footer className='hidden lg:block border-t border-border py-6'>
+      {/* Desktop: 푸터 — 그라데이션 라인, 풍부한 스타일 */}
+      <footer className='hidden lg:block site-footer py-8 mt-4'>
         <div className='max-w-[1200px] mx-auto px-8'>
-          <div className='flex flex-wrap items-center justify-center gap-4 text-text-tertiary text-sm'>
-            <span>© GOLDEN RACE — AI 경마 승부예측 서비스</span>
-            <Link href={routes.legal.terms} className='hover:text-primary transition-colors'>
+          <div className='flex flex-wrap items-center justify-center gap-6 text-text-tertiary text-sm'>
+            <span className='font-medium text-foreground/80'>© GOLDEN RACE — AI 경마 승부예측 서비스</span>
+            <Link href={routes.legal.terms} className='hover:text-primary transition-colors font-medium'>
               이용약관
             </Link>
-            <Link href={routes.legal.privacy} className='hover:text-primary transition-colors'>
+            <Link href={routes.legal.privacy} className='hover:text-primary transition-colors font-medium'>
               개인정보처리방침
             </Link>
           </div>
+          <p className='text-center text-text-tertiary text-xs mt-4 max-w-xl mx-auto'>
+            본 서비스는 사행성을 조장하지 않으며, AI 분석 콘텐츠 제공 목적입니다.
+          </p>
         </div>
       </footer>
     </div>

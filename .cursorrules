@@ -104,6 +104,10 @@ goldenrace/
 - **웹앱에서 즐겨찾기 기능 제거.** 페이지·API 클라이언트·타입 모두 삭제됨.
 - **서버:** type은 RACE만 허용 (말·기수·조교사 즐겨찾기 없음).
 
+### 내가 고른 말 (Picks)
+- **서비스에서 제외.** WebApp/Mobile에서 메뉴·페이지 미노출.
+- **서버:** Picks API는 존재하나 클라이언트 미사용.
+
 ### 알림 설정 (Notification Preferences)
 - **이메일 알림 없음.** 푸시만 채널로 사용.
 - **푸시 토글**: mobile(native WebView)에서만 UI 노출. Web에서는 숨김.

@@ -25,6 +25,8 @@ export interface FilterDateBarProps {
   /** 고유 ID (한 페이지에 여러 개일 때) */
   dateId?: string;
   className?: string;
+  /** card 스타일 생략 (섹션 내 중첩 시 사용) */
+  inline?: boolean;
 }
 
 export default function FilterDateBar({
@@ -37,10 +39,13 @@ export default function FilterDateBar({
   dateLabel = '날짜',
   dateId = 'filter-date',
   className = '',
+  inline = false,
 }: FilterDateBarProps) {
+  const wrapClass = inline
+    ? `flex flex-wrap gap-2 items-center mb-4 ${className}`.trim()
+    : `card p-4 mb-4 border-primary/10 flex flex-wrap gap-2 items-center ${className}`.trim();
   return (
-    <div className={`card p-3 mb-4 ${className}`.trim()}>
-      <div className='flex flex-wrap gap-2 items-center'>
+    <div className={wrapClass}>
         <FilterChips
           options={filterOptions}
           value={filterValue}
@@ -63,7 +68,6 @@ export default function FilterDateBar({
             />
           </div>
         )}
-      </div>
     </div>
   );
 }

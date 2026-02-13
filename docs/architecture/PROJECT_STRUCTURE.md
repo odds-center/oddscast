@@ -119,7 +119,7 @@ server/
 │   │   ├── prediction-tickets.controller.ts
 │   │   └── prediction-tickets.service.ts
 │   │
-│   ├── picks/                           # 📌 내가 고른 말 (승식별)
+│   ├── picks/                           # 📌 내가 고른 말 (승식별) — 서비스에서 제외, API만 존재
 │   │   ├── picks.module.ts
 │   │   ├── picks.controller.ts
 │   │   ├── picks.service.ts
@@ -184,10 +184,10 @@ webapp/
 │   │   └── [id].tsx                  # 경주 상세, 승식 선택
 │   ├── predictions/
 │   │   └── matrix.tsx                 # 종합예상표, AI/전문가 코멘트
-│   ├── picks.tsx                     # 내부 리다이렉트
+│   ├── picks.tsx                     # (제외) 내부 리다이렉트 — 서비스에서 제외
 │   └── mypage/
 │       ├── index.tsx                 # 마이페이지 메뉴 허브
-│       ├── picks.tsx                 # 내가 고른 말
+│       ├── picks.tsx                 # (제외) 내가 고른 말 — 메뉴 미노출
 │       ├── subscriptions.tsx         # 구독 플랜
 │       ├── subscription-checkout.tsx  # ?planId= 쿼리로 결제
 │       ├── ticket-history.tsx        # 예측권 이력
@@ -331,5 +331,5 @@ docs/
 | 우선순위              | 모듈                                                              | 설명                            |
 | --------------------- | ----------------------------------------------------------------- | ------------------------------- |
 | **P0 (Core)**         | Auth, Races, Results, Predictions                                 | 핵심 기능 — 이것 없이는 앱 불가 |
-| **P1 (Features)**     | Users, Favorites, PredictionTickets, Picks                        | 사용자 경험 향상                |
+| **P1 (Features)**     | Users, Favorites, PredictionTickets, ~~Picks(제외)~~               | 사용자 경험 향상                |
 | **P2 (Monetization)** | Points, Subscriptions, Payments, SinglePurchases, Notifications, Rankings | 수익화 + 소셜                   |

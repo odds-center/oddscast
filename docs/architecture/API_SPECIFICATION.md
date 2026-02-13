@@ -278,11 +278,11 @@ CreateRaceEntryDto { hrNo, hrName, jkName, trName?, owName?, weight?, recentRank
 
 ---
 
-## 6.5 Picks (내가 고른 말) — `/api/picks`
+## 6.5 Picks (내가 고른 말) — `/api/picks` — ⚠️ 서비스에서 제외 (UI 미노출)
 
-> Server: `server/src/picks/picks.controller.ts` WebApp: `webapp/lib/api/picksApi.ts`
+> Server: `server/src/picks/picks.controller.ts` WebApp: `webapp/lib/api/picksApi.ts` (존재하나 사용 안 함)
 >
-> 승식별 기록, 적중 시 포인트 지급
+> **제외**: 승식별 기록·적중 포인트 기능. WebApp/Mobile에서 메뉴·페이지 미노출.
 
 | Method   | Route                    | 설명                  | Auth |
 | -------- | ------------------------ | --------------------- | ---- |

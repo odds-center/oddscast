@@ -69,7 +69,7 @@ import { DataTable } from '@/components/ui';
 | 경주 결과 (/results) | 결과 테이블 (같은 경기 1·2·3위 한 행에 묶음) |
 | 경주 상세 (/races/[id]) | 경주 결과, 출전마 (compact) |
 | 종합예상표 (PredictionMatrixTable) | 매트릭스 표 |
-| 내가 고른 말 (picks), 포인트, 예측권, 알림 | 목록 테이블 |
+| 포인트, 예측권, 알림 | 목록 테이블 |
 | 랭킹 | 랭킹 테이블 |
 
 ### 테이블 내 링크
@@ -109,8 +109,6 @@ import Pagination from '@/components/page/Pagination';
 |--------|------|
 | 경주 목록 (/) | 20개/페이지 |
 | 경주 결과 (/results) | 250개/페이지 |
-| 즐겨찾기 | |
-| 내가 고른 말 | |
 | 포인트 거래 | |
 | 예측권 이력 | |
 | 알림 | |

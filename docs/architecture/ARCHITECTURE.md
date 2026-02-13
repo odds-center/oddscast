@@ -82,7 +82,7 @@ graph LR
         Users["👤 Users"]
         Favorites["⭐ Favorites"]
         Tickets["🎫 PredictionTickets"]
-        Picks["📌 Picks"]
+        Picks["📌 Picks (제외)"]
     end
 
     subgraph "Monetization (P2)"

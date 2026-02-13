@@ -35,7 +35,7 @@ npm run dev
 | **Config** | `lib/config.ts` — `CONFIG.useMock` |
 | **데이터** | `lib/mocks/data.ts` — races, results, predictions, rankings, points, tickets, subscriptions, notifications, user, config |
 | **데모 계정** | `demo@goldenrace.com` / `demo123` |
-| **적용 API** | RaceApi, ResultApi, PredictionApi, RankingApi, PicksApi, FavoriteApi, NotificationApi, PointApi, PredictionTicketApi, SubscriptionApi, SubscriptionPlansApi, ConfigApi, AuthApi |
+| **적용 API** | RaceApi, ResultApi, PredictionApi, RankingApi, FavoriteApi, NotificationApi, PointApi, PredictionTicketApi, SubscriptionApi, SubscriptionPlansApi, ConfigApi, AuthApi |
 
 ---
 
@@ -132,13 +132,11 @@ import BackLink from '@/components/page/BackLink';
 | Ranking | RankingApi.getRankings | LoadingSpinner | EmptyState + refetch | EmptyState |
 | Prediction | PredictionApi.getPredictions | LoadingSpinner | EmptyState + refetch | EmptyState |
 | Profile | PointApi, TicketApi, SubscriptionApi | LoadingSpinner | — | — |
-| mypage/favorites | FavoriteApi.getFavorites | LoadingSpinner | EmptyState + refetch | EmptyState |
-| mypage/picks | PicksApi.getMyPicks | LoadingSpinner | EmptyState + refetch | EmptyState |
 | mypage/notifications | NotificationApi.getNotifications | LoadingSpinner | EmptyState + refetch | EmptyState |
 | mypage/subscriptions | SubscriptionPlansApi.getSubscriptionPlans | LoadingSpinner | EmptyState + refetch | EmptyState |
 | mypage/subscription-checkout | SubscriptionApi.subscribe, PaymentApi.processSubscription, activate | LoadingSpinner | — | — |
 | settings/notifications | NotificationApi.getNotificationPreferences, updateNotificationPreferences | LoadingSpinner | msg-error | — |
-| races/[id] | RaceApi, PicksApi, FavoriteApi, PredictionApi | LoadingSpinner | — | — |
+| races/[id] | RaceApi, FavoriteApi, PredictionApi | LoadingSpinner | — | — |
 
 ---
 

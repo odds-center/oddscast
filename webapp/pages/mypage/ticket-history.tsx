@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/page/PageHeader';
 import Pagination from '@/components/page/Pagination';
 import BackLink from '@/components/page/BackLink';
+import DataFetchState from '@/components/page/DataFetchState';
+import RequireLogin from '@/components/page/RequireLogin';
+import { Badge, Card } from '@/components/ui';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery } from '@tanstack/react-query';
@@ -41,16 +42,16 @@ export default function TicketHistoryPage() {
     }
   };
 
-  const getStatusClass = (status: string) => {
+  const getStatusVariant = (status: string): 'primary' | 'muted' | 'warning' => {
     switch (status) {
       case 'AVAILABLE':
-        return 'text-primary';
+        return 'primary';
       case 'USED':
-        return 'text-text-secondary';
+        return 'muted';
       case 'EXPIRED':
-        return 'text-text-tertiary';
+        return 'warning';
       default:
-        return '';
+        return 'muted';
     }
   };
 
@@ -58,12 +59,7 @@ export default function TicketHistoryPage() {
     return (
       <Layout title='예측권 이력 — GOLDEN RACE'>
         <PageHeader icon='Ticket' title='예측권 이력' description='예측권 구매·사용 내역입니다.' />
-        <p className='text-text-secondary text-sm mb-4'>
-          <Link href={routes.auth.login} className='link-primary'>
-            로그인
-          </Link>
-          후 확인할 수 있습니다.
-        </p>
+        <RequireLogin />
         <BackLink href={routes.profile.index} label='내 정보로' />
       </Layout>
     );
@@ -77,31 +73,25 @@ export default function TicketHistoryPage() {
         description='예측권 구매·사용 내역입니다.'
       />
 
-      {isLoading ? (
-        <div className='py-16'>
-          <LoadingSpinner size={28} label='이력을 불러오는 중...' />
-        </div>
-      ) : error ? (
-        <EmptyState
-          icon='AlertCircle'
-          title='데이터를 불러오지 못했습니다'
-          description={(error as Error)?.message}
-          action={
-            <button onClick={() => refetch()} className='btn-secondary px-4 py-2 text-sm'>
-              다시 시도
-            </button>
-          }
-        />
-      ) : (
-        <div className='space-y-2'>
+      <DataFetchState
+        isLoading={isLoading}
+        error={error as Error | null}
+        onRetry={() => refetch()}
+        isEmpty={!tickets.length}
+        emptyIcon='Ticket'
+        emptyTitle='예측권 이력이 없습니다'
+        emptyDescription='예측권을 구매하거나 구독하면 이력이 표시됩니다.'
+        loadingLabel='이력을 불러오는 중...'
+      >
+        <div className='space-y-3'>
           {tickets.map((t: PredictionTicket) => (
-            <div key={t.id} className='card py-4'>
+            <Card key={t.id} className='py-4'>
               <div className='flex items-start justify-between gap-2'>
                 <div className='min-w-0 flex-1'>
-                  <p className='text-foreground font-medium text-sm'>
+                  <Badge variant={getStatusVariant(t.status)} size='md' className='mb-1'>
                     {getStatusLabel(t.status)}
-                  </p>
-                  <p className='text-text-secondary text-xs mt-0.5'>
+                  </Badge>
+                  <p className='text-text-secondary text-xs mt-1'>
                     발급: {formatDate(t.issuedAt)} · 만료: {formatDate(t.expiresAt)}
                   </p>
                   {t.usedAt && (
@@ -110,29 +100,16 @@ export default function TicketHistoryPage() {
                   {t.raceId && (
                     <Link
                       href={routes.races.detail(t.raceId)}
-                      className='text-primary text-xs mt-1 inline-block'
+                      className='text-primary text-xs mt-1 inline-block link-primary'
                     >
                       경주 보기 →
                     </Link>
                   )}
                 </div>
-                <span className={`shrink-0 text-xs font-medium ${getStatusClass(t.status)}`}>
-                  {getStatusLabel(t.status)}
-                </span>
               </div>
-            </div>
+            </Card>
           ))}
-          {tickets.length === 0 && (
-            <EmptyState
-              icon='Ticket'
-              title='예측권 이력이 없습니다'
-              description='예측권을 구매하거나 구독하면 이력이 표시됩니다.'
-            />
-          )}
         </div>
-      )}
-
-      {totalPages > 1 && (
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -140,7 +117,7 @@ export default function TicketHistoryPage() {
           onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
           className='mt-6'
         />
-      )}
+      </DataFetchState>
 
       <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>

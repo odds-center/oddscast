@@ -3,6 +3,7 @@ import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../prisma/prisma.service';
 import { PredictionsService } from './predictions.service';
 import { GlobalConfigService } from '../config/config.service';
+import dayjs from 'dayjs';
 
 /**
  * 예측 자동 생성 Cron (BUSINESS_LOGIC 1.1)
@@ -28,7 +29,7 @@ export class PredictionsScheduler {
       this.logger.log('[Cron] Batch prediction disabled in ai_config, skipping');
       return;
     }
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const today = dayjs().format('YYYYMMDD');
     this.logger.log(`[Cron] Generate predictions for ${today}`);
 
     const races = await this.prisma.race.findMany({

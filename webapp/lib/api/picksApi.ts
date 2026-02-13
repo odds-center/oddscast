@@ -70,7 +70,7 @@ export function findDividendForPick(
 }
 
 export interface CreatePickDto {
-  raceId: string;
+  raceId: number; // 서버: number (ParseIntPipe)
   pickType: string;
   hrNos: string[];
   hrNames?: string[];
@@ -89,12 +89,24 @@ export interface Pick {
 }
 
 export default class PicksApi {
-  static async create(dto: CreatePickDto): Promise<Pick> {
+  static async create(dto: CreatePickDto & { raceId?: number | string }): Promise<Pick> {
+    const payload = {
+      ...dto,
+      raceId: typeof dto.raceId === 'string' ? parseInt(dto.raceId, 10) : dto.raceId,
+    };
     if (CONFIG.useMock) {
-      return { id: 'mock-pick', ...dto, hrNames: dto.hrNames ?? [], createdAt: new Date().toISOString() } as Pick;
+      return {
+        id: 'mock-pick',
+        userId: 'mock-user',
+        raceId: String(payload.raceId),
+        pickType: payload.pickType,
+        hrNos: payload.hrNos,
+        hrNames: payload.hrNames ?? [],
+        createdAt: new Date().toISOString(),
+      } as Pick;
     }
     try {
-      const response = await axiosInstance.post<ApiResponse<Pick>>('/picks', dto);
+      const response = await axiosInstance.post<ApiResponse<Pick>>('/picks', payload);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);

@@ -116,7 +116,7 @@ let FavoritesService = class FavoritesService {
         });
         return {
             byType: counts,
-            total: counts.reduce((sum, c) => sum + c._count, 0),
+            total: counts.reduce((sum, c) => sum + (c._count ?? 0), 0),
         };
     }
     async search(userId, query) {

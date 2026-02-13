@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -67,25 +68,25 @@ export class PredictionsController {
 
   @Get('preview/:raceId')
   @ApiOperation({ summary: '예측 미리보기 (무료)' })
-  getPreview(@Param('raceId') raceId: string) {
+  getPreview(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.getPreview(raceId);
   }
 
   @Get('race/:raceId/preview')
   @ApiOperation({ summary: '예측 미리보기 (무료) — alias' })
-  getPreviewAlias(@Param('raceId') raceId: string) {
+  getPreviewAlias(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.getPreview(raceId);
   }
 
   @Get('race/:raceId')
   @ApiOperation({ summary: '경주별 예측 조회' })
-  getByRace(@Param('raceId') raceId: string) {
+  getByRace(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.getByRace(raceId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '예측 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.predictionsService.findOne(id);
   }
 
@@ -110,7 +111,7 @@ export class PredictionsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '예측 상태 업데이트' })
   updateStatus(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdatePredictionStatusDto,
   ) {
     return this.predictionsService.updateStatus(id, dto);
@@ -120,7 +121,7 @@ export class PredictionsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '예측 생성 (AI)' })
-  generate(@Param('raceId') raceId: string) {
+  generate(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.generatePrediction(raceId);
   }
 }

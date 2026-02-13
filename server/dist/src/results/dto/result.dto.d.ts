@@ -1,19 +1,18 @@
 export declare class CreateResultDto {
-    raceId: string;
+    raceId: number;
     ord?: string;
     hrNo: string;
     hrName: string;
     jkName?: string;
     trName?: string;
     owName?: string;
-    rcRank?: string;
     rcTime?: string;
-    rcPrize?: number;
+    chaksun1?: number;
 }
 export declare class UpdateResultDto {
-    rcRank?: string;
+    ord?: string;
     rcTime?: string;
-    rcPrize?: number;
+    chaksun1?: number;
 }
 export declare class BulkCreateResultDto {
     results: CreateResultDto[];

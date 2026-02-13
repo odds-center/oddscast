@@ -125,33 +125,33 @@ __decorate([
 __decorate([
     (0, common_1.Get)('preview/:raceId'),
     (0, swagger_1.ApiOperation)({ summary: '예측 미리보기 (무료)' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getPreview", null);
 __decorate([
     (0, common_1.Get)('race/:raceId/preview'),
     (0, swagger_1.ApiOperation)({ summary: '예측 미리보기 (무료) — alias' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getPreviewAlias", null);
 __decorate([
     (0, common_1.Get)('race/:raceId'),
     (0, swagger_1.ApiOperation)({ summary: '경주별 예측 조회' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getByRace", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '예측 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "findOne", null);
 __decorate([
@@ -178,10 +178,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '예측 상태 업데이트' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, prediction_dto_1.UpdatePredictionStatusDto]),
+    __metadata("design:paramtypes", [Number, prediction_dto_1.UpdatePredictionStatusDto]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "updateStatus", null);
 __decorate([
@@ -189,9 +189,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '예측 생성 (AI)' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "generate", null);
 exports.PredictionsController = PredictionsController = __decorate([

@@ -11,65 +11,105 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RacesService = void 0;
 const common_1 = require("@nestjs/common");
 const cache_manager_1 = require("@nestjs/cache-manager");
 const prisma_service_1 = require("../prisma/prisma.service");
+const dayjs_1 = __importDefault(require("dayjs"));
+const constants_1 = require("../kra/constants");
+const kra_serializer_1 = require("../common/serializers/kra.serializer");
+const prisma_includes_1 = require("../common/prisma-includes");
+const shared_1 = require("@goldenrace/shared");
 let RacesService = class RacesService {
     constructor(prisma, cache) {
         this.prisma = prisma;
         this.cache = cache;
     }
     async findAll(filters) {
-        const { page = 1, limit = 20, date, meet, status } = filters;
+        const page = Math.max(1, Number(filters.page) || 1);
+        const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
+        const { date, dateFrom, dateTo, meet, status } = filters;
         const where = {};
-        if (date)
-            where.rcDate = date;
+        if (date) {
+            where.rcDate = date.replace(/-/g, '').slice(0, 8);
+        }
+        else if (dateFrom && dateTo) {
+            const from = dateFrom.replace(/-/g, '').slice(0, 8);
+            const to = dateTo.replace(/-/g, '').slice(0, 8);
+            where.rcDate = { gte: from, lte: to };
+        }
         if (meet)
-            where.meet = meet;
+            where.meet = (0, constants_1.toKraMeetName)(meet);
         if (status)
             where.status = status;
         const [races, total] = await Promise.all([
             this.prisma.race.findMany({
                 where,
-                include: { entries: true },
+                include: prisma_includes_1.RACE_INCLUDE_ENTRIES,
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: [{ rcDate: 'desc' }, { rcNo: 'asc' }],
             }),
             this.prisma.race.count({ where }),
         ]);
-        return { races, total, page, totalPages: Math.ceil(total / limit) };
+        return {
+            races: (0, kra_serializer_1.serializeRaces)(races),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
     }
     async findOne(id) {
         const cacheKey = `race:${id}`;
         const cached = await this.cache.get(cacheKey);
-        if (cached)
-            return cached;
+        if (cached) {
+            const hasEntries = (cached.entries?.length ?? 0) > 0;
+            if (!hasEntries) {
+                const fresh = await this._findOneRaw(id);
+                if (fresh && Array.isArray(fresh.entries) && fresh.entries.length > 0) {
+                    const serialized = (0, kra_serializer_1.serializeRace)(fresh);
+                    await this.cache.set(cacheKey, fresh, 60 * 5 * 1000);
+                    return serialized ?? fresh;
+                }
+            }
+            return (0, kra_serializer_1.serializeRace)(cached) ?? cached;
+        }
         const race = await this._findOneRaw(id);
         if (!race)
             throw new common_1.NotFoundException('경주를 찾을 수 없습니다');
+        const serialized = (0, kra_serializer_1.serializeRace)(race);
         await this.cache.set(cacheKey, race, 60 * 5 * 1000);
-        return race;
+        return serialized ?? race;
     }
     async _findOneRaw(id) {
         return this.prisma.race.findUnique({
             where: { id },
-            include: { entries: true, results: true, predictions: true },
+            include: prisma_includes_1.RACE_INCLUDE_FULL,
         });
     }
     async create(dto) {
-        return this.prisma.race.create({ data: dto, include: { entries: true } });
+        const data = { ...dto, meet: (0, shared_1.toKraMeetForDb)(dto.meet) ?? dto.meet };
+        const created = await this.prisma.race.create({
+            data,
+            include: prisma_includes_1.RACE_INCLUDE_ENTRIES,
+        });
+        return (0, kra_serializer_1.serializeRace)(created) ?? created;
     }
     async update(id, dto) {
+        const data = dto.meet != null
+            ? { ...dto, meet: (0, shared_1.toKraMeetForDb)(dto.meet) ?? dto.meet }
+            : dto;
         const race = await this.prisma.race.update({
             where: { id },
-            data: dto,
-            include: { entries: true },
+            data,
+            include: prisma_includes_1.RACE_INCLUDE_ENTRIES,
         });
         await this.cache.del(`race:${id}`);
-        return race;
+        return (0, kra_serializer_1.serializeRace)(race) ?? race;
     }
     async remove(id) {
         await this.prisma.race.delete({ where: { id } });
@@ -79,32 +119,45 @@ let RacesService = class RacesService {
     async getSchedule(filters) {
         const where = {};
         if (filters.dateFrom && filters.dateTo) {
-            where.rcDate = { gte: filters.dateFrom, lte: filters.dateTo };
+            const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
+            const to = filters.dateTo.replace(/-/g, '').slice(0, 8);
+            where.rcDate = { gte: from, lte: to };
         }
         if (filters.meet)
-            where.meet = filters.meet;
-        return this.prisma.race.findMany({
+            where.meet = (0, constants_1.toKraMeetName)(filters.meet);
+        const races = await this.prisma.race.findMany({
             where,
-            include: { entries: true },
+            include: prisma_includes_1.RACE_INCLUDE_ENTRIES,
             orderBy: [{ rcDate: 'asc' }, { rcNo: 'asc' }],
         });
+        return (0, kra_serializer_1.serializeRaces)(races);
     }
     async getTodayRaces() {
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const today = (0, dayjs_1.default)().format('YYYYMMDD');
         return this.getRacesByDate(today);
     }
     async getRacesByDate(date) {
         const rcDate = date.replace(/-/g, '').slice(0, 8);
-        return this.prisma.race.findMany({
+        const races = await this.prisma.race.findMany({
             where: { rcDate },
-            include: { entries: { where: { isScratched: false } } },
+            include: prisma_includes_1.RACE_INCLUDE_ENTRIES_ACTIVE,
             orderBy: [{ rcNo: 'asc' }],
         });
+        return (0, kra_serializer_1.serializeRaces)(races);
     }
     async getRaceResult(raceId) {
         const results = await this.prisma.raceResult.findMany({
             where: { raceId },
-            orderBy: { rcRank: 'asc' },
+            select: {
+                id: true,
+                ord: true,
+                chulNo: true,
+                hrNo: true,
+                hrName: true,
+                jkName: true,
+                rcTime: true,
+            },
+            orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
         });
         if (!results.length)
             throw new common_1.NotFoundException('결과를 찾을 수 없습니다');

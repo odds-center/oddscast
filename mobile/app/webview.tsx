@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   StyleSheet,
   View,
@@ -11,17 +11,26 @@ import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
+import * as Notifications from 'expo-notifications';
+import * as Device from 'expo-device';
 
 import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 
-// WebApp URL — dev: webapp port 3000, prod: 배포 URL
-const WEBAPP_BASE =
+// WebApp URL — dev: 로컬, prod: EXPO_PUBLIC_WEBAPP_URL 또는 기본 Vercel
+const WEBAPP_URL =
   __DEV__
     ? Platform.OS === 'android'
       ? 'http://10.0.2.2:3000'
       : 'http://localhost:3000'
-    : 'https://gold-race-webapp.vercel.app';
-const WEBAPP_URL = WEBAPP_BASE;
+    : (process.env.EXPO_PUBLIC_WEBAPP_URL as string | undefined) || 'https://gold-race-webapp.vercel.app';
+
+// API URL — 푸시 등록용
+const API_BASE =
+  __DEV__
+    ? Platform.OS === 'android'
+      ? 'http://10.0.2.2:3001/api'
+      : 'http://localhost:3001/api'
+    : (Constants.expoConfig?.extra?.apiBaseUrl as string) || '';
 
 const webClientId =
   Constants.expoConfig?.extra?.webClientId as string | undefined;
@@ -33,10 +42,62 @@ if (webClientId) {
   });
 }
 
+// Foreground에서도 알림 표시 (app.json 설정과 동일)
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
+
 export default function WebAppScreen() {
   const webViewRef = useRef<WebView>(null);
   const router = useRouter();
   const [canGoBack, setCanGoBack] = useState(false);
+  const expoPushTokenRef = useRef<string | null>(null);
+  const authTokenRef = useRef<string | null>(null);
+  const hasRegisteredRef = useRef(false);
+
+  const tryRegisterPush = async () => {
+    const expoToken = expoPushTokenRef.current;
+    const accessToken = authTokenRef.current;
+    if (!expoToken || !accessToken || !API_BASE || hasRegisteredRef.current) return;
+    try {
+      const res = await fetch(`${API_BASE}/notifications/push-subscribe`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          token: expoToken,
+          deviceId: Device.modelName ?? undefined,
+        }),
+      });
+      if (res.ok) hasRegisteredRef.current = true;
+    } catch (e) {
+      console.warn('Push subscribe failed', e);
+    }
+  };
+
+  useEffect(() => {
+    if (!Device.isDevice) return;
+    (async () => {
+      const { status: existing } = await Notifications.getPermissionsAsync();
+      let final = existing;
+      if (existing !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        final = status;
+      }
+      if (final !== 'granted') return;
+      const tokenData = await Notifications.getExpoPushTokenAsync({
+        projectId: Constants.expoConfig?.extra?.eas?.projectId as string,
+      });
+      expoPushTokenRef.current = tokenData.data;
+      tryRegisterPush();
+    })();
+  }, []);
 
   const onNavStateChange = (navState: WebViewNavigation) => {
     setCanGoBack(navState.canGoBack ?? false);
@@ -74,6 +135,12 @@ export default function WebAppScreen() {
       switch (data.type) {
         case 'LOGIN_GOOGLE':
           await handleGoogleLogin();
+          break;
+        case 'AUTH_READY':
+          if (data.payload?.token) {
+            authTokenRef.current = data.payload.token;
+            tryRegisterPush();
+          }
           break;
         case 'ECHO':
           sendToWeb('ECHO_REPLY', data.payload);

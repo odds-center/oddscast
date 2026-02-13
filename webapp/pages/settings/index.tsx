@@ -2,7 +2,7 @@ import Layout from '@/components/Layout';
 import PageHeader from '@/components/page/PageHeader';
 import MenuList from '@/components/page/MenuList';
 import BackLink from '@/components/page/BackLink';
-import Link from 'next/link';
+import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
 
@@ -25,12 +25,11 @@ export default function SettingsPage() {
           />
         ) : (
           <>
-            <p className='text-text-secondary text-sm mb-4'>
-              <Link href={routes.auth.login} className='link-primary'>
-                로그인
-              </Link>
-              후 설정할 수 있습니다.
-            </p>
+            <RequireLogin
+              suffix='설정할 수 있습니다'
+              showLoginButton={false}
+              className='mb-4'
+            />
             <MenuList
               items={[
                 { href: routes.legal.terms, icon: 'AlertCircle', label: '이용약관' },

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import { adminSinglePurchaseApi } from '@/lib/api/admin';
 
 // Zod 스키마
@@ -98,11 +99,11 @@ export default function SinglePurchaseConfigPage() {
         <title>개별 구매 설정 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <h1 className='text-3xl font-bold text-gray-900'>개별 구매 설정</h1>
+        <div className='space-y-4'>
+          <PageHeader title='개별 구매 설정' />
 
           <div className='bg-white rounded-lg shadow p-8'>
-            <form onSubmit={handleSubmit(onSubmit)} className='space-y-6'>
+            <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>설정 이름</label>
                 <input
@@ -170,7 +171,7 @@ export default function SinglePurchaseConfigPage() {
                 </div>
               </div>
 
-              <div className='bg-blue-50 p-6 rounded-lg'>
+              <div className='bg-blue-50 p-4 rounded-md'>
                 <h3 className='font-semibold text-gray-900 mb-4'>💰 가격 미리보기</h3>
                 <div className='space-y-2'>
                   <div className='flex justify-between'>

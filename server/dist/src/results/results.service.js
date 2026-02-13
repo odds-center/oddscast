@@ -13,6 +13,8 @@ exports.ResultsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const points_service_1 = require("../points/points.service");
+const constants_1 = require("../kra/constants");
+const kra_serializer_1 = require("../common/serializers/kra.serializer");
 let ResultsService = class ResultsService {
     constructor(prisma, pointsService) {
         this.prisma = prisma;
@@ -21,23 +23,39 @@ let ResultsService = class ResultsService {
     async findAll(filters) {
         const { page = 1, limit = 20, date, meet } = filters;
         const where = {};
-        if (date) {
-            where.OR = [{ rcDay: date }, { race: { rcDate: date } }];
-        }
-        if (meet) {
-            where.race = { meet };
+        if (date || meet) {
+            where.race = {
+                ...(date && { rcDate: date }),
+                ...(meet && { meet: (0, constants_1.toKraMeetName)(meet) }),
+            };
         }
         const [results, total] = await Promise.all([
             this.prisma.raceResult.findMany({
                 where,
-                include: { race: true },
+                select: {
+                    id: true,
+                    raceId: true,
+                    ord: true,
+                    chulNo: true,
+                    hrNo: true,
+                    hrName: true,
+                    jkName: true,
+                    race: {
+                        select: { meet: true, meetName: true, rcNo: true, rcDate: true },
+                    },
+                },
                 skip: (page - 1) * limit,
                 take: limit,
                 orderBy: { createdAt: 'desc' },
             }),
             this.prisma.raceResult.count({ where }),
         ]);
-        return { results, total, page, totalPages: Math.ceil(total / limit) };
+        return {
+            results: (0, kra_serializer_1.serializeRaceResults)(results),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
     }
     async findOne(id) {
         const result = await this.prisma.raceResult.findUnique({
@@ -46,7 +64,7 @@ let ResultsService = class ResultsService {
         });
         if (!result)
             throw new common_1.NotFoundException('결과를 찾을 수 없습니다');
-        return result;
+        return (0, kra_serializer_1.serializeRaceResults)([result])[0] ?? result;
     }
     async create(dto) {
         return this.prisma.raceResult.create({
@@ -93,14 +111,16 @@ let ResultsService = class ResultsService {
             return;
         const results = await this.prisma.raceResult.findMany({
             where: { raceId },
-            orderBy: { rcRank: 'asc' },
+            orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
         });
         if (!results.length)
             return;
         const predictedOrder = horseScores
             .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
             .map((h) => String(h.hrNo ?? h.hrName ?? '').trim());
-        const actualTop = results.slice(0, 3).map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
+        const actualTop = results
+            .slice(0, 3)
+            .map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
         const topN = Math.min(3, predictedOrder.length, actualTop.length);
         let matchCount = 0;
         for (let i = 0; i < topN; i++) {
@@ -116,7 +136,7 @@ let ResultsService = class ResultsService {
     async getByRace(raceId) {
         return this.prisma.raceResult.findMany({
             where: { raceId },
-            orderBy: { rcRank: 'asc' },
+            orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
         });
     }
     async getStatistics(filters) {
@@ -128,8 +148,8 @@ let ResultsService = class ResultsService {
         }
         if (filters.meet) {
             where.race = {
-                ...where.race?.is,
-                meet: filters.meet,
+                ...where.race,
+                meet: (0, constants_1.toKraMeetName)(filters.meet),
             };
         }
         const totalResults = await this.prisma.raceResult.count({ where });

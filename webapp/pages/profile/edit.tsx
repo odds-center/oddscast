@@ -2,11 +2,16 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import Link from 'next/link';
+import FormInput from '@/components/page/FormInput';
+import PageHeader from '@/components/page/PageHeader';
+import BackLink from '@/components/page/BackLink';
+import { TabBar } from '@/components/ui';
+import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 import AuthApi from '@/lib/api/authApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getErrorMessage } from '@/lib/utils/error';
 
 type ProfileForm = {
   name: string;
@@ -39,8 +44,8 @@ export default function ProfileEditPage() {
   useEffect(() => {
     const u = currentUser ?? user;
     if (u) {
-      const uAny = u as any;
-      profileForm.reset({ name: uAny.name ?? '', nickname: uAny.nickname ?? '' });
+      const uExt = u as { name?: string; nickname?: string; avatar?: string };
+      profileForm.reset({ name: uExt.name ?? '', nickname: uExt.nickname ?? '' });
     }
   }, [currentUser, user]);
 
@@ -48,7 +53,8 @@ export default function ProfileEditPage() {
     mutationFn: (data: { name?: string; nickname?: string }) => AuthApi.updateProfile(data),
     onSuccess: (updated) => {
       const token = useAuthStore.getState().token;
-      if (token) setAuth(token, updated as any);
+      if (token)
+        setAuth(token, updated as { id: string; email: string; name: string; nickname?: string });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
   });
@@ -79,11 +85,8 @@ export default function ProfileEditPage() {
   if (!isLoggedIn) {
     return (
       <Layout title='프로필 수정 — GOLDEN RACE'>
-        <div className='text-center p-8'>
-          <p className='text-text-secondary mb-4'>로그인이 필요합니다.</p>
-          <Link href={routes.auth.login} className='link-primary'>
-            로그인
-          </Link>
+        <div className='max-w-md mx-auto'>
+          <RequireLogin suffix='프로필을 수정할 수 있습니다.' />
         </div>
       </Layout>
     );
@@ -92,67 +95,47 @@ export default function ProfileEditPage() {
   return (
     <Layout title='프로필 수정 — GOLDEN RACE'>
       <div className='max-w-md mx-auto'>
-        <h1 className='text-lg md:text-2xl font-bold text-primary mb-4 md:mb-6 flex items-center gap-2'>
-          <Icon name='User' size={28} />
-          프로필 수정
-        </h1>
+        <PageHeader
+          icon='User'
+          title='프로필 수정'
+          description='기본 정보와 비밀번호를 수정할 수 있습니다.'
+        />
 
-        <div className='flex gap-2 mb-4'>
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`px-4 py-2 rounded font-medium ${
-              activeTab === 'profile' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
-            }`}
-          >
-            기본 정보
-          </button>
-          <button
-            onClick={() => setActiveTab('password')}
-            className={`px-4 py-2 rounded font-medium ${
-              activeTab === 'password' ? 'bg-primary text-primary-foreground' : 'bg-card border border-border'
-            }`}
-          >
-            비밀번호
-          </button>
-        </div>
+        <TabBar
+          options={[
+            { value: 'profile', label: '기본 정보' },
+            { value: 'password', label: '비밀번호' },
+          ]}
+          value={activeTab}
+          onChange={(v) => setActiveTab(v)}
+          variant='filled'
+          size='md'
+          className='mb-6'
+        />
 
         {activeTab === 'profile' && (
           <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className='card space-y-4'>
-            <div>
-              <label className='block text-sm font-medium mb-1'>이름</label>
-              <input
-                type='text'
-                {...profileForm.register('name', { required: '이름을 입력하세요.' })}
-                className='w-full px-3 py-2 rounded bg-secondary border border-border text-foreground'
-              />
-              {profileForm.formState.errors.name && (
-                <p className='msg-error mt-1.5'>{profileForm.formState.errors.name.message}</p>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>닉네임</label>
-              <input
-                type='text'
-                {...profileForm.register('nickname', {
-                  required: '닉네임을 입력하세요.',
-                  minLength: { value: 2, message: '닉네임은 2자 이상이어야 합니다.' },
-                })}
-                className='w-full px-3 py-2 rounded bg-secondary border border-border text-foreground'
-              />
-              {profileForm.formState.errors.nickname && (
-                <p className='msg-error mt-1.5'>
-                  {profileForm.formState.errors.nickname.message}
-                </p>
-              )}
-            </div>
+            <FormInput
+              label='이름'
+              type='text'
+              {...profileForm.register('name', { required: '이름을 입력하세요.' })}
+              error={profileForm.formState.errors.name?.message}
+            />
+            <FormInput
+              label='닉네임'
+              type='text'
+              {...profileForm.register('nickname', {
+                required: '닉네임을 입력하세요.',
+                minLength: { value: 2, message: '닉네임은 2자 이상이어야 합니다.' },
+              })}
+              error={profileForm.formState.errors.nickname?.message}
+            />
             {profileMutation.isError && (
               <p className='msg-error'>
-                {(profileMutation.error as any)?.message || '저장에 실패했습니다.'}
+                {getErrorMessage(profileMutation.error) || '저장에 실패했습니다.'}
               </p>
             )}
-            {profileMutation.isSuccess && (
-              <p className='msg-success'>저장되었습니다.</p>
-            )}
+            {profileMutation.isSuccess && <p className='msg-success'>저장되었습니다.</p>}
             <button
               type='submit'
               disabled={profileMutation.isPending}
@@ -172,56 +155,38 @@ export default function ProfileEditPage() {
 
         {activeTab === 'password' && (
           <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className='card space-y-4'>
+            <FormInput
+              label='현재 비밀번호'
+              type='password'
+              {...passwordForm.register('currentPassword', {
+                required: '현재 비밀번호를 입력하세요.',
+              })}
+              error={passwordForm.formState.errors.currentPassword?.message}
+            />
             <div>
-              <label className='block text-sm font-medium mb-1'>현재 비밀번호</label>
-              <input
-                type='password'
-                {...passwordForm.register('currentPassword', { required: '현재 비밀번호를 입력하세요.' })}
-                className='w-full px-3 py-2 rounded bg-secondary border border-border text-foreground'
-              />
-              {passwordForm.formState.errors.currentPassword && (
-                <p className='msg-error mt-1.5'>
-                  {passwordForm.formState.errors.currentPassword.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>새 비밀번호</label>
-              <input
+              <FormInput
+                label='새 비밀번호'
                 type='password'
                 {...passwordForm.register('newPassword', {
                   required: '새 비밀번호를 입력하세요.',
                   minLength: { value: 6, message: '6자 이상 입력하세요.' },
                 })}
-                className='w-full px-3 py-2 rounded bg-secondary border border-border text-foreground'
+                error={passwordForm.formState.errors.newPassword?.message}
               />
               <p className='text-text-tertiary text-xs mt-1'>6자 이상</p>
-              {passwordForm.formState.errors.newPassword && (
-                <p className='msg-error mt-1.5'>
-                  {passwordForm.formState.errors.newPassword.message}
-                </p>
-              )}
             </div>
-            <div>
-              <label className='block text-sm font-medium mb-1'>새 비밀번호 확인</label>
-              <input
-                type='password'
-                {...passwordForm.register('newPasswordConfirm', {
-                  required: '비밀번호 확인을 입력하세요.',
-                  validate: (v) =>
-                    v === newPassword || '비밀번호가 일치하지 않습니다.',
-                })}
-                className='w-full px-3 py-2 rounded bg-secondary border border-border text-foreground'
-              />
-              {passwordForm.formState.errors.newPasswordConfirm && (
-                <p className='msg-error mt-1.5'>
-                  {passwordForm.formState.errors.newPasswordConfirm.message}
-                </p>
-              )}
-            </div>
+            <FormInput
+              label='새 비밀번호 확인'
+              type='password'
+              {...passwordForm.register('newPasswordConfirm', {
+                required: '비밀번호 확인을 입력하세요.',
+                validate: (v) => v === newPassword || '비밀번호가 일치하지 않습니다.',
+              })}
+              error={passwordForm.formState.errors.newPasswordConfirm?.message}
+            />
             {passwordMutation.isError && (
               <p className='msg-error'>
-                {(passwordMutation.error as any)?.message || '비밀번호 변경에 실패했습니다.'}
+                {getErrorMessage(passwordMutation.error) || '비밀번호 변경에 실패했습니다.'}
               </p>
             )}
             {passwordMutation.isSuccess && (
@@ -248,9 +213,7 @@ export default function ProfileEditPage() {
           </form>
         )}
 
-        <Link href={routes.profile.index} className='block mt-6 text-primary text-sm'>
-          ← 내 정보로
-        </Link>
+        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

@@ -2,7 +2,7 @@ import { AnalysisService } from './analysis.service';
 export declare class AnalysisController {
     private readonly analysisService;
     constructor(analysisService: AnalysisService);
-    getJockeyAnalysis(raceId: string): Promise<{
+    getJockeyAnalysis(raceId: number): Promise<{
         entriesWithScores: Array<{
             hrNo: string;
             hrName: string;

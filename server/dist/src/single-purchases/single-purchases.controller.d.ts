@@ -6,24 +6,24 @@ export declare class SinglePurchasesController {
     constructor(singlePurchasesService: SinglePurchasesService);
     purchase(user: JwtPayload, dto: PurchaseDto): Promise<{
         purchase: {
-            id: string;
-            userId: string;
+            id: number;
+            userId: number;
+            totalAmount: number;
             quantity: number;
             paymentMethod: string | null;
             pgTransactionId: string | null;
-            totalAmount: number;
             purchasedAt: Date;
         };
         ticketsIssued: number;
     }>;
     purchaseAlias(user: JwtPayload, dto: PurchaseDto): Promise<{
         purchase: {
-            id: string;
-            userId: string;
+            id: number;
+            userId: number;
+            totalAmount: number;
             quantity: number;
             paymentMethod: string | null;
             pgTransactionId: string | null;
-            totalAmount: number;
             purchasedAt: Date;
         };
         ticketsIssued: number;
@@ -56,12 +56,12 @@ export declare class SinglePurchasesController {
     }>;
     getHistory(user: JwtPayload, page?: number, limit?: number): Promise<{
         purchases: {
-            id: string;
-            userId: string;
+            id: number;
+            userId: number;
+            totalAmount: number;
             quantity: number;
             paymentMethod: string | null;
             pgTransactionId: string | null;
-            totalAmount: number;
             purchasedAt: Date;
         }[];
         total: number;

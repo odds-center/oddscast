@@ -16,13 +16,12 @@ class SubscribeDto {
 }
 exports.SubscribeDto = SubscribeDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '플랜 이름 (LIGHT, PREMIUM)' }),
+    (0, swagger_1.ApiPropertyOptional)({ description: '플랜 ID (생략 시 기본 플랜)' }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    __metadata("design:type", Object)
 ], SubscribeDto.prototype, "planId", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'PG 빌링키 (결제 후 전달)' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
@@ -31,7 +30,8 @@ class ActivateSubscriptionDto {
 }
 exports.ActivateSubscriptionDto = ActivateSubscriptionDto;
 __decorate([
-    (0, swagger_1.ApiProperty)(),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'PG 빌링키 (subscribe 시 이미 있으면 생략 가능)' }),
+    (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ActivateSubscriptionDto.prototype, "billingKey", void 0);
@@ -39,7 +39,7 @@ class CancelSubscriptionDto {
 }
 exports.CancelSubscriptionDto = CancelSubscriptionDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ description: '취소 사유' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

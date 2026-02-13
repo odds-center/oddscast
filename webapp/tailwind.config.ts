@@ -9,8 +9,8 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        display: ['Syne', 'Pretendard', 'system-ui', 'sans-serif'],
-        sans: ['Plus Jakarta Sans', 'Pretendard', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
+        sans: ['Pretendard', '-apple-system', 'BlinkMacSystemFont', 'system-ui', 'sans-serif'],
       },
       colors: {
         background: 'var(--background)',
@@ -33,6 +33,7 @@ const config: Config = {
         border: {
           DEFAULT: 'var(--border)',
           gold: 'var(--border-gold)',
+          focus: 'var(--border-focus)',
         },
         card: {
           DEFAULT: 'var(--card-bg)',

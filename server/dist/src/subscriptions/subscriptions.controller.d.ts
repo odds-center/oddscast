@@ -6,7 +6,7 @@ export declare class SubscriptionsController {
     constructor(subscriptionsService: SubscriptionsService);
     getPlans(): Promise<{
         description: string | null;
-        id: string;
+        id: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -20,21 +20,12 @@ export declare class SubscriptionsController {
         totalTickets: number;
         sortOrder: number;
     }[]>;
-    getStatus(user: JwtPayload): Promise<{
-        isActive: boolean;
-        planId: null;
-        monthlyTickets: number;
-        daysUntilRenewal: null;
-        subscription?: undefined;
-    } | {
-        isActive: boolean;
-        planId: string;
-        monthlyTickets: number;
-        daysUntilRenewal: number | null;
-        subscription: {
+    getStatus(user: JwtPayload): Promise<import("./subscriptions.service").SubscriptionStatusResult>;
+    getHistory(user: JwtPayload, page?: number, limit?: number, offset?: number): Promise<{
+        subscriptions: ({
             plan: {
                 description: string | null;
-                id: string;
+                id: number;
                 isActive: boolean;
                 createdAt: Date;
                 updatedAt: Date;
@@ -49,12 +40,12 @@ export declare class SubscriptionsController {
                 sortOrder: number;
             };
         } & {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.SubscriptionStatus;
-            userId: string;
-            planId: string;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
+            userId: number;
+            planId: number;
             price: number;
             billingKey: string | null;
             nextBillingDate: Date | null;
@@ -62,44 +53,15 @@ export declare class SubscriptionsController {
             startedAt: Date;
             cancelledAt: Date | null;
             cancelReason: string | null;
-        };
+        })[];
+        total: number;
+        page: number;
+        totalPages: number;
     }>;
-    getHistory(user: JwtPayload): Promise<({
-        plan: {
-            description: string | null;
-            id: string;
-            isActive: boolean;
-            createdAt: Date;
-            updatedAt: Date;
-            planName: string;
-            displayName: string;
-            originalPrice: number;
-            vat: number;
-            totalPrice: number;
-            baseTickets: number;
-            bonusTickets: number;
-            totalTickets: number;
-            sortOrder: number;
-        };
-    } & {
-        id: string;
-        createdAt: Date;
-        updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
-        price: number;
-        billingKey: string | null;
-        nextBillingDate: Date | null;
-        lastBilledAt: Date | null;
-        startedAt: Date;
-        cancelledAt: Date | null;
-        cancelReason: string | null;
-    })[]>;
     subscribe(user: JwtPayload, dto: SubscribeDto): Promise<{
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -114,12 +76,12 @@ export declare class SubscriptionsController {
             sortOrder: number;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;
@@ -131,7 +93,7 @@ export declare class SubscriptionsController {
     subscribeAlias(user: JwtPayload, dto: SubscribeDto): Promise<{
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -146,12 +108,12 @@ export declare class SubscriptionsController {
             sortOrder: number;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;
@@ -163,7 +125,7 @@ export declare class SubscriptionsController {
     cancelPost(user: JwtPayload, dto: CancelSubscriptionDto): Promise<{
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -178,12 +140,12 @@ export declare class SubscriptionsController {
             sortOrder: number;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;
@@ -192,10 +154,11 @@ export declare class SubscriptionsController {
         cancelledAt: Date | null;
         cancelReason: string | null;
     }>;
-    activate(id: string, dto: ActivateSubscriptionDto): Promise<{
+    activate(user: JwtPayload, id: number, dto: ActivateSubscriptionDto): Promise<{
+        ticketsIssued: number;
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -209,13 +172,12 @@ export declare class SubscriptionsController {
             totalTickets: number;
             sortOrder: number;
         };
-    } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;
@@ -224,10 +186,11 @@ export declare class SubscriptionsController {
         cancelledAt: Date | null;
         cancelReason: string | null;
     }>;
-    activatePost(id: string, dto: ActivateSubscriptionDto): Promise<{
+    activatePost(user: JwtPayload, id: number, dto: ActivateSubscriptionDto): Promise<{
+        ticketsIssued: number;
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -241,13 +204,12 @@ export declare class SubscriptionsController {
             totalTickets: number;
             sortOrder: number;
         };
-    } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;
@@ -256,10 +218,10 @@ export declare class SubscriptionsController {
         cancelledAt: Date | null;
         cancelReason: string | null;
     }>;
-    cancel(id: string, dto: CancelSubscriptionDto): Promise<{
+    cancel(user: JwtPayload, id: number, dto: CancelSubscriptionDto): Promise<{
         plan: {
             description: string | null;
-            id: string;
+            id: number;
             isActive: boolean;
             createdAt: Date;
             updatedAt: Date;
@@ -274,12 +236,12 @@ export declare class SubscriptionsController {
             sortOrder: number;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.SubscriptionStatus;
-        userId: string;
-        planId: string;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
+        userId: number;
+        planId: number;
         price: number;
         billingKey: string | null;
         nextBillingDate: Date | null;

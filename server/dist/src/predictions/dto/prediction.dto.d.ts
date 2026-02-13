@@ -1,5 +1,5 @@
 export declare class CreatePredictionDto {
-    raceId: string;
+    raceId: number;
     scores?: Record<string, unknown>;
     analysis?: string;
     preview?: string;

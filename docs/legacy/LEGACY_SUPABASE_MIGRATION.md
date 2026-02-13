@@ -1,4 +1,4 @@
-# ✅ Supabase 마이그레이션 완료 보고서
+# ✅ PostgreSQL 마이그레이션 완료 보고서
 
 **작업 일자**: 2025년 1월 26일  
 **상태**: 완료 ✅
@@ -7,7 +7,7 @@
 
 ## 🎯 작업 개요
 
-Golden Race 서버의 데이터베이스를 Supabase PostgreSQL로 완전히 마이그레이션하고 설정을 정리했습니다.
+Golden Race 서버의 데이터베이스를 PostgreSQL로 완전히 마이그레이션하고 설정을 정리했습니다.
 
 ---
 
@@ -16,7 +16,7 @@ Golden Race 서버의 데이터베이스를 Supabase PostgreSQL로 완전히 마
 ### 1. 환경변수 설정 템플릿 생성 ✅
 
 - **파일**: `server/env.example`
-- **내용**: Supabase 연결 정보를 포함한 모든 환경변수 템플릿
+- **내용**: PostgreSQL 연결 정보를 포함한 모든 환경변수 템플릿
 - **특징**:
   - DATABASE_URL 또는 개별 환경변수 지원
   - 개발/프로덕션 환경 구분
@@ -33,9 +33,9 @@ Golden Race 서버의 데이터베이스를 Supabase PostgreSQL로 완전히 마
 
 ### 3. 데이터베이스 연결 테스트 스크립트 ✅
 
-- **파일**: `server/scripts/test-supabase-connection.ts`
+- **파일**: `server_legacy_nestjs/scripts/test-supabase-connection.ts`
 - **기능**:
-  - Supabase 연결 테스트
+  - PostgreSQL 연결 테스트
   - 데이터베이스 정보 조회
   - 테이블 목록 확인
   - 연결 풀 상태 확인
@@ -79,7 +79,7 @@ Golden Race 서버의 데이터베이스를 Supabase PostgreSQL로 완전히 마
 ```bash
 cd server
 cp env.example .env
-# .env 파일을 열어서 Supabase 정보 입력
+# .env 파일을 열어서 PostgreSQL 정보 입력
 ```
 
 ### 2. 연결 테스트
@@ -113,10 +113,10 @@ npm run migration:run
 
 **새로 추가된 환경변수:**
 - `DB_SYNC`: 개발 환경에서만 테이블 자동 동기화 (기본값: false)
-- `DATABASE_URL`: Supabase Connection String (선택사항)
+- `DATABASE_URL`: PostgreSQL Connection String (선택사항)
 
-**사용 중인 Supabase 환경변수:**
-- `SUPABASE_DB_HOST`: Supabase 호스트
+**사용 중인 PostgreSQL 환경변수 (레거시):**
+- `SUPABASE_DB_HOST`: DB 호스트
 - `SUPABASE_DB_PORT`: 포트 (5432 또는 6543)
 - `SUPABASE_DB_USER`: 사용자명 (보통 postgres)
 - `SUPABASE_DB_PASSWORD`: 비밀번호
@@ -131,7 +131,7 @@ npm run migration:run
 
 **새로 생성된 파일:**
 - `server/env.example`: 환경변수 템플릿
-- `server/scripts/test-supabase-connection.ts`: 연결 테스트 스크립트
+- `server_legacy_nestjs/scripts/test-supabase-connection.ts`: PostgreSQL 연결 테스트 스크립트
 - `server/src/data-source/data-source.ts`: TypeORM CLI 설정
 
 ---
@@ -146,11 +146,11 @@ npm run migration:run
 
 2. **Connection Pooling 사용 권장**
    - 포트: `6543`
-   - Host: `aws-0-ap-northeast-2.pooler.supabase.com`
+   - Host: pooler 호스트 (Connection pooling)
    - 성능 향상 및 연결 수 제한 관리
 
 3. **SSL 필수**
-   - Supabase는 SSL 연결이 필수입니다
+   - 클라우드 DB는 SSL 연결이 필수일 수 있습니다
    - 프로덕션에서는 자동으로 활성화됩니다
 
 ### 개발 환경
@@ -174,7 +174,7 @@ npm run test:db
 curl http://localhost:3002/api/health
 ```
 
-### 3. Supabase 대시보드
+### 3. DB 대시보드
 
 - Table Editor에서 테이블 목록 확인
 - SQL Editor에서 직접 쿼리 실행
@@ -196,19 +196,19 @@ curl http://localhost:3002/api/health
 - [x] 마이그레이션 설정 추가
 - [x] NPM 스크립트 추가
 - [x] 문서 업데이트
-- [ ] 실제 Supabase 프로젝트 연결 테스트 (사용자가 수행)
+- [ ] 실제 PostgreSQL 프로젝트 연결 테스트 (사용자가 수행)
 - [ ] 테이블 생성 확인 (사용자가 수행)
 
 ---
 
 ## 🎉 완료!
 
-이제 Supabase로 완전히 마이그레이션되었습니다. 다음 단계:
+이제 PostgreSQL로 완전히 마이그레이션되었습니다. 다음 단계:
 
-1. `.env` 파일 생성 및 Supabase 정보 입력
+1. `.env` 파일 생성 및 PostgreSQL 정보 입력
 2. `npm run test:db`로 연결 테스트
 3. `npm run start:dev`로 서버 실행
-4. Supabase 대시보드에서 테이블 생성 확인
+4. DB 대시보드에서 테이블 생성 확인
 
 문제가 발생하면 [LEGACY_SUPABASE_SETUP.md](LEGACY_SUPABASE_SETUP.md)를 참고하세요.
 

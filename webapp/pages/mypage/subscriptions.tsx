@@ -55,10 +55,10 @@ export default function SubscriptionsPage() {
           </p>
         )}
 
-        {isLoggedIn && Array.isArray(history) && history.length > 0 && (
+        {isLoggedIn && Array.isArray((history as any)?.subscriptions) && (history as any).subscriptions.length > 0 && (
           <SectionCard title='구독 이력' icon='Crown' className='mb-6'>
             <div className='space-y-2 max-h-40 overflow-y-auto'>
-              {history.slice(0, 5).map((h: any) => (
+              {(history as any).subscriptions.slice(0, 5).map((h: any) => (
                 <div
                   key={h.id}
                   className='flex items-center justify-between py-2 border-b border-border last:border-0 text-sm'

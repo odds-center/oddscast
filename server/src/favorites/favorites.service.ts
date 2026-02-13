@@ -12,7 +12,7 @@ export class FavoritesService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(
-    userId: string,
+    userId: number,
     filters: { type?: string; page?: number; limit?: number },
   ) {
     const { page = 1, limit = 20, type = 'RACE' } = filters;
@@ -33,13 +33,13 @@ export class FavoritesService {
     return { favorites, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const fav = await this.prisma.favorite.findUnique({ where: { id } });
     if (!fav) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
     return fav;
   }
 
-  async create(userId: string, dto: CreateFavoriteDto) {
+  async create(userId: number, dto: CreateFavoriteDto) {
     return this.prisma.favorite.create({
       data: {
         userId,
@@ -54,7 +54,7 @@ export class FavoritesService {
     });
   }
 
-  async update(id: string, dto: UpdateFavoriteDto) {
+  async update(id: number, dto: UpdateFavoriteDto) {
     return this.prisma.favorite.update({
       where: { id },
       data: {
@@ -67,12 +67,12 @@ export class FavoritesService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.prisma.favorite.delete({ where: { id } });
     return { message: '즐겨찾기가 삭제되었습니다' };
   }
 
-  async toggle(userId: string, dto: ToggleFavoriteDto) {
+  async toggle(userId: number, dto: ToggleFavoriteDto) {
     const existing = await this.prisma.favorite.findUnique({
       where: {
         userId_type_targetId: {
@@ -102,7 +102,7 @@ export class FavoritesService {
     }
   }
 
-  async check(userId: string, type: string, targetId: string) {
+  async check(userId: number, type: string, targetId: string) {
     const fav = await this.prisma.favorite.findUnique({
       where: {
         userId_type_targetId: {
@@ -115,7 +115,7 @@ export class FavoritesService {
     return { isFavorite: !!fav, favorite: fav || undefined };
   }
 
-  async getStatistics(userId: string) {
+  async getStatistics(userId: number) {
     const counts = await this.prisma.favorite.groupBy({
       by: ['type'],
       where: { userId },
@@ -123,11 +123,11 @@ export class FavoritesService {
     });
     return {
       byType: counts,
-      total: counts.reduce((sum, c) => sum + c._count, 0),
+      total: counts.reduce((sum, c) => sum + (c._count ?? 0), 0),
     };
   }
 
-  async search(userId: string, query: string) {
+  async search(userId: number, query: string) {
     return this.prisma.favorite.findMany({
       where: {
         userId,
@@ -141,13 +141,13 @@ export class FavoritesService {
     });
   }
 
-  async export(userId: string) {
+  async export(userId: number) {
     return this.prisma.favorite.findMany({
       where: { userId, type: 'RACE' },
     });
   }
 
-  async bulkAdd(userId: string, items: CreateFavoriteDto[]) {
+  async bulkAdd(userId: number, items: CreateFavoriteDto[]) {
     // RACE만 허용 (DTO 검증 통과된 항목만)
     const raceItems = items.filter((item) => item.type === 'RACE');
     return this.prisma.favorite.createMany({
@@ -165,7 +165,7 @@ export class FavoritesService {
     });
   }
 
-  async bulkDelete(userId: string, ids: string[]) {
+  async bulkDelete(userId: number, ids: number[]) {
     return this.prisma.favorite.deleteMany({
       where: {
         userId,

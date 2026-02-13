@@ -37,7 +37,7 @@ export class RankingsService {
     return { data: rankings, total: rankings.length, type };
   }
 
-  async getMyRanking(userId: string, _type: string = 'overall') {
+  async getMyRanking(userId: number, _type: string = 'overall') {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, nickname: true, avatar: true },

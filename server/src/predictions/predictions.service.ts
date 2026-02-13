@@ -3,12 +3,19 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { Prisma } from '@prisma/client';
+import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
 import {
   CreatePredictionDto,
   UpdatePredictionStatusDto,
   PredictionFilterDto,
   AccuracyHistoryFilterDto,
 } from './dto/prediction.dto';
+import type {
+  RaceForPython,
+  RaceEntryForAnalysis,
+  HorseAnalysisItem,
+  GeminiPredictionJson,
+} from './prediction-internal.types';
 
 @Injectable()
 export class PredictionsService {
@@ -37,7 +44,7 @@ export class PredictionsService {
     return { predictions, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const prediction = await this.prisma.prediction.findUnique({
       where: { id },
       include: { race: { include: { entries: true } } },
@@ -58,7 +65,7 @@ export class PredictionsService {
     });
   }
 
-  async updateStatus(id: string, dto: UpdatePredictionStatusDto) {
+  async updateStatus(id: number, dto: UpdatePredictionStatusDto) {
     return this.prisma.prediction.update({
       where: { id },
       data: {
@@ -207,7 +214,7 @@ export class PredictionsService {
    * 검수 미통과 시 데이터를 보내지 않음 (사행성 방지).
    * UI 표시용: scores.horseScores, analysis, preview 반환
    */
-  async getPreview(raceId: string) {
+  async getPreview(raceId: number) {
     const prediction = await this.prisma.prediction.findFirst({
       where: { raceId, previewApproved: true, status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' },
@@ -223,7 +230,7 @@ export class PredictionsService {
     return prediction || null;
   }
 
-  async getByRace(raceId: string) {
+  async getByRace(raceId: number) {
     return this.prisma.prediction.findFirst({
       where: { raceId, status: 'COMPLETED' },
       include: { race: { include: { entries: true } } },
@@ -233,7 +240,7 @@ export class PredictionsService {
 
   // --- Gemini Integration ---
 
-  async generatePrediction(raceId: string) {
+  async generatePrediction(raceId: number) {
     // 1. Check Gemini Availability
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -254,12 +261,10 @@ export class PredictionsService {
       generationConfig: { temperature, maxOutputTokens: maxTokens },
     });
 
-    // 2. Fetch Race Data (entries + trainings for prompt)
+    // 2. Fetch Race Data (출전마·기수·훈련 내역)
     const race = await this.prisma.race.findUnique({
       where: { id: raceId },
-      include: {
-        entries: { include: { trainings: { orderBy: { date: 'desc' }, take: 10 } } },
-      },
+      include: RACE_INCLUDE_FOR_ANALYSIS,
     });
     if (!race) throw new NotFoundException('Race not found');
 
@@ -273,7 +278,7 @@ export class PredictionsService {
     // 3. Run Python Analysis (말 기준 점수 + 기수 통합 분석)
     const path = require('path');
     const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
-    const horseScoreResult = await this.runPythonScript(scriptPath, race);
+    const horseScoreResult = await this.runPythonScript(scriptPath, race as RaceForPython);
 
     let jockeyAnalysis: {
       entriesWithScores?: Array<{
@@ -292,7 +297,7 @@ export class PredictionsService {
 
     // 4. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
     const prompt = this.constructPrompt(
-      race,
+      race as RaceForPython,
       horseScoreResult,
       jockeyAnalysis,
       sectionalByHorse,
@@ -330,7 +335,7 @@ export class PredictionsService {
     }
   }
 
-  private runPythonScript(scriptPath: string, raceData: any): Promise<any> {
+  private runPythonScript(scriptPath: string, raceData: RaceForPython): Promise<HorseAnalysisItem[]> {
     const { spawn } = require('child_process');
     return new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', [scriptPath]);
@@ -352,7 +357,7 @@ export class PredictionsService {
           );
         } else {
           try {
-            resolve(JSON.parse(dataString));
+            resolve(JSON.parse(dataString) as HorseAnalysisItem[]);
           } catch {
             reject(new Error(`Failed to parse Python output: ${dataString}`));
           }
@@ -365,23 +370,23 @@ export class PredictionsService {
     });
   }
 
-  private buildRaceContext(race: any): Record<string, unknown> {
+  private buildRaceContext(race: RaceForPython): Record<string, unknown> {
     return {
       meet: race.meet,
       meetName: race.meetName,
       rcDate: race.rcDate,
       rcNo: race.rcNo,
       rcDist: race.rcDist,
-      rcGrade: race.rcGrade,
+      rank: race.rank,
       rcCondition: race.rcCondition,
       rcPrize: race.rcPrize,
       weather: race.weather ?? '미상',
-      trackState: race.trackState ?? '미상',
+      track: race.track ?? '미상',
     };
   }
 
   private buildEntrySummary(
-    entry: any,
+    entry: RaceEntryForAnalysis,
     trainingSummary?: string,
     sectionalTag?: string,
   ): Record<string, unknown> {
@@ -390,11 +395,11 @@ export class PredictionsService {
       hrName: entry.hrName,
       jkName: entry.jkName,
       trName: entry.trName,
-      weight: entry.weight,
+      wgBudam: entry.wgBudam,
       rating: entry.rating,
       chulNo: entry.chulNo,
-      totalRuns: entry.totalRuns,
-      totalWins: entry.totalWins,
+      rcCntT: entry.rcCntT,
+      ord1CntT: entry.ord1CntT,
       recentRanks: entry.recentRanks,
       horseWeight: entry.horseWeight,
       equipment: entry.equipment,
@@ -406,8 +411,8 @@ export class PredictionsService {
     return base;
   }
 
-  private summarizeTraining(entry: any): string | undefined {
-    const trainings = entry.trainings as Array<{ date?: string; intensity?: string; time?: string }> | undefined;
+  private summarizeTraining(entry: RaceEntryForAnalysis): string | undefined {
+    const trainings = entry.trainings;
     const trainingData = entry.trainingData;
     if (trainingData && typeof trainingData === 'object') {
       const arr = Array.isArray(trainingData) ? trainingData : [trainingData];
@@ -417,7 +422,7 @@ export class PredictionsService {
     }
     if (trainings?.length) {
       const recent = trainings.slice(0, 5);
-      const strong = recent.filter((t) => /강|상|고/.test(String(t.intensity || '')));
+      const strong = recent.filter((t) => /강|상|고/.test(String(t.intensity ?? t.trContent ?? '')));
       const summary = strong.length
         ? `최근 ${recent.length}회 훈련 중 강도 높은 ${strong.length}회`
         : `최근 ${recent.length}회 훈련`;
@@ -501,8 +506,8 @@ export class PredictionsService {
   }
 
   private constructPrompt(
-    race: any,
-    horseAnalysis: any,
+    race: RaceForPython,
+    horseAnalysis: HorseAnalysisItem[] | unknown,
     jockeyAnalysis: {
       entriesWithScores?: Array<{
         hrNo?: string;
@@ -516,22 +521,22 @@ export class PredictionsService {
     sectionalByHorse: Record<string, { tag: string; s1f?: number; g1f?: number }> = {},
   ): string {
     const raceContext = this.buildRaceContext(race);
-    const entries = (race.entries || []).map((e: any) =>
+    const entries = (race.entries || []).map((e: RaceEntryForAnalysis) =>
       this.buildEntrySummary(
         e,
         this.summarizeTraining(e),
         sectionalByHorse[e.hrNo]?.tag,
       ),
     );
-    const horseScores = Array.isArray(horseAnalysis) ? horseAnalysis : [];
+    const horseScores: HorseAnalysisItem[] = Array.isArray(horseAnalysis) ? horseAnalysis : [];
     const jockeyMap = new Map<string, { jockeyScore: number; combinedScore: number }>();
     for (const x of jockeyAnalysis?.entriesWithScores || []) {
       const key = x.hrNo ?? x.hrName;
       if (key) jockeyMap.set(key, { jockeyScore: x.jockeyScore, combinedScore: x.combinedScore });
     }
 
-    const mergedEntries = entries.map((e: any) => {
-      const hs = horseScores.find((h: any) => String(h.hrNo) === String(e.hrNo));
+    const mergedEntries = entries.map((e: Record<string, unknown>) => {
+      const hs = horseScores.find((h: HorseAnalysisItem) => String(h.hrNo) === String(e.hrNo));
       const js = jockeyMap.get(String(e.hrNo)) ?? jockeyMap.get(String(e.hrName));
       return {
         ...e,
@@ -606,7 +611,7 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
 **주의**: 모든 horseScores의 hrNo는 출전마 목록의 hrNo와 정확히 일치해야 합니다. score는 0~100, confidence는 데이터 확실성에 따라 선택하세요.`;
   }
 
-  private parseGeminiResponse(text: string): any {
+  private parseGeminiResponse(text: string): GeminiPredictionJson {
     let cleanText = text
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
@@ -615,7 +620,7 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
     if (jsonMatch) cleanText = jsonMatch[0];
 
     try {
-      return JSON.parse(cleanText);
+      return JSON.parse(cleanText) as GeminiPredictionJson;
     } catch {
       throw new Error(`Gemini 응답 JSON 파싱 실패: ${cleanText.slice(0, 200)}...`);
     }
@@ -627,7 +632,10 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
    * - analysisData: Python·기수 분석 원본 (정확도 계산·분석용)
    */
   private buildScoresForSave(
-    geminiScores: { horseScores?: Array<{ hrName?: string; score?: number; reason?: string }> } | undefined,
+    geminiScores:
+      | GeminiPredictionJson
+      | { horseScores?: Array<{ hrNo?: string; hrName?: string; score?: number; reason?: string }> }
+      | undefined,
     horseScoreResult: unknown,
     jockeyAnalysis: {
       entriesWithScores?: Array<unknown>;
@@ -636,13 +644,15 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
     } | null,
   ): Record<string, unknown> {
     const base = (geminiScores && typeof geminiScores === 'object' && !('error' in geminiScores)) ? { ...geminiScores } : {};
+    const gemi = base as GeminiPredictionJson & { horseScores?: Array<{ hrNo?: string; hrName?: string; score?: number; reason?: string }> };
+    const hs = gemi.horseScores ?? gemi.scores?.horseScores ?? [];
     const safeHorseResult = Array.isArray(horseScoreResult) && !horseScoreResult.some((x) => x && typeof x === 'object' && 'error' in x)
       ? horseScoreResult
       : [];
 
     return {
       ...base,
-      horseScores: base.horseScores || [],
+      horseScores: hs,
       analysisData: {
         horseScoreResult: safeHorseResult,
         jockeyAnalysis: jockeyAnalysis

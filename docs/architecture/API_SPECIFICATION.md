@@ -6,6 +6,14 @@
 >
 > **클라이언트:** WebApp (`webapp/lib/api/`) — 메인 클라이언트. Mobile은 WebView로 WebApp 로드. Admin (`admin/src/lib/api/`).
 
+### Admin 전용 Base URL
+
+Admin은 `/api/admin` prefix로 별도 base URL 사용:
+
+- **Env:** `NEXT_PUBLIC_ADMIN_API_URL=http://localhost:3001/api/admin`
+- **경로:** `/auth/login`, `/users`, `/statistics/dashboard` 등 (base에 `/api/admin` 포함)
+- **Auth:** `admin-auth.controller.ts` — `/api/admin/auth/login`, `/api/admin/auth/me`, `/api/admin/auth/refresh`
+
 ---
 
 ## 공통 규칙
@@ -42,7 +50,10 @@
 | `POST`   | `/auth/register`            | 회원가입            | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/login`               | 로그인 (이메일/비밀번호) | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/google`             | 구글 로그인 (idToken → JWT) | 🔓   | auth.controller.ts |
-| `POST`   | `/auth/admin/login`        | 관리자 로그인       | 🔓   | auth.controller.ts |
+| `POST`   | `/auth/admin/login`        | 관리자 로그인 (legacy) | 🔓 | auth.controller.ts |
+| `POST`   | `/admin/auth/login`        | 관리자 로그인 (Admin 전용) | 🔓 | admin-auth.controller.ts |
+| `GET`    | `/admin/auth/me`           | 관리자 내 정보       | 🔐   | admin-auth.controller.ts |
+| `POST`   | `/admin/auth/refresh`      | 관리자 토큰 갱신     | 🔐   | admin-auth.controller.ts |
 | `POST`   | `/auth/logout`              | 로그아웃            | 🔐   | auth.controller.ts |
 | `POST`   | `/auth/refresh`             | 토큰 갱신           | 🔐   | auth.controller.ts |
 | `GET`    | `/auth/me`                  | 내 정보 조회        | 🔐   | auth.controller.ts |
@@ -437,10 +448,14 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 
 | Method | Route                         | 설명                    | Auth        |
 | ------ | ----------------------------- | ----------------------- | ----------- |
-| `POST` | `/admin/kra/sync/schedule`    | KRA 경주 계획/출전표 동기화 | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/results`     | KRA 경주 결과 동기화    | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/details`     | KRA 상세/훈련정보 동기화 | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/jockeys`     | KRA 기수 통산전적 동기화 | 🔐 Admin    |
+| `GET`  | `/admin/kra/sync-logs`       | KRA 동기화 로그 조회 (endpoint, rcDate, limit) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/schedule`   | KRA 경주 계획/출전표 동기화 (date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/results`    | KRA 경주 결과 동기화 (date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/details`    | KRA 상세/훈련정보 동기화 (date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/jockeys`    | KRA 기수 통산전적 동기화 (meet?: 1\|2\|3) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/all`        | KRA 전체 적재 (출전표→결과→상세→기수, date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/historical`  | KRA 과거 데이터 일괄 적재 (dateFrom, dateTo: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/seed-sample`       | 샘플 경주 데이터 시드 (date?: YYYYMMDD) | 🔐 Admin    |
 | `GET`  | `/admin/users`                | 사용자 목록             | 🔐 Admin    |
 | `GET`  | `/admin/users/:id`            | 사용자 상세             | 🔐 Admin    |
 | `PATCH`| `/admin/users/:id`            | 사용자 수정             | 🔐 Admin    |
@@ -468,7 +483,8 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 ## 16. KRA (한국마사회 API) — `/api/kra` — 🔐 ADMIN 역할 필요
 
 > Server: `server/src/kra/kra.controller.ts`  
-> Admin에서 KRA 동기화 수동 실행 또는 /admin/kra/* 사용
+> Admin 패널: `/api/admin/kra/*` 사용 (AdminController). `/api/kra`는 KraController 직접 노출.
+> KRA API 명세: `docs/specs/KRA_*.md`, `docs/specs/KRA_API_ANALYSIS_SPEC.md`
 
 | Method | Route                | 설명                     | Auth     |
 | ------ | -------------------- | ------------------------ | -------- |

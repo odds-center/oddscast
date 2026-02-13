@@ -1,8 +1,8 @@
 #!/bin/bash
 
-# Supabase 환경변수 설정 스크립트
+# PostgreSQL 환경변수 설정 스크립트 (레거시: SUPABASE_DB_* 변수명)
 
-export SUPABASE_DB_HOST=db.qayqwpfpwiuutxdkihit.supabase.co
+export SUPABASE_DB_HOST=your-db-host.example.com
 export SUPABASE_DB_PORT=5432
 export SUPABASE_DB_USER=postgres
 export SUPABASE_DB_PASSWORD=[YOUR-PASSWORD]

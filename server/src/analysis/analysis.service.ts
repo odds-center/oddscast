@@ -69,7 +69,7 @@ export class AnalysisService {
    * 2단계 필터링 분석 (마칠기삼·기수 점수·가중치)
    * Race + Entries + JockeyResult + RaceResult 활용
    */
-  async analyzeJockey(raceId: string): Promise<{
+  async analyzeJockey(raceId: number): Promise<{
     entriesWithScores: Array<{
       hrNo: string;
       hrName: string;
@@ -92,21 +92,22 @@ export class AnalysisService {
       where: { id: raceId },
       include: {
         entries: true,
-        results: { orderBy: { rcRank: 'asc' } },
+        results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
       },
     });
 
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
 
-    // JockeyResult.meet: "1"=서울, "2"=제주, "3"=부경 | Race.meet: "Seoul","Jeju","Busan"
+    // JockeyResult.meet: "1"=서울, "2"=제주, "3"=부경 | Race.meet: KRA API 기준 "서울","제주","부산경남"
     const meetMap: Record<string, string> = {
+      서울: '1',
+      제주: '2',
+      부산경남: '3',
+      부산: '3',
+      부경: '3',
       Seoul: '1',
       Jeju: '2',
       Busan: '3',
-      서울: '1',
-      제주: '2',
-      부산: '3',
-      부경: '3',
     };
     const meet =
       meetMap[String(race.meet)] ?? (String(race.meet).replace(/[^123]/g, '') || '1');
@@ -148,7 +149,7 @@ export class AnalysisService {
       jockeyMap,
       results: race.results.map((r) => ({
         rcTime: r.rcTime,
-        rcRank: r.rcRank,
+        ord: r.ord,
       })),
     };
 

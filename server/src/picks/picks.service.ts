@@ -6,12 +6,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePickDto, PICK_TYPE_HORSE_COUNTS } from './dto/pick.dto';
 import { PickType } from '@prisma/client';
+import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 
 @Injectable()
 export class PicksService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, dto: CreatePickDto) {
+  async create(userId: number, dto: CreatePickDto) {
     const race = await this.prisma.race.findUnique({
       where: { id: dto.raceId },
     });
@@ -32,7 +33,7 @@ export class PicksService {
       },
     });
     if (existing) {
-      return this.prisma.userPick.update({
+      const updated = await this.prisma.userPick.update({
         where: { id: existing.id },
         data: {
           pickType: dto.pickType,
@@ -41,9 +42,10 @@ export class PicksService {
         },
         include: { race: true },
       });
+      return serializeItemsWithRace([updated])[0] ?? updated;
     }
 
-    return this.prisma.userPick.create({
+    const created = await this.prisma.userPick.create({
       data: {
         userId,
         raceId: dto.raceId,
@@ -53,9 +55,10 @@ export class PicksService {
       },
       include: { race: true },
     });
+    return serializeItemsWithRace([created])[0] ?? created;
   }
 
-  async findByUser(userId: string, page = 1, limit = 20) {
+  async findByUser(userId: number, page = 1, limit = 20) {
     const [picks, total] = await Promise.all([
       this.prisma.userPick.findMany({
         where: { userId },
@@ -67,21 +70,21 @@ export class PicksService {
       this.prisma.userPick.count({ where: { userId } }),
     ]);
 
-    return { picks, total, page, totalPages: Math.ceil(total / limit) };
+    return { picks: serializeItemsWithRace(picks), total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findByRace(raceId: string, userId?: string) {
-    const where: { raceId: string; userId?: string } = { raceId };
+  async findByRace(raceId: number, userId?: number) {
+    const where: { raceId: number; userId?: number } = { raceId };
     if (userId) where.userId = userId;
 
     const pick = await this.prisma.userPick.findFirst({
       where,
       include: { race: true },
     });
-    return pick;
+    return pick ? serializeItemsWithRace([pick])[0] ?? pick : null;
   }
 
-  async delete(userId: string, raceId: string) {
+  async delete(userId: number, raceId: number) {
     const pick = await this.prisma.userPick.findFirst({
       where: { userId, raceId },
     });
@@ -93,13 +96,13 @@ export class PicksService {
   /**
    * 맞춘 횟수 계산 (SINGLE: 1등, PLACE: 1~3등, 그 외 승식별)
    */
-  async getCorrectCount(userId: string): Promise<number> {
+  async getCorrectCount(userId: number): Promise<number> {
     const picks = await this.prisma.userPick.findMany({
       where: { userId },
       include: {
         race: {
           include: {
-            results: { orderBy: { rcRank: 'asc' } },
+            results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
           },
         },
       },
@@ -119,18 +122,18 @@ export class PicksService {
   /**
    * 유저별 맞춘 횟수 집계 (랭킹용)
    */
-  async getCorrectCountByUser(): Promise<Map<string, number>> {
+  async getCorrectCountByUser(): Promise<Map<number, number>> {
     const picks = await this.prisma.userPick.findMany({
       include: {
         race: {
           include: {
-            results: { orderBy: { rcRank: 'asc' } },
+            results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
           },
         },
       },
     });
 
-    const map = new Map<string, number>();
+    const map = new Map<number, number>();
     for (const pick of picks) {
       const results = pick.race?.results ?? [];
       if (results.length === 0) continue;
@@ -145,10 +148,10 @@ export class PicksService {
   /**
    * 적중 여부 판정 (승식별)
    */
-  checkPickHit(pickType: PickType, hrNos: string[], results: { hrNo: string; rcRank: string | null }[]): boolean {
-    const rank1 = results.find((r) => (r.rcRank ?? '') === '1');
-    const rank2 = results.find((r) => (r.rcRank ?? '') === '2');
-    const rank3 = results.find((r) => (r.rcRank ?? '') === '3');
+  checkPickHit(pickType: PickType, hrNos: string[], results: { hrNo: string; ord: string | null }[]): boolean {
+    const rank1 = results.find((r) => (r.ord ?? '') === '1');
+    const rank2 = results.find((r) => (r.ord ?? '') === '2');
+    const rank3 = results.find((r) => (r.ord ?? '') === '3');
     const top3 = [rank1, rank2, rank3].filter(Boolean).map((r) => r!.hrNo);
 
     switch (pickType) {

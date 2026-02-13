@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
@@ -29,15 +30,13 @@ export default function StatisticsPage() {
         <title>통계 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>통계</h1>
-            <p className='mt-2 text-sm text-gray-600'>
-              플랫폼의 주요 지표와 통계를 확인할 수 있습니다.
-            </p>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='통계'
+            description='플랫폼의 주요 지표와 통계를 확인할 수 있습니다.'
+          />
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
             {/* 사용자 증가 추이 */}
             <Card title='사용자 증가 추이' description='신규 가입자 및 활성 사용자'>
               <div className='mb-4 flex justify-between items-center'>

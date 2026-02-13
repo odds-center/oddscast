@@ -136,24 +136,32 @@ let AuthService = class AuthService {
         const token = this.generateToken(user.id, user.email, user.role);
         return { user: this.sanitize(user), ...token };
     }
-    async adminLogin(email, password) {
-        const user = await this.prisma.user.findUnique({ where: { email } });
-        if (!user)
-            throw new common_1.UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
-        if (user.role !== 'ADMIN') {
-            throw new common_1.UnauthorizedException('관리자 권한이 없습니다');
+    async adminLogin(loginId, password) {
+        const admin = await this.prisma.adminUser.findUnique({
+            where: { loginId },
+        });
+        if (!admin)
+            throw new common_1.UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
+        if (!admin.isActive) {
+            throw new common_1.UnauthorizedException('비활성화된 계정입니다');
         }
-        const valid = await bcrypt.compare(password, user.password);
+        const valid = await bcrypt.compare(password, admin.password);
         if (!valid)
-            throw new common_1.UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
-        await this.prisma.user.update({
-            where: { id: user.id },
+            throw new common_1.UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
+        await this.prisma.adminUser.update({
+            where: { id: admin.id },
             data: { lastLoginAt: new Date() },
         });
-        const token = this.generateToken(user.id, user.email, user.role);
-        return { user: this.sanitize(user), ...token };
+        const token = this.generateToken(admin.id, admin.loginId, 'ADMIN');
+        return { user: this.sanitizeAdmin(admin), ...token };
     }
-    async getProfile(userId) {
+    async getProfile(userId, role) {
+        if (role === 'ADMIN') {
+            const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+            if (!admin)
+                throw new common_1.UnauthorizedException();
+            return this.sanitizeAdmin(admin);
+        }
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             throw new common_1.UnauthorizedException();
@@ -187,7 +195,13 @@ let AuthService = class AuthService {
         });
         return { message: '계정이 비활성화되었습니다' };
     }
-    async refreshToken(userId) {
+    async refreshToken(userId, role) {
+        if (role === 'ADMIN') {
+            const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+            if (!admin)
+                throw new common_1.UnauthorizedException();
+            return this.generateToken(admin.id, admin.loginId, 'ADMIN');
+        }
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user)
             throw new common_1.UnauthorizedException();
@@ -211,6 +225,17 @@ let AuthService = class AuthService {
             isActive: user.isActive,
             createdAt: user.createdAt,
             updatedAt: user.updatedAt,
+        };
+    }
+    sanitizeAdmin(admin) {
+        return {
+            id: admin.id,
+            loginId: admin.loginId,
+            name: admin.name,
+            role: 'ADMIN',
+            isActive: admin.isActive,
+            createdAt: admin.createdAt,
+            updatedAt: admin.updatedAt,
         };
     }
 };

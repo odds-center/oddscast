@@ -6,6 +6,7 @@
 export const routes = {
   home: '/',
   results: '/results',
+  resultsDetail: (id: string) => `/races/${id}?view=result`,
   ranking: '/ranking',
   settings: '/settings',
   settingsNotifications: '/settings/notifications',
@@ -25,7 +26,6 @@ export const routes = {
   mypage: {
     index: '/mypage',
     picks: '/mypage/picks',
-    favorites: '/mypage/favorites',
     subscriptions: '/mypage/subscriptions',
     subscriptionsCheckout: (planId: string) => `/mypage/subscription-checkout?planId=${planId}`,
     notifications: '/mypage/notifications',
@@ -36,6 +36,11 @@ export const routes = {
   races: {
     index: '/',
     detail: (id: string) => `/races/${id}`,
+  },
+
+  /** 용산종합지 스타일 - 종합 예상표 */
+  predictions: {
+    matrix: '/predictions/matrix',
   },
 
   legal: {

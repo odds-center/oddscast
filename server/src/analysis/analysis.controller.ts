@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 
 /**
@@ -13,7 +13,7 @@ export class AnalysisController {
    * GET /api/analysis/race/:raceId/jockey
    */
   @Get('race/:raceId/jockey')
-  async getJockeyAnalysis(@Param('raceId') raceId: string) {
+  async getJockeyAnalysis(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.analysisService.analyzeJockey(raceId);
   }
 }

@@ -1,5 +1,6 @@
 import {
   IsString,
+  IsNumber,
   IsOptional,
   IsObject,
   IsArray,
@@ -9,8 +10,8 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateNotificationDto {
   @ApiProperty()
-  @IsString()
-  userId: string;
+  @IsNumber()
+  userId: number;
 
   @ApiProperty()
   @IsString()
@@ -60,15 +61,32 @@ export class BulkSendDto {
   @IsString()
   templateId: string;
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({ type: [Number] })
   @IsArray()
-  @IsString({ each: true })
-  recipients: string[];
+  @IsNumber({}, { each: true })
+  recipients: number[];
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsObject()
   variables?: Record<string, unknown>;
+}
+
+export class PushSubscribeDto {
+  @ApiProperty({ description: 'Expo Push Token (ExponentPushToken[xxx])' })
+  @IsString()
+  token: string;
+
+  @ApiPropertyOptional({ description: '기기 식별자 (중복 등록 방지)' })
+  @IsOptional()
+  @IsString()
+  deviceId?: string;
+}
+
+export class PushUnsubscribeDto {
+  @ApiProperty({ description: 'Expo Push Token' })
+  @IsString()
+  token: string;
 }
 
 export class UpdateNotificationPreferenceDto {

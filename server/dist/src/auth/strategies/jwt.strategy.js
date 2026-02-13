@@ -24,9 +24,12 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
         this.config = config;
     }
     async validate(payload) {
-        if (!payload.sub)
+        if (payload.sub == null)
             throw new common_1.UnauthorizedException();
-        return { sub: payload.sub, email: payload.email, role: payload.role };
+        const sub = typeof payload.sub === 'number' ? payload.sub : parseInt(String(payload.sub), 10);
+        if (isNaN(sub))
+            throw new common_1.UnauthorizedException();
+        return { sub, email: payload.email, role: payload.role };
     }
 };
 exports.JwtStrategy = JwtStrategy;

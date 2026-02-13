@@ -18,7 +18,7 @@ let PaymentsService = class PaymentsService {
     }
     async processSubscription(userId, dto) {
         const plan = await this.prisma.subscriptionPlan.findUnique({
-            where: { id: dto.planId },
+            where: { id: Number(dto.planId) },
         });
         if (!plan)
             throw new common_1.NotFoundException('플랜을 찾을 수 없습니다');

@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, GoogleAuthDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, AdminLoginDto, GoogleAuthDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
 import { JwtPayload } from '../common/decorators/current-user.decorator';
 export declare class AuthController {
     private authService;
@@ -19,16 +19,16 @@ export declare class AuthController {
         refreshToken: string;
         user: import("./auth.service").SanitizedUser;
     }>;
-    adminLogin(dto: LoginDto): Promise<{
+    adminLogin(dto: AdminLoginDto): Promise<{
         accessToken: string;
         refreshToken: string;
-        user: import("./auth.service").SanitizedUser;
+        user: import("./auth.service").SanitizedAdminUser;
     }>;
     logout(_user: JwtPayload): {
         message: string;
     };
-    getMe(user: JwtPayload): Promise<import("./auth.service").SanitizedUser>;
-    getProfile(user: JwtPayload): Promise<import("./auth.service").SanitizedUser>;
+    getMe(user: JwtPayload): Promise<import("./auth.service").SanitizedUser | import("./auth.service").SanitizedAdminUser>;
+    getProfile(user: JwtPayload): Promise<import("./auth.service").SanitizedUser | import("./auth.service").SanitizedAdminUser>;
     updateProfile(user: JwtPayload, dto: UpdateProfileDto): Promise<import("./auth.service").SanitizedUser>;
     updatePassword(user: JwtPayload, dto: ChangePasswordDto): Promise<{
         message: string;
@@ -66,6 +66,6 @@ export declare class AuthController {
     }>;
     checkAuth(user: JwtPayload): {
         authenticated: boolean;
-        userId: string;
+        userId: number;
     };
 }

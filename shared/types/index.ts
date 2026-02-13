@@ -6,11 +6,18 @@
 // API
 export * from './api.types';
 
+// DTO (API 요청/응답)
+export * from './dto';
+
 // Auth
 export * from './auth.types';
 
 // User
 export * from './user.types';
+
+// KRA (enum, 변환, API 응답)
+export * from './kra.types';
+export * from './kra-api.types';
 
 // Race
 export * from './race.types';

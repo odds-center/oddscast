@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
+import BackLink from '@/components/page/BackLink';
 import Icon from '@/components/icons';
 import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
@@ -111,9 +112,7 @@ export default function ResetPasswordPage() {
         </form>
 
         <p className='mt-6 text-text-secondary text-sm'>
-          <Link href={routes.auth.login} className='link-primary'>
-            ← 로그인
-          </Link>
+          <BackLink href={routes.auth.login} label='로그인' />
         </p>
       </div>
     </Layout>

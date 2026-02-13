@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PicksService } from './picks.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -44,7 +45,7 @@ export class PicksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '해당 경주에 대한 내 선택' })
   findByRace(
-    @Param('raceId') raceId: string,
+    @Param('raceId', ParseIntPipe) raceId: number,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.picksService.findByRace(raceId, user.sub);
@@ -55,7 +56,7 @@ export class PicksController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '선택 삭제' })
   delete(
-    @Param('raceId') raceId: string,
+    @Param('raceId', ParseIntPipe) raceId: number,
     @CurrentUser() user: JwtPayload,
   ) {
     return this.picksService.delete(user.sub, raceId);

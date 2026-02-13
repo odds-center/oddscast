@@ -1,10 +1,41 @@
 /**
+ * AI 예측 horseScores 항목 (경주 상세 표시용)
+ */
+export interface PredictionHorseScore {
+  hrNo?: string;
+  hrName?: string;
+  horseName?: string;
+  score?: number;
+  reason?: string;
+  chulNo?: string;
+}
+
+/**
+ * AI 예측 scores 객체 (경주 상세 표시용)
+ */
+export interface PredictionScoresDto {
+  horseScores?: PredictionHorseScore[];
+}
+
+/**
+ * AI 예측 상세 (경주 상세 표시용)
+ */
+export interface PredictionDetailDto {
+  scores?: PredictionScoresDto;
+  analysis?: string;
+  preview?: string;
+}
+
+/**
  * AI 예측 결과 DTO
+ * (일부 API는 scores를 포함한 확장 형태로 반환)
  */
 export interface PredictionResultDto {
   id: string;
   raceId: string;
   predictedFirst: number;
+  /** 경주 상세 표시용 scores (선택, 예측권 사용 응답 등에서 제공) */
+  scores?: PredictionScoresDto;
   predictedSecond: number;
   predictedThird: number;
   analysis: string;

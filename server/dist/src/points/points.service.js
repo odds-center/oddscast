@@ -102,6 +102,7 @@ let PointsService = class PointsService {
         if (fromBalance.currentPoints < dto.amount) {
             throw new common_1.BadRequestException('잔액이 부족합니다.');
         }
+        const toUserId = Number(dto.toUserId);
         return this.prisma.$transaction(async (prisma) => {
             await prisma.pointTransaction.create({
                 data: {
@@ -109,14 +110,14 @@ let PointsService = class PointsService {
                     transactionType: client_1.PointTransactionType.TRANSFER_OUT,
                     amount: dto.amount,
                     balanceAfter: fromBalance.currentPoints - dto.amount,
-                    description: `Transfer to ${dto.toUserId}: ${dto.description}`,
+                    description: `Transfer to ${toUserId}: ${dto.description}`,
                     status: client_1.PointStatus.ACTIVE,
                 },
             });
-            const toBalance = await this.getBalance(dto.toUserId);
+            const toBalance = await this.getBalance(toUserId);
             await prisma.pointTransaction.create({
                 data: {
-                    userId: dto.toUserId,
+                    userId: toUserId,
                     transactionType: client_1.PointTransactionType.TRANSFER_IN,
                     amount: dto.amount,
                     balanceAfter: toBalance.currentPoints + dto.amount,
@@ -207,7 +208,7 @@ let PointsService = class PointsService {
         const picks = await this.prisma.userPick.findMany({
             where: { raceId },
             include: {
-                race: { include: { results: { orderBy: { rcRank: 'asc' } } } },
+                race: { include: { results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] } } },
             },
         });
         const configMap = await this.getPointConfigMap();
@@ -219,7 +220,7 @@ let PointsService = class PointsService {
             const results = pick.race?.results ?? [];
             if (results.length === 0)
                 continue;
-            const isHit = this.picksService.checkPickHit(pick.pickType, pick.hrNos, results.map((r) => ({ hrNo: r.hrNo, rcRank: r.rcRank })));
+            const isHit = this.picksService.checkPickHit(pick.pickType, pick.hrNos, results.map((r) => ({ hrNo: r.hrNo, ord: r.ord })));
             if (!isHit)
                 continue;
             const multKey = PICK_TYPE_CONFIG_KEYS[pick.pickType];

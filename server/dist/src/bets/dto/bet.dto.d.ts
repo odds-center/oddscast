@@ -5,7 +5,7 @@ export declare class SelectionsDto {
     combinations?: string[][];
 }
 export declare class CreateBetDto {
-    raceId: string;
+    raceId: number;
     betType: BetType;
     betName: string;
     betDescription?: string;
@@ -24,7 +24,7 @@ export declare class UpdateBetDto {
     notes?: string;
 }
 export declare class BetFilterDto {
-    raceId?: string;
+    raceId?: number;
     betType?: BetType;
     betStatus?: BetStatus;
     betResult?: BetResult;
@@ -34,6 +34,6 @@ export declare class BetFilterDto {
     limit?: number;
 }
 export declare class CreateBetSlipDto {
-    raceId: string;
+    raceId: number;
     bets: any[];
 }

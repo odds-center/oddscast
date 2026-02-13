@@ -3,6 +3,7 @@ export type NativeMessageType =
   | 'LOGIN_GOOGLE'
   | 'LOGIN_SUCCESS'
   | 'LOGIN_FAILURE'
+  | 'AUTH_READY'
   | 'NAVIGATION'
   | string;
 
@@ -13,9 +14,12 @@ interface NativeMessage {
 
 declare global {
   interface Window {
+    /** react-native-webview가 WebView 로드 시 주입 (postMessage용) */
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
     };
+    /** mobile/app/webview.tsx의 injectedJavaScriptBeforeContentLoaded로 주입 */
+    __IS_NATIVE_APP__?: boolean;
     onNativeMessage?: (message: NativeMessage) => void;
   }
 }
@@ -34,7 +38,7 @@ class NativeBridge {
           if (typeof e.data === 'string') {
             const data = JSON.parse(e.data) as NativeMessage;
             // Native Bridge 형식만 처리 (LOGIN_SUCCESS 등 - GSI 등 다른 postMessage 제외)
-            if (data?.type && /^(LOGIN_|ECHO|NAVIGATION)/.test(data.type)) {
+            if (data?.type && /^(LOGIN_|AUTH_READY|ECHO|NAVIGATION)/.test(data.type)) {
               handler(data);
             }
           }
@@ -52,15 +56,23 @@ class NativeBridge {
     return NativeBridge.instance;
   }
 
-  // Check if running in the native app
+  /** WebView 내부인지 여부 — __IS_NATIVE_APP__(mobile 주입) 또는 ReactNativeWebView로 판단 */
   public isNativeApp(): boolean {
+    if (typeof window === 'undefined') return false;
+    return !!(window.__IS_NATIVE_APP__ ?? window.ReactNativeWebView);
+  }
+
+  /** Native로 메시지 전송 가능 여부 (ReactNativeWebView 필수) */
+  public canSendToNative(): boolean {
     return typeof window !== 'undefined' && !!window.ReactNativeWebView;
   }
 
-  // Send message to native app
+  /** Native 앱으로 메시지 전송 */
   public send(type: NativeMessageType, payload?: any) {
-    if (this.isNativeApp()) {
-      window.ReactNativeWebView?.postMessage(JSON.stringify({ type, payload }));
+    if (this.canSendToNative()) {
+      window.ReactNativeWebView!.postMessage(JSON.stringify({ type, payload }));
+    } else if (this.isNativeApp()) {
+      console.warn('NativeBridge: ReactNativeWebView not ready yet', { type, payload });
     } else {
       console.warn('NativeBridge: Not running in native app', { type, payload });
     }

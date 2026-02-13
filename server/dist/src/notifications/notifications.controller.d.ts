@@ -1,20 +1,20 @@
 import { NotificationsService } from './notifications.service';
 import { JwtPayload } from '../common/decorators/current-user.decorator';
-import { CreateNotificationDto, UpdateNotificationDto, BulkSendDto, UpdateNotificationPreferenceDto } from './dto/notification.dto';
+import { CreateNotificationDto, UpdateNotificationDto, BulkSendDto, UpdateNotificationPreferenceDto, PushSubscribeDto, PushUnsubscribeDto } from './dto/notification.dto';
 export declare class NotificationsController {
     private notificationsService;
     constructor(notificationsService: NotificationsService);
     findAll(user: JwtPayload, page?: number, limit?: number, isRead?: boolean): Promise<{
         notifications: {
-            type: import(".prisma/client").$Enums.NotificationType;
+            type: import("@prisma/client").$Enums.NotificationType;
             title: string;
             message: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             data: import("@prisma/client/runtime/client").JsonValue | null;
-            userId: string;
-            category: import(".prisma/client").$Enums.NotificationCategory;
+            userId: number;
+            category: import("@prisma/client").$Enums.NotificationCategory;
             isRead: boolean;
             readAt: Date | null;
         }[];
@@ -26,10 +26,10 @@ export declare class NotificationsController {
         count: number;
     }>;
     getPreferences(user: JwtPayload): Promise<{
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        userId: number;
         pushEnabled: boolean;
         raceEnabled: boolean;
         predictionEnabled: boolean;
@@ -38,10 +38,10 @@ export declare class NotificationsController {
         promotionEnabled: boolean;
     }>;
     updatePreferences(user: JwtPayload, dto: UpdateNotificationPreferenceDto): Promise<{
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        userId: number;
         pushEnabled: boolean;
         raceEnabled: boolean;
         predictionEnabled: boolean;
@@ -50,74 +50,74 @@ export declare class NotificationsController {
         promotionEnabled: boolean;
     }>;
     getTemplates(): never[];
-    findOne(id: string): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    findOne(id: number): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: import("@prisma/client/runtime/client").JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
     create(dto: CreateNotificationDto): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: import("@prisma/client/runtime/client").JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
-    pushSubscribe(_user: JwtPayload, _body: any): {
+    pushSubscribe(user: JwtPayload, dto: PushSubscribeDto): Promise<{
         message: string;
-    };
-    pushUnsubscribe(_user: JwtPayload, _body: any): {
+    }>;
+    pushUnsubscribe(user: JwtPayload, dto: PushUnsubscribeDto): Promise<{
         message: string;
-    };
+    }>;
     bulkSend(dto: BulkSendDto): Promise<{
         count: number;
     }>;
-    markAsRead(id: string): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    markAsRead(id: number): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: import("@prisma/client/runtime/client").JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
     markAllAsRead(user: JwtPayload): Promise<{
         count: number;
     }>;
-    update(id: string, dto: UpdateNotificationDto): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    update(id: number, dto: UpdateNotificationDto): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: import("@prisma/client/runtime/client").JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
     deleteAll(user: JwtPayload): Promise<{
         count: number;
     }>;
-    remove(id: string): Promise<{
+    remove(id: number): Promise<{
         message: string;
     }>;
 }

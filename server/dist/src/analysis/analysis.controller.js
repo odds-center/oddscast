@@ -26,9 +26,9 @@ let AnalysisController = class AnalysisController {
 exports.AnalysisController = AnalysisController;
 __decorate([
     (0, common_1.Get)('race/:raceId/jockey'),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AnalysisController.prototype, "getJockeyAnalysis", null);
 exports.AnalysisController = AnalysisController = __decorate([

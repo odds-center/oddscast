@@ -33,16 +33,16 @@ let AuthController = class AuthController {
         return this.authService.googleLogin(dto.idToken);
     }
     adminLogin(dto) {
-        return this.authService.adminLogin(dto.email, dto.password);
+        return this.authService.adminLogin(dto.loginId, dto.password);
     }
     logout(_user) {
         return { message: '로그아웃 성공' };
     }
     getMe(user) {
-        return this.authService.getProfile(user.sub);
+        return this.authService.getProfile(user.sub, user.role);
     }
     getProfile(user) {
-        return this.authService.getProfile(user.sub);
+        return this.authService.getProfile(user.sub, user.role);
     }
     updateProfile(user, dto) {
         return this.authService.updateProfile(user.sub, dto);
@@ -69,7 +69,7 @@ let AuthController = class AuthController {
         return this.authService.deleteAccount(user.sub);
     }
     refreshToken(user) {
-        return this.authService.refreshToken(user.sub);
+        return this.authService.refreshToken(user.sub, user.role);
     }
     checkAuth(user) {
         return { authenticated: true, userId: user.sub };
@@ -102,10 +102,10 @@ __decorate([
 ], AuthController.prototype, "googleLogin", null);
 __decorate([
     (0, common_1.Post)('admin/login'),
-    (0, swagger_1.ApiOperation)({ summary: '관리자 로그인' }),
+    (0, swagger_1.ApiOperation)({ summary: '관리자 로그인 (아이디/비밀번호)' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [auth_dto_1.LoginDto]),
+    __metadata("design:paramtypes", [auth_dto_1.AdminLoginDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "adminLogin", null);
 __decorate([

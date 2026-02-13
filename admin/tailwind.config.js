@@ -3,6 +3,12 @@ module.exports = {
   content: ['./src/pages/**/*.{js,ts,jsx,tsx,mdx}', './src/components/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {
+      fontSize: {
+        base: ['14px', { lineHeight: '1.5' }],
+      },
+      spacing: {
+        '18': '4.5rem',
+      },
       colors: {
         primary: {
           50: '#fef2f2',

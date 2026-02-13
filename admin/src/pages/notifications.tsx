@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import Table from '@/components/common/Table';
@@ -15,8 +16,8 @@ import { formatDateTime } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 
 interface Notification {
-  id: string;
-  userId: string;
+  id: number;
+  userId: number;
   title: string;
   message: string;
   type: string;
@@ -42,6 +43,7 @@ export default function NotificationsPage() {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors, isValid },
   } = useForm<NotificationFormData>({
     resolver: zodResolver(notificationSchema),
@@ -60,9 +62,13 @@ export default function NotificationsPage() {
 
   const sendNotificationMutation = useMutation({
     mutationFn: (data: NotificationFormData) => adminNotificationsApi.send(data),
-    onSuccess: () => {
+    onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
-      toast.success('알림이 전송되었습니다!');
+      const msg =
+        res?.pushSent !== undefined
+          ? `알림 ${res.count ?? 0}건 저장, 푸시 ${res.pushSent}건 발송`
+          : '알림이 전송되었습니다!';
+      toast.success(msg);
       reset();
     },
     onError: (error) => {
@@ -75,12 +81,15 @@ export default function NotificationsPage() {
     sendNotificationMutation.mutate(data);
   };
 
+  const watchedTitle = watch('title');
+  const watchedMessage = watch('message');
+
   const columns = [
     {
       key: 'userId',
       header: '사용자 ID',
       className: 'w-32',
-      render: (notification: Notification) => notification.userId?.slice(0, 8) || '-',
+      render: (notification: Notification) => notification.userId ?? '-',
     },
     {
       key: 'title',
@@ -128,13 +137,11 @@ export default function NotificationsPage() {
         <title>알림 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>알림 관리</h1>
-            <p className='mt-2 text-sm text-gray-600'>
-              사용자에게 푸시 알림을 전송하고 내역을 조회할 수 있습니다.
-            </p>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='알림 관리'
+            description='사용자에게 푸시 알림을 전송하고 내역을 조회할 수 있습니다.'
+          />
 
           <Card title='알림 전송' description='모바일 앱 사용자들에게 푸시 알림을 전송합니다.'>
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
@@ -174,6 +181,27 @@ export default function NotificationsPage() {
                   <option value='active'>활성 회원</option>
                   <option value='subscribers'>구독자</option>
                 </select>
+              </div>
+
+              {/* 모바일 푸시 미리보기 */}
+              <div className='rounded-lg border border-gray-200 bg-gray-50 p-4'>
+                <p className='text-xs font-medium text-gray-500 mb-2'>모바일 푸시 미리보기</p>
+                <div className='max-w-[280px] mx-auto rounded-xl bg-white shadow-lg border border-gray-200 overflow-hidden'>
+                  <div className='flex items-start gap-3 p-3'>
+                    <div className='flex-shrink-0 w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center'>
+                      <Bell className='w-5 h-5 text-amber-900' />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <p className='font-semibold text-gray-900 text-sm truncate'>
+                        {watchedTitle || '제목'}
+                      </p>
+                      <p className='text-gray-600 text-xs mt-0.5 line-clamp-2'>
+                        {watchedMessage || '내용'}
+                      </p>
+                      <p className='text-gray-400 text-[10px] mt-1'>지금</p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <Button

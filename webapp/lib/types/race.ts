@@ -1,4 +1,7 @@
-// 경마 관련 타입 정의
+// 경마 관련 타입 — @goldenrace/shared DTO re-export
+export type { RaceDto, RaceDetailDto, RaceEntryDto, RaceResultDto, DividendDto, RaceListResponseDto } from '@goldenrace/shared';
+
+/** @deprecated RaceDto 사용 권장 */
 export interface Race {
   id: string;
   meet: string;
@@ -7,20 +10,20 @@ export interface Race {
   rcNo: string;
   rcName: string;
   rcDist: string;
-  rcGrade: string;
+  rank: string; // KRA: 등급조건 (rcGrade)
   rcCondition: string;
   rcPrize: number;
   rcRatingMin?: string;
   rcRatingMax?: string;
   rcAgeCondition?: string;
   rcSexCondition?: string;
-  rcStartTime?: string; // KRA API 응답 - string
+  stTime?: string; // KRA: 출발시각
+  rcStartTime?: string; // mock/legacy 호환
   rcEndTime?: string; // KRA API 응답 - string
   rcDay?: string;
   rcWeekday?: string;
-  rcWeather?: string;
-  rcTrack?: string;
-  rcTrackCondition?: string;
+  weather?: string;
+  track?: string; // KRA: 주로상태
   rcPrize2?: number;
   rcPrize3?: number;
   rcPrize4?: number;
@@ -63,7 +66,7 @@ export interface EntryDetail {
   hrWeight?: string;
   hrRating?: string;
   totalStarts?: number;
-  totalWins?: number;
+  ord1CntT?: number; // KRA: 통산1위횟수 (totalWins)
   totalPlaces?: number;
   totalWinRate?: number;
   totalPlaceRate?: number;
@@ -80,23 +83,16 @@ export interface EntryDetail {
 export interface RaceResult {
   id: string;
   raceId: string;
-  ord: string;
+  ord: string; // KRA: 순위
   hrNo: string;
   hrName: string;
   jkName: string;
   trName: string;
   owName: string;
-  rcRank: string;
   rcTime: string;
-  rcPrize?: number;
-  rcDist: string;
-  rcGrade: string;
-  rcCondition: string;
-  rcDay?: string;
-  rcWeekday?: string;
-  rcWeather?: string;
-  rcTrack?: string;
-  rcTrackCondition?: string;
+  chaksun1?: number;
+  track?: string;
+  weather?: string;
 }
 
 export interface DividendRate {
@@ -108,7 +104,7 @@ export interface DividendRate {
   chulNo: string;
   chulNo2?: string;
   chulNo3?: string;
-  raceName: string;
+  rcName: string;
   raceDistance: string;
   raceGrade: string;
   raceCondition: string;
@@ -152,28 +148,26 @@ export interface CreateRaceRequest {
   rcNo: string;
   rcName: string;
   rcDist: string;
-  rcGrade: string;
+  rank: string; // KRA: 등급조건 (rcGrade)
   rcCondition: string;
   rcPrize: number;
   rcStartTime?: string;
   rcEndTime?: string;
-  rcWeather?: string;
-  rcTrack?: string;
-  rcTrackCondition?: string;
+  weather?: string;
+  track?: string; // KRA: 주로상태
 }
 
 export interface UpdateRaceRequest {
   meetName?: string;
   rcName?: string;
   rcDist?: string;
-  rcGrade?: string;
+  rank?: string; // KRA: 등급조건 (기존 rcGrade)
   rcCondition?: string;
   rcPrize?: number;
   rcStartTime?: string;
   rcEndTime?: string;
-  rcWeather?: string;
-  rcTrack?: string;
-  rcTrackCondition?: string;
+  weather?: string;
+  track?: string; // KRA: 주로상태
   raceStatus?: string;
 }
 
@@ -245,7 +239,7 @@ export interface RaceSchedule {
     rcNo: string;
     rcName: string;
     rcDist: string;
-    rcGrade: string;
+    rank: string; // KRA: 등급조건 (rcGrade)
     rcStartTime: string;
     totalEntries: number;
     raceStatus: string;

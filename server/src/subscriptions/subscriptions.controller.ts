@@ -5,7 +5,9 @@ import {
   Patch,
   Body,
   Param,
+  Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { SubscriptionsService } from './subscriptions.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -42,9 +44,19 @@ export class SubscriptionsController {
   @Get('history')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '구독 이력 조회' })
-  getHistory(@CurrentUser() user: JwtPayload) {
-    return this.subscriptionsService.getHistory(user.sub);
+  @ApiOperation({ summary: '구독 이력 조회 (page/limit 또는 offset/limit)' })
+  getHistory(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('offset') offset?: number,
+  ) {
+    const lim = Math.min(50, Math.max(1, Number(limit) || 20));
+    const hasOffset = offset !== undefined && String(offset).trim() !== '';
+    const pg = hasOffset
+      ? Math.floor(Number(offset) / lim) + 1
+      : Math.max(1, Number(page) || 1);
+    return this.subscriptionsService.getHistory(user.sub, pg, lim);
   }
 
   @Post()
@@ -74,24 +86,36 @@ export class SubscriptionsController {
   @Patch(':id/activate')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '구독 활성화' })
-  activate(@Param('id') id: string, @Body() dto: ActivateSubscriptionDto) {
-    return this.subscriptionsService.activate(id, dto);
+  @ApiOperation({ summary: '구독 활성화 (결제 성공 후)' })
+  activate(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActivateSubscriptionDto,
+  ) {
+    return this.subscriptionsService.activate(id, user.sub, dto);
   }
 
   @Post(':id/activate')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '구독 활성화 (alias)' })
-  activatePost(@Param('id') id: string, @Body() dto: ActivateSubscriptionDto) {
-    return this.subscriptionsService.activate(id, dto);
+  activatePost(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: ActivateSubscriptionDto,
+  ) {
+    return this.subscriptionsService.activate(id, user.sub, dto);
   }
 
   @Patch(':id/cancel')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '구독 취소' })
-  cancel(@Param('id') id: string, @Body() dto: CancelSubscriptionDto) {
-    return this.subscriptionsService.cancel(id, dto);
+  @ApiOperation({ summary: '구독 취소 (ID 지정)' })
+  cancel(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CancelSubscriptionDto,
+  ) {
+    return this.subscriptionsService.cancel(id, user.sub, dto);
   }
 }

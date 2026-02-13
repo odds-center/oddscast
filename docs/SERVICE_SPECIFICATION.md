@@ -80,7 +80,7 @@
 - **API**: `GET /api/races/:id`, `GET /api/races/:id/results`, `GET /api/predictions/race/:raceId`, `GET /api/analysis/race/:raceId/jockey`
 
 #### 경주 결과
-- **내용**: 종료된 경주 결과 목록 (날짜 필터, 페이지네이션)
+- **내용**: 종료된 경주 결과 목록 (날짜 필터, 페이지네이션). **같은 경기 1·2·3위를 한 행에 묶어 표시** (경주 | 날짜 | 1위 | 2위 | 3위)
 - **라우트**: `/results`
 - **API**: `GET /api/results`
 

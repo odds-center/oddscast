@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import Link from 'next/link';
 import PageHeader from '@/components/page/PageHeader';
 import SectionCard from '@/components/page/SectionCard';
 import MenuList from '@/components/page/MenuList';
+import DataFetchState from '@/components/page/DataFetchState';
+import RequireLogin from '@/components/page/RequireLogin';
 import Dropdown from '@/components/ui/Dropdown';
 import PointApi from '@/lib/api/pointApi';
 import { routes } from '@/lib/routes';
@@ -62,12 +62,9 @@ export default function Profile() {
         <PageHeader
           icon='User'
           title='내 정보'
-          description='로그인하면 포인트, 예측 이력, 즐겨찾기, 구독 정보를 확인할 수 있습니다.'
+          description='포인트, 예측권, 구독 정보를 확인할 수 있습니다.'
         />
-        <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 px-6 py-3'>
-          <Icon name='LogIn' size={18} />
-          로그인
-        </Link>
+        <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
       </Layout>
     );
   }
@@ -86,22 +83,22 @@ export default function Profile() {
           icon='User'
           title='내 정보'
           subtitle={
-            (user as any)?.name && (
+            (user as { name?: string })?.name && (
               <>
-                {(user as any).name}
-                {(user as any).nickname && (
-                  <span className='text-text-secondary text-sm ml-2 font-normal'>@{(user as any).nickname}</span>
+                {(user as { name?: string }).name}
+                {(user as { nickname?: string }).nickname && (
+                  <span className='text-text-secondary text-sm ml-2 font-normal'>@{(user as { nickname?: string }).nickname}</span>
                 )}
               </>
             )
           }
         />
 
-        {isLoading ? (
-          <div className='py-16'>
-            <LoadingSpinner size={28} label='정보를 불러오는 중...' />
-          </div>
-        ) : (
+        <DataFetchState
+          isLoading={isLoading}
+          error={null}
+          loadingLabel='정보를 불러오는 중...'
+        >
           <div className='space-y-4'>
             <SectionCard title='예측권' icon='Ticket'>
               <p className='text-2xl font-bold text-primary'>
@@ -179,15 +176,13 @@ export default function Profile() {
                 { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독 플랜' },
                 { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
                 { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
-                { href: routes.mypage.picks, icon: 'Bookmark', label: '내가 고른 말' },
-                { href: routes.mypage.favorites, icon: 'Heart', label: '즐겨찾기' },
                 { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
                 { href: routes.ranking, icon: 'Medal', label: '랭킹' },
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />
-        </div>
-      )}
+          </div>
+        </DataFetchState>
       </div>
     </Layout>
   );

@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 import Link from 'next/link';
+import BackLink from '@/components/page/BackLink';
 import PageHeader from '@/components/page/PageHeader';
 import FormInput from '@/components/page/FormInput';
 import SectionCard from '@/components/page/SectionCard';
@@ -83,9 +84,7 @@ export default function ForgotPasswordPage() {
         )}
 
         <p className='mt-6 text-text-secondary text-sm'>
-          <Link href={routes.auth.login} className='link-primary'>
-            ← 로그인
-          </Link>
+          <BackLink href={routes.auth.login} label='로그인' />
         </p>
       </div>
     </Layout>

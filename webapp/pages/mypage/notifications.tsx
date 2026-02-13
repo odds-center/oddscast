@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/page/PageHeader';
 import Pagination from '@/components/page/Pagination';
 import BackLink from '@/components/page/BackLink';
+import DataFetchState from '@/components/page/DataFetchState';
+import RequireLogin from '@/components/page/RequireLogin';
+import { Card } from '@/components/ui';
 import NotificationApi from '@/lib/api/notificationApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -65,14 +66,7 @@ export default function NotificationsPage() {
         description='경주 결과, 포인트 만료 등 알림을 확인하세요.'
       />
 
-      {!isLoggedIn && (
-        <p className='text-text-secondary text-sm mb-4'>
-          <Link href={routes.auth.login} className='link-primary'>
-            로그인
-          </Link>
-          후 확인할 수 있습니다.
-        </p>
-      )}
+      {!isLoggedIn && <RequireLogin />}
 
       {isLoggedIn && (
         <>
@@ -86,31 +80,27 @@ export default function NotificationsPage() {
             </button>
           )}
 
-          {isLoading ? (
-            <div className='py-16'>
-              <LoadingSpinner size={28} label='알림을 불러오는 중...' />
-            </div>
-            ) : error ? (
-              <EmptyState
-                icon='AlertCircle'
-                title='데이터를 불러오지 못했습니다'
-                description={(error as Error)?.message}
-                action={
-                  <button onClick={() => refetch()} className='btn-secondary px-4 py-2 text-sm'>
-                    다시 시도
-                  </button>
-                }
-              />
-            ) : (
-              <div className='space-y-2'>
-                {notifications.map((n: any) => {
-                  const link = getLink(n);
+          <DataFetchState
+            isLoading={isLoading}
+            error={error as Error | null}
+            onRetry={() => refetch()}
+            isEmpty={!notifications.length}
+            emptyIcon='Bell'
+            emptyTitle='알림이 없습니다'
+            emptyDescription='경주 결과, 포인트 알림 등이 여기에 표시됩니다.'
+            loadingLabel='알림을 불러오는 중...'
+          >
+            <div className='space-y-3'>
+              {notifications.map((n: any) => {
+                const link = getLink(n);
+                const isUnread = !n.isRead;
 
-                  return (
-                    <div
-                      key={n.id}
-                      className={`card py-4 ${!n.isRead ? 'border-l-4 border-l-primary bg-primary/5' : ''}`}
-                    >
+                return (
+                  <Card
+                    key={n.id}
+                    variant={isUnread ? 'accent' : 'default'}
+                    className={`py-4 ${isUnread ? 'bg-primary/5' : ''}`}
+                  >
                       <div className='flex items-start justify-between gap-2'>
                         <div className='flex-1 min-w-0'>
                           {link ? (
@@ -163,18 +153,10 @@ export default function NotificationsPage() {
                           </button>
                         </div>
                       </div>
-                    </div>
-                  );
-                })}
-                {notifications.length === 0 && (
-                  <EmptyState
-                    icon='Bell'
-                    title='알림이 없습니다'
-                    description='경주 결과, 포인트 알림 등이 여기에 표시됩니다.'
-                  />
-                )}
-              </div>
-            )}
+                  </Card>
+                );
+              })}
+            </div>
 
             <Pagination
               page={page}
@@ -183,10 +165,11 @@ export default function NotificationsPage() {
               onNext={() => setPage((p) => Math.min(data?.totalPages ?? 1, p + 1))}
               className='mt-6'
             />
+          </DataFetchState>
           </>
         )}
 
-        <BackLink href={routes.profile.index} label='내 정보로' />
+      <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>
   );
 }

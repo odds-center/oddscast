@@ -44,11 +44,11 @@ let NotificationsController = class NotificationsController {
     create(dto) {
         return this.notificationsService.create(dto);
     }
-    pushSubscribe(_user, _body) {
-        return { message: '푸시 알림이 구독되었습니다.' };
+    pushSubscribe(user, dto) {
+        return this.notificationsService.pushSubscribe(user.sub, dto);
     }
-    pushUnsubscribe(_user, _body) {
-        return { message: '푸시 알림 구독이 해제되었습니다.' };
+    pushUnsubscribe(user, dto) {
+        return this.notificationsService.pushUnsubscribe(user.sub, dto);
     }
     bulkSend(dto) {
         return this.notificationsService.bulkSend(dto);
@@ -129,9 +129,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '알림 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "findOne", null);
 __decorate([
@@ -148,11 +148,12 @@ __decorate([
     (0, common_1.Post)('push-subscribe'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: '푸시 구독' }),
+    (0, swagger_1.ApiOperation)({ summary: '푸시 구독 (Expo 토큰 등록)' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Object]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload,
+        notification_dto_1.PushSubscribeDto]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "pushSubscribe", null);
 __decorate([
@@ -163,7 +164,8 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Object]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload,
+        notification_dto_1.PushUnsubscribeDto]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "pushUnsubscribe", null);
 __decorate([
@@ -181,9 +183,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '알림 읽음 처리' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "markAsRead", null);
 __decorate([
@@ -201,10 +203,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '알림 수정' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, notification_dto_1.UpdateNotificationDto]),
+    __metadata("design:paramtypes", [Number, notification_dto_1.UpdateNotificationDto]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "update", null);
 __decorate([
@@ -222,9 +224,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '알림 삭제' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], NotificationsController.prototype, "remove", null);
 exports.NotificationsController = NotificationsController = __decorate([

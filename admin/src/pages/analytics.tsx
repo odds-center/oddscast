@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import { adminAIApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
@@ -62,21 +63,19 @@ export default function AnalyticsPage() {
         <title>AI 분석 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>AI 예측 성과 분석</h1>
-            <p className='mt-2 text-sm text-gray-600'>
-              AI 예측의 정확도, 비용, ROI를 실시간으로 분석합니다
-            </p>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='AI 예측 성과 분석'
+            description='AI 예측의 정확도, 비용, ROI를 실시간으로 분석합니다'
+          />
 
           {/* 주요 지표 카드 */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-            <div className='bg-white rounded-lg shadow p-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='bg-white rounded-md shadow p-4'>
               <div className='flex items-center justify-between'>
                 <div>
                   <p className='text-sm text-gray-600'>전체 정확도</p>
-                  <p className='text-3xl font-bold text-blue-600 mt-2'>
+                  <p className='text-lg font-bold text-blue-600 mt-2'>
                     {(dashboard?.overall?.accuracy ?? 0).toFixed(1)}%
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>
@@ -90,11 +89,11 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className='bg-white rounded-lg shadow p-6'>
+            <div className='bg-white rounded-md shadow p-4'>
               <div className='flex items-center justify-between'>
                 <div>
                   <p className='text-sm text-gray-600'>평균 신뢰도</p>
-                  <p className='text-3xl font-bold text-green-600 mt-2'>
+                  <p className='text-lg font-bold text-green-600 mt-2'>
                     {(dashboard?.overall?.avgConfidence ?? 0).toFixed(1)}%
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>AI 확신 수준</p>
@@ -105,11 +104,11 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className='bg-white rounded-lg shadow p-6'>
+            <div className='bg-white rounded-md shadow p-4'>
               <div className='flex items-center justify-between'>
                 <div>
                   <p className='text-sm text-gray-600'>총 비용</p>
-                  <p className='text-3xl font-bold text-yellow-600 mt-2'>
+                  <p className='text-lg font-bold text-yellow-600 mt-2'>
                     ₩{formatNumber(costData?.totalCost || 0)}
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>누적 AI 호출 비용</p>
@@ -120,11 +119,11 @@ export default function AnalyticsPage() {
               </div>
             </div>
 
-            <div className='bg-white rounded-lg shadow p-6'>
+            <div className='bg-white rounded-md shadow p-4'>
               <div className='flex items-center justify-between'>
                 <div>
                   <p className='text-sm text-gray-600'>총 예측 수</p>
-                  <p className='text-3xl font-bold text-purple-600 mt-2'>
+                  <p className='text-lg font-bold text-purple-600 mt-2'>
                     {formatNumber(dashboard?.overall.totalPredictions || 0)}
                   </p>
                   <p className='text-xs text-gray-500 mt-1'>생성된 예측</p>
@@ -137,9 +136,9 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 포지션별 정확도 */}
-          <div className='bg-white rounded-lg shadow p-6'>
+          <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-semibold mb-4'>포지션별 정확도</h3>
-            <div className='grid grid-cols-3 gap-6'>
+            <div className='grid grid-cols-3 gap-4'>
               <div className='text-center'>
                 <div className='text-4xl font-bold text-blue-600 mb-2'>
                   {(dashboard?.byPosition?.first?.accuracy ?? 0).toFixed(1)}%
@@ -176,7 +175,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 최근 7일 트렌드 */}
-          <div className='bg-white rounded-lg shadow p-6'>
+          <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-semibold mb-4'>최근 7일 정확도 트렌드</h3>
             <div className='space-y-3'>
               {(dashboard?.recent7Days ?? []).map((day, idx) => (
@@ -202,7 +201,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 제공자별 성능 */}
-          <div className='bg-white rounded-lg shadow p-6'>
+          <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-semibold mb-4'>LLM 제공자별 성능</h3>
             <div className='overflow-x-auto'>
               <table className='w-full'>
@@ -246,7 +245,7 @@ export default function AnalyticsPage() {
 
           {/* 실패 원인 분석 */}
           {failureAnalysis && (
-            <div className='bg-white rounded-lg shadow p-6'>
+            <div className='bg-white rounded-md shadow p-4'>
               <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
                 <AlertTriangle className='w-5 h-5 text-yellow-600' />
                 실패 원인 분석
@@ -255,13 +254,13 @@ export default function AnalyticsPage() {
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
                     <div className='text-sm text-gray-600'>총 실패 수</div>
-                    <div className='text-2xl font-bold text-red-600'>
+                    <div className='text-base font-bold text-red-600'>
                       {failureAnalysis.totalFailures}
                     </div>
                   </div>
                   <div>
                     <div className='text-sm text-gray-600'>평균 오차 거리</div>
-                    <div className='text-2xl font-bold text-gray-900'>
+                    <div className='text-base font-bold text-gray-900'>
                       {(failureAnalysis?.avgMissDistance ?? 0).toFixed(1)}위
                     </div>
                   </div>

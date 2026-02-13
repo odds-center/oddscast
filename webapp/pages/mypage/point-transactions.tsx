@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import Layout from '@/components/Layout';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/page/PageHeader';
 import Pagination from '@/components/page/Pagination';
+import { DataTable } from '@/components/ui';
 import BackLink from '@/components/page/BackLink';
+import DataFetchState from '@/components/page/DataFetchState';
+import RequireLogin from '@/components/page/RequireLogin';
 import PointApi from '@/lib/api/pointApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
 import { routes } from '@/lib/routes';
 
 export default function PointTransactionsPage() {
@@ -48,12 +48,7 @@ export default function PointTransactionsPage() {
     return (
       <Layout title='포인트 거래 내역 — GOLDEN RACE'>
         <PageHeader icon='Gem' title='포인트 거래 내역' description='포인트 적립·사용 내역입니다.' />
-        <p className='text-text-secondary text-sm mb-4'>
-          <Link href={routes.auth.login} className='link-primary'>
-            로그인
-          </Link>
-          후 확인할 수 있습니다.
-        </p>
+        <RequireLogin />
         <BackLink href={routes.profile.index} label='내 정보로' />
       </Layout>
     );
@@ -67,59 +62,26 @@ export default function PointTransactionsPage() {
         description='포인트 적립·사용 내역입니다.'
       />
 
-      {isLoading ? (
-        <div className='py-16'>
-          <LoadingSpinner size={28} label='거래 내역을 불러오는 중...' />
-        </div>
-      ) : error ? (
-        <EmptyState
-          icon='AlertCircle'
-          title='데이터를 불러오지 못했습니다'
-          description={(error as Error)?.message}
-          action={
-            <button onClick={() => refetch()} className='btn-secondary px-4 py-2 text-sm'>
-              다시 시도
-            </button>
-          }
+      <DataFetchState
+        isLoading={isLoading}
+        error={error as Error | null}
+        onRetry={() => refetch()}
+        isEmpty={!transactions.length}
+        emptyIcon='Gem'
+        emptyTitle='거래 내역이 없습니다'
+        emptyDescription='경주 적중 보상이나 예측권 구매 시 내역이 표시됩니다.'
+        loadingLabel='거래 내역을 불러오는 중...'
+      >
+        <DataTable
+          columns={[
+            { key: 'type', header: '유형', headerClassName: 'min-w-[100px]', cellClassName: 'font-medium', render: (t) => getTypeLabel(t.transactionType) },
+            { key: 'desc', header: '설명', cellClassName: 'text-text-secondary', render: (t) => t.description ?? '-' },
+            { key: 'amount', header: '포인트', align: 'right', headerClassName: 'w-24', cellClassName: (t) => `font-semibold ${isPositive(t.transactionType) ? 'text-primary' : 'text-text-secondary'}`, render: (t) => `${isPositive(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt` },
+            { key: 'date', header: '일시', align: 'center', headerClassName: 'w-32', cellClassName: 'text-text-tertiary', render: (t) => { const v = t.transactionTime ?? t.createdAt; return v ? formatDate(v) : '-'; } },
+          ]}
+          data={transactions}
+          getRowKey={(t) => t.id}
         />
-      ) : (
-        <div className='space-y-2'>
-          {transactions.map((t: any) => (
-            <div key={t.id} className='card py-4'>
-              <div className='flex items-start justify-between gap-2'>
-                <div className='min-w-0 flex-1'>
-                  <p className='text-foreground font-medium text-sm'>
-                    {getTypeLabel(t.transactionType)}
-                  </p>
-                  <p className='text-text-secondary text-xs mt-0.5'>
-                    {t.description ?? '-'}
-                  </p>
-                  <p className='text-text-tertiary text-xs mt-0.5'>
-                    {formatDate(t.transactionTime ?? t.createdAt)}
-                  </p>
-                </div>
-                <span
-                  className={`shrink-0 font-semibold ${
-                    isPositive(t.transactionType) ? 'text-primary' : 'text-text-secondary'
-                  }`}
-                >
-                  {isPositive(t.transactionType) ? '+' : '-'}
-                  {Math.abs(t.amount ?? 0).toLocaleString()}pt
-                </span>
-              </div>
-            </div>
-          ))}
-          {transactions.length === 0 && (
-            <EmptyState
-              icon='Gem'
-              title='거래 내역이 없습니다'
-              description='경주 적중 보상이나 예측권 구매 시 내역이 표시됩니다.'
-            />
-          )}
-        </div>
-      )}
-
-      {totalPages > 1 && (
         <Pagination
           page={page}
           totalPages={totalPages}
@@ -127,7 +89,7 @@ export default function PointTransactionsPage() {
           onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
           className='mt-6'
         />
-      )}
+      </DataFetchState>
 
       <BackLink href={routes.profile.index} label='내 정보로' />
     </Layout>

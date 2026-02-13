@@ -9,9 +9,9 @@ import {
 export class PaymentsService {
   constructor(private prisma: PrismaService) {}
 
-  async processSubscription(userId: string, dto: PaymentSubscribeDto) {
+  async processSubscription(userId: number, dto: PaymentSubscribeDto) {
     const plan = await this.prisma.subscriptionPlan.findUnique({
-      where: { id: dto.planId },
+      where: { id: Number(dto.planId) },
     });
     if (!plan) throw new NotFoundException('플랜을 찾을 수 없습니다');
 
@@ -27,7 +27,7 @@ export class PaymentsService {
     return { billing, planName: plan.displayName };
   }
 
-  async processPurchase(userId: string, dto: PaymentPurchaseDto) {
+  async processPurchase(userId: number, dto: PaymentPurchaseDto) {
     const billing = await this.prisma.billingHistory.create({
       data: {
         userId,
@@ -41,7 +41,7 @@ export class PaymentsService {
     return { billing };
   }
 
-  async getHistory(userId: string) {
+  async getHistory(userId: number) {
     return this.prisma.billingHistory.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },

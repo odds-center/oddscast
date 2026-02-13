@@ -1,4 +1,5 @@
-import Icon, { IconName } from '../icons';
+import { Card, SectionTitle } from '../ui';
+import type { IconName } from '../icons';
 
 interface SectionCardProps {
   children: React.ReactNode;
@@ -10,20 +11,9 @@ interface SectionCardProps {
 
 export default function SectionCard({ children, title, icon, accent, className = '' }: SectionCardProps) {
   return (
-    <section
-      className={`card ${accent ? 'border-l-4 border-l-primary' : ''} ${className}`}
-    >
-      {title && (
-        <h3 className='text-foreground font-semibold mb-3 flex items-center gap-2'>
-          {icon && (
-            <span className='inline-flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10'>
-              <Icon name={icon} size={18} className='text-primary' strokeWidth={2} />
-            </span>
-          )}
-          {title}
-        </h3>
-      )}
+    <Card as='section' variant={accent ? 'accent' : 'default'} className={className}>
+      {title && <SectionTitle title={title} icon={icon} />}
       {children}
-    </section>
+    </Card>
   );
 }

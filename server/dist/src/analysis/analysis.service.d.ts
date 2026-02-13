@@ -10,7 +10,7 @@ export declare class AnalysisService {
             rating?: number;
         }>;
     }): Promise<unknown>;
-    analyzeJockey(raceId: string): Promise<{
+    analyzeJockey(raceId: number): Promise<{
         entriesWithScores: Array<{
             hrNo: string;
             hrName: string;

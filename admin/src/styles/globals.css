@@ -1,3 +1,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Admin: 14px 기준 */
+@layer base {
+  html {
+    font-size: 14px;
+  }
+  body {
+    @apply text-sm antialiased;
+  }
+}

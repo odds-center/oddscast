@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { BetsService } from './bets.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -58,32 +59,32 @@ export class BetsController {
 
   @Get(':id')
   @ApiOperation({ summary: '베팅 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.betsService.findOne(id);
   }
 
   @Put(':id')
   @ApiOperation({ summary: '베팅 수정' })
-  update(@Param('id') id: string, @Body() dto: UpdateBetDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateBetDto) {
     return this.betsService.update(id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: '베팅 삭제 (취소)' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.betsService.cancel(id);
   }
 
   @Patch(':id/cancel')
   @ApiOperation({ summary: '베팅 취소' })
-  cancel(@Param('id') id: string) {
+  cancel(@Param('id', ParseIntPipe) id: number) {
     return this.betsService.cancel(id);
   }
 
   @Patch(':id/result')
   @ApiOperation({ summary: '베팅 결과 처리 (테스트용)' })
   processResult(
-    @Param('id') id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() body: { result: BetResult; actualWin?: number },
   ) {
     return this.betsService.processResult(id, body.result, body.actualWin);

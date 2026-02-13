@@ -29,8 +29,13 @@ let SubscriptionsController = class SubscriptionsController {
     getStatus(user) {
         return this.subscriptionsService.getStatus(user.sub);
     }
-    getHistory(user) {
-        return this.subscriptionsService.getHistory(user.sub);
+    getHistory(user, page, limit, offset) {
+        const lim = Math.min(50, Math.max(1, Number(limit) || 20));
+        const hasOffset = offset !== undefined && String(offset).trim() !== '';
+        const pg = hasOffset
+            ? Math.floor(Number(offset) / lim) + 1
+            : Math.max(1, Number(page) || 1);
+        return this.subscriptionsService.getHistory(user.sub, pg, lim);
     }
     subscribe(user, dto) {
         return this.subscriptionsService.subscribe(user.sub, dto);
@@ -41,14 +46,14 @@ let SubscriptionsController = class SubscriptionsController {
     cancelPost(user, dto) {
         return this.subscriptionsService.cancelByUserId(user.sub, dto.reason);
     }
-    activate(id, dto) {
-        return this.subscriptionsService.activate(id, dto);
+    activate(user, id, dto) {
+        return this.subscriptionsService.activate(id, user.sub, dto);
     }
-    activatePost(id, dto) {
-        return this.subscriptionsService.activate(id, dto);
+    activatePost(user, id, dto) {
+        return this.subscriptionsService.activate(id, user.sub, dto);
     }
-    cancel(id, dto) {
-        return this.subscriptionsService.cancel(id, dto);
+    cancel(user, id, dto) {
+        return this.subscriptionsService.cancel(id, user.sub, dto);
     }
 };
 exports.SubscriptionsController = SubscriptionsController;
@@ -73,10 +78,13 @@ __decorate([
     (0, common_1.Get)('history'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: '구독 이력 조회' }),
+    (0, swagger_1.ApiOperation)({ summary: '구독 이력 조회 (page/limit 또는 offset/limit)' }),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Number, Number, Number]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "getHistory", null);
 __decorate([
@@ -116,11 +124,12 @@ __decorate([
     (0, common_1.Patch)(':id/activate'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: '구독 활성화' }),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, swagger_1.ApiOperation)({ summary: '구독 활성화 (결제 성공 후)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, subscription_dto_1.ActivateSubscriptionDto]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Number, subscription_dto_1.ActivateSubscriptionDto]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "activate", null);
 __decorate([
@@ -128,21 +137,23 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '구독 활성화 (alias)' }),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, subscription_dto_1.ActivateSubscriptionDto]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Number, subscription_dto_1.ActivateSubscriptionDto]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "activatePost", null);
 __decorate([
     (0, common_1.Patch)(':id/cancel'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
-    (0, swagger_1.ApiOperation)({ summary: '구독 취소' }),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
+    (0, swagger_1.ApiOperation)({ summary: '구독 취소 (ID 지정)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, subscription_dto_1.CancelSubscriptionDto]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Number, subscription_dto_1.CancelSubscriptionDto]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "cancel", null);
 exports.SubscriptionsController = SubscriptionsController = __decorate([

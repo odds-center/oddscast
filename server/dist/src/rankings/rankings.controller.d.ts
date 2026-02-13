@@ -6,7 +6,7 @@ export declare class RankingsController {
     getRankings(type?: string, limit?: number): Promise<{
         data: {
             rank: number;
-            id: string;
+            id: number;
             name: string;
             avatar: string;
             correctCount: number;
@@ -17,7 +17,7 @@ export declare class RankingsController {
     }>;
     getMyRanking(user: JwtPayload, type?: string): Promise<{
         data: {
-            id: string;
+            id: number;
             rank: number;
             name: string;
             avatar: string;

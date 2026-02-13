@@ -9,6 +9,7 @@ import {
   Put,
   Patch,
   Delete,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -44,26 +45,69 @@ export class AdminController {
 
   @Post('kra/sync/schedule')
   @ApiOperation({ summary: '[Admin] KRA 경주 계획/출전표 동기화' })
-  async syncSchedule(@Query('date') date: string) {
-    return this.kraService.syncEntrySheet(date);
+  async syncSchedule(@Query('date') date?: string) {
+    const d =
+      date?.replace(/-/g, '').slice(0, 8) ||
+      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return this.kraService.syncEntrySheet(d);
   }
 
   @Post('kra/sync/results')
   @ApiOperation({ summary: '[Admin] KRA 경주 결과 동기화' })
-  async syncResults(@Query('date') date: string) {
-    return this.kraService.fetchRaceResults(date);
+  async syncResults(@Query('date') date?: string) {
+    const d =
+      date?.replace(/-/g, '').slice(0, 8) ||
+      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return this.kraService.fetchRaceResults(d);
   }
 
   @Post('kra/sync/details')
   @ApiOperation({ summary: '[Admin] KRA 상세/훈련정보 동기화 (Group B)' })
-  async syncDetails(@Query('date') date: string) {
-    return this.kraService.syncAnalysisData(date);
+  async syncDetails(@Query('date') date?: string) {
+    const d =
+      date?.replace(/-/g, '').slice(0, 8) ||
+      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return this.kraService.syncAnalysisData(d);
+  }
+
+  @Get('kra/sync-logs')
+  @ApiOperation({ summary: '[Admin] KRA 동기화 로그 조회' })
+  async getKraSyncLogs(
+    @Query('endpoint') endpoint?: string,
+    @Query('rcDate') rcDate?: string,
+    @Query('limit') limit?: number,
+  ) {
+    const take = Math.min(Number(limit) || 50, 100);
+    const logs = await this.prisma.kraSyncLog.findMany({
+      where: {
+        ...(endpoint && { endpoint }),
+        ...(rcDate && { rcDate }),
+      },
+      orderBy: { createdAt: 'desc' },
+      take,
+    });
+    return { logs, total: logs.length };
+  }
+
+  @Post('kra/seed-sample')
+  @ApiOperation({ summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)' })
+  async seedSample(@Query('date') date?: string) {
+    return this.kraService.seedSampleRaces(date);
   }
 
   @Post('kra/sync/jockeys')
   @ApiOperation({ summary: '[Admin] KRA 기수 통산전적 동기화' })
   async syncJockeys(@Query('meet') meet?: string) {
     return this.kraService.fetchJockeyTotalResults(meet);
+  }
+
+  @Post('kra/sync/all')
+  @ApiOperation({ summary: '[Admin] KRA 전체 적재 (출전표→결과→상세→기수)' })
+  async syncAll(@Query('date') date?: string) {
+    const d =
+      date?.replace(/-/g, '').slice(0, 8) ||
+      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return this.kraService.syncAll(d);
   }
 
   @Post('kra/sync/historical')
@@ -107,31 +151,31 @@ export class AdminController {
 
   @Get('users/:id')
   @ApiOperation({ summary: '[Admin] 사용자 상세 조회' })
-  async getUser(@Param('id') id: string) {
+  async getUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
   }
 
   @Patch('users/:id')
   @ApiOperation({ summary: '[Admin] 사용자 수정' })
-  async updateUser(@Param('id') id: string, @Body() body: any) {
+  async updateUser(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return this.usersService.update(id, body);
   }
 
   @Delete('users/:id')
   @ApiOperation({ summary: '[Admin] 사용자 삭제(비활성화)' })
-  async deleteUser(@Param('id') id: string) {
+  async deleteUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }
 
   @Patch('users/:id/activate')
   @ApiOperation({ summary: '[Admin] 사용자 활성화' })
-  async activateUser(@Param('id') id: string) {
+  async activateUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.update(id, { isActive: true } as UpdateUserDto);
   }
 
   @Patch('users/:id/deactivate')
   @ApiOperation({ summary: '[Admin] 사용자 비활성화' })
-  async deactivateUser(@Param('id') id: string) {
+  async deactivateUser(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.update(id, { isActive: false } as UpdateUserDto);
   }
 
@@ -258,8 +302,8 @@ export class AdminController {
     const p = Math.max(1, Number(page) || 1);
     const l = Math.min(100, Math.max(1, Number(limit) || 20));
     const where: any = {};
-    if (userId) where.userId = userId;
-    if (raceId) where.raceId = raceId;
+    if (userId) where.userId = parseInt(userId, 10);
+    if (raceId) where.raceId = parseInt(raceId, 10);
     if (status) where.betStatus = status;
 
     const [bets, total] = await Promise.all([
@@ -281,7 +325,7 @@ export class AdminController {
 
   @Get('bets/:id')
   @ApiOperation({ summary: '[Admin] 마권 상세 조회' })
-  async getBet(@Param('id') id: string) {
+  async getBet(@Param('id', ParseIntPipe) id: number) {
     return this.prisma.bet.findUnique({
       where: { id },
       include: { race: true, user: { select: { id: true, email: true, name: true } } },
@@ -298,7 +342,7 @@ export class AdminController {
 
   @Get('subscriptions/plans/:id')
   @ApiOperation({ summary: '[Admin] 구독 플랜 상세' })
-  async getSubscriptionPlan(@Param('id') id: string) {
+  async getSubscriptionPlan(@Param('id', ParseIntPipe) id: number) {
     return this.prisma.subscriptionPlan.findUnique({
       where: { id },
     });
@@ -306,7 +350,7 @@ export class AdminController {
 
   @Patch('subscriptions/plans/:id')
   @ApiOperation({ summary: '[Admin] 구독 플랜 수정' })
-  async updateSubscriptionPlan(@Param('id') id: string, @Body() body: any) {
+  async updateSubscriptionPlan(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
     return this.subscriptionsService.updatePlan(id, body);
   }
 

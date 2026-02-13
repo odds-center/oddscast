@@ -141,7 +141,7 @@ let SinglePurchasesService = class SinglePurchasesService {
             _count: true,
         });
         return {
-            totalSpent: result._sum.totalAmount || 0,
+            totalSpent: result._sum?.totalAmount ?? 0,
             totalPurchases: result._count,
         };
     }

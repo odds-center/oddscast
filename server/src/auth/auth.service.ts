@@ -11,11 +11,21 @@ import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 
 export interface SanitizedUser {
-  id: string;
+  id: number;
   email: string;
   name: string;
   nickname: string | null;
   avatar: string | null;
+  role: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface SanitizedAdminUser {
+  id: number;
+  loginId: string;
+  name: string;
   role: string;
   isActive: boolean;
   createdAt: Date;
@@ -128,35 +138,42 @@ export class AuthService {
     return { user: this.sanitize(user), ...token };
   }
 
-  async adminLogin(email: string, password: string) {
-    const user = await this.prisma.user.findUnique({ where: { email } });
-    if (!user)
-      throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+  async adminLogin(loginId: string, password: string) {
+    const admin = await this.prisma.adminUser.findUnique({
+      where: { loginId },
+    });
+    if (!admin)
+      throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
 
-    if (user.role !== 'ADMIN') {
-      throw new UnauthorizedException('관리자 권한이 없습니다');
+    if (!admin.isActive) {
+      throw new UnauthorizedException('비활성화된 계정입니다');
     }
 
-    const valid = await bcrypt.compare(password, user.password);
+    const valid = await bcrypt.compare(password, admin.password);
     if (!valid)
-      throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+      throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
 
-    await this.prisma.user.update({
-      where: { id: user.id },
+    await this.prisma.adminUser.update({
+      where: { id: admin.id },
       data: { lastLoginAt: new Date() },
     });
 
-    const token = this.generateToken(user.id, user.email, user.role);
-    return { user: this.sanitize(user), ...token };
+    const token = this.generateToken(admin.id, admin.loginId, 'ADMIN');
+    return { user: this.sanitizeAdmin(admin), ...token };
   }
 
-  async getProfile(userId: string) {
+  async getProfile(userId: number, role?: string): Promise<SanitizedUser | SanitizedAdminUser> {
+    if (role === 'ADMIN') {
+      const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+      if (!admin) throw new UnauthorizedException();
+      return this.sanitizeAdmin(admin);
+    }
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
     return this.sanitize(user);
   }
 
-  async updateProfile(userId: string, dto: UpdateProfileDto) {
+  async updateProfile(userId: number, dto: UpdateProfileDto) {
     const user = await this.prisma.user.update({
       where: { id: userId },
       data: dto,
@@ -165,7 +182,7 @@ export class AuthService {
   }
 
   async changePassword(
-    userId: string,
+    userId: number,
     oldPassword: string,
     newPassword: string,
   ) {
@@ -183,7 +200,7 @@ export class AuthService {
     return { message: '비밀번호가 변경되었습니다' };
   }
 
-  async deleteAccount(userId: string) {
+  async deleteAccount(userId: number) {
     await this.prisma.user.update({
       where: { id: userId },
       data: { isActive: false },
@@ -191,13 +208,18 @@ export class AuthService {
     return { message: '계정이 비활성화되었습니다' };
   }
 
-  async refreshToken(userId: string) {
+  async refreshToken(userId: number, role?: string) {
+    if (role === 'ADMIN') {
+      const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+      if (!admin) throw new UnauthorizedException();
+      return this.generateToken(admin.id, admin.loginId, 'ADMIN');
+    }
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
     return this.generateToken(user.id, user.email, user.role);
   }
 
-  private generateToken(userId: string, email: string, role: string) {
+  private generateToken(userId: number, email: string, role: string) {
     const payload = { sub: userId, email, role };
     return {
       accessToken: this.jwtService.sign(payload),
@@ -206,7 +228,7 @@ export class AuthService {
   }
 
   private sanitize(user: {
-    id: string;
+    id: number;
     email: string;
     name: string;
     nickname: string | null;
@@ -228,6 +250,25 @@ export class AuthService {
       isActive: user.isActive,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
+    };
+  }
+
+  private sanitizeAdmin(admin: {
+    id: number;
+    loginId: string;
+    name: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+  }): SanitizedAdminUser {
+    return {
+      id: admin.id,
+      loginId: admin.loginId,
+      name: admin.name,
+      role: 'ADMIN',
+      isActive: admin.isActive,
+      createdAt: admin.createdAt,
+      updatedAt: admin.updatedAt,
     };
   }
 }

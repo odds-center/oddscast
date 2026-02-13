@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Ticket, Zap } from 'lucide-react';
@@ -44,13 +45,11 @@ export default function RevenuePage() {
         <title>수익 대시보드 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>수익 대시보드</h1>
-              <p className='mt-2 text-sm text-gray-600'>매출, 비용, 마진을 실시간으로 분석합니다</p>
-            </div>
-
+        <div className='space-y-4'>
+          <PageHeader
+            title='수익 대시보드'
+            description='매출, 비용, 마진을 실시간으로 분석합니다'
+          >
             <select
               value={period}
               onChange={(e) => setPeriod(e.target.value)}
@@ -60,15 +59,15 @@ export default function RevenuePage() {
               <option value='month'>월별</option>
               <option value='year'>연별</option>
             </select>
-          </div>
+          </PageHeader>
 
           {/* 주요 지표 카드 */}
-          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
-            <div className='bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white'>
+          <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
+            <div className='bg-gradient-to-br from-green-500 to-green-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center justify-between mb-4'>
                 <div>
                   <p className='text-sm opacity-90'>월 매출</p>
-                  <p className='text-3xl font-bold mt-1'>
+                  <p className='text-lg font-bold mt-1'>
                     ₩{formatNumber(dashboard?.monthlyRevenue || 0)}
                   </p>
                 </div>
@@ -82,11 +81,11 @@ export default function RevenuePage() {
               </div>
             </div>
 
-            <div className='bg-gradient-to-br from-red-500 to-red-600 rounded-lg shadow-lg p-6 text-white'>
+            <div className='bg-gradient-to-br from-red-500 to-red-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center justify-between mb-4'>
                 <div>
                   <p className='text-sm opacity-90'>월 비용</p>
-                  <p className='text-3xl font-bold mt-1'>
+                  <p className='text-lg font-bold mt-1'>
                     ₩{formatNumber(dashboard?.monthlyCost || 0)}
                   </p>
                 </div>
@@ -100,11 +99,11 @@ export default function RevenuePage() {
               </div>
             </div>
 
-            <div className='bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white'>
+            <div className='bg-gradient-to-br from-blue-500 to-blue-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center justify-between mb-4'>
                 <div>
                   <p className='text-sm opacity-90'>월 순이익</p>
-                  <p className='text-3xl font-bold mt-1'>
+                  <p className='text-lg font-bold mt-1'>
                     ₩{formatNumber(dashboard?.monthlyProfit || 0)}
                   </p>
                 </div>
@@ -117,11 +116,11 @@ export default function RevenuePage() {
               </div>
             </div>
 
-            <div className='bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white'>
+            <div className='bg-gradient-to-br from-purple-500 to-purple-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center justify-between mb-4'>
                 <div>
                   <p className='text-sm opacity-90'>활성 구독자</p>
-                  <p className='text-3xl font-bold mt-1'>
+                  <p className='text-lg font-bold mt-1'>
                     {formatNumber(dashboard?.activeSubscribers || 0)}
                   </p>
                 </div>
@@ -136,8 +135,8 @@ export default function RevenuePage() {
           </div>
 
           {/* 수익 구성 */}
-          <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
-            <div className='bg-white rounded-lg shadow p-6'>
+          <div className='grid grid-cols-1 lg:grid-cols-2 gap-4'>
+            <div className='bg-white rounded-md shadow p-4'>
               <h3 className='text-lg font-semibold mb-4'>수익 구성</h3>
               <div className='space-y-4'>
                 <div>
@@ -172,12 +171,12 @@ export default function RevenuePage() {
               <div className='border-t mt-6 pt-4'>
                 <div className='flex justify-between items-center'>
                   <span className='font-semibold text-gray-900'>총 수익</span>
-                  <span className='text-2xl font-bold text-gray-900'>₩1,940,000</span>
+                  <span className='text-base font-bold text-gray-900'>₩1,940,000</span>
                 </div>
               </div>
             </div>
 
-            <div className='bg-white rounded-lg shadow p-6'>
+            <div className='bg-white rounded-md shadow p-4'>
               <h3 className='text-lg font-semibold mb-4'>비용 구성</h3>
               <div className='space-y-4'>
                 <div>
@@ -213,14 +212,14 @@ export default function RevenuePage() {
               <div className='border-t mt-6 pt-4'>
                 <div className='flex justify-between items-center'>
                   <span className='font-semibold text-gray-900'>총 비용</span>
-                  <span className='text-2xl font-bold text-gray-900'>₩62,140</span>
+                  <span className='text-base font-bold text-gray-900'>₩62,140</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* 월별 추이 */}
-          <div className='bg-white rounded-lg shadow p-6'>
+          <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-semibold mb-4'>월별 수익 추이</h3>
             <div className='overflow-x-auto'>
               <table className='w-full'>
@@ -274,7 +273,7 @@ export default function RevenuePage() {
           </div>
 
           {/* 사용자 규모별 수익 시뮬레이션 */}
-          <div className='bg-white rounded-lg shadow p-6'>
+          <div className='bg-white rounded-md shadow p-4'>
             <h3 className='text-lg font-semibold mb-4'>구독자 규모별 수익 예측</h3>
             <div className='overflow-x-auto'>
               <table className='w-full'>

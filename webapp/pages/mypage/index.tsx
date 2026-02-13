@@ -1,10 +1,9 @@
 import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
-import Icon from '@/components/icons';
-import Link from 'next/link';
 import { useAuthStore } from '@/lib/store/authStore';
 import PageHeader from '@/components/page/PageHeader';
 import MenuList from '@/components/page/MenuList';
+import RequireLogin from '@/components/page/RequireLogin';
 
 export default function MypageIndex() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -15,12 +14,9 @@ export default function MypageIndex() {
         <PageHeader
           icon='User'
           title='마이페이지'
-          description='로그인하면 내 정보, 즐겨찾기, 알림 등을 확인할 수 있습니다.'
+          description='내 정보, 알림 등을 확인할 수 있습니다.'
         />
-        <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 px-6 py-3'>
-          <Icon name='LogIn' size={18} />
-          로그인
-        </Link>
+        <RequireLogin suffix='내 정보, 알림 등을 확인할 수 있습니다.' />
       </Layout>
     );
   }
@@ -34,8 +30,6 @@ export default function MypageIndex() {
           { href: routes.profile.edit, icon: 'User', label: '프로필 수정' },
           { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
           { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
-          { href: routes.mypage.picks, icon: 'Bookmark', label: '내가 고른 말' },
-          { href: routes.mypage.favorites, icon: 'Heart', label: '즐겨찾기' },
           { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독 플랜' },
           { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
           { href: routes.settings, icon: 'Settings', label: '설정' },

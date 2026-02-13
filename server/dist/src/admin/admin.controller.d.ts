@@ -14,35 +14,68 @@ export declare class AdminController {
     private readonly notificationsService;
     private readonly singlePurchasesService;
     constructor(kraService: KraService, usersService: UsersService, configService: GlobalConfigService, prisma: PrismaService, subscriptionsService: SubscriptionsService, notificationsService: NotificationsService, singlePurchasesService: SinglePurchasesService);
-    syncSchedule(date: string): Promise<{
+    syncSchedule(date?: string): Promise<{
         message: string;
+        races: number;
+        entries: number;
     }>;
-    syncResults(date: string): Promise<{
+    syncResults(date?: string): Promise<{
         message: string;
         totalResults?: number;
     }>;
-    syncDetails(date: string): Promise<{
+    syncDetails(date?: string): Promise<{
         message: string;
+    }>;
+    getKraSyncLogs(endpoint?: string, rcDate?: string, limit?: number): Promise<{
+        logs: {
+            id: number;
+            endpoint: string;
+            meet: string | null;
+            rcDate: string | null;
+            status: string;
+            recordCount: number;
+            errorMessage: string | null;
+            durationMs: number | null;
+            createdAt: Date;
+        }[];
+        total: number;
+    }>;
+    seedSample(date?: string): Promise<{
+        races: number;
+        entries: number;
+        rcDate: string;
     }>;
     syncJockeys(meet?: string): Promise<{
         message: string;
+    }>;
+    syncAll(date?: string): Promise<{
+        message: string;
+        entrySheet?: {
+            races: number;
+            entries: number;
+        };
+        results?: {
+            totalResults: number;
+        };
+        details?: string;
+        jockeys?: string;
     }>;
     syncHistorical(dateFrom: string, dateTo: string): Promise<{
         message: string;
         processed: number;
         failed: string[];
         totalResults: number;
-    }>;
+    } | undefined>;
     getUsers(page?: number, limit?: number, role?: string, search?: string): Promise<{
         data: {
-            email: string;
+            id: number;
+            createdAt: Date;
             name: string;
+            email: string;
             nickname: string | null;
             avatar: string | null;
-            id: string;
-            role: import(".prisma/client").$Enums.UserRole;
+            role: import("@prisma/client").$Enums.UserRole;
             isActive: boolean;
-            createdAt: Date;
         }[];
         meta: {
             total: number;
@@ -51,45 +84,45 @@ export declare class AdminController {
             totalPages: number;
         };
     }>;
-    getUser(id: string): Promise<{
-        email: string;
+    getUser(id: number): Promise<{
+        id: number;
+        createdAt: Date;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         lastLoginAt: Date | null;
-        createdAt: Date;
     }>;
-    updateUser(id: string, body: any): Promise<{
-        email: string;
+    updateUser(id: number, body: any): Promise<{
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
-    deleteUser(id: string): Promise<{
+    deleteUser(id: number): Promise<{
         message: string;
     }>;
-    activateUser(id: string): Promise<{
-        email: string;
+    activateUser(id: number): Promise<{
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
-    deactivateUser(id: string): Promise<{
-        email: string;
+    deactivateUser(id: number): Promise<{
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
     getAIConfig(): Promise<any>;
@@ -105,54 +138,59 @@ export declare class AdminController {
         show_google_login: boolean;
         kra_base_url_override: string;
     }>;
+    private static readonly MODEL_COST;
+    private static readonly RACES_PER_MONTH;
     estimateCost(): Promise<{
         estimatedMonthlyCost: number;
+        primaryModel: any;
         costStrategy: any;
         enableCaching: any;
+        calculationText: string;
     }>;
     getBets(page?: number, limit?: number, userId?: string, raceId?: string, status?: string): Promise<{
         data: ({
             race: {
-                id: string;
+                id: number;
+                meet: string;
+                rcDate: string;
+                status: import("@prisma/client").$Enums.RaceStatus;
                 createdAt: Date;
                 updatedAt: Date;
-                raceName: string | null;
-                meet: string;
+                rcName: string | null;
                 meetName: string | null;
-                rcDate: string;
+                rcDay: string | null;
                 rcNo: string;
+                stTime: string | null;
                 rcDist: string | null;
-                rcGrade: string | null;
+                rank: string | null;
                 rcCondition: string | null;
                 rcPrize: number | null;
                 weather: string | null;
-                trackState: string | null;
-                status: import(".prisma/client").$Enums.RaceStatus;
+                track: string | null;
             };
         } & {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: string;
-            userId: string;
-            analysisData: import("@prisma/client/runtime/client").JsonValue | null;
-            betType: import(".prisma/client").$Enums.BetType;
+            userId: number;
+            raceId: number;
+            betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
             betAmount: number;
-            selections: import("@prisma/client/runtime/client").JsonValue;
-            betReason: string | null;
-            confidenceLevel: number | null;
-            betStatus: import(".prisma/client").$Enums.BetStatus;
-            notes: string | null;
-            betResult: import(".prisma/client").$Enums.BetResult;
             potentialWin: number | null;
             odds: number | null;
+            selections: import("@prisma/client/runtime/client").JsonValue;
+            betStatus: import("@prisma/client").$Enums.BetStatus;
+            betResult: import("@prisma/client").$Enums.BetResult;
             betTime: Date;
             raceTime: Date | null;
             resultTime: Date | null;
             actualWin: number | null;
             actualOdds: number | null;
+            confidenceLevel: number | null;
+            betReason: string | null;
+            analysisData: import("@prisma/client/runtime/client").JsonValue | null;
             apiVersion: string | null;
             dataSource: string | null;
             ipAddress: string | null;
@@ -160,6 +198,7 @@ export declare class AdminController {
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
+            notes: string | null;
         })[];
         meta: {
             total: number;
@@ -168,53 +207,54 @@ export declare class AdminController {
             totalPages: number;
         };
     }>;
-    getBet(id: string): Promise<({
+    getBet(id: number): Promise<({
         user: {
-            email: string;
+            id: number;
             name: string;
-            id: string;
+            email: string;
         };
         race: {
-            id: string;
+            id: number;
+            meet: string;
+            rcDate: string;
+            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
-            raceName: string | null;
-            meet: string;
+            rcName: string | null;
             meetName: string | null;
-            rcDate: string;
+            rcDay: string | null;
             rcNo: string;
+            stTime: string | null;
             rcDist: string | null;
-            rcGrade: string | null;
+            rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
-            trackState: string | null;
-            status: import(".prisma/client").$Enums.RaceStatus;
+            track: string | null;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: string;
-        userId: string;
-        analysisData: import("@prisma/client/runtime/client").JsonValue | null;
-        betType: import(".prisma/client").$Enums.BetType;
+        userId: number;
+        raceId: number;
+        betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
         betAmount: number;
-        selections: import("@prisma/client/runtime/client").JsonValue;
-        betReason: string | null;
-        confidenceLevel: number | null;
-        betStatus: import(".prisma/client").$Enums.BetStatus;
-        notes: string | null;
-        betResult: import(".prisma/client").$Enums.BetResult;
         potentialWin: number | null;
         odds: number | null;
+        selections: import("@prisma/client/runtime/client").JsonValue;
+        betStatus: import("@prisma/client").$Enums.BetStatus;
+        betResult: import("@prisma/client").$Enums.BetResult;
         betTime: Date;
         raceTime: Date | null;
         resultTime: Date | null;
         actualWin: number | null;
         actualOdds: number | null;
+        confidenceLevel: number | null;
+        betReason: string | null;
+        analysisData: import("@prisma/client/runtime/client").JsonValue | null;
         apiVersion: string | null;
         dataSource: string | null;
         ipAddress: string | null;
@@ -222,15 +262,16 @@ export declare class AdminController {
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
+        notes: string | null;
     }) | null>;
     getSubscriptionPlans(): Promise<{
-        description: string | null;
-        id: string;
-        isActive: boolean;
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -239,14 +280,14 @@ export declare class AdminController {
         totalTickets: number;
         sortOrder: number;
     }[]>;
-    getSubscriptionPlan(id: string): Promise<{
-        description: string | null;
-        id: string;
-        isActive: boolean;
+    getSubscriptionPlan(id: number): Promise<{
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -255,14 +296,14 @@ export declare class AdminController {
         totalTickets: number;
         sortOrder: number;
     } | null>;
-    updateSubscriptionPlan(id: string, body: any): Promise<{
-        description: string | null;
-        id: string;
-        isActive: boolean;
+    updateSubscriptionPlan(id: number, body: any): Promise<{
+        id: number;
         createdAt: Date;
+        isActive: boolean;
         updatedAt: Date;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -274,20 +315,20 @@ export declare class AdminController {
     getNotifications(page?: number, limit?: number): Promise<{
         data: ({
             user: {
-                email: string;
+                id: number;
                 name: string;
-                id: string;
+                email: string;
             };
         } & {
-            type: import(".prisma/client").$Enums.NotificationType;
-            title: string;
-            message: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             data: import("@prisma/client/runtime/client").JsonValue | null;
-            userId: string;
-            category: import(".prisma/client").$Enums.NotificationCategory;
+            userId: number;
+            title: string;
+            message: string;
+            type: import("@prisma/client").$Enums.NotificationType;
+            category: import("@prisma/client").$Enums.NotificationCategory;
             isRead: boolean;
             readAt: Date | null;
         })[];
@@ -304,10 +345,8 @@ export declare class AdminController {
         target: string;
     }): Promise<{
         count: number;
+        pushSent: number;
         message: string;
-    } | {
-        count: number;
-        message?: undefined;
     }>;
     getSinglePurchaseConfig(): Promise<{
         id: any;

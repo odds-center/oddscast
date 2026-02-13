@@ -7,6 +7,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -59,31 +60,31 @@ export class UsersController {
 
   @Get(':id/profile')
   @ApiOperation({ summary: '사용자 프로필 조회' })
-  getProfile(@Param('id') id: string) {
+  getProfile(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
   }
 
   @Put(':id/profile')
   @ApiOperation({ summary: '사용자 프로필 수정' })
-  updateProfile(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  updateProfile(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '사용자 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.findOne(id);
   }
 
   @Get(':id/stats')
   @ApiOperation({ summary: '사용자 통계 조회' })
-  getStats(@Param('id') id: string) {
+  getStats(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.getStats(id);
   }
 
   @Get(':id/statistics')
   @ApiOperation({ summary: '사용자 통계 조회 (alias)' })
-  getStatistics(@Param('id') id: string) {
+  getStatistics(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.getStats(id);
   }
 
@@ -120,7 +121,7 @@ export class UsersController {
 
   @Put(':id')
   @ApiOperation({ summary: '사용자 정보 수정' })
-  update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }
 
@@ -128,7 +129,7 @@ export class UsersController {
   @ApiOperation({ summary: '사용자 비활성화' })
   @UseGuards(RolesGuard)
   @Roles(UserRole.ADMIN)
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.usersService.remove(id);
   }
 }

@@ -41,8 +41,9 @@ class CreateBetDto {
 exports.CreateBetDto = CreateBetDto;
 __decorate([
     (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreateBetDto.prototype, "raceId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ enum: client_1.BetType }),
@@ -134,8 +135,9 @@ exports.BetFilterDto = BetFilterDto;
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false }),
     (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], BetFilterDto.prototype, "raceId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ required: false, enum: client_1.BetType }),
@@ -184,8 +186,9 @@ class CreateBetSlipDto {
 exports.CreateBetSlipDto = CreateBetSlipDto;
 __decorate([
     (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreateBetSlipDto.prototype, "raceId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),

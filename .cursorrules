@@ -23,6 +23,9 @@
 - `docs/specs/HORSE_RACING_SPEC.md` — 기술 스택 및 아키텍처 명세 (T-N-P-P 전략)
 - `docs/specs/COST_ANALYSIS.md` — Gemini API 비용 분석 & 서버 캐싱 전략
 
+### 🎨 UI 패턴 (프론트엔드 작업 시 참조)
+- `docs/features/UI_PATTERNS.md` — 공용 테이블, 페이지네이션, TabBar, LinkBadge, FilterDateBar
+
 ### ⚖️ 법적 고지
 - `docs/legal/LEGAL_NOTICE.md` — 서비스 법적 고지사항
 
@@ -42,6 +45,8 @@
 | **AI 예측 관련** | `BUSINESS_LOGIC.md` + `HORSE_RACING_SPEC.md` |
 | **알림 설정 관련** | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
 | **즐겨찾기 관련** | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
+| **UI 컴포넌트/테이블/페이지네이션** | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md` |
+| **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` |
 
 ---
 
@@ -52,7 +57,7 @@
 | **App** | React Native (Expo) — TypeScript |
 | **Backend** | NestJS (Node.js) — API 서버 + Control Tower |
 | **Analysis** | Python (pandas, numpy) — python-shell로 실행 |
-| **Database** | PostgreSQL (Supabase) — Prisma ORM |
+| **Database** | PostgreSQL — Prisma ORM |
 | **AI** | Google Gemini API |
 | **Admin** | Next.js |
 
@@ -96,8 +101,8 @@ goldenrace/
 ## 🔒 핵심 규칙 요약 (코드 작성 시 반드시 적용)
 
 ### 즐겨찾기 (Favorites)
-- **type은 RACE만 지원.** 말·기수·조교사 즐겨찾기 없음.
-- DTO: `@IsIn(['RACE'])`, 서비스: type 기본값·필터 모두 RACE.
+- **웹앱에서 즐겨찾기 기능 제거.** 페이지·API 클라이언트·타입 모두 삭제됨.
+- **서버:** type은 RACE만 허용 (말·기수·조교사 즐겨찾기 없음).
 
 ### 알림 설정 (Notification Preferences)
 - **이메일 알림 없음.** 푸시만 채널로 사용.
@@ -117,3 +122,148 @@ goldenrace/
 ### 기타
 - **기본 폰트 16px**, px는 짝수 사용 (40~60대 가독성).
 - **prediction 페이지**: 제거됨. 예측 목록은 경주 상세에서 확인.
+
+---
+
+## 📐 TypeScript / 코드 규칙 (필수)
+
+### any 금지
+- **`any` 타입 사용 금지.** `unknown` + type guard 또는 명시적 타입 정의 사용.
+- API 응답: `ApiResponseDto<T>` 또는 shared DTO 사용.
+- 에러: `catch (err: unknown)` → `err instanceof Error ? err.message : String(err)` 패턴.
+- mutation.error: `(error as Error)?.message` 또는 유틸 함수 사용.
+
+### 타입 정의 위치
+- **공통 타입**: `shared/types/` — webapp·mobile·admin·server 공용.
+- **웹앱 전용**: `webapp/lib/types/` — API 응답 래퍼 등.
+- **API 함수 반환**: `Promise<타입>` 명시. `Promise<any>` 금지.
+
+### 에러 처리
+```ts
+// O
+catch (err: unknown) {
+  const msg = err instanceof Error ? err.message : '알 수 없는 오류';
+}
+// X
+catch (err: any) { ... }
+```
+
+### 인덱스 시그니처
+- `[key: string]: any` 대신 `[key: string]: unknown` 또는 구체적 타입.
+- 확장 가능 객체: `Record<string, unknown>` 사용.
+
+### 타입 단언 최소화
+- `as any` 금지. `as Type`은 필요한 경우만 (API 응답 등).
+- `handleApiResponse(response)` 반환값을 제네릭으로 명시.
+
+---
+
+## 📐 코드 컨벤션 (전체)
+
+### 네이밍 규칙
+
+| 대상 | 규칙 | 예시 |
+|------|------|------|
+| **React 컴포넌트** | PascalCase, default export | `Layout`, `PageHeader`, `FormInput` |
+| **함수·변수** | camelCase | `getRankings`, `handleSubmit`, `isLoggedIn` |
+| **상수 (진짜 상수)** | UPPER_SNAKE | `PICK_TYPE_HORSE_COUNTS`, `MOCK_PREFIX` |
+| **타입·인터페이스** | PascalCase | `RankingUser`, `ProfileForm`, `IconName` |
+| **API 클래스** | PascalCase + Api 접미사 | `RankingApi`, `AuthApi`, `PredictionTicketApi` |
+| **파일명 (컴포넌트)** | PascalCase.tsx | `Layout.tsx`, `PageHeader.tsx` |
+| **파일명 (유틸·API)** | camelCase.ts | `authApi.ts`, `handleApiResponse` |
+| **라우트 경로** | 케밥 케이스 | `/profile/edit`, `/point-transactions` |
+| **CSS 클래스** | 케밥 케이스 | `btn-primary`, `data-table`, `msg-error` |
+
+### Import 순서
+
+1. React / Next.js
+2. 외부 라이브러리 (alphabetical)
+3. 내부 컴포넌트 (`@/components`, `@/lib` 등)
+4. 타입 (`import type`)
+
+```ts
+import React from 'react';
+import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import Layout from '@/components/Layout';
+import { routes } from '@/lib/routes';
+import type { PredictionDetailDto } from '@/lib/types/predictions';
+```
+
+### React / Next.js 페이지
+
+- **페이지 구조**: `Layout` > `PageHeader` > `SectionCard`/`DataFetchState` > `BackLink` 순.
+- **새 페이지**: `Layout`, `PageHeader`, `BackLink` 등 공통 컴포넌트 사용.
+- **라우트**: `lib/routes.ts`에서 중앙 관리. 하드코딩 금지.
+
+```tsx
+<Layout title='페이지명 — GOLDEN RACE'>
+  <PageHeader icon='IconName' title='제목' description='설명' />
+  <DataFetchState isLoading={...} error={...} isEmpty={...}>
+    {/* 콘텐츠 */}
+  </DataFetchState>
+  <BackLink href={routes.profile.index} label='돌아가기' />
+</Layout>
+```
+
+### 폼 (react-hook-form)
+
+- 모든 폼: `useForm`, `register`, `handleSubmit` 사용.
+- `FormInput` 컴포넌트 사용.
+- 에러 메시지: `formState.errors.필드?.message` 또는 `getErrorMessage(mutation.error)`.
+
+### API 클라이언트 (webapp/lib/api/)
+
+- API 클래스: `static async 메서드()` 형태.
+- 응답 추출: `handleApiResponse(response)` 또는 `response.data?.data ?? response.data`.
+- 반환 타입: `Promise<타입>` 명시.
+- 라우트: `axiosInstance.get('/path')` — base URL에 `/api` 포함 여부는 config 확인.
+
+### 서버 (NestJS)
+
+- **DTO**: `class-validator` (`@IsString`, `@IsOptional` 등) + `@ApiProperty` (Swagger).
+- **모듈 구조**: `xxx.controller.ts`, `xxx.service.ts`, `dto/xxx.dto.ts`.
+- **응답**: `ResponseInterceptor`가 `{ data, status, message? }`로 래핑.
+- **컨트롤러**: `@Get()`, `@Post()` 등 데코레이터, JWT 필요 시 `@UseGuards(JwtAuthGuard)`.
+
+### 스타일 (Tailwind / CSS)
+
+- **테마 변수 사용**: `text-primary`, `bg-background`, `border-border`, `text-text-secondary`.
+- **기본 폰트 16px**, px 값은 짝수 사용 (40~60대 가독성).
+- **버튼**: `btn-primary`, `btn-secondary` 등 globals.css에 정의된 클래스 사용.
+- **테이블**: `DataTable` 컴포넌트 사용. columns 정의로 일관된 테이블. 셀 내 경주/결과 링크는 `LinkBadge` 사용.
+- **탭바**: 세그먼트 스타일 탭은 `TabBar` 사용 (`variant`: filled|subtle, `size`: sm|md).
+- **뒤로가기**: `BackLink` 사용 (커스텀 `← 텍스트` 링크 대신).
+- **메시지**: `msg-error`, `msg-success`.
+- **반응형**: `lg:`, `sm:` 브레이크포인트 활용.
+
+### 주석
+
+- **한글 주석** 사용.
+- **JSDoc**: 공개 API, 복잡한 로직에만.
+- **인라인**: `// Native WebView: 상단 헤더 중복 방지` 형태로 목적 명시.
+
+### 에러 처리
+
+- **catch**: `catch (err: unknown)` + `getErrorMessage(err)` (webapp/lib/utils/error.ts).
+- **mutation.error**: `getErrorMessage(profileMutation.error)`.
+- **API 에러**: `handleApiError` 또는 try/catch 후 사용자 메시지 표시.
+
+### TanStack Query (React Query)
+
+- **queryKey**: 배열 형태, 도메인·식별자 순. 예: `['rankings']`, `['rankings', 'me']`, `['race', id]`.
+- **enabled**: 로그인 필수 API는 `enabled: isLoggedIn` 등으로 비활성화.
+- **mutation**: `onSuccess`에서 `queryClient.invalidateQueries` 호출.
+
+### 컴포넌트 구조
+
+- **page/**: 페이지 공통 (`PageHeader`, `SectionCard`, `DataFetchState`, `FormInput`, `BackLink`, `FilterDateBar`, `FilterChips`, `Pagination` 등).
+- **ui/**: 범용 UI (`Card`, `Badge`, `Toggle`, `Dropdown`, `SectionTitle`, `TabBar`, `LinkBadge`, `StatusBadge`, `RankBadge` 등).
+- **도메인별**: `race/`, `results/`, `predictions/` — 해당 도메인 전용.
+- **Props**: 컴포넌트 파일 상단에 `interface XxxProps` 정의 후 사용.
+
+### 기타
+
+- **아이콘**: `components/icons.tsx`의 `Icon` 컴포넌트, `IconName` 타입.
+- **Mock**: `lib/mocks/data.ts`, `CONFIG.useMock`로 분기.
+- **인증 상태**: `useAuthStore`, `isLoggedIn` 체크 후 인증 API 호출.

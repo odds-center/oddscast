@@ -8,6 +8,10 @@ export declare class LoginDto {
     email: string;
     password: string;
 }
+export declare class AdminLoginDto {
+    loginId: string;
+    password: string;
+}
 export declare class GoogleAuthDto {
     idToken: string;
 }

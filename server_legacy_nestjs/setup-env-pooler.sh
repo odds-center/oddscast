@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Supabase Connection Pooler 사용 (IPv4 + 성능 향상)
+# PostgreSQL Connection Pooler 사용 (IPv4 + 성능 향상)
 
-export SUPABASE_DB_HOST=aws-0-ap-northeast-2.pooler.supabase.com
+export SUPABASE_DB_HOST=your-pooler-host.example.com
 export SUPABASE_DB_PORT=6543
-export SUPABASE_DB_USER=postgres.qayqwpfpwiuutxdkihit
+export SUPABASE_DB_USER=postgres
 export SUPABASE_DB_PASSWORD=[YOUR-PASSWORD]
 export SUPABASE_DB_NAME=postgres
 
@@ -27,7 +27,7 @@ export CORS_ORIGINS=http://localhost:3000,http://localhost:3001,exp://localhost:
 
 export BATCH_ENABLED=true
 
-echo "✅ Supabase Connection Pooler 환경변수 설정 완료!"
+echo "✅ PostgreSQL Connection Pooler 환경변수 설정 완료!"
 echo "Host: $SUPABASE_DB_HOST"
 echo "Port: $SUPABASE_DB_PORT (Connection Pooling)"
 echo ""

@@ -157,9 +157,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '경주 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "findOne", null);
 __decorate([
@@ -177,10 +177,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '경주 수정' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, race_dto_1.UpdateRaceDto]),
+    __metadata("design:paramtypes", [Number, race_dto_1.UpdateRaceDto]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "update", null);
 __decorate([
@@ -188,49 +188,49 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '경주 삭제' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "remove", null);
 __decorate([
     (0, common_1.Get)(':id/results'),
     (0, swagger_1.ApiOperation)({ summary: '경주 결과 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getRaceResults", null);
 __decorate([
     (0, common_1.Get)(':id/result'),
     (0, swagger_1.ApiOperation)({ summary: '경주 결과 조회 (singular alias)' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getRaceResult", null);
 __decorate([
     (0, common_1.Get)(':id/entries'),
     (0, swagger_1.ApiOperation)({ summary: '출전마 목록 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getEntries", null);
 __decorate([
     (0, common_1.Get)(':id/dividends'),
     (0, swagger_1.ApiOperation)({ summary: '배당률 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getDividends", null);
 __decorate([
     (0, common_1.Get)(':id/analysis'),
     (0, swagger_1.ApiOperation)({ summary: '경주 AI 분석 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getAnalysis", null);
 __decorate([
@@ -238,10 +238,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '출전마 등록' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, race_dto_1.CreateRaceEntryDto]),
+    __metadata("design:paramtypes", [Number, race_dto_1.CreateRaceEntryDto]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "createEntry", null);
 __decorate([
@@ -249,10 +249,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '출전마 일괄 등록' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "createBulkEntries", null);
 exports.RacesController = RacesController = __decorate([

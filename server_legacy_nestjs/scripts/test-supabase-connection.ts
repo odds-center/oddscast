@@ -1,11 +1,11 @@
 #!/usr/bin/env ts-node
 /**
- * Supabase 연결 테스트 스크립트
+ * PostgreSQL 연결 테스트 스크립트 (레거시)
  * 
  * 사용법:
  *   npm run test:db
  *   또는
- *   ts-node scripts/test-supabase-connection.ts
+ *   ts-node scripts/test-supabase-connection.ts (또는 npm run test:db)
  */
 
 import { Client } from 'pg';
@@ -20,7 +20,7 @@ dns.setServers(['8.8.8.8', '1.1.1.1', '8.8.4.4']);
 dotenv.config({ path: path.join(__dirname, '../.env') });
 dotenv.config({ path: path.join(__dirname, '../.env.local') });
 
-console.log('🔍 Supabase 연결 테스트 시작...\n');
+console.log('🔍 PostgreSQL 연결 테스트 시작...\n');
 
 // 환경변수에서 연결 정보 가져오기
 const getDbConfig = () => {
@@ -78,7 +78,7 @@ const testConnection = async () => {
     console.log('  SSL: enabled\n');
 
     await client.connect();
-    console.log('✅ Supabase 연결 성공!\n');
+    console.log('✅ PostgreSQL 연결 성공!\n');
 
     // 서버 정보 조회
     const versionResult = await client.query(
@@ -127,7 +127,7 @@ const testConnection = async () => {
     
     console.error('\n💡 해결 방법:');
     console.error('1. 환경변수 확인 (.env 파일 또는 시스템 환경변수)');
-    console.error('2. Supabase 프로젝트 상태 확인 (대시보드에서 Active인지 확인)');
+    console.error('2. DB 호스팅 프로젝트 상태 확인 (대시보드에서 Active인지 확인)');
     console.error('3. 네트워크 연결 확인');
     console.error('4. Connection Pooling 사용 시 포트 6543 사용');
     

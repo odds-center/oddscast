@@ -24,13 +24,20 @@ export type {
   CreateBetRequest,
   UpdateBetRequest,
 } from './bet';
-export type {
-  CreateFavoriteRequest,
-  Favorite,
-  FavoriteFilters,
-  UpdateFavoriteRequest,
-} from './favorite';
 export type { Notification, NotificationPreferences } from './notification';
 export type { PointTransactionType, UserPointBalance, UserPoints } from './point';
-export type { DividendRate, EntryDetail, Race, RaceDetail, RaceFilters, RaceResult } from './race';
+export type {
+  DividendRate,
+  EntryDetail,
+  Race,
+  RaceDetail,
+  RaceFilters,
+  RaceResult,
+  RaceDto,
+  RaceDetailDto,
+  RaceEntryDto,
+  RaceResultDto,
+  DividendDto,
+  RaceListResponseDto,
+} from './race';
 export type { User, UserProfile, UserStatistics } from './user';

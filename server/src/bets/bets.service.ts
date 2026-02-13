@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 import {
   CreateBetDto,
   UpdateBetDto,
@@ -12,7 +13,7 @@ import { BetStatus, BetResult } from '@prisma/client';
 export class BetsService {
   constructor(private prisma: PrismaService) {}
 
-  async create(userId: string, dto: CreateBetDto) {
+  async create(userId: number, dto: CreateBetDto) {
     return this.prisma.bet.create({
       data: {
         userId,
@@ -30,7 +31,7 @@ export class BetsService {
     });
   }
 
-  async findAll(userId: string, filters: BetFilterDto) {
+  async findAll(userId: number, filters: BetFilterDto) {
     const where: any = { userId };
     if (filters.raceId) where.raceId = filters.raceId;
     if (filters.betType) where.betType = filters.betType;
@@ -55,33 +56,33 @@ export class BetsService {
       this.prisma.bet.count({ where }),
     ]);
 
-    return { bets, total, page, totalPages: Math.ceil(total / limit) };
+    return { bets: serializeItemsWithRace(bets), total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const bet = await this.prisma.bet.findUnique({
       where: { id },
       include: { race: true },
     });
     if (!bet) throw new NotFoundException('Bet not found');
-    return bet;
+    return serializeItemsWithRace([bet])[0] ?? bet;
   }
 
-  async update(id: string, dto: UpdateBetDto) {
+  async update(id: number, dto: UpdateBetDto) {
     return this.prisma.bet.update({
       where: { id },
       data: dto,
     });
   }
 
-  async cancel(id: string) {
+  async cancel(id: number) {
     return this.prisma.bet.update({
       where: { id },
       data: { betStatus: BetStatus.CANCELLED },
     });
   }
 
-  async processResult(id: string, result: BetResult, actualWin?: number) {
+  async processResult(id: number, result: BetResult, actualWin?: number) {
     let status: BetStatus = BetStatus.COMPLETED;
     if (result === BetResult.WIN || result === BetResult.PARTIAL_WIN)
       status = BetStatus.WON;
@@ -98,7 +99,7 @@ export class BetsService {
     });
   }
 
-  async createSlip(userId: string, dto: CreateBetSlipDto) {
+  async createSlip(userId: number, dto: CreateBetSlipDto) {
     // 실제로는 bets 배열을 순회하며 개별 bet을 생성하거나,
     // Slip 모델에 JSON으로 저장하고 나중에 confirm 시에 bet을 생성하는 로직일 수 있음.
     // 여기서는 Slip 모델에 저장만 함.
@@ -114,7 +115,7 @@ export class BetsService {
     });
   }
 
-  async getStatistics(userId: string) {
+  async getStatistics(userId: number) {
     const bets = await this.prisma.bet.findMany({
       where: {
         userId,

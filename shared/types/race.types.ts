@@ -13,7 +13,7 @@ export interface Race {
   rcName?: string;
   rcDist?: string;
   rcTime?: string;
-  meet?: string; // 경마장 (서울/부산경남)
+  meet?: string; // API 응답: Meet enum (SEOUL/JEJU/BUSAN), meetName: 표시용
   chulNo?: string;
   grade?: string;
   divn?: string;

@@ -48,6 +48,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const analysis_service_1 = require("../analysis/analysis.service");
 const config_service_1 = require("../config/config.service");
 const client_1 = require("@prisma/client");
+const prisma_includes_1 = require("../common/prisma-includes");
 let PredictionsService = class PredictionsService {
     constructor(prisma, analysisService, configService) {
         this.prisma = prisma;
@@ -263,9 +264,7 @@ let PredictionsService = class PredictionsService {
         });
         const race = await this.prisma.race.findUnique({
             where: { id: raceId },
-            include: {
-                entries: { include: { trainings: { orderBy: { date: 'desc' }, take: 10 } } },
-            },
+            include: prisma_includes_1.RACE_INCLUDE_FOR_ANALYSIS,
         });
         if (!race)
             throw new common_1.NotFoundException('Race not found');
@@ -340,11 +339,11 @@ let PredictionsService = class PredictionsService {
             rcDate: race.rcDate,
             rcNo: race.rcNo,
             rcDist: race.rcDist,
-            rcGrade: race.rcGrade,
+            rank: race.rank,
             rcCondition: race.rcCondition,
             rcPrize: race.rcPrize,
             weather: race.weather ?? '미상',
-            trackState: race.trackState ?? '미상',
+            track: race.track ?? '미상',
         };
     }
     buildEntrySummary(entry, trainingSummary, sectionalTag) {
@@ -353,11 +352,11 @@ let PredictionsService = class PredictionsService {
             hrName: entry.hrName,
             jkName: entry.jkName,
             trName: entry.trName,
-            weight: entry.weight,
+            wgBudam: entry.wgBudam,
             rating: entry.rating,
             chulNo: entry.chulNo,
-            totalRuns: entry.totalRuns,
-            totalWins: entry.totalWins,
+            rcCntT: entry.rcCntT,
+            ord1CntT: entry.ord1CntT,
             recentRanks: entry.recentRanks,
             horseWeight: entry.horseWeight,
             equipment: entry.equipment,
@@ -381,7 +380,7 @@ let PredictionsService = class PredictionsService {
         }
         if (trainings?.length) {
             const recent = trainings.slice(0, 5);
-            const strong = recent.filter((t) => /강|상|고/.test(String(t.intensity || '')));
+            const strong = recent.filter((t) => /강|상|고/.test(String(t.intensity ?? t.trContent ?? '')));
             const summary = strong.length
                 ? `최근 ${recent.length}회 훈련 중 강도 높은 ${strong.length}회`
                 : `최근 ${recent.length}회 훈련`;
@@ -558,12 +557,14 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
     }
     buildScoresForSave(geminiScores, horseScoreResult, jockeyAnalysis) {
         const base = (geminiScores && typeof geminiScores === 'object' && !('error' in geminiScores)) ? { ...geminiScores } : {};
+        const gemi = base;
+        const hs = gemi.horseScores ?? gemi.scores?.horseScores ?? [];
         const safeHorseResult = Array.isArray(horseScoreResult) && !horseScoreResult.some((x) => x && typeof x === 'object' && 'error' in x)
             ? horseScoreResult
             : [];
         return {
             ...base,
-            horseScores: base.horseScores || [],
+            horseScores: hs,
             analysisData: {
                 horseScoreResult: safeHorseResult,
                 jockeyAnalysis: jockeyAnalysis

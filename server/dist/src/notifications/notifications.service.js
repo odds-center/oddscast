@@ -8,13 +8,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+var NotificationsService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotificationsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
-let NotificationsService = class NotificationsService {
+const expo_server_sdk_1 = __importDefault(require("expo-server-sdk"));
+let NotificationsService = NotificationsService_1 = class NotificationsService {
     constructor(prisma) {
         this.prisma = prisma;
+        this.logger = new common_1.Logger(NotificationsService_1.name);
+        this.expo = new expo_server_sdk_1.default({ accessToken: process.env.EXPO_ACCESS_TOKEN });
     }
     async findAll(userId, filters) {
         const { page = 1, limit = 20, isRead } = filters;
@@ -115,6 +122,29 @@ let NotificationsService = class NotificationsService {
         }
         return pref;
     }
+    async pushSubscribe(userId, dto) {
+        if (!expo_server_sdk_1.default.isExpoPushToken(dto.token)) {
+            throw new Error('유효하지 않은 Expo Push Token입니다.');
+        }
+        await this.prisma.pushToken.upsert({
+            where: {
+                userId_token: { userId, token: dto.token },
+            },
+            create: {
+                userId,
+                token: dto.token,
+                deviceId: dto.deviceId ?? null,
+            },
+            update: { deviceId: dto.deviceId ?? undefined, updatedAt: new Date() },
+        });
+        return { message: '푸시 알림이 구독되었습니다.' };
+    }
+    async pushUnsubscribe(userId, dto) {
+        await this.prisma.pushToken.deleteMany({
+            where: { userId, token: dto.token },
+        });
+        return { message: '푸시 알림 구독이 해제되었습니다.' };
+    }
     async updatePreferences(userId, dto) {
         const data = {};
         if (dto.pushEnabled !== undefined)
@@ -173,7 +203,7 @@ let NotificationsService = class NotificationsService {
             userIds = subs.map((s) => s.userId);
         }
         if (userIds.length === 0) {
-            return { count: 0, message: '발송 대상이 없습니다.' };
+            return { count: 0, pushSent: 0, message: '발송 대상이 없습니다.' };
         }
         const created = await this.prisma.notification.createMany({
             data: userIds.map((userId) => ({
@@ -184,11 +214,55 @@ let NotificationsService = class NotificationsService {
                 category: 'GENERAL',
             })),
         });
-        return { count: created.count };
+        let pushSent = 0;
+        try {
+            const tokens = await this.prisma.pushToken.findMany({
+                where: {
+                    userId: { in: userIds },
+                    OR: [
+                        { user: { notificationPreference: { is: null } } },
+                        {
+                            user: {
+                                notificationPreference: {
+                                    pushEnabled: true,
+                                    systemEnabled: true,
+                                },
+                            },
+                        },
+                    ],
+                },
+                select: { token: true },
+            });
+            if (tokens.length > 0) {
+                const messages = tokens.map((t) => ({
+                    to: t.token,
+                    title: data.title,
+                    body: data.message,
+                    sound: 'default',
+                    data: { type: 'SYSTEM' },
+                }));
+                const chunks = this.expo.chunkPushNotifications(messages);
+                for (const chunk of chunks) {
+                    const receipts = await this.expo.sendPushNotificationsAsync(chunk);
+                    for (let i = 0; i < receipts.length; i++) {
+                        const r = receipts[i];
+                        if (r.status === 'ok')
+                            pushSent += 1;
+                        else if (r.status === 'error' && r.details?.error) {
+                            this.logger.warn(`Push failed: ${r.details.error}`);
+                        }
+                    }
+                }
+            }
+        }
+        catch (err) {
+            this.logger.error('Expo push send error', err);
+        }
+        return { count: created.count, pushSent, message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송` };
     }
 };
 exports.NotificationsService = NotificationsService;
-exports.NotificationsService = NotificationsService = __decorate([
+exports.NotificationsService = NotificationsService = NotificationsService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], NotificationsService);

@@ -4,145 +4,145 @@ import { CreateFavoriteDto, UpdateFavoriteDto, ToggleFavoriteDto } from './dto/f
 export declare class FavoritesService {
     private prisma;
     constructor(prisma: PrismaService);
-    findAll(userId: string, filters: {
+    findAll(userId: number, filters: {
         type?: string;
         page?: number;
         limit?: number;
     }): Promise<{
         favorites: {
-            type: import(".prisma/client").$Enums.FavoriteType;
-            id: string;
+            type: import("@prisma/client").$Enums.FavoriteType;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             tags: string[];
-            userId: string;
+            userId: number;
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
             memo: string | null;
-            priority: import(".prisma/client").$Enums.FavoritePriority;
+            priority: import("@prisma/client").$Enums.FavoritePriority;
             notificationsOn: boolean;
         }[];
         total: number;
         page: number;
         totalPages: number;
     }>;
-    findOne(id: string): Promise<{
-        type: import(".prisma/client").$Enums.FavoriteType;
-        id: string;
+    findOne(id: number): Promise<{
+        type: import("@prisma/client").$Enums.FavoriteType;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         tags: string[];
-        userId: string;
+        userId: number;
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
         memo: string | null;
-        priority: import(".prisma/client").$Enums.FavoritePriority;
+        priority: import("@prisma/client").$Enums.FavoritePriority;
         notificationsOn: boolean;
     }>;
-    create(userId: string, dto: CreateFavoriteDto): Promise<{
-        type: import(".prisma/client").$Enums.FavoriteType;
-        id: string;
+    create(userId: number, dto: CreateFavoriteDto): Promise<{
+        type: import("@prisma/client").$Enums.FavoriteType;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         tags: string[];
-        userId: string;
+        userId: number;
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
         memo: string | null;
-        priority: import(".prisma/client").$Enums.FavoritePriority;
+        priority: import("@prisma/client").$Enums.FavoritePriority;
         notificationsOn: boolean;
     }>;
-    update(id: string, dto: UpdateFavoriteDto): Promise<{
-        type: import(".prisma/client").$Enums.FavoriteType;
-        id: string;
+    update(id: number, dto: UpdateFavoriteDto): Promise<{
+        type: import("@prisma/client").$Enums.FavoriteType;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         tags: string[];
-        userId: string;
+        userId: number;
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
         memo: string | null;
-        priority: import(".prisma/client").$Enums.FavoritePriority;
+        priority: import("@prisma/client").$Enums.FavoritePriority;
         notificationsOn: boolean;
     }>;
-    remove(id: string): Promise<{
+    remove(id: number): Promise<{
         message: string;
     }>;
-    toggle(userId: string, dto: ToggleFavoriteDto): Promise<{
+    toggle(userId: number, dto: ToggleFavoriteDto): Promise<{
         action: "REMOVED";
         favorite?: undefined;
     } | {
         action: "ADDED";
         favorite: {
-            type: import(".prisma/client").$Enums.FavoriteType;
-            id: string;
+            type: import("@prisma/client").$Enums.FavoriteType;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             tags: string[];
-            userId: string;
+            userId: number;
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
             memo: string | null;
-            priority: import(".prisma/client").$Enums.FavoritePriority;
+            priority: import("@prisma/client").$Enums.FavoritePriority;
             notificationsOn: boolean;
         };
     }>;
-    check(userId: string, type: string, targetId: string): Promise<{
+    check(userId: number, type: string, targetId: string): Promise<{
         isFavorite: boolean;
         favorite: {
-            type: import(".prisma/client").$Enums.FavoriteType;
-            id: string;
+            type: import("@prisma/client").$Enums.FavoriteType;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             tags: string[];
-            userId: string;
+            userId: number;
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
             memo: string | null;
-            priority: import(".prisma/client").$Enums.FavoritePriority;
+            priority: import("@prisma/client").$Enums.FavoritePriority;
             notificationsOn: boolean;
         } | undefined;
     }>;
-    getStatistics(userId: string): Promise<{
+    getStatistics(userId: number): Promise<{
         byType: (Prisma.PickEnumerable<Prisma.FavoriteGroupByOutputType, "type"[]> & {
             _count: number;
         })[];
         total: number;
     }>;
-    search(userId: string, query: string): Promise<{
-        type: import(".prisma/client").$Enums.FavoriteType;
-        id: string;
+    search(userId: number, query: string): Promise<{
+        type: import("@prisma/client").$Enums.FavoriteType;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         tags: string[];
-        userId: string;
+        userId: number;
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
         memo: string | null;
-        priority: import(".prisma/client").$Enums.FavoritePriority;
+        priority: import("@prisma/client").$Enums.FavoritePriority;
         notificationsOn: boolean;
     }[]>;
-    export(userId: string): Promise<{
-        type: import(".prisma/client").$Enums.FavoriteType;
-        id: string;
+    export(userId: number): Promise<{
+        type: import("@prisma/client").$Enums.FavoriteType;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         tags: string[];
-        userId: string;
+        userId: number;
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
         memo: string | null;
-        priority: import(".prisma/client").$Enums.FavoritePriority;
+        priority: import("@prisma/client").$Enums.FavoritePriority;
         notificationsOn: boolean;
     }[]>;
-    bulkAdd(userId: string, items: CreateFavoriteDto[]): Promise<Prisma.BatchPayload>;
-    bulkDelete(userId: string, ids: string[]): Promise<Prisma.BatchPayload>;
+    bulkAdd(userId: number, items: CreateFavoriteDto[]): Promise<Prisma.BatchPayload>;
+    bulkDelete(userId: number, ids: number[]): Promise<Prisma.BatchPayload>;
 }

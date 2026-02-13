@@ -31,8 +31,9 @@ export class SelectionsDto {
 
 export class CreateBetDto {
   @ApiProperty()
-  @IsString()
-  raceId: string;
+  @IsNumber()
+  @Type(() => Number)
+  raceId: number;
 
   @ApiProperty({ enum: BetType })
   @IsEnum(BetType)
@@ -107,8 +108,9 @@ export class UpdateBetDto {
 export class BetFilterDto {
   @ApiProperty({ required: false })
   @IsOptional()
-  @IsString()
-  raceId?: string;
+  @IsNumber()
+  @Type(() => Number)
+  raceId?: number;
 
   @ApiProperty({ required: false, enum: BetType })
   @IsOptional()
@@ -148,8 +150,9 @@ export class BetFilterDto {
 
 export class CreateBetSlipDto {
   @ApiProperty()
-  @IsString()
-  raceId: string;
+  @IsNumber()
+  @Type(() => Number)
+  raceId: number;
 
   // Assuming bets in a slip are simplified or refer to CreateBetDto structure
   // For simplicity, using any[] here but should be typed strictly if possible

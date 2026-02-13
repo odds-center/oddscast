@@ -59,7 +59,7 @@ export default function Dropdown<T extends string | number>({
         disabled={disabled}
         aria-haspopup='listbox'
         aria-expanded={open}
-        className='dropdown-trigger w-full flex items-center justify-between gap-2 px-4 py-3 min-h-[48px] rounded-xl bg-card border-2 border-border text-foreground text-base font-medium touch-manipulation transition-colors hover:border-border-gold focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed'
+        className='dropdown-trigger w-full flex items-center justify-between gap-2 px-4 py-3 min-h-[48px] rounded-xl bg-card border border-border text-foreground text-base font-medium touch-manipulation transition-colors hover:border-border-gold focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed'
       >
         <span className='truncate'>{displayText}</span>
         <Icon
@@ -72,7 +72,7 @@ export default function Dropdown<T extends string | number>({
       {open && (
         <ul
           role='listbox'
-          className='dropdown-list absolute z-50 mt-2 w-full min-w-[120px] max-h-[240px] overflow-y-auto rounded-xl border-2 border-border bg-card shadow-lg py-2'
+          className='dropdown-list absolute z-50 mt-2 w-full min-w-[120px] max-h-[240px] overflow-y-auto rounded-xl border border-border bg-card shadow-lg py-2'
         >
           {options.map((opt) => {
             const isSelected = opt.value === value;

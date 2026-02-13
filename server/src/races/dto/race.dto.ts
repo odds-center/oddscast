@@ -6,9 +6,9 @@ export class CreateRaceDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  raceName?: string;
+  rcName?: string;
 
-  @ApiProperty({ example: 'SEO', description: '서울/부산/제주 코드' })
+  @ApiProperty({ example: '서울', description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남' })
   @IsString()
   meet: string;
 
@@ -33,7 +33,7 @@ export class CreateRaceDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  rcGrade?: string;
+  rank?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -54,7 +54,7 @@ export class CreateRaceDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  trackState?: string;
+  track?: string;
 }
 
 export class UpdateRaceDto extends PartialType(CreateRaceDto) {}
@@ -86,14 +86,24 @@ export class CreateRaceEntryDto {
   @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  weight?: number;
+  wgBudam?: number;
 }
 
 export class RaceFilterDto {
-  @ApiPropertyOptional()
+  @ApiPropertyOptional({ description: 'YYYYMMDD 또는 YYYY-MM-DD' })
   @IsOptional()
   @IsString()
   date?: string;
+
+  @ApiPropertyOptional({ description: '날짜 범위 시작 (YYYYMMDD)' })
+  @IsOptional()
+  @IsString()
+  dateFrom?: string;
+
+  @ApiPropertyOptional({ description: '날짜 범위 끝 (YYYYMMDD)' })
+  @IsOptional()
+  @IsString()
+  dateTo?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

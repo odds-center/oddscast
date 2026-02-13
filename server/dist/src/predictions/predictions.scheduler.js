@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var PredictionsScheduler_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PredictionsScheduler = void 0;
@@ -16,6 +19,7 @@ const schedule_1 = require("@nestjs/schedule");
 const prisma_service_1 = require("../prisma/prisma.service");
 const predictions_service_1 = require("./predictions.service");
 const config_service_1 = require("../config/config.service");
+const dayjs_1 = __importDefault(require("dayjs"));
 let PredictionsScheduler = PredictionsScheduler_1 = class PredictionsScheduler {
     constructor(prisma, predictionsService, configService) {
         this.prisma = prisma;
@@ -30,7 +34,7 @@ let PredictionsScheduler = PredictionsScheduler_1 = class PredictionsScheduler {
             this.logger.log('[Cron] Batch prediction disabled in ai_config, skipping');
             return;
         }
-        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const today = (0, dayjs_1.default)().format('YYYYMMDD');
         this.logger.log(`[Cron] Generate predictions for ${today}`);
         const races = await this.prisma.race.findMany({
             where: {

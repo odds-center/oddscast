@@ -14,6 +14,9 @@
 - **Endpoint**: `/RaceDetailResult`
 - **활용 신청**: 공공데이터포털 활용신청 후 ServiceKey 발급 필요
 
+> **구현 참고:** 2024 공식 가이드(KRA_OFFICIAL_GUIDE.md) 기준으로 서버는 `API4_3/raceResult_3` 사용.  
+> API214_1/RaceDetailResult와 응답 구조는 유사함.
+
 ---
 
 ## 3. 요청 메시지 명세 (Request)

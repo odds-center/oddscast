@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { FavoritesService } from './favorites.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -70,7 +71,7 @@ export class FavoritesController {
 
   @Get(':id')
   @ApiOperation({ summary: '즐겨찾기 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.favoritesService.findOne(id);
   }
 
@@ -94,19 +95,20 @@ export class FavoritesController {
 
   @Delete('bulk')
   @ApiOperation({ summary: '즐겨찾기 일괄 삭제' })
-  bulkDelete(@CurrentUser() user: JwtPayload, @Body() body: { ids: string[] }) {
-    return this.favoritesService.bulkDelete(user.sub, body.ids);
+  bulkDelete(@CurrentUser() user: JwtPayload, @Body() body: { ids: (string | number)[] }) {
+    const ids = (body.ids ?? []).map((x) => (typeof x === 'number' ? x : parseInt(String(x), 10)));
+    return this.favoritesService.bulkDelete(user.sub, ids);
   }
 
   @Put(':id')
   @ApiOperation({ summary: '즐겨찾기 수정' })
-  update(@Param('id') id: string, @Body() dto: UpdateFavoriteDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFavoriteDto) {
     return this.favoritesService.update(id, dto);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: '즐겨찾기 삭제' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.favoritesService.remove(id);
   }
 }

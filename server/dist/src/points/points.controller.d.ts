@@ -5,10 +5,10 @@ export declare class PointsController {
     private pointsService;
     constructor(pointsService: PointsService);
     getPromotions(filters: any): Promise<{
-        type: import(".prisma/client").$Enums.PromotionType;
+        type: import("@prisma/client").$Enums.PromotionType;
         description: string;
         name: string;
-        id: string;
+        id: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -28,7 +28,7 @@ export declare class PointsController {
         pointsPerTicket: number;
     }>;
     getMyBalance(user: JwtPayload): Promise<{
-        userId: string;
+        userId: number;
         currentPoints: number;
         totalPointsEarned: number;
         totalPointsSpent: number;
@@ -39,14 +39,14 @@ export declare class PointsController {
     getMyTransactions(user: JwtPayload, page?: number, limit?: number, type?: string): Promise<{
         transactions: {
             description: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.PointStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PointStatus;
+            userId: number;
             amount: number;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
-            transactionType: import(".prisma/client").$Enums.PointTransactionType;
+            transactionType: import("@prisma/client").$Enums.PointTransactionType;
             balanceAfter: number;
             transactionTime: Date;
         }[];
@@ -62,8 +62,8 @@ export declare class PointsController {
     transfer(user: JwtPayload, dto: PointTransferDto): Promise<{
         status: string;
     }>;
-    getBalance(userId: string): Promise<{
-        userId: string;
+    getBalance(userId: number): Promise<{
+        userId: number;
         currentPoints: number;
         totalPointsEarned: number;
         totalPointsSpent: number;
@@ -71,17 +71,17 @@ export declare class PointsController {
         expiringPoints: number;
         lastUpdated: Date;
     }>;
-    getTransactions(userId: string, filters: any): Promise<{
+    getTransactions(userId: number, filters: any): Promise<{
         transactions: {
             description: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.PointStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PointStatus;
+            userId: number;
             amount: number;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
-            transactionType: import(".prisma/client").$Enums.PointTransactionType;
+            transactionType: import("@prisma/client").$Enums.PointTransactionType;
             balanceAfter: number;
             transactionTime: Date;
         }[];
@@ -89,20 +89,20 @@ export declare class PointsController {
         page: any;
         totalPages: number;
     }>;
-    createTransaction(userId: string, dto: CreatePointTransactionDto): Promise<{
+    createTransaction(userId: number, dto: CreatePointTransactionDto): Promise<{
         description: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.PointStatus;
-        userId: string;
+        status: import("@prisma/client").$Enums.PointStatus;
+        userId: number;
         amount: number;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        transactionType: import(".prisma/client").$Enums.PointTransactionType;
+        transactionType: import("@prisma/client").$Enums.PointTransactionType;
         balanceAfter: number;
         transactionTime: Date;
     }>;
-    applyPromotion(userId: string, promotionId: string): Promise<{
+    applyPromotion(userId: number, promotionId: number): Promise<{
         message: string;
         pointsEarned: number;
     }>;

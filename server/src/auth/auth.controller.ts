@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import {
   RegisterDto,
   LoginDto,
+  AdminLoginDto,
   GoogleAuthDto,
   UpdateProfileDto,
   ChangePasswordDto,
@@ -46,9 +47,9 @@ export class AuthController {
   }
 
   @Post('admin/login')
-  @ApiOperation({ summary: '관리자 로그인' })
-  adminLogin(@Body() dto: LoginDto) {
-    return this.authService.adminLogin(dto.email, dto.password);
+  @ApiOperation({ summary: '관리자 로그인 (아이디/비밀번호)' })
+  adminLogin(@Body() dto: AdminLoginDto) {
+    return this.authService.adminLogin(dto.loginId, dto.password);
   }
 
   @Post('logout')
@@ -64,7 +65,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '내 정보 조회' })
   getMe(@CurrentUser() user: JwtPayload) {
-    return this.authService.getProfile(user.sub);
+    return this.authService.getProfile(user.sub, user.role);
   }
 
   @Get('profile')
@@ -72,7 +73,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '프로필 조회' })
   getProfile(@CurrentUser() user: JwtPayload) {
-    return this.authService.getProfile(user.sub);
+    return this.authService.getProfile(user.sub, user.role);
   }
 
   @Put('profile')
@@ -153,7 +154,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '토큰 갱신' })
   refreshToken(@CurrentUser() user: JwtPayload) {
-    return this.authService.refreshToken(user.sub);
+    return this.authService.refreshToken(user.sub, user.role);
   }
 
   @Get('check')

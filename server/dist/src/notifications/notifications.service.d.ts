@@ -1,24 +1,26 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
-import { CreateNotificationDto, UpdateNotificationDto, BulkSendDto, UpdateNotificationPreferenceDto } from './dto/notification.dto';
+import { CreateNotificationDto, UpdateNotificationDto, BulkSendDto, UpdateNotificationPreferenceDto, PushSubscribeDto, PushUnsubscribeDto } from './dto/notification.dto';
 export declare class NotificationsService {
     private prisma;
+    private readonly logger;
+    private expo;
     constructor(prisma: PrismaService);
-    findAll(userId: string, filters: {
+    findAll(userId: number, filters: {
         page?: number;
         limit?: number;
         isRead?: boolean;
     }): Promise<{
         notifications: {
-            type: import(".prisma/client").$Enums.NotificationType;
+            type: import("@prisma/client").$Enums.NotificationType;
             title: string;
             message: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             data: Prisma.JsonValue | null;
-            userId: string;
-            category: import(".prisma/client").$Enums.NotificationCategory;
+            userId: number;
+            category: import("@prisma/client").$Enums.NotificationCategory;
             isRead: boolean;
             readAt: Date | null;
         }[];
@@ -26,78 +28,78 @@ export declare class NotificationsService {
         page: number;
         totalPages: number;
     }>;
-    findOne(id: string): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    findOne(id: number): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: Prisma.JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
     create(dto: CreateNotificationDto): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: Prisma.JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
-    update(id: string, dto: UpdateNotificationDto): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    update(id: number, dto: UpdateNotificationDto): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: Prisma.JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
-    remove(id: string): Promise<{
+    remove(id: number): Promise<{
         message: string;
     }>;
-    markAsRead(id: string): Promise<{
-        type: import(".prisma/client").$Enums.NotificationType;
+    markAsRead(id: number): Promise<{
+        type: import("@prisma/client").$Enums.NotificationType;
         title: string;
         message: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
         data: Prisma.JsonValue | null;
-        userId: string;
-        category: import(".prisma/client").$Enums.NotificationCategory;
+        userId: number;
+        category: import("@prisma/client").$Enums.NotificationCategory;
         isRead: boolean;
         readAt: Date | null;
     }>;
-    markAllAsRead(userId: string): Promise<{
+    markAllAsRead(userId: number): Promise<{
         count: number;
     }>;
-    getUnreadCount(userId: string): Promise<{
+    getUnreadCount(userId: number): Promise<{
         count: number;
     }>;
     bulkSend(dto: BulkSendDto): Promise<{
         count: number;
     }>;
-    deleteAll(userId: string): Promise<{
+    deleteAll(userId: number): Promise<{
         count: number;
     }>;
-    getPreferences(userId: string): Promise<{
-        id: string;
+    getPreferences(userId: number): Promise<{
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        userId: number;
         pushEnabled: boolean;
         raceEnabled: boolean;
         predictionEnabled: boolean;
@@ -105,11 +107,17 @@ export declare class NotificationsService {
         systemEnabled: boolean;
         promotionEnabled: boolean;
     }>;
-    updatePreferences(userId: string, dto: UpdateNotificationPreferenceDto): Promise<{
-        id: string;
+    pushSubscribe(userId: number, dto: PushSubscribeDto): Promise<{
+        message: string;
+    }>;
+    pushUnsubscribe(userId: number, dto: PushUnsubscribeDto): Promise<{
+        message: string;
+    }>;
+    updatePreferences(userId: number, dto: UpdateNotificationPreferenceDto): Promise<{
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: string;
+        userId: number;
         pushEnabled: boolean;
         raceEnabled: boolean;
         predictionEnabled: boolean;
@@ -125,18 +133,18 @@ export declare class NotificationsService {
             user: {
                 email: string;
                 name: string;
-                id: string;
+                id: number;
             };
         } & {
-            type: import(".prisma/client").$Enums.NotificationType;
+            type: import("@prisma/client").$Enums.NotificationType;
             title: string;
             message: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
             data: Prisma.JsonValue | null;
-            userId: string;
-            category: import(".prisma/client").$Enums.NotificationCategory;
+            userId: number;
+            category: import("@prisma/client").$Enums.NotificationCategory;
             isRead: boolean;
             readAt: Date | null;
         })[];
@@ -153,9 +161,7 @@ export declare class NotificationsService {
         target: string;
     }): Promise<{
         count: number;
+        pushSent: number;
         message: string;
-    } | {
-        count: number;
-        message?: undefined;
     }>;
 }

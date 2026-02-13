@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import { adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
 
@@ -199,17 +200,15 @@ export default function AIConfigPage() {
         <title>AI 설정 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>AI 예측 설정</h1>
-            <p className='mt-2 text-sm text-gray-600'>
-              LLM 모델, 비용 전략, 캐싱 등의 AI 시스템 설정을 관리합니다 (DB 저장)
-            </p>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='AI 예측 설정'
+            description='LLM 모델, 비용 전략, 캐싱 등의 AI 시스템 설정을 관리합니다 (DB 저장)'
+          />
 
           {/* 통계 카드 */}
-          <div className='grid grid-cols-1 lg:grid-cols-3 gap-6'>
-            <div className='bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg shadow-lg p-6 text-white'>
+          <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
+            <div className='bg-gradient-to-br from-blue-500 to-blue-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
                 <DollarSign className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>예상 비용</h3>
@@ -219,7 +218,7 @@ export default function AIConfigPage() {
                   <div className='text-sm opacity-90'>
                     월간 (캐싱 {watchedEnableCaching ? 'ON' : 'OFF'})
                   </div>
-                  <div className='text-3xl font-bold'>₩{estimatedMonthlyCost.toLocaleString()}</div>
+                  <div className='text-lg font-bold'>₩{estimatedMonthlyCost.toLocaleString()}</div>
                 </div>
                 <div className='text-sm opacity-90'>전략: {selectedStrategy.name}</div>
                 <div className='text-xs opacity-80 pt-2 border-t border-white/30'>
@@ -232,7 +231,7 @@ export default function AIConfigPage() {
               </div>
             </div>
 
-            <div className='bg-gradient-to-br from-green-500 to-green-600 rounded-lg shadow-lg p-6 text-white'>
+            <div className='bg-gradient-to-br from-green-500 to-green-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
                 <Zap className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>예상 정확도</h3>
@@ -240,7 +239,7 @@ export default function AIConfigPage() {
               <div className='space-y-3'>
                 <div>
                   <div className='text-sm opacity-90'>1위 예측 정확도</div>
-                  <div className='text-3xl font-bold'>{selectedStrategy.accuracy}%</div>
+                  <div className='text-lg font-bold'>{selectedStrategy.accuracy}%</div>
                 </div>
                 <div className='text-sm opacity-90'>
                   모델:{' '}
@@ -249,7 +248,7 @@ export default function AIConfigPage() {
               </div>
             </div>
 
-            <div className='bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg shadow-lg p-6 text-white'>
+            <div className='bg-gradient-to-br from-purple-500 to-purple-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
                 <Bot className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>시스템 상태</h3>
@@ -301,7 +300,7 @@ export default function AIConfigPage() {
                   <SettingsIcon className='w-5 h-5' />
                   모델 설정
                 </h3>
-                <div className='grid grid-cols-2 gap-6'>
+                <div className='grid grid-cols-2 gap-4'>
                   <div>
                     <label className='block text-sm font-medium text-gray-700 mb-2'>주 모델</label>
                     <select
@@ -569,7 +568,7 @@ export default function AIConfigPage() {
           </div>
 
           {/* 도움말 & 예상 비용 계산 */}
-          <div className='bg-blue-50 border border-blue-200 rounded-lg p-6'>
+          <div className='bg-blue-50 border border-blue-200 rounded-md p-4'>
             <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 & 예상 비용 계산</h4>
             <div className='space-y-2 text-sm text-blue-800'>
               <p>

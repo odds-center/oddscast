@@ -1,19 +1,27 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, NotificationType, NotificationCategory } from '@prisma/client';
+import Expo from 'expo-server-sdk';
 import {
   CreateNotificationDto,
   UpdateNotificationDto,
   BulkSendDto,
   UpdateNotificationPreferenceDto,
+  PushSubscribeDto,
+  PushUnsubscribeDto,
 } from './dto/notification.dto';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  private readonly logger = new Logger(NotificationsService.name);
+  private expo: Expo;
+
+  constructor(private prisma: PrismaService) {
+    this.expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+  }
 
   async findAll(
-    userId: string,
+    userId: number,
     filters: { page?: number; limit?: number; isRead?: boolean },
   ) {
     const { page = 1, limit = 20, isRead } = filters;
@@ -33,7 +41,7 @@ export class NotificationsService {
     return { notifications, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const notification = await this.prisma.notification.findUnique({
       where: { id },
     });
@@ -54,7 +62,7 @@ export class NotificationsService {
     });
   }
 
-  async update(id: string, dto: UpdateNotificationDto) {
+  async update(id: number, dto: UpdateNotificationDto) {
     return this.prisma.notification.update({
       where: { id },
       data: {
@@ -66,19 +74,19 @@ export class NotificationsService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.prisma.notification.delete({ where: { id } });
     return { message: '알림이 삭제되었습니다' };
   }
 
-  async markAsRead(id: string) {
+  async markAsRead(id: number) {
     return this.prisma.notification.update({
       where: { id },
       data: { isRead: true, readAt: new Date() },
     });
   }
 
-  async markAllAsRead(userId: string) {
+  async markAllAsRead(userId: number) {
     const result = await this.prisma.notification.updateMany({
       where: { userId, isRead: false },
       data: { isRead: true, readAt: new Date() },
@@ -86,7 +94,7 @@ export class NotificationsService {
     return { count: result.count };
   }
 
-  async getUnreadCount(userId: string) {
+  async getUnreadCount(userId: number) {
     const count = await this.prisma.notification.count({
       where: { userId, isRead: false },
     });
@@ -106,7 +114,7 @@ export class NotificationsService {
     return { count: created.count };
   }
 
-  async deleteAll(userId: string) {
+  async deleteAll(userId: number) {
     const result = await this.prisma.notification.deleteMany({
       where: { userId },
     });
@@ -114,7 +122,7 @@ export class NotificationsService {
   }
 
   /** 알림 설정 조회 (없으면 기본값으로 생성) */
-  async getPreferences(userId: string) {
+  async getPreferences(userId: number) {
     let pref = await this.prisma.userNotificationPreference.findUnique({
       where: { userId },
     });
@@ -126,8 +134,35 @@ export class NotificationsService {
     return pref;
   }
 
+  /** 푸시 토큰 등록 (Expo Push) */
+  async pushSubscribe(userId: number, dto: PushSubscribeDto) {
+    if (!Expo.isExpoPushToken(dto.token)) {
+      throw new Error('유효하지 않은 Expo Push Token입니다.');
+    }
+    await this.prisma.pushToken.upsert({
+      where: {
+        userId_token: { userId, token: dto.token },
+      },
+      create: {
+        userId,
+        token: dto.token,
+        deviceId: dto.deviceId ?? null,
+      },
+      update: { deviceId: dto.deviceId ?? undefined, updatedAt: new Date() },
+    });
+    return { message: '푸시 알림이 구독되었습니다.' };
+  }
+
+  /** 푸시 토큰 삭제 */
+  async pushUnsubscribe(userId: number, dto: PushUnsubscribeDto) {
+    await this.prisma.pushToken.deleteMany({
+      where: { userId, token: dto.token },
+    });
+    return { message: '푸시 알림 구독이 해제되었습니다.' };
+  }
+
   /** 알림 설정 수정 */
-  async updatePreferences(userId: string, dto: UpdateNotificationPreferenceDto) {
+  async updatePreferences(userId: number, dto: UpdateNotificationPreferenceDto) {
     const data: Record<string, boolean> = {};
     if (dto.pushEnabled !== undefined) data.pushEnabled = dto.pushEnabled;
     if (dto.raceEnabled !== undefined) data.raceEnabled = dto.raceEnabled;
@@ -158,9 +193,9 @@ export class NotificationsService {
     return { data: notifications, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
   }
 
-  /** Admin: 대상별 알림 발송 (all | active | subscribers) */
+  /** Admin: 대상별 알림 발송 (all | active | subscribers) - DB 저장 + Expo Push */
   async adminSend(data: { title: string; message: string; target: string }) {
-    let userIds: string[] = [];
+    let userIds: number[] = [];
     if (data.target === 'all') {
       const users = await this.prisma.user.findMany({
         where: { isActive: true },
@@ -183,7 +218,7 @@ export class NotificationsService {
     }
 
     if (userIds.length === 0) {
-      return { count: 0, message: '발송 대상이 없습니다.' };
+      return { count: 0, pushSent: 0, message: '발송 대상이 없습니다.' };
     }
 
     const created = await this.prisma.notification.createMany({
@@ -195,6 +230,52 @@ export class NotificationsService {
         category: 'GENERAL',
       })),
     });
-    return { count: created.count };
+
+    let pushSent = 0;
+    try {
+      const tokens = await this.prisma.pushToken.findMany({
+        where: {
+          userId: { in: userIds },
+          OR: [
+            { user: { notificationPreference: { is: null } } },
+            {
+              user: {
+                notificationPreference: {
+                  pushEnabled: true,
+                  systemEnabled: true,
+                },
+              },
+            },
+          ],
+        },
+        select: { token: true },
+      });
+
+      if (tokens.length > 0) {
+        const messages = tokens.map((t) => ({
+          to: t.token,
+          title: data.title,
+          body: data.message,
+          sound: 'default' as const,
+          data: { type: 'SYSTEM' },
+        }));
+
+        const chunks = this.expo.chunkPushNotifications(messages);
+        for (const chunk of chunks) {
+          const receipts = await this.expo.sendPushNotificationsAsync(chunk);
+          for (let i = 0; i < receipts.length; i++) {
+            const r = receipts[i];
+            if (r.status === 'ok') pushSent += 1;
+            else if (r.status === 'error' && r.details?.error) {
+              this.logger.warn(`Push failed: ${r.details.error}`);
+            }
+          }
+        }
+      }
+    } catch (err) {
+      this.logger.error('Expo push send error', err);
+    }
+
+    return { count: created.count, pushSent, message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송` };
   }
 }

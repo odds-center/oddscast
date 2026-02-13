@@ -47,7 +47,7 @@ export class UsersService {
     return { users, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: {
@@ -66,7 +66,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto) {
+  async update(id: number, dto: UpdateUserDto) {
     return this.prisma.user.update({
       where: { id },
       data: dto,
@@ -82,12 +82,12 @@ export class UsersService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.prisma.user.update({ where: { id }, data: { isActive: false } });
     return { message: '사용자가 비활성화되었습니다' };
   }
 
-  async getStats(id: string) {
+  async getStats(id: number) {
     const [ticketCount, favCount] = await Promise.all([
       this.prisma.predictionTicket.count({ where: { userId: id } }),
       this.prisma.favorite.count({ where: { userId: id } }),

@@ -2,8 +2,9 @@ import React from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
 import { useRouter } from 'next/router';
-import Icon from './icons';
+import Icon, { type IconName } from './icons';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useIsNativeApp } from '@/lib/hooks/useIsNativeApp';
 import { routes } from '@/lib/routes';
 
 interface LayoutProps {
@@ -14,7 +15,10 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
   const router = useRouter();
   const pathname = router.pathname;
+  const isNativeApp = useIsNativeApp();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  /** Native WebView: 상단 헤더는 mobile 앱에서 제공 → 중복 방지 */
+  const hideTopHeader = isNativeApp;
   const logout = useAuthStore((s) => s.logout);
   const showBackButton = pathname !== '/' && pathname !== '';
 
@@ -27,15 +31,14 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
     router.back();
   };
 
-  const navLinks = [
+  const navLinks: { href: string; icon: IconName; label: string }[] = [
     { href: routes.home, icon: 'Flag', label: '경주' },
+    { href: routes.predictions.matrix, icon: 'BarChart2', label: '종합 예상' },
     { href: routes.results, icon: 'TrendingUp', label: '결과' },
     { href: routes.ranking, icon: 'Medal', label: '랭킹' },
   ];
 
-  const navLinksMore = [
-    { href: routes.mypage.picks, icon: 'Bookmark', label: '내가 고른 말' },
-    { href: routes.mypage.favorites, icon: 'Heart', label: '즐겨찾기' },
+  const navLinksMore: { href: string; icon: IconName; label: string }[] = [
     { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
     { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독' },
     { href: routes.profile.index, icon: 'User', label: '내 정보' },
@@ -47,15 +50,15 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
       <Head>
         <title>{title}</title>
         <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover' />
-        <meta name='theme-color' content='#050508' />
+        <meta name='theme-color' content='#fafafa' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
-        <meta name='apple-mobile-web-app-status-bar-style' content='black-translucent' />
+        <meta name='apple-mobile-web-app-status-bar-style' content='default' />
       </Head>
 
-      {/* Desktop: 상단 네비게이션 (lg 1024px 이상에서만 표시) */}
+      {/* Desktop: 상단 네비게이션 */}
       <header className='hidden lg:block sticky top-0 z-20'>
-        <div className='bg-background-elevated/95 backdrop-blur-md border-b border-border'>
-          <div className='max-w-7xl mx-auto px-6 h-16 flex items-center justify-between'>
+        <div className='bg-background-elevated border-b border-border'>
+          <div className='max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between'>
             <Link
               href={routes.home}
               className='font-display font-bold text-xl tracking-[0.2em] text-primary hover:text-primary/90 transition-all duration-200'
@@ -71,7 +74,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
                     pathname === href ? 'text-primary bg-primary/10' : ''
                   }`}
                 >
-                  <Icon name={icon as any} size={17} />
+                  <Icon name={icon} size={17} />
                   {label}
                 </Link>
               ))}
@@ -85,7 +88,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
                       isActive ? 'text-primary bg-primary/10' : ''
                     }`}
                   >
-                    <Icon name={icon as any} size={17} />
+                    <Icon name={icon} size={17} />
                     {label}
                   </Link>
                 );
@@ -108,13 +111,13 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
               )}
             </nav>
           </div>
-          {/* 하단 금색 그라데이션 라인 */}
-          <div className='h-px bg-gradient-to-r from-transparent via-primary/50 to-transparent' />
+          <div className='h-1 bg-primary/30' />
         </div>
       </header>
 
-      {/* Mobile/Tablet: 상단 헤더 (1024px 미만) */}
-      <header className='lg:hidden sticky top-0 z-20 bg-background/95 backdrop-blur-md border-b border-border pt-[env(safe-area-inset-top)]'>
+      {/* Mobile/Tablet: 상단 헤더 (Native WebView에서는 mobile 앱이 제공하므로 숨김) */}
+      {!hideTopHeader && (
+      <header className='lg:hidden sticky top-0 z-20 bg-background-elevated border-b border-border pt-[env(safe-area-inset-top)]'>
         <div className='h-14 flex items-center px-4'>
           <div className='flex-1 flex items-center min-w-0'>
             {showBackButton ? (
@@ -138,17 +141,22 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
             <div className='w-10 shrink-0' />
           </div>
         </div>
-        <div className='h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent' />
+        <div className='h-1 bg-primary/30' />
       </header>
+      )}
 
-      {/* Content — 모바일: safe-area, 하단 nav 여백, 가로 스크롤 방지, flex 스크롤 */}
-      <main className='flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain lg:max-w-5xl mx-auto px-4 lg:px-8 py-4 lg:py-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6rem,calc(4.5rem+env(safe-area-inset-bottom)))] lg:pb-10'>
+      {/* Content — 모바일: safe-area, 하단 nav 여백. Native WebView: 헤더 숨김 시 상단 safe-area */}
+      <main
+        className={`flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain lg:max-w-[1200px] mx-auto px-4 lg:px-8 py-4 lg:py-8 pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pb-[max(6rem,calc(4.5rem+env(safe-area-inset-bottom)))] lg:pb-10 ${
+          hideTopHeader ? 'pt-[max(1rem,env(safe-area-inset-top))]' : ''
+        }`}
+      >
         {children}
       </main>
 
-      {/* Mobile/Tablet: 하단 네비게이션 (1024px 미만) */}
+      {/* Mobile/Tablet: 하단 네비게이션 */}
       <nav
-        className='lg:hidden fixed bottom-0 left-0 right-0 z-10 bg-background-elevated/98 backdrop-blur-md border-t border-border safe-area-bottom'
+        className='lg:hidden fixed bottom-0 left-0 right-0 z-10 bg-background-elevated border-t border-border safe-area-bottom'
         aria-label='하단 메뉴'
       >
         <div className='w-full mx-auto h-14 min-h-[56px] flex items-stretch justify-around pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] pb-[env(safe-area-inset-bottom)]'>
@@ -158,7 +166,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
               href={href}
               className={`nav-item-mobile flex-1 min-w-0 flex flex-col items-center justify-center gap-0.5 touch-manipulation ${pathname === href ? 'text-primary' : ''}`}
             >
-              <Icon name={icon as any} size={22} className={`shrink-0 ${pathname === href ? 'text-primary' : ''}`} />
+              <Icon name={icon} size={22} className={`shrink-0 ${pathname === href ? 'text-primary' : ''}`} />
               <span className='text-xs truncate block text-center w-full px-0.5'>{label}</span>
             </Link>
           ))}
@@ -174,7 +182,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
 
       {/* Desktop: 푸터 */}
       <footer className='hidden lg:block border-t border-border py-6'>
-        <div className='max-w-5xl mx-auto px-8'>
+        <div className='max-w-[1200px] mx-auto px-8'>
           <div className='flex flex-wrap items-center justify-center gap-4 text-text-tertiary text-sm'>
             <span>© GOLDEN RACE — AI 경마 승부예측 서비스</span>
             <Link href={routes.legal.terms} className='hover:text-primary transition-colors'>

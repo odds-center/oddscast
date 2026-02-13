@@ -6,7 +6,7 @@ interface PaginationProps {
   className?: string;
 }
 
-const btnClass = 'px-4 py-2 rounded-lg bg-card border border-border hover:border-border-gold disabled:opacity-50 disabled:cursor-not-allowed transition-all';
+const btnClass = 'px-5 py-2.5 rounded-lg bg-card border border-border hover:border-border-gold disabled:opacity-50 disabled:cursor-not-allowed font-semibold transition-colors';
 
 export default function Pagination({ page, totalPages, onPrev, onNext, className = '' }: PaginationProps) {
   if (totalPages <= 1) return null;

@@ -4,6 +4,7 @@
  */
 import {
   Trophy,
+  Clock,
   ClipboardList,
   User,
   UserPlus,
@@ -46,6 +47,7 @@ export const Horse = Flag;
 
 export const Icons = {
   Trophy,
+  Clock,
   ClipboardList,
   User,
   UserPlus,

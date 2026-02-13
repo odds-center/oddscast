@@ -48,7 +48,7 @@ import { CacheModule } from './cache/cache.module';
       ? [ScheduleModule.forRoot()]
       : []),
 
-    // TypeORM 설정 - Supabase PostgreSQL
+    // TypeORM 설정 - PostgreSQL
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => {
@@ -77,10 +77,10 @@ import { CacheModule } from './cache/cache.module';
               : isDevelopment
                 ? ['error']
                 : false,
-          // Supabase는 SSL 필수
+          // 클라우드 PostgreSQL SSL 필수
           ssl: { rejectUnauthorized: false },
           extra: {
-            // Connection pool 설정 (Supabase 권장)
+            // Connection pool 설정 (PostgreSQL 권장)
             max: 20, // 최대 연결 수
             connectionTimeoutMillis: 20000, // 연결 타임아웃 (증가)
             idleTimeoutMillis: 30000, // 유휴 연결 타임아웃

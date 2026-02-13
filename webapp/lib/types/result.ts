@@ -8,17 +8,13 @@ export interface RaceResultDetail {
   jkName: string;
   trName: string;
   owName: string;
-  rcRank: string;
   rcTime: string;
-  rcPrize?: number;
-  rcDist: string;
-  rcGrade: string;
+  chaksun1?: number;
   rcCondition: string;
   rcDay?: string;
   rcWeekday?: string;
-  rcWeather?: string;
-  rcTrack?: string; // 주로
-  rcTrackCondition?: string; // 주로 상태
+  weather?: string;
+  track?: string; // KRA: 주로상태
   finishTime?: string;
   margin?: string;
   odds?: number;
@@ -27,15 +23,14 @@ export interface RaceResultDetail {
 
 export interface CreateRaceResultRequest {
   raceId: string;
-  ord: string;
+  ord: string; // KRA: 순위
   hrNo: string;
   hrName: string;
   jkName: string;
   trName: string;
   owName: string;
-  rcRank: string;
   rcTime: string;
-  rcPrize?: number;
+  chaksun1?: number;
   finishTime?: string;
   margin?: string;
   odds?: number;
@@ -43,9 +38,9 @@ export interface CreateRaceResultRequest {
 }
 
 export interface UpdateRaceResultRequest {
-  rcRank?: string;
+  ord?: string;
   rcTime?: string;
-  rcPrize?: number;
+  chaksun1?: number;
   finishTime?: string;
   margin?: string;
   odds?: number;
@@ -57,7 +52,7 @@ export interface RaceResultFilters {
   hrNo?: string;
   jkName?: string;
   trName?: string;
-  rcRank?: string;
+  ord?: string;
   dateFrom?: Date; // 필터용 - Date
   dateTo?: Date; // 필터용 - Date
   page?: number;
@@ -147,7 +142,7 @@ export interface RaceResultAnalysis {
 
 export interface RaceResultExport {
   raceId: string;
-  raceName: string;
+  rcName: string; // KRA: 경주명
   raceDate: string;
   results: RaceResultDetail[];
   summary: {

@@ -7,6 +7,8 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import Modal from '@/components/common/Modal';
+import PageHeader from '@/components/common/PageHeader';
 import { adminRacesApi, adminKraApi } from '@/lib/api/admin';
 import { formatDate } from '@/lib/utils';
 
@@ -18,7 +20,7 @@ interface RaceData {
   rcTime?: string;
   meet: string;
   rcDist: string;
-  rcGrade?: string;
+  rank?: string;
   status?: string;
 }
 
@@ -40,6 +42,15 @@ export default function RacesPage() {
     onError: (err: any) => toast.error(err?.message || '동기화 실패'),
   });
 
+  const seedSampleMutation = useMutation({
+    mutationFn: (date?: string) => adminKraApi.seedSample(date),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      toast.success(`샘플 데이터 적재 완료: ${res?.races ?? 0}경주, ${res?.entries ?? 0}건`);
+    },
+    onError: (err: any) => toast.error(err?.message || '샘플 적재 실패'),
+  });
+
   const syncResultsMutation = useMutation({
     mutationFn: (date: string) => adminKraApi.syncResults(date),
     onSuccess: () => {
@@ -56,6 +67,15 @@ export default function RacesPage() {
       toast.success('상세정보(훈련·장구 등) 동기화 완료');
     },
     onError: (err: any) => toast.error(err?.message || '동기화 실패'),
+  });
+
+  const syncAllMutation = useMutation({
+    mutationFn: (date: string) => adminKraApi.syncAll(date),
+    onSuccess: (res: any) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      toast.success(res?.message || '전체 적재 완료');
+    },
+    onError: (err: any) => toast.error(err?.message || '전체 적재 실패'),
   });
 
   const [histFrom, setHistFrom] = useState('20230101');
@@ -164,13 +184,11 @@ export default function RacesPage() {
         <title>경주 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>경주 관리</h1>
-              <p className='mt-2 text-sm text-gray-600'>경주 일정과 정보를 관리할 수 있습니다.</p>
-            </div>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='경주 관리'
+            description='경주 일정과 정보를 관리할 수 있습니다.'
+          />
 
           {/* KRA 동기화 */}
           <Card>
@@ -187,29 +205,73 @@ export default function RacesPage() {
                 className='px-3 py-2 border rounded-md'
               />
               <Button
-                onClick={() => syncScheduleMutation.mutate(syncDate)}
-                disabled={syncScheduleMutation.isPending || !syncDate}
+                onClick={() =>
+                  syncScheduleMutation.mutate(
+                    syncDate ||
+                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                  )
+                }
+                disabled={syncScheduleMutation.isPending}
               >
                 {syncScheduleMutation.isPending ? '동기화 중...' : '출전표'}
               </Button>
               <Button
                 variant='secondary'
-                onClick={() => syncResultsMutation.mutate(syncDate)}
-                disabled={syncResultsMutation.isPending || !syncDate}
+                onClick={() =>
+                  syncResultsMutation.mutate(
+                    syncDate ||
+                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                  )
+                }
+                disabled={syncResultsMutation.isPending}
               >
                 {syncResultsMutation.isPending ? '동기화 중...' : '경주 결과'}
               </Button>
               <Button
                 variant='secondary'
-                onClick={() => syncDetailsMutation.mutate(syncDate)}
-                disabled={syncDetailsMutation.isPending || !syncDate}
+                onClick={() =>
+                  syncDetailsMutation.mutate(
+                    syncDate ||
+                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                  )
+                }
+                disabled={syncDetailsMutation.isPending}
               >
                 {syncDetailsMutation.isPending ? '동기화 중...' : '상세정보'}
               </Button>
+              <Button
+                variant='primary'
+                onClick={() =>
+                  syncAllMutation.mutate(
+                    syncDate ||
+                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                  )
+                }
+                disabled={syncAllMutation.isPending}
+              >
+                {syncAllMutation.isPending ? '적재 중...' : '전체 적재'}
+              </Button>
             </div>
             <p className='mt-2 text-sm text-gray-500'>
-              날짜 선택 후: 출전표(일정·출마), 경주 결과(착순), 상세정보(훈련·장구·마체중 등).
+              날짜 선택 후: 출전표·경주 결과·상세정보 각각 동기화 또는 전체 적재(한 번에 모두). KRA_SERVICE_KEY 필요.
             </p>
+
+            <hr className='my-4' />
+            <h4 className='font-medium mb-3 text-gray-700'>
+              개발용: 샘플 데이터 적재 (KRA 키 없이 사용)
+            </h4>
+            <div className='flex flex-wrap items-center gap-3'>
+              <Button
+                variant='secondary'
+                onClick={() => seedSampleMutation.mutate(syncDate || undefined)}
+                disabled={seedSampleMutation.isPending}
+              >
+                {seedSampleMutation.isPending ? '적재 중...' : '샘플 경주 적재'}
+              </Button>
+              <span className='text-sm text-gray-500'>
+                위 날짜 기준으로 서울·부산 각 4경주, 경주당 5마리 출전마 생성
+              </span>
+            </div>
 
             <hr className='my-4' />
             <h4 className='font-medium mb-3 text-gray-700'>과거 데이터 적재 (KRA 누락 대비)</h4>
@@ -274,31 +336,11 @@ export default function RacesPage() {
 
         {/* 경주 상세 모달 */}
         {selectedRace && (
-          <div
-            className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
-            onClick={() => setSelectedRace(null)}
+          <Modal
+            open
+            onClose={() => setSelectedRace(null)}
+            title='경주 상세 정보'
           >
-            <div
-              className='bg-white rounded-lg p-6 max-w-2xl w-full mx-4'
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className='flex justify-between items-start mb-6'>
-                <h2 className='text-2xl font-bold'>경주 상세 정보</h2>
-                <button
-                  onClick={() => setSelectedRace(null)}
-                  className='text-gray-400 hover:text-gray-600'
-                >
-                  <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
-                    />
-                  </svg>
-                </button>
-              </div>
-
               <div className='space-y-4'>
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
@@ -330,10 +372,10 @@ export default function RacesPage() {
                     <label className='block text-sm font-medium text-gray-700 mb-1'>거리</label>
                     <div className='text-gray-900'>{selectedRace.rcDist}m</div>
                   </div>
-                  {selectedRace.rcGrade && (
+                  {selectedRace.rank && (
                     <div>
                       <label className='block text-sm font-medium text-gray-700 mb-1'>등급</label>
-                      <div className='text-gray-900'>{selectedRace.rcGrade}</div>
+                      <div className='text-gray-900'>{selectedRace.rank}</div>
                     </div>
                   )}
                 </div>
@@ -349,8 +391,7 @@ export default function RacesPage() {
                   </Button>
                 </div>
               </div>
-            </div>
-          </div>
+          </Modal>
         )}
       </Layout>
     </>

@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
@@ -20,14 +21,13 @@ interface RaceResult {
   meet: string;
   meetName: string;
   rcDist: string;
-  rcRank: string;
+  ord: string;
   hrName: string;
   hrNo: string;
   jkName: string;
   trName: string;
   rcTime: string;
-  rcPrize?: number;
-  ord: string;
+  chaksun1?: number;
   createdAt: string;
 }
 
@@ -40,12 +40,12 @@ function EditResultModal({
 }: {
   result: RaceResult;
   onClose: () => void;
-  onSave: (dto: { rcRank?: string; rcTime?: string; rcPrize?: number }) => void;
+  onSave: (dto: { ord?: string; rcTime?: string; chaksun1?: number }) => void;
   isPending: boolean;
 }) {
-  const [rcRank, setRcRank] = useState(result.rcRank || '');
+  const [ord, setOrd] = useState(result.ord || (result as any).rcRank || '');
   const [rcTime, setRcTime] = useState(result.rcTime || '');
-  const [rcPrize, setRcPrize] = useState(String(result.rcPrize || ''));
+  const [chaksun1, setChaksun1] = useState(String(result.chaksun1 ?? (result as any).rcPrize ?? ''));
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
@@ -59,8 +59,8 @@ function EditResultModal({
             <label className='block text-sm font-medium text-gray-700 mb-1'>착순</label>
             <input
               type='text'
-              value={rcRank}
-              onChange={(e) => setRcRank(e.target.value)}
+              value={ord}
+              onChange={(e) => setOrd(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='1'
             />
@@ -79,15 +79,15 @@ function EditResultModal({
             <label className='block text-sm font-medium text-gray-700 mb-1'>상금 (원)</label>
             <input
               type='number'
-              value={rcPrize}
-              onChange={(e) => setRcPrize(e.target.value)}
+              value={chaksun1}
+              onChange={(e) => setChaksun1(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='0'
             />
           </div>
         </div>
         <div className='flex gap-2 mt-6'>
-          <Button variant='primary' onClick={() => onSave({ rcRank, rcTime, rcPrize: rcPrize ? parseInt(rcPrize) : undefined })} disabled={isPending}>
+          <Button variant='primary' onClick={() => onSave({ ord, rcTime, chaksun1: chaksun1 ? parseInt(chaksun1) : undefined })} disabled={isPending}>
             저장
           </Button>
           <Button variant='ghost' onClick={onClose}>취소</Button>
@@ -112,9 +112,9 @@ function CreateResultModal({
   const [hrName, setHrName] = useState('');
   const [jkName, setJkName] = useState('');
   const [trName, setTrName] = useState('');
-  const [rcRank, setRcRank] = useState('');
+  const [ord, setOrd] = useState('');
   const [rcTime, setRcTime] = useState('');
-  const [rcPrize, setRcPrize] = useState('');
+  const [chaksun1, setChaksun1] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,9 +128,9 @@ function CreateResultModal({
       hrName,
       jkName: jkName || undefined,
       trName: trName || undefined,
-      rcRank: rcRank || undefined,
+      ord: ord || undefined,
       rcTime: rcTime || undefined,
-      rcPrize: rcPrize ? parseInt(rcPrize) : undefined,
+      chaksun1: chaksun1 ? parseInt(chaksun1) : undefined,
     });
   };
 
@@ -194,8 +194,8 @@ function CreateResultModal({
             <label className='block text-sm font-medium text-gray-700 mb-1'>착순</label>
             <input
               type='text'
-              value={rcRank}
-              onChange={(e) => setRcRank(e.target.value)}
+              value={ord}
+              onChange={(e) => setOrd(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='1'
             />
@@ -214,8 +214,8 @@ function CreateResultModal({
             <label className='block text-sm font-medium text-gray-700 mb-1'>상금 (원)</label>
             <input
               type='number'
-              value={rcPrize}
-              onChange={(e) => setRcPrize(e.target.value)}
+              value={chaksun1}
+              onChange={(e) => setChaksun1(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
             />
           </div>
@@ -238,18 +238,17 @@ function normalizeResult(raw: any): RaceResult {
     raceId: raw.raceId,
     rcDate: race.rcDate || raw.rcDate || '',
     rcNo: race.rcNo || raw.rcNo || '',
-    rcName: race.raceName || raw.rcName || '',
+    rcName: race.rcName || race.raceName || raw.rcName || '',
     meet: race.meet || raw.meet || '',
     meetName: race.meetName || raw.meetName || '',
     rcDist: raw.rcDist || '',
-    rcRank: raw.rcRank || '',
+    ord: raw.ord || raw.rcRank || '',
     hrName: raw.hrName || '',
     hrNo: raw.hrNo || '',
     jkName: raw.jkName || '',
     trName: raw.trName || '',
     rcTime: raw.rcTime || '',
-    rcPrize: raw.rcPrize,
-    ord: raw.ord || '',
+    chaksun1: raw.chaksun1 ?? raw.rcPrize,
     createdAt: raw.createdAt,
   };
 }
@@ -338,7 +337,7 @@ export default function ResultsPage() {
       header: '순위',
       className: 'w-16',
       render: (result: RaceResult) => {
-        const rank = parseInt(result.rcRank || '0');
+        const rank = parseInt(result.ord || '0');
         const colors: any = {
           1: 'bg-yellow-500',
           2: 'bg-gray-400',
@@ -406,14 +405,13 @@ export default function ResultsPage() {
         <title>경기 결과 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>경기 결과</h1>
-              <p className='mt-2 text-sm text-gray-600'>경주 결과를 조회하고 수동 등록/수정/삭제할 수 있습니다.</p>
-            </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='경기 결과'
+            description='경주 결과를 조회하고 수동 등록/수정/삭제할 수 있습니다.'
+          >
             <Button onClick={() => setCreateModalOpen(true)}>결과 수동 등록</Button>
-          </div>
+          </PageHeader>
 
           <Card>
             <div className='mb-4 flex gap-4'>
@@ -505,7 +503,7 @@ export default function ResultsPage() {
                 </button>
               </div>
 
-              <div className='space-y-6'>
+              <div className='space-y-4'>
                 {/* 경주 정보 */}
                 <div className='border-b pb-4'>
                   <h3 className='font-semibold text-lg mb-3'>경주 정보</h3>
@@ -551,18 +549,18 @@ export default function ResultsPage() {
                       <div className='flex items-center gap-2'>
                         <span
                           className={`inline-flex items-center justify-center w-10 h-10 rounded-full ${
-                            parseInt(selectedResult.rcRank) === 1
+                            parseInt(selectedResult.ord) === 1
                               ? 'bg-yellow-500'
-                              : parseInt(selectedResult.rcRank) === 2
+                              : parseInt(selectedResult.ord) === 2
                               ? 'bg-gray-400'
-                              : parseInt(selectedResult.rcRank) === 3
+                              : parseInt(selectedResult.ord) === 3
                               ? 'bg-orange-600'
                               : 'bg-gray-300'
                           } text-white font-bold text-lg`}
                         >
-                          {selectedResult.rcRank}
+                          {selectedResult.ord}
                         </span>
-                        <span className='text-2xl font-bold'>{selectedResult.rcRank}착</span>
+                        <span className='text-2xl font-bold'>{selectedResult.ord}착</span>
                       </div>
                     </div>
                     <div>
@@ -591,13 +589,13 @@ export default function ResultsPage() {
                 </div>
 
                 {/* 상금 */}
-                {selectedResult.rcPrize && (
+                {selectedResult.chaksun1 != null && (
                   <div>
                     <h3 className='font-semibold text-lg mb-3'>상금</h3>
                     <div className='bg-green-50 p-4 rounded-lg'>
                       <div className='text-sm text-gray-600 mb-1'>착순 상금</div>
                       <div className='text-3xl font-bold text-green-600'>
-                        {selectedResult.rcPrize.toLocaleString()}원
+                        {selectedResult.chaksun1!.toLocaleString()}원
                       </div>
                     </div>
                   </div>

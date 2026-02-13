@@ -16,7 +16,7 @@ export interface RaceResultItem {
   rcTime?: string;
   rcPrize?: number;
   rcDist?: string;
-  rcGrade?: string;
+  rank?: string; // KRA: 등급조건 (기존 rcGrade)
   rcCondition?: string;
 }
 

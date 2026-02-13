@@ -29,7 +29,7 @@ export class SinglePurchasesService {
     return this.DEFAULT_PRICE_PER_TICKET;
   }
 
-  async purchase(userId: string, dto: PurchaseDto) {
+  async purchase(userId: number, dto: PurchaseDto) {
     const quantity = dto.quantity || 1;
     const unitPrice = await this.getPricePerTicket();
     const totalAmount = quantity * unitPrice;
@@ -136,7 +136,7 @@ export class SinglePurchasesService {
     };
   }
 
-  async getHistory(userId: string, page: number = 1, limit: number = 20) {
+  async getHistory(userId: number, page: number = 1, limit: number = 20) {
     const [purchases, total] = await Promise.all([
       this.prisma.singlePurchase.findMany({
         where: { userId },
@@ -150,7 +150,7 @@ export class SinglePurchasesService {
     return { purchases, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async getTotalSpent(userId: string) {
+  async getTotalSpent(userId: number) {
     const result = await this.prisma.singlePurchase.aggregate({
       where: { userId },
       _sum: { totalAmount: true },
@@ -158,7 +158,7 @@ export class SinglePurchasesService {
     });
 
     return {
-      totalSpent: result._sum.totalAmount || 0,
+      totalSpent: result._sum?.totalAmount ?? 0,
       totalPurchases: result._count,
     };
   }

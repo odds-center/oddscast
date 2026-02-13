@@ -17,6 +17,7 @@
 
 ### 📦 Features (기능 명세)
 
+- [`UI_PATTERNS.md`](features/UI_PATTERNS.md) — **공용 UI 패턴** (테이블, 페이지네이션, TabBar, LinkBadge, FilterDateBar 등)
 - [`NOTIFICATION_SETTINGS.md`](features/NOTIFICATION_SETTINGS.md) — 알림 설정 (플랫폼별 푸시, 플래그 구조)
 - [`POINT_PICK_SYSTEM.md`](features/POINT_PICK_SYSTEM.md) — 포인트·승식 시스템
 
@@ -42,6 +43,7 @@
 
 ### 📖 Guides (개발 가이드)
 
+- [`DATA_LOADING.md`](DATA_LOADING.md) — KRA 데이터 적재, 출전마 보이지 않을 때 대응, Admin 수동 동기화
 - [`PRISMA_SETUP.md`](guides/PRISMA_SETUP.md) — Prisma 7 설정 (Accelerate, 직접 연결, 포트 구성)
 - [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp Mock 모드, 페이지 컴포넌트, 모바일 최적화, 구독 플로우
 - [`WEBAPP_README.md`](guides/WEBAPP_README.md) — WebApp 요약 (테마, 환경변수, 라우트)
@@ -51,8 +53,12 @@
 
 ### 📦 Legacy (참고용)
 
-- [`legacy/README.md`](legacy/README.md) — server_legacy_nestjs 문서 (Supabase, KRA API 등)
+- [`legacy/README.md`](legacy/README.md) — server_legacy_nestjs 문서 (PostgreSQL, KRA API 등)
 
 ### ⚖️ Legal (법적 고지)
 
 - [`LEGAL_NOTICE.md`](legal/LEGAL_NOTICE.md) — 서비스 법적 고지사항
+
+### 🤖 AI / 규칙
+
+- [`CURSOR_RULES.md`](CURSOR_RULES.md) — `.cursorrules`와 동기화된 프로젝트 규칙 (요약)

@@ -23,15 +23,15 @@ export default function Table<T extends Record<string, any>>({
 }: TableProps<T>) {
   if (isLoading) {
     return (
-      <div className='flex items-center justify-center py-12'>
-        <div className='animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600'></div>
+      <div className='flex items-center justify-center py-8'>
+        <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600'></div>
       </div>
     );
   }
 
   if (data.length === 0) {
     return (
-      <div className='text-center py-12'>
+      <div className='text-center py-8'>
         <p className='text-gray-500'>{emptyMessage}</p>
       </div>
     );
@@ -46,7 +46,7 @@ export default function Table<T extends Record<string, any>>({
               <th
                 key={column.key}
                 className={cn(
-                  'px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
+                  'px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider',
                   column.className
                 )}
               >
@@ -61,7 +61,7 @@ export default function Table<T extends Record<string, any>>({
               {columns.map((column) => (
                 <td
                   key={column.key}
-                  className={cn('px-6 py-4 whitespace-nowrap text-sm', column.className)}
+                  className={cn('px-4 py-2.5 whitespace-nowrap text-sm', column.className)}
                 >
                   {column.render ? column.render(item) : item[column.key]}
                 </td>

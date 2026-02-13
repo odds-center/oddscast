@@ -21,9 +21,9 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateRaceDto.prototype, "raceName", void 0);
+], CreateRaceDto.prototype, "rcName", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: 'SEO', description: '서울/부산/제주 코드' }),
+    (0, swagger_1.ApiProperty)({ example: '서울', description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남' }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateRaceDto.prototype, "meet", void 0);
@@ -54,7 +54,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateRaceDto.prototype, "rcGrade", void 0);
+], CreateRaceDto.prototype, "rank", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
@@ -79,7 +79,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateRaceDto.prototype, "trackState", void 0);
+], CreateRaceDto.prototype, "track", void 0);
 class UpdateRaceDto extends (0, swagger_1.PartialType)(CreateRaceDto) {
 }
 exports.UpdateRaceDto = UpdateRaceDto;
@@ -119,16 +119,28 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
-], CreateRaceEntryDto.prototype, "weight", void 0);
+], CreateRaceEntryDto.prototype, "wgBudam", void 0);
 class RaceFilterDto {
 }
 exports.RaceFilterDto = RaceFilterDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
+    (0, swagger_1.ApiPropertyOptional)({ description: 'YYYYMMDD 또는 YYYY-MM-DD' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], RaceFilterDto.prototype, "date", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '날짜 범위 시작 (YYYYMMDD)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RaceFilterDto.prototype, "dateFrom", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '날짜 범위 끝 (YYYYMMDD)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RaceFilterDto.prototype, "dateTo", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

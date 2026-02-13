@@ -5,8 +5,8 @@ export declare class PointsService {
     private prisma;
     private picksService;
     constructor(prisma: PrismaService, picksService: PicksService);
-    getBalance(userId: string): Promise<{
-        userId: string;
+    getBalance(userId: number): Promise<{
+        userId: number;
         currentPoints: number;
         totalPointsEarned: number;
         totalPointsSpent: number;
@@ -14,17 +14,17 @@ export declare class PointsService {
         expiringPoints: number;
         lastUpdated: Date;
     }>;
-    getTransactions(userId: string, filters: any): Promise<{
+    getTransactions(userId: number, filters: any): Promise<{
         transactions: {
             description: string;
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.PointStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PointStatus;
+            userId: number;
             amount: number;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
-            transactionType: import(".prisma/client").$Enums.PointTransactionType;
+            transactionType: import("@prisma/client").$Enums.PointTransactionType;
             balanceAfter: number;
             transactionTime: Date;
         }[];
@@ -32,27 +32,27 @@ export declare class PointsService {
         page: any;
         totalPages: number;
     }>;
-    createTransaction(userId: string, dto: CreatePointTransactionDto): Promise<{
+    createTransaction(userId: number, dto: CreatePointTransactionDto): Promise<{
         description: string;
-        id: string;
+        id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import(".prisma/client").$Enums.PointStatus;
-        userId: string;
+        status: import("@prisma/client").$Enums.PointStatus;
+        userId: number;
         amount: number;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
-        transactionType: import(".prisma/client").$Enums.PointTransactionType;
+        transactionType: import("@prisma/client").$Enums.PointTransactionType;
         balanceAfter: number;
         transactionTime: Date;
     }>;
-    transfer(fromUserId: string, dto: PointTransferDto): Promise<{
+    transfer(fromUserId: number, dto: PointTransferDto): Promise<{
         status: string;
     }>;
     getPromotions(_filters: any): Promise<{
-        type: import(".prisma/client").$Enums.PromotionType;
+        type: import("@prisma/client").$Enums.PromotionType;
         description: string;
         name: string;
-        id: string;
+        id: number;
         isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -63,7 +63,7 @@ export declare class PointsService {
         maxUses: number | null;
         currentUses: number;
     }[]>;
-    applyPromotion(userId: string, promotionId: string): Promise<{
+    applyPromotion(userId: number, promotionId: number): Promise<{
         message: string;
         pointsEarned: number;
     }>;
@@ -75,12 +75,12 @@ export declare class PointsService {
     getTicketPrice(): Promise<{
         pointsPerTicket: number;
     }>;
-    purchaseTicket(userId: string, dto: PurchaseTicketDto): Promise<{
+    purchaseTicket(userId: number, dto: PurchaseTicketDto): Promise<{
         tickets: any[];
         pointsSpent: number;
         remainingPoints: number;
     }>;
-    awardPickPointsForRace(raceId: string): Promise<{
+    awardPickPointsForRace(raceId: number): Promise<{
         awarded: number;
     }>;
     private getPointConfigMap;

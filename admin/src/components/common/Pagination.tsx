@@ -24,7 +24,7 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
   }
 
   return (
-    <div className='flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6'>
+    <div className='flex items-center justify-between border-t border-gray-200 bg-white px-4 py-2 sm:px-5'>
       <div className='flex flex-1 justify-between sm:hidden'>
         <button
           onClick={() => onPageChange(currentPage - 1)}

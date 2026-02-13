@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatePickDto = exports.PICK_TYPE_HORSE_COUNTS = void 0;
 const class_validator_1 = require("class-validator");
+const class_transformer_1 = require("class-transformer");
 const swagger_1 = require("@nestjs/swagger");
 const client_1 = require("@prisma/client");
 exports.PICK_TYPE_HORSE_COUNTS = {
@@ -27,8 +28,9 @@ class CreatePickDto {
 exports.CreatePickDto = CreatePickDto;
 __decorate([
     (0, swagger_1.ApiProperty)({ description: '경주 ID' }),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsNumber)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreatePickDto.prototype, "raceId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({ enum: ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'] }),

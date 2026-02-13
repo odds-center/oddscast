@@ -25,7 +25,7 @@ import type {
 export class AdminDashboardApi {
   static async getStats(): Promise<DashboardStats> {
     try {
-      const response = await axiosInstance.get<DashboardStats>('/admin/statistics/dashboard');
+      const response = await axiosInstance.get<DashboardStats>('/statistics/dashboard');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -44,7 +44,7 @@ export class AdminUsersApi {
     role?: string;
   }): Promise<UserListResponse> {
     try {
-      const response = await axiosInstance.get<UserListResponse>('/admin/users', { params });
+      const response = await axiosInstance.get<UserListResponse>('/users', { params });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -53,7 +53,7 @@ export class AdminUsersApi {
 
   static async getOne(id: string): Promise<User> {
     try {
-      const response = await axiosInstance.get<User>(`/admin/users/${id}`);
+      const response = await axiosInstance.get<User>(`/users/${id}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -62,7 +62,7 @@ export class AdminUsersApi {
 
   static async update(id: string, data: Partial<User>): Promise<User> {
     try {
-      const response = await axiosInstance.patch<User>(`/admin/users/${id}`, data);
+      const response = await axiosInstance.patch<User>(`/users/${id}`, data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -71,7 +71,7 @@ export class AdminUsersApi {
 
   static async delete(id: string): Promise<void> {
     try {
-      await axiosInstance.delete(`/admin/users/${id}`);
+      await axiosInstance.delete(`/users/${id}`);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -79,7 +79,7 @@ export class AdminUsersApi {
 
   static async activate(id: string): Promise<User> {
     try {
-      const response = await axiosInstance.patch<User>(`/admin/users/${id}/activate`, {});
+      const response = await axiosInstance.patch<User>(`/users/${id}/activate`, {});
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -88,7 +88,7 @@ export class AdminUsersApi {
 
   static async deactivate(id: string): Promise<User> {
     try {
-      const response = await axiosInstance.patch<User>(`/admin/users/${id}/deactivate`, {});
+      const response = await axiosInstance.patch<User>(`/users/${id}/deactivate`, {});
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -108,7 +108,7 @@ export class AdminBetsApi {
     status?: string;
   }): Promise<BetListResponse> {
     try {
-      const response = await axiosInstance.get<BetListResponse>('/admin/bets', { params });
+      const response = await axiosInstance.get<BetListResponse>('/bets', { params });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -117,7 +117,7 @@ export class AdminBetsApi {
 
   static async getOne(id: string): Promise<Bet> {
     try {
-      const response = await axiosInstance.get<Bet>(`/admin/bets/${id}`);
+      const response = await axiosInstance.get<Bet>(`/bets/${id}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -126,7 +126,7 @@ export class AdminBetsApi {
 
   static async updateStatus(id: string, status: string): Promise<Bet> {
     try {
-      const response = await axiosInstance.patch<Bet>(`/admin/bets/${id}/status`, { status });
+      const response = await axiosInstance.patch<Bet>(`/bets/${id}/status`, { status });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -141,7 +141,7 @@ export class AdminSubscriptionsApi {
   // 플랜 관리
   static async getPlans(): Promise<SubscriptionPlan[]> {
     try {
-      const response = await axiosInstance.get<SubscriptionPlan[]>('/admin/subscriptions/plans');
+      const response = await axiosInstance.get<SubscriptionPlan[]>('/subscriptions/plans');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -151,7 +151,7 @@ export class AdminSubscriptionsApi {
   static async getPlan(planId: string): Promise<SubscriptionPlan> {
     try {
       const response = await axiosInstance.get<SubscriptionPlan>(
-        `/admin/subscriptions/plans/${planId}`
+        `/subscriptions/plans/${planId}`
       );
       return handleApiResponse(response);
     } catch (error) {
@@ -162,7 +162,7 @@ export class AdminSubscriptionsApi {
   static async createPlan(data: Partial<SubscriptionPlan>): Promise<SubscriptionPlan> {
     try {
       const response = await axiosInstance.post<SubscriptionPlan>(
-        '/admin/subscriptions/plans',
+        '/subscriptions/plans',
         data
       );
       return handleApiResponse(response);
@@ -177,7 +177,7 @@ export class AdminSubscriptionsApi {
   ): Promise<SubscriptionPlan> {
     try {
       const response = await axiosInstance.patch<SubscriptionPlan>(
-        `/admin/subscriptions/plans/${planId}`,
+        `/subscriptions/plans/${planId}`,
         data
       );
       return handleApiResponse(response);
@@ -188,7 +188,7 @@ export class AdminSubscriptionsApi {
 
   static async deletePlan(planId: string): Promise<void> {
     try {
-      await axiosInstance.delete(`/admin/subscriptions/plans/${planId}`);
+      await axiosInstance.delete(`/subscriptions/plans/${planId}`);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -201,7 +201,7 @@ export class AdminSubscriptionsApi {
     status?: string;
   }): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/subscriptions/users', { params });
+      const response = await axiosInstance.get('/subscriptions/users', { params });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -210,7 +210,7 @@ export class AdminSubscriptionsApi {
 
   static async getUserSubscription(userId: string): Promise<any> {
     try {
-      const response = await axiosInstance.get(`/admin/subscriptions/users/${userId}`);
+      const response = await axiosInstance.get(`/subscriptions/users/${userId}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -220,7 +220,7 @@ export class AdminSubscriptionsApi {
   static async cancelUserSubscription(userId: string, body: any): Promise<any> {
     try {
       const response = await axiosInstance.patch(
-        `/admin/subscriptions/users/${userId}/cancel`,
+        `/subscriptions/users/${userId}/cancel`,
         body
       );
       return handleApiResponse(response);
@@ -231,7 +231,7 @@ export class AdminSubscriptionsApi {
 
   static async extendUserSubscription(userId: string, days: number): Promise<any> {
     try {
-      const response = await axiosInstance.patch(`/admin/subscriptions/users/${userId}/extend`, {
+      const response = await axiosInstance.patch(`/subscriptions/users/${userId}/extend`, {
         days,
       });
       return handleApiResponse(response);
@@ -248,7 +248,7 @@ export class AdminSinglePurchaseApi {
   static async getConfig(): Promise<SinglePurchaseConfig> {
     try {
       const response = await axiosInstance.get<SinglePurchaseConfig>(
-        '/admin/single-purchase/config'
+        '/single-purchase/config'
       );
       return handleApiResponse(response);
     } catch (error) {
@@ -259,7 +259,7 @@ export class AdminSinglePurchaseApi {
   static async updateConfig(data: Partial<SinglePurchaseConfig>): Promise<SinglePurchaseConfig> {
     try {
       const response = await axiosInstance.patch<SinglePurchaseConfig>(
-        '/admin/single-purchase/config',
+        '/single-purchase/config',
         data
       );
       return handleApiResponse(response);
@@ -355,7 +355,7 @@ export class AdminSystemConfigApi {
     kra_base_url_override: string;
   }> {
     try {
-      const response = await axiosInstance.get('/admin/config/system');
+      const response = await axiosInstance.get('/config/system');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -367,7 +367,7 @@ export class AdminSystemConfigApi {
     kra_base_url_override?: string;
   }): Promise<any> {
     try {
-      const response = await axiosInstance.patch('/admin/config/system', data);
+      const response = await axiosInstance.patch('/config/system', data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -381,7 +381,7 @@ export class AdminSystemConfigApi {
 export class AdminAIConfigApi {
   static async getConfig(): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/ai/config');
+      const response = await axiosInstance.get('/ai/config');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -390,7 +390,7 @@ export class AdminAIConfigApi {
 
   static async updateConfig(data: any): Promise<any> {
     try {
-      const response = await axiosInstance.post('/admin/ai/config', data);
+      const response = await axiosInstance.post('/ai/config', data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -399,7 +399,7 @@ export class AdminAIConfigApi {
 
   static async estimateCost(): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/ai/estimate-cost');
+      const response = await axiosInstance.get('/ai/estimate-cost');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -413,7 +413,7 @@ export class AdminAIConfigApi {
 export class AdminKraApi {
   static async syncSchedule(date: string): Promise<any> {
     try {
-      const response = await axiosInstance.post(`/admin/kra/sync/schedule?date=${date}`);
+      const response = await axiosInstance.post(`/kra/sync/schedule?date=${date}`, {}, { timeout: 120_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -422,7 +422,7 @@ export class AdminKraApi {
 
   static async syncResults(date: string): Promise<any> {
     try {
-      const response = await axiosInstance.post(`/admin/kra/sync/results?date=${date}`);
+      const response = await axiosInstance.post(`/kra/sync/results?date=${date}`, {}, { timeout: 120_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -431,7 +431,7 @@ export class AdminKraApi {
 
   static async syncDetails(date: string): Promise<any> {
     try {
-      const response = await axiosInstance.post(`/admin/kra/sync/details?date=${date}`);
+      const response = await axiosInstance.post(`/kra/sync/details?date=${date}`, {}, { timeout: 120_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -440,8 +440,23 @@ export class AdminKraApi {
 
   static async syncJockeys(meet?: string): Promise<any> {
     try {
-      const url = meet ? `/admin/kra/sync/jockeys?meet=${meet}` : '/admin/kra/sync/jockeys';
-      const response = await axiosInstance.post(url);
+      const url = meet ? `/kra/sync/jockeys?meet=${meet}` : '/kra/sync/jockeys';
+      const response = await axiosInstance.post(url, {}, { timeout: 60_000 });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async syncAll(date?: string): Promise<{
+    message: string;
+    entrySheet?: { races: number; entries: number };
+    results?: { totalResults: number };
+  }> {
+    try {
+      const d = date?.replace(/-/g, '').slice(0, 8) ||
+        new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const response = await axiosInstance.post(`/kra/sync/all?date=${d}`, {}, { timeout: 300_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -450,9 +465,50 @@ export class AdminKraApi {
 
   static async syncHistorical(dateFrom: string, dateTo: string): Promise<any> {
     try {
+      // 과거 적재는 여러 날짜 순회로 수 분 소요 가능 → 5분 timeout
       const response = await axiosInstance.post(
-        `/admin/kra/sync/historical?dateFrom=${dateFrom}&dateTo=${dateTo}`
+        `/kra/sync/historical?dateFrom=${dateFrom}&dateTo=${dateTo}`,
+        {},
+        { timeout: 300_000 }
       );
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async seedSample(date?: string): Promise<{ races: number; entries: number; rcDate: string }> {
+    try {
+      const url = date ? `/kra/seed-sample?date=${date}` : '/kra/seed-sample';
+      const response = await axiosInstance.post(url);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async getSyncLogs(params?: {
+    endpoint?: string;
+    rcDate?: string;
+    limit?: number;
+  }): Promise<{ logs: Array<{
+    id: number;
+    endpoint: string;
+    meet: string | null;
+    rcDate: string | null;
+    status: string;
+    recordCount: number;
+    errorMessage: string | null;
+    durationMs: number | null;
+    createdAt: string;
+  }>; total: number }> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.endpoint) searchParams.set('endpoint', params.endpoint);
+      if (params?.rcDate) searchParams.set('rcDate', params.rcDate);
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      const qs = searchParams.toString();
+      const response = await axiosInstance.get(`/kra/sync-logs${qs ? `?${qs}` : ''}`);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -532,9 +588,8 @@ export class AdminResultsApi {
     jkName?: string;
     trName?: string;
     owName?: string;
-    rcRank?: string;
     rcTime?: string;
-    rcPrize?: number;
+    chaksun1?: number;
   }): Promise<any> {
     try {
       const response = await axiosInstance.post('/results', dto);
@@ -544,7 +599,7 @@ export class AdminResultsApi {
     }
   }
 
-  static async update(id: string, dto: { rcRank?: string; rcTime?: string; rcPrize?: number }): Promise<any> {
+  static async update(id: string, dto: { ord?: string; rcTime?: string; chaksun1?: number }): Promise<any> {
     try {
       const response = await axiosInstance.put(`/results/${id}`, dto);
       return handleApiResponse(response);
@@ -568,7 +623,7 @@ export class AdminResultsApi {
 export class AdminNotificationsApi {
   static async getAll(params?: { page?: number; limit?: number }): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/notifications', { params });
+      const response = await axiosInstance.get('/notifications', { params });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -577,7 +632,7 @@ export class AdminNotificationsApi {
 
   static async send(data: { title: string; message: string; target: string }): Promise<any> {
     try {
-      const response = await axiosInstance.post('/admin/notifications/send', data);
+      const response = await axiosInstance.post('/notifications/send', data);
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -595,7 +650,7 @@ export class AdminRevenueApi {
     endDate?: string;
   }): Promise<RevenueStats[]> {
     try {
-      const response = await axiosInstance.get<RevenueStats[]>('/admin/statistics/revenue', {
+      const response = await axiosInstance.get<RevenueStats[]>('/statistics/revenue', {
         params,
       });
       return handleApiResponse(response);
@@ -611,7 +666,7 @@ export class AdminRevenueApi {
 export class AdminStatisticsApi {
   static async getDashboard(): Promise<any> {
     try {
-      const response = await axiosInstance.get('/admin/statistics/dashboard');
+      const response = await axiosInstance.get('/statistics/dashboard');
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -620,7 +675,7 @@ export class AdminStatisticsApi {
 
   static async getUsersGrowth(days?: number): Promise<UsersGrowth[]> {
     try {
-      const response = await axiosInstance.get<UsersGrowth[]>('/admin/statistics/users-growth', {
+      const response = await axiosInstance.get<UsersGrowth[]>('/statistics/users-growth', {
         params: { days },
       });
       return handleApiResponse(response);
@@ -631,7 +686,7 @@ export class AdminStatisticsApi {
 
   static async getBetsTrend(days?: number): Promise<BetsTrend[]> {
     try {
-      const response = await axiosInstance.get<BetsTrend[]>('/admin/statistics/bets-trend', {
+      const response = await axiosInstance.get<BetsTrend[]>('/statistics/bets-trend', {
         params: { days },
       });
       return handleApiResponse(response);
@@ -652,7 +707,7 @@ export class AdminStatisticsApi {
     rows: Revenue[];
   }> {
     try {
-      const response = await axiosInstance.get('/admin/statistics/revenue', {
+      const response = await axiosInstance.get('/statistics/revenue', {
         params: { period },
       });
       return handleApiResponse(response);

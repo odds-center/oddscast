@@ -36,7 +36,7 @@ export default class RankingApi {
   }): Promise<RankingUser[]> {
     const { limit = 20 } = params;
     if (CONFIG.useMock) {
-      return mockRankings.slice(0, limit) as any;
+      return mockRankings.slice(0, limit) as unknown as RankingUser[];
     }
     const { type = 'overall' } = params;
     try {
@@ -60,9 +60,12 @@ export default class RankingApi {
     if (CONFIG.useMock) return null;
     try {
       const response = await axiosInstance.get('/rankings/me', { params: { type } });
-      const result = handleApiResponse(response) as { data?: any } | any;
-      const data = result?.data ?? result;
-      return data ?? null;
+      const result = handleApiResponse(response) as
+        | { data?: { id: string; rank: number; name: string; correctCount: number; isCurrentUser: boolean } }
+        | { id: string; rank: number; name: string; correctCount: number; isCurrentUser: boolean };
+      const raw =
+        typeof result === 'object' && result !== null && 'data' in result ? result.data : result;
+      return (raw ?? null) as { id: string; rank: number; name: string; correctCount: number; isCurrentUser: boolean } | null;
     } catch {
       return null;
     }

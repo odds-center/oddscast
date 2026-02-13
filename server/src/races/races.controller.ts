@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { RacesService } from './races.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -96,7 +97,7 @@ export class RacesController {
 
   @Get(':id')
   @ApiOperation({ summary: '경주 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.findOne(id);
   }
 
@@ -112,7 +113,7 @@ export class RacesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '경주 수정' })
-  update(@Param('id') id: string, @Body() dto: UpdateRaceDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRaceDto) {
     return this.racesService.update(id, dto);
   }
 
@@ -120,37 +121,37 @@ export class RacesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '경주 삭제' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.remove(id);
   }
 
   @Get(':id/results')
   @ApiOperation({ summary: '경주 결과 조회' })
-  getRaceResults(@Param('id') id: string) {
+  getRaceResults(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.getRaceResult(id);
   }
 
   @Get(':id/result')
   @ApiOperation({ summary: '경주 결과 조회 (singular alias)' })
-  getRaceResult(@Param('id') id: string) {
+  getRaceResult(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.getRaceResult(id);
   }
 
   @Get(':id/entries')
   @ApiOperation({ summary: '출전마 목록 조회' })
-  getEntries(@Param('id') id: string) {
+  getEntries(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.findOne(id);
   }
 
   @Get(':id/dividends')
   @ApiOperation({ summary: '배당률 조회' })
-  getDividends(@Param('id') id: string) {
+  getDividends(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.findOne(id);
   }
 
   @Get(':id/analysis')
   @ApiOperation({ summary: '경주 AI 분석 조회' })
-  getAnalysis(@Param('id') id: string) {
+  getAnalysis(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.getAnalysis(id);
   }
 
@@ -158,7 +159,7 @@ export class RacesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '출전마 등록' })
-  createEntry(@Param('id') raceId: string, @Body() dto: CreateRaceEntryDto) {
+  createEntry(@Param('id', ParseIntPipe) raceId: number, @Body() dto: CreateRaceEntryDto) {
     return this.racesService.createEntry(raceId, dto);
   }
 
@@ -167,7 +168,7 @@ export class RacesController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '출전마 일괄 등록' })
   createBulkEntries(
-    @Param('id') raceId: string,
+    @Param('id', ParseIntPipe) raceId: number,
     @Body() body: { entries: CreateRaceEntryDto[] },
   ) {
     return this.racesService.createBulkEntries(raceId, body.entries);

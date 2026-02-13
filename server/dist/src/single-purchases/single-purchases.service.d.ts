@@ -7,14 +7,14 @@ export declare class SinglePurchasesService {
     constructor(prisma: PrismaService, configService: GlobalConfigService);
     private readonly DEFAULT_PRICE_PER_TICKET;
     private getPricePerTicket;
-    purchase(userId: string, dto: PurchaseDto): Promise<{
+    purchase(userId: number, dto: PurchaseDto): Promise<{
         purchase: {
-            id: string;
-            userId: string;
+            id: number;
+            userId: number;
+            totalAmount: number;
             quantity: number;
             paymentMethod: string | null;
             pgTransactionId: string | null;
-            totalAmount: number;
             purchasedAt: Date;
         };
         ticketsIssued: number;
@@ -55,21 +55,21 @@ export declare class SinglePurchasesService {
         discountAmount: number;
         total: number;
     }>;
-    getHistory(userId: string, page?: number, limit?: number): Promise<{
+    getHistory(userId: number, page?: number, limit?: number): Promise<{
         purchases: {
-            id: string;
-            userId: string;
+            id: number;
+            userId: number;
+            totalAmount: number;
             quantity: number;
             paymentMethod: string | null;
             pgTransactionId: string | null;
-            totalAmount: number;
             purchasedAt: Date;
         }[];
         total: number;
         page: number;
         totalPages: number;
     }>;
-    getTotalSpent(userId: string): Promise<{
+    getTotalSpent(userId: number): Promise<{
         totalSpent: number;
         totalPurchases: number;
     }>;

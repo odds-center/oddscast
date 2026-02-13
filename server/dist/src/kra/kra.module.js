@@ -14,12 +14,13 @@ const kra_service_1 = require("./kra.service");
 const kra_controller_1 = require("./kra.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 const config_1 = require("@nestjs/config");
+const cache_module_1 = require("../cache/cache.module");
 let KraModule = class KraModule {
 };
 exports.KraModule = KraModule;
 exports.KraModule = KraModule = __decorate([
     (0, common_1.Module)({
-        imports: [axios_1.HttpModule, schedule_1.ScheduleModule.forRoot(), prisma_module_1.PrismaModule, config_1.ConfigModule],
+        imports: [axios_1.HttpModule, schedule_1.ScheduleModule.forRoot(), prisma_module_1.PrismaModule, config_1.ConfigModule, cache_module_1.CacheModule],
         controllers: [kra_controller_1.KraController],
         providers: [kra_service_1.KraService],
         exports: [kra_service_1.KraService],

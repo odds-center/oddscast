@@ -65,10 +65,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '해당 경주에 대한 내 선택' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, current_user_decorator_1.JwtPayload]),
+    __metadata("design:paramtypes", [Number, current_user_decorator_1.JwtPayload]),
     __metadata("design:returntype", void 0)
 ], PicksController.prototype, "findByRace", null);
 __decorate([
@@ -76,10 +76,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '선택 삭제' }),
-    __param(0, (0, common_1.Param)('raceId')),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __param(1, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, current_user_decorator_1.JwtPayload]),
+    __metadata("design:paramtypes", [Number, current_user_decorator_1.JwtPayload]),
     __metadata("design:returntype", void 0)
 ], PicksController.prototype, "delete", null);
 exports.PicksController = PicksController = __decorate([

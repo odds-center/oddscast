@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { Prisma } from '@prisma/client';
+import { toKraMeetName } from '../kra/constants';
+import { serializeRaceResults } from '../common/serializers/kra.serializer';
 import {
   CreateResultDto,
   UpdateResultDto,
@@ -20,17 +22,28 @@ export class ResultsService {
   async findAll(filters: ResultFilterDto) {
     const { page = 1, limit = 20, date, meet } = filters;
     const where: Prisma.RaceResultWhereInput = {};
-    if (date) {
-      where.OR = [{ rcDay: date }, { race: { rcDate: date } }];
-    }
-    if (meet) {
-      where.race = { meet };
+    if (date || meet) {
+      where.race = {
+        ...(date && { rcDate: date }),
+        ...(meet && { meet: toKraMeetName(meet) }),
+      };
     }
 
     const [results, total] = await Promise.all([
       this.prisma.raceResult.findMany({
         where,
-        include: { race: true },
+        select: {
+          id: true,
+          raceId: true,
+          ord: true,
+          chulNo: true,
+          hrNo: true,
+          hrName: true,
+          jkName: true,
+          race: {
+            select: { meet: true, meetName: true, rcNo: true, rcDate: true },
+          },
+        },
         skip: (page - 1) * limit,
         take: limit,
         orderBy: { createdAt: 'desc' },
@@ -38,16 +51,21 @@ export class ResultsService {
       this.prisma.raceResult.count({ where }),
     ]);
 
-    return { results, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      results: serializeRaceResults(results),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const result = await this.prisma.raceResult.findUnique({
       where: { id },
       include: { race: true },
     });
     if (!result) throw new NotFoundException('결과를 찾을 수 없습니다');
-    return result;
+    return serializeRaceResults([result])[0] ?? result;
   }
 
   async create(dto: CreateResultDto) {
@@ -57,7 +75,7 @@ export class ResultsService {
     });
   }
 
-  async update(id: string, dto: UpdateResultDto) {
+  async update(id: number, dto: UpdateResultDto) {
     return this.prisma.raceResult.update({
       where: { id },
       data: dto,
@@ -65,7 +83,7 @@ export class ResultsService {
     });
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.prisma.raceResult.delete({ where: { id } });
     return { message: '결과가 삭제되었습니다' };
   }
@@ -89,7 +107,7 @@ export class ResultsService {
   /**
    * 경주 결과 확정 시 해당 경주의 예측 정확도 계산 및 DB 저장
    */
-  private async updatePredictionAccuracy(raceId: string) {
+  private async updatePredictionAccuracy(raceId: number) {
     const prediction = await this.prisma.prediction.findFirst({
       where: { raceId, status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' },
@@ -104,14 +122,16 @@ export class ResultsService {
 
     const results = await this.prisma.raceResult.findMany({
       where: { raceId },
-      orderBy: { rcRank: 'asc' },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
     });
     if (!results.length) return;
 
     const predictedOrder = horseScores
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .map((h) => String(h.hrNo ?? h.hrName ?? '').trim());
-    const actualTop = results.slice(0, 3).map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
+    const actualTop = results
+      .slice(0, 3)
+      .map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
 
     const topN = Math.min(3, predictedOrder.length, actualTop.length);
     let matchCount = 0;
@@ -126,10 +146,10 @@ export class ResultsService {
     });
   }
 
-  async getByRace(raceId: string) {
+  async getByRace(raceId: number) {
     return this.prisma.raceResult.findMany({
       where: { raceId },
-      orderBy: { rcRank: 'asc' },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
     });
   }
 
@@ -142,8 +162,8 @@ export class ResultsService {
     }
     if (filters.meet) {
       where.race = {
-        ...where.race?.is,
-        meet: filters.meet,
+        ...(where.race as object),
+        meet: toKraMeetName(filters.meet),
       };
     }
 

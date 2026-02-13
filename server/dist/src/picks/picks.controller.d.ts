@@ -6,94 +6,100 @@ export declare class PicksController {
     constructor(picksService: PicksService);
     create(user: JwtPayload, dto: CreatePickDto): Promise<{
         race: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceName: string | null;
+            rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
             rcNo: string;
             rcDist: string | null;
-            rcGrade: string | null;
+            rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
-            trackState: string | null;
-            status: import(".prisma/client").$Enums.RaceStatus;
+            track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
-        raceId: string;
-        pickType: import(".prisma/client").$Enums.PickType;
+        raceId: number;
+        userId: number;
+        pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
-        userId: string;
         pointsAwarded: number | null;
     }>;
     findByUser(user: JwtPayload, page?: number, limit?: number): Promise<{
         picks: ({
             race: {
-                id: string;
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceName: string | null;
+                rcName: string | null;
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
                 rcNo: string;
                 rcDist: string | null;
-                rcGrade: string | null;
+                rank: string | null;
                 rcCondition: string | null;
                 rcPrize: number | null;
                 weather: string | null;
-                trackState: string | null;
-                status: import(".prisma/client").$Enums.RaceStatus;
+                track: string | null;
+                status: import("@prisma/client").$Enums.RaceStatus;
+                rcDay: string | null;
+                stTime: string | null;
             };
         } & {
-            id: string;
+            id: number;
             createdAt: Date;
-            raceId: string;
-            pickType: import(".prisma/client").$Enums.PickType;
+            raceId: number;
+            userId: number;
+            pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
-            userId: string;
             pointsAwarded: number | null;
         })[];
         total: number;
         page: number;
         totalPages: number;
     }>;
-    findByRace(raceId: string, user: JwtPayload): Promise<({
+    findByRace(raceId: number, user: JwtPayload): Promise<({
         race: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceName: string | null;
+            rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
             rcNo: string;
             rcDist: string | null;
-            rcGrade: string | null;
+            rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
-            trackState: string | null;
-            status: import(".prisma/client").$Enums.RaceStatus;
+            track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
-        raceId: string;
-        pickType: import(".prisma/client").$Enums.PickType;
+        raceId: number;
+        userId: number;
+        pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
-        userId: string;
         pointsAwarded: number | null;
     }) | null>;
-    delete(raceId: string, user: JwtPayload): Promise<{
+    delete(raceId: number, user: JwtPayload): Promise<{
         message: string;
     }>;
 }

@@ -4,102 +4,108 @@ import { PickType } from '@prisma/client';
 export declare class PicksService {
     private prisma;
     constructor(prisma: PrismaService);
-    create(userId: string, dto: CreatePickDto): Promise<{
+    create(userId: number, dto: CreatePickDto): Promise<{
         race: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceName: string | null;
+            rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
             rcNo: string;
             rcDist: string | null;
-            rcGrade: string | null;
+            rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
-            trackState: string | null;
-            status: import(".prisma/client").$Enums.RaceStatus;
+            track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
-        raceId: string;
-        pickType: import(".prisma/client").$Enums.PickType;
+        raceId: number;
+        userId: number;
+        pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
-        userId: string;
         pointsAwarded: number | null;
     }>;
-    findByUser(userId: string, page?: number, limit?: number): Promise<{
+    findByUser(userId: number, page?: number, limit?: number): Promise<{
         picks: ({
             race: {
-                id: string;
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceName: string | null;
+                rcName: string | null;
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
                 rcNo: string;
                 rcDist: string | null;
-                rcGrade: string | null;
+                rank: string | null;
                 rcCondition: string | null;
                 rcPrize: number | null;
                 weather: string | null;
-                trackState: string | null;
-                status: import(".prisma/client").$Enums.RaceStatus;
+                track: string | null;
+                status: import("@prisma/client").$Enums.RaceStatus;
+                rcDay: string | null;
+                stTime: string | null;
             };
         } & {
-            id: string;
+            id: number;
             createdAt: Date;
-            raceId: string;
-            pickType: import(".prisma/client").$Enums.PickType;
+            raceId: number;
+            userId: number;
+            pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
-            userId: string;
             pointsAwarded: number | null;
         })[];
         total: number;
         page: number;
         totalPages: number;
     }>;
-    findByRace(raceId: string, userId?: string): Promise<({
+    findByRace(raceId: number, userId?: number): Promise<({
         race: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceName: string | null;
+            rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
             rcNo: string;
             rcDist: string | null;
-            rcGrade: string | null;
+            rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
-            trackState: string | null;
-            status: import(".prisma/client").$Enums.RaceStatus;
+            track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
-        id: string;
+        id: number;
         createdAt: Date;
-        raceId: string;
-        pickType: import(".prisma/client").$Enums.PickType;
+        raceId: number;
+        userId: number;
+        pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
-        userId: string;
         pointsAwarded: number | null;
     }) | null>;
-    delete(userId: string, raceId: string): Promise<{
+    delete(userId: number, raceId: number): Promise<{
         message: string;
     }>;
-    getCorrectCount(userId: string): Promise<number>;
-    getCorrectCountByUser(): Promise<Map<string, number>>;
+    getCorrectCount(userId: number): Promise<number>;
+    getCorrectCountByUser(): Promise<Map<number, number>>;
     checkPickHit(pickType: PickType, hrNos: string[], results: {
         hrNo: string;
-        rcRank: string | null;
+        ord: string | null;
     }[]): boolean;
 }

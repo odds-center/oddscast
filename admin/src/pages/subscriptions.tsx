@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { adminSubscriptionsApi } from '@/lib/api/admin';
@@ -20,20 +21,17 @@ export default function SubscriptionsPage() {
         <title>구독 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>구독 관리</h1>
-              <p className='mt-2 text-sm text-gray-600'>
-                구독 플랜과 사용자 구독을 관리할 수 있습니다.
-              </p>
-            </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='구독 관리'
+            description='구독 플랜과 사용자 구독을 관리할 수 있습니다.'
+          >
             <Button>플랜 추가</Button>
-          </div>
+          </PageHeader>
 
           <div>
-            <h2 className='text-xl font-semibold mb-4'>구독 플랜</h2>
-            <div className='grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3'>
+            <h2 className='text-base font-semibold mb-3'>구독 플랜</h2>
+            <div className='grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3'>
               {isLoading ? (
                 <div className='col-span-3 text-center py-12'>로딩 중...</div>
               ) : plans && plans.length > 0 ? (
@@ -53,7 +51,7 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className='border-t pt-4'>
-                        <div className='text-3xl font-bold'>{formatCurrency(plan.totalPrice)}</div>
+                        <div className='text-lg font-bold'>{formatCurrency(plan.totalPrice)}</div>
                         <div className='text-sm text-gray-500 mt-1'>
                           월 {plan.totalTickets}개 예측권
                         </div>

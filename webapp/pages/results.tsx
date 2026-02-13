@@ -1,13 +1,31 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Layout from '@/components/Layout';
-import Icon from '@/components/icons';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
 import PageHeader from '@/components/page/PageHeader';
+import FilterDateBar from '@/components/page/FilterDateBar';
+import Pagination from '@/components/page/Pagination';
+import DataFetchState from '@/components/page/DataFetchState';
+import { DataTable, LinkBadge } from '@/components/ui';
 import ResultApi from '@/lib/api/resultApi';
-import { useQuery } from '@tanstack/react-query';
-import Link from 'next/link';
+import type { RaceResult } from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
+import { formatRcDate } from '@/lib/utils/format';
+import { useQuery } from '@tanstack/react-query';
+
+interface TableResult {
+  ord: string;
+  chulNo?: string;
+  hrNo: string;
+  hrName: string;
+  jkName: string;
+}
+
+interface GroupedRace {
+  raceId: string;
+  meetName: string;
+  rcNo: string;
+  rcDate: string;
+  results: TableResult[];
+}
 
 export default function Results() {
   const [page, setPage] = useState(1);
@@ -17,112 +35,125 @@ export default function Results() {
     queryKey: ['results', page, dateFilter],
     queryFn: () =>
       ResultApi.getResults({
-        limit: 20,
+        limit: 250,
         page,
         ...(dateFilter && { date: dateFilter }),
       }),
   });
 
-  const rawResults = data?.results ?? [];
-  // raceId 기준 유니크 (한 경주당 여러 결과 행이 올 수 있음)
-  const seen = new Set<string>();
-  const results = rawResults.filter((r: any) => {
-    const id = r.raceId || r.id;
-    if (seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
+  const groupedRaces = useMemo(() => {
+    const rawResults: RaceResult[] = data?.results ?? [];
+    const byRace = new Map<
+      string,
+      { meetName: string; rcNo: string; rcDate: string; results: TableResult[] }
+    >();
+
+    for (const r of rawResults) {
+      const ord = parseInt(r.ord ?? '99', 10) || 99;
+      if (ord > 3) continue;
+
+      const rWithRace = r as RaceResult & {
+        race?: { meetName?: string; rcNo?: string; rcDate?: string; id?: string };
+        meetName?: string;
+        rcNo?: string;
+        rcDate?: string;
+      };
+      const raceId = String(rWithRace.raceId ?? rWithRace.race?.id ?? rWithRace.id ?? '');
+      const meetName = rWithRace.race?.meetName ?? rWithRace.meetName ?? '-';
+      const rcNo = rWithRace.race?.rcNo ?? rWithRace.rcNo ?? '-';
+      const rcDate = rWithRace.race?.rcDate ?? rWithRace.rcDate ?? '';
+
+      if (!byRace.has(raceId)) {
+        byRace.set(raceId, { meetName, rcNo, rcDate, results: [] });
+      }
+      byRace.get(raceId)!.results.push({
+        ord: r.ord ?? String(ord),
+        chulNo: r.chulNo,
+        hrNo: r.hrNo,
+        hrName: r.hrName,
+        jkName: r.jkName,
+      });
+    }
+
+    const list: GroupedRace[] = [];
+    for (const [raceId, { meetName, rcNo, rcDate, results }] of byRace.entries()) {
+      results.sort((a, b) => (parseInt(a.ord, 10) || 99) - (parseInt(b.ord, 10) || 99));
+      list.push({ raceId, meetName, rcNo, rcDate, results });
+    }
+
+    list.sort((a, b) => {
+      const dateCmp = (a.rcDate || '').localeCompare(b.rcDate || '');
+      if (dateCmp !== 0) return -dateCmp;
+      return (a.rcNo || '').localeCompare(b.rcNo || '');
+    });
+    return list;
+  }, [data?.results]);
+
   const totalPages = data?.totalPages ?? 1;
+
+  function renderRankCell(race: GroupedRace, ord: '1' | '2' | '3') {
+    const r = race.results.find((x) => x.ord === ord);
+    if (!r) return <span className='text-text-tertiary'>-</span>;
+    const no = r.chulNo ?? (r.hrNo && r.hrNo.length <= 2 ? r.hrNo : '-');
+    return (
+      <span className='inline-flex items-center gap-1.5'>
+        <span className='badge-muted'>{no}</span>
+        <span className='font-medium'>{r.hrName}</span>
+        <span className='text-text-secondary text-sm'>({r.jkName})</span>
+      </span>
+    );
+  }
 
   return (
     <Layout title='경주 결과 — GOLDEN RACE'>
       <PageHeader icon='TrendingUp' title='경주 결과' description='종료된 경주의 결과를 확인할 수 있습니다.' />
-      <div className='flex flex-wrap gap-2 items-center mb-6'>
-        <button
-          onClick={() => setDateFilter('')}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-            !dateFilter ? 'bg-primary text-primary-foreground' : 'bg-card border border-border hover:border-border-gold'
-          }`}
-        >
-          전체
-        </button>
-        <input
-          type='date'
-          value={dateFilter}
-          onChange={(e) => {
-            setDateFilter(e.target.value || '');
-            setPage(1);
-          }}
-          className='px-4 py-2 rounded-lg text-sm bg-card border border-border text-foreground focus:border-primary/50'
-        />
-      </div>
+      <FilterDateBar
+        filterOptions={[{ value: '', label: '전체' }]}
+        filterValue={dateFilter || ''}
+        onFilterChange={(v) => { setDateFilter(v); setPage(1); }}
+        dateValue={dateFilter}
+        onDateChange={(v) => { setDateFilter(v); setPage(1); }}
+        dateId='result-date'
+      />
 
-      {isLoading ? (
-        <div className='py-16'>
-          <LoadingSpinner size={28} label='결과를 불러오는 중...' />
-        </div>
-      ) : error ? (
-        <EmptyState
-          icon='AlertCircle'
-          title='결과를 불러오지 못했습니다'
-          description={(error as Error)?.message || '잠시 후 다시 시도해주세요.'}
-          action={
-            <button onClick={() => refetch()} className='btn-secondary px-4 py-2 text-sm'>
-              다시 시도
-            </button>
-          }
+      <DataFetchState
+        isLoading={isLoading}
+        error={error as Error | null}
+        onRetry={() => refetch()}
+        isEmpty={!groupedRaces.length}
+        emptyIcon='TrendingUp'
+        emptyTitle='결과 데이터가 없습니다'
+        emptyDescription='해당 조건에 맞는 경주 결과가 없습니다.'
+        loadingLabel='결과를 불러오는 중...'
+      >
+        <DataTable
+          columns={[
+            { key: 'race', header: '경주', headerClassName: 'w-28 whitespace-nowrap', cellClassName: 'whitespace-nowrap', render: (row) => (
+              <LinkBadge href={routes.resultsDetail(row.raceId)} icon='Flag' iconSize={14}>
+                {row.meetName} {row.rcNo}경
+              </LinkBadge>
+            ) },
+            { key: 'date', header: '날짜', headerClassName: 'w-20', render: (row) => (
+              <span className='text-text-secondary text-sm'>{formatRcDate(row.rcDate)}</span>
+            ) },
+            { key: 'ord1', header: '1위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '1') },
+            { key: 'ord2', header: '2위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '2') },
+            { key: 'ord3', header: '3위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '3') },
+          ]}
+          data={groupedRaces}
+          getRowKey={(row) => row.raceId}
+          rowClassName={() => 'group'}
+          className='text-[14px]'
         />
-      ) : (
-        <>
-          <div className='space-y-2'>
-            {Array.isArray(results) &&
-              results.map((r: any) => (
-                <Link
-                  key={r.id || r.raceId}
-                  href={routes.races.detail(r.raceId || r.id)}
-                  className='card card-hover block flex items-center justify-between gap-3 touch-manipulation min-h-[48px]'
-                >
-                  <div className='flex-1 min-w-0'>
-                    <span className='text-foreground font-medium block'>
-                      {r.race?.meetName || r.meetName} {r.race?.rcNo || r.rcNo}경주
-                    </span>
-                    <span className='text-text-secondary text-sm'>{r.race?.rcDate || r.rcDate}</span>
-                  </div>
-                  <Icon name='ChevronRight' size={20} className='text-text-tertiary shrink-0' />
-                </Link>
-              ))}
-            {(!results || results.length === 0) && (
-              <EmptyState
-                icon='TrendingUp'
-                title='결과 데이터가 없습니다'
-                description='해당 조건에 맞는 경주 결과가 없습니다.'
-              />
-            )}
-          </div>
 
-          {totalPages > 1 && (
-            <div className='flex justify-center gap-2 mt-6'>
-              <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
-                disabled={page <= 1}
-                className='px-3 py-1.5 rounded bg-card border border-border disabled:opacity-50'
-              >
-                이전
-              </button>
-              <span className='py-1.5 text-sm'>
-                {page} / {totalPages}
-              </span>
-              <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                disabled={page >= totalPages}
-                className='px-3 py-1.5 rounded bg-card border border-border disabled:opacity-50'
-              >
-                다음
-              </button>
-            </div>
-          )}
-        </>
-      )}
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          onPrev={() => setPage((p) => Math.max(1, p - 1))}
+          onNext={() => setPage((p) => Math.min(totalPages, p + 1))}
+          className='mt-4'
+        />
+      </DataFetchState>
     </Layout>
   );
 }

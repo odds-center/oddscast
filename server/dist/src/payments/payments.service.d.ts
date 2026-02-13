@@ -3,12 +3,12 @@ import { PaymentSubscribeDto, PaymentPurchaseDto } from '../common/dto/payment.d
 export declare class PaymentsService {
     private prisma;
     constructor(prisma: PrismaService);
-    processSubscription(userId: string, dto: PaymentSubscribeDto): Promise<{
+    processSubscription(userId: number, dto: PaymentSubscribeDto): Promise<{
         billing: {
-            id: string;
+            id: number;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.PaymentStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PaymentStatus;
+            userId: number;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -17,12 +17,12 @@ export declare class PaymentsService {
         };
         planName: string;
     }>;
-    processPurchase(userId: string, dto: PaymentPurchaseDto): Promise<{
+    processPurchase(userId: number, dto: PaymentPurchaseDto): Promise<{
         billing: {
-            id: string;
+            id: number;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.PaymentStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PaymentStatus;
+            userId: number;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -30,11 +30,11 @@ export declare class PaymentsService {
             errorMessage: string | null;
         };
     }>;
-    getHistory(userId: string): Promise<{
-        id: string;
+    getHistory(userId: number): Promise<{
+        id: number;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.PaymentStatus;
-        userId: string;
+        status: import("@prisma/client").$Enums.PaymentStatus;
+        userId: number;
         amount: number;
         pgTransactionId: string | null;
         billingDate: Date;

@@ -11,7 +11,7 @@ interface FilterChipsProps {
 }
 
 const chipBase =
-  'inline-flex items-center justify-center px-4 py-2.5 min-h-[48px] rounded-xl text-base font-medium transition-all duration-200 touch-manipulation';
+  'inline-flex items-center justify-center px-3 py-1.5 min-h-[36px] rounded-lg text-sm font-medium transition-all duration-200 ease touch-manipulation border';
 
 export default function FilterChips({ options, value, onChange, className = '' }: FilterChipsProps) {
   return (
@@ -25,8 +25,8 @@ export default function FilterChips({ options, value, onChange, className = '' }
             type='button'
             className={`${chipBase} ${
               isActive
-                ? 'bg-primary text-primary-foreground shadow-[0_2px_8px_rgba(255,215,0,0.25)] border border-primary/30'
-                : 'bg-card border border-border text-text-secondary hover:border-border-gold hover:text-foreground'
+                ? 'bg-primary text-primary-foreground border-primary/80'
+                : 'bg-card border-border text-text-secondary hover:border-border-gold hover:text-foreground hover:bg-primary/5'
             }`}
           >
             {opt.label}

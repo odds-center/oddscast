@@ -31,6 +31,8 @@ Admin (Next.js)  →  Server (/api)
 WebApp          →  Server (/api)
 ```
 
+**WebApp ↔ Mobile 상세:** [WEBAPP_MOBILE_INTEGRATION.md](./WEBAPP_MOBILE_INTEGRATION.md)
+
 ---
 
 ## Server (`server/`)
@@ -174,17 +176,18 @@ webapp/
 │   │   ├── index.tsx                 # 포인트, 예측권, 구독 요약
 │   │   └── edit.tsx
 │   ├── ranking.tsx
-│   ├── results.tsx
+│   ├── results.tsx               # 경주 결과 (같은 경기 1·2·3위 행 묶음)
 │   ├── settings.tsx
 │   ├── settings/
 │   │   └── notifications.tsx         # 알림 설정 (푸시는 mobile만)
 │   ├── races/
 │   │   └── [id].tsx                  # 경주 상세, 승식 선택
-│   ├── picks.tsx                     # 내가 고른 말 (내부 리다이렉트)
+│   ├── predictions/
+│   │   └── matrix.tsx                 # 종합예상표, AI/전문가 코멘트
+│   ├── picks.tsx                     # 내부 리다이렉트
 │   └── mypage/
 │       ├── index.tsx                 # 마이페이지 메뉴 허브
-│       ├── picks.tsx
-│       ├── favorites.tsx
+│       ├── picks.tsx                 # 내가 고른 말
 │       ├── subscriptions.tsx         # 구독 플랜
 │       ├── subscription-checkout.tsx  # ?planId= 쿼리로 결제
 │       ├── ticket-history.tsx        # 예측권 이력
@@ -197,17 +200,32 @@ webapp/
 │   ├── EmptyState.tsx
 │   ├── GoogleSignInButton.tsx        # GSI 구글 로그인 버튼
 │   ├── icons.tsx                     # Lucide 아이콘
-│   └── page/                         # 페이지 공통 컴포넌트 (직접 import)
-│       ├── PageHeader.tsx            # 아이콘 + 제목 + 설명
-│       ├── SectionCard.tsx           # 카드 섹션
-│       ├── MenuList.tsx              # 메뉴 링크 목록
-│   └── ui/                           # UI 컴포넌트
-│       ├── Dropdown.tsx              # 커스텀 드롭다운
-│       └── Toggle.tsx                # 스위치 토글 (알림 설정 등)
-│       ├── FilterChips.tsx           # 필터 칩
-│       ├── FormInput.tsx             # 폼 입력 필드
-│       ├── Pagination.tsx            # 이전/다음 페이지
-│       └── BackLink.tsx              # 뒤로가기 링크
+│   ├── page/                         # 페이지 공통 (docs/features/UI_PATTERNS.md 참조)
+│   │   ├── PageHeader.tsx            # 아이콘 + 제목 + 설명
+│   │   ├── SectionCard.tsx           # 카드 섹션
+│   │   ├── MenuList.tsx              # 메뉴 링크 목록
+│   │   ├── DataFetchState.tsx        # 로딩/에러/빈 상태 처리
+│   │   ├── RequireLogin.tsx          # 로그인 필요 안내
+│   │   ├── FormInput.tsx             # 폼 입력 필드
+│   │   ├── FilterDateBar.tsx         # 필터 칩 + 날짜 선택
+│   │   ├── FilterChips.tsx          # 필터 칩
+│   │   ├── Pagination.tsx            # 이전/다음 페이지
+│   │   ├── BackLink.tsx              # 뒤로가기 링크 (ChevronLeft 아이콘)
+│   │   └── PageContent.tsx           # 페이지 콘텐츠 래퍼
+│   └── ui/                           # 범용 UI 컴포넌트
+│       ├── Card.tsx
+│       ├── DataTable.tsx             # 공용 테이블 (columns 기반)
+│       ├── Badge.tsx
+│       ├── TabBar.tsx                # 세그먼트 탭 (variant: filled|subtle)
+│       ├── LinkBadge.tsx             # 테이블 내 경주/결과 링크
+│       ├── StatusBadge.tsx           # 경주 상태 배지
+│       ├── RankBadge.tsx             # 1·2·3등 배지
+│       ├── SectionTitle.tsx
+│       ├── Toggle.tsx
+│       └── Dropdown.tsx
+│   ├── race/                         # HorseEntryTable, RaceHeaderCard, PredictionSymbol
+│   ├── results/                      # ResultCard
+│   └── predictions/                  # PredictionMatrixTable, CommentaryFeed, HitRecordBanner
 ├── lib/
 │   ├── api/                          # Server API 클라이언트
 │   ├── mocks/
@@ -222,7 +240,7 @@ webapp/
 │   └── bridge.ts                     # Native ↔ WebView
 <｜tool▁call▁end｜><｜tool▁call▁begin｜>
 └── styles/
-    └── globals.css                   # 테마, 모바일 Safe Area, 터치 UX
+    └── globals.css                   # 라이트 테마(#fafafa, #c9a227), max-width 1200px, 스크롤바 6px
 ```
 
 ## Mobile (`mobile/`)
@@ -278,6 +296,8 @@ admin/
 │   │   └── admin.ts            # admin Races, Users, Results 등
 │   └── pages/
 │       ├── login.tsx
+│       ├── index.tsx             # 대시보드
+│       ├── kra.tsx               # KRA 데이터 관리 (출전표 수동 동기화, 동기화 로그)
 │       ├── races/
 │       ├── users/
 │       └── ...

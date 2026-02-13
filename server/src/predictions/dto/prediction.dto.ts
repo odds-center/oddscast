@@ -11,8 +11,9 @@ import { Type } from 'class-transformer';
 
 export class CreatePredictionDto {
   @ApiProperty()
-  @IsString()
-  raceId: string;
+  @IsNumber()
+  @Type(() => Number)
+  raceId: number;
 
   @ApiPropertyOptional({ description: '{ horseScores: [...] }' })
   @IsOptional()

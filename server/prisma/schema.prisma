@@ -10,13 +10,14 @@ datasource db {
 // 스키마 전략: 마이그레이션 없음, schema가 default state
 // - prisma db push: schema → DB 반영
 // - prisma/seed.sql: 초기 데이터 (PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig)
+// - id: Int @default(autoincrement()) — 기존 UUID DB가 있다면 drop 후 push 필요
 // ============================================
 
 // ============================================
-// 사용자 (User)
+// 앱 사용자 (User) — 웹/모바일 회원
 // ============================================
 model User {
-  id              String    @id @default(uuid())
+  id              Int       @id @default(autoincrement())
   email           String    @unique
   password        String
   name            String
@@ -32,38 +33,58 @@ model User {
   favorites              Favorite[]
   notifications          Notification[]
   notificationPreference UserNotificationPreference?
-  predictionTickets PredictionTicket[]
-  subscriptions     Subscription[]
-  billingHistories  BillingHistory[]
-  singlePurchases   SinglePurchase[]
-  pointTransactions PointTransaction[]
-  bets              Bet[]
-  picks             UserPick[]
+  pushTokens             PushToken[]
+  predictionTickets      PredictionTicket[]
+  subscriptions          Subscription[]
+  billingHistories       BillingHistory[]
+  singlePurchases        SinglePurchase[]
+  pointTransactions      PointTransaction[]
+  bets                   Bet[]
+  picks                  UserPick[]
+  betSlips               BetSlip[]
 
   @@map("users")
 }
 
+// ============================================
+// 관리자 (AdminUser) — Admin 패널 전용, User와 분리
+// ============================================
+model AdminUser {
+  id          Int       @id @default(autoincrement())
+  loginId     String    @unique // 로그인 아이디
+  password    String
+  name        String
+  isActive    Boolean   @default(true)
+  lastLoginAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("admin_users")
+}
+
 enum UserRole {
   USER
-  ADMIN
+  ADMIN // JWT/Guard용 (AdminUser는 DB에 role 없음)
 }
 
 // ============================================
-// 경기 (Race)
+// 경기 (Race) — KRA API 기준 (raceResult_3, entrySheet_2)
 // ============================================
 model Race {
-  id          String     @id @default(uuid())
-  raceName    String?
-  meet        String // 서울/부산/제주 코드
-  meetName    String? // 서울, 부산경남, 제주
-  rcDate      String // YYYYMMDD
-  rcNo        String // 경주 번호
-  rcDist      String? // 거리
-  rcGrade     String? // 등급
-  rcCondition String? // 조건
-  rcPrize     Int? // 상금
-  weather     String?
-  trackState  String? // 주로 상태
+  id          Int        @id @default(autoincrement())
+  rcName      String? // KRA: 경주명
+  meet        String // KRA: 시행경마장명 (서울, 제주, 부산경남)
+  meetName    String?
+  rcDate      String // KRA: YYYYMMDD
+  rcDay       String? // KRA: 경주요일 (예: 일요일)
+  rcNo        String // KRA: 경주번호
+  stTime      String? // KRA: 출발시각
+  rcDist      String? // KRA: 경주거리 (m)
+  rank        String? // KRA: 등급조건 (예: 국6등급)
+  rcCondition String?
+  rcPrize     Int? // KRA: 1착상금 (경주 단위)
+  weather     String? // KRA: 날씨
+  track       String? // KRA: 주로상태 (예: 건조 (2%))
   status      RaceStatus @default(SCHEDULED)
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
@@ -73,6 +94,7 @@ model Race {
   predictions Prediction[]
   bets        Bet[]
   picks       UserPick[]
+  betSlips    BetSlip[]
 
   @@unique([meet, rcDate, rcNo])
   @@map("races")
@@ -86,69 +108,76 @@ enum RaceStatus {
 }
 
 // ============================================
-// 출전마 (RaceEntry)
+// 출전마 (RaceEntry) — KRA API 기준 (entrySheet_2)
 // ============================================
 model RaceEntry {
-  id       String  @id @default(uuid())
-  raceId   String
-  hrNo     String // 마번 (등록번호)
-  hrName   String // 마명
-  hrNameEn String? // 영문 마명
-  jkNo     String? // 기수 번호
-  jkName   String // 기수명
-  jkNameEn String? // 영문 기수명
-  trNo     String? // 조교사 번호
-  trName   String? // 조교사명
-  owNo     String? // 마주 번호
-  owName   String? // 마주명
+  id       Int     @id @default(autoincrement())
+  raceId   Int
+  hrNo     String // KRA: 마번(고유번호)
+  hrName   String // KRA: 마명
+  hrNameEn String? // KRA: 영문마명
+  jkNo     String? // KRA: 기수번호
+  jkName   String // KRA: 기수명
+  jkNameEn String? // KRA: 영문기수이름
+  trNo     String? // KRA: 조교사번호
+  trName   String? // KRA: 조교사명
+  owNo     String? // KRA: 마주번호
+  owName   String? // KRA: 마주명
 
-  weight Float? // 부담 중량 (wgBudam)
-  rating Float? // 레이팅
+  wgBudam Float? // KRA: 부담중량 (kg)
+  rating  Float? // KRA: 레이팅
 
-  chulNo Int? // 출전번호
-  dusu   Int? // 총 두수 (해당 경주)
+  chulNo String? // KRA: 마번(출주번호) — 출전번호
+  dusu   Int? // KRA: 두수 (총 출전 두수)
 
-  sex    String? // 성별 (암/수/거)
-  age    Int? // 연령
-  origin String? // 산지 (국산/외산) - prd
+  sex String? // KRA: 성별 (암/수/거)
+  age Int? // KRA: 연령
+  prd String? // KRA: 산지 (예: 한국)
 
-  // 추가 정보 (상금, 통산 성적 등)
-  prize1    Int? // 1착 상금 (chaksun1)
-  prizeT    BigInt? // 통산 수득 상금 (chaksunT)
-  totalRuns Int? // 통산 출전 횟수 (rcCntT)
-  totalWins Int? // 통산 1위 횟수 (ord1CntT)
+  // KRA: 상금·통산 성적
+  chaksun1 Int? // KRA: 1착상금
+  chaksunT BigInt? // KRA: 통산수득상금
+  rcCntT   Int? // KRA: 통산출주횟수
+  ord1CntT Int? // KRA: 통산1위횟수
 
-  // 분석용 데이터 (Group B)
-  recentRanks    Json?   // 최근 등수 배열
-  trainingData   Json?   // 훈련 내역 (JSON) - Simple storage
-  equipment      String? // 장구 변경 내역 (KRA API24)
-  horseWeight    String? // 마체중 (KRA API25, e.g. "502(-2)")
-  bleedingInfo   Json?   // 폐출혈 이력 (bleCnt, bleDate, medicalInfo)
-  isScratched    Boolean @default(false) // 출전취소 (KRA API9)
+  // 분석용 (Group B)
+  budam        String? // KRA: 부담구분 (예: 별정A)
+  recentRanks  Json? // 최근 등수 배열
+  trainingData Json? // 훈련 내역 (JSON)
+  equipment    String? // 장구 변경 (KRA API24)
+  horseWeight  String? // 마체중 (KRA API25, e.g. "502(-2)")
+  bleedingInfo Json? // 폐출혈 이력
+  isScratched  Boolean @default(false) // KRA API9: 출전취소
 
   // Relations
   race      Race       @relation(fields: [raceId], references: [id], onDelete: Cascade)
-  trainings Training[] // 1:N Relation with Training data
+  trainings Training[] // 1:N
 
   @@map("race_entries")
 }
 
 // ============================================
-// 훈련 데이터 (Training)
+// 훈련 데이터 (Training) — KRA API 기준 (trcontihi)
 // ============================================
 model Training {
-  id          String  @id @default(uuid())
-  raceEntryId String? // Optional link to a specific race entry
-  horseNo     String // 마번 (Link to Horse conceptually)
+  id          Int    @id @default(autoincrement())
+  raceEntryId Int?
+  horseNo     String // KRA: 마번 (hrNo)
 
-  date           String // 훈련 일자 (YYYYMMDD)
-  place          String? // 훈련 장소
-  weather        String? // 날씨
-  trackCondition String? // 주로 상태
+  trDate      String // KRA: 훈련일자 (YYYYMMDD)
+  trTime      String? // KRA: 훈련시간
+  trEndTime   String? // KRA: 훈련종료시간
+  trDuration  String? // KRA: 훈련소요시간
+  trContent   String? // KRA: 훈련조교내용
+  trType      String? // KRA: 훈련종류 (발마, 조교 등)
+  managerType String? // KRA: 관리사 종류
+  managerName String? // KRA: 관리사명
 
-  course    String? // 코스
-  time      String? // 훈련 시간 (초/분) or Text
-  intensity String? // 훈련 강도
+  place          String? // KRA: 훈련장소
+  weather        String? // KRA: 날씨
+  trackCondition String? // KRA: 주로상태
+  course         String? // 코스 (확장용)
+  intensity      String? // 훈련 강도 (확장용)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -156,47 +185,41 @@ model Training {
   raceEntry RaceEntry? @relation(fields: [raceEntryId], references: [id])
 
   @@index([horseNo])
+  @@index([trDate])
   @@map("trainings")
 }
 
 // ============================================
-// 경주 결과 (RaceResult)
+// 경주 결과 (RaceResult) — KRA API 기준 (raceResult_3)
 // ============================================
 model RaceResult {
-  id               String  @id @default(uuid())
-  raceId           String
-  ord              String? // 순서
-  hrNo             String // 마번
-  hrName           String // 마명
-  jkName           String? // 기수명
-  trName           String? // 조교사명
-  owName           String? // 마주명
-  rcRank           String? // 착순
-  rcTime           String? // 기록 시간
-  rcPrize          Int? // 상금
-  rcDist           String? // 거리
-  rcGrade          String? // 등급
-  rcCondition      String? // 조건
-  rcDay            String?
-  rcWeekday        String?
-  rcWeather        String?
-  rcTrack          String?
-  rcTrackCondition String?
+  id      Int     @id @default(autoincrement())
+  raceId  Int
+  ord     String? // KRA: 순위
+  ordInt  Int? // 정렬용 (ord 파싱, 10경주+ 대비)
+  hrNo    String // KRA: 마번
+  hrName  String // KRA: 마명
+  chulNo  String? // KRA: 출전번호
+  age     String? // KRA: 연령
+  sex     String? // KRA: 성별 (수/암/거)
+  jkNo    String? // KRA: 기수번호
+  jkName  String? // KRA: 기수명
+  trName  String? // KRA: 조교사명
+  owName  String? // KRA: 마주명
+  wgBudam Float? // KRA: 부담중량
+  wgHr    String? // KRA: 마체감량 (e.g. 502(-2))
+  hrTool  String? // KRA: 장구내역
 
-  // New API Fields
-  chulNo  String? // 출전번호
-  age     String? // 연령
-  sex     String? // 성별
-  jkNo    String? // 기수번호
-  wgBudam Float? // 부담중량
-  wgHr    String? // 마체중 (e.g. 502(-2))
-  hrTool  String? // 장구내역
+  rcTime   String? // KRA: 경주기록 (초)
+  diffUnit String? // KRA: 착차
+  winOdds  Float? // KRA: 단승식배당율
+  plcOdds  Float? // KRA: 복승식배당율
 
-  diffUnit String? // 착차
-  winOdds  Float? // 단승식 배당률
-  plcOdds  Float? // 복승식 배당률
+  track    String? // KRA: 주로상태 (해당 경주)
+  weather  String? // KRA: 날씨 (해당 경주)
+  chaksun1 Int? // KRA: 1착상금 (rcPrize)
 
-  sectionalTimes Json? // 구간별 기록 (S1F, G3F, G1F etc.)
+  sectionalTimes Json? // 구간별 기록 (seS1fAccTime, seG3fAccTime 등)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -209,7 +232,7 @@ model RaceResult {
 // 기수 통산 전적 (JockeyResult)
 // ============================================
 model JockeyResult {
-  id     String @id @default(uuid())
+  id     Int    @id @default(autoincrement())
   meet   String // 1:서울, 2:제주, 3:부경
   jkNo   String // 기수번호
   jkName String // 기수명
@@ -234,8 +257,8 @@ model JockeyResult {
 // AI 예측 (Prediction)
 // ============================================
 model Prediction {
-  id              String           @id @default(uuid())
-  raceId          String
+  id              Int              @id @default(autoincrement())
+  raceId          Int
   scores          Json? // { horseScores: [...] }
   analysis        String?          @db.Text // AI 분석글
   preview         String?          @db.Text // 무료 미리보기
@@ -262,11 +285,11 @@ enum PredictionStatus {
 // 예측권 (PredictionTicket)
 // ============================================
 model PredictionTicket {
-  id             String       @id @default(uuid())
-  userId         String
-  subscriptionId String?
-  predictionId   String?
-  raceId         String?
+  id             Int          @id @default(autoincrement())
+  userId         Int
+  subscriptionId Int?
+  predictionId   Int?
+  raceId         Int?
   status         TicketStatus @default(AVAILABLE)
   usedAt         DateTime?
   issuedAt       DateTime     @default(now())
@@ -289,7 +312,7 @@ enum TicketStatus {
 // 구독 플랜 (SubscriptionPlan)
 // ============================================
 model SubscriptionPlan {
-  id            String   @id @default(uuid())
+  id            Int      @id @default(autoincrement())
   planName      String   @unique // LIGHT, PREMIUM
   displayName   String
   description   String?
@@ -313,9 +336,9 @@ model SubscriptionPlan {
 // 구독 (Subscription)
 // ============================================
 model Subscription {
-  id              String             @id @default(uuid())
-  userId          String
-  planId          String
+  id              Int                @id @default(autoincrement())
+  userId          Int
+  planId          Int
   price           Int
   status          SubscriptionStatus @default(PENDING)
   billingKey      String?
@@ -345,8 +368,8 @@ enum SubscriptionStatus {
 // 알림 (Notification)
 // ============================================
 model Notification {
-  id        String               @id @default(uuid())
-  userId    String
+  id        Int                  @id @default(autoincrement())
+  userId    Int
   title     String
   message   String
   type      NotificationType     @default(SYSTEM)
@@ -378,17 +401,34 @@ enum NotificationCategory {
 }
 
 // ============================================
+// 푸시 토큰 (PushToken) — Expo Push 발송용
+// ============================================
+model PushToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String // ExponentPushToken[xxx]
+  deviceId  String? // 앱에서 중복 등록 방지용
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, token])
+  @@map("push_tokens")
+}
+
+// ============================================
 // 알림 설정 (UserNotificationPreference)
 // ============================================
 model UserNotificationPreference {
-  id                 String   @id @default(uuid())
-  userId              String   @unique
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
   pushEnabled         Boolean  @default(true)
-  raceEnabled         Boolean  @default(true)   // 경주 시작/결과
-  predictionEnabled   Boolean  @default(true)   // AI 예측권/분석 관련
-  subscriptionEnabled Boolean  @default(true)   // 구독 결제/만료
-  systemEnabled       Boolean  @default(true)   // 시스템 공지
-  promotionEnabled    Boolean  @default(false)  // 프로모션/마케팅
+  raceEnabled         Boolean  @default(true) // 경주 시작/결과
+  predictionEnabled   Boolean  @default(true) // AI 예측권/분석 관련
+  subscriptionEnabled Boolean  @default(true) // 구독 결제/만료
+  systemEnabled       Boolean  @default(true) // 시스템 공지
+  promotionEnabled    Boolean  @default(false) // 프로모션/마케팅
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -401,8 +441,8 @@ model UserNotificationPreference {
 // 즐겨찾기 (Favorite)
 // ============================================
 model Favorite {
-  id              String           @id @default(uuid())
-  userId          String
+  id              Int              @id @default(autoincrement())
+  userId          Int
   type            FavoriteType
   targetId        String
   targetName      String
@@ -438,8 +478,8 @@ enum FavoritePriority {
 // 결제 이력 (BillingHistory)
 // ============================================
 model BillingHistory {
-  id              String        @id @default(uuid())
-  userId          String
+  id              Int           @id @default(autoincrement())
+  userId          Int
   amount          Int
   billingDate     DateTime      @default(now())
   status          PaymentStatus @default(SUCCESS)
@@ -463,8 +503,8 @@ enum PaymentStatus {
 // 개별 구매 (SinglePurchase)
 // ============================================
 model SinglePurchase {
-  id              String   @id @default(uuid())
-  userId          String
+  id              Int      @id @default(autoincrement())
+  userId          Int
   quantity        Int
   totalAmount     Int
   paymentMethod   String?
@@ -480,8 +520,8 @@ model SinglePurchase {
 // 포인트 (Point)
 // ============================================
 model PointTransaction {
-  id              String               @id @default(uuid())
-  userId          String
+  id              Int                  @id @default(autoincrement())
+  userId          Int
   transactionType PointTransactionType
   amount          Int
   balanceAfter    Int
@@ -498,7 +538,7 @@ model PointTransaction {
 }
 
 model PointPromotion {
-  id          String        @id @default(uuid())
+  id          Int           @id @default(autoincrement())
   name        String
   description String
   type        PromotionType
@@ -547,9 +587,9 @@ enum PromotionType {
 // 베팅 (Bet)
 // ============================================
 model Bet {
-  id              String    @id @default(uuid())
-  userId          String
-  raceId          String
+  id              Int       @id @default(autoincrement())
+  userId          Int
+  raceId          Int
   betType         BetType
   betName         String
   betDescription  String?
@@ -585,14 +625,17 @@ model Bet {
 }
 
 model BetSlip {
-  id          String        @id @default(uuid())
-  raceId      String
-  userId      String
+  id          Int           @id @default(autoincrement())
+  raceId      Int
+  userId      Int
   bets        Json // Array of bets
   totalAmount Int
   status      BetSlipStatus @default(DRAFT)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  race Race @relation(fields: [raceId], references: [id], onDelete: Cascade)
 
   @@map("bet_slips")
 }
@@ -634,14 +677,14 @@ enum BetSlipStatus {
 // 내가 고른 말 (UserPick) — 승식별 기록, 적중 시 포인트
 // ============================================
 model UserPick {
-  id             String   @id @default(uuid())
-  userId         String
-  raceId         String
-  pickType       PickType @default(SINGLE) // 단승/복승/연승/쌍승 등
-  hrNos          String[] // 고른 마번 배열 [1, 5] or [1, 5, 7]
-  hrNames        String[] // 마명 (표시용)
-  pointsAwarded  Int?     @default(0) // 적중 시 지급된 포인트
-  createdAt      DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  userId        Int
+  raceId        Int
+  pickType      PickType @default(SINGLE) // 단승/복승/연승/쌍승 등
+  hrNos         String[] // 고른 마번 배열 [1, 5] or [1, 5, 7]
+  hrNames       String[] // 마명 (표시용)
+  pointsAwarded Int?     @default(0) // 적중 시 지급된 포인트
+  createdAt     DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   race Race @relation(fields: [raceId], references: [id], onDelete: Cascade)
@@ -651,20 +694,20 @@ model UserPick {
 }
 
 enum PickType {
-  SINGLE       // 단승식: 1마리 1등
-  PLACE       // 복승식: 1마리 1~3등
-  QUINELLA    // 연승식: 2마리 1·2등 (순서 무관)
-  EXACTA      // 쌍승식: 2마리 1·2등 (순서 유관)
-  QUINELLA_PLACE  // 복연승식: 2마리 3등 이내
-  TRIFECTA    // 삼복승식: 3마리 1·2·3등 (순서 무관)
-  TRIPLE      // 삼쌍승식: 3마리 1·2·3등 (순서 유관)
+  SINGLE // 단승식: 1마리 1등
+  PLACE // 복승식: 1마리 1~3등
+  QUINELLA // 연승식: 2마리 1·2등 (순서 무관)
+  EXACTA // 쌍승식: 2마리 1·2등 (순서 유관)
+  QUINELLA_PLACE // 복연승식: 2마리 3등 이내
+  TRIFECTA // 삼복승식: 3마리 1·2·3등 (순서 무관)
+  TRIPLE // 삼쌍승식: 3마리 1·2·3등 (순서 유관)
 }
 
 // ============================================
 // 포인트 지급 설정 (PointConfig)
 // ============================================
 model PointConfig {
-  id          String   @id @default(uuid())
+  id          Int      @id @default(autoincrement())
   configKey   String   @unique // BASE_POINTS, SINGLE_MULTIPLIER 등
   configValue String
   description String?
@@ -678,13 +721,13 @@ model PointConfig {
 // 포인트 예측권 가격 (PointTicketPrice)
 // ============================================
 model PointTicketPrice {
-  id               String    @id @default(uuid())
-  pointsPerTicket  Int       // 1장당 포인트 (예: 1200)
-  isActive         Boolean   @default(true)
-  effectiveFrom    DateTime  @default(now())
-  effectiveTo      DateTime?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id              Int       @id @default(autoincrement())
+  pointsPerTicket Int // 1장당 포인트 (예: 1200)
+  isActive        Boolean   @default(true)
+  effectiveFrom   DateTime  @default(now())
+  effectiveTo     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
   @@map("point_ticket_prices")
 }
@@ -693,14 +736,14 @@ model PointTicketPrice {
 // KRA API 동기화 로그 (각 API 호출 이력)
 // ============================================
 model KraSyncLog {
-  id           String   @id @default(uuid())
-  endpoint     String   // API 엔드포인트 (entrySheet, raceResult, jockey, trackInfo 등)
-  meet         String?  // 경마장 코드 (1/2/3)
-  rcDate       String?  // YYYYMMDD
-  status       String   // SUCCESS, FAILED, PARTIAL
+  id           Int      @id @default(autoincrement())
+  endpoint     String // API 엔드포인트 (entrySheet, raceResult, jockey, trackInfo 등)
+  meet         String? // 경마장 코드 (1/2/3)
+  rcDate       String? // YYYYMMDD
+  status       String // SUCCESS, FAILED, PARTIAL
   recordCount  Int      @default(0) // 처리된 레코드 수
   errorMessage String?  @db.Text
-  durationMs   Int?     // 소요 시간 (ms)
+  durationMs   Int? // 소요 시간 (ms)
   createdAt    DateTime @default(now())
 
   @@index([endpoint, rcDate])
@@ -712,9 +755,9 @@ model KraSyncLog {
 // 글로벌 설정 (Key-Value, NoSQL 스타일)
 // ============================================
 model GlobalConfig {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   key       String   @unique
-  value     String   // JSON 문자열 또는 단순 문자열
+  value     String // JSON 문자열 또는 단순 문자열
   updatedAt DateTime @updatedAt
 
   @@map("global_config")

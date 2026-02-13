@@ -10,8 +10,9 @@ import { Type } from 'class-transformer';
 
 export class CreateResultDto {
   @ApiProperty()
-  @IsString()
-  raceId: string;
+  @IsInt()
+  @Type(() => Number)
+  raceId: number;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -44,25 +45,20 @@ export class CreateResultDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  rcRank?: string;
-
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
   rcTime?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
   @Type(() => Number)
-  rcPrize?: number;
+  chaksun1?: number;
 }
 
 export class UpdateResultDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
-  rcRank?: string;
+  ord?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -73,7 +69,7 @@ export class UpdateResultDto {
   @IsOptional()
   @IsInt()
   @Type(() => Number)
-  rcPrize?: number;
+  chaksun1?: number;
 }
 
 export class BulkCreateResultDto {

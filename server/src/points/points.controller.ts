@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PointsService } from './points.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -91,7 +92,7 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '포인트 잔액 조회' })
-  getBalance(@Param('userId') userId: string) {
+  getBalance(@Param('userId', ParseIntPipe) userId: number) {
     return this.pointsService.getBalance(userId);
   }
 
@@ -99,7 +100,7 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '포인트 트랜잭션 조회' })
-  getTransactions(@Param('userId') userId: string, @Query() filters: any) {
+  getTransactions(@Param('userId', ParseIntPipe) userId: number, @Query() filters: any) {
     return this.pointsService.getTransactions(userId, filters);
   }
 
@@ -108,7 +109,7 @@ export class PointsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '포인트 트랜잭션 생성 (관리자용?)' })
   createTransaction(
-    @Param('userId') userId: string,
+    @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: CreatePointTransactionDto,
   ) {
     return this.pointsService.createTransaction(userId, dto);
@@ -119,8 +120,8 @@ export class PointsController {
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '프로모션 적용' })
   applyPromotion(
-    @Param('userId') userId: string,
-    @Param('promotionId') promotionId: string,
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('promotionId', ParseIntPipe) promotionId: number,
   ) {
     return this.pointsService.applyPromotion(userId, promotionId);
   }

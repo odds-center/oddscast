@@ -7,7 +7,7 @@ export declare class KraController {
     constructor(kraService: KraService, prisma: PrismaService);
     getSyncLogs(endpoint?: string, rcDate?: string, limit?: number): Promise<{
         logs: {
-            id: string;
+            id: number;
             createdAt: Date;
             meet: string | null;
             rcDate: string | null;
@@ -21,6 +21,8 @@ export declare class KraController {
     }>;
     syncSchedule(date: string): Promise<{
         message: string;
+        races: number;
+        entries: number;
     }>;
     syncResults(date: string): Promise<{
         message: string;

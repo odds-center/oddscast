@@ -30,7 +30,7 @@ export class PointsService {
     private picksService: PicksService,
   ) {}
 
-  async getBalance(userId: string) {
+  async getBalance(userId: number) {
     const transactions = await this.prisma.pointTransaction.findMany({
       where: { userId, status: 'ACTIVE' },
     });
@@ -64,7 +64,7 @@ export class PointsService {
     };
   }
 
-  async getTransactions(userId: string, filters: any) {
+  async getTransactions(userId: number, filters: any) {
     const where: any = { userId };
     if (filters.type) where.transactionType = filters.type;
     if (filters.status) where.status = filters.status;
@@ -87,7 +87,7 @@ export class PointsService {
     };
   }
 
-  async createTransaction(userId: string, dto: CreatePointTransactionDto) {
+  async createTransaction(userId: number, dto: CreatePointTransactionDto) {
     // 잔액 확인 및 업데이트 로직 필요하나, 일단 단순 기록
     const currentBalance = (await this.getBalance(userId)).currentPoints;
     let balanceAfter = currentBalance;
@@ -111,12 +111,13 @@ export class PointsService {
     });
   }
 
-  async transfer(fromUserId: string, dto: PointTransferDto) {
+  async transfer(fromUserId: number, dto: PointTransferDto) {
     const fromBalance = await this.getBalance(fromUserId);
     if (fromBalance.currentPoints < dto.amount) {
       throw new BadRequestException('잔액이 부족합니다.');
     }
 
+    const toUserId = Number(dto.toUserId);
     // 트랜잭션으로 처리해야 함
     return this.prisma.$transaction(async (prisma) => {
       // 출금
@@ -126,16 +127,16 @@ export class PointsService {
           transactionType: PointTransactionType.TRANSFER_OUT,
           amount: dto.amount,
           balanceAfter: fromBalance.currentPoints - dto.amount,
-          description: `Transfer to ${dto.toUserId}: ${dto.description}`,
+          description: `Transfer to ${toUserId}: ${dto.description}`,
           status: PointStatus.ACTIVE,
         },
       });
 
       // 입금
-      const toBalance = await this.getBalance(dto.toUserId);
+      const toBalance = await this.getBalance(toUserId);
       await prisma.pointTransaction.create({
         data: {
-          userId: dto.toUserId,
+          userId: toUserId,
           transactionType: PointTransactionType.TRANSFER_IN,
           amount: dto.amount,
           balanceAfter: toBalance.currentPoints + dto.amount,
@@ -154,7 +155,7 @@ export class PointsService {
     });
   }
 
-  async applyPromotion(userId: string, promotionId: string) {
+  async applyPromotion(userId: number, promotionId: number) {
     const promotion = await this.prisma.pointPromotion.findUnique({
       where: { id: promotionId },
     });
@@ -192,7 +193,7 @@ export class PointsService {
     return { pointsPerTicket: price?.pointsPerTicket ?? 1200 };
   }
 
-  async purchaseTicket(userId: string, dto: PurchaseTicketDto) {
+  async purchaseTicket(userId: number, dto: PurchaseTicketDto) {
     const { pointsPerTicket } = await this.getTicketPrice();
     const totalCost = pointsPerTicket * dto.quantity;
     const balance = await this.getBalance(userId);
@@ -242,11 +243,11 @@ export class PointsService {
   /**
    * 경주 결과 확정 후, 적중한 UserPick에 포인트 지급
    */
-  async awardPickPointsForRace(raceId: string): Promise<{ awarded: number }> {
+  async awardPickPointsForRace(raceId: number): Promise<{ awarded: number }> {
     const picks = await this.prisma.userPick.findMany({
       where: { raceId },
       include: {
-        race: { include: { results: { orderBy: { rcRank: 'asc' } } } },
+        race: { include: { results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] } } },
       },
     });
 
@@ -262,7 +263,7 @@ export class PointsService {
       const isHit = this.picksService.checkPickHit(
         pick.pickType,
         pick.hrNos,
-        results.map((r) => ({ hrNo: r.hrNo, rcRank: r.rcRank })),
+        results.map((r) => ({ hrNo: r.hrNo, ord: r.ord })),
       );
       if (!isHit) continue;
 

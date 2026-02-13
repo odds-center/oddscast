@@ -10,7 +10,7 @@
 | 파일 | 원본 | 설명 |
 |------|------|------|
 | [LEGACY_SERVER_README.md](LEGACY_SERVER_README.md) | server_legacy_nestjs/README.md | 레거시 서버 개요 |
-| [LEGACY_SUPABASE_SETUP.md](LEGACY_SUPABASE_SETUP.md) | SUPABASE_SETUP.md | Supabase 마이그레이션 가이드 |
+| [LEGACY_SUPABASE_SETUP.md](LEGACY_SUPABASE_SETUP.md) | SUPABASE_SETUP.md | PostgreSQL 마이그레이션 가이드 (레거시) |
 | [LEGACY_SUPABASE_MIGRATION.md](LEGACY_SUPABASE_MIGRATION.md) | SUPABASE_MIGRATION_COMPLETE.md | 마이그레이션 완료 보고서 |
 | [LEGACY_ENV_SETUP.md](LEGACY_ENV_SETUP.md) | ENV_SETUP.md | 레거시 환경변수 설정 |
 | [LEGACY_MIGRATIONS.md](LEGACY_MIGRATIONS.md) | migrations/README.md | MySQL 마이그레이션 |

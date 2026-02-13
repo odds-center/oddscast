@@ -41,10 +41,17 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 var KraService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KraService = void 0;
 const common_1 = require("@nestjs/common");
+const cache_manager_1 = require("@nestjs/cache-manager");
 const axios_1 = require("@nestjs/axios");
 const config_1 = require("@nestjs/config");
 const client_1 = require("@prisma/client");
@@ -52,16 +59,23 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const schedule_1 = require("@nestjs/schedule");
 const rxjs_1 = require("rxjs");
 const xml2js = __importStar(require("xml2js"));
+const dayjs_1 = __importDefault(require("dayjs"));
+const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
+const constants_1 = require("./constants");
 let KraService = KraService_1 = class KraService {
-    constructor(httpService, configService, prisma) {
+    constructor(httpService, configService, prisma, cache) {
         this.httpService = httpService;
         this.configService = configService;
         this.prisma = prisma;
+        this.cache = cache;
         this.logger = new common_1.Logger(KraService_1.name);
         this.baseUrl = 'http://apis.data.go.kr/B551015';
+        dayjs_1.default.extend(customParseFormat_1.default);
         this.serviceKey = this.configService.get('KRA_SERVICE_KEY', '');
     }
     async syncWeeklySchedule() {
+        if (!this.ensureServiceKey())
+            return;
         this.logger.log('Running Weekly Schedule Sync (Pre-fetch)');
         const dates = this.getUpcomingWeekendDates();
         for (const date of dates) {
@@ -69,79 +83,95 @@ let KraService = KraService_1 = class KraService {
         }
     }
     async syncRaceDayMorning() {
+        if (!this.ensureServiceKey())
+            return;
         this.logger.log('Running Race Day Morning Sync (Finalization)');
         const today = this.getTodayDateString();
         await this.syncEntrySheet(today);
         await this.syncAnalysisData(today);
     }
     async syncRealtimeResults() {
+        if (!this.ensureServiceKey())
+            return;
         this.logger.log('Running Real-time Result Sync');
         const today = this.getTodayDateString();
         await this.fetchRaceResults(today);
         await this.syncAnalysisData(today);
     }
+    formatYyyyMmDd(d) {
+        return d.format('YYYYMMDD');
+    }
+    normalizeToYyyyMmDd(date) {
+        const d = date.includes('-') ? (0, dayjs_1.default)(date) : (0, dayjs_1.default)(date, 'YYYYMMDD');
+        return d.format('YYYYMMDD');
+    }
     getTodayDateString() {
-        return new Date().toISOString().split('T')[0].replace(/-/g, '');
+        return this.formatYyyyMmDd((0, dayjs_1.default)());
     }
     getUpcomingWeekendDates() {
-        const today = new Date();
-        const day = today.getDay();
+        const today = (0, dayjs_1.default)();
+        const day = today.day();
         const dates = [];
         const diffToFri = 5 - day;
         for (let i = 0; i < 3; i++) {
-            const nextDate = new Date(today);
-            nextDate.setDate(today.getDate() + diffToFri + i);
-            dates.push(nextDate.toISOString().split('T')[0].replace(/-/g, ''));
+            dates.push(this.formatYyyyMmDd(today.add(diffToFri + i, 'day')));
         }
         return dates;
     }
     meetNameToCode(name) {
-        if (name === 'Seoul')
-            return '1';
-        if (name === 'Jeju')
-            return '2';
-        if (name === 'Busan')
-            return '3';
-        return '1';
+        return (0, constants_1.meetToCode)(name);
+    }
+    ensureServiceKey() {
+        if (!this.serviceKey?.trim()) {
+            this.logger.warn('[KraSync] KRA_SERVICE_KEY가 비어있어 KRA API 호출을 스킵합니다. .env에 인코딩된 API 키를 설정하세요.');
+            return false;
+        }
+        return true;
     }
     async logKraSync(endpoint, opts) {
-        await this.prisma.kraSyncLog.create({
-            data: {
-                endpoint,
-                meet: opts.meet,
-                rcDate: opts.rcDate,
-                status: opts.status,
-                recordCount: opts.recordCount ?? 0,
-                errorMessage: opts.errorMessage,
-                durationMs: opts.durationMs,
-            },
-        });
+        try {
+            await this.prisma.kraSyncLog.create({
+                data: {
+                    endpoint,
+                    meet: opts.meet ?? null,
+                    rcDate: opts.rcDate ?? null,
+                    status: opts.status,
+                    recordCount: opts.recordCount ?? 0,
+                    errorMessage: opts.errorMessage ?? null,
+                    durationMs: opts.durationMs ?? null,
+                },
+            });
+        }
+        catch {
+        }
     }
     async syncEntrySheet(date) {
-        this.logger.log(`Syncing Entry Sheet for date: ${date}`);
+        if (!this.ensureServiceKey()) {
+            return { message: 'KRA_SERVICE_KEY 미설정. .env에 API 키를 추가하세요.', races: 0, entries: 0 };
+        }
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
+        this.logger.log(`Syncing Entry Sheet for date: ${normalizedDate}`);
         const endpoint = 'entrySheet';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
         let totalRaces = 0;
         let totalEntries = 0;
-        for (const meet of meets) {
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const url = `${this.baseUrl}/API26_2/entrySheet_2`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
-                    rc_date: date,
+                    rc_date: normalizedDate,
+                    rc_month: normalizedDate.slice(0, 6),
                     numOfRows: 1000,
                     pageNo: 1,
                     _type: 'json',
                 };
                 const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
                 let items = [];
+                let body;
                 if (response.data?.response?.body?.items?.item) {
+                    body = response.data.response.body;
                     const rawItems = response.data.response.body.items.item;
                     items = Array.isArray(rawItems) ? rawItems : [rawItems];
                 }
@@ -150,8 +180,24 @@ let KraService = KraService_1 = class KraService {
                     const parser = new xml2js.Parser({ explicitArray: false });
                     const result = await parser.parseStringPromise(response.data);
                     if (result?.response?.body?.items?.item) {
+                        body = result.response.body;
                         const rawItems = result.response.body.items.item;
                         items = Array.isArray(rawItems) ? rawItems : [rawItems];
+                    }
+                }
+                const totalCount = body?.totalCount != null ? Number(body.totalCount) : items.length;
+                if (totalCount > items.length && totalCount > 0) {
+                    for (let pageNo = 2; items.length < totalCount; pageNo++) {
+                        const nextRes = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
+                            params: { ...params, pageNo, numOfRows: 1000 },
+                        }));
+                        const raw = nextRes?.data?.response?.body?.items?.item;
+                        if (!raw)
+                            break;
+                        const arr = Array.isArray(raw) ? raw : [raw];
+                        items.push(...arr);
+                        if (arr.length < 1000)
+                            break;
                     }
                 }
                 if (items.length === 0) {
@@ -159,14 +205,14 @@ let KraService = KraService_1 = class KraService {
                     continue;
                 }
                 for (const item of items) {
-                    await this.processEntrySheetItem(item, meet.name, date);
+                    await this.processEntrySheetItem(item, meet.name, normalizedDate);
                     totalEntries++;
                 }
-                const uniqueRaces = new Set(items.map((i) => i.rcNo));
+                const uniqueRaces = new Set(items.map((i) => i?.rcNo ?? i?.rc_no ?? ''));
                 totalRaces += uniqueRaces.size;
                 await this.logKraSync(endpoint, {
                     meet: meet.code,
-                    rcDate: date,
+                    rcDate: normalizedDate,
                     status: 'SUCCESS',
                     recordCount: items.length,
                     durationMs: Date.now() - start,
@@ -175,7 +221,7 @@ let KraService = KraService_1 = class KraService {
             catch (error) {
                 await this.logKraSync(endpoint, {
                     meet: meet.code,
-                    rcDate: date,
+                    rcDate: normalizedDate,
                     status: 'FAILED',
                     errorMessage: error instanceof Error ? error.message : String(error),
                     durationMs: Date.now() - start,
@@ -184,73 +230,100 @@ let KraService = KraService_1 = class KraService {
             }
         }
         return {
-            message: `Synced ${totalRaces} races and ${totalEntries} entries for ${date}`,
+            message: `Synced ${totalRaces} races and ${totalEntries} entries for ${normalizedDate}`,
+            races: totalRaces,
+            entries: totalEntries,
         };
     }
     async processEntrySheetItem(item, meetName, date) {
-        const prize = parseInt(item.chaksun1?.replace(/,/g, '') || '0', 10) || 0;
+        const v = (key) => item[key] ?? item[key.replace(/([A-Z])/g, '_$1').toLowerCase()];
+        const vs = (key) => {
+            const x = v(key);
+            return x != null ? String(x) : null;
+        };
+        const rcNo = vs('rcNo') || vs('rc_no') || '';
+        if (!rcNo)
+            return;
+        const chaksun1 = vs('chaksun1') || vs('chaksun_1') || '0';
+        const prize = parseInt(chaksun1.replace(/,/g, ''), 10) || undefined;
+        const stTime = vs('stTime') ?? vs('st_time') ?? null;
+        const meetFromApi = vs('meet');
+        const meetForRace = meetFromApi && ['서울', '제주', '부산경남'].includes(meetFromApi) ? meetFromApi : meetName;
+        const rcNameRaw = vs('rcName') ?? vs('rc_name') ?? vs('raceName');
+        const rcName = (rcNameRaw && rcNameRaw.trim()) ? rcNameRaw.trim() : `경주 ${rcNo}R`;
         const race = await this.prisma.race.upsert({
             where: {
-                meet_rcDate_rcNo: {
-                    meet: meetName,
-                    rcDate: date,
-                    rcNo: item.rcNo,
-                },
+                meet_rcDate_rcNo: { meet: meetForRace, rcDate: date, rcNo },
             },
             update: {
-                rcDist: item.rcDist,
-                raceName: item.rcName,
-                rcGrade: item.rank,
+                rcDist: vs('rcDist') ?? vs('rc_dist'),
+                rcName,
+                rcDay: vs('rcDay') ?? vs('rc_day'),
+                rank: vs('rank'),
                 rcPrize: prize,
+                meetName: meetFromApi ?? meetName,
+                stTime: stTime ?? undefined,
             },
             create: {
-                meet: meetName,
+                meet: meetForRace,
                 rcDate: date,
-                rcNo: item.rcNo,
-                rcDist: item.rcDist,
-                raceName: item.rcName,
-                rcGrade: item.rank,
+                rcNo,
+                rcDist: vs('rcDist') ?? vs('rc_dist'),
+                rcName,
+                rcDay: vs('rcDay') ?? vs('rc_day'),
+                rank: vs('rank'),
                 rcPrize: prize,
+                meetName: meetFromApi ?? meetName,
+                stTime: stTime ?? undefined,
             },
         });
+        const hrNo = vs('hrNo') || vs('hr_no') || '';
         const existingEntry = await this.prisma.raceEntry.findFirst({
-            where: {
-                raceId: race.id,
-                hrNo: item.hrNo,
-            },
+            where: { raceId: race.id, hrNo },
         });
-        const weight = parseFloat(item.wgBudam) || 0;
-        const rating = parseFloat(item.rating) || 0;
-        const age = parseInt(item.age, 10) || 0;
-        const prize1 = parseInt(item.chaksun1?.replace(/,/g, '') || '0', 10) || 0;
-        const prizeT = BigInt(parseInt(item.chaksunT?.replace(/,/g, '') || '0', 10));
-        const totalRuns = parseInt(item.rcCntT, 10) || 0;
-        const totalWins = parseInt(item.ord1CntT, 10) || 0;
-        const dusu = parseInt(item.dusu, 10) || 0;
-        const chulNo = parseInt(item.chulNo, 10) || 0;
+        const wgBudamRaw = v('wgBudam') ?? v('wg_budam');
+        const weight = wgBudamRaw != null ? parseFloat(String(wgBudamRaw)) : undefined;
+        const ratingVal = v('rating');
+        const rating = ratingVal != null ? parseFloat(String(ratingVal)) : undefined;
+        const ageVal = v('age');
+        const age = ageVal != null ? parseInt(String(ageVal), 10) : undefined;
+        const chaksun1Raw = v('chaksun1') ?? v('chaksun_1');
+        const prize1 = chaksun1Raw != null ? parseInt(String(chaksun1Raw).replace(/,/g, ''), 10) : undefined;
+        const chaksunTRaw = v('chaksunT') ?? v('chaksun_t');
+        const prizeT = chaksunTRaw != null ? BigInt(parseInt(String(chaksunTRaw).replace(/,/g, ''), 10) || 0) : undefined;
+        const rcCntTRaw = v('rcCntT') ?? v('rc_cnt_t');
+        const totalRuns = rcCntTRaw != null ? parseInt(String(rcCntTRaw), 10) : undefined;
+        const ord1CntTRaw = v('ord1CntT') ?? v('ord1_cnt_t');
+        const totalWins = ord1CntTRaw != null ? parseInt(String(ord1CntTRaw), 10) : undefined;
+        const dusuVal = v('dusu');
+        const dusu = dusuVal != null ? parseInt(String(dusuVal), 10) : undefined;
+        const chulNoVal = v('chulNo') ?? v('chul_no');
+        const chulNo = chulNoVal != null ? String(chulNoVal) : undefined;
+        const budam = vs('budam');
         const entryData = {
             raceId: race.id,
-            hrNo: item.hrNo,
-            hrName: item.hrName,
-            hrNameEn: item.hrNameEn,
-            jkNo: item.jkNo,
-            jkName: item.jkName,
-            jkNameEn: item.jkNameEn,
-            trNo: item.trNo,
-            trName: item.trName,
-            owNo: item.owNo,
-            owName: item.owName,
-            weight: weight,
-            rating: rating,
-            chulNo: chulNo,
-            dusu: dusu,
-            sex: item.sex,
-            age: age,
-            origin: item.prd,
-            prize1: prize1,
-            prizeT: prizeT,
-            totalRuns: totalRuns,
-            totalWins: totalWins,
+            hrNo,
+            hrName: vs('hrName') || vs('hr_name') || '',
+            hrNameEn: vs('hrNameEn') || vs('hr_name_en'),
+            jkNo: vs('jkNo') || vs('jk_no'),
+            jkName: vs('jkName') || vs('jk_name') || '',
+            jkNameEn: vs('jkNameEn') || vs('jk_name_en'),
+            trNo: vs('trNo') || vs('tr_no'),
+            trName: vs('trName') || vs('tr_name'),
+            owNo: vs('owNo') || vs('ow_no'),
+            owName: vs('owName') || vs('ow_name'),
+            wgBudam: weight,
+            rating,
+            chulNo,
+            dusu,
+            sex: vs('sex'),
+            age,
+            prd: vs('prd'),
+            chaksun1: prize1,
+            chaksunT: prizeT,
+            rcCntT: totalRuns,
+            ord1CntT: totalWins,
+            budam: budam ?? undefined,
         };
         if (existingEntry) {
             await this.prisma.raceEntry.update({
@@ -263,12 +336,43 @@ let KraService = KraService_1 = class KraService {
                 data: entryData,
             });
         }
+        await this.cache.del(`race:${race.id}`);
+    }
+    async syncAll(date) {
+        if (!this.ensureServiceKey()) {
+            return { message: 'KRA_SERVICE_KEY 미설정.' };
+        }
+        const d = this.normalizeToYyyyMmDd(date);
+        this.logger.log(`[syncAll] Starting full sync for ${d}`);
+        const out = {
+            message: '',
+        };
+        try {
+            const entryRes = await this.syncEntrySheet(d);
+            out.entrySheet = { races: entryRes.races, entries: entryRes.entries };
+            await this.delay(300);
+            const resultRes = await this.fetchRaceResults(d);
+            out.results = { totalResults: resultRes.totalResults ?? 0 };
+            await this.delay(300);
+            const detailRes = await this.syncAnalysisData(d);
+            out.details = detailRes.message;
+            const jockeyRes = await this.fetchJockeyTotalResults();
+            out.jockeys = jockeyRes.message;
+            out.message = `전체 적재 완료: ${out.entrySheet?.races ?? 0}경주, ${out.entrySheet?.entries ?? 0}출마, ${out.results?.totalResults ?? 0}결과`;
+        }
+        catch (err) {
+            this.logger.error('[syncAll] Failed', err);
+            throw err;
+        }
+        return out;
     }
     async syncHistoricalBackfill(dateFrom, dateTo) {
-        this.logger.log(`Starting historical backfill from ${dateFrom} to ${dateTo}`);
-        const start = dateFrom.replace(/-/g, '');
-        const end = dateTo.replace(/-/g, '');
-        const dates = this.getDateRange(start, end);
+        if (!this.ensureServiceKey())
+            return;
+        this.logger.log(`Starting historical backfill (race days only) from ${dateFrom} to ${dateTo}`);
+        const start = this.normalizeToYyyyMmDd(dateFrom);
+        const end = this.normalizeToYyyyMmDd(dateTo);
+        const dates = this.getRaceDateRange(start, end);
         const summary = { processed: 0, failed: [], totalResults: 0 };
         for (const date of dates) {
             try {
@@ -277,12 +381,19 @@ let KraService = KraService_1 = class KraService {
                 summary.totalResults += typeof result === 'object' && result && 'totalResults' in result
                     ? result.totalResults
                     : 0;
+                await this.fetchTrackInfo(date);
                 await this.delay(500);
             }
             catch (err) {
                 summary.failed.push(date);
                 this.logger.warn(`Historical backfill failed for ${date}`, err);
             }
+        }
+        try {
+            await this.fetchJockeyTotalResults();
+        }
+        catch (e) {
+            this.logger.warn('Jockey sync after historical failed', e);
         }
         return {
             message: `과거 데이터 적재 완료`,
@@ -291,12 +402,15 @@ let KraService = KraService_1 = class KraService {
             totalResults: summary.totalResults,
         };
     }
-    getDateRange(from, to) {
+    getRaceDateRange(from, to) {
         const dates = [];
-        const start = new Date(parseInt(from.slice(0, 4), 10), parseInt(from.slice(4, 6), 10) - 1, parseInt(from.slice(6, 8), 10));
-        const end = new Date(parseInt(to.slice(0, 4), 10), parseInt(to.slice(4, 6), 10) - 1, parseInt(to.slice(6, 8), 10));
-        for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-            dates.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+        const start = (0, dayjs_1.default)(from, 'YYYYMMDD');
+        const end = (0, dayjs_1.default)(to, 'YYYYMMDD');
+        for (let d = start; !d.isAfter(end); d = d.add(1, 'day')) {
+            const day = d.day();
+            if (day === 0 || day === 5 || day === 6) {
+                dates.push(this.formatYyyyMmDd(d));
+            }
         }
         return dates;
     }
@@ -304,72 +418,171 @@ let KraService = KraService_1 = class KraService {
         return new Promise((resolve) => setTimeout(resolve, ms));
     }
     async fetchRaceResults(date, createRaceIfMissing = false) {
+        if (!this.ensureServiceKey()) {
+            return { message: 'KRA_SERVICE_KEY 미설정.', totalResults: 0 };
+        }
         this.logger.log(`Fetching race results for date: ${date}`);
         const endpoint = 'raceResult';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
         let totalResults = 0;
-        for (const meet of meets) {
+        const failed500Meets = [];
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/getRaceResult`;
+                const normalizedDate = this.normalizeToYyyyMmDd(date);
+                const url = `${this.baseUrl}/API4_3/raceResult_3`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
-                    rc_date: date,
+                    rc_date: normalizedDate,
                     numOfRows: 300,
                     pageNo: 1,
+                    _type: 'json',
                 };
                 const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
-                const parser = new xml2js.Parser({ explicitArray: false });
-                const result = await parser.parseStringPromise(response.data);
+                let result;
+                if (typeof response.data === 'object' && response.data?.response?.body?.items?.item) {
+                    result = response.data;
+                }
+                else if (typeof response.data === 'string' && response.data.includes('<')) {
+                    const parser = new xml2js.Parser({ explicitArray: false });
+                    result = await parser.parseStringPromise(response.data);
+                }
+                else {
+                    result = {};
+                }
                 if (!result?.response?.body?.items?.item) {
                     continue;
                 }
-                const items = Array.isArray(result.response.body.items.item)
+                let items = Array.isArray(result.response.body.items.item)
                     ? result.response.body.items.item
                     : [result.response.body.items.item];
+                const body = result.response?.body;
+                const totalCount = body?.totalCount != null ? Number(body.totalCount) : items.length;
+                if (totalCount > items.length && totalCount > 0) {
+                    const allItems = [...items];
+                    for (let pageNo = 2; allItems.length < totalCount; pageNo++) {
+                        const nextRes = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
+                            params: { ...params, pageNo, numOfRows: 300 },
+                        }));
+                        const nextResult = nextRes?.data;
+                        const nextItems = nextResult?.response?.body?.items?.item;
+                        if (!nextItems)
+                            break;
+                        const arr = Array.isArray(nextItems) ? nextItems : [nextItems];
+                        allItems.push(...arr);
+                        if (arr.length < 300)
+                            break;
+                    }
+                    items = allItems;
+                }
                 const racesToUpdate = new Set();
+                const getRcName = (it) => {
+                    const v = it.rcName ?? it.rc_name ?? it.raceName ?? it.race_name;
+                    if (v != null && String(v).trim())
+                        return String(v).trim();
+                    return null;
+                };
+                const rcNameFallback = (rcNoStr) => `경주 ${rcNoStr}R`;
                 for (const item of items) {
+                    const rcNo = String(item.rcNo ?? item.rc_no ?? '');
                     let race = await this.prisma.race.findUnique({
                         where: {
                             meet_rcDate_rcNo: {
                                 meet: meet.name,
-                                rcDate: date,
-                                rcNo: item.rcNo,
+                                rcDate: normalizedDate,
+                                rcNo,
                             },
                         },
                     });
+                    const rcNameVal = getRcName(item);
+                    const rcNameToSave = rcNameVal ?? rcNameFallback(rcNo);
+                    const rcDistVal = item.rcDist ?? item.rc_dist;
+                    const rcDayVal = item.rcDay ?? item.rc_day;
+                    const rankVal = item.rank;
+                    const weatherVal = item.weather;
+                    const trackVal = item.track ?? item.trackState ?? item.track;
                     if (!race && createRaceIfMissing) {
+                        const meetName = item.meet && ['서울', '제주', '부산경남'].includes(String(item.meet))
+                            ? String(item.meet)
+                            : meet.name;
                         race = await this.prisma.race.upsert({
                             where: {
                                 meet_rcDate_rcNo: {
-                                    meet: meet.name,
-                                    rcDate: date,
-                                    rcNo: item.rcNo,
+                                    meet: meetName,
+                                    rcDate: normalizedDate,
+                                    rcNo,
                                 },
                             },
                             create: {
-                                meet: meet.name,
-                                rcDate: date,
-                                rcNo: item.rcNo,
-                                rcDist: item.rcDist ?? null,
-                                weather: item.weather ?? null,
-                                trackState: item.trackState ?? null,
+                                meet: meetName,
+                                rcDate: normalizedDate,
+                                rcNo,
+                                rcDist: rcDistVal != null ? String(rcDistVal) : null,
+                                rcName: rcNameToSave,
+                                rcDay: rcDayVal != null ? String(rcDayVal) : null,
+                                rank: rankVal != null ? String(rankVal) : null,
+                                weather: weatherVal != null ? String(weatherVal) : null,
+                                track: trackVal != null ? String(trackVal) : null,
                                 status: 'COMPLETED',
                             },
-                            update: {},
+                            update: {
+                                rcName: rcNameToSave,
+                                rcDist: rcDistVal != null ? String(rcDistVal) : undefined,
+                                rcDay: rcDayVal != null ? String(rcDayVal) : undefined,
+                                rank: rankVal != null ? String(rankVal) : undefined,
+                                weather: weatherVal != null ? String(weatherVal) : undefined,
+                                track: trackVal != null ? String(trackVal) : undefined,
+                            },
+                        });
+                    }
+                    else if (race) {
+                        const patch = { rcName: rcNameToSave };
+                        if (rcDistVal != null)
+                            patch.rcDist = String(rcDistVal);
+                        if (rcDayVal != null)
+                            patch.rcDay = String(rcDayVal);
+                        if (rankVal != null)
+                            patch.rank = String(rankVal);
+                        if (weatherVal != null)
+                            patch.weather = String(weatherVal);
+                        if (trackVal != null)
+                            patch.track = String(trackVal);
+                        await this.prisma.race.update({
+                            where: { id: race.id },
+                            data: patch,
                         });
                     }
                     if (!race)
                         continue;
+                    const hrNoStr = item.hrNo != null ? String(item.hrNo) : item.hr_no != null ? String(item.hr_no) : '';
+                    if (hrNoStr) {
+                        const existingEntry = await this.prisma.raceEntry.findFirst({
+                            where: { raceId: race.id, hrNo: hrNoStr },
+                        });
+                        if (!existingEntry) {
+                            const sv = (val) => (val != null ? String(val) : undefined);
+                            await this.prisma.raceEntry.create({
+                                data: {
+                                    raceId: race.id,
+                                    hrNo: hrNoStr,
+                                    hrName: sv(item.hrName ?? item.hr_name) ?? '',
+                                    jkNo: sv(item.jkNo ?? item.jk_no),
+                                    jkName: sv(item.jkName ?? item.jk_name) ?? '',
+                                    trName: sv(item.trName ?? item.tr_name),
+                                    owName: sv(item.owName ?? item.ow_name),
+                                    wgBudam: item.wgBudam != null ? parseFloat(String(item.wgBudam)) : item.wg_budam != null ? parseFloat(String(item.wg_budam)) : undefined,
+                                    chulNo: sv(item.chulNo ?? item.chul_no),
+                                    age: item.age != null ? parseInt(String(item.age), 10) : undefined,
+                                    sex: sv(item.sex),
+                                },
+                            });
+                            await this.cache.del(`race:${race.id}`);
+                        }
+                    }
                     const existingResult = await this.prisma.raceResult.findFirst({
                         where: {
                             raceId: race.id,
-                            hrNo: item.hrNo,
+                            hrNo: hrNoStr,
                         },
                     });
                     const s1f = item.seS1fAccTime ?? item.buS1fAccTime ?? item.jeS1fAccTime;
@@ -379,33 +592,34 @@ let KraService = KraService_1 = class KraService {
                     const sectionalTimes = hasSectional
                         ? JSON.parse(JSON.stringify({ s1f, g3f, g1f }))
                         : undefined;
+                    const sv = (val) => (val != null ? String(val) : undefined);
+                    const ordStr = sv(item.ord);
+                    const ordIntVal = ordStr != null && /^\d+$/.test(ordStr) ? parseInt(ordStr, 10) : undefined;
                     const resultData = {
                         raceId: race.id,
-                        hrNo: item.hrNo,
-                        hrName: item.hrName,
-                        ord: item.ord,
-                        rcTime: item.rcTime,
-                        rcRank: item.ord ?? item.rank,
-                        rcDist: item.rcDist,
-                        rcWeather: item.weather,
-                        rcTrack: item.track,
-                        rcTrackCondition: item.track ?? item.trackState,
-                        chulNo: item.chulNo,
-                        age: item.age,
-                        sex: item.sex,
-                        jkNo: item.jkNo,
-                        jkName: item.jkName,
-                        trName: item.trName,
-                        owName: item.owName,
-                        wgBudam: item.wgBudam != null ? parseFloat(String(item.wgBudam)) : undefined,
-                        wgHr: item.wgHr ?? item.wg_hr,
-                        hrTool: item.hrTool ?? item.hr_tool,
-                        diffUnit: item.diffUnit ?? item.diff_unit,
+                        hrNo: sv(item.hrNo ?? item.hr_no) ?? '',
+                        hrName: sv(item.hrName ?? item.hr_name) ?? '',
+                        ord: ordStr,
+                        ordInt: ordIntVal,
+                        rcTime: sv(item.rcTime),
+                        chulNo: sv(item.chulNo ?? item.chul_no),
+                        age: sv(item.age),
+                        sex: sv(item.sex),
+                        jkNo: sv(item.jkNo ?? item.jk_no),
+                        jkName: sv(item.jkName ?? item.jk_name),
+                        trName: sv(item.trName ?? item.tr_name),
+                        owName: sv(item.owName ?? item.ow_name),
+                        wgBudam: item.wgBudam != null ? parseFloat(String(item.wgBudam)) : item.wg_budam != null ? parseFloat(String(item.wg_budam)) : undefined,
+                        wgHr: sv(item.wgHr ?? item.wg_hr),
+                        hrTool: sv(item.hrTool ?? item.hr_tool),
+                        diffUnit: sv(item.diffUnit ?? item.diff_unit),
                         winOdds: item.winOdds != null ? parseFloat(String(item.winOdds)) : undefined,
                         plcOdds: item.plcOdds != null ? parseFloat(String(item.plcOdds)) : undefined,
+                        track: sv(item.track ?? item.trackState),
+                        weather: sv(item.weather),
+                        chaksun1: item.rcPrize != null || item.chaksun1 != null
+                            ? parseInt(String(item.rcPrize ?? item.chaksun1), 10) : undefined,
                     };
-                    if (item.rcPrize != null)
-                        resultData.rcPrize = parseInt(String(item.rcPrize), 10);
                     if (sectionalTimes)
                         resultData.sectionalTimes = sectionalTimes;
                     const data = { ...resultData };
@@ -436,68 +650,96 @@ let KraService = KraService_1 = class KraService {
                 });
             }
             catch (error) {
+                const msg = error instanceof Error ? error.message : String(error);
+                const errResp = error && typeof error === 'object' && 'response' in error
+                    ? error.response?.status
+                    : undefined;
+                const is500 = typeof errResp === 'number' && errResp === 500;
                 await this.logKraSync(endpoint, {
                     meet: meet.code,
                     rcDate: date,
                     status: 'FAILED',
-                    errorMessage: error instanceof Error ? error.message : String(error),
+                    errorMessage: msg.slice(0, 500),
                     durationMs: Date.now() - start,
                 });
-                this.logger.error(`Failed to fetch results for ${meet.name}`, error);
+                if (is500) {
+                    failed500Meets.push(meet.name);
+                }
+                else {
+                    this.logger.error(`Failed to fetch results for ${meet.name}`, error);
+                }
             }
+        }
+        if (failed500Meets.length > 0) {
+            this.logger.warn(`KRA API 500 for ${date} (${failed500Meets.join(', ')}) - 해당 날짜 경주 없을 수 있음`);
         }
         return { message: `Synced ${totalResults} results for ${date}`, totalResults };
     }
     async fetchRaceEntries(meet, date, raceNo) {
-        const endpoint = '/getRaceEntry';
-        const meetCode = meet === 'Seoul' ? '1' : meet === 'Jeju' ? '2' : '3';
+        if (!this.ensureServiceKey())
+            return { message: 'KRA_SERVICE_KEY 미설정' };
+        const meetCode = this.meetNameToCode(meet);
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
         try {
-            const url = `${this.baseUrl}${endpoint}`;
+            const url = `${this.baseUrl}/API26_2/entrySheet_2`;
             const params = {
                 serviceKey: decodeURIComponent(this.serviceKey),
                 meet: meetCode,
-                rc_date: date,
-                rc_no: raceNo,
-                numOfRows: 100,
+                rc_date: normalizedDate,
+                rc_month: normalizedDate.slice(0, 6),
+                numOfRows: 500,
                 pageNo: 1,
+                _type: 'json',
             };
             const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
-            const parser = new xml2js.Parser({ explicitArray: false });
-            const result = await parser.parseStringPromise(response.data);
-            if (!result?.response?.body?.items?.item) {
-                return;
+            let items = [];
+            if (response.data?.response?.body?.items?.item) {
+                const raw = response.data.response.body.items.item;
+                items = (Array.isArray(raw) ? raw : [raw]);
             }
-            const items = Array.isArray(result.response.body.items.item)
-                ? result.response.body.items.item
-                : [result.response.body.items.item];
+            else if (typeof response.data === 'string' && response.data.includes('<')) {
+                const parser = new xml2js.Parser({ explicitArray: false });
+                const result = await parser.parseStringPromise(response.data);
+                if (result?.response?.body?.items?.item) {
+                    const raw = result.response.body.items.item;
+                    items = (Array.isArray(raw) ? raw : [raw]);
+                }
+            }
+            const filtered = items.filter((i) => String(i.rcNo ?? i.rc_no ?? '') === String(raceNo));
+            if (filtered.length === 0)
+                return { message: 'No entries for race' };
             const race = await this.prisma.race.findUnique({
                 where: {
-                    meet_rcDate_rcNo: {
-                        meet: meet,
-                        rcDate: date,
-                        rcNo: raceNo,
-                    },
+                    meet_rcDate_rcNo: { meet, rcDate: normalizedDate, rcNo: raceNo },
                 },
             });
             if (!race) {
-                this.logger.warn(`Race not found for entry sync: ${meet} ${date} R${raceNo}`);
-                return;
+                this.logger.warn(`Race not found: ${meet} ${date} R${raceNo}`);
+                return { message: 'Race not found' };
             }
-            for (const item of items) {
+            for (const item of filtered) {
+                const v = (k) => item[k] ?? item[k.replace(/([A-Z])/g, '_$1').toLowerCase()];
+                const vs = (k) => (v(k) != null ? String(v(k)) : null);
+                const hrNo = vs('hrNo') || vs('hr_no') || '';
+                if (!hrNo)
+                    continue;
                 const existingEntry = await this.prisma.raceEntry.findFirst({
-                    where: {
-                        raceId: race.id,
-                        hrNo: item.hrNo,
-                    },
+                    where: { raceId: race.id, hrNo },
                 });
+                const wgBudam = v('wgBudam') ?? v('wg_budam');
                 const entryData = {
                     raceId: race.id,
-                    hrNo: item.hrNo,
-                    hrName: item.hrName,
-                    jkName: item.jkName,
-                    trName: item.trName,
-                    owName: item.owName,
-                    weight: parseFloat(item.wgBudam) || 0,
+                    hrNo,
+                    hrName: vs('hrName') || vs('hr_name') || '',
+                    hrNameEn: vs('hrNameEn') || vs('hr_name_en'),
+                    jkNo: vs('jkNo') || vs('jk_no'),
+                    jkName: vs('jkName') || vs('jk_name') || '',
+                    jkNameEn: vs('jkNameEn') || vs('jk_name_en'),
+                    trNo: vs('trNo') || vs('tr_no'),
+                    trName: vs('trName') || vs('tr_name'),
+                    owNo: vs('owNo') || vs('ow_no'),
+                    owName: vs('owName') || vs('ow_name'),
+                    wgBudam: wgBudam != null ? parseFloat(String(wgBudam)) : undefined,
                 };
                 if (existingEntry) {
                     await this.prisma.raceEntry.update({
@@ -506,83 +748,162 @@ let KraService = KraService_1 = class KraService {
                     });
                 }
                 else {
-                    await this.prisma.raceEntry.create({
-                        data: entryData,
-                    });
+                    await this.prisma.raceEntry.create({ data: entryData });
                 }
             }
+            return { message: `Fetched ${filtered.length} entries` };
         }
         catch (error) {
             this.logger.error(`Failed to fetch entries for ${meet} R${raceNo}`, error);
+            return { message: 'Fetch failed' };
         }
-        return { message: 'Fetched entries' };
     }
     async fetchHorseDetails(meet, date, raceNo) {
+        if (!this.ensureServiceKey())
+            return { message: 'KRA_SERVICE_KEY 미설정' };
         const race = await this.prisma.race.findUnique({
             where: {
                 meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
             },
             include: { entries: true },
         });
-        if (!race)
-            return;
-        for (const entry of race.entries) {
-            await this.prisma.raceEntry.update({
-                where: { id: entry.id },
-                data: {
-                    rating: 0,
-                    equipment: 'None',
-                },
-            });
-        }
-        return { message: 'Fetched details (stub)' };
-    }
-    async fetchTrainingData(meet, date, raceNo) {
-        this.logger.log(`Fetching training data for ${meet} ${date} R${raceNo}`);
-        const race = await this.prisma.race.findUnique({
-            where: {
-                meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
-            },
-            include: { entries: true },
-        });
-        if (!race)
-            return;
+        if (!race || race.entries.length === 0)
+            return { message: 'No entries' };
+        const meetCode = this.meetNameToCode(meet);
         for (const entry of race.entries) {
             if (!entry.hrNo)
                 continue;
             try {
-                const mockTraining = [
-                    {
-                        date: '20231020',
-                        place: 'Seoul',
-                        course: 'Outer',
-                        time: '50.2',
-                        intensity: 'High',
+                const url = `${this.baseUrl}/API8_2/raceHorseInfo_2`;
+                const params = {
+                    serviceKey: decodeURIComponent(this.serviceKey),
+                    meet: meetCode,
+                    hr_no: entry.hrNo,
+                    act_gubun: 'y',
+                    numOfRows: 1,
+                    pageNo: 1,
+                    _type: 'json',
+                };
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                let item = null;
+                const body = response.data?.response?.body ?? response.data?.body;
+                if (body?.items?.item) {
+                    const raw = body.items.item;
+                    item = Array.isArray(raw) ? raw[0] : raw;
+                }
+                if (!item)
+                    continue;
+                const v = (k) => item[k] ?? item[k.replace(/([A-Z])/g, '_$1').toLowerCase()];
+                const vi = (k) => {
+                    const x = v(k);
+                    return x != null ? parseInt(String(x), 10) : undefined;
+                };
+                const vf = (k) => {
+                    const x = v(k);
+                    return x != null ? parseFloat(String(x)) : undefined;
+                };
+                const vs = (k) => (v(k) != null ? String(v(k)) : undefined);
+                const rating = vf('rating') ?? vi('rating');
+                const rcCntT = vi('rcCntT') ?? vi('rc_cnt_t');
+                const ord1CntT = vi('ord1CntT') ?? vi('ord1_cnt_t');
+                const chaksunT = v('chaksunT') ?? v('chaksun_t');
+                const prizeT = chaksunT != null ? BigInt(parseInt(String(chaksunT).replace(/,/g, ''), 10) || 0) : undefined;
+                await this.prisma.raceEntry.update({
+                    where: { id: entry.id },
+                    data: {
+                        rating: rating ?? undefined,
+                        rcCntT: rcCntT ?? undefined,
+                        ord1CntT: ord1CntT ?? undefined,
+                        chaksunT: prizeT ?? undefined,
+                        sex: vs('sex') ?? undefined,
+                        age: vi('age') ?? undefined,
+                        prd: vs('prd') ?? vs('name') ?? undefined,
                     },
-                    {
-                        date: '20231021',
-                        place: 'Seoul',
-                        course: 'Inner',
-                        time: '15.5',
-                        intensity: 'Medium',
-                    },
-                ];
-                for (const trn of mockTraining) {
+                });
+                await this.delay(150);
+            }
+            catch (e) {
+                this.logger.warn(`Horse details fetch failed for ${entry.hrNo}`, e);
+            }
+        }
+        return { message: 'Fetched horse details' };
+    }
+    async fetchTrainingData(meet, date, raceNo) {
+        if (!this.ensureServiceKey())
+            return { message: 'KRA_SERVICE_KEY 미설정' };
+        const race = await this.prisma.race.findUnique({
+            where: {
+                meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
+            },
+            include: { entries: true },
+        });
+        if (!race || race.entries.length === 0)
+            return { message: 'No entries' };
+        const trDateTo = this.normalizeToYyyyMmDd(date);
+        const trDateFrom = (0, dayjs_1.default)(date, 'YYYYMMDD').subtract(14, 'day').format('YYYYMMDD');
+        for (const entry of race.entries) {
+            if (!entry.hrNo)
+                continue;
+            try {
+                const url = `${this.baseUrl}/trcontihi/gettrcontihi`;
+                const params = {
+                    serviceKey: decodeURIComponent(this.serviceKey),
+                    hrno: entry.hrNo,
+                    tr_date_fr: trDateFrom,
+                    tr_date_to: trDateTo,
+                    numOfRows: 50,
+                    pageNo: 1,
+                    _type: 'json',
+                };
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                let items = [];
+                if (response.data?.response?.body?.items?.item) {
+                    const raw = response.data.response.body.items.item;
+                    items = (Array.isArray(raw) ? raw : [raw]);
+                }
+                await this.prisma.training.deleteMany({
+                    where: { raceEntryId: entry.id },
+                });
+                const trainingSummaries = [];
+                for (const item of items) {
+                    const trDate = String(item.trDate ?? item.tr_date ?? '');
+                    const trTime = String(item.trTime ?? item.tr_time ?? '');
+                    const trType = String(item.trType ?? item.tr_type ?? '');
+                    const trContent = String(item.trContent ?? item.tr_content ?? '');
+                    const place = String(item.place ?? '');
+                    const intensity = trType || trContent || '';
                     await this.prisma.training.create({
                         data: {
                             raceEntryId: entry.id,
                             horseNo: entry.hrNo,
-                            date: trn.date,
-                            place: trn.place,
-                            course: trn.course,
-                            time: trn.time,
-                            intensity: trn.intensity,
+                            trDate,
+                            trTime: trTime || undefined,
+                            trEndTime: String(item.trEndTime ?? item.tr_end_time ?? '') || undefined,
+                            trDuration: String(item.trDuration ?? item.tr_duration ?? '') || undefined,
+                            trContent: trContent || undefined,
+                            trType: trType || undefined,
+                            managerType: String(item.managerType ?? item.manager_type ?? '') || undefined,
+                            managerName: String(item.managerName ?? item.manager_name ?? '') || undefined,
+                            place: place || undefined,
+                            weather: String(item.weather ?? '') || undefined,
+                            trackCondition: String(item.trackCondition ?? item.track_condition ?? '') || undefined,
+                            intensity: intensity || undefined,
+                        },
+                    });
+                    trainingSummaries.push(`${trDate} ${trType || trContent}`);
+                }
+                if (trainingSummaries.length > 0) {
+                    await this.prisma.raceEntry.update({
+                        where: { id: entry.id },
+                        data: {
+                            trainingData: { count: items.length, summary: trainingSummaries.slice(-7) },
                         },
                     });
                 }
+                await this.delay(200);
             }
             catch (e) {
-                this.logger.error(`Failed to fetch training for horse ${entry.hrNo}`, e);
+                this.logger.warn(`Training fetch failed for horse ${entry.hrNo}`, e);
             }
         }
         return { message: 'Fetched training data' };
@@ -591,17 +912,8 @@ let KraService = KraService_1 = class KraService {
         this.logger.log(`Fetching jockey total results${meet ? ` for meet ${meet}` : ''}`);
         const endpoint = 'jockeyResult';
         const meetsToFetch = meet
-            ? [
-                {
-                    code: meet === 'Seoul' ? '1' : meet === 'Jeju' ? '2' : '3',
-                    name: meet,
-                },
-            ]
-            : [
-                { code: '1', name: 'Seoul' },
-                { code: '2', name: 'Jeju' },
-                { code: '3', name: 'Busan' },
-            ];
+            ? [{ code: (0, constants_1.meetToCode)(meet), name: meet }]
+            : constants_1.KRA_MEETS;
         let totalJockeys = 0;
         for (const m of meetsToFetch) {
             const start = Date.now();
@@ -618,7 +930,7 @@ let KraService = KraService_1 = class KraService {
                 let items = [];
                 if (response.data?.response?.body?.items?.item) {
                     const rawItems = response.data.response.body.items.item;
-                    items = Array.isArray(rawItems) ? rawItems : [rawItems];
+                    items = (Array.isArray(rawItems) ? rawItems : [rawItems]);
                 }
                 else if (typeof response.data === 'string' &&
                     response.data.includes('<')) {
@@ -626,7 +938,7 @@ let KraService = KraService_1 = class KraService {
                     const result = await parser.parseStringPromise(response.data);
                     if (result?.response?.body?.items?.item) {
                         const rawItems = result.response.body.items.item;
-                        items = Array.isArray(rawItems) ? rawItems : [rawItems];
+                        items = (Array.isArray(rawItems) ? rawItems : [rawItems]);
                     }
                 }
                 if (items.length === 0) {
@@ -634,34 +946,46 @@ let KraService = KraService_1 = class KraService {
                     continue;
                 }
                 for (const item of items) {
+                    const jkNo = String(item.jkNo ?? item.jk_no ?? '').trim();
+                    if (!jkNo)
+                        continue;
+                    const jkName = String(item.jkName ?? item.jk_name ?? '');
+                    const rcCntT = parseInt(String(item.rcCntT ?? item.rc_cnt_t ?? ''), 10) || 0;
+                    const ord1CntT = parseInt(String(item.ord1CntT ?? item.ord1_cnt_t ?? ''), 10) || 0;
+                    const ord2CntT = parseInt(String(item.ord2CntT ?? item.ord2_cnt_t ?? ''), 10) || 0;
+                    const ord3CntT = parseInt(String(item.ord3CntT ?? item.ord3_cnt_t ?? ''), 10) || 0;
+                    const winRateTsum = parseFloat(String(item.winRateTsum ?? item.win_rate_tsum ?? '')) || 0.0;
+                    const quRateTsum = parseFloat(String(item.quRateTsum ?? item.qu_rate_tsum ?? '')) || 0.0;
+                    const chaksunStr = String(item.chaksunT ?? item.chaksun_t ?? '').replace(/,/g, '');
+                    const chaksunT = BigInt(parseInt(chaksunStr, 10) || 0);
                     await this.prisma.jockeyResult.upsert({
                         where: {
                             meet_jkNo: {
                                 meet: m.code,
-                                jkNo: item.jkNo,
+                                jkNo,
                             },
                         },
                         update: {
-                            jkName: item.jkName,
-                            rcCntT: parseInt(item.rcCntT, 10) || 0,
-                            ord1CntT: parseInt(item.ord1CntT, 10) || 0,
-                            ord2CntT: parseInt(item.ord2CntT, 10) || 0,
-                            ord3CntT: parseInt(item.ord3CntT, 10) || 0,
-                            winRateTsum: parseFloat(item.winRateTsum) || 0.0,
-                            quRateTsum: parseFloat(item.quRateTsum) || 0.0,
-                            chaksunT: BigInt(parseInt(item.chaksunT?.replace(/,/g, ''), 10) || 0),
+                            jkName,
+                            rcCntT,
+                            ord1CntT,
+                            ord2CntT,
+                            ord3CntT,
+                            winRateTsum,
+                            quRateTsum,
+                            chaksunT,
                         },
                         create: {
                             meet: m.code,
-                            jkNo: item.jkNo,
-                            jkName: item.jkName,
-                            rcCntT: parseInt(item.rcCntT, 10) || 0,
-                            ord1CntT: parseInt(item.ord1CntT, 10) || 0,
-                            ord2CntT: parseInt(item.ord2CntT, 10) || 0,
-                            ord3CntT: parseInt(item.ord3CntT, 10) || 0,
-                            winRateTsum: parseFloat(item.winRateTsum) || 0.0,
-                            quRateTsum: parseFloat(item.quRateTsum) || 0.0,
-                            chaksunT: BigInt(parseInt(item.chaksunT?.replace(/,/g, ''), 10) || 0),
+                            jkNo,
+                            jkName,
+                            rcCntT,
+                            ord1CntT,
+                            ord2CntT,
+                            ord3CntT,
+                            winRateTsum,
+                            quRateTsum,
+                            chaksunT,
                         },
                     });
                     totalJockeys++;
@@ -687,12 +1011,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchTrackInfo(date) {
         const endpoint = 'trackInfo';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
-        for (const meet of meets) {
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const url = `${this.baseUrl}/API189_1/Track_1`;
@@ -709,7 +1028,7 @@ let KraService = KraService_1 = class KraService {
                 let items = [];
                 if (response.data?.response?.body?.items?.item) {
                     const raw = response.data.response.body.items.item;
-                    items = Array.isArray(raw) ? raw : [raw];
+                    items = (Array.isArray(raw) ? raw : [raw]);
                 }
                 for (const item of items) {
                     const race = await this.prisma.race.findUnique({
@@ -726,9 +1045,9 @@ let KraService = KraService_1 = class KraService {
                             where: { id: race.id },
                             data: {
                                 weather: item.weather ?? race.weather,
-                                trackState: item.track ?? item.moisture
+                                track: item.track ?? item.moisture
                                     ? `${item.track ?? ''} (함수율 ${item.moisture ?? '-'}%)`
-                                    : race.trackState,
+                                    : race.track,
                             },
                         });
                     }
@@ -755,12 +1074,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchHorseWeight(date) {
         const endpoint = 'horseWeight';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
-        for (const meet of meets) {
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const url = `${this.baseUrl}/API25_1/entryHorseWeightInfo_1`;
@@ -776,7 +1090,7 @@ let KraService = KraService_1 = class KraService {
                 let items = [];
                 if (response.data?.response?.body?.items?.item) {
                     const raw = response.data.response.body.items.item;
-                    items = Array.isArray(raw) ? raw : [raw];
+                    items = (Array.isArray(raw) ? raw : [raw]);
                 }
                 for (const item of items) {
                     const race = await this.prisma.race.findUnique({
@@ -821,12 +1135,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchEquipmentBleeding(date) {
         const endpoint = 'equipmentBleeding';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
-        for (const meet of meets) {
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const url = `${this.baseUrl}/API24_1/horseMedicalAndEquipment_1`;
@@ -842,7 +1151,7 @@ let KraService = KraService_1 = class KraService {
                 let items = [];
                 if (response.data?.response?.body?.items?.item) {
                     const raw = response.data.response.body.items.item;
-                    items = Array.isArray(raw) ? raw : [raw];
+                    items = (Array.isArray(raw) ? raw : [raw]);
                 }
                 for (const item of items) {
                     const race = await this.prisma.race.findUnique({
@@ -898,12 +1207,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchHorseCancel(date) {
         const endpoint = 'horseCancel';
-        const meets = [
-            { code: '1', name: 'Seoul' },
-            { code: '2', name: 'Jeju' },
-            { code: '3', name: 'Busan' },
-        ];
-        for (const meet of meets) {
+        for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const url = `${this.baseUrl}/API9_1/raceHorseCancelInfo_1`;
@@ -919,7 +1223,7 @@ let KraService = KraService_1 = class KraService {
                 let items = [];
                 if (response.data?.response?.body?.items?.item) {
                     const raw = response.data.response.body.items.item;
-                    items = Array.isArray(raw) ? raw : [raw];
+                    items = (Array.isArray(raw) ? raw : [raw]);
                 }
                 for (const item of items) {
                     const hrNo = String(item.hrNo ?? item.hr_no ?? '');
@@ -964,9 +1268,14 @@ let KraService = KraService_1 = class KraService {
         }
     }
     async syncAnalysisData(date) {
+        if (!this.ensureServiceKey()) {
+            return { message: 'KRA_SERVICE_KEY 미설정.' };
+        }
         this.logger.log(`Syncing analysis data (Training, Equipment, etc.) for date: ${date}`);
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
         const races = await this.prisma.race.findMany({
-            where: { rcDate: date },
+            where: { rcDate: normalizedDate },
+            select: { meet: true, rcDate: true, rcNo: true },
         });
         if (races.length === 0) {
             return { message: `No races found for ${date}` };
@@ -982,6 +1291,75 @@ let KraService = KraService_1 = class KraService {
             processedCount++;
         }
         return { message: `Synced analysis data for ${processedCount} races` };
+    }
+    async seedSampleRaces(date) {
+        const rcDate = date ? this.normalizeToYyyyMmDd(date) : this.getTodayDateString();
+        const MEETS = [constants_1.KRA_MEETS[0], constants_1.KRA_MEETS[2]];
+        const ENTRIES = [
+            { hrNo: '001', hrName: '다크호스', jkName: '김기수', trName: '이조교', wgBudam: 56 },
+            { hrNo: '002', hrName: '썬더볼트', jkName: '박기수', trName: '최조교', wgBudam: 55 },
+            { hrNo: '003', hrName: '스타더스트', jkName: '정기수', trName: '김조교', wgBudam: 57 },
+            { hrNo: '004', hrName: '라이팅킹', jkName: '강기수', trName: '박조교', wgBudam: 56 },
+            { hrNo: '005', hrName: '실버문', jkName: '조기수', trName: '정조교', wgBudam: 54 },
+        ];
+        let raceCount = 0;
+        let entryCount = 0;
+        for (const meet of MEETS) {
+            for (let r = 1; r <= 4; r++) {
+                const rcNo = String(r).padStart(2, '0');
+                const rcName = `${r}장 경주`;
+                const rcDist = [1000, 1200, 1400, 1600][r % 4].toString();
+                let race = await this.prisma.race.findFirst({
+                    where: { meet: meet.name, rcDate, rcNo },
+                });
+                if (!race) {
+                    race = await this.prisma.race.create({
+                        data: {
+                            meet: meet.name,
+                            meetName: meet.name,
+                            rcDate,
+                            rcNo,
+                            rcDist,
+                            rcName,
+                            rank: '일반',
+                            rcPrize: 5000000,
+                        },
+                    });
+                }
+                raceCount++;
+                for (const e of ENTRIES) {
+                    const existing = await this.prisma.raceEntry.findFirst({
+                        where: { raceId: race.id, hrNo: e.hrNo },
+                    });
+                    const data = {
+                        raceId: race.id,
+                        hrNo: e.hrNo,
+                        hrName: e.hrName,
+                        jkName: e.jkName,
+                        trName: e.trName,
+                        wgBudam: e.wgBudam,
+                        chulNo: e.hrNo,
+                        dusu: ENTRIES.length,
+                        age: 4,
+                        sex: '거',
+                        prd: '국산',
+                        chaksun1: 3000000,
+                        chaksunT: BigInt(50000000),
+                        rcCntT: 20,
+                        ord1CntT: 3,
+                    };
+                    if (existing) {
+                        await this.prisma.raceEntry.update({ where: { id: existing.id }, data });
+                    }
+                    else {
+                        await this.prisma.raceEntry.create({ data });
+                    }
+                    entryCount++;
+                }
+            }
+        }
+        this.logger.log(`Sample races seeded: ${raceCount} races, ${entryCount} entries for ${rcDate}`);
+        return { races: raceCount, entries: entryCount, rcDate };
     }
 };
 exports.KraService = KraService;
@@ -1005,8 +1383,9 @@ __decorate([
 ], KraService.prototype, "syncRealtimeResults", null);
 exports.KraService = KraService = KraService_1 = __decorate([
     (0, common_1.Injectable)(),
+    __param(3, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [axios_1.HttpService,
         config_1.ConfigService,
-        prisma_service_1.PrismaService])
+        prisma_service_1.PrismaService, Function])
 ], KraService);
 //# sourceMappingURL=kra.service.js.map

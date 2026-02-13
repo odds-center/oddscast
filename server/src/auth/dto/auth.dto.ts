@@ -31,6 +31,18 @@ export class LoginDto {
   password: string;
 }
 
+/** 관리자 로그인 — 아이디 + 비밀번호 */
+export class AdminLoginDto {
+  @ApiProperty({ example: 'admin', description: '관리자 아이디' })
+  @IsString()
+  @MinLength(1, { message: '아이디를 입력하세요' })
+  loginId: string;
+
+  @ApiProperty({ example: 'password123' })
+  @IsString()
+  password: string;
+}
+
 export class GoogleAuthDto {
   @ApiProperty({ description: 'Google ID Token from client (Web or Mobile)' })
   @IsString()

@@ -13,6 +13,7 @@ exports.PicksService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const pick_dto_1 = require("./dto/pick.dto");
+const kra_serializer_1 = require("../common/serializers/kra.serializer");
 let PicksService = class PicksService {
     constructor(prisma) {
         this.prisma = prisma;
@@ -34,7 +35,7 @@ let PicksService = class PicksService {
             },
         });
         if (existing) {
-            return this.prisma.userPick.update({
+            const updated = await this.prisma.userPick.update({
                 where: { id: existing.id },
                 data: {
                     pickType: dto.pickType,
@@ -43,8 +44,9 @@ let PicksService = class PicksService {
                 },
                 include: { race: true },
             });
+            return (0, kra_serializer_1.serializeItemsWithRace)([updated])[0] ?? updated;
         }
-        return this.prisma.userPick.create({
+        const created = await this.prisma.userPick.create({
             data: {
                 userId,
                 raceId: dto.raceId,
@@ -54,6 +56,7 @@ let PicksService = class PicksService {
             },
             include: { race: true },
         });
+        return (0, kra_serializer_1.serializeItemsWithRace)([created])[0] ?? created;
     }
     async findByUser(userId, page = 1, limit = 20) {
         const [picks, total] = await Promise.all([
@@ -66,7 +69,7 @@ let PicksService = class PicksService {
             }),
             this.prisma.userPick.count({ where: { userId } }),
         ]);
-        return { picks, total, page, totalPages: Math.ceil(total / limit) };
+        return { picks: (0, kra_serializer_1.serializeItemsWithRace)(picks), total, page, totalPages: Math.ceil(total / limit) };
     }
     async findByRace(raceId, userId) {
         const where = { raceId };
@@ -76,7 +79,7 @@ let PicksService = class PicksService {
             where,
             include: { race: true },
         });
-        return pick;
+        return pick ? (0, kra_serializer_1.serializeItemsWithRace)([pick])[0] ?? pick : null;
     }
     async delete(userId, raceId) {
         const pick = await this.prisma.userPick.findFirst({
@@ -93,7 +96,7 @@ let PicksService = class PicksService {
             include: {
                 race: {
                     include: {
-                        results: { orderBy: { rcRank: 'asc' } },
+                        results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
                     },
                 },
             },
@@ -114,7 +117,7 @@ let PicksService = class PicksService {
             include: {
                 race: {
                     include: {
-                        results: { orderBy: { rcRank: 'asc' } },
+                        results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
                     },
                 },
             },
@@ -132,9 +135,9 @@ let PicksService = class PicksService {
         return map;
     }
     checkPickHit(pickType, hrNos, results) {
-        const rank1 = results.find((r) => (r.rcRank ?? '') === '1');
-        const rank2 = results.find((r) => (r.rcRank ?? '') === '2');
-        const rank3 = results.find((r) => (r.rcRank ?? '') === '3');
+        const rank1 = results.find((r) => (r.ord ?? '') === '1');
+        const rank2 = results.find((r) => (r.ord ?? '') === '2');
+        const rank3 = results.find((r) => (r.ord ?? '') === '3');
         const top3 = [rank1, rank2, rank3].filter(Boolean).map((r) => r.hrNo);
         switch (pickType) {
             case 'SINGLE':

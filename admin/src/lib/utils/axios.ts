@@ -1,16 +1,15 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
 
-// API 기본 설정
-// Server API (NestJS) — base + /api
-const SERVER_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
-const API_BASE_URL = SERVER_BASE.endsWith('/api') ? SERVER_BASE : `${SERVER_BASE}/api`;
+// Admin 전용 API Base URL — /api/admin prefix
+const ADMIN_API_URL =
+  process.env.NEXT_PUBLIC_ADMIN_API_URL || 'http://localhost:3001/api/admin';
 
 /**
  * API 클라이언트 생성
  */
 export const createApiClient = (baseURL?: string): AxiosInstance => {
   const client = axios.create({
-    baseURL: baseURL || API_BASE_URL,
+    baseURL: baseURL || ADMIN_API_URL,
     timeout: 5000, // 5초로 단축 (빠른 실패)
     headers: {
       'Content-Type': 'application/json',
@@ -23,10 +22,12 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
   // 요청 인터셉터
   client.interceptors.request.use(
     async (config) => {
-      // Admin 토큰 추가 (필요시)
-      const token = localStorage.getItem('accessToken') || localStorage.getItem('admin_token');
-      if (token) {
-        config.headers['Authorization'] = `Bearer ${token}`;
+      // Admin 토큰 추가 (SSR 시 localStorage 없음 방어)
+      if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('accessToken') || localStorage.getItem('admin_token');
+        if (token) {
+          config.headers['Authorization'] = `Bearer ${token}`;
+        }
       }
       return config;
     },
@@ -46,15 +47,11 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
         const isAuthRequest =
           error.config?.url?.includes('/auth') || error.config?.url?.includes('/login');
 
-        if (!isAuthRequest) {
+        if (!isAuthRequest && typeof window !== 'undefined') {
           console.log('🚫 401 Unauthorized - Redirecting to login');
           localStorage.removeItem('accessToken');
           localStorage.removeItem('admin_token');
-
-          // 브라우저 환경에서만 리다이렉트
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
+          window.location.href = '/login';
         }
       }
 

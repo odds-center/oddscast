@@ -2,7 +2,8 @@ import Layout from '@/components/Layout';
 import PageHeader from '@/components/page/PageHeader';
 import SectionCard from '@/components/page/SectionCard';
 import BackLink from '@/components/page/BackLink';
-import Toggle from '@/components/ui/Toggle';
+import RequireLogin from '@/components/page/RequireLogin';
+import { Toggle } from '@/components/ui';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import NotificationApi from '@/lib/api/notificationApi';
 import { routes } from '@/lib/routes';
@@ -74,12 +75,7 @@ export default function NotificationSettingsPage() {
     return (
       <Layout title='알림 설정 — GOLDEN RACE'>
         <PageHeader icon='Bell' title='알림 설정' description='알림 수신 여부를 설정합니다.' />
-        <p className='text-text-secondary text-sm mb-4'>
-          <Link href={routes.auth.login} className='link-primary'>
-            로그인
-          </Link>
-          후 설정할 수 있습니다.
-        </p>
+        <RequireLogin suffix='설정할 수 있습니다' />
         <BackLink href={routes.settings} label='설정으로' />
       </Layout>
     );

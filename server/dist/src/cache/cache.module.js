@@ -17,39 +17,39 @@ const keyv_1 = require("keyv");
 const redis_1 = __importDefault(require("@keyv/redis"));
 const cacheable_1 = require("cacheable");
 const TTL_MS = 60 * 60 * 1000;
+const nestCacheModule = cache_manager_1.CacheModule.registerAsync({
+    imports: [config_1.ConfigModule],
+    inject: [config_1.ConfigService],
+    useFactory: async (config) => {
+        const redisUrl = config.get('REDIS_URL');
+        const stores = [
+            new keyv_1.Keyv({
+                store: new cacheable_1.CacheableMemory({ ttl: TTL_MS, lruSize: 5000 }),
+            }),
+        ];
+        if (redisUrl) {
+            try {
+                stores.push(new keyv_1.Keyv({ store: new redis_1.default(redisUrl) }));
+            }
+            catch (e) {
+                console.warn('[Cache] Redis 연결 실패, 인메모리만 사용:', e.message);
+            }
+        }
+        return {
+            stores,
+            ttl: TTL_MS,
+            isGlobal: true,
+        };
+    },
+});
 let CacheModule = class CacheModule {
 };
 exports.CacheModule = CacheModule;
 exports.CacheModule = CacheModule = __decorate([
     (0, common_1.Global)(),
     (0, common_1.Module)({
-        imports: [
-            cache_manager_1.CacheModule.registerAsync({
-                imports: [config_1.ConfigModule],
-                inject: [config_1.ConfigService],
-                useFactory: async (config) => {
-                    const redisUrl = config.get('REDIS_URL');
-                    const stores = [
-                        new keyv_1.Keyv({
-                            store: new cacheable_1.CacheableMemory({ ttl: TTL_MS, lruSize: 5000 }),
-                        }),
-                    ];
-                    if (redisUrl) {
-                        try {
-                            stores.push(new keyv_1.Keyv({ store: new redis_1.default(redisUrl) }));
-                        }
-                        catch (e) {
-                            console.warn('[Cache] Redis 연결 실패, 인메모리만 사용:', e.message);
-                        }
-                    }
-                    return {
-                        stores,
-                        ttl: TTL_MS,
-                        isGlobal: true,
-                    };
-                },
-            }),
-        ],
+        imports: [nestCacheModule],
+        exports: [nestCacheModule],
     })
 ], CacheModule);
 //# sourceMappingURL=cache.module.js.map

@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -70,20 +71,19 @@ export default function SettingsPage() {
         <title>설정 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div>
-            <h1 className='text-3xl font-bold text-gray-900'>설정</h1>
-            <p className='mt-2 text-sm text-gray-600'>
-              시스템 설정, AI, KRA 등 모든 Config를 Admin에서 관리합니다.
-            </p>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader title='설정' description='시스템 설정, AI, KRA 등 모든 Config를 Admin에서 관리합니다.' />
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
             <Card title='관리자 정보'>
               <div className='space-y-4'>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700'>이메일</label>
-                  <div className='mt-1 text-gray-900'>{user?.email || '-'}</div>
+                  <label className='block text-sm font-medium text-gray-700'>
+                    로그인 아이디
+                  </label>
+                  <div className='mt-1 text-gray-900'>
+                    {user?.loginId || '-'}
+                  </div>
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700'>사용자명</label>
@@ -106,14 +106,14 @@ export default function SettingsPage() {
             </Card>
 
             <Card title='Config 빠른 링크'>
-              <div className='space-y-3'>
+              <div className='space-y-2'>
                 <Link
                   href='/ai-config'
-                  className='flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition'
+                  className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Bot className='w-6 h-6 text-blue-600' />
+                  <Bot className='w-5 h-5 text-blue-600' />
                   <div className='flex-1'>
-                    <div className='font-medium text-gray-900'>AI 설정 (Gemini)</div>
+                    <div className='font-medium text-sm text-gray-900'>AI 설정 (Gemini)</div>
                     <div className='text-sm text-gray-500'>
                       모델 선택, Temperature, 배치 예측 스케줄 등
                       {costEstimate && (
@@ -141,22 +141,22 @@ export default function SettingsPage() {
                 </Link>
                 <Link
                   href='/single-purchase-config'
-                  className='flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition'
+                  className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Database className='w-6 h-6 text-green-600' />
+                  <Database className='w-5 h-5 text-green-600' />
                   <div className='flex-1'>
-                    <div className='font-medium text-gray-900'>개별 구매 설정</div>
+                    <div className='font-medium text-sm text-gray-900'>개별 구매 설정</div>
                     <div className='text-sm text-gray-500'>예측권 단건 가격 등</div>
                   </div>
                   <ExternalLink className='w-4 h-4 text-gray-400' />
                 </Link>
                 <Link
                   href='/subscription-plans'
-                  className='flex items-center gap-3 p-3 rounded-lg border hover:bg-gray-50 transition'
+                  className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Settings className='w-6 h-6 text-purple-600' />
+                  <Settings className='w-5 h-5 text-purple-600' />
                   <div className='flex-1'>
-                    <div className='font-medium text-gray-900'>구독 플랜</div>
+                    <div className='font-medium text-sm text-gray-900'>구독 플랜</div>
                     <div className='text-sm text-gray-500'>LIGHT, PREMIUM 플랜 관리</div>
                   </div>
                   <ExternalLink className='w-4 h-4 text-gray-400' />
@@ -171,7 +171,7 @@ export default function SettingsPage() {
             ) : (
               <form
                 onSubmit={handleSubmit((d) => updateMutation.mutate(d))}
-                className='space-y-6'
+                className='space-y-4'
               >
                 <div>
                   <label className='flex items-center gap-2 cursor-pointer'>

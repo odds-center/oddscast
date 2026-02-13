@@ -101,22 +101,23 @@ export default class PaymentsApi {
 
   /**
    * 개별 예측권 구매 (모바일에서 결제 완료 후)
-   * POST /api/payments/purchase
+   * POST /payments/purchase (baseURL에 /api 포함)
    */
   static async purchaseTickets(data: PurchaseTicketsRequest): Promise<PurchaseTicketsResponse> {
-    const response = await axiosInstance.post<PurchaseTicketsResponse>(
-      '/api/payments/purchase',
+    const response = await axiosInstance.post<ApiResponse<PurchaseTicketsResponse>>(
+      '/payments/purchase',
       data,
     );
-    return response.data;
+    return handleApiResponse(response);
   }
 
   /**
    * 결제 내역 조회
-   * GET /api/payments/history
+   * GET /payments/history (baseURL에 /api 포함)
    */
   static async getHistory(): Promise<BillingHistory[]> {
-    const response = await axiosInstance.get<BillingHistory[]>('/api/payments/history');
-    return response.data;
+    const response = await axiosInstance.get<ApiResponse<BillingHistory[]>>('/payments/history');
+    const data = handleApiResponse(response);
+    return Array.isArray(data) ? data : [];
   }
 }

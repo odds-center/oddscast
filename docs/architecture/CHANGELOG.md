@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-02-13 (금) — WebApp 라이트 테마 & UI/UX & 결과 그룹화 & Admin KRA 전용 페이지
+
+### 1. WebApp 테마 — 다크 → 라이트 전환
+
+- **배경**: `#050508` → `#fafafa`
+- **Primary**: `#ffd700` → `#c9a227` (라이트 배경 대비 골드)
+- **텍스트**: `#18181b`, `#52525b`
+- **카드/테두리**: 흰색·연한 회색
+- **Layout**: `theme-color` `#fafafa`, iOS 상태바 `default`
+- **globals.css**: shadow, border, badge 등 라이트 대응
+
+### 2. UI/UX 완화 (부드럽게)
+
+- **테두리**: `border-2` → `border` (1px)
+- **모서리**: radius 증가 (`radius-lg`, `radius-xl`)
+- **트랜지션**: `0.2s ease`
+- **버튼·카드·테이블·필터칩·TabBar**: 전반 완화
+
+### 3. 레이아웃·스크롤바
+
+- **콘텐츠 최대 너비**: `max-w-5xl`(1024px) → `max-w-[1200px]`
+- **헤더·푸터·메인**: 1200px 통일
+- **스크롤바**: 8px → 6px, `scrollbar-width: thin`, hover/active 상태
+
+### 4. 경주 결과 테이블
+
+- **그룹화**: 같은 경기 1·2·3위를 한 행으로 묶음
+- **컬럼**: 경주 | 날짜 | 1위 (No 마명 기수) | 2위 | 3위
+- **nowrap**: 경주 셀 `whitespace-nowrap`, data-table 전역 `white-space: nowrap`
+
+### 5. Admin KRA 데이터 관리
+
+- **새 페이지**: `/kra` — 출전표·경주 결과·상세정보 수동 동기화
+- **출전표 수동 동기화**: 웹앱 출전마 없을 때 Admin에서 날짜 선택 후 실행
+- **동기화 로그**: `GET /api/admin/kra/sync-logs` 조회, 최근 30건 표시
+- **사이드바**: KRA 데이터 메뉴 추가
+- **대시보드**: KRA 데이터 빠른 링크
+- **경주 상세**: 출전마 데이터 → KRA 동기화 링크 (`/kra?date=YYYYMMDD`)
+
+### 6. 문서
+
+- **ADMIN_GUIDE.md**: KRA 페이지, 출전표 수동 동기화 안내
+- **DATA_LOADING.md**: 출전마 보이지 않을 때 대응, sync-logs
+- **UI_PATTERNS.md**: 테마·스크롤·max-width
+- **API_SPECIFICATION.md**: `GET /api/admin/kra/sync-logs`
+
+---
+
 ## 2026-02-13 (금) — @goldenrace/shared 공용 타입 패키지
 
 ### 1. shared 패키지 구성

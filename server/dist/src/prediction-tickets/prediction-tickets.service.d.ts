@@ -3,24 +3,24 @@ import { UseTicketDto } from '../common/dto/payment.dto';
 export declare class PredictionTicketsService {
     private prisma;
     constructor(prisma: PrismaService);
-    useTicket(userId: string, dto: UseTicketDto): Promise<{
+    useTicket(userId: number, dto: UseTicketDto): Promise<{
         ticket: {
-            id: string;
-            status: import(".prisma/client").$Enums.TicketStatus;
-            raceId: string | null;
-            userId: string;
+            id: number;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
+            userId: number;
             expiresAt: Date;
+            subscriptionId: number | null;
+            predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
-            subscriptionId: string | null;
-            predictionId: string | null;
         };
         prediction: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.PredictionStatus;
-            raceId: string;
+            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             scores: import("@prisma/client/runtime/client").JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -28,20 +28,20 @@ export declare class PredictionTicketsService {
             accuracy: number | null;
         };
     }>;
-    getBalance(userId: string): Promise<{
+    getBalance(userId: number): Promise<{
         available: number;
         used: number;
         expired: number;
         total: number;
     }>;
-    getHistory(userId: string, page?: number, limit?: number): Promise<{
+    getHistory(userId: number, page?: number, limit?: number): Promise<{
         tickets: ({
             prediction: {
-                id: string;
+                id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                status: import(".prisma/client").$Enums.PredictionStatus;
-                raceId: string;
+                status: import("@prisma/client").$Enums.PredictionStatus;
+                raceId: number;
                 scores: import("@prisma/client/runtime/client").JsonValue | null;
                 analysis: string | null;
                 preview: string | null;
@@ -49,27 +49,27 @@ export declare class PredictionTicketsService {
                 accuracy: number | null;
             } | null;
         } & {
-            id: string;
-            status: import(".prisma/client").$Enums.TicketStatus;
-            raceId: string | null;
-            userId: string;
+            id: number;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
+            userId: number;
             expiresAt: Date;
+            subscriptionId: number | null;
+            predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
-            subscriptionId: string | null;
-            predictionId: string | null;
         })[];
         total: number;
         page: number;
         totalPages: number;
     }>;
-    findOne(id: string): Promise<{
+    findOne(id: number): Promise<{
         prediction: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.PredictionStatus;
-            raceId: string;
+            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             scores: import("@prisma/client/runtime/client").JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -77,12 +77,12 @@ export declare class PredictionTicketsService {
             accuracy: number | null;
         } | null;
         subscription: {
-            id: string;
+            id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import(".prisma/client").$Enums.SubscriptionStatus;
-            userId: string;
-            planId: string;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
+            userId: number;
+            planId: number;
             price: number;
             billingKey: string | null;
             nextBillingDate: Date | null;
@@ -92,14 +92,14 @@ export declare class PredictionTicketsService {
             cancelReason: string | null;
         } | null;
     } & {
-        id: string;
-        status: import(".prisma/client").$Enums.TicketStatus;
-        raceId: string | null;
-        userId: string;
+        id: number;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        raceId: number | null;
+        userId: number;
         expiresAt: Date;
+        subscriptionId: number | null;
+        predictionId: number | null;
         usedAt: Date | null;
         issuedAt: Date;
-        subscriptionId: string | null;
-        predictionId: string | null;
     }>;
 }

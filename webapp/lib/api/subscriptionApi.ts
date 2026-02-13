@@ -92,11 +92,14 @@ export default class SubscriptionsApi {
   }
 
   /**
-   * 구독 내역 조회
+   * 구독 내역 조회 (페이지네이션)
+   * @returns { subscriptions, total, page, totalPages }
    */
   static async getHistory(limit = 10, offset = 0) {
     try {
-      const response = await axiosInstance.get<ApiResponse<any[]>>('/subscriptions/history', {
+      const response = await axiosInstance.get<
+        ApiResponse<{ subscriptions: any[]; total: number; page: number; totalPages: number }>
+      >('/subscriptions/history', {
         params: { limit, offset },
       });
       return handleApiResponse(response);

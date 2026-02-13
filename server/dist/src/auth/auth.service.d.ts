@@ -3,11 +3,20 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 export interface SanitizedUser {
-    id: string;
+    id: number;
     email: string;
     name: string;
     nickname: string | null;
     avatar: string | null;
+    role: string;
+    isActive: boolean;
+    createdAt: Date;
+    updatedAt: Date;
+}
+export interface SanitizedAdminUser {
+    id: number;
+    loginId: string;
+    name: string;
     role: string;
     isActive: boolean;
     createdAt: Date;
@@ -34,23 +43,24 @@ export declare class AuthService {
         refreshToken: string;
         user: SanitizedUser;
     }>;
-    adminLogin(email: string, password: string): Promise<{
+    adminLogin(loginId: string, password: string): Promise<{
         accessToken: string;
         refreshToken: string;
-        user: SanitizedUser;
+        user: SanitizedAdminUser;
     }>;
-    getProfile(userId: string): Promise<SanitizedUser>;
-    updateProfile(userId: string, dto: UpdateProfileDto): Promise<SanitizedUser>;
-    changePassword(userId: string, oldPassword: string, newPassword: string): Promise<{
+    getProfile(userId: number, role?: string): Promise<SanitizedUser | SanitizedAdminUser>;
+    updateProfile(userId: number, dto: UpdateProfileDto): Promise<SanitizedUser>;
+    changePassword(userId: number, oldPassword: string, newPassword: string): Promise<{
         message: string;
     }>;
-    deleteAccount(userId: string): Promise<{
+    deleteAccount(userId: number): Promise<{
         message: string;
     }>;
-    refreshToken(userId: string): Promise<{
+    refreshToken(userId: number, role?: string): Promise<{
         accessToken: string;
         refreshToken: string;
     }>;
     private generateToken;
     private sanitize;
+    private sanitizeAdmin;
 }

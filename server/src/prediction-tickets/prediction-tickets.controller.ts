@@ -6,6 +6,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { PredictionTicketsService } from './prediction-tickets.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -47,7 +48,7 @@ export class PredictionTicketsController {
 
   @Get(':id')
   @ApiOperation({ summary: '예측권 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.ticketsService.findOne(id);
   }
 }

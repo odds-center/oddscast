@@ -29,6 +29,8 @@ graph TD
 | **WebApp** | HTTP/REST        | 단일 페이지, 화면 크기에 따라 Desktop/Mobile 자동 전환 |
 | **Admin**  | HTTP/REST        | 관리자 패널 → `/api/*` 직접 호출                       |
 
+> WebApp–Mobile 연동 상세: [WEBAPP_MOBILE_INTEGRATION.md](./WEBAPP_MOBILE_INTEGRATION.md)
+
 ### 요청-응답 흐름 (일반 API)
 
 ```

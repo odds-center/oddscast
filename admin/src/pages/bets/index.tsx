@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
@@ -124,15 +125,11 @@ export default function BetsPage() {
         <title>마권 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>마권 관리</h1>
-              <p className='mt-2 text-sm text-gray-600'>
-                모든 마권 기록을 조회하고 관리할 수 있습니다.
-              </p>
-            </div>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='마권 관리'
+            description='모든 마권 기록을 조회하고 관리할 수 있습니다.'
+          />
 
           <Card>
             <div className='mb-4'>

@@ -11,6 +11,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 var __param = (this && this.__param) || function (paramIndex, decorator) {
     return function (target, key) { decorator(target, key, paramIndex); }
 };
+var AdminController_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminController = void 0;
 const common_1 = require("@nestjs/common");
@@ -26,7 +27,7 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const single_purchases_service_1 = require("../single-purchases/single-purchases.service");
-let AdminController = class AdminController {
+let AdminController = AdminController_1 = class AdminController {
     constructor(kraService, usersService, configService, prisma, subscriptionsService, notificationsService, singlePurchasesService) {
         this.kraService = kraService;
         this.usersService = usersService;
@@ -37,16 +38,42 @@ let AdminController = class AdminController {
         this.singlePurchasesService = singlePurchasesService;
     }
     async syncSchedule(date) {
-        return this.kraService.syncEntrySheet(date);
+        const d = date?.replace(/-/g, '').slice(0, 8) ||
+            new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        return this.kraService.syncEntrySheet(d);
     }
     async syncResults(date) {
-        return this.kraService.fetchRaceResults(date);
+        const d = date?.replace(/-/g, '').slice(0, 8) ||
+            new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        return this.kraService.fetchRaceResults(d);
     }
     async syncDetails(date) {
-        return this.kraService.syncAnalysisData(date);
+        const d = date?.replace(/-/g, '').slice(0, 8) ||
+            new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        return this.kraService.syncAnalysisData(d);
+    }
+    async getKraSyncLogs(endpoint, rcDate, limit) {
+        const take = Math.min(Number(limit) || 50, 100);
+        const logs = await this.prisma.kraSyncLog.findMany({
+            where: {
+                ...(endpoint && { endpoint }),
+                ...(rcDate && { rcDate }),
+            },
+            orderBy: { createdAt: 'desc' },
+            take,
+        });
+        return { logs, total: logs.length };
+    }
+    async seedSample(date) {
+        return this.kraService.seedSampleRaces(date);
     }
     async syncJockeys(meet) {
         return this.kraService.fetchJockeyTotalResults(meet);
+    }
+    async syncAll(date) {
+        const d = date?.replace(/-/g, '').slice(0, 8) ||
+            new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        return this.kraService.syncAll(d);
     }
     async syncHistorical(dateFrom, dateTo) {
         if (!dateFrom || !dateTo) {
@@ -139,17 +166,30 @@ let AdminController = class AdminController {
     }
     async estimateCost() {
         const raw = await this.configService.get('ai_config');
-        const config = raw ? JSON.parse(raw) : { costStrategy: 'balanced' };
-        const estimates = {
+        const config = raw ? JSON.parse(raw) : {};
+        const strategyMonthly = {
             premium: 7200,
             balanced: 3600,
             budget: 1200,
         };
-        const monthly = estimates[config.costStrategy] ?? 3600;
+        const rawMonthly = typeof config.primaryModel === 'string' && AdminController_1.MODEL_COST[config.primaryModel] != null
+            ? AdminController_1.MODEL_COST[config.primaryModel] * AdminController_1.RACES_PER_MONTH
+            : strategyMonthly[config.costStrategy ?? 'balanced'] ?? 3600;
+        const modelCost = typeof config.primaryModel === 'string'
+            ? AdminController_1.MODEL_COST[config.primaryModel] ?? 12
+            : rawMonthly / AdminController_1.RACES_PER_MONTH;
+        const enableCaching = config.enableCaching ?? true;
+        const estimatedMonthlyCost = enableCaching ? Math.round(rawMonthly * 0.01) : rawMonthly;
         return {
-            estimatedMonthlyCost: config.enableCaching ? Math.round(monthly * 0.01) : monthly,
-            costStrategy: config.costStrategy,
-            enableCaching: config.enableCaching ?? true,
+            estimatedMonthlyCost,
+            primaryModel: config.primaryModel ?? null,
+            costStrategy: config.costStrategy ?? 'balanced',
+            enableCaching,
+            calculationText: typeof config.primaryModel === 'string'
+                ? enableCaching
+                    ? `경주당 ₩${modelCost} × ${AdminController_1.RACES_PER_MONTH}경기/월 × 1%(캐싱) ≈ ₩${estimatedMonthlyCost.toLocaleString()}`
+                    : `경주당 ₩${modelCost} × ${AdminController_1.RACES_PER_MONTH}경기/월 ≈ ₩${rawMonthly.toLocaleString()} (캐싱 ON 시 99%↓)`
+                : `전략 ${config.costStrategy ?? 'balanced'} (캐싱 ${enableCaching ? 'ON' : 'OFF'}) ≈ ₩${estimatedMonthlyCost.toLocaleString()}`,
         };
     }
     async getBets(page, limit, userId, raceId, status) {
@@ -157,9 +197,9 @@ let AdminController = class AdminController {
         const l = Math.min(100, Math.max(1, Number(limit) || 20));
         const where = {};
         if (userId)
-            where.userId = userId;
+            where.userId = parseInt(userId, 10);
         if (raceId)
-            where.raceId = raceId;
+            where.raceId = parseInt(raceId, 10);
         if (status)
             where.betStatus = status;
         const [bets, total] = await Promise.all([
@@ -351,6 +391,15 @@ let AdminController = class AdminController {
     }
 };
 exports.AdminController = AdminController;
+AdminController.MODEL_COST = {
+    'gemini-2.0-flash-exp': 5,
+    'gemini-1.5-pro': 12,
+    'gemini-1.5-pro-002': 12,
+    'gemini-1.5-flash': 4,
+    'gemini-1.5-flash-8b': 2,
+    'gemini-pro': 8,
+};
+AdminController.RACES_PER_MONTH = 50;
 __decorate([
     (0, common_1.Post)('kra/sync/schedule'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 경주 계획/출전표 동기화' }),
@@ -376,6 +425,24 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "syncDetails", null);
 __decorate([
+    (0, common_1.Get)('kra/sync-logs'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 동기화 로그 조회' }),
+    __param(0, (0, common_1.Query)('endpoint')),
+    __param(1, (0, common_1.Query)('rcDate')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getKraSyncLogs", null);
+__decorate([
+    (0, common_1.Post)('kra/seed-sample'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)' }),
+    __param(0, (0, common_1.Query)('date')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "seedSample", null);
+__decorate([
     (0, common_1.Post)('kra/sync/jockeys'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 기수 통산전적 동기화' }),
     __param(0, (0, common_1.Query)('meet')),
@@ -383,6 +450,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "syncJockeys", null);
+__decorate([
+    (0, common_1.Post)('kra/sync/all'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 전체 적재 (출전표→결과→상세→기수)' }),
+    __param(0, (0, common_1.Query)('date')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "syncAll", null);
 __decorate([
     (0, common_1.Post)('kra/sync/historical'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 과거 경마 기록 적재 (몇 년치 백업용)' }),
@@ -406,42 +481,42 @@ __decorate([
 __decorate([
     (0, common_1.Get)('users/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getUser", null);
 __decorate([
     (0, common_1.Patch)('users/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자 수정' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateUser", null);
 __decorate([
     (0, common_1.Delete)('users/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자 삭제(비활성화)' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "deleteUser", null);
 __decorate([
     (0, common_1.Patch)('users/:id/activate'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자 활성화' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "activateUser", null);
 __decorate([
     (0, common_1.Patch)('users/:id/deactivate'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자 비활성화' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "deactivateUser", null);
 __decorate([
@@ -496,9 +571,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)('bets/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 마권 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getBet", null);
 __decorate([
@@ -511,18 +586,18 @@ __decorate([
 __decorate([
     (0, common_1.Get)('subscriptions/plans/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 구독 플랜 상세' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getSubscriptionPlan", null);
 __decorate([
     (0, common_1.Patch)('subscriptions/plans/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 구독 플랜 수정' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateSubscriptionPlan", null);
 __decorate([
@@ -588,7 +663,7 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getBetsTrend", null);
-exports.AdminController = AdminController = __decorate([
+exports.AdminController = AdminController = AdminController_1 = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),

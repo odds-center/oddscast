@@ -9,6 +9,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -22,6 +23,8 @@ import {
   UpdateNotificationDto,
   BulkSendDto,
   UpdateNotificationPreferenceDto,
+  PushSubscribeDto,
+  PushUnsubscribeDto,
 } from './dto/notification.dto';
 
 @ApiTags('Notifications')
@@ -81,7 +84,7 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.notificationsService.findOne(id);
   }
 
@@ -96,17 +99,23 @@ export class NotificationsController {
   @Post('push-subscribe')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '푸시 구독' })
-  pushSubscribe(@CurrentUser() _user: JwtPayload, @Body() _body: any) {
-    return { message: '푸시 알림이 구독되었습니다.' };
+  @ApiOperation({ summary: '푸시 구독 (Expo 토큰 등록)' })
+  pushSubscribe(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PushSubscribeDto,
+  ) {
+    return this.notificationsService.pushSubscribe(user.sub, dto);
   }
 
   @Post('push-unsubscribe')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '푸시 구독 해제' })
-  pushUnsubscribe(@CurrentUser() _user: JwtPayload, @Body() _body: any) {
-    return { message: '푸시 알림 구독이 해제되었습니다.' };
+  pushUnsubscribe(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PushUnsubscribeDto,
+  ) {
+    return this.notificationsService.pushUnsubscribe(user.sub, dto);
   }
 
   @Post('bulk-send')
@@ -121,7 +130,7 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 읽음 처리' })
-  markAsRead(@Param('id') id: string) {
+  markAsRead(@Param('id', ParseIntPipe) id: number) {
     return this.notificationsService.markAsRead(id);
   }
 
@@ -137,7 +146,7 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 수정' })
-  update(@Param('id') id: string, @Body() dto: UpdateNotificationDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateNotificationDto) {
     return this.notificationsService.update(id, dto);
   }
 
@@ -153,7 +162,7 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 삭제' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.notificationsService.remove(id);
   }
 }

@@ -10,8 +10,8 @@ export declare class UsersController {
             name: string;
             nickname: string | null;
             avatar: string | null;
-            id: string;
-            role: import(".prisma/client").$Enums.UserRole;
+            id: number;
+            role: import("@prisma/client").$Enums.UserRole;
             isActive: boolean;
             createdAt: Date;
         }[];
@@ -25,8 +25,8 @@ export declare class UsersController {
             name: string;
             nickname: string | null;
             avatar: string | null;
-            id: string;
-            role: import(".prisma/client").$Enums.UserRole;
+            id: number;
+            role: import("@prisma/client").$Enums.UserRole;
             isActive: boolean;
             createdAt: Date;
         }[];
@@ -39,8 +39,8 @@ export declare class UsersController {
         name: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        id: number;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         lastLoginAt: Date | null;
         createdAt: Date;
@@ -51,44 +51,44 @@ export declare class UsersController {
         availableTickets: number;
         totalFavorites: number;
     }>;
-    getProfile(id: string): Promise<{
+    getProfile(id: number): Promise<{
         email: string;
         name: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        id: number;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         lastLoginAt: Date | null;
         createdAt: Date;
     }>;
-    updateProfile(id: string, dto: UpdateUserDto): Promise<{
+    updateProfile(id: number, dto: UpdateUserDto): Promise<{
         email: string;
         name: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        id: number;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
-    findOne(id: string): Promise<{
+    findOne(id: number): Promise<{
         email: string;
         name: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        id: number;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         lastLoginAt: Date | null;
         createdAt: Date;
     }>;
-    getStats(id: string): Promise<{
+    getStats(id: number): Promise<{
         totalTickets: number;
         usedTickets: number;
         availableTickets: number;
         totalFavorites: number;
     }>;
-    getStatistics(id: string): Promise<{
+    getStatistics(id: number): Promise<{
         totalTickets: number;
         usedTickets: number;
         availableTickets: number;
@@ -115,16 +115,16 @@ export declare class UsersController {
         marketing: boolean;
         notifications: boolean;
     };
-    update(id: string, dto: UpdateUserDto): Promise<{
+    update(id: number, dto: UpdateUserDto): Promise<{
         email: string;
         name: string;
         nickname: string | null;
         avatar: string | null;
-        id: string;
-        role: import(".prisma/client").$Enums.UserRole;
+        id: number;
+        role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
-    remove(id: string): Promise<{
+    remove(id: number): Promise<{
         message: string;
     }>;
 }

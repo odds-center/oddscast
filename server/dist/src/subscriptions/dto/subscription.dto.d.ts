@@ -1,9 +1,9 @@
 export declare class SubscribeDto {
-    planId?: string;
+    planId?: string | number;
     billingKey?: string;
 }
 export declare class ActivateSubscriptionDto {
-    billingKey: string;
+    billingKey?: string;
 }
 export declare class CancelSubscriptionDto {
     reason?: string;

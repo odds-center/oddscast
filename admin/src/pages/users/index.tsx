@@ -6,6 +6,8 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import Modal from '@/components/common/Modal';
+import PageHeader from '@/components/common/PageHeader';
 import { adminUsersApi } from '@/lib/api/admin';
 import { formatDateTime } from '@/lib/utils';
 
@@ -129,22 +131,20 @@ export default function UsersPage() {
         <title>회원 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <div className='flex items-center justify-between'>
-            <div>
-              <h1 className='text-3xl font-bold text-gray-900'>회원 관리</h1>
-              <p className='mt-2 text-sm text-gray-600'>가입한 회원들을 관리할 수 있습니다.</p>
-            </div>
-          </div>
+        <div className='space-y-4'>
+          <PageHeader
+            title='회원 관리'
+            description='가입한 회원들을 관리할 수 있습니다.'
+          />
 
           <Card>
-            <div className='mb-4'>
+            <div className='mb-3'>
               <input
                 type='text'
                 placeholder='이메일 또는 사용자명으로 검색...'
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className='w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                className='w-full max-w-md px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500'
               />
             </div>
 
@@ -167,33 +167,13 @@ export default function UsersPage() {
 
         {/* 사용자 상세 모달 */}
         {selectedUser && (
-          <div
-            className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'
-            onClick={() => setSelectedUser(null)}
-          >
-            <div
-              className='bg-white rounded-lg p-6 max-w-2xl w-full mx-4'
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className='flex justify-between items-start mb-6'>
-                <h2 className='text-2xl font-bold'>회원 상세 정보</h2>
-                <button
-                  onClick={() => setSelectedUser(null)}
-                  className='text-gray-400 hover:text-gray-600'
-                >
-                  <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path
-                      strokeLinecap='round'
-                      strokeLinejoin='round'
-                      strokeWidth={2}
-                      d='M6 18L18 6M6 6l12 12'
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <div className='space-y-4'>
-                <div className='grid grid-cols-2 gap-4'>
+        <Modal
+          open
+          onClose={() => setSelectedUser(null)}
+          title='회원 상세 정보'
+        >
+          <div className='space-y-3'>
+                <div className='grid grid-cols-2 gap-3'>
                   <div>
                     <label className='block text-sm font-medium text-gray-700 mb-1'>ID</label>
                     <div className='text-gray-900'>{selectedUser.id}</div>
@@ -209,7 +189,7 @@ export default function UsersPage() {
                   <div>
                     <label className='block text-sm font-medium text-gray-700 mb-1'>역할</label>
                     <div>
-                      <span className='inline-flex rounded-full bg-blue-100 px-3 py-1 text-sm font-semibold text-blue-800'>
+                      <span className='inline-flex rounded bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800'>
                         {selectedUser.role}
                       </span>
                     </div>
@@ -218,7 +198,7 @@ export default function UsersPage() {
                     <label className='block text-sm font-medium text-gray-700 mb-1'>상태</label>
                     <div>
                       <span
-                        className={`inline-flex rounded-full px-3 py-1 text-sm font-semibold ${
+                        className={`inline-flex rounded px-2 py-0.5 text-xs font-semibold ${
                           selectedUser.isActive
                             ? 'bg-green-100 text-green-800'
                             : 'bg-red-100 text-red-800'
@@ -234,35 +214,35 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                <div className='border-t pt-4'>
-                  <h3 className='font-semibold mb-3'>베팅 통계</h3>
-                  <div className='grid grid-cols-2 gap-4'>
-                    <div className='bg-gray-50 p-3 rounded'>
-                      <div className='text-sm text-gray-600'>총 베팅 수</div>
-                      <div className='text-2xl font-bold'>{selectedUser.totalBets ?? 0}건</div>
+                <div className='border-t pt-3'>
+                  <h3 className='text-sm font-semibold mb-2'>베팅 통계</h3>
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div className='bg-gray-50 p-2.5 rounded'>
+                      <div className='text-xs text-gray-600'>총 베팅 수</div>
+                      <div className='text-base font-bold'>{selectedUser.totalBets ?? 0}건</div>
                     </div>
-                    <div className='bg-gray-50 p-3 rounded'>
-                      <div className='text-sm text-gray-600'>승리 횟수</div>
-                      <div className='text-2xl font-bold text-green-600'>
+                    <div className='bg-gray-50 p-2.5 rounded'>
+                      <div className='text-xs text-gray-600'>승리 횟수</div>
+                      <div className='text-base font-bold text-green-600'>
                         {selectedUser.wonBets ?? 0}건
                       </div>
                     </div>
-                    <div className='bg-gray-50 p-3 rounded'>
-                      <div className='text-sm text-gray-600'>총 베팅 금액</div>
-                      <div className='text-2xl font-bold'>
+                    <div className='bg-gray-50 p-2.5 rounded'>
+                      <div className='text-xs text-gray-600'>총 베팅 금액</div>
+                      <div className='text-base font-bold'>
                         {(selectedUser.totalBetAmount ?? 0).toLocaleString()}원
                       </div>
                     </div>
-                    <div className='bg-gray-50 p-3 rounded'>
-                      <div className='text-sm text-gray-600'>총 당첨 금액</div>
-                      <div className='text-2xl font-bold text-green-600'>
+                    <div className='bg-gray-50 p-2.5 rounded'>
+                      <div className='text-xs text-gray-600'>총 당첨 금액</div>
+                      <div className='text-base font-bold text-green-600'>
                         {(selectedUser.totalWinAmount ?? 0).toLocaleString()}원
                       </div>
                     </div>
                   </div>
-                  <div className='mt-3 bg-blue-50 p-3 rounded'>
-                    <div className='text-sm text-gray-600'>승률</div>
-                    <div className='text-2xl font-bold text-blue-600'>
+                  <div className='mt-2 bg-blue-50 p-2.5 rounded'>
+                    <div className='text-xs text-gray-600'>승률</div>
+                    <div className='text-base font-bold text-blue-600'>
                       {(selectedUser.totalBets ?? 0) > 0
                         ? (
                             ((selectedUser.wonBets ?? 0) / (selectedUser.totalBets ?? 1)) *
@@ -274,7 +254,7 @@ export default function UsersPage() {
                   </div>
                 </div>
 
-                <div className='border-t pt-4 flex gap-2'>
+                <div className='border-t pt-3 flex gap-2'>
                   <Button
                     variant={selectedUser.isActive ? 'danger' : 'secondary'}
                     className='flex-1'
@@ -292,9 +272,8 @@ export default function UsersPage() {
                     닫기
                   </Button>
                 </div>
-              </div>
-            </div>
           </div>
+        </Modal>
         )}
       </Layout>
     </>

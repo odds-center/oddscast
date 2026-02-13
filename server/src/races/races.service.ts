@@ -3,12 +3,24 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
+import dayjs from 'dayjs';
 import {
   CreateRaceDto,
   UpdateRaceDto,
   RaceFilterDto,
   CreateRaceEntryDto,
 } from './dto/race.dto';
+import { toKraMeetName } from '../kra/constants';
+import {
+  serializeRace,
+  serializeRaces,
+} from '../common/serializers/kra.serializer';
+import {
+  RACE_INCLUDE_ENTRIES,
+  RACE_INCLUDE_ENTRIES_ACTIVE,
+  RACE_INCLUDE_FULL,
+} from '../common/prisma-includes';
+import { toKraMeetForDb } from '@goldenrace/shared';
 
 @Injectable()
 export class RacesService {
@@ -18,16 +30,24 @@ export class RacesService {
   ) {}
 
   async findAll(filters: RaceFilterDto) {
-    const { page = 1, limit = 20, date, meet, status } = filters;
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
+    const { date, dateFrom, dateTo, meet, status } = filters;
     const where: Prisma.RaceWhereInput = {};
-    if (date) where.rcDate = date;
-    if (meet) where.meet = meet;
+    if (date) {
+      where.rcDate = date.replace(/-/g, '').slice(0, 8);
+    } else if (dateFrom && dateTo) {
+      const from = dateFrom.replace(/-/g, '').slice(0, 8);
+      const to = dateTo.replace(/-/g, '').slice(0, 8);
+      where.rcDate = { gte: from, lte: to };
+    }
+    if (meet) where.meet = toKraMeetName(meet);
     if (status) where.status = status as Prisma.EnumRaceStatusFilter;
 
     const [races, total] = await Promise.all([
       this.prisma.race.findMany({
         where,
-        include: { entries: true },
+        include: RACE_INCLUDE_ENTRIES,
         skip: (page - 1) * limit,
         take: limit,
         orderBy: [{ rcDate: 'desc' }, { rcNo: 'asc' }],
@@ -35,41 +55,71 @@ export class RacesService {
       this.prisma.race.count({ where }),
     ]);
 
-    return { races, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      races: serializeRaces(races),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const cacheKey = `race:${id}`;
-    const cached = await this.cache.get<Awaited<ReturnType<typeof this._findOneRaw>>>(cacheKey);
-    if (cached) return cached;
+    const cached =
+      await this.cache.get<Awaited<ReturnType<typeof this._findOneRaw>>>(
+        cacheKey,
+      );
+    if (cached) {
+      const hasEntries =
+        ((cached as { entries?: unknown[] }).entries?.length ?? 0) > 0;
+      if (!hasEntries) {
+        const fresh = await this._findOneRaw(id);
+        if (fresh && Array.isArray(fresh.entries) && fresh.entries.length > 0) {
+          const serialized = serializeRace(fresh);
+          await this.cache.set(cacheKey, fresh, 60 * 5 * 1000);
+          return serialized ?? fresh;
+        }
+      }
+      return serializeRace(cached) ?? cached;
+    }
     const race = await this._findOneRaw(id);
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
-    await this.cache.set(cacheKey, race, 60 * 5 * 1000); // 5분
-    return race;
+    const serialized = serializeRace(race);
+    await this.cache.set(cacheKey, race, 60 * 5 * 1000);
+    return serialized ?? race;
   }
 
-  private async _findOneRaw(id: string) {
+  private async _findOneRaw(id: number) {
     return this.prisma.race.findUnique({
       where: { id },
-      include: { entries: true, results: true, predictions: true },
+      include: RACE_INCLUDE_FULL,
     });
   }
 
   async create(dto: CreateRaceDto) {
-    return this.prisma.race.create({ data: dto, include: { entries: true } });
+    const data = { ...dto, meet: toKraMeetForDb(dto.meet) ?? dto.meet };
+    const created = await this.prisma.race.create({
+      data,
+      include: RACE_INCLUDE_ENTRIES,
+    });
+    return serializeRace(created) ?? created;
   }
 
-  async update(id: string, dto: UpdateRaceDto) {
+  async update(id: number, dto: UpdateRaceDto) {
+    const data =
+      dto.meet != null
+        ? { ...dto, meet: toKraMeetForDb(dto.meet) ?? dto.meet }
+        : dto;
     const race = await this.prisma.race.update({
       where: { id },
-      data: dto,
-      include: { entries: true },
+      data,
+      include: RACE_INCLUDE_ENTRIES,
     });
     await this.cache.del(`race:${id}`);
-    return race;
+    return serializeRace(race) ?? race;
   }
 
-  async remove(id: string) {
+  async remove(id: number) {
     await this.prisma.race.delete({ where: { id } });
     await this.cache.del(`race:${id}`);
     return { message: '경주가 삭제되었습니다' };
@@ -82,19 +132,22 @@ export class RacesService {
   }) {
     const where: Prisma.RaceWhereInput = {};
     if (filters.dateFrom && filters.dateTo) {
-      where.rcDate = { gte: filters.dateFrom, lte: filters.dateTo };
+      const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
+      const to = filters.dateTo.replace(/-/g, '').slice(0, 8);
+      where.rcDate = { gte: from, lte: to };
     }
-    if (filters.meet) where.meet = filters.meet;
+    if (filters.meet) where.meet = toKraMeetName(filters.meet);
 
-    return this.prisma.race.findMany({
+    const races = await this.prisma.race.findMany({
       where,
-      include: { entries: true },
+      include: RACE_INCLUDE_ENTRIES,
       orderBy: [{ rcDate: 'asc' }, { rcNo: 'asc' }],
     });
+    return serializeRaces(races);
   }
 
   async getTodayRaces() {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const today = dayjs().format('YYYYMMDD');
     return this.getRacesByDate(today);
   }
 
@@ -104,34 +157,44 @@ export class RacesService {
    */
   async getRacesByDate(date: string) {
     const rcDate = date.replace(/-/g, '').slice(0, 8); // YYYYMMDD 정규화
-    return this.prisma.race.findMany({
+    const races = await this.prisma.race.findMany({
       where: { rcDate },
-      include: { entries: { where: { isScratched: false } } },
+      include: RACE_INCLUDE_ENTRIES_ACTIVE,
       orderBy: [{ rcNo: 'asc' }],
     });
+    return serializeRaces(races);
   }
 
-  async getRaceResult(raceId: string) {
+  async getRaceResult(raceId: number) {
     const results = await this.prisma.raceResult.findMany({
       where: { raceId },
-      orderBy: { rcRank: 'asc' },
+      select: {
+        id: true,
+        ord: true,
+        chulNo: true,
+        hrNo: true,
+        hrName: true,
+        jkName: true,
+        rcTime: true,
+      },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
     });
     if (!results.length) throw new NotFoundException('결과를 찾을 수 없습니다');
     return results;
   }
 
-  async createEntry(raceId: string, dto: CreateRaceEntryDto) {
+  async createEntry(raceId: number, dto: CreateRaceEntryDto) {
     return this.prisma.raceEntry.create({ data: { ...dto, raceId } });
   }
 
-  async createBulkEntries(raceId: string, entries: CreateRaceEntryDto[]) {
+  async createBulkEntries(raceId: number, entries: CreateRaceEntryDto[]) {
     const created = await this.prisma.raceEntry.createMany({
       data: entries.map((e) => ({ ...e, raceId })),
     });
     return { count: created.count };
   }
 
-  async getAnalysis(raceId: string) {
+  async getAnalysis(raceId: number) {
     const prediction = await this.prisma.prediction.findFirst({
       where: { raceId, status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' },

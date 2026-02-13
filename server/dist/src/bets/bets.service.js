@@ -12,6 +12,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BetsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const kra_serializer_1 = require("../common/serializers/kra.serializer");
 const client_1 = require("@prisma/client");
 let BetsService = class BetsService {
     constructor(prisma) {
@@ -60,7 +61,7 @@ let BetsService = class BetsService {
             }),
             this.prisma.bet.count({ where }),
         ]);
-        return { bets, total, page, totalPages: Math.ceil(total / limit) };
+        return { bets: (0, kra_serializer_1.serializeItemsWithRace)(bets), total, page, totalPages: Math.ceil(total / limit) };
     }
     async findOne(id) {
         const bet = await this.prisma.bet.findUnique({
@@ -69,7 +70,7 @@ let BetsService = class BetsService {
         });
         if (!bet)
             throw new common_1.NotFoundException('Bet not found');
-        return bet;
+        return (0, kra_serializer_1.serializeItemsWithRace)([bet])[0] ?? bet;
     }
     async update(id, dto) {
         return this.prisma.bet.update({

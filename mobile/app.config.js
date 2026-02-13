@@ -96,6 +96,8 @@ module.exports = ({ config: expoConfig }) => {
       webClientId: config.google.webClientId,
       iosClientId: config.google.iosClientId,
       kraApiKey: config.kra.apiKey,
+      // API 서버 (푸시 등록) - EXPO_PUBLIC_API_URL로 prod 설정
+      apiBaseUrl: process.env.EXPO_PUBLIC_API_URL || '',
     },
     updates: {
       enabled: true,

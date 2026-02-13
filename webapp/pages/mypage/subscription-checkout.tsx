@@ -44,7 +44,9 @@ export default function SubscriptionCheckoutPage() {
     (async () => {
       try {
         const plans = await SubscriptionPlansApi.getSubscriptionPlans();
-        const found = plans.find((p) => p.id === planId || p.planName === planId);
+        const found = plans.find(
+          (p) => String(p.id) === planId || p.id === planId || p.planName === planId,
+        );
         if (!found) {
           setStep('error');
           setErrorMsg('플랜을 찾을 수 없습니다.');
@@ -66,18 +68,22 @@ export default function SubscriptionCheckoutPage() {
 
     try {
       // 1. 구독 신청 (PENDING)
-      const sub = await SubscriptionApi.subscribe({ planId: plan.id });
-      const subscriptionId = (sub as { id?: string })?.id;
-      if (!subscriptionId) throw new Error('구독 정보를 받지 못했습니다.');
+      const sub = await SubscriptionApi.subscribe({ planId: String(plan.id) });
+      const subscriptionId = (sub as { id?: string | number })?.id;
+      const subId =
+        typeof subscriptionId === 'number'
+          ? String(subscriptionId)
+          : subscriptionId ?? '';
+      if (!subId) throw new Error('구독 정보를 받지 못했습니다.');
 
       // 2. 결제 처리
       await PaymentsApi.processSubscription({
-        planId: plan.id,
+        planId: String(plan.id),
         paymentMethod: CONFIG.useMock ? 'MOCK' : 'CARD',
       });
 
       // 3. 구독 활성화
-      await SubscriptionApi.activate(subscriptionId, CONFIG.useMock ? 'mock-billing-key' : 'billing-key-from-pg');
+      await SubscriptionApi.activate(subId, CONFIG.useMock ? 'mock-billing-key' : 'billing-key-from-pg');
 
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
       setStep('success');
@@ -97,9 +103,7 @@ export default function SubscriptionCheckoutPage() {
             </Link>
             후 구독할 수 있습니다.
           </p>
-          <Link href={routes.mypage.subscriptions} className='btn-secondary'>
-            ← 구독 플랜으로
-          </Link>
+          <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block' />
         </div>
       </Layout>
     );
@@ -120,9 +124,7 @@ export default function SubscriptionCheckoutPage() {
       <Layout title='구독 결제 — GOLDEN RACE'>
         <div className='max-w-md mx-auto'>
           <EmptyState icon='AlertCircle' title='오류' description={errorMsg} />
-          <Link href={routes.mypage.subscriptions} className='btn-secondary mt-4 block text-center'>
-            ← 구독 플랜으로
-          </Link>
+          <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block text-center' />
         </div>
       </Layout>
     );

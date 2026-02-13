@@ -10,11 +10,13 @@ exports.RacesModule = void 0;
 const common_1 = require("@nestjs/common");
 const races_service_1 = require("./races.service");
 const races_controller_1 = require("./races.controller");
+const cache_module_1 = require("../cache/cache.module");
 let RacesModule = class RacesModule {
 };
 exports.RacesModule = RacesModule;
 exports.RacesModule = RacesModule = __decorate([
     (0, common_1.Module)({
+        imports: [cache_module_1.CacheModule],
         controllers: [races_controller_1.RacesController],
         providers: [races_service_1.RacesService],
         exports: [races_service_1.RacesService],

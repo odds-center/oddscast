@@ -51,7 +51,8 @@ let FavoritesController = class FavoritesController {
         return this.favoritesService.bulkAdd(user.sub, items);
     }
     bulkDelete(user, body) {
-        return this.favoritesService.bulkDelete(user.sub, body.ids);
+        const ids = (body.ids ?? []).map((x) => (typeof x === 'number' ? x : parseInt(String(x), 10)));
+        return this.favoritesService.bulkDelete(user.sub, ids);
     }
     update(id, dto) {
         return this.favoritesService.update(id, dto);
@@ -110,9 +111,9 @@ __decorate([
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '즐겨찾기 상세 조회' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], FavoritesController.prototype, "findOne", null);
 __decorate([
@@ -154,18 +155,18 @@ __decorate([
 __decorate([
     (0, common_1.Put)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '즐겨찾기 수정' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, favorite_dto_1.UpdateFavoriteDto]),
+    __metadata("design:paramtypes", [Number, favorite_dto_1.UpdateFavoriteDto]),
     __metadata("design:returntype", void 0)
 ], FavoritesController.prototype, "update", null);
 __decorate([
     (0, common_1.Delete)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '즐겨찾기 삭제' }),
-    __param(0, (0, common_1.Param)('id')),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], FavoritesController.prototype, "remove", null);
 exports.FavoritesController = FavoritesController = __decorate([

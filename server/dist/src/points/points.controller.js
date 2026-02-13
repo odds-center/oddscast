@@ -135,9 +135,9 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '포인트 잔액 조회' }),
-    __param(0, (0, common_1.Param)('userId')),
+    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PointsController.prototype, "getBalance", null);
 __decorate([
@@ -145,10 +145,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '포인트 트랜잭션 조회' }),
-    __param(0, (0, common_1.Param)('userId')),
+    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", void 0)
 ], PointsController.prototype, "getTransactions", null);
 __decorate([
@@ -156,10 +156,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '포인트 트랜잭션 생성 (관리자용?)' }),
-    __param(0, (0, common_1.Param)('userId')),
+    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, point_dto_1.CreatePointTransactionDto]),
+    __metadata("design:paramtypes", [Number, point_dto_1.CreatePointTransactionDto]),
     __metadata("design:returntype", void 0)
 ], PointsController.prototype, "createTransaction", null);
 __decorate([
@@ -167,10 +167,10 @@ __decorate([
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
     (0, swagger_1.ApiOperation)({ summary: '프로모션 적용' }),
-    __param(0, (0, common_1.Param)('userId')),
-    __param(1, (0, common_1.Param)('promotionId')),
+    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Param)('promotionId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], PointsController.prototype, "applyPromotion", null);
 exports.PointsController = PointsController = __decorate([

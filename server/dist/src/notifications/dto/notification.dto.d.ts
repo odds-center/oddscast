@@ -1,5 +1,5 @@
 export declare class CreateNotificationDto {
-    userId: string;
+    userId: number;
     title: string;
     message: string;
     type?: string;
@@ -13,8 +13,15 @@ export declare class UpdateNotificationDto {
 }
 export declare class BulkSendDto {
     templateId: string;
-    recipients: string[];
+    recipients: number[];
     variables?: Record<string, unknown>;
+}
+export declare class PushSubscribeDto {
+    token: string;
+    deviceId?: string;
+}
+export declare class PushUnsubscribeDto {
+    token: string;
 }
 export declare class UpdateNotificationPreferenceDto {
     pushEnabled?: boolean;

@@ -19,7 +19,7 @@
 | **WebApp**   | Next.js               | 반응형 웹 (Desktop/Mobile 자동 전환) |
 | **Backend**  | NestJS (Node.js)      | API 서버 + Control Tower        |
 | **Admin**    | Next.js               | 관리자 대시보드                 |
-| **Database** | PostgreSQL (Supabase) | 관계형 데이터 관리              |
+| **Database** | PostgreSQL (Prisma) | 관계형 데이터 관리              |
 | **AI**       | Google Gemini API     | 분석 기반 승부 예측 코멘트      |
 
 ---

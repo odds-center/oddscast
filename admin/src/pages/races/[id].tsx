@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +16,7 @@ interface Race {
   rcTime?: string;
   meet: string;
   rcDist: string;
-  rcGrade?: string;
+  rank?: string;
   status?: string;
 }
 
@@ -58,10 +59,10 @@ export default function RaceDetailPage() {
         <title>{race.rcName} | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
+        <div className='space-y-4'>
           <div className='flex items-center justify-between'>
             <div>
-              <h1 className='text-3xl font-bold text-gray-900'>{race.rcName}</h1>
+              <h1 className='text-xl font-bold text-gray-900'>{race.rcName}</h1>
               <p className='mt-2 text-sm text-gray-600'>경주 상세 정보</p>
             </div>
             <div className='flex gap-2'>
@@ -72,7 +73,7 @@ export default function RaceDetailPage() {
             </div>
           </div>
 
-          <div className='grid grid-cols-1 gap-6 lg:grid-cols-2'>
+          <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
             <Card title='경주 정보'>
               <div className='space-y-4'>
                 <div className='grid grid-cols-2 gap-4'>
@@ -105,10 +106,10 @@ export default function RaceDetailPage() {
                     <label className='block text-sm font-medium text-gray-700 mb-1'>거리</label>
                     <div className='text-gray-900'>{race.rcDist}m</div>
                   </div>
-                  {race.rcGrade && (
+                  {race.rank && (
                     <div>
                       <label className='block text-sm font-medium text-gray-700 mb-1'>등급</label>
-                      <div className='text-gray-900'>{race.rcGrade}</div>
+                      <div className='text-gray-900'>{race.rank}</div>
                     </div>
                   )}
                 </div>
@@ -117,6 +118,19 @@ export default function RaceDetailPage() {
 
             <Card title='경주명'>
               <div className='text-lg font-semibold'>{race.rcName}</div>
+            </Card>
+
+            <Card
+              title='출전마 데이터'
+              description='웹앱에서 출전마가 보이지 않으면 KRA 출전표를 수동 동기화하세요.'
+              className='lg:col-span-2'
+            >
+              <Link
+                href={`/kra?date=${(race.rcDate || '').replace(/-/g, '').slice(0, 8)}`}
+                className='inline-flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-800 rounded-md hover:bg-amber-100 text-sm font-medium'
+              >
+                출전표 수동 동기화 →
+              </Link>
             </Card>
           </div>
         </div>

@@ -1,4 +1,5 @@
-import { IsString, IsOptional, IsArray, IsEnum } from 'class-validator';
+import { IsString, IsOptional, IsArray, IsEnum, IsNumber } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PickType } from '@prisma/client';
 
@@ -14,8 +15,9 @@ export const PICK_TYPE_HORSE_COUNTS: Record<PickType, number> = {
 
 export class CreatePickDto {
   @ApiProperty({ description: '경주 ID' })
-  @IsString()
-  raceId: string;
+  @IsNumber()
+  @Type(() => Number)
+  raceId: number;
 
   @ApiProperty({ enum: ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'] })
   @IsEnum(['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'])

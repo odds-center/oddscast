@@ -6,10 +6,10 @@ export declare class PaymentsController {
     constructor(paymentsService: PaymentsService);
     processSubscription(user: JwtPayload, dto: PaymentSubscribeDto): Promise<{
         billing: {
-            id: string;
+            id: number;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.PaymentStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PaymentStatus;
+            userId: number;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -20,10 +20,10 @@ export declare class PaymentsController {
     }>;
     processPurchase(user: JwtPayload, dto: PaymentPurchaseDto): Promise<{
         billing: {
-            id: string;
+            id: number;
             createdAt: Date;
-            status: import(".prisma/client").$Enums.PaymentStatus;
-            userId: string;
+            status: import("@prisma/client").$Enums.PaymentStatus;
+            userId: number;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -32,10 +32,10 @@ export declare class PaymentsController {
         };
     }>;
     getHistory(user: JwtPayload): Promise<{
-        id: string;
+        id: number;
         createdAt: Date;
-        status: import(".prisma/client").$Enums.PaymentStatus;
-        userId: string;
+        status: import("@prisma/client").$Enums.PaymentStatus;
+        userId: number;
         amount: number;
         pgTransactionId: string | null;
         billingDate: Date;

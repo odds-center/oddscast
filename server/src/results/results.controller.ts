@@ -8,6 +8,7 @@ import {
   Param,
   Query,
   UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { ResultsService } from './results.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -51,13 +52,13 @@ export class ResultsController {
 
   @Get('race/:raceId')
   @ApiOperation({ summary: '경주별 결과 조회' })
-  getByRace(@Param('raceId') raceId: string) {
+  getByRace(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.resultsService.getByRace(raceId);
   }
 
   @Get(':id')
   @ApiOperation({ summary: '결과 상세 조회' })
-  findOne(@Param('id') id: string) {
+  findOne(@Param('id', ParseIntPipe) id: number) {
     return this.resultsService.findOne(id);
   }
 
@@ -84,7 +85,7 @@ export class ResultsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '결과 수정 (Admin)' })
-  update(@Param('id') id: string, @Body() dto: UpdateResultDto) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateResultDto) {
     return this.resultsService.update(id, dto);
   }
 
@@ -93,7 +94,7 @@ export class ResultsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '결과 삭제 (Admin)' })
-  remove(@Param('id') id: string) {
+  remove(@Param('id', ParseIntPipe) id: number) {
     return this.resultsService.remove(id);
   }
 }

@@ -1,0 +1,6 @@
+packages:
+  - 'server'
+  - 'webapp'
+  - 'admin'
+  - 'mobile'
+  - 'shared'

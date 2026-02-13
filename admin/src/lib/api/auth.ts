@@ -1,7 +1,8 @@
-import { apiClient } from './client';
+import { axiosInstance } from '../utils/axios';
+import { handleApiResponse } from '../utils/axios';
 
 export interface LoginRequest {
-  email: string;
+  loginId: string;
   password: string;
 }
 
@@ -10,7 +11,7 @@ export interface LoginResponse {
   refreshToken: string;
   user: {
     id: string;
-    email: string;
+    loginId: string;
     name: string;
     role: string;
   };
@@ -18,20 +19,16 @@ export interface LoginResponse {
 
 export const authApi = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiClient.post<{ data?: LoginResponse } & LoginResponse>(
-      '/api/auth/admin/login',
+    const response = await axiosInstance.post<{ data?: LoginResponse } & LoginResponse>(
+      '/auth/login',
       data
     );
-    // NestJS ResponseInterceptor 래핑 { data, status } 처리
-    const payload = (response as any)?.data ?? response;
+    const payload = (response.data as any)?.data ?? response.data;
 
-    // 토큰 저장
-    if (payload?.accessToken) {
-      apiClient.setToken(payload.accessToken);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('refreshToken', payload.refreshToken || '');
-        document.cookie = `accessToken=${payload.accessToken}; path=/; max-age=86400`;
-      }
+    if (payload?.accessToken && typeof window !== 'undefined') {
+      localStorage.setItem('accessToken', payload.accessToken);
+      localStorage.setItem('refreshToken', payload.refreshToken || '');
+      document.cookie = `accessToken=${payload.accessToken}; path=/; max-age=86400`;
     }
 
     return payload;
@@ -47,10 +44,13 @@ export const authApi = {
   },
 
   refreshToken: async (refreshToken: string): Promise<LoginResponse> => {
-    return apiClient.post<LoginResponse>('/api/auth/refresh', { refreshToken });
+    const response = await axiosInstance.post<LoginResponse>('/auth/refresh', { refreshToken });
+    const payload = (response.data as any)?.data ?? response.data;
+    return payload;
   },
 
   getProfile: async () => {
-    return apiClient.get('/api/auth/me');
+    const response = await axiosInstance.get('/auth/me');
+    return handleApiResponse(response);
   },
 };

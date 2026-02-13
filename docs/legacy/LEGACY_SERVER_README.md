@@ -6,8 +6,8 @@
 
 ## 개요
 
-TypeScript + Supabase PostgreSQL + TypeORM 기반 NestJS 백엔드.  
-MySQL → Supabase 마이그레이션 완료 버전.
+TypeScript + PostgreSQL + TypeORM 기반 NestJS 백엔드.  
+MySQL → PostgreSQL 마이그레이션 완료 버전.
 
 ---
 
@@ -23,14 +23,14 @@ MySQL → Supabase 마이그레이션 완료 버전.
 ## 기술 스택
 
 - NestJS 10, TypeScript 5, Node.js 18+
-- Supabase PostgreSQL 15, TypeORM
+- PostgreSQL 15, TypeORM
 - Passport, Winston, Docker
 
 ---
 
 ## 관련 문서 (이 폴더)
 
-- [LEGACY_SUPABASE_SETUP.md](LEGACY_SUPABASE_SETUP.md) — Supabase 설정
+- [LEGACY_SUPABASE_SETUP.md](LEGACY_SUPABASE_SETUP.md) — PostgreSQL 설정 (레거시)
 - [LEGACY_ENV_SETUP.md](LEGACY_ENV_SETUP.md) — 환경변수
 - [LEGACY_MIGRATIONS.md](LEGACY_MIGRATIONS.md) — MySQL 마이그레이션
 - [LEGACY_KRA_API.md](LEGACY_KRA_API.md) — KRA API 모듈

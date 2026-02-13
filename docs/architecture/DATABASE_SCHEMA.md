@@ -1,6 +1,7 @@
 # 🗄️ 데이터베이스 스키마 (Database Schema)
 
-> **Prisma ORM 기반 PostgreSQL 스키마. 파일: `server/prisma/schema.prisma`**
+> **Prisma ORM 기반 PostgreSQL 스키마. 파일: `server/prisma/schema.prisma`**  
+> **KRA API 기준으로 정렬됨** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
 ---
 
@@ -8,7 +9,7 @@
 
 - **schema가 default state** — column, default 값이 모두 schema에 정의됨
 - **`prisma db push`** — schema → DB 반영 (마이그레이션 파일 생성 안 함)
-- **`prisma/seed.sql`** — 초기 데이터 (PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig)
+- **`prisma/seed.sql`** — 초기 데이터 (PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig, AdminUser)
 
 ```bash
 # DB 초기화
@@ -45,13 +46,13 @@ erDiagram
 
 ## 모델 상세
 
-### 1. User (사용자)
+### 1. User (앱 사용자)
 
-> 테이블명: `users`
+> 테이블명: `users` — 웹/모바일 회원 전용. Admin과 분리됨.
 
 | 필드              | 타입          | 설명                   | 비고           |
 | ----------------- | ------------- | ---------------------- | -------------- |
-| `id`              | String (UUID) | 고유 ID                | PK, auto UUID  |
+| `id`              | Int           | 고유 ID                | PK, auto increment |
 | `email`           | String        | 이메일                 | unique         |
 | `password`        | String        | 비밀번호 (bcrypt hash) |                |
 | `name`            | String        | 이름                   |                |
@@ -69,31 +70,52 @@ SinglePurchase[]
 
 ---
 
-### 2. Race (경기)
+### 2. AdminUser (관리자)
+
+> 테이블명: `admin_users` — Admin 패널 전용. User와 별도 테이블.
+
+| 필드          | 타입          | 설명                   | 비고           |
+| ------------- | ------------- | ---------------------- | -------------- |
+| `id`          | Int           | 고유 ID                | PK, auto increment |
+| `loginId`     | String        | 로그인 아이디          | unique         |
+| `password`    | String        | 비밀번호 (bcrypt hash) | pgcrypto crypt |
+| `name`        | String        | 이름                   |                |
+| `isActive`    | Boolean       | 활성 상태              | default: true  |
+| `lastLoginAt` | DateTime?     | 마지막 로그인          |                |
+| `createdAt`   | DateTime      | 생성일                 | auto           |
+| `updatedAt`   | DateTime      | 수정일                 | auto           |
+
+**참고:** JWT/Guard의 `UserRole.ADMIN`은 DB 컬럼이 아님. Admin 로그인 시 응답에 role: 'ADMIN'을 포함.
+
+---
+
+### 3. Race (경기)
 
 > 테이블명: `races`
 
 | 필드          | 타입          | 설명        | 비고               |
 | ------------- | ------------- | ----------- | ------------------ |
-| `id`          | String (UUID) | 고유 ID     | PK                 |
-| `raceName`    | String?       | 경주명      |                    |
-| `meet`        | String        | 경마장 코드 | 서울/부산/제주     |
+| `id`          | Int           | 고유 ID     | PK, auto increment  |
+| `rcName`      | String?       | 경주명      | KRA                |
+| `meet`        | String        | 시행경마장명 | 서울/제주/부산경남 |
 | `meetName`    | String?       | 경마장 이름 |                    |
 | `rcDate`      | String        | 경기 날짜   | YYYYMMDD           |
+| `rcDay`       | String?       | 경주요일    | KRA                |
 | `rcNo`        | String        | 경주 번호   |                    |
+| `stTime`      | String?       | 출발시각    | KRA                |
 | `rcDist`      | String?       | 거리 (m)    |                    |
-| `rcGrade`     | String?       | 등급        |                    |
+| `rank`        | String?       | 등급조건    | KRA (rcGrade)      |
 | `rcCondition` | String?       | 출전 조건   |                    |
-| `rcPrize`     | Int?          | 상금        |                    |
+| `rcPrize`     | Int?          | 1착상금     |                    |
 | `weather`     | String?       | 날씨        |                    |
-| `trackState`  | String?       | 주로 상태   | 건조/포화 등       |
+| `track`       | String?       | 주로상태    | KRA (trackState)   |
 | `status`      | RaceStatus    | 경기 상태   | default: SCHEDULED |
 
 **Unique:** `[meet, rcDate, rcNo]` **관계:** RaceEntry[], RaceResult[], Prediction[], UserPick[]
 
 ---
 
-### 3. RaceEntry (출전마)
+### 4. RaceEntry (출전마)
 
 > 테이블명: `race_entries`
 
@@ -115,7 +137,7 @@ SinglePurchase[]
 
 ---
 
-### 4. RaceResult (경주 결과)
+### 5. RaceResult (경주 결과)
 
 > 테이블명: `race_results`
 
@@ -143,7 +165,7 @@ SinglePurchase[]
 
 ---
 
-### 5. Prediction (AI 예측)
+### 6. Prediction (AI 예측)
 
 > 테이블명: `predictions`
 
@@ -160,7 +182,7 @@ SinglePurchase[]
 
 ---
 
-### 6. PredictionTicket (예측권)
+### 7. PredictionTicket (예측권)
 
 > 테이블명: `prediction_tickets`
 
@@ -178,7 +200,7 @@ SinglePurchase[]
 
 ---
 
-### 7. SubscriptionPlan (구독 플랜)
+### 8. SubscriptionPlan (구독 플랜)
 
 > 테이블명: `subscription_plans`
 
@@ -199,7 +221,7 @@ SinglePurchase[]
 
 ---
 
-### 8. Subscription (구독)
+### 9. Subscription (구독)
 
 > 테이블명: `subscriptions`
 
@@ -219,7 +241,7 @@ SinglePurchase[]
 
 ---
 
-### 9. UserPick (내가 고른 말)
+### 10. UserPick (내가 고른 말)
 
 > 테이블명: `user_picks`
 
@@ -236,7 +258,7 @@ SinglePurchase[]
 
 **Unique:** `[userId, raceId]`
 
-### 10. PointConfig (포인트 설정)
+### 11. PointConfig (포인트 설정)
 
 > 테이블명: `point_configs`
 
@@ -245,7 +267,7 @@ SinglePurchase[]
 | `configKey` | String | BASE_POINTS 등 |
 | `configValue`| String | 값             |
 
-### 11. PointTicketPrice (포인트 예측권 가격)
+### 12. PointTicketPrice (포인트 예측권 가격)
 
 > 테이블명: `point_ticket_prices`
 
@@ -254,7 +276,7 @@ SinglePurchase[]
 | `pointsPerTicket`| Int     | 1장당 포인트|
 | `isActive`       | Boolean | 활성 여부   |
 
-### 12–14. 나머지 모델
+### 13–15. 나머지 모델
 
 | 모델                        | 테이블                         | 설명                                                                   |
 | --------------------------- | ------------------------------ | ---------------------------------------------------------------------- |
@@ -325,7 +347,7 @@ SinglePurchase[]
 
 | Enum                   | 값                                                | 사용 모델        |
 | ---------------------- | ------------------------------------------------- | ---------------- |
-| `UserRole`             | USER, ADMIN                                       | User             |
+| `UserRole`             | USER, ADMIN                                       | User, JWT/Guard (AdminUser는 DB에 role 없음) |
 | `RaceStatus`           | SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED      | Race             |
 | `PredictionStatus`     | PENDING, PROCESSING, COMPLETED, FAILED            | Prediction       |
 | `TicketStatus`         | AVAILABLE, USED, EXPIRED                          | PredictionTicket |

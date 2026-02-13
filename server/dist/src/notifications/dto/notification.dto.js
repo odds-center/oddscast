@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateNotificationPreferenceDto = exports.BulkSendDto = exports.UpdateNotificationDto = exports.CreateNotificationDto = void 0;
+exports.UpdateNotificationPreferenceDto = exports.PushUnsubscribeDto = exports.PushSubscribeDto = exports.BulkSendDto = exports.UpdateNotificationDto = exports.CreateNotificationDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 class CreateNotificationDto {
@@ -17,8 +17,8 @@ class CreateNotificationDto {
 exports.CreateNotificationDto = CreateNotificationDto;
 __decorate([
     (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
 ], CreateNotificationDto.prototype, "userId", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
@@ -80,9 +80,9 @@ __decorate([
     __metadata("design:type", String)
 ], BulkSendDto.prototype, "templateId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ type: [String] }),
+    (0, swagger_1.ApiProperty)({ type: [Number] }),
     (0, class_validator_1.IsArray)(),
-    (0, class_validator_1.IsString)({ each: true }),
+    (0, class_validator_1.IsNumber)({}, { each: true }),
     __metadata("design:type", Array)
 ], BulkSendDto.prototype, "recipients", void 0);
 __decorate([
@@ -91,6 +91,28 @@ __decorate([
     (0, class_validator_1.IsObject)(),
     __metadata("design:type", Object)
 ], BulkSendDto.prototype, "variables", void 0);
+class PushSubscribeDto {
+}
+exports.PushSubscribeDto = PushSubscribeDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Expo Push Token (ExponentPushToken[xxx])' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PushSubscribeDto.prototype, "token", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '기기 식별자 (중복 등록 방지)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PushSubscribeDto.prototype, "deviceId", void 0);
+class PushUnsubscribeDto {
+}
+exports.PushUnsubscribeDto = PushUnsubscribeDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Expo Push Token' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], PushUnsubscribeDto.prototype, "token", void 0);
 class UpdateNotificationPreferenceDto {
 }
 exports.UpdateNotificationPreferenceDto = UpdateNotificationPreferenceDto;

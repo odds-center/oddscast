@@ -12,51 +12,96 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.SubscriptionsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const BILLING_PERIOD_DAYS = 30;
 let SubscriptionsService = class SubscriptionsService {
     constructor(prisma) {
         this.prisma = prisma;
     }
     async subscribe(userId, dto) {
-        const plan = dto.planId
-            ? await this.prisma.subscriptionPlan.findUnique({
-                where: { id: dto.planId },
-            })
-            : await this.prisma.subscriptionPlan.findFirst({
-                where: { isActive: true },
-                orderBy: { sortOrder: 'asc' },
-            });
-        if (!plan)
-            throw new common_1.NotFoundException('플랜을 찾을 수 없습니다');
+        const hasActive = await this.prisma.subscription.findFirst({
+            where: { userId, status: 'ACTIVE' },
+        });
+        if (hasActive) {
+            throw new common_1.BadRequestException('이미 활성 구독이 있습니다. 취소 후 다시 신청해 주세요.');
+        }
+        const plan = await this.resolvePlan(dto.planId);
+        if (!plan.isActive) {
+            throw new common_1.BadRequestException('선택한 플랜은 현재 제공되지 않습니다.');
+        }
         return this.prisma.subscription.create({
             data: {
                 userId,
                 planId: plan.id,
                 price: plan.totalPrice,
-                billingKey: dto.billingKey,
+                billingKey: dto.billingKey ?? undefined,
                 status: 'PENDING',
             },
             include: { plan: true },
         });
     }
-    async activate(id, dto) {
-        return this.prisma.subscription.update({
+    async activate(id, userId, dto) {
+        const sub = await this.prisma.subscription.findUnique({
             where: { id },
-            data: {
-                status: 'ACTIVE',
-                billingKey: dto.billingKey,
-                startedAt: new Date(),
-                nextBillingDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-            },
             include: { plan: true },
         });
+        if (!sub)
+            throw new common_1.NotFoundException('구독을 찾을 수 없습니다.');
+        if (sub.userId !== userId) {
+            throw new common_1.BadRequestException('본인의 구독만 활성화할 수 있습니다.');
+        }
+        if (sub.status !== 'PENDING') {
+            throw new common_1.BadRequestException(`이미 ${sub.status} 상태입니다. PENDING 구독만 활성화할 수 있습니다.`);
+        }
+        const startedAt = new Date();
+        const nextBillingDate = new Date(startedAt);
+        nextBillingDate.setDate(nextBillingDate.getDate() + BILLING_PERIOD_DAYS);
+        const ticketsToIssue = sub.plan.totalTickets;
+        const ticketExpiresAt = new Date(nextBillingDate);
+        const [updated] = await this.prisma.$transaction([
+            this.prisma.subscription.update({
+                where: { id },
+                data: {
+                    status: 'ACTIVE',
+                    billingKey: dto.billingKey ?? sub.billingKey,
+                    startedAt,
+                    nextBillingDate,
+                },
+                include: { plan: true },
+            }),
+            this.prisma.predictionTicket.createMany({
+                data: Array.from({ length: ticketsToIssue }, () => ({
+                    userId: sub.userId,
+                    subscriptionId: sub.id,
+                    status: 'AVAILABLE',
+                    expiresAt: ticketExpiresAt,
+                })),
+            }),
+        ]);
+        const ticketsCreated = ticketsToIssue;
+        return { ...updated, ticketsIssued: ticketsCreated };
     }
-    async cancel(id, dto) {
+    async cancel(id, userId, dto) {
+        const sub = await this.prisma.subscription.findUnique({
+            where: { id },
+            include: { plan: true },
+        });
+        if (!sub)
+            throw new common_1.NotFoundException('구독을 찾을 수 없습니다.');
+        if (sub.userId !== userId) {
+            throw new common_1.BadRequestException('본인의 구독만 취소할 수 있습니다.');
+        }
+        if (sub.status === 'CANCELLED') {
+            throw new common_1.BadRequestException('이미 취소된 구독입니다.');
+        }
+        if (sub.status !== 'ACTIVE') {
+            throw new common_1.BadRequestException('활성 구독만 취소할 수 있습니다.');
+        }
         return this.prisma.subscription.update({
             where: { id },
             data: {
                 status: 'CANCELLED',
                 cancelledAt: new Date(),
-                cancelReason: dto.reason,
+                cancelReason: dto.reason ?? undefined,
             },
             include: { plan: true },
         });
@@ -68,18 +113,37 @@ let SubscriptionsService = class SubscriptionsService {
             orderBy: { createdAt: 'desc' },
         });
         if (!sub) {
-            return { isActive: false, planId: null, monthlyTickets: 0, daysUntilRenewal: null };
+            return {
+                isActive: false,
+                planId: null,
+                planDisplayName: null,
+                monthlyTickets: 0,
+                remainingTickets: 0,
+                daysUntilRenewal: null,
+            };
         }
         const monthlyTickets = sub.plan?.totalTickets ?? sub.plan?.baseTickets ?? 0;
+        const remainingTickets = await this.prisma.predictionTicket.count({
+            where: {
+                userId,
+                subscriptionId: sub.id,
+                status: 'AVAILABLE',
+                expiresAt: { gte: new Date() },
+            },
+        });
         let daysUntilRenewal = null;
         if (sub.nextBillingDate) {
-            daysUntilRenewal = Math.ceil((new Date(sub.nextBillingDate).getTime() - Date.now()) / (24 * 60 * 60 * 1000));
+            const diff = Math.ceil((new Date(sub.nextBillingDate).getTime() - Date.now()) /
+                (24 * 60 * 60 * 1000));
+            daysUntilRenewal = diff >= 0 ? diff : null;
         }
         return {
             isActive: true,
-            planId: sub.plan?.displayName ?? sub.plan?.planName ?? sub.planId,
+            planId: sub.plan?.displayName ?? sub.plan?.planName ?? String(sub.planId),
+            planDisplayName: sub.plan?.displayName ?? sub.plan?.planName ?? null,
             monthlyTickets,
-            daysUntilRenewal: daysUntilRenewal !== null && daysUntilRenewal >= 0 ? daysUntilRenewal : null,
+            remainingTickets,
+            daysUntilRenewal,
             subscription: sub,
         };
     }
@@ -90,14 +154,27 @@ let SubscriptionsService = class SubscriptionsService {
         });
         if (!sub)
             throw new common_1.NotFoundException('활성 구독이 없습니다.');
-        return this.cancel(sub.id, { reason });
+        return this.cancel(sub.id, userId, { reason });
     }
-    async getHistory(userId) {
-        return this.prisma.subscription.findMany({
-            where: { userId },
-            include: { plan: true },
-            orderBy: { createdAt: 'desc' },
-        });
+    async getHistory(userId, page = 1, limit = 20) {
+        const safePage = Math.max(1, Number(page) || 1);
+        const safeLimit = Math.min(50, Math.max(1, Number(limit) || 20));
+        const [subscriptions, total] = await Promise.all([
+            this.prisma.subscription.findMany({
+                where: { userId },
+                include: { plan: true },
+                orderBy: { createdAt: 'desc' },
+                skip: (safePage - 1) * safeLimit,
+                take: safeLimit,
+            }),
+            this.prisma.subscription.count({ where: { userId } }),
+        ]);
+        return {
+            subscriptions,
+            total,
+            page: safePage,
+            totalPages: Math.ceil(total / safeLimit),
+        };
     }
     async getPlans() {
         return this.prisma.subscriptionPlan.findMany({
@@ -111,10 +188,32 @@ let SubscriptionsService = class SubscriptionsService {
         });
     }
     async updatePlan(id, data) {
+        const plan = await this.prisma.subscriptionPlan.findUnique({
+            where: { id },
+        });
+        if (!plan)
+            throw new common_1.NotFoundException('플랜을 찾을 수 없습니다.');
         return this.prisma.subscriptionPlan.update({
             where: { id },
             data,
         });
+    }
+    async resolvePlan(planId) {
+        if (planId != null && planId !== '') {
+            const plan = await this.prisma.subscriptionPlan.findUnique({
+                where: { id: Number(planId) },
+            });
+            if (!plan)
+                throw new common_1.NotFoundException('플랜을 찾을 수 없습니다.');
+            return plan;
+        }
+        const plan = await this.prisma.subscriptionPlan.findFirst({
+            where: { isActive: true },
+            orderBy: { sortOrder: 'asc' },
+        });
+        if (!plan)
+            throw new common_1.NotFoundException('활성 플랜이 없습니다.');
+        return plan;
     }
 };
 exports.SubscriptionsService = SubscriptionsService;

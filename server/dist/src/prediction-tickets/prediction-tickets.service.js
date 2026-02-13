@@ -24,7 +24,7 @@ let PredictionTicketsService = class PredictionTicketsService {
         if (!ticket)
             throw new common_1.BadRequestException('사용 가능한 예측권이 없습니다');
         const prediction = await this.prisma.prediction.findFirst({
-            where: { raceId: dto.raceId, status: 'COMPLETED' },
+            where: { raceId: Number(dto.raceId), status: 'COMPLETED' },
             orderBy: { createdAt: 'desc' },
         });
         if (!prediction)
@@ -35,7 +35,7 @@ let PredictionTicketsService = class PredictionTicketsService {
                 status: 'USED',
                 usedAt: new Date(),
                 predictionId: prediction.id,
-                raceId: dto.raceId,
+                raceId: Number(dto.raceId),
             },
         });
         return { ticket: updated, prediction };

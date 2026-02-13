@@ -3,8 +3,8 @@
 # Node.js가 IPv4를 우선 사용하도록 설정
 export NODE_OPTIONS="--dns-result-order=ipv4first"
 
-# Supabase Direct Connection
-export SUPABASE_DB_HOST=db.qayqwpfpwiuutxdkihit.supabase.co
+# PostgreSQL Direct Connection (SUPABASE_DB_* 변수명은 레거시 호환용)
+export SUPABASE_DB_HOST=your-db-host.example.com
 export SUPABASE_DB_PORT=5432
 export SUPABASE_DB_USER=postgres
 export SUPABASE_DB_PASSWORD=[YOUR-PASSWORD]
@@ -29,7 +29,7 @@ export CORS_ORIGINS=http://localhost:3000,http://localhost:3001,exp://localhost:
 
 export BATCH_ENABLED=true
 
-echo "✅ Supabase 환경변수 설정 완료 (IPv4 우선)"
+echo "✅ PostgreSQL 환경변수 설정 완료 (IPv4 우선)"
 echo "Host: $SUPABASE_DB_HOST"
 echo "Port: $SUPABASE_DB_PORT"
 echo ""

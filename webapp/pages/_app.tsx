@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import 'pretendard/dist/web/static/pretendard.css';
 import '@/styles/globals.css';
-import '@/lib/bridge'; // Native ↔ WebView Bridge 초기화 (Mobile WebView 로그인 등)
+import bridge from '@/lib/bridge';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/authStore';
 import { trackPageView } from '@/lib/analytics';
@@ -34,9 +34,17 @@ export default function App({ Component, pageProps }: AppProps) {
   );
 
   const hydrate = useAuthStore((s) => s.hydrate);
+  const token = useAuthStore((s) => s.token);
   useEffect(() => {
     hydrate();
   }, [hydrate]);
+
+  // 네이티브 앱: 로그인 시 푸시 토큰 등록을 위해 JWT 전달
+  useEffect(() => {
+    if (bridge.isNativeApp() && token) {
+      bridge.send('AUTH_READY', { token });
+    }
+  }, [token]);
 
   return (
     <>

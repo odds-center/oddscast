@@ -10,7 +10,7 @@ import { UseTicketDto } from '../common/dto/payment.dto';
 export class PredictionTicketsService {
   constructor(private prisma: PrismaService) {}
 
-  async useTicket(userId: string, dto: UseTicketDto) {
+  async useTicket(userId: number, dto: UseTicketDto) {
     const ticket = await this.prisma.predictionTicket.findFirst({
       where: { userId, status: 'AVAILABLE', expiresAt: { gte: new Date() } },
       orderBy: { expiresAt: 'asc' },
@@ -19,7 +19,7 @@ export class PredictionTicketsService {
     if (!ticket) throw new BadRequestException('사용 가능한 예측권이 없습니다');
 
     const prediction = await this.prisma.prediction.findFirst({
-      where: { raceId: dto.raceId, status: 'COMPLETED' },
+      where: { raceId: Number(dto.raceId), status: 'COMPLETED' },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -31,14 +31,14 @@ export class PredictionTicketsService {
         status: 'USED',
         usedAt: new Date(),
         predictionId: prediction.id,
-        raceId: dto.raceId,
+        raceId: Number(dto.raceId),
       },
     });
 
     return { ticket: updated, prediction };
   }
 
-  async getBalance(userId: string) {
+  async getBalance(userId: number) {
     const [available, used, expired] = await Promise.all([
       this.prisma.predictionTicket.count({
         where: { userId, status: 'AVAILABLE', expiresAt: { gte: new Date() } },
@@ -58,7 +58,7 @@ export class PredictionTicketsService {
     return { available, used, expired, total: available + used + expired };
   }
 
-  async getHistory(userId: string, page: number = 1, limit: number = 20) {
+  async getHistory(userId: number, page: number = 1, limit: number = 20) {
     const [tickets, total] = await Promise.all([
       this.prisma.predictionTicket.findMany({
         where: { userId },
@@ -73,7 +73,7 @@ export class PredictionTicketsService {
     return { tickets, total, page, totalPages: Math.ceil(total / limit) };
   }
 
-  async findOne(id: string) {
+  async findOne(id: number) {
     const ticket = await this.prisma.predictionTicket.findUnique({
       where: { id },
       include: { prediction: true, subscription: true },

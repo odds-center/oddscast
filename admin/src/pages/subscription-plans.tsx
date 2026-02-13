@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
+import PageHeader from '@/components/common/PageHeader';
 import { adminSubscriptionsApi } from '@/lib/api/admin';
 
 interface SubscriptionPlan {
@@ -126,16 +127,16 @@ export default function SubscriptionPlansPage() {
         <title>구독 플랜 관리 | GoldenRace Admin</title>
       </Head>
       <Layout>
-        <div className='space-y-6'>
-          <h1 className='text-3xl font-bold text-gray-900'>구독 플랜 관리</h1>
+        <div className='space-y-4'>
+          <PageHeader title='구독 플랜 관리' />
 
-          <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
             {plans &&
               plans.map((plan) => (
-                <div key={plan.id} className='bg-white rounded-lg shadow p-6'>
+                <div key={plan.id} className='bg-white rounded-md shadow p-4'>
                   <div className='flex justify-between items-start mb-4'>
                     <div>
-                      <h2 className='text-2xl font-bold text-gray-900'>{plan.displayName}</h2>
+                      <h2 className='text-lg font-bold text-gray-900'>{plan.displayName}</h2>
                       <p className='text-sm text-gray-500'>{plan.planName}</p>
                     </div>
                     <button
@@ -157,7 +158,7 @@ export default function SubscriptionPlansPage() {
                     </div>
                     <div className='flex justify-between border-t pt-2'>
                       <span className='text-gray-900 font-bold'>최종 가격</span>
-                      <span className='text-xl font-bold text-blue-600'>
+                      <span className='text-base font-bold text-blue-600'>
                         ₩{plan.totalPrice.toLocaleString()}
                       </span>
                     </div>
@@ -204,7 +205,7 @@ export default function SubscriptionPlansPage() {
           {editingPlan && (
             <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
               <div className='bg-white rounded-lg p-8 max-w-2xl w-full max-h-screen overflow-y-auto'>
-                <h2 className='text-2xl font-bold mb-6'>{editingPlan.displayName} 수정</h2>
+                <h2 className='text-lg font-bold mb-4'>{editingPlan.displayName} 수정</h2>
 
                 <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
                   <div>

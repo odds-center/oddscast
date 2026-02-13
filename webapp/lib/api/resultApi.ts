@@ -1,4 +1,4 @@
-import { ApiResponse } from '@/lib/types/api';
+import type { ApiResponseDto } from '@goldenrace/shared';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 import CONFIG from '@/lib/config';
 import { mockResults } from '@/lib/mocks/data';
@@ -8,22 +8,16 @@ export interface RaceResult {
   id: string;
   raceId: string;
   ord: string;
+  chulNo?: string;
   hrNo: string;
   hrName: string;
   jkName: string;
   trName: string;
   owName: string;
-  rcRank: string;
   rcTime: string;
-  rcPrize?: number;
-  rcDist: string;
-  rcGrade: string;
-  rcCondition: string;
-  rcDay?: string;
-  rcWeekday?: string;
-  rcWeather?: string;
-  rcTrack?: string;
-  rcTrackCondition?: string;
+  chaksun1?: number;
+  track?: string;
+  weather?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,20 +25,20 @@ export interface RaceResult {
 export interface RaceResultDetail extends RaceResult {
   race?: {
     id: string;
-    raceName: string;
+    rcName: string;
     meet: string;
     meetName: string;
     rcDate: string;
     rcNo: string;
     rcDist: string;
-    rcGrade: string;
-    rcCondition: string;
+    rank: string;
+    rcCondition?: string;
     rcPrize: number;
   };
   horseDetails?: {
     age: number;
     gender: string;
-    weight: number;
+    wgBudam: number;
     rating: number;
     odds: number;
     finishTime: string;
@@ -160,7 +154,7 @@ export default class ResultApi {
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
       const response = await axiosInstance.get<
-        ApiResponse<{
+        ApiResponseDto<{
           results: RaceResult[];
           total: number;
           page: number;
@@ -177,7 +171,7 @@ export default class ResultApi {
   // 개별 경주 결과 조회
   static async getResult(resultId: string): Promise<RaceResultDetail> {
     try {
-      const response = await axiosInstance.get<ApiResponse<RaceResultDetail>>(
+      const response = await axiosInstance.get<ApiResponseDto<RaceResultDetail>>(
         `${ResultApi.baseUrl}/${resultId}`,
       );
       return handleApiResponse(response);
@@ -189,7 +183,7 @@ export default class ResultApi {
   // 경주별 결과 목록
   static async getRaceResults(raceId: string): Promise<RaceResult[]> {
     try {
-      const response = await axiosInstance.get<ApiResponse<RaceResult[]>>(
+      const response = await axiosInstance.get<ApiResponseDto<RaceResult[]>>(
         `${ResultApi.baseUrl}/race/${raceId}`,
       );
       return handleApiResponse(response);
@@ -203,7 +197,7 @@ export default class ResultApi {
     resultData: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<RaceResult> {
     try {
-      const response = await axiosInstance.post<ApiResponse<RaceResult>>(
+      const response = await axiosInstance.post<ApiResponseDto<RaceResult>>(
         ResultApi.baseUrl,
         resultData,
       );
@@ -219,7 +213,7 @@ export default class ResultApi {
     updateData: Partial<Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>>,
   ): Promise<RaceResult> {
     try {
-      const response = await axiosInstance.put<ApiResponse<RaceResult>>(
+      const response = await axiosInstance.put<ApiResponseDto<RaceResult>>(
         `${ResultApi.baseUrl}/${resultId}`,
         updateData,
       );
@@ -232,7 +226,7 @@ export default class ResultApi {
   // 경주 결과 삭제
   static async deleteResult(resultId: string): Promise<{ message: string }> {
     try {
-      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.delete<ApiResponseDto<{ message: string }>>(
         `${ResultApi.baseUrl}/${resultId}`,
       );
       return handleApiResponse(response);
@@ -260,7 +254,7 @@ export default class ResultApi {
       if (filters?.grade) params.append('grade', filters.grade);
       if (filters?.distance) params.append('distance', filters.distance);
 
-      const response = await axiosInstance.get<ApiResponse<ResultStatistics>>(
+      const response = await axiosInstance.get<ApiResponseDto<ResultStatistics>>(
         `${ResultApi.baseUrl}/statistics?${params.toString()}`,
       );
       return handleApiResponse(response);
@@ -290,7 +284,7 @@ export default class ResultApi {
       if (filters?.limit) params.append('limit', filters.limit.toString());
 
       const response = await axiosInstance.get<
-        ApiResponse<{
+        ApiResponseDto<{
           results: RaceResult[];
           total: number;
           page: number;
@@ -328,20 +322,16 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 일괄 생성
+  /**
+   * 경주 결과 일괄 생성 (서버: POST /results/bulk)
+   */
   static async createBulkResults(
     results: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>[],
-  ): Promise<{
-    createdCount: number;
-    failedCount: number;
-    errors: { index: number; error: string }[];
-  }> {
+  ): Promise<{ count?: number }> {
     try {
-      const response = await axiosInstance.post<ApiResponse<any>>(
-        `${ResultApi.baseUrl}/bulk-create`,
-        {
-          results,
-        },
+      const response = await axiosInstance.post<ApiResponseDto<{ count?: number }>>(
+        `${ResultApi.baseUrl}/bulk`,
+        { results },
       );
       return handleApiResponse(response);
     } catch (error) {
@@ -349,49 +339,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 일괄 업데이트
-  static async updateBulkResults(
-    updates: {
-      id: string;
-      data: Partial<Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>>;
-    }[],
-  ): Promise<{
-    updatedCount: number;
-    failedCount: number;
-    errors: { id: string; error: string }[];
-  }> {
-    try {
-      const response = await axiosInstance.put<ApiResponse<any>>(
-        `${ResultApi.baseUrl}/bulk-update`,
-        {
-          updates,
-        },
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
-  // 경주 결과 검증
-  static async validateResults(raceId: string): Promise<{
-    isValid: boolean;
-    issues: {
-      type: 'MISSING' | 'INVALID' | 'DUPLICATE' | 'INCONSISTENT';
-      message: string;
-      resultId?: string;
-      field?: string;
-    }[];
-  }> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<any>>(
-        `${ResultApi.baseUrl}/validate/${raceId}`,
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
+  // 서버에 bulk-update, validate 엔드포인트 없음 — Admin에서 필요 시 추가 예정
 }
 
 // 싱글톤 인스턴스 export

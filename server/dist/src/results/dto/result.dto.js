@@ -18,8 +18,9 @@ class CreateResultDto {
 exports.CreateResultDto = CreateResultDto;
 __decorate([
     (0, swagger_1.ApiProperty)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
+    (0, class_validator_1.IsInt)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
 ], CreateResultDto.prototype, "raceId", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
@@ -60,12 +61,6 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], CreateResultDto.prototype, "rcRank", void 0);
-__decorate([
-    (0, swagger_1.ApiPropertyOptional)(),
-    (0, class_validator_1.IsOptional)(),
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
 ], CreateResultDto.prototype, "rcTime", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
@@ -73,7 +68,7 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
-], CreateResultDto.prototype, "rcPrize", void 0);
+], CreateResultDto.prototype, "chaksun1", void 0);
 class UpdateResultDto {
 }
 exports.UpdateResultDto = UpdateResultDto;
@@ -82,7 +77,7 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
-], UpdateResultDto.prototype, "rcRank", void 0);
+], UpdateResultDto.prototype, "ord", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
@@ -95,7 +90,7 @@ __decorate([
     (0, class_validator_1.IsInt)(),
     (0, class_transformer_1.Type)(() => Number),
     __metadata("design:type", Number)
-], UpdateResultDto.prototype, "rcPrize", void 0);
+], UpdateResultDto.prototype, "chaksun1", void 0);
 class BulkCreateResultDto {
 }
 exports.BulkCreateResultDto = BulkCreateResultDto;

@@ -6,6 +6,8 @@ export declare class UsersController {
     constructor(usersService: UsersService);
     findAll(page?: number, limit?: number, role?: string): Promise<{
         users: {
+            availableTickets: number;
+            totalTickets: number;
             email: string;
             name: string;
             nickname: string | null;
@@ -21,6 +23,8 @@ export declare class UsersController {
     }>;
     search(query: string): Promise<{
         users: {
+            availableTickets: number;
+            totalTickets: number;
             email: string;
             name: string;
             nickname: string | null;

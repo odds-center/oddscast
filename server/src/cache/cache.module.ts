@@ -22,7 +22,10 @@ const nestCacheModule = NestCacheModule.registerAsync({
       try {
         stores.push(new Keyv({ store: new KeyvRedis(redisUrl) }));
       } catch (e) {
-        console.warn('[Cache] Redis 연결 실패, 인메모리만 사용:', (e as Error).message);
+        console.warn(
+          '[Cache] Redis 연결 실패, 인메모리만 사용:',
+          (e as Error).message,
+        );
       }
     }
 

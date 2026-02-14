@@ -15,6 +15,7 @@ import {
   XCircle,
   AlertTriangle,
 } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState({
@@ -84,7 +85,7 @@ export default function AnalyticsPage() {
                   </p>
                 </div>
                 <div className='p-3 bg-blue-100 rounded-full'>
-                  <Target className='w-8 h-8 text-blue-600' />
+                  <AdminIcon icon={Target} className='w-8 h-8 text-blue-600' />
                 </div>
               </div>
             </div>
@@ -99,7 +100,7 @@ export default function AnalyticsPage() {
                   <p className='text-xs text-gray-500 mt-1'>AI 확신 수준</p>
                 </div>
                 <div className='p-3 bg-green-100 rounded-full'>
-                  <Brain className='w-8 h-8 text-green-600' />
+                  <AdminIcon icon={Brain} className='w-8 h-8 text-green-600' />
                 </div>
               </div>
             </div>
@@ -114,7 +115,7 @@ export default function AnalyticsPage() {
                   <p className='text-xs text-gray-500 mt-1'>누적 AI 호출 비용</p>
                 </div>
                 <div className='p-3 bg-yellow-100 rounded-full'>
-                  <DollarSign className='w-8 h-8 text-yellow-600' />
+                  <AdminIcon icon={DollarSign} className='w-8 h-8 text-yellow-600' />
                 </div>
               </div>
             </div>
@@ -129,7 +130,7 @@ export default function AnalyticsPage() {
                   <p className='text-xs text-gray-500 mt-1'>생성된 예측</p>
                 </div>
                 <div className='p-3 bg-purple-100 rounded-full'>
-                  <CheckCircle className='w-8 h-8 text-purple-600' />
+                  <AdminIcon icon={CheckCircle} className='w-8 h-8 text-purple-600' />
                 </div>
               </div>
             </div>
@@ -247,7 +248,7 @@ export default function AnalyticsPage() {
           {failureAnalysis && (
             <div className='bg-white rounded-md shadow p-4'>
               <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-                <AlertTriangle className='w-5 h-5 text-yellow-600' />
+                <AdminIcon icon={AlertTriangle} className='w-5 h-5 text-yellow-600' />
                 실패 원인 분석
               </h3>
               <div className='space-y-4'>

@@ -117,7 +117,8 @@ __decorate([
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, subscription_dto_1.CancelSubscriptionDto]),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload,
+        subscription_dto_1.CancelSubscriptionDto]),
     __metadata("design:returntype", void 0)
 ], SubscriptionsController.prototype, "cancelPost", null);
 __decorate([

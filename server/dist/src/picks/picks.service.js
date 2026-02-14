@@ -69,7 +69,12 @@ let PicksService = class PicksService {
             }),
             this.prisma.userPick.count({ where: { userId } }),
         ]);
-        return { picks: (0, kra_serializer_1.serializeItemsWithRace)(picks), total, page, totalPages: Math.ceil(total / limit) };
+        return {
+            picks: (0, kra_serializer_1.serializeItemsWithRace)(picks),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
     }
     async findByRace(raceId, userId) {
         const where = { raceId };
@@ -79,7 +84,7 @@ let PicksService = class PicksService {
             where,
             include: { race: true },
         });
-        return pick ? (0, kra_serializer_1.serializeItemsWithRace)([pick])[0] ?? pick : null;
+        return pick ? ((0, kra_serializer_1.serializeItemsWithRace)([pick])[0] ?? pick) : null;
     }
     async delete(userId, raceId) {
         const pick = await this.prisma.userPick.findFirst({
@@ -144,28 +149,38 @@ let PicksService = class PicksService {
                 return rank1 !== undefined && hrNos[0] === rank1.hrNo;
             case 'PLACE':
                 return rank1 !== undefined && top3.includes(hrNos[0]);
-            case 'QUINELLA':
+            case 'QUINELLA': {
                 if (!rank1 || !rank2)
                     return false;
                 const set12 = new Set([rank1.hrNo, rank2.hrNo]);
                 const setPickQ = new Set(hrNos);
-                return set12.size === 2 && setPickQ.size === 2 &&
-                    [...set12].every((h) => setPickQ.has(h));
+                return (set12.size === 2 &&
+                    setPickQ.size === 2 &&
+                    [...set12].every((h) => setPickQ.has(h)));
+            }
             case 'EXACTA':
-                return rank1 !== undefined && rank2 !== undefined &&
-                    hrNos[0] === rank1.hrNo && hrNos[1] === rank2.hrNo;
+                return (rank1 !== undefined &&
+                    rank2 !== undefined &&
+                    hrNos[0] === rank1.hrNo &&
+                    hrNos[1] === rank2.hrNo);
             case 'QUINELLA_PLACE':
                 return top3.length >= 2 && hrNos.every((h) => top3.includes(h));
-            case 'TRIFECTA':
+            case 'TRIFECTA': {
                 if (!rank1 || !rank2 || !rank3)
                     return false;
                 const set123 = new Set([rank1.hrNo, rank2.hrNo, rank3.hrNo]);
                 const setPick = new Set(hrNos);
-                return set123.size === 3 && setPick.size === 3 &&
-                    [...set123].every((h) => setPick.has(h));
+                return (set123.size === 3 &&
+                    setPick.size === 3 &&
+                    [...set123].every((h) => setPick.has(h)));
+            }
             case 'TRIPLE':
-                return rank1 !== undefined && rank2 !== undefined && rank3 !== undefined &&
-                    hrNos[0] === rank1.hrNo && hrNos[1] === rank2.hrNo && hrNos[2] === rank3.hrNo;
+                return (rank1 !== undefined &&
+                    rank2 !== undefined &&
+                    rank3 !== undefined &&
+                    hrNos[0] === rank1.hrNo &&
+                    hrNos[1] === rank2.hrNo &&
+                    hrNos[2] === rank3.hrNo);
             default:
                 return false;
         }

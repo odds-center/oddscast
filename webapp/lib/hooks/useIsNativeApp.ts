@@ -21,7 +21,7 @@ export function useIsNativeApp(): boolean {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      setIsNative(Boolean(window.__IS_NATIVE_APP__));
+      queueMicrotask(() => setIsNative(Boolean(window.__IS_NATIVE_APP__)));
     }
   }, []);
 

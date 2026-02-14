@@ -66,7 +66,10 @@ export class UsersController {
 
   @Put(':id/profile')
   @ApiOperation({ summary: '사용자 프로필 수정' })
-  updateProfile(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
+  updateProfile(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateUserDto,
+  ) {
     return this.usersService.update(id, dto);
   }
 

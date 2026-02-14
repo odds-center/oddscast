@@ -9,6 +9,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import { adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 // Zod 스키마 (Gemini 전용)
 const aiConfigSchema = z.object({
@@ -210,7 +211,7 @@ export default function AIConfigPage() {
           <div className='grid grid-cols-1 lg:grid-cols-3 gap-4'>
             <div className='bg-gradient-to-br from-blue-500 to-blue-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
-                <DollarSign className='w-8 h-8' />
+                <AdminIcon icon={DollarSign} className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>예상 비용</h3>
               </div>
               <div className='space-y-3'>
@@ -233,7 +234,7 @@ export default function AIConfigPage() {
 
             <div className='bg-gradient-to-br from-green-500 to-green-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
-                <Zap className='w-8 h-8' />
+                <AdminIcon icon={Zap} className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>예상 정확도</h3>
               </div>
               <div className='space-y-3'>
@@ -250,7 +251,7 @@ export default function AIConfigPage() {
 
             <div className='bg-gradient-to-br from-purple-500 to-purple-600 rounded-md shadow p-4 text-white'>
               <div className='flex items-center gap-3 mb-4'>
-                <Bot className='w-8 h-8' />
+                <AdminIcon icon={Bot} className='w-8 h-8' />
                 <h3 className='text-lg font-semibold'>시스템 상태</h3>
               </div>
               <div className='space-y-2 text-sm'>
@@ -276,7 +277,7 @@ export default function AIConfigPage() {
               {/* LLM Provider (Gemini 전용) */}
               <div>
                 <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-                  <Bot className='w-5 h-5' />
+                  <AdminIcon icon={Bot} className='w-5 h-5' />
                   LLM Provider (Google Gemini)
                 </h3>
                 <div className='bg-blue-50 border-2 border-blue-500 rounded-lg p-4'>
@@ -297,7 +298,7 @@ export default function AIConfigPage() {
               {/* 모델 설정 */}
               <div className='border-t pt-8'>
                 <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-                  <SettingsIcon className='w-5 h-5' />
+                  <AdminIcon icon={SettingsIcon} className='w-5 h-5' />
                   모델 설정
                 </h3>
                 <div className='grid grid-cols-2 gap-4'>

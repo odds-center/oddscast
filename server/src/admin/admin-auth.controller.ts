@@ -3,7 +3,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from '../auth/auth.service';
 import { AdminLoginDto } from '../auth/dto/auth.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
 
 /**
  * Admin 전용 Auth API — /api/admin/auth/*

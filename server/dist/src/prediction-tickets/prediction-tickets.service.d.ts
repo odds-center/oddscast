@@ -1,8 +1,10 @@
 import { PrismaService } from '../prisma/prisma.service';
+import { PredictionsService } from '../predictions/predictions.service';
 import { UseTicketDto } from '../common/dto/payment.dto';
 export declare class PredictionTicketsService {
     private prisma;
-    constructor(prisma: PrismaService);
+    private predictionsService;
+    constructor(prisma: PrismaService, predictionsService: PredictionsService);
     useTicket(userId: number, dto: UseTicketDto): Promise<{
         ticket: {
             id: number;
@@ -101,5 +103,19 @@ export declare class PredictionTicketsService {
         predictionId: number | null;
         usedAt: Date | null;
         issuedAt: Date;
+    }>;
+    grantTickets(userId: number, count: number, expiresInDays?: number): Promise<{
+        granted: number;
+        tickets: {
+            id: number;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
+            userId: number;
+            expiresAt: Date;
+            subscriptionId: number | null;
+            predictionId: number | null;
+            usedAt: Date | null;
+            issuedAt: Date;
+        }[];
     }>;
 }

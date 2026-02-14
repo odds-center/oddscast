@@ -12,6 +12,7 @@ import PredictionSymbol, { scoreToSymbol } from '@/components/race/PredictionSym
 import RaceApi from '@/lib/api/raceApi';
 import PicksApi, { PICK_TYPE_HORSE_COUNTS } from '@/lib/api/picksApi';
 import HorsePickPanel from '@/components/HorsePickPanel';
+import BetTypePredictionsSection from '@/components/predictions/BetTypePredictionsSection';
 import { CONFIG } from '@/lib/config';
 import PredictionApi from '@/lib/api/predictionApi';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
@@ -32,8 +33,8 @@ export default function RaceDetailPage() {
   const [pickType, setPickType] = useState<string>('SINGLE');
   const [selectedHorses, setSelectedHorses] = useState<{ hrNo: string; hrName: string }[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  type TabId = 'record' | 'prediction';
-  const [activeTab, setActiveTab] = useState<TabId>(isResultView ? 'record' : 'record');
+  type TabId = 'basic' | 'record' | 'prediction';
+  const [activeTab, setActiveTab] = useState<TabId>(isResultView ? 'record' : 'basic');
 
   const {
     data: race,
@@ -75,18 +76,41 @@ export default function RaceDetailPage() {
     enabled: !!id && isLoggedIn && !!hasUsedTicketForRace,
   });
 
+  const { data: predictionHistory } = useQuery({
+    queryKey: ['prediction', 'history', id],
+    queryFn: () => PredictionApi.getHistoryByRaceId(id as string),
+    enabled: !!id && isLoggedIn && !!hasUsedTicketForRace,
+  });
+
+  const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
+
+  const { data: predictionPreview } = useQuery({
+    queryKey: ['prediction', 'preview', id],
+    queryFn: () => PredictionApi.getPreview(id as string),
+    enabled: !!id && !hasUsedTicketForRace,
+  });
+
   const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(null);
 
   const useTicketMutation = useMutation({
-    mutationFn: (raceId: string) => PredictionTicketApi.use(raceId),
+    mutationFn: ({ raceId, regenerate }: { raceId: string; regenerate?: boolean }) =>
+      PredictionTicketApi.redeem(raceId, { regenerate }),
     onSuccess: (data) => {
       setFullPredictionFromUse(data.prediction);
+      setSelectedPredictionId(null);
+      queryClient.invalidateQueries({ queryKey: ['prediction', 'full', id] });
+      queryClient.invalidateQueries({ queryKey: ['prediction', 'history', id] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'history'] });
     },
   });
 
-  const displayPrediction = fullPredictionFromUse ?? fullPredictionData;
+  const list = predictionHistory ?? (fullPredictionData ? [fullPredictionData] : []);
+  const displayPrediction =
+    fullPredictionFromUse ??
+    (selectedPredictionId != null
+      ? list.find((p) => Number((p as unknown as { id?: number }).id) === selectedPredictionId)
+      : list[0]);
   const availableTickets =
     ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
 
@@ -116,21 +140,24 @@ export default function RaceDetailPage() {
   });
 
   useEffect(() => {
-    if (myPick) {
-      setPickType(myPick.pickType);
-      setSelectedHorses(
-        (myPick.hrNos || []).map((hrNo, i) => ({
-          hrNo,
-          hrName: myPick.hrNames?.[i] ?? '',
-        })),
-      );
-    } else {
-      setSelectedHorses([]);
-    }
+    const sync = () => {
+      if (myPick) {
+        setPickType(myPick.pickType);
+        setSelectedHorses(
+          (myPick.hrNos || []).map((hrNo, i) => ({
+            hrNo,
+            hrName: myPick.hrNames?.[i] ?? '',
+          })),
+        );
+      } else {
+        setSelectedHorses([]);
+      }
+    };
+    queueMicrotask(sync);
   }, [myPick]);
 
   useEffect(() => {
-    setSelectedHorses([]);
+    queueMicrotask(() => setSelectedHorses([]));
   }, [pickType]);
 
   const pickMutation = useMutation({
@@ -217,7 +244,6 @@ export default function RaceDetailPage() {
     entries?: Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
     entryDetails?: Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
   };
-  const name = r.rcName ?? `경주 ${r.rcNo ?? id}`;
   const entries = (r.entries ?? r.entryDetails ?? []) as Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
 
   return (
@@ -235,50 +261,60 @@ export default function RaceDetailPage() {
       <div className='mb-4'>
         <RaceHeaderCard
           meetName={r.meetName}
+          rcDay={(r as { rcDay?: string }).rcDay}
           rcNo={r.rcNo}
           stTime={r.stTime}
           rcDist={r.rcDist}
+          rank={(r as { rank?: string }).rank}
+          rcCondition={(r as { rcCondition?: string }).rcCondition}
+          weather={(r as { weather?: string }).weather}
+          track={(r as { track?: string }).track}
         />
       </div>
 
-      {/* 출전마 — 결과 뷰에서는 선택 불가, 경주 뷰에서는 승식 선택 가능 */}
-      <section className='mb-5 md:mb-6'>
-        <SectionTitle title='출전마' className='text-base md:text-lg' />
-        {isLoggedIn && !isResultView && (
-          <p className='text-text-secondary text-xs mb-2'>
-            오른쪽(데스크톱) 또는 하단 버튼(모바일)에서 고를 말을 선택하세요.
-          </p>
-        )}
-        {entries.length > 0 ? (
-          <HorseEntryTable
-            entries={entries}
-            onSelectHorse={!isResultView && isLoggedIn && CONFIG.picksEnabled ? handleSelectHorse : undefined}
-            isSelected={isHorseSelected}
-          />
-        ) : (
-          <div className='rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center'>
-            <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
-            <p className='text-text-tertiary text-xs mt-1'>KRA 출전표 적재 후 표시됩니다.</p>
-            <button
-              type='button'
-              onClick={() => refetchRace()}
-              className='btn-secondary mt-3 text-sm'
-            >
-              다시 불러오기
-            </button>
-          </div>
-        )}
-      </section>
+      {/* 기본정보 탭: 출전마 (RACE_DETAIL_UI_SPEC 2.2) */}
+      {(activeTab === 'basic' || isResultView) && (
+        <section className='mb-5 md:mb-6'>
+          <SectionTitle title='출전마' className='text-base md:text-lg' />
+          {isLoggedIn && !isResultView && (
+            <p className='text-text-secondary text-xs mb-2'>
+              오른쪽(데스크톱) 또는 하단 버튼(모바일)에서 고를 말을 선택하세요.
+            </p>
+          )}
+          {entries.length > 0 ? (
+            <HorseEntryTable
+              entries={entries}
+              onSelectHorse={!isResultView && isLoggedIn && CONFIG.picksEnabled ? handleSelectHorse : undefined}
+              isSelected={isHorseSelected}
+            />
+          ) : (
+            <div className='rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center'>
+              <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
+              <p className='text-text-tertiary text-xs mt-1'>KRA 출전표 적재 후 표시됩니다.</p>
+              <button
+                type='button'
+                onClick={() => refetchRace()}
+                className='btn-secondary mt-3 text-sm'
+              >
+                다시 불러오기
+              </button>
+            </div>
+          )}
+        </section>
+      )}
 
-      {/* 탭: 경주 결과 | AI 예상 (결과 뷰에서는 탭 숨김, 결과만 표시) */}
+      {/* 탭: 기본정보 | 기록정보 | 예상정보 (RACE_DETAIL_UI_SPEC 3) */}
       {!isResultView && (
         <TabBar
           options={[
-            { value: 'record', label: '경주 결과' },
-            { value: 'prediction', label: 'AI 예상' },
+            { value: 'basic', label: '기본정보' },
+            { value: 'record', label: '기록정보' },
+            { value: 'prediction', label: '예상정보' },
           ]}
           value={activeTab}
           onChange={(v) => setActiveTab(v)}
+          variant='subtle'
+          size='md'
           className='mb-4'
         />
       )}
@@ -404,8 +440,124 @@ export default function RaceDetailPage() {
         />
         {displayPrediction ? (
           <Card className='mt-3 bg-primary/5 border-primary/30'>
+            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3'>
+              {list.length > 1 ? (
+                <div className='flex flex-col gap-1.5'>
+                  <span className='text-text-secondary text-xs font-medium'>
+                    예측 기록 ({list.length}건)
+                  </span>
+                  <div className='flex flex-wrap gap-1.5'>
+                    {list.map((p, i) => {
+                      const pid = (p as unknown as { id?: number }).id ?? i;
+                      const isActive =
+                        (selectedPredictionId ?? (displayPrediction as unknown as { id?: number }).id ?? (list[0] as unknown as { id?: number })?.id) ===
+                        pid;
+                      const num = list.length - i;
+                      const createdAt = (p as unknown as { createdAt?: string }).createdAt;
+                      const timeStr =
+                        createdAt &&
+                        (() => {
+                          try {
+                            const d = new Date(createdAt);
+                            return d.toLocaleTimeString('ko-KR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            });
+                          } catch {
+                            return '';
+                          }
+                        })();
+                      return (
+                        <button
+                          key={pid}
+                          type='button'
+                          onClick={() => setSelectedPredictionId(pid)}
+                          className={`
+                            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
+                            transition-colors touch-manipulation
+                            ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-background-elevated text-text-secondary hover:text-foreground hover:bg-background'}
+                          `}
+                        >
+                          <span>{num}번</span>
+                          {num === 1 && (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                isActive ? 'bg-white/25' : 'bg-primary/15 text-primary'
+                              }`}
+                            >
+                              최신
+                            </span>
+                          )}
+                          {timeStr && (
+                            <span className='text-[10px] opacity-80'>{timeStr}</span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : (
+                <div />
+              )}
+              {availableTickets > 0 && (
+                <button
+                  type='button'
+                  onClick={() => {
+                    trackCTA('PREDICTION_REGENERATE', String(id));
+                    useTicketMutation.mutate({ raceId: id as string, regenerate: true });
+                  }}
+                  disabled={useTicketMutation.isPending}
+                  className='btn-secondary text-sm px-3 py-1.5 flex items-center gap-2 shrink-0 self-start sm:self-center'
+                >
+                  {useTicketMutation.isPending ? (
+                    <>
+                      <Icon name='Loader2' size={14} className='animate-spin' />
+                      새 예측 생성 중...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name='RefreshCw' size={14} />
+                      다시 예측하기 (예측권 1장)
+                    </>
+                  )}
+                </button>
+              )}
+            </div>
             {displayPrediction?.scores?.horseScores?.length ? (
               <div className='space-y-3'>
+                {/* 마칠기삼 · AI 강력 추천 (KRA_ANALYSIS_STRATEGY, RACE_DETAIL_UI_SPEC) */}
+                {(() => {
+                  const jc = (displayPrediction.scores as Record<string, unknown>)?.analysisData as
+                    | { jockeyAnalysis?: { weightRatio?: { horse: number; jockey: number }; topPickByJockey?: { hrName: string; jkName: string } } }
+                    | undefined;
+                  if (!jc?.jockeyAnalysis) return null;
+                  const { weightRatio, topPickByJockey } = jc.jockeyAnalysis;
+                  return (
+                    <div className='flex flex-wrap items-center gap-3 pb-3 border-b border-border'>
+                      {weightRatio && (
+                        <span className='text-text-secondary text-sm'>
+                          마칠기삼: 말 {Math.round(weightRatio.horse * 100)}% · 기수 {Math.round(weightRatio.jockey * 100)}%
+                        </span>
+                      )}
+                      {topPickByJockey && (
+                        <span className='px-2 py-1 rounded bg-primary/20 text-primary font-semibold text-sm'>
+                          AI 강력 추천: {topPickByJockey.hrName} ({topPickByJockey.jkName})
+                        </span>
+                      )}
+                    </div>
+                  );
+                })()}
+                {/* 승식별 AI 추천 조합 (HORSE_RACING_TERMINOLOGY) — 먼저 표시 */}
+                {(displayPrediction.scores?.betTypePredictions ||
+                  displayPrediction.scores?.horseScores?.length) &&
+                  entries.length > 0 && (
+                    <BetTypePredictionsSection
+                      betTypePredictions={displayPrediction.scores.betTypePredictions}
+                      horseScores={displayPrediction.scores.horseScores}
+                      entries={entries}
+                    />
+                  )}
+                {/* 말별 점수 */}
                 {displayPrediction.scores!.horseScores!.map((h, i) => (
                   <div key={i} className='flex items-center gap-3 py-2 border-b border-border last:border-0'>
                     <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
@@ -447,11 +599,17 @@ export default function RaceDetailPage() {
             </div>
             <div className='absolute inset-0 backdrop-blur-lg bg-background/50' aria-hidden />
             <div className='relative z-10 p-4 sm:p-6 text-center'>
+              {predictionPreview?.preview && (
+                <div className='mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20'>
+                  <p className='text-text-secondary text-xs mb-1'>AI 예측 요약 (저장됨)</p>
+                  <p className='text-foreground text-sm'>{predictionPreview.preview}</p>
+                </div>
+              )}
               <p className='text-foreground font-medium mb-1'>
                 예측권을 사용해서 전체 AI 분석을 받아보세요
               </p>
               <p className='text-text-secondary text-sm mb-4'>
-                마별 승률 예상과 상세 분석을 확인할 수 있습니다
+                마별 승률 예상·승식별 추천·상세 분석을 확인할 수 있습니다
               </p>
               {isLoggedIn && availableTickets > 0 && (
                 <>
@@ -459,7 +617,7 @@ export default function RaceDetailPage() {
                   <button
                     onClick={() => {
                       trackCTA('PREDICTION_TICKET_USE', String(id));
-                      useTicketMutation.mutate(id as string);
+                      useTicketMutation.mutate({ raceId: id as string });
                     }}
                     disabled={useTicketMutation.isPending}
                     className='btn-primary px-5 py-2.5 text-sm flex items-center gap-2 mx-auto'
@@ -467,7 +625,7 @@ export default function RaceDetailPage() {
                     {useTicketMutation.isPending ? (
                       <>
                         <Icon name='Loader2' size={18} className='animate-spin' />
-                        분석 받는 중...
+                        AI 분석 생성 중... (최대 1분)
                       </>
                     ) : (
                       <>

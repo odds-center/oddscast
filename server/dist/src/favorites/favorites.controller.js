@@ -51,7 +51,7 @@ let FavoritesController = class FavoritesController {
         return this.favoritesService.bulkAdd(user.sub, items);
     }
     bulkDelete(user, body) {
-        const ids = (body.ids ?? []).map((x) => (typeof x === 'number' ? x : parseInt(String(x), 10)));
+        const ids = (body.ids ?? []).map((x) => typeof x === 'number' ? x : parseInt(String(x), 10));
         return this.favoritesService.bulkDelete(user.sub, ids);
     }
     update(id, dto) {

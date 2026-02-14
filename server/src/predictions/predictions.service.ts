@@ -15,7 +15,11 @@ import type {
   RaceEntryForAnalysis,
   HorseAnalysisItem,
   GeminiPredictionJson,
+  BetTypePredictions,
 } from './prediction-internal.types';
+
+/** 세션 중 마지막으로 성공한 Gemini 모델 — 다음 요청에서 우선 시도 (404 낭비 방지) */
+let lastWorkingGeminiModel: string | null = null;
 
 @Injectable()
 export class PredictionsService {
@@ -103,10 +107,14 @@ export class PredictionsService {
       select: { id: true, accuracy: true, scores: true },
     });
     const totalPredictions = completed.length;
-    const correctPredictions = completed.filter((p) => (p.accuracy ?? 0) > 0).length;
-    const avgAccuracy = totalPredictions > 0
-      ? completed.reduce((s, p) => s + (p.accuracy ?? 0), 0) / totalPredictions
-      : 0;
+    const correctPredictions = completed.filter(
+      (p) => (p.accuracy ?? 0) > 0,
+    ).length;
+    const avgAccuracy =
+      totalPredictions > 0
+        ? completed.reduce((s, p) => s + (p.accuracy ?? 0), 0) /
+          totalPredictions
+        : 0;
 
     const emptyPos = { correct: 0, total: 0, accuracy: 0 };
     const byPosition = {
@@ -141,12 +149,22 @@ export class PredictionsService {
       },
       byPosition,
       recent7Days: recent7,
-      byProvider: [{ provider: 'gemini', accuracy: avgAccuracy, count: totalPredictions, avgCost: 0 }],
+      byProvider: [
+        {
+          provider: 'gemini',
+          accuracy: avgAccuracy,
+          count: totalPredictions,
+          avgCost: 0,
+        },
+      ],
     };
   }
 
-  private async getRecent7DaysAccuracy(): Promise<Array<{ date: string; accuracy: number; count: number }>> {
-    const results: Array<{ date: string; accuracy: number; count: number }> = [];
+  private async getRecent7DaysAccuracy(): Promise<
+    Array<{ date: string; accuracy: number; count: number }>
+  > {
+    const results: Array<{ date: string; accuracy: number; count: number }> =
+      [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date();
       d.setDate(d.getDate() - i);
@@ -164,7 +182,9 @@ export class PredictionsService {
       });
       const count = dayPreds.length;
       const accuracy =
-        count > 0 ? dayPreds.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count : 0;
+        count > 0
+          ? dayPreds.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count
+          : 0;
       results.push({
         date: d.toISOString().slice(0, 10),
         accuracy,
@@ -193,7 +213,9 @@ export class PredictionsService {
     });
     return {
       totalFailures: failed.length,
-      byReason: [{ reason: 'accuracy_zero', count: failed.length, percentage: 100 }],
+      byReason: [
+        { reason: 'accuracy_zero', count: failed.length, percentage: 100 },
+      ],
       avgMissDistance: 0,
       commonPatterns: [],
     };
@@ -238,6 +260,15 @@ export class PredictionsService {
     });
   }
 
+  /** 경주별 예측 기록 목록 (다시 예측 시 이전 기록 유지) */
+  async getByRaceHistory(raceId: number) {
+    return this.prisma.prediction.findMany({
+      where: { raceId, status: 'COMPLETED' },
+      include: { race: { include: { entries: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   // --- Gemini Integration ---
 
   async generatePrediction(raceId: number) {
@@ -248,18 +279,49 @@ export class PredictionsService {
     }
     // 2. Load model & params from Admin AI Config (GlobalConfig)
     const rawConfig = await this.configService.get('ai_config');
-    const aiConfig = rawConfig ? (JSON.parse(rawConfig) as Record<string, unknown>) : {};
-    const modelName =
-      (aiConfig.primaryModel as string) || 'gemini-1.5-pro';
-    const temperature = Math.min(1, Math.max(0, Number(aiConfig.temperature) || 0.7));
-    const maxTokens = Math.min(8192, Math.max(100, Number(aiConfig.maxTokens) || 1000));
+    const aiConfig = rawConfig
+      ? (JSON.parse(rawConfig) as Record<string, unknown>)
+      : {};
+    const rawModel = (aiConfig.primaryModel as string) || 'gemini-2.5-flash';
+    // 404/미지원 모델 → fallback 사용 (gemini-2.5-flash 우선)
+    const deprecatedOrUnavailable = [
+      'gemini-1.5-pro',
+      'gemini-1.5-pro-002',
+      'gemini-2.0-flash-exp',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b',
+    ];
+    const fallbackModels = [
+      'gemini-2.5-flash', // 우선 (현재 사용 가능)
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+      'gemini-1.5-flash-8b',
+      'gemini-pro',
+    ];
+    let modelsToTry = deprecatedOrUnavailable.includes(rawModel)
+      ? [...fallbackModels]
+      : [rawModel, ...fallbackModels.filter((m) => m !== rawModel)];
+    // 이전 성공 모델이 있으면 맨 앞에 배치 (404 스킵)
+    if (
+      lastWorkingGeminiModel &&
+      modelsToTry.includes(lastWorkingGeminiModel)
+    ) {
+      modelsToTry = [
+        lastWorkingGeminiModel,
+        ...modelsToTry.filter((m) => m !== lastWorkingGeminiModel),
+      ];
+    }
+    const temperature = Math.min(
+      1,
+      Math.max(0, Number(aiConfig.temperature) || 0.7),
+    );
+    const maxTokens = Math.min(
+      8192,
+      Math.max(500, Number(aiConfig.maxTokens) || 4096),
+    );
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(apiKey);
-    const model = genAI.getGenerativeModel({
-      model: modelName,
-      generationConfig: { temperature, maxOutputTokens: maxTokens },
-    });
 
     // 2. Fetch Race Data (출전마·기수·훈련 내역)
     const race = await this.prisma.race.findUnique({
@@ -275,10 +337,18 @@ export class PredictionsService {
       race.rcDate,
     );
 
+    // 3b. recentRanks 보강 — DB에 없으면 RaceResult에서 과거 착순 조회 (KRA_API_ANALYSIS_SPEC §4.2)
+    const raceWithRecentRanks = await this.enrichEntriesWithRecentRanks(
+      race as RaceForPython,
+    );
+
     // 3. Run Python Analysis (말 기준 점수 + 기수 통합 분석)
     const path = require('path');
     const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
-    const horseScoreResult = await this.runPythonScript(scriptPath, race as RaceForPython);
+    const horseScoreResult = await this.runPythonScript(
+      scriptPath,
+      raceWithRecentRanks,
+    );
 
     let jockeyAnalysis: {
       entriesWithScores?: Array<{
@@ -287,7 +357,11 @@ export class PredictionsService {
         combinedScore: number;
       }>;
       weightRatio?: { horse: number; jockey: number };
-      topPickByJockey?: { hrName: string; jkName: string; jockeyScore: number } | null;
+      topPickByJockey?: {
+        hrName: string;
+        jkName: string;
+        jockeyScore: number;
+      } | null;
     } | null = null;
     try {
       jockeyAnalysis = await this.analysisService.analyzeJockey(raceId);
@@ -297,47 +371,96 @@ export class PredictionsService {
 
     // 4. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
     const prompt = this.constructPrompt(
-      race as RaceForPython,
+      raceWithRecentRanks,
       horseScoreResult,
       jockeyAnalysis,
       sectionalByHorse,
     );
 
-    // 5. Call Gemini (temperature, maxTokens from ai_config)
-    try {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
+    // 5. Call Gemini (404 시 fallback 모델로 재시도)
+    const generationConfig = {
+      temperature,
+      maxOutputTokens: maxTokens,
+    };
+    let lastError: Error | null = null;
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig,
+        });
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
 
-      // 6. Parse and Save (예측 성공 시 관련 데이터 DB 저장)
-      const predictionData = this.parseGeminiResponse(text);
-      const geminiScores = predictionData?.scores ?? predictionData;
+        // 6. Parse and Save (예측 성공 시 관련 데이터 DB 저장)
+        const predictionData = this.parseGeminiResponse(text);
+        const geminiScores = predictionData?.scores ?? predictionData;
 
-      const scoresToSave = this.buildScoresForSave(
-        geminiScores,
-        horseScoreResult,
-        jockeyAnalysis,
-      );
+        const scoresToSave = this.buildScoresForSave(
+          geminiScores,
+          horseScoreResult,
+          jockeyAnalysis,
+          (race as { entries?: Array<{ hrNo?: string; chulNo?: string }> })
+            .entries ?? [],
+        );
 
-      return this.prisma.prediction.create({
-        data: {
-          raceId,
-          scores: scoresToSave as Prisma.InputJsonValue,
-          analysis: predictionData?.analysis ?? '',
-          preview: predictionData?.preview ?? '',
-          status: 'COMPLETED',
-          previewApproved: true, // 검수 통과 시 preview API 노출 (관리자가 미승인 시 false로 변경 가능)
-        },
-      });
-    } catch (error) {
-      console.error('Gemini generation failed:', error);
-      throw new Error('Failed to generate prediction via Gemini');
+        lastWorkingGeminiModel = modelName;
+
+        // 새 예측 생성 (이전 예측 기록 유지 — update/delete 없음)
+        return this.prisma.prediction.create({
+          data: {
+            raceId,
+            scores: scoresToSave as Prisma.InputJsonValue,
+            analysis: predictionData?.analysis ?? '',
+            preview: predictionData?.preview ?? '',
+            status: 'COMPLETED',
+            previewApproved: true, // 검수 통과 시 preview API 노출 (관리자가 미승인 시 false로 변경 가능)
+          },
+        });
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        const status = (err as { status?: number })?.status;
+        const msg = String((err as Error).message);
+        const is404 =
+          status === 404 ||
+          msg.includes('404') ||
+          msg.toLowerCase().includes('not found');
+        if (is404) {
+          console.warn(
+            `Gemini model "${modelName}" not found (404), trying next...`,
+          );
+          continue;
+        }
+        console.error(`Gemini generation failed (${modelName}):`, lastError);
+        throw new Error(
+          `Failed to generate prediction via Gemini: ${lastError.message}`,
+        );
+      }
     }
+    throw new Error(
+      `Failed to generate prediction: no usable model. Last error: ${lastError?.message ?? 'unknown'}`,
+    );
   }
 
-  private runPythonScript(scriptPath: string, raceData: RaceForPython): Promise<HorseAnalysisItem[]> {
+  /** entries로 최소 horseScore 배열 생성 — Python 실패 시 무조건 결과 산출 */
+  private fallbackHorseScoresFromEntries(
+    entries: Array<{ hrNo?: string; chulNo?: string }>,
+  ): HorseAnalysisItem[] {
+    return entries.slice(0, 14).map((e, i) => ({
+      hrNo: e.hrNo ?? e.chulNo ?? String(i + 1),
+      score: 50 + (14 - i) * 2,
+    }));
+  }
+
+  private runPythonScript(
+    scriptPath: string,
+    raceData: RaceForPython,
+  ): Promise<HorseAnalysisItem[]> {
     const { spawn } = require('child_process');
-    return new Promise((resolve, reject) => {
+    const entries = raceData.entries ?? [];
+
+    return new Promise((resolve) => {
       const pythonProcess = spawn('python3', [scriptPath]);
       let dataString = '';
       let errorString = '';
@@ -351,21 +474,33 @@ export class PredictionsService {
       });
 
       pythonProcess.on('close', (code) => {
-        if (code !== 0) {
-          reject(
-            new Error(`Python script failed with code ${code}: ${errorString}`),
-          );
-        } else {
-          try {
-            resolve(JSON.parse(dataString) as HorseAnalysisItem[]);
-          } catch {
-            reject(new Error(`Failed to parse Python output: ${dataString}`));
+        let result: HorseAnalysisItem[];
+        try {
+          const parsed = JSON.parse(dataString || '[]');
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            result = parsed as HorseAnalysisItem[];
+          } else {
+            result = this.fallbackHorseScoresFromEntries(entries);
+            if (code !== 0 || parsed?.error) {
+              console.warn(
+                `Python analysis fallback (code=${code}): ${errorString || parsed?.error || 'no valid output'}`,
+              );
+            }
           }
+        } catch {
+          result = this.fallbackHorseScoresFromEntries(entries);
+          console.warn(
+            `Python parse fallback: ${dataString?.slice(0, 100) || errorString}`,
+          );
         }
+        resolve(result);
       });
 
-      // Write data to stdin
-      pythonProcess.stdin.write(JSON.stringify(raceData));
+      pythonProcess.stdin.write(
+        JSON.stringify(raceData, (_, value) =>
+          typeof value === 'bigint' ? value.toString() : value,
+        ),
+      );
       pythonProcess.stdin.end();
     });
   }
@@ -390,6 +525,14 @@ export class PredictionsService {
     trainingSummary?: string,
     sectionalTag?: string,
   ): Record<string, unknown> {
+    // chaksunT(BigInt) → JSON 호환 문자열 (Gemini 프롬프트용)
+    const chaksunTStr =
+      entry.chaksunT != null
+        ? typeof entry.chaksunT === 'bigint'
+          ? entry.chaksunT.toString()
+          : String(entry.chaksunT)
+        : undefined;
+
     const base: Record<string, unknown> = {
       hrNo: entry.hrNo,
       hrName: entry.hrName,
@@ -405,10 +548,74 @@ export class PredictionsService {
       equipment: entry.equipment,
       bleedingInfo: entry.bleedingInfo,
       isScratched: entry.isScratched,
+      // KRA: 혈통·나이·저평가 분석용 (KRA_API_ANALYSIS_SPEC §4.2)
+      sex: entry.sex ?? undefined,
+      age: entry.age ?? undefined,
+      prd: entry.prd ?? undefined,
+      chaksun1: entry.chaksun1 ?? undefined,
+      chaksunT: chaksunTStr,
     };
     if (trainingSummary) base.trainingSummary = trainingSummary;
     if (sectionalTag) base.sectionalTag = sectionalTag;
     return base;
+  }
+
+  /**
+   * recentRanks 보강 — RaceResult에서 해당 말(hrNo)의 과거 착순을 조회해 entries에 채움.
+   * KRA sync에서 recentRanks 미적재 시 예측 시점에 온디맨드 계산 (KRA_API_ANALYSIS_SPEC §4.2)
+   */
+  private async enrichEntriesWithRecentRanks(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+
+    const beforeRcDate = race.rcDate ?? '';
+    if (!beforeRcDate) return race;
+
+    const results = await this.prisma.raceResult.findMany({
+      where: {
+        hrNo: { in: hrNos },
+        race: { rcDate: { lt: beforeRcDate } },
+      },
+      select: {
+        hrNo: true,
+        ord: true,
+        ordInt: true,
+        race: { select: { rcDate: true } },
+      },
+      take: 500,
+    });
+
+    // rcDate 내림차순 정렬 후 hrNo별 최근 5경기 착순 (Prisma relation orderBy 비일관 대비)
+    const sorted = [...results].sort((a, b) => {
+      const da = a.race?.rcDate ?? '';
+      const db = b.race?.rcDate ?? '';
+      return db.localeCompare(da);
+    });
+    const byHorse = new Map<string, number[]>();
+    for (const r of sorted) {
+      const arr = byHorse.get(r.hrNo) ?? [];
+      if (arr.length >= 5) continue;
+      const ordNum =
+        r.ordInt ??
+        (r.ord != null && /^\d+$/.test(r.ord)
+          ? parseInt(r.ord, 10)
+          : undefined);
+      if (ordNum != null && ordNum > 0) arr.push(ordNum);
+      byHorse.set(r.hrNo, arr);
+    }
+
+    const enrichedEntries = entries.map((e) => {
+      const ranks = byHorse.get(e.hrNo);
+      if (!ranks?.length && e.recentRanks) return e;
+      return { ...e, recentRanks: ranks ?? e.recentRanks };
+    });
+
+    return { ...race, entries: enrichedEntries };
   }
 
   private summarizeTraining(entry: RaceEntryForAnalysis): string | undefined {
@@ -422,7 +629,9 @@ export class PredictionsService {
     }
     if (trainings?.length) {
       const recent = trainings.slice(0, 5);
-      const strong = recent.filter((t) => /강|상|고/.test(String(t.intensity ?? t.trContent ?? '')));
+      const strong = recent.filter((t) =>
+        /강|상|고/.test(String(t.intensity ?? t.trContent ?? '')),
+      );
       const summary = strong.length
         ? `최근 ${recent.length}회 훈련 중 강도 높은 ${strong.length}회`
         : `최근 ${recent.length}회 훈련`;
@@ -461,7 +670,8 @@ export class PredictionsService {
       const g1f = this.parseSectionalTime(st.g1f ?? st.G1F ?? st.seG1fAccTime);
       if (s1f == null && g1f == null) continue;
       const key = r.hrNo;
-      if (!byHorse[key]) byHorse[key] = { s1fSum: 0, g1fSum: 0, s1fN: 0, g1fN: 0 };
+      if (!byHorse[key])
+        byHorse[key] = { s1fSum: 0, g1fSum: 0, s1fN: 0, g1fN: 0 };
       if (s1f != null) {
         byHorse[key].s1fSum += s1f;
         byHorse[key].s1fN += 1;
@@ -516,9 +726,16 @@ export class PredictionsService {
         combinedScore: number;
       }>;
       weightRatio?: { horse: number; jockey: number };
-      topPickByJockey?: { hrName: string; jkName: string; jockeyScore: number } | null;
+      topPickByJockey?: {
+        hrName: string;
+        jkName: string;
+        jockeyScore: number;
+      } | null;
     } | null,
-    sectionalByHorse: Record<string, { tag: string; s1f?: number; g1f?: number }> = {},
+    sectionalByHorse: Record<
+      string,
+      { tag: string; s1f?: number; g1f?: number }
+    > = {},
   ): string {
     const raceContext = this.buildRaceContext(race);
     const entries = (race.entries || []).map((e: RaceEntryForAnalysis) =>
@@ -528,16 +745,28 @@ export class PredictionsService {
         sectionalByHorse[e.hrNo]?.tag,
       ),
     );
-    const horseScores: HorseAnalysisItem[] = Array.isArray(horseAnalysis) ? horseAnalysis : [];
-    const jockeyMap = new Map<string, { jockeyScore: number; combinedScore: number }>();
+    const horseScores: HorseAnalysisItem[] = Array.isArray(horseAnalysis)
+      ? horseAnalysis
+      : [];
+    const jockeyMap = new Map<
+      string,
+      { jockeyScore: number; combinedScore: number }
+    >();
     for (const x of jockeyAnalysis?.entriesWithScores || []) {
       const key = x.hrNo ?? x.hrName;
-      if (key) jockeyMap.set(key, { jockeyScore: x.jockeyScore, combinedScore: x.combinedScore });
+      if (key)
+        jockeyMap.set(key, {
+          jockeyScore: x.jockeyScore,
+          combinedScore: x.combinedScore,
+        });
     }
 
     const mergedEntries = entries.map((e: Record<string, unknown>) => {
-      const hs = horseScores.find((h: HorseAnalysisItem) => String(h.hrNo) === String(e.hrNo));
-      const js = jockeyMap.get(String(e.hrNo)) ?? jockeyMap.get(String(e.hrName));
+      const hs = horseScores.find(
+        (h: HorseAnalysisItem) => String(h.hrNo) === String(e.hrNo),
+      );
+      const js =
+        jockeyMap.get(String(e.hrNo)) ?? jockeyMap.get(String(e.hrName));
       return {
         ...e,
         horseScore: hs?.score ?? hs?.ratingScore,
@@ -564,7 +793,9 @@ ${topJ ? `- 기수 점수 1위: ${topJ.hrName} (${topJ.jkName}, 기수점수 ${t
 ${JSON.stringify(raceContext)}
 \`\`\`
 
-## 2. 출전마 통계 (정제된 데이터)
+## 2. 출전마 통계 (정제된 데이터, KRA API 기반)
+- sex, age, prd: 성별·연령·산지 — 혈통·나이 분석
+- chaksun1, chaksunT: 1착상금·통산상금 — 저평가/실적 참고
 - trainingSummary: 최근 훈련 요약 (있을 경우)
 - sectionalTag: 과거 구간 기록 기반 각질 (선행마/추입마/중간마, 있을 경우)
 \`\`\`json
@@ -596,23 +827,38 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
         "hrNo": "마번",
         "hrName": "마명",
         "score": 85,
-        "reason": "데이터 기반 한 줄 이유 (레이팅·최근순위·기수 등 구체적 언급)",
+        "reason": "데이터 기반 한 줄 이유",
         "strengths": ["강점1", "강점2"],
         "weaknesses": ["약점 또는 리스크"],
         "confidence": "high|medium|low"
       }
     ]
   },
-  "analysis": "종합 분석 (3~5문장). 날씨·주로·거리 영향, 우승 후보 2~3마 및 이유, 주의할 변수(출전취소·장구변경 등)를 포함.",
-  "preview": "무료 사용자용 2문장 요약. 예: '1번 ○○ 우선, 2번·3번 복승 추천. 주로 상태와 기수 배합 참고.'"
+  "betTypePredictions": {
+    "SINGLE": { "hrNo": "1등추천 마번", "reason": "이유" },
+    "PLACE": { "hrNo": "1~3등 추천 마번", "reason": "이유" },
+    "QUINELLA": { "hrNos": ["1등마번","2등마번"], "reason": "1·2등 순서무관" },
+    "EXACTA": { "first": "1등마번", "second": "2등마번", "reason": "1→2등 순서" },
+    "QUINELLA_PLACE": { "hrNos": ["마번1","마번2"], "reason": "3등이내 2마리" },
+    "TRIFECTA": { "hrNos": ["1등","2등","3등 마번"], "reason": "1·2·3등 순서무관" },
+    "TRIPLE": { "first": "1등", "second": "2등", "third": "3등", "reason": "1→2→3등 순서" }
+  },
+  "analysis": "종합 분석 (4~7문장). 날씨·주로·거리·우승후보·주의변수.",
+  "preview": "무료 사용자용 2문장 요약."
 }
 \`\`\`
 
-**주의**: 모든 horseScores의 hrNo는 출전마 목록의 hrNo와 정확히 일치해야 합니다. score는 0~100, confidence는 데이터 확실성에 따라 선택하세요.`;
+**승식별 조합 (HORSE_RACING_TERMINOLOGY)**:
+- 단승식: 1마리 1등 | 복승식: 1마리 1~3등 | 연승식: 2마리 1·2등(순서무관) | 쌍승식: 2마리 1→2등(순서유관)
+- 복연승식: 2마리 3등이내 | 삼복승식: 3마리 1·2·3등(순서무관) | 삼쌍승식: 3마리 1→2→3등(순서유관)
+- 7개 승식 모두 반드시 출력. 하나도 누락 금지.
+- 마식별자: 2번 출전마 JSON의 hrNo 또는 chulNo 값을 그대로 사용. horseScores 1·2·3위 마번을 betTypePredictions에 활용.`;
   }
 
   private parseGeminiResponse(text: string): GeminiPredictionJson {
     let cleanText = text
+      // Gemini 2.5 thinking 블록 제거
+      .replace(/<think>[\s\S]*?<\/think>/gi, '')
       .replace(/```json\s*/gi, '')
       .replace(/```\s*/g, '')
       .trim();
@@ -622,19 +868,267 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
     try {
       return JSON.parse(cleanText) as GeminiPredictionJson;
     } catch {
-      throw new Error(`Gemini 응답 JSON 파싱 실패: ${cleanText.slice(0, 200)}...`);
+      try {
+        // trailing comma 수정
+        const fixed = cleanText.replace(/,\s*([\]}])/g, '$1');
+        return JSON.parse(fixed) as GeminiPredictionJson;
+      } catch {
+        try {
+          const { jsonrepair } = require('jsonrepair');
+          const repaired = jsonrepair(cleanText) as string;
+          return JSON.parse(repaired) as GeminiPredictionJson;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          throw new Error(
+            `Gemini 응답 JSON 파싱 실패: ${msg}. 응답 앞 300자: ${cleanText.slice(0, 300)}...`,
+          );
+        }
+      }
     }
   }
 
   /**
+   * horseScores에서 승식별 기본 조합 유도 (2마리/3마리 승식은 3개 조합)
+   */
+  private deriveBetTypePredictionsFromHorseScores(
+    horseScores: Array<{ hrNo?: string; chulNo?: string; score?: number }>,
+  ): BetTypePredictions {
+    const id = (h: { hrNo?: string; chulNo?: string }) =>
+      (h?.hrNo ?? h?.chulNo ?? '').toString().trim();
+    const sorted = [...horseScores]
+      .filter((h) => id(h))
+      .sort((a, b) => (b?.score ?? 0) - (a?.score ?? 0));
+    const ids = sorted.map((h) => id(h!)).filter(Boolean);
+    const [a, b, c, d] = ids;
+    if (!a) return {};
+
+    const pairCombos =
+      b && c
+        ? [
+            { hrNos: [a, b] as [string, string] },
+            { hrNos: [a, c] as [string, string] },
+            b && c
+              ? { hrNos: [b, c] as [string, string] }
+              : { hrNos: [a, b] as [string, string] },
+          ].slice(0, 3)
+        : b
+          ? [{ hrNos: [a, b] as [string, string] }]
+          : [];
+
+    const exactaCombos =
+      b && c
+        ? [
+            { first: a, second: b },
+            { first: a, second: c },
+            { first: b, second: a },
+          ]
+        : b
+          ? [{ first: a, second: b }]
+          : [];
+
+    const tripleCombos =
+      a && b && c && d
+        ? [
+            { hrNos: [a, b, c] as [string, string, string] },
+            { hrNos: [a, b, d] as [string, string, string] },
+            { hrNos: [a, c, d] as [string, string, string] },
+          ]
+        : a && b && c
+          ? [{ hrNos: [a, b, c] as [string, string, string] }]
+          : [];
+
+    const tripleExactCombos =
+      a && b && c && d
+        ? [
+            { first: a, second: b, third: c },
+            { first: a, second: b, third: d },
+            { first: a, second: c, third: b },
+          ]
+        : a && b && c
+          ? [{ first: a, second: b, third: c }]
+          : [];
+
+    return {
+      SINGLE: { hrNo: a, reason: '1등 예상' },
+      PLACE: { hrNo: a, reason: '1~3등 안정' },
+      QUINELLA:
+        pairCombos.length > 0
+          ? { combinations: pairCombos, reason: '1·2등 조합' }
+          : undefined,
+      EXACTA:
+        exactaCombos.length > 0
+          ? { combinations: exactaCombos, reason: '1→2등 순서' }
+          : undefined,
+      QUINELLA_PLACE:
+        pairCombos.length > 0
+          ? {
+              combinations: pairCombos.map((p) => ({ ...p })),
+              reason: '3등 이내 2마리',
+            }
+          : undefined,
+      TRIFECTA:
+        tripleCombos.length > 0
+          ? { combinations: tripleCombos, reason: '1·2·3등 조합' }
+          : undefined,
+      TRIPLE:
+        tripleExactCombos.length > 0
+          ? { combinations: tripleExactCombos, reason: '1→2→3등 순서' }
+          : undefined,
+    };
+  }
+
+  /**
+   * Gemini betTypePredictions + horseScores 기반 보강 → 7개 승식 모두 포함
+   */
+  private mergeBetTypePredictions(
+    fromGemini: BetTypePredictions | undefined,
+    fromHorseScores: BetTypePredictions,
+  ): BetTypePredictions {
+    return {
+      SINGLE: fromGemini?.SINGLE ?? fromHorseScores.SINGLE,
+      PLACE: fromGemini?.PLACE ?? fromHorseScores.PLACE,
+      QUINELLA: fromGemini?.QUINELLA ?? fromHorseScores.QUINELLA,
+      EXACTA: fromGemini?.EXACTA ?? fromHorseScores.EXACTA,
+      QUINELLA_PLACE:
+        fromGemini?.QUINELLA_PLACE ?? fromHorseScores.QUINELLA_PLACE,
+      TRIFECTA: fromGemini?.TRIFECTA ?? fromHorseScores.TRIFECTA,
+      TRIPLE: fromGemini?.TRIPLE ?? fromHorseScores.TRIPLE,
+    };
+  }
+
+  /**
+   * chulNo(출주번호) 또는 hrNo → hrNo(마번) 정규화
+   * 정확도 계산·일관된 표시를 위해 entries 기반 매핑
+   */
+  private resolveToHrNo(
+    value: string | undefined,
+    entries: Array<{ hrNo?: string; chulNo?: string }>,
+  ): string | undefined {
+    if (!value || typeof value !== 'string') return value;
+    const v = String(value).trim();
+    const e = entries.find(
+      (x) =>
+        String(x.hrNo || '').trim() === v ||
+        String(x.chulNo || '').trim() === v,
+    );
+    return e?.hrNo ? String(e.hrNo).trim() : v;
+  }
+
+  /**
+   * betTypePredictions 내 모든 마식별자를 hrNo로 정규화
+   */
+  private normalizeBetTypePredictionsToHrNo(
+    pred: BetTypePredictions,
+    entries: Array<{ hrNo?: string; chulNo?: string }>,
+  ): BetTypePredictions {
+    const r = (v: string | undefined) => this.resolveToHrNo(v, entries);
+    const out: BetTypePredictions = {};
+    if (pred.SINGLE?.hrNo)
+      out.SINGLE = {
+        hrNo: r(pred.SINGLE.hrNo) ?? pred.SINGLE.hrNo,
+        reason: pred.SINGLE.reason,
+      };
+    if (pred.PLACE?.hrNo)
+      out.PLACE = {
+        hrNo: r(pred.PLACE.hrNo) ?? pred.PLACE.hrNo,
+        reason: pred.PLACE.reason,
+      };
+    const normPair = (p: { hrNos: [string, string] }) => ({
+      hrNos: [r(p.hrNos[0]) ?? p.hrNos[0], r(p.hrNos[1]) ?? p.hrNos[1]] as [
+        string,
+        string,
+      ],
+    });
+    const normExacta = (p: { first: string; second: string }) => ({
+      first: r(p.first) ?? p.first,
+      second: r(p.second) ?? p.second,
+    });
+    const normTriple = (p: { hrNos: [string, string, string] }) => ({
+      hrNos: [
+        r(p.hrNos[0]) ?? p.hrNos[0],
+        r(p.hrNos[1]) ?? p.hrNos[1],
+        r(p.hrNos[2]) ?? p.hrNos[2],
+      ] as [string, string, string],
+    });
+    const normTripleExact = (p: {
+      first: string;
+      second: string;
+      third: string;
+    }) => ({
+      first: r(p.first) ?? p.first,
+      second: r(p.second) ?? p.second,
+      third: r(p.third) ?? p.third,
+    });
+
+    const q = pred.QUINELLA;
+    if (q && 'combinations' in q && q.combinations.length) {
+      out.QUINELLA = {
+        combinations: q.combinations.map(normPair).slice(0, 3),
+        reason: q.reason,
+      };
+    } else if (q && 'hrNos' in q) {
+      out.QUINELLA = { combinations: [normPair(q)], reason: q.reason };
+    }
+
+    const ex = pred.EXACTA;
+    if (ex && 'combinations' in ex && ex.combinations.length) {
+      out.EXACTA = {
+        combinations: ex.combinations.map(normExacta).slice(0, 3),
+        reason: ex.reason,
+      };
+    } else if (ex && 'first' in ex && 'second' in ex) {
+      out.EXACTA = { combinations: [normExacta(ex)], reason: ex.reason };
+    }
+
+    const qp = pred.QUINELLA_PLACE;
+    if (qp && 'combinations' in qp && qp.combinations.length) {
+      out.QUINELLA_PLACE = {
+        combinations: qp.combinations.map(normPair).slice(0, 3),
+        reason: qp.reason,
+      };
+    } else if (qp && 'hrNos' in qp) {
+      out.QUINELLA_PLACE = { combinations: [normPair(qp)], reason: qp.reason };
+    }
+
+    const tr = pred.TRIFECTA;
+    if (tr && 'combinations' in tr && tr.combinations.length) {
+      out.TRIFECTA = {
+        combinations: tr.combinations.map(normTriple).slice(0, 3),
+        reason: tr.reason,
+      };
+    } else if (tr && 'hrNos' in tr) {
+      out.TRIFECTA = { combinations: [normTriple(tr)], reason: tr.reason };
+    }
+
+    const tp = pred.TRIPLE;
+    if (tp && 'combinations' in tp && tp.combinations.length) {
+      out.TRIPLE = {
+        combinations: tp.combinations.map(normTripleExact).slice(0, 3),
+        reason: tp.reason,
+      };
+    } else if (tp && 'first' in tp && 'second' in tp && 'third' in tp) {
+      out.TRIPLE = { combinations: [normTripleExact(tp)], reason: tp.reason };
+    }
+    return out;
+  }
+
+  /**
    * 예측 성공 시 DB에 저장할 scores 구조 생성
-   * - horseScores: Gemini 결과 (API/UI 호환)
-   * - analysisData: Python·기수 분석 원본 (정확도 계산·분석용)
+   * - horseScores: Gemini 결과 (chulNo→hrNo 정규화)
+   * - betTypePredictions: 7개 승식 보강 + hrNo 정규화
+   * - analysisData: Python·기수 분석 원본
    */
   private buildScoresForSave(
     geminiScores:
       | GeminiPredictionJson
-      | { horseScores?: Array<{ hrNo?: string; hrName?: string; score?: number; reason?: string }> }
+      | {
+          horseScores?: Array<{
+            hrNo?: string;
+            hrName?: string;
+            score?: number;
+            reason?: string;
+          }>;
+        }
       | undefined,
     horseScoreResult: unknown,
     jockeyAnalysis: {
@@ -642,23 +1136,97 @@ ${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
       weightRatio?: { horse: number; jockey: number };
       topPickByJockey?: unknown;
     } | null,
+    entries: Array<{ hrNo?: string; chulNo?: string }> = [],
   ): Record<string, unknown> {
-    const base = (geminiScores && typeof geminiScores === 'object' && !('error' in geminiScores)) ? { ...geminiScores } : {};
-    const gemi = base as GeminiPredictionJson & { horseScores?: Array<{ hrNo?: string; hrName?: string; score?: number; reason?: string }> };
-    const hs = gemi.horseScores ?? gemi.scores?.horseScores ?? [];
-    const safeHorseResult = Array.isArray(horseScoreResult) && !horseScoreResult.some((x) => x && typeof x === 'object' && 'error' in x)
-      ? horseScoreResult
-      : [];
+    const base =
+      geminiScores &&
+      typeof geminiScores === 'object' &&
+      !('error' in geminiScores)
+        ? { ...geminiScores }
+        : {};
+    const gemi = base as GeminiPredictionJson & {
+      horseScores?: Array<{
+        hrNo?: string;
+        hrName?: string;
+        score?: number;
+        reason?: string;
+      }>;
+    };
+    const hsRaw = gemi.horseScores ?? gemi.scores?.horseScores ?? [];
+    const safeHorseResult =
+      Array.isArray(horseScoreResult) &&
+      !horseScoreResult.some((x) => x && typeof x === 'object' && 'error' in x)
+        ? horseScoreResult
+        : [];
+
+    // Python 결과를 절대 우선 (무조건 배열 반환하도록 보장됨)
+    const hsSource =
+      Array.isArray(safeHorseResult) && safeHorseResult.length > 0
+        ? (safeHorseResult as Array<{
+            hrNo?: string;
+            chulNo?: string;
+            score?: number;
+          }>)
+        : hsRaw;
+    let derived = this.deriveBetTypePredictionsFromHorseScores(hsSource);
+
+    // 7개 승식 무조건 채움 — 부족하면 entries로 보강
+    const hasTrifecta =
+      derived.TRIFECTA &&
+      ('hrNos' in derived.TRIFECTA || 'combinations' in derived.TRIFECTA);
+    const needFallback = !hasTrifecta || entries.length >= 3;
+    if (needFallback && entries.length >= 3) {
+      const fallbackHs = entries.slice(0, 6).map((e) => ({
+        hrNo: e.hrNo ?? e.chulNo ?? '',
+        chulNo: e.chulNo,
+        score: 50,
+      }));
+      const fallback = this.deriveBetTypePredictionsFromHorseScores(fallbackHs);
+      derived = {
+        SINGLE: derived.SINGLE ?? fallback.SINGLE,
+        PLACE: derived.PLACE ?? fallback.PLACE,
+        QUINELLA: derived.QUINELLA ?? fallback.QUINELLA,
+        EXACTA: derived.EXACTA ?? fallback.EXACTA,
+        QUINELLA_PLACE: derived.QUINELLA_PLACE ?? fallback.QUINELLA_PLACE,
+        TRIFECTA: derived.TRIFECTA ?? fallback.TRIFECTA,
+        TRIPLE: derived.TRIPLE ?? fallback.TRIPLE,
+      };
+    }
+
+    const mergedBetType = this.mergeBetTypePredictions(
+      gemi.betTypePredictions,
+      derived,
+    );
+
+    const normalizedBet = this.normalizeBetTypePredictionsToHrNo(
+      mergedBetType,
+      entries,
+    );
+    const hs = entries.length
+      ? hsRaw.map((h) => {
+          const rawId = (h.hrNo ?? (h as { chulNo?: string }).chulNo)
+            ?.toString()
+            .trim();
+          const resolved = rawId
+            ? (this.resolveToHrNo(rawId, entries) ?? rawId)
+            : undefined;
+          return { ...h, hrNo: resolved ?? h.hrNo };
+        })
+      : hsRaw;
 
     return {
       ...base,
       horseScores: hs,
+      betTypePredictions: normalizedBet,
       analysisData: {
         horseScoreResult: safeHorseResult,
         jockeyAnalysis: jockeyAnalysis
           ? {
               entriesWithScores: jockeyAnalysis.entriesWithScores || [],
-              weightRatio: jockeyAnalysis.weightRatio || { horse: 0.7, jockey: 0.3 },
+              weightRatio: jockeyAnalysis.weightRatio || {
+                horse: 0.7,
+                jockey: 0.3,
+              },
               topPickByJockey: jockeyAnalysis.topPickByJockey ?? null,
             }
           : null,

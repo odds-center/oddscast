@@ -13,23 +13,34 @@ const GATE_COLORS: Record<number, string> = {
 
 export interface RaceHeaderProps {
   meetName?: string;
+  rcDay?: string;
   rcNo?: string;
   stTime?: string;
   rcDist?: string;
+  rank?: string;
+  rcCondition?: string;
+  weather?: string;
+  track?: string;
 }
 
 export default function RaceHeaderCard({
   meetName,
+  rcDay,
   rcNo,
   stTime,
   rcDist,
+  rank,
+  rcCondition,
+  weather,
+  track,
 }: RaceHeaderProps) {
+  const metaItems = [rcDist ? `${rcDist}m` : null, rank, rcCondition, weather, track].filter(Boolean);
   return (
     <div className='rounded-xl border border-primary/25 bg-card overflow-hidden'>
       <div className='flex items-center justify-between px-4 py-3 bg-primary/15'>
         <div className='flex items-center gap-3'>
           <span className='font-display font-bold text-primary text-lg'>
-            {meetName ?? '-'}
+            {rcDay ? `${rcDay} ` : ''}{meetName ?? '-'}
           </span>
           <span className='text-text-secondary text-sm'>
             제 {rcNo ?? '-'} 경주
@@ -42,10 +53,18 @@ export default function RaceHeaderCard({
           </span>
         )}
       </div>
-      {rcDist && (
-        <div className='px-4 py-2 border-t border-border text-sm text-text-secondary flex items-center gap-1.5'>
-          <Icon name='Ruler' size={14} className='shrink-0' />
-          {rcDist}m
+      {metaItems.length > 0 && (
+        <div className='px-4 py-2 border-t border-border text-sm text-text-secondary flex flex-wrap items-center gap-x-4 gap-y-1'>
+          {rcDist && (
+            <span className='flex items-center gap-1.5'>
+              <Icon name='Ruler' size={14} className='shrink-0' />
+              {rcDist}m
+            </span>
+          )}
+          {rank && <span>{rank}</span>}
+          {rcCondition && <span>{rcCondition}</span>}
+          {weather && <span>날씨 {weather}</span>}
+          {track && <span>주로 {track}</span>}
         </div>
       )}
     </div>

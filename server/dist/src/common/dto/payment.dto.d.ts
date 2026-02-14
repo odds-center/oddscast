@@ -14,4 +14,5 @@ export declare class PaymentPurchaseDto {
 }
 export declare class UseTicketDto {
     raceId: string;
+    regenerate?: boolean;
 }

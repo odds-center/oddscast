@@ -53,8 +53,11 @@ export default function GoogleSignInButton({
   const [scriptLoaded, setScriptLoaded] = useState(false);
   const onSuccessRef = useRef(onSuccess);
   const onErrorRef = useRef(onError);
-  onSuccessRef.current = onSuccess;
-  onErrorRef.current = onError;
+
+  useEffect(() => {
+    onSuccessRef.current = onSuccess;
+    onErrorRef.current = onError;
+  }, [onSuccess, onError]);
 
   // Mobile WebView: Native 구글 로그인 사용 (GSI는 WebView에서 제한 있음)
   useEffect(() => {
@@ -77,6 +80,36 @@ export default function GoogleSignInButton({
     trackCTA('GOOGLE_LOGIN_CLICK', 'native');
     nativeBridge.send('LOGIN_GOOGLE');
   };
+
+  // 웹: Google GSI 버튼 (항상 등록하여 hooks 순서 유지)
+  useEffect(() => {
+    const clientId = CONFIG.google.clientId;
+    if (!clientId || !scriptLoaded || !window.google?.accounts?.id || !containerRef.current) return;
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    window.google.accounts.id.initialize({
+      client_id: clientId,
+      callback: (response) => {
+        if (response.credential) {
+          trackCTA('GOOGLE_LOGIN_CLICK', 'web_success');
+          onSuccess?.(response.credential);
+        } else {
+          onError?.('로그인에 실패했습니다.');
+        }
+      },
+    });
+
+    if (containerRef.current) {
+      window.google.accounts.id.renderButton(containerRef.current, {
+        theme,
+        size,
+        type: 'standard',
+        text: 'signin_with',
+        shape: 'rectangular',
+      });
+    }
+  }, [scriptLoaded, onSuccess, onError, theme, size]);
 
   // WebView(Native 앱) 내부일 때: Native Google Sign-In 버튼
   if (nativeBridge.isNativeApp()) {
@@ -109,36 +142,6 @@ export default function GoogleSignInButton({
       </button>
     );
   }
-
-  // 웹: Google GSI 버튼
-  useEffect(() => {
-    const clientId = CONFIG.google.clientId;
-    if (!clientId || !scriptLoaded || !window.google?.accounts?.id || !containerRef.current) return;
-    if (initializedRef.current) return;
-    initializedRef.current = true;
-
-    window.google.accounts.id.initialize({
-      client_id: clientId,
-      callback: (response) => {
-        if (response.credential) {
-          trackCTA('GOOGLE_LOGIN_CLICK', 'web_success');
-          onSuccess?.(response.credential);
-        } else {
-          onError?.('로그인에 실패했습니다.');
-        }
-      },
-    });
-
-    if (containerRef.current) {
-      window.google.accounts.id.renderButton(containerRef.current, {
-        theme,
-        size,
-        type: 'standard',
-        text: 'signin_with',
-        shape: 'rectangular',
-      });
-    }
-  }, [scriptLoaded, onSuccess, onError, theme, size]);
 
   if (!CONFIG.google.clientId) {
     return (

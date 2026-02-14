@@ -247,7 +247,11 @@ export class PointsService {
     const picks = await this.prisma.userPick.findMany({
       where: { raceId },
       include: {
-        race: { include: { results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] } } },
+        race: {
+          include: {
+            results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
+          },
+        },
       },
     });
 

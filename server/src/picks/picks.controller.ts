@@ -12,7 +12,10 @@ import {
 import { PicksService } from './picks.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  JwtPayload,
+} from '../common/decorators/current-user.decorator';
 import { CreatePickDto } from './dto/pick.dto';
 
 @ApiTags('Picks')

@@ -49,6 +49,9 @@ let PredictionsController = class PredictionsController {
     getPreviewAlias(raceId) {
         return this.predictionsService.getPreview(raceId);
     }
+    getByRaceHistory(raceId) {
+        return this.predictionsService.getByRaceHistory(raceId);
+    }
     getByRace(raceId) {
         return this.predictionsService.getByRace(raceId);
     }
@@ -139,8 +142,16 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getPreviewAlias", null);
 __decorate([
+    (0, common_1.Get)('race/:raceId/history'),
+    (0, swagger_1.ApiOperation)({ summary: '경주별 예측 기록 목록' }),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], PredictionsController.prototype, "getByRaceHistory", null);
+__decorate([
     (0, common_1.Get)('race/:raceId'),
-    (0, swagger_1.ApiOperation)({ summary: '경주별 예측 조회' }),
+    (0, swagger_1.ApiOperation)({ summary: '경주별 예측 조회 (최신 1건)' }),
     __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),

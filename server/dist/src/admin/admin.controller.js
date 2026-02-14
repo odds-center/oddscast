@@ -27,8 +27,9 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const subscriptions_service_1 = require("../subscriptions/subscriptions.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const single_purchases_service_1 = require("../single-purchases/single-purchases.service");
+const prediction_tickets_service_1 = require("../prediction-tickets/prediction-tickets.service");
 let AdminController = AdminController_1 = class AdminController {
-    constructor(kraService, usersService, configService, prisma, subscriptionsService, notificationsService, singlePurchasesService) {
+    constructor(kraService, usersService, configService, prisma, subscriptionsService, notificationsService, singlePurchasesService, predictionTicketsService) {
         this.kraService = kraService;
         this.usersService = usersService;
         this.configService = configService;
@@ -36,6 +37,7 @@ let AdminController = AdminController_1 = class AdminController {
         this.subscriptionsService = subscriptionsService;
         this.notificationsService = notificationsService;
         this.singlePurchasesService = singlePurchasesService;
+        this.predictionTicketsService = predictionTicketsService;
     }
     async syncSchedule(date) {
         const d = date?.replace(/-/g, '').slice(0, 8) ||
@@ -113,17 +115,24 @@ let AdminController = AdminController_1 = class AdminController {
     async deactivateUser(id) {
         return this.usersService.update(id, { isActive: false });
     }
+    async grantTickets(id, body) {
+        const count = Math.min(100, Math.max(1, Number(body.count) || 1));
+        const expiresInDays = Math.min(365, Math.max(1, Number(body.expiresInDays) || 30));
+        return this.predictionTicketsService.grantTickets(id, count, expiresInDays);
+    }
     async getAIConfig() {
         const raw = await this.configService.get('ai_config');
         const defaults = {
             llmProvider: 'gemini',
-            primaryModel: 'gemini-1.5-pro',
+            primaryModel: 'gemini-2.5-flash',
             availableModels: [
+                'gemini-2.5-flash',
+                'gemini-2.0-flash',
                 'gemini-2.0-flash-exp',
-                'gemini-1.5-pro',
-                'gemini-1.5-pro-002',
                 'gemini-1.5-flash',
                 'gemini-1.5-flash-8b',
+                'gemini-1.5-pro',
+                'gemini-1.5-pro-002',
                 'gemini-pro',
             ],
             fallbackModels: ['gemini-1.5-flash', 'gemini-pro'],
@@ -172,14 +181,18 @@ let AdminController = AdminController_1 = class AdminController {
             balanced: 3600,
             budget: 1200,
         };
-        const rawMonthly = typeof config.primaryModel === 'string' && AdminController_1.MODEL_COST[config.primaryModel] != null
-            ? AdminController_1.MODEL_COST[config.primaryModel] * AdminController_1.RACES_PER_MONTH
-            : strategyMonthly[config.costStrategy ?? 'balanced'] ?? 3600;
+        const rawMonthly = typeof config.primaryModel === 'string' &&
+            AdminController_1.MODEL_COST[config.primaryModel] != null
+            ? AdminController_1.MODEL_COST[config.primaryModel] *
+                AdminController_1.RACES_PER_MONTH
+            : (strategyMonthly[config.costStrategy ?? 'balanced'] ?? 3600);
         const modelCost = typeof config.primaryModel === 'string'
-            ? AdminController_1.MODEL_COST[config.primaryModel] ?? 12
+            ? (AdminController_1.MODEL_COST[config.primaryModel] ?? 12)
             : rawMonthly / AdminController_1.RACES_PER_MONTH;
         const enableCaching = config.enableCaching ?? true;
-        const estimatedMonthlyCost = enableCaching ? Math.round(rawMonthly * 0.01) : rawMonthly;
+        const estimatedMonthlyCost = enableCaching
+            ? Math.round(rawMonthly * 0.01)
+            : rawMonthly;
         return {
             estimatedMonthlyCost,
             primaryModel: config.primaryModel ?? null,
@@ -220,7 +233,10 @@ let AdminController = AdminController_1 = class AdminController {
     async getBet(id) {
         return this.prisma.bet.findUnique({
             where: { id },
-            include: { race: true, user: { select: { id: true, email: true, name: true } } },
+            include: {
+                race: true,
+                user: { select: { id: true, email: true, name: true } },
+            },
         });
     }
     async getSubscriptionPlans() {
@@ -392,7 +408,9 @@ let AdminController = AdminController_1 = class AdminController {
 };
 exports.AdminController = AdminController;
 AdminController.MODEL_COST = {
+    'gemini-2.5-flash': 5,
     'gemini-2.0-flash-exp': 5,
+    'gemini-2.0-flash': 5,
     'gemini-1.5-pro': 12,
     'gemini-1.5-pro-002': 12,
     'gemini-1.5-flash': 4,
@@ -436,7 +454,9 @@ __decorate([
 ], AdminController.prototype, "getKraSyncLogs", null);
 __decorate([
     (0, common_1.Post)('kra/seed-sample'),
-    (0, swagger_1.ApiOperation)({ summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)' }),
+    (0, swagger_1.ApiOperation)({
+        summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)',
+    }),
     __param(0, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -519,6 +539,15 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "deactivateUser", null);
+__decorate([
+    (0, common_1.Post)('users/:id/grant-tickets'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] 사용자에게 예측권 지급' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "grantTickets", null);
 __decorate([
     (0, common_1.Get)('ai/config'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] AI 설정 조회 (Gemini)' }),
@@ -675,6 +704,7 @@ exports.AdminController = AdminController = AdminController_1 = __decorate([
         prisma_service_1.PrismaService,
         subscriptions_service_1.SubscriptionsService,
         notifications_service_1.NotificationsService,
-        single_purchases_service_1.SinglePurchasesService])
+        single_purchases_service_1.SinglePurchasesService,
+        prediction_tickets_service_1.PredictionTicketsService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

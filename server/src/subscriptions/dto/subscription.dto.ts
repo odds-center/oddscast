@@ -1,5 +1,5 @@
 import { IsString, IsOptional } from 'class-validator';
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SubscribeDto {
   @ApiPropertyOptional({ description: '플랜 ID (생략 시 기본 플랜)' })
@@ -13,7 +13,9 @@ export class SubscribeDto {
 }
 
 export class ActivateSubscriptionDto {
-  @ApiPropertyOptional({ description: 'PG 빌링키 (subscribe 시 이미 있으면 생략 가능)' })
+  @ApiPropertyOptional({
+    description: 'PG 빌링키 (subscribe 시 이미 있으면 생략 가능)',
+  })
   @IsOptional()
   @IsString()
   billingKey?: string;

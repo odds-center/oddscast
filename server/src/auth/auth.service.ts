@@ -101,7 +101,9 @@ export class AuthService {
 
     const payload = ticket.getPayload();
     if (!payload?.email) {
-      throw new UnauthorizedException('Google 프로필에서 이메일을 가져올 수 없습니다.');
+      throw new UnauthorizedException(
+        'Google 프로필에서 이메일을 가져올 수 없습니다.',
+      );
     }
 
     const { email, name, picture } = payload;
@@ -162,9 +164,14 @@ export class AuthService {
     return { user: this.sanitizeAdmin(admin), ...token };
   }
 
-  async getProfile(userId: number, role?: string): Promise<SanitizedUser | SanitizedAdminUser> {
+  async getProfile(
+    userId: number,
+    role?: string,
+  ): Promise<SanitizedUser | SanitizedAdminUser> {
     if (role === 'ADMIN') {
-      const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+      const admin = await this.prisma.adminUser.findUnique({
+        where: { id: userId },
+      });
       if (!admin) throw new UnauthorizedException();
       return this.sanitizeAdmin(admin);
     }
@@ -210,7 +217,9 @@ export class AuthService {
 
   async refreshToken(userId: number, role?: string) {
     if (role === 'ADMIN') {
-      const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+      const admin = await this.prisma.adminUser.findUnique({
+        where: { id: userId },
+      });
       if (!admin) throw new UnauthorizedException();
       return this.generateToken(admin.id, admin.loginId, 'ADMIN');
     }

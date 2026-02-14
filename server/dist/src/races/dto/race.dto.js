@@ -23,7 +23,10 @@ __decorate([
     __metadata("design:type", String)
 ], CreateRaceDto.prototype, "rcName", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ example: '서울', description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남' }),
+    (0, swagger_1.ApiProperty)({
+        example: '서울',
+        description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남',
+    }),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateRaceDto.prototype, "meet", void 0);

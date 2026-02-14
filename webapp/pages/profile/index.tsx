@@ -16,7 +16,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const user = useAuthStore((s) => s.user);
+  const _user = useAuthStore((s) => s.user);
+  void _user; // store 구독 유지
   const [purchaseQty, setPurchaseQty] = useState(1);
   const queryClient = useQueryClient();
 

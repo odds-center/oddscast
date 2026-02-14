@@ -157,7 +157,9 @@ let AuthService = class AuthService {
     }
     async getProfile(userId, role) {
         if (role === 'ADMIN') {
-            const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+            const admin = await this.prisma.adminUser.findUnique({
+                where: { id: userId },
+            });
             if (!admin)
                 throw new common_1.UnauthorizedException();
             return this.sanitizeAdmin(admin);
@@ -197,7 +199,9 @@ let AuthService = class AuthService {
     }
     async refreshToken(userId, role) {
         if (role === 'ADMIN') {
-            const admin = await this.prisma.adminUser.findUnique({ where: { id: userId } });
+            const admin = await this.prisma.adminUser.findUnique({
+                where: { id: userId },
+            });
             if (!admin)
                 throw new common_1.UnauthorizedException();
             return this.generateToken(admin.id, admin.loginId, 'ADMIN');

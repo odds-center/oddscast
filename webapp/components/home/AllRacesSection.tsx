@@ -23,11 +23,14 @@ export default function AllRacesSection() {
 
   useEffect(() => {
     const q = router.query?.date as string | undefined;
-    if (q === 'today') setDateFilter('today');
-    else if (q && /^\d{4}-?\d{2}-?\d{2}$/.test(q.replace(/-/g, ''))) {
-      const normalized = q.includes('-') ? q : `${q.slice(0, 4)}-${q.slice(4, 6)}-${q.slice(6, 8)}`;
-      setDateFilter(normalized);
-    }
+    const updater = () => {
+      if (q === 'today') setDateFilter('today');
+      else if (q && /^\d{4}-?\d{2}-?\d{2}$/.test(q.replace(/-/g, ''))) {
+        const normalized = q.includes('-') ? q : `${q.slice(0, 4)}-${q.slice(4, 6)}-${q.slice(6, 8)}`;
+        setDateFilter(normalized);
+      }
+    };
+    queueMicrotask(updater);
   }, [router.query?.date]);
 
   const { data, isLoading, error, refetch } = useQuery({

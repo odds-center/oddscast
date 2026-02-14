@@ -79,7 +79,10 @@ export class SubscriptionsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '구독 취소 (현재 유저 활성 구독)' })
-  cancelPost(@CurrentUser() user: JwtPayload, @Body() dto: CancelSubscriptionDto) {
+  cancelPost(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CancelSubscriptionDto,
+  ) {
     return this.subscriptionsService.cancelByUserId(user.sub, dto.reason);
   }
 

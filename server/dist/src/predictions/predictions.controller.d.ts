@@ -123,6 +123,71 @@ export declare class PredictionsController {
         analysis: string | null;
         preview: string | null;
     } | null>;
+    getByRaceHistory(raceId: number): Promise<({
+        race: {
+            entries: {
+                id: number;
+                hrNo: string;
+                hrName: string;
+                jkName: string;
+                trName: string | null;
+                owName: string | null;
+                wgBudam: number | null;
+                raceId: number;
+                hrNameEn: string | null;
+                jkNo: string | null;
+                jkNameEn: string | null;
+                trNo: string | null;
+                owNo: string | null;
+                rating: number | null;
+                chulNo: string | null;
+                dusu: number | null;
+                sex: string | null;
+                age: number | null;
+                prd: string | null;
+                chaksun1: number | null;
+                chaksunT: bigint | null;
+                rcCntT: number | null;
+                ord1CntT: number | null;
+                budam: string | null;
+                recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
+                trainingData: import("@prisma/client/runtime/client").JsonValue | null;
+                equipment: string | null;
+                horseWeight: string | null;
+                bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
+                isScratched: boolean;
+            }[];
+        } & {
+            id: number;
+            createdAt: Date;
+            updatedAt: Date;
+            rcName: string | null;
+            meet: string;
+            meetName: string | null;
+            rcDate: string;
+            rcNo: string;
+            rcDist: string | null;
+            rank: string | null;
+            rcCondition: string | null;
+            rcPrize: number | null;
+            weather: string | null;
+            track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
+        };
+    } & {
+        id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
+        raceId: number;
+        scores: import("@prisma/client/runtime/client").JsonValue | null;
+        analysis: string | null;
+        preview: string | null;
+        previewApproved: boolean;
+        accuracy: number | null;
+    })[]>;
     getByRace(raceId: number): Promise<({
         race: {
             entries: {

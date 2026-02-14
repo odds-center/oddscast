@@ -61,7 +61,12 @@ let BetsService = class BetsService {
             }),
             this.prisma.bet.count({ where }),
         ]);
-        return { bets: (0, kra_serializer_1.serializeItemsWithRace)(bets), total, page, totalPages: Math.ceil(total / limit) };
+        return {
+            bets: (0, kra_serializer_1.serializeItemsWithRace)(bets),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
     }
     async findOne(id) {
         const bet = await this.prisma.bet.findUnique({

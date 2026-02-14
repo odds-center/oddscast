@@ -62,7 +62,10 @@ export class PredictionsController {
 
   @Get('analytics/failures')
   @ApiOperation({ summary: '실패 원인 분석' })
-  getAnalyticsFailures(@Query('startDate') startDate?: string, @Query('endDate') endDate?: string) {
+  getAnalyticsFailures(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+  ) {
     return this.predictionsService.getAnalyticsFailures({ startDate, endDate });
   }
 
@@ -78,8 +81,14 @@ export class PredictionsController {
     return this.predictionsService.getPreview(raceId);
   }
 
+  @Get('race/:raceId/history')
+  @ApiOperation({ summary: '경주별 예측 기록 목록' })
+  getByRaceHistory(@Param('raceId', ParseIntPipe) raceId: number) {
+    return this.predictionsService.getByRaceHistory(raceId);
+  }
+
   @Get('race/:raceId')
-  @ApiOperation({ summary: '경주별 예측 조회' })
+  @ApiOperation({ summary: '경주별 예측 조회 (최신 1건)' })
   getByRace(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.getByRace(raceId);
   }

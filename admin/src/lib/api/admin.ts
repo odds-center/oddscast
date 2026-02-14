@@ -94,6 +94,22 @@ export class AdminUsersApi {
       throw handleApiError(error);
     }
   }
+
+  static async grantTickets(
+    id: string | number,
+    count: number,
+    expiresInDays?: number,
+  ): Promise<{ granted: number; tickets: unknown[] }> {
+    try {
+      const response = await axiosInstance.post<{ granted: number; tickets: unknown[] }>(
+        `/users/${id}/grant-tickets`,
+        { count, expiresInDays },
+      );
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 }
 
 /**

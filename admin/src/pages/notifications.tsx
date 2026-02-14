@@ -14,6 +14,7 @@ import Pagination from '@/components/common/Pagination';
 import { adminNotificationsApi } from '@/lib/api/admin';
 import { formatDateTime } from '@/lib/utils';
 import { Bell } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 interface Notification {
   id: number;
@@ -189,7 +190,7 @@ export default function NotificationsPage() {
                 <div className='max-w-[280px] mx-auto rounded-xl bg-white shadow-lg border border-gray-200 overflow-hidden'>
                   <div className='flex items-start gap-3 p-3'>
                     <div className='flex-shrink-0 w-10 h-10 rounded-lg bg-amber-400 flex items-center justify-center'>
-                      <Bell className='w-5 h-5 text-amber-900' />
+                      <AdminIcon icon={Bell} className='w-5 h-5 text-amber-900' />
                     </div>
                     <div className='flex-1 min-w-0'>
                       <p className='font-semibold text-gray-900 text-sm truncate'>
@@ -209,7 +210,7 @@ export default function NotificationsPage() {
                 className='w-full'
                 disabled={sendNotificationMutation.isPending || !isValid}
               >
-                <Bell className='w-4 h-4 mr-2' />
+                <AdminIcon icon={Bell} className='w-4 h-4 mr-2' />
                 {sendNotificationMutation.isPending ? '전송 중...' : '알림 전송'}
               </Button>
             </form>

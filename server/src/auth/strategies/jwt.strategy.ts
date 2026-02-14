@@ -15,7 +15,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate(payload: any) {
     if (payload.sub == null) throw new UnauthorizedException();
-    const sub = typeof payload.sub === 'number' ? payload.sub : parseInt(String(payload.sub), 10);
+    const sub =
+      typeof payload.sub === 'number'
+        ? payload.sub
+        : parseInt(String(payload.sub), 10);
     if (isNaN(sub)) throw new UnauthorizedException();
     return { sub, email: payload.email, role: payload.role };
   }

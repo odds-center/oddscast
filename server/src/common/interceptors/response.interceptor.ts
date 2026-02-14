@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { serializeBigInt } from '../utils/serialize-bigint';
 
 export interface ApiResponse<T> {
   data: T;
@@ -27,7 +28,7 @@ export class ResponseInterceptor<T> implements NestInterceptor<
 
     return next.handle().pipe(
       map((data) => ({
-        data,
+        data: serializeBigInt(data) as T,
         status: response.statusCode,
       })),
     );

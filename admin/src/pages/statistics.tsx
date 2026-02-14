@@ -7,6 +7,7 @@ import Card from '@/components/common/Card';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { BarChart3, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 export default function StatisticsPage() {
   const [usersDays, setUsersDays] = useState(30);
@@ -77,7 +78,7 @@ export default function StatisticsPage() {
               ) : (
                 <div className='flex items-center justify-center h-64'>
                   <div className='text-center text-gray-500'>
-                    <Users className='h-16 w-16 mx-auto mb-4' />
+                    <AdminIcon icon={Users} className='h-16 w-16 mx-auto mb-4' />
                     <p>데이터가 없습니다</p>
                   </div>
                 </div>
@@ -129,7 +130,7 @@ export default function StatisticsPage() {
               ) : (
                 <div className='flex items-center justify-center h-64'>
                   <div className='text-center text-gray-500'>
-                    <DollarSign className='h-16 w-16 mx-auto mb-4' />
+                    <AdminIcon icon={DollarSign} className='h-16 w-16 mx-auto mb-4' />
                     <p>데이터가 없습니다</p>
                   </div>
                 </div>

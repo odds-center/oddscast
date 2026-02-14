@@ -4,11 +4,7 @@
 import {
   PointTransactionType,
   PointStatus,
-} from '@goldenrace/shared';
-import type {
-  UserPointBalance,
-  PointTransaction,
-  TicketPrice,
+  type UserPointBalance,
 } from '@goldenrace/shared';
 export { PointTransactionType, PointStatus } from '@goldenrace/shared';
 export type { UserPointBalance, PointTransaction, TicketPrice } from '@goldenrace/shared';

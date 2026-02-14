@@ -3,7 +3,7 @@
  * 가로 스크롤, 게이트 색상, 경주 클릭 → 상세
  */
 import Link from 'next/link';
-import type { MatrixRowDto, MatrixResponseDto } from '@/lib/api/predictionMatrixApi';
+import type { MatrixResponseDto } from '@/lib/api/predictionMatrixApi';
 import { getGateBgColor } from '@/components/race/RaceHeaderCard';
 import { routes } from '@/lib/routes';
 

@@ -95,14 +95,22 @@ export class FavoritesController {
 
   @Delete('bulk')
   @ApiOperation({ summary: '즐겨찾기 일괄 삭제' })
-  bulkDelete(@CurrentUser() user: JwtPayload, @Body() body: { ids: (string | number)[] }) {
-    const ids = (body.ids ?? []).map((x) => (typeof x === 'number' ? x : parseInt(String(x), 10)));
+  bulkDelete(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { ids: (string | number)[] },
+  ) {
+    const ids = (body.ids ?? []).map((x) =>
+      typeof x === 'number' ? x : parseInt(String(x), 10),
+    );
     return this.favoritesService.bulkDelete(user.sub, ids);
   }
 
   @Put(':id')
   @ApiOperation({ summary: '즐겨찾기 수정' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateFavoriteDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateFavoriteDto,
+  ) {
     return this.favoritesService.update(id, dto);
   }
 

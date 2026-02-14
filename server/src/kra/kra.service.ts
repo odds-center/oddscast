@@ -166,12 +166,15 @@ export class KraService {
    */
   async syncEntrySheet(date: string) {
     if (!this.ensureServiceKey()) {
-      return { message: 'KRA_SERVICE_KEY 미설정. .env에 API 키를 추가하세요.', races: 0, entries: 0 };
+      return {
+        message: 'KRA_SERVICE_KEY 미설정. .env에 API 키를 추가하세요.',
+        races: 0,
+        entries: 0,
+      };
     }
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     this.logger.log(`Syncing Entry Sheet for date: ${normalizedDate}`);
     const endpoint = 'entrySheet';
-
 
     let totalRaces = 0;
     let totalEntries = 0;
@@ -214,7 +217,8 @@ export class KraService {
           }
         }
 
-        const totalCount = body?.totalCount != null ? Number(body.totalCount) : items.length;
+        const totalCount =
+          body?.totalCount != null ? Number(body.totalCount) : items.length;
         if (totalCount > items.length && totalCount > 0) {
           for (let pageNo = 2; items.length < totalCount; pageNo++) {
             const nextRes = await firstValueFrom(
@@ -247,7 +251,9 @@ export class KraService {
         }
 
         // Count unique races for logging
-        const uniqueRaces = new Set(items.map((i: KraApiItem) => i?.rcNo ?? i?.rc_no ?? ''));
+        const uniqueRaces = new Set(
+          items.map((i: KraApiItem) => i?.rcNo ?? i?.rc_no ?? ''),
+        );
         totalRaces += uniqueRaces.size;
 
         await this.logKraSync(endpoint, {
@@ -298,10 +304,14 @@ export class KraService {
 
     const stTime = vs('stTime') ?? vs('st_time') ?? null;
     const meetFromApi = vs('meet');
-    const meetForRace = meetFromApi && ['서울', '제주', '부산경남'].includes(meetFromApi) ? meetFromApi : meetName;
+    const meetForRace =
+      meetFromApi && ['서울', '제주', '부산경남'].includes(meetFromApi)
+        ? meetFromApi
+        : meetName;
 
     const rcNameRaw = vs('rcName') ?? vs('rc_name') ?? vs('raceName');
-    const rcName = (rcNameRaw && rcNameRaw.trim()) ? rcNameRaw.trim() : `경주 ${rcNo}R`;
+    const rcName =
+      rcNameRaw && rcNameRaw.trim() ? rcNameRaw.trim() : `경주 ${rcNo}R`;
 
     const race = await this.prisma.race.upsert({
       where: {
@@ -336,19 +346,29 @@ export class KraService {
     });
 
     const wgBudamRaw = v('wgBudam') ?? v('wg_budam');
-    const weight = wgBudamRaw != null ? parseFloat(String(wgBudamRaw)) : undefined;
+    const weight =
+      wgBudamRaw != null ? parseFloat(String(wgBudamRaw)) : undefined;
     const ratingVal = v('rating');
-    const rating = ratingVal != null ? parseFloat(String(ratingVal)) : undefined;
+    const rating =
+      ratingVal != null ? parseFloat(String(ratingVal)) : undefined;
     const ageVal = v('age');
     const age = ageVal != null ? parseInt(String(ageVal), 10) : undefined;
     const chaksun1Raw = v('chaksun1') ?? v('chaksun_1');
-    const prize1 = chaksun1Raw != null ? parseInt(String(chaksun1Raw).replace(/,/g, ''), 10) : undefined;
+    const prize1 =
+      chaksun1Raw != null
+        ? parseInt(String(chaksun1Raw).replace(/,/g, ''), 10)
+        : undefined;
     const chaksunTRaw = v('chaksunT') ?? v('chaksun_t');
-    const prizeT = chaksunTRaw != null ? BigInt(parseInt(String(chaksunTRaw).replace(/,/g, ''), 10) || 0) : undefined;
+    const prizeT =
+      chaksunTRaw != null
+        ? BigInt(parseInt(String(chaksunTRaw).replace(/,/g, ''), 10) || 0)
+        : undefined;
     const rcCntTRaw = v('rcCntT') ?? v('rc_cnt_t');
-    const totalRuns = rcCntTRaw != null ? parseInt(String(rcCntTRaw), 10) : undefined;
+    const totalRuns =
+      rcCntTRaw != null ? parseInt(String(rcCntTRaw), 10) : undefined;
     const ord1CntTRaw = v('ord1CntT') ?? v('ord1_cnt_t');
-    const totalWins = ord1CntTRaw != null ? parseInt(String(ord1CntTRaw), 10) : undefined;
+    const totalWins =
+      ord1CntTRaw != null ? parseInt(String(ord1CntTRaw), 10) : undefined;
     const dusuVal = v('dusu');
     const dusu = dusuVal != null ? parseInt(String(dusuVal), 10) : undefined;
     const chulNoVal = v('chulNo') ?? v('chul_no');
@@ -455,9 +475,10 @@ export class KraService {
       try {
         const result = await this.fetchRaceResults(date, true);
         summary.processed++;
-        summary.totalResults += typeof result === 'object' && result && 'totalResults' in result
-          ? (result as { totalResults: number }).totalResults
-          : 0;
+        summary.totalResults +=
+          typeof result === 'object' && result && 'totalResults' in result
+            ? (result as { totalResults: number }).totalResults
+            : 0;
         await this.fetchTrackInfo(date);
         await this.delay(500);
       } catch (err) {
@@ -508,7 +529,6 @@ export class KraService {
     this.logger.log(`Fetching race results for date: ${date}`);
     const endpoint = 'raceResult';
 
-
     let totalResults = 0;
     const failed500Meets: string[] = [];
 
@@ -531,9 +551,15 @@ export class KraService {
           this.httpService.get(url, { params }),
         );
         let result: { response?: { body?: { items?: { item?: unknown } } } };
-        if (typeof response.data === 'object' && response.data?.response?.body?.items?.item) {
+        if (
+          typeof response.data === 'object' &&
+          response.data?.response?.body?.items?.item
+        ) {
           result = response.data as typeof result;
-        } else if (typeof response.data === 'string' && response.data.includes('<')) {
+        } else if (
+          typeof response.data === 'string' &&
+          response.data.includes('<')
+        ) {
           const parser = new xml2js.Parser({ explicitArray: false });
           result = await parser.parseStringPromise(response.data);
         } else {
@@ -549,8 +575,11 @@ export class KraService {
           : [result.response.body.items.item];
 
         // 페이지네이션: totalCount 초과 시 추가 페이지 조회
-        const body = result.response?.body as { totalCount?: number } | undefined;
-        const totalCount = body?.totalCount != null ? Number(body.totalCount) : items.length;
+        const body = result.response?.body as
+          | { totalCount?: number }
+          | undefined;
+        const totalCount =
+          body?.totalCount != null ? Number(body.totalCount) : items.length;
         if (totalCount > items.length && totalCount > 0) {
           const allItems: KraApiItem[] = [...items];
           for (let pageNo = 2; allItems.length < totalCount; pageNo++) {
@@ -599,9 +628,11 @@ export class KraService {
           const trackVal = item.track ?? item.trackState ?? item.track;
 
           if (!race && createRaceIfMissing) {
-            const meetName = item.meet && ['서울', '제주', '부산경남'].includes(String(item.meet))
-              ? String(item.meet)
-              : meet.name;
+            const meetName =
+              item.meet &&
+              ['서울', '제주', '부산경남'].includes(String(item.meet))
+                ? String(item.meet)
+                : meet.name;
             race = await this.prisma.race.upsert({
               where: {
                 meet_rcDate_rcNo: {
@@ -646,7 +677,12 @@ export class KraService {
 
           if (!race) continue;
 
-          const hrNoStr = item.hrNo != null ? String(item.hrNo) : item.hr_no != null ? String(item.hr_no) : '';
+          const hrNoStr =
+            item.hrNo != null
+              ? String(item.hrNo)
+              : item.hr_no != null
+                ? String(item.hr_no)
+                : '';
 
           // RaceEntry 연동: 결과 API만 먼저 실행된 경우 Entry 없음 → 결과 데이터로 Entry 보강
           if (hrNoStr) {
@@ -654,7 +690,8 @@ export class KraService {
               where: { raceId: race.id, hrNo: hrNoStr },
             });
             if (!existingEntry) {
-              const sv = (val: unknown) => (val != null ? String(val) : undefined);
+              const sv = (val: unknown) =>
+                val != null ? String(val) : undefined;
               await this.prisma.raceEntry.create({
                 data: {
                   raceId: race.id,
@@ -664,9 +701,17 @@ export class KraService {
                   jkName: sv(item.jkName ?? item.jk_name) ?? '',
                   trName: sv(item.trName ?? item.tr_name),
                   owName: sv(item.owName ?? item.ow_name),
-                  wgBudam: item.wgBudam != null ? parseFloat(String(item.wgBudam)) : item.wg_budam != null ? parseFloat(String(item.wg_budam)) : undefined,
+                  wgBudam:
+                    item.wgBudam != null
+                      ? parseFloat(String(item.wgBudam))
+                      : item.wg_budam != null
+                        ? parseFloat(String(item.wg_budam))
+                        : undefined,
                   chulNo: sv(item.chulNo ?? item.chul_no),
-                  age: item.age != null ? parseInt(String(item.age), 10) : undefined,
+                  age:
+                    item.age != null
+                      ? parseInt(String(item.age), 10)
+                      : undefined,
                   sex: sv(item.sex),
                 },
               });
@@ -688,17 +733,26 @@ export class KraService {
           });
 
           // KRA 응답: ord=착순, rank=등급조건. rcRank는 ord(착순) 사용.
-          const s1f = item.seS1fAccTime ?? item.buS1fAccTime ?? item.jeS1fAccTime;
-          const g3f = item.seG3fAccTime ?? item.buG3fAccTime ?? item.jeG3fAccTime;
-          const g1f = item.seG1fAccTime ?? item.buG1fAccTime ?? item.jeG1fAccTime;
+          const s1f =
+            item.seS1fAccTime ?? item.buS1fAccTime ?? item.jeS1fAccTime;
+          const g3f =
+            item.seG3fAccTime ?? item.buG3fAccTime ?? item.jeG3fAccTime;
+          const g1f =
+            item.seG1fAccTime ?? item.buG1fAccTime ?? item.jeG1fAccTime;
           const hasSectional = s1f != null || g3f != null || g1f != null;
           const sectionalTimes = hasSectional
-            ? (JSON.parse(JSON.stringify({ s1f, g3f, g1f })) as Record<string, unknown>)
+            ? (JSON.parse(JSON.stringify({ s1f, g3f, g1f })) as Record<
+                string,
+                unknown
+              >)
             : undefined;
 
           const sv = (val: unknown) => (val != null ? String(val) : undefined);
           const ordStr = sv(item.ord);
-          const ordIntVal = ordStr != null && /^\d+$/.test(ordStr) ? parseInt(ordStr, 10) : undefined;
+          const ordIntVal =
+            ordStr != null && /^\d+$/.test(ordStr)
+              ? parseInt(ordStr, 10)
+              : undefined;
           const resultData: Record<string, unknown> = {
             raceId: race.id,
             hrNo: sv(item.hrNo ?? item.hr_no) ?? '',
@@ -713,16 +767,29 @@ export class KraService {
             jkName: sv(item.jkName ?? item.jk_name),
             trName: sv(item.trName ?? item.tr_name),
             owName: sv(item.owName ?? item.ow_name),
-            wgBudam: item.wgBudam != null ? parseFloat(String(item.wgBudam)) : item.wg_budam != null ? parseFloat(String(item.wg_budam)) : undefined,
+            wgBudam:
+              item.wgBudam != null
+                ? parseFloat(String(item.wgBudam))
+                : item.wg_budam != null
+                  ? parseFloat(String(item.wg_budam))
+                  : undefined,
             wgHr: sv(item.wgHr ?? item.wg_hr),
             hrTool: sv(item.hrTool ?? item.hr_tool),
             diffUnit: sv(item.diffUnit ?? item.diff_unit),
-            winOdds: item.winOdds != null ? parseFloat(String(item.winOdds)) : undefined,
-            plcOdds: item.plcOdds != null ? parseFloat(String(item.plcOdds)) : undefined,
+            winOdds:
+              item.winOdds != null
+                ? parseFloat(String(item.winOdds))
+                : undefined,
+            plcOdds:
+              item.plcOdds != null
+                ? parseFloat(String(item.plcOdds))
+                : undefined,
             track: sv(item.track ?? item.trackState),
             weather: sv(item.weather),
-            chaksun1: item.rcPrize != null || item.chaksun1 != null
-              ? parseInt(String(item.rcPrize ?? item.chaksun1), 10) : undefined,
+            chaksun1:
+              item.rcPrize != null || item.chaksun1 != null
+                ? parseInt(String(item.rcPrize ?? item.chaksun1), 10)
+                : undefined,
           };
           if (sectionalTimes) resultData.sectionalTimes = sectionalTimes;
 
@@ -759,9 +826,10 @@ export class KraService {
         });
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
-        const errResp = error && typeof error === 'object' && 'response' in error
-          ? (error as { response?: { status?: number } }).response?.status
-          : undefined;
+        const errResp =
+          error && typeof error === 'object' && 'response' in error
+            ? (error as { response?: { status?: number } }).response?.status
+            : undefined;
         const is500 = typeof errResp === 'number' && errResp === 500;
         await this.logKraSync(endpoint, {
           meet: meet.code,
@@ -784,7 +852,10 @@ export class KraService {
       );
     }
 
-    return { message: `Synced ${totalResults} results for ${date}`, totalResults };
+    return {
+      message: `Synced ${totalResults} results for ${date}`,
+      totalResults,
+    };
   }
 
   /**
@@ -810,13 +881,18 @@ export class KraService {
         _type: 'json',
       };
 
-      const response = await firstValueFrom(this.httpService.get(url, { params }));
+      const response = await firstValueFrom(
+        this.httpService.get(url, { params }),
+      );
 
       let items: Record<string, unknown>[] = [];
       if (response.data?.response?.body?.items?.item) {
         const raw = response.data.response.body.items.item;
         items = (Array.isArray(raw) ? raw : [raw]) as KraApiItem[];
-      } else if (typeof response.data === 'string' && response.data.includes('<')) {
+      } else if (
+        typeof response.data === 'string' &&
+        response.data.includes('<')
+      ) {
         const parser = new xml2js.Parser({ explicitArray: false });
         const result = await parser.parseStringPromise(response.data);
         if (result?.response?.body?.items?.item) {
@@ -841,7 +917,8 @@ export class KraService {
       }
 
       for (const item of filtered) {
-        const v = (k: string) => item[k] ?? item[k.replace(/([A-Z])/g, '_$1').toLowerCase()];
+        const v = (k: string) =>
+          item[k] ?? item[k.replace(/([A-Z])/g, '_$1').toLowerCase()];
         const vs = (k: string) => (v(k) != null ? String(v(k)) : null);
         const hrNo = vs('hrNo') || vs('hr_no') || '';
         if (!hrNo) continue;
@@ -876,7 +953,10 @@ export class KraService {
       }
       return { message: `Fetched ${filtered.length} entries` };
     } catch (error) {
-      this.logger.error(`Failed to fetch entries for ${meet} R${raceNo}`, error);
+      this.logger.error(
+        `Failed to fetch entries for ${meet} R${raceNo}`,
+        error,
+      );
       return { message: 'Fetch failed' };
     }
   }
@@ -930,7 +1010,8 @@ export class KraService {
 
         if (!item) continue;
 
-        const v = (k: string) => item![k] ?? item![k.replace(/([A-Z])/g, '_$1').toLowerCase()];
+        const v = (k: string) =>
+          item![k] ?? item![k.replace(/([A-Z])/g, '_$1').toLowerCase()];
         const vi = (k: string) => {
           const x = v(k);
           return x != null ? parseInt(String(x), 10) : undefined;
@@ -945,7 +1026,10 @@ export class KraService {
         const rcCntT = vi('rcCntT') ?? vi('rc_cnt_t');
         const ord1CntT = vi('ord1CntT') ?? vi('ord1_cnt_t');
         const chaksunT = v('chaksunT') ?? v('chaksun_t');
-        const prizeT = chaksunT != null ? BigInt(parseInt(String(chaksunT).replace(/,/g, ''), 10) || 0) : undefined;
+        const prizeT =
+          chaksunT != null
+            ? BigInt(parseInt(String(chaksunT).replace(/,/g, ''), 10) || 0)
+            : undefined;
 
         await this.prisma.raceEntry.update({
           where: { id: entry.id },
@@ -987,7 +1071,9 @@ export class KraService {
     if (!race || race.entries.length === 0) return { message: 'No entries' };
 
     const trDateTo = this.normalizeToYyyyMmDd(date);
-    const trDateFrom = dayjs(date, 'YYYYMMDD').subtract(14, 'day').format('YYYYMMDD');
+    const trDateFrom = dayjs(date, 'YYYYMMDD')
+      .subtract(14, 'day')
+      .format('YYYYMMDD');
 
     for (const entry of race.entries) {
       if (!entry.hrNo) continue;
@@ -1034,15 +1120,23 @@ export class KraService {
               horseNo: entry.hrNo,
               trDate,
               trTime: trTime || undefined,
-              trEndTime: String(item.trEndTime ?? item.tr_end_time ?? '') || undefined,
-              trDuration: String(item.trDuration ?? item.tr_duration ?? '') || undefined,
+              trEndTime:
+                String(item.trEndTime ?? item.tr_end_time ?? '') || undefined,
+              trDuration:
+                String(item.trDuration ?? item.tr_duration ?? '') || undefined,
               trContent: trContent || undefined,
               trType: trType || undefined,
-              managerType: String(item.managerType ?? item.manager_type ?? '') || undefined,
-              managerName: String(item.managerName ?? item.manager_name ?? '') || undefined,
+              managerType:
+                String(item.managerType ?? item.manager_type ?? '') ||
+                undefined,
+              managerName:
+                String(item.managerName ?? item.manager_name ?? '') ||
+                undefined,
               place: place || undefined,
               weather: String(item.weather ?? '') || undefined,
-              trackCondition: String(item.trackCondition ?? item.track_condition ?? '') || undefined,
+              trackCondition:
+                String(item.trackCondition ?? item.track_condition ?? '') ||
+                undefined,
               intensity: intensity || undefined,
             },
           });
@@ -1053,7 +1147,10 @@ export class KraService {
           await this.prisma.raceEntry.update({
             where: { id: entry.id },
             data: {
-              trainingData: { count: items.length, summary: trainingSummaries.slice(-7) } as Prisma.InputJsonValue,
+              trainingData: {
+                count: items.length,
+                summary: trainingSummaries.slice(-7),
+              } as Prisma.InputJsonValue,
             },
           });
         }
@@ -1102,7 +1199,9 @@ export class KraService {
         // Handle JSON or XML response safely
         if (response.data?.response?.body?.items?.item) {
           const rawItems = response.data.response.body.items.item;
-          items = (Array.isArray(rawItems) ? rawItems : [rawItems]) as KraApiItem[];
+          items = (
+            Array.isArray(rawItems) ? rawItems : [rawItems]
+          ) as KraApiItem[];
         } else if (
           typeof response.data === 'string' &&
           response.data.includes('<')
@@ -1111,7 +1210,9 @@ export class KraService {
           const result = await parser.parseStringPromise(response.data);
           if (result?.response?.body?.items?.item) {
             const rawItems = result.response.body.items.item;
-            items = (Array.isArray(rawItems) ? rawItems : [rawItems]) as KraApiItem[];
+            items = (
+              Array.isArray(rawItems) ? rawItems : [rawItems]
+            ) as KraApiItem[];
           }
         }
 
@@ -1126,13 +1227,23 @@ export class KraService {
           if (!jkNo) continue;
 
           const jkName = String(item.jkName ?? item.jk_name ?? '');
-          const rcCntT = parseInt(String(item.rcCntT ?? item.rc_cnt_t ?? ''), 10) || 0;
-          const ord1CntT = parseInt(String(item.ord1CntT ?? item.ord1_cnt_t ?? ''), 10) || 0;
-          const ord2CntT = parseInt(String(item.ord2CntT ?? item.ord2_cnt_t ?? ''), 10) || 0;
-          const ord3CntT = parseInt(String(item.ord3CntT ?? item.ord3_cnt_t ?? ''), 10) || 0;
-          const winRateTsum = parseFloat(String(item.winRateTsum ?? item.win_rate_tsum ?? '')) || 0.0;
-          const quRateTsum = parseFloat(String(item.quRateTsum ?? item.qu_rate_tsum ?? '')) || 0.0;
-          const chaksunStr = String(item.chaksunT ?? item.chaksun_t ?? '').replace(/,/g, '');
+          const rcCntT =
+            parseInt(String(item.rcCntT ?? item.rc_cnt_t ?? ''), 10) || 0;
+          const ord1CntT =
+            parseInt(String(item.ord1CntT ?? item.ord1_cnt_t ?? ''), 10) || 0;
+          const ord2CntT =
+            parseInt(String(item.ord2CntT ?? item.ord2_cnt_t ?? ''), 10) || 0;
+          const ord3CntT =
+            parseInt(String(item.ord3CntT ?? item.ord3_cnt_t ?? ''), 10) || 0;
+          const winRateTsum =
+            parseFloat(String(item.winRateTsum ?? item.win_rate_tsum ?? '')) ||
+            0.0;
+          const quRateTsum =
+            parseFloat(String(item.quRateTsum ?? item.qu_rate_tsum ?? '')) ||
+            0.0;
+          const chaksunStr = String(
+            item.chaksunT ?? item.chaksun_t ?? '',
+          ).replace(/,/g, '');
           const chaksunT = BigInt(parseInt(chaksunStr, 10) || 0);
 
           await this.prisma.jockeyResult.upsert({
@@ -1235,7 +1346,7 @@ export class KraService {
               data: {
                 weather: item.weather ?? race.weather,
                 track:
-                  item.track ?? item.moisture
+                  (item.track ?? item.moisture)
                     ? `${item.track ?? ''} (함수율 ${item.moisture ?? '-'}%)`
                     : race.track,
               },
@@ -1258,10 +1369,7 @@ export class KraService {
           errorMessage: error instanceof Error ? error.message : String(error),
           durationMs: Date.now() - start,
         });
-        this.logger.error(
-          `Failed to fetch track info for ${meet.name}`,
-          error,
-        );
+        this.logger.error(`Failed to fetch track info for ${meet.name}`, error);
       }
     }
   }
@@ -1387,7 +1495,8 @@ export class KraService {
             await this.prisma.raceEntry.update({
               where: { id: entry.id },
               data: {
-                equipment: item.hrTool ?? item.equipment ?? item.equipChange ?? null,
+                equipment:
+                  item.hrTool ?? item.equipment ?? item.equipChange ?? null,
                 bleedingInfo:
                   item.bleCnt != null ||
                   item.bleDate != null ||
@@ -1542,16 +1651,50 @@ export class KraService {
    * 샘플 경주 데이터 적재 (KRA API 키 없이 개발용)
    * Admin에서 호출하여 즉시 테스트 데이터 로드
    */
-  async seedSampleRaces(date?: string): Promise<{ races: number; entries: number; rcDate: string }> {
-    const rcDate = date ? this.normalizeToYyyyMmDd(date) : this.getTodayDateString();
+  async seedSampleRaces(
+    date?: string,
+  ): Promise<{ races: number; entries: number; rcDate: string }> {
+    const rcDate = date
+      ? this.normalizeToYyyyMmDd(date)
+      : this.getTodayDateString();
 
     const MEETS = [KRA_MEETS[0], KRA_MEETS[2]]; // 서울, 부산경남 (샘플용)
     const ENTRIES = [
-      { hrNo: '001', hrName: '다크호스', jkName: '김기수', trName: '이조교', wgBudam: 56 },
-      { hrNo: '002', hrName: '썬더볼트', jkName: '박기수', trName: '최조교', wgBudam: 55 },
-      { hrNo: '003', hrName: '스타더스트', jkName: '정기수', trName: '김조교', wgBudam: 57 },
-      { hrNo: '004', hrName: '라이팅킹', jkName: '강기수', trName: '박조교', wgBudam: 56 },
-      { hrNo: '005', hrName: '실버문', jkName: '조기수', trName: '정조교', wgBudam: 54 },
+      {
+        hrNo: '001',
+        hrName: '다크호스',
+        jkName: '김기수',
+        trName: '이조교',
+        wgBudam: 56,
+      },
+      {
+        hrNo: '002',
+        hrName: '썬더볼트',
+        jkName: '박기수',
+        trName: '최조교',
+        wgBudam: 55,
+      },
+      {
+        hrNo: '003',
+        hrName: '스타더스트',
+        jkName: '정기수',
+        trName: '김조교',
+        wgBudam: 57,
+      },
+      {
+        hrNo: '004',
+        hrName: '라이팅킹',
+        jkName: '강기수',
+        trName: '박조교',
+        wgBudam: 56,
+      },
+      {
+        hrNo: '005',
+        hrName: '실버문',
+        jkName: '조기수',
+        trName: '정조교',
+        wgBudam: 54,
+      },
     ];
 
     let raceCount = 0;
@@ -1604,7 +1747,10 @@ export class KraService {
             ord1CntT: 3,
           };
           if (existing) {
-            await this.prisma.raceEntry.update({ where: { id: existing.id }, data });
+            await this.prisma.raceEntry.update({
+              where: { id: existing.id },
+              data,
+            });
           } else {
             await this.prisma.raceEntry.create({ data });
           }
@@ -1613,7 +1759,9 @@ export class KraService {
       }
     }
 
-    this.logger.log(`Sample races seeded: ${raceCount} races, ${entryCount} entries for ${rcDate}`);
+    this.logger.log(
+      `Sample races seeded: ${raceCount} races, ${entryCount} entries for ${rcDate}`,
+    );
     return { races: raceCount, entries: entryCount, rcDate };
   }
 }

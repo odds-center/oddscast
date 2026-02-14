@@ -10,11 +10,70 @@ export interface PredictionHorseScore {
   chulNo?: string;
 }
 
+/** 승식별 AI 예측 — 각 승식마다 별도 추천 */
+export interface BetTypePredictionSingle {
+  hrNo: string;
+  reason?: string;
+}
+export interface BetTypePredictionPair {
+  hrNos: [string, string];
+  reason?: string;
+}
+export interface BetTypePredictionExacta {
+  first: string;
+  second: string;
+  reason?: string;
+}
+export interface BetTypePredictionTriple {
+  hrNos: [string, string, string];
+  reason?: string;
+}
+export interface BetTypePredictionTripleExact {
+  first: string;
+  second: string;
+  third: string;
+  reason?: string;
+}
+
+/** 2마리/3마리 승식 — 3개 조합 예시 (연승·쌍승·복연승·삼복승·삼쌍승) */
+export interface BetTypePredictionPairMulti {
+  combinations: BetTypePredictionPair[];
+  reason?: string;
+}
+export interface BetTypePredictionExactaMulti {
+  combinations: BetTypePredictionExacta[];
+  reason?: string;
+}
+export interface BetTypePredictionTripleMulti {
+  combinations: BetTypePredictionTriple[];
+  reason?: string;
+}
+export interface BetTypePredictionTripleExactMulti {
+  combinations: BetTypePredictionTripleExact[];
+  reason?: string;
+}
+
+export interface BetTypePredictions {
+  SINGLE?: BetTypePredictionSingle;
+  PLACE?: BetTypePredictionSingle;
+  /** 연승식: 3개 조합 (서로 다름) */
+  QUINELLA?: BetTypePredictionPair | BetTypePredictionPairMulti;
+  /** 쌍승식: 3개 조합 */
+  EXACTA?: BetTypePredictionExacta | BetTypePredictionExactaMulti;
+  /** 복연승식: 3개 조합 */
+  QUINELLA_PLACE?: BetTypePredictionPair | BetTypePredictionPairMulti;
+  /** 삼복승식: 3개 조합 */
+  TRIFECTA?: BetTypePredictionTriple | BetTypePredictionTripleMulti;
+  /** 삼쌍승식: 3개 조합 */
+  TRIPLE?: BetTypePredictionTripleExact | BetTypePredictionTripleExactMulti;
+}
+
 /**
  * AI 예측 scores 객체 (경주 상세 표시용)
  */
 export interface PredictionScoresDto {
   horseScores?: PredictionHorseScore[];
+  betTypePredictions?: BetTypePredictions;
 }
 
 /**
@@ -70,15 +129,19 @@ export interface PredictionStatusDto {
 }
 
 /**
- * 예측 미리보기 (블러 처리용)
+ * 예측 미리보기 (블러 처리용, GET /predictions/race/:raceId/preview 응답)
  */
 export interface PredictionPreview {
-  raceId: string;
-  hasPrediction: boolean;
+  raceId?: string;
+  hasPrediction?: boolean;
   confidence?: number;
-  requiresTicket: boolean;
-  message: string;
+  requiresTicket?: boolean;
+  message?: string;
   status?: 'pending' | 'completed' | 'failed';
+  /** DB 저장 예측의 요약 텍스트 (previewApproved 시) */
+  preview?: string;
+  analysis?: string;
+  scores?: PredictionScoresDto;
 }
 
 /**

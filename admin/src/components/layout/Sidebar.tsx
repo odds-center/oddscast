@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Database,
 } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 const navigation = [
   { name: '대시보드', href: '/', icon: LayoutDashboard },
@@ -62,13 +63,13 @@ export default function Sidebar() {
                           }
                         `}
                       >
-                        <item.icon
+                        <AdminIcon
+                          icon={item.icon}
                           className={`h-5 w-5 shrink-0 ${
                             isActive
                               ? 'text-primary-600'
                               : 'text-gray-400 group-hover:text-primary-600'
                           }`}
-                          aria-hidden='true'
                         />
                         {item.name}
                       </Link>

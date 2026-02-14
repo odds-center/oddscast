@@ -159,7 +159,10 @@ export class RacesController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '출전마 등록' })
-  createEntry(@Param('id', ParseIntPipe) raceId: number, @Body() dto: CreateRaceEntryDto) {
+  createEntry(
+    @Param('id', ParseIntPipe) raceId: number,
+    @Body() dto: CreateRaceEntryDto,
+  ) {
     return this.racesService.createEntry(raceId, dto);
   }
 

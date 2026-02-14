@@ -8,7 +8,13 @@ import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
 
 @Module({
-  imports: [HttpModule, ScheduleModule.forRoot(), PrismaModule, ConfigModule, CacheModule],
+  imports: [
+    HttpModule,
+    ScheduleModule.forRoot(),
+    PrismaModule,
+    ConfigModule,
+    CacheModule,
+  ],
   controllers: [KraController],
   providers: [KraService],
   exports: [KraService],

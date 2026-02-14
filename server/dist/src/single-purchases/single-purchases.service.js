@@ -100,7 +100,9 @@ let SinglePurchasesService = class SinglePurchasesService {
         const merged = {
             ...current,
             ...data,
-            vat: data.originalPrice != null ? Math.round(data.originalPrice * 0.1) : current.vat,
+            vat: data.originalPrice != null
+                ? Math.round(data.originalPrice * 0.1)
+                : current.vat,
             totalPrice: data.originalPrice != null
                 ? data.originalPrice + Math.round(data.originalPrice * 0.1)
                 : current.totalPrice,

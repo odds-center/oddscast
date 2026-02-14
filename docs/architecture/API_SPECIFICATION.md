@@ -461,6 +461,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `PATCH`| `/admin/users/:id`            | 사용자 수정             | 🔐 Admin    |
 | `PATCH`| `/admin/users/:id/activate`   | 사용자 활성화           | 🔐 Admin    |
 | `PATCH`| `/admin/users/:id/deactivate` | 사용자 비활성화         | 🔐 Admin    |
+| `POST` | `/admin/users/:id/grant-tickets` | 예측권 지급 (관리자 발급) | 🔐 Admin |
 | `DELETE`| `/admin/users/:id`           | 사용자 삭제(비활성화)   | 🔐 Admin    |
 | `GET`  | `/admin/ai/config`            | AI 설정 조회 (Gemini)   | 🔐 Admin    |
 | `POST` | `/admin/ai/config`            | AI 설정 저장            | 🔐 Admin    |

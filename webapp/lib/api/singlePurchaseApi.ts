@@ -62,7 +62,7 @@ export default class SinglePurchasesApi {
    */
   static async getHistory(limit = 50, offset = 0) {
     try {
-      const response = await axiosInstance.get<ApiResponse<any[]>>('/single-purchases/history', {
+      const response = await axiosInstance.get<ApiResponse<unknown[]>>('/single-purchases/history', {
         params: { limit, offset },
       });
       return handleApiResponse(response);

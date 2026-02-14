@@ -6,7 +6,6 @@ import {
   UseGuards,
   Param,
   Body,
-  Put,
   Patch,
   Delete,
   ParseIntPipe,
@@ -23,6 +22,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SinglePurchasesService } from '../single-purchases/single-purchases.service';
+import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { UpdateUserDto } from '../users/dto/user.dto';
 
 @ApiTags('Admin')
@@ -39,6 +39,7 @@ export class AdminController {
     private readonly subscriptionsService: SubscriptionsService,
     private readonly notificationsService: NotificationsService,
     private readonly singlePurchasesService: SinglePurchasesService,
+    private readonly predictionTicketsService: PredictionTicketsService,
   ) {}
 
   // --- KRA Data Sync Endpoints ---
@@ -90,7 +91,9 @@ export class AdminController {
   }
 
   @Post('kra/seed-sample')
-  @ApiOperation({ summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)' })
+  @ApiOperation({
+    summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)',
+  })
   async seedSample(@Query('date') date?: string) {
     return this.kraService.seedSampleRaces(date);
   }
@@ -179,6 +182,20 @@ export class AdminController {
     return this.usersService.update(id, { isActive: false } as UpdateUserDto);
   }
 
+  @Post('users/:id/grant-tickets')
+  @ApiOperation({ summary: '[Admin] 사용자에게 예측권 지급' })
+  async grantTickets(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { count: number; expiresInDays?: number },
+  ) {
+    const count = Math.min(100, Math.max(1, Number(body.count) || 1));
+    const expiresInDays = Math.min(
+      365,
+      Math.max(1, Number(body.expiresInDays) || 30),
+    );
+    return this.predictionTicketsService.grantTickets(id, count, expiresInDays);
+  }
+
   // --- AI Config (Gemini) ---
 
   @Get('ai/config')
@@ -187,13 +204,15 @@ export class AdminController {
     const raw = await this.configService.get('ai_config');
     const defaults = {
       llmProvider: 'gemini',
-      primaryModel: 'gemini-1.5-pro',
+      primaryModel: 'gemini-2.5-flash',
       availableModels: [
+        'gemini-2.5-flash',
+        'gemini-2.0-flash',
         'gemini-2.0-flash-exp',
-        'gemini-1.5-pro',
-        'gemini-1.5-pro-002',
         'gemini-1.5-flash',
         'gemini-1.5-flash-8b',
+        'gemini-1.5-pro',
+        'gemini-1.5-pro-002',
         'gemini-pro',
       ],
       fallbackModels: ['gemini-1.5-flash', 'gemini-pro'],
@@ -226,26 +245,41 @@ export class AdminController {
   async getSystemConfig() {
     const all = await this.configService.getAll();
     return {
-      show_google_login: all.show_google_login === 'true' || all.show_google_login === '1',
+      show_google_login:
+        all.show_google_login === 'true' || all.show_google_login === '1',
       kra_base_url_override: all.kra_base_url_override || '',
     };
   }
 
   @Patch('config/system')
   @ApiOperation({ summary: '[Admin] 시스템 설정 저장' })
-  async updateSystemConfig(@Body() body: { show_google_login?: boolean; kra_base_url_override?: string }) {
+  async updateSystemConfig(
+    @Body()
+    body: {
+      show_google_login?: boolean;
+      kra_base_url_override?: string;
+    },
+  ) {
     if (body.show_google_login !== undefined) {
-      await this.configService.set('show_google_login', body.show_google_login ? 'true' : 'false');
+      await this.configService.set(
+        'show_google_login',
+        body.show_google_login ? 'true' : 'false',
+      );
     }
     if (body.kra_base_url_override !== undefined) {
-      await this.configService.set('kra_base_url_override', String(body.kra_base_url_override));
+      await this.configService.set(
+        'kra_base_url_override',
+        String(body.kra_base_url_override),
+      );
     }
     return this.getSystemConfig();
   }
 
   /** 경주당 비용 (원) - Admin ai-config와 동일 */
   private static readonly MODEL_COST: Record<string, number> = {
+    'gemini-2.5-flash': 5,
     'gemini-2.0-flash-exp': 5,
+    'gemini-2.0-flash': 5,
     'gemini-1.5-pro': 12,
     'gemini-1.5-pro-002': 12,
     'gemini-1.5-flash': 4,
@@ -265,15 +299,19 @@ export class AdminController {
       budget: 1200,
     };
     const rawMonthly =
-      typeof config.primaryModel === 'string' && AdminController.MODEL_COST[config.primaryModel] != null
-        ? AdminController.MODEL_COST[config.primaryModel] * AdminController.RACES_PER_MONTH
-        : strategyMonthly[config.costStrategy ?? 'balanced'] ?? 3600;
+      typeof config.primaryModel === 'string' &&
+      AdminController.MODEL_COST[config.primaryModel] != null
+        ? AdminController.MODEL_COST[config.primaryModel] *
+          AdminController.RACES_PER_MONTH
+        : (strategyMonthly[config.costStrategy ?? 'balanced'] ?? 3600);
     const modelCost =
       typeof config.primaryModel === 'string'
-        ? AdminController.MODEL_COST[config.primaryModel] ?? 12
+        ? (AdminController.MODEL_COST[config.primaryModel] ?? 12)
         : rawMonthly / AdminController.RACES_PER_MONTH;
     const enableCaching = config.enableCaching ?? true;
-    const estimatedMonthlyCost = enableCaching ? Math.round(rawMonthly * 0.01) : rawMonthly;
+    const estimatedMonthlyCost = enableCaching
+      ? Math.round(rawMonthly * 0.01)
+      : rawMonthly;
     return {
       estimatedMonthlyCost,
       primaryModel: config.primaryModel ?? null,
@@ -328,7 +366,10 @@ export class AdminController {
   async getBet(@Param('id', ParseIntPipe) id: number) {
     return this.prisma.bet.findUnique({
       where: { id },
-      include: { race: true, user: { select: { id: true, email: true, name: true } } },
+      include: {
+        race: true,
+        user: { select: { id: true, email: true, name: true } },
+      },
     });
   }
 
@@ -350,7 +391,10 @@ export class AdminController {
 
   @Patch('subscriptions/plans/:id')
   @ApiOperation({ summary: '[Admin] 구독 플랜 수정' })
-  async updateSubscriptionPlan(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  async updateSubscriptionPlan(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: any,
+  ) {
     return this.subscriptionsService.updatePlan(id, body);
   }
 
@@ -367,7 +411,9 @@ export class AdminController {
 
   @Post('notifications/send')
   @ApiOperation({ summary: '[Admin] 대상별 알림 발송' })
-  async sendNotification(@Body() body: { title: string; message: string; target: string }) {
+  async sendNotification(
+    @Body() body: { title: string; message: string; target: string },
+  ) {
     return this.notificationsService.adminSend(body);
   }
 
@@ -539,7 +585,10 @@ export class AdminController {
       select: { betAmount: true, actualWin: true, betTime: true },
     });
 
-    const byDate: Record<string, { count: number; amount: number; winAmount: number }> = {};
+    const byDate: Record<
+      string,
+      { count: number; amount: number; winAmount: number }
+    > = {};
     for (let i = 0; i < d; i++) {
       const dt = new Date(start);
       dt.setDate(dt.getDate() + i);

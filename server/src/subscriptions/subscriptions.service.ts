@@ -34,7 +34,9 @@ export class SubscriptionsService {
       where: { userId, status: 'ACTIVE' },
     });
     if (hasActive) {
-      throw new BadRequestException('이미 활성 구독이 있습니다. 취소 후 다시 신청해 주세요.');
+      throw new BadRequestException(
+        '이미 활성 구독이 있습니다. 취소 후 다시 신청해 주세요.',
+      );
     }
 
     const plan = await this.resolvePlan(dto.planId);

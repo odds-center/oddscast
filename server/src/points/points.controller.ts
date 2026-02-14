@@ -100,7 +100,10 @@ export class PointsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '포인트 트랜잭션 조회' })
-  getTransactions(@Param('userId', ParseIntPipe) userId: number, @Query() filters: any) {
+  getTransactions(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() filters: any,
+  ) {
     return this.pointsService.getTransactions(userId, filters);
   }
 

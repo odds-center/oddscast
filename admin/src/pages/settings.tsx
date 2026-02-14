@@ -12,6 +12,7 @@ import { useRouter } from 'next/router';
 import { authApi } from '@/lib/api/auth';
 import { adminSystemConfigApi, adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Settings, Database, ExternalLink } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 import toast from 'react-hot-toast';
 
 type SystemConfigForm = {
@@ -111,7 +112,7 @@ export default function SettingsPage() {
                   href='/ai-config'
                   className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Bot className='w-5 h-5 text-blue-600' />
+                  <AdminIcon icon={Bot} className='w-5 h-5 text-blue-600' />
                   <div className='flex-1'>
                     <div className='font-medium text-sm text-gray-900'>AI 설정 (Gemini)</div>
                     <div className='text-sm text-gray-500'>
@@ -137,29 +138,29 @@ export default function SettingsPage() {
                       )}
                     </div>
                   </div>
-                  <ExternalLink className='w-4 h-4 text-gray-400' />
+                  <AdminIcon icon={ExternalLink} className='w-4 h-4 text-gray-400' />
                 </Link>
                 <Link
                   href='/single-purchase-config'
                   className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Database className='w-5 h-5 text-green-600' />
+                  <AdminIcon icon={Database} className='w-5 h-5 text-green-600' />
                   <div className='flex-1'>
                     <div className='font-medium text-sm text-gray-900'>개별 구매 설정</div>
                     <div className='text-sm text-gray-500'>예측권 단건 가격 등</div>
                   </div>
-                  <ExternalLink className='w-4 h-4 text-gray-400' />
+                  <AdminIcon icon={ExternalLink} className='w-4 h-4 text-gray-400' />
                 </Link>
                 <Link
                   href='/subscription-plans'
                   className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
                 >
-                  <Settings className='w-5 h-5 text-purple-600' />
+                  <AdminIcon icon={Settings} className='w-5 h-5 text-purple-600' />
                   <div className='flex-1'>
                     <div className='font-medium text-sm text-gray-900'>구독 플랜</div>
                     <div className='text-sm text-gray-500'>LIGHT, PREMIUM 플랜 관리</div>
                   </div>
-                  <ExternalLink className='w-4 h-4 text-gray-400' />
+                  <AdminIcon icon={ExternalLink} className='w-4 h-4 text-gray-400' />
                 </Link>
               </div>
             </Card>

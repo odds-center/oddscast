@@ -30,7 +30,9 @@ class ActivateSubscriptionDto {
 }
 exports.ActivateSubscriptionDto = ActivateSubscriptionDto;
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: 'PG 빌링키 (subscribe 시 이미 있으면 생략 가능)' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'PG 빌링키 (subscribe 시 이미 있으면 생략 가능)',
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)

@@ -25,10 +25,7 @@ export class ConfigController {
   @Roles(UserRole.ADMIN)
   @ApiBearerAuth()
   @ApiOperation({ summary: '[Admin] 설정 값 변경' })
-  async set(
-    @Param('key') key: string,
-    @Body() body: { value: string },
-  ) {
+  async set(@Param('key') key: string, @Body() body: { value: string }) {
     await this.configService.set(key, body.value);
     return { key, value: body.value };
   }

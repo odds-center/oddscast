@@ -162,14 +162,20 @@ export class NotificationsService {
   }
 
   /** 알림 설정 수정 */
-  async updatePreferences(userId: number, dto: UpdateNotificationPreferenceDto) {
+  async updatePreferences(
+    userId: number,
+    dto: UpdateNotificationPreferenceDto,
+  ) {
     const data: Record<string, boolean> = {};
     if (dto.pushEnabled !== undefined) data.pushEnabled = dto.pushEnabled;
     if (dto.raceEnabled !== undefined) data.raceEnabled = dto.raceEnabled;
-    if (dto.predictionEnabled !== undefined) data.predictionEnabled = dto.predictionEnabled;
-    if (dto.subscriptionEnabled !== undefined) data.subscriptionEnabled = dto.subscriptionEnabled;
+    if (dto.predictionEnabled !== undefined)
+      data.predictionEnabled = dto.predictionEnabled;
+    if (dto.subscriptionEnabled !== undefined)
+      data.subscriptionEnabled = dto.subscriptionEnabled;
     if (dto.systemEnabled !== undefined) data.systemEnabled = dto.systemEnabled;
-    if (dto.promotionEnabled !== undefined) data.promotionEnabled = dto.promotionEnabled;
+    if (dto.promotionEnabled !== undefined)
+      data.promotionEnabled = dto.promotionEnabled;
 
     return this.prisma.userNotificationPreference.upsert({
       where: { userId },
@@ -190,7 +196,10 @@ export class NotificationsService {
       }),
       this.prisma.notification.count(),
     ]);
-    return { data: notifications, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data: notifications,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   /** Admin: 대상별 알림 발송 (all | active | subscribers) - DB 저장 + Expo Push */
@@ -276,6 +285,10 @@ export class NotificationsService {
       this.logger.error('Expo push send error', err);
     }
 
-    return { count: created.count, pushSent, message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송` };
+    return {
+      count: created.count,
+      pushSent,
+      message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송`,
+    };
   }
 }

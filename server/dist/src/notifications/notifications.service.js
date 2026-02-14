@@ -176,7 +176,10 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
             }),
             this.prisma.notification.count(),
         ]);
-        return { data: notifications, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+        return {
+            data: notifications,
+            meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+        };
     }
     async adminSend(data) {
         let userIds = [];
@@ -258,7 +261,11 @@ let NotificationsService = NotificationsService_1 = class NotificationsService {
         catch (err) {
             this.logger.error('Expo push send error', err);
         }
-        return { count: created.count, pushSent, message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송` };
+        return {
+            count: created.count,
+            pushSent,
+            message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송`,
+        };
     }
 };
 exports.NotificationsService = NotificationsService;

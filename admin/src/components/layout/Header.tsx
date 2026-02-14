@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Bell, User, LogOut } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 import { authApi } from '@/lib/api/auth';
 import { useAuth } from '@/lib/hooks/useAuth';
 
@@ -22,7 +23,7 @@ export default function Header() {
         <div className='flex items-center gap-x-4 lg:gap-x-6'>
           <button type='button' className='-m-2.5 p-2.5 text-gray-400 hover:text-gray-500'>
             <span className='sr-only'>알림 보기</span>
-            <Bell className='h-5 w-5' aria-hidden='true' />
+            <AdminIcon icon={Bell} className='h-5 w-5' />
           </button>
 
           <div className='hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200' aria-hidden='true' />
@@ -35,7 +36,7 @@ export default function Header() {
             >
               <span className='sr-only'>사용자 메뉴 열기</span>
               <div className='h-7 w-7 rounded-full bg-gray-200 flex items-center justify-center'>
-                <User className='h-4 w-4 text-gray-600' />
+                <AdminIcon icon={User} className='h-4 w-4 text-gray-600' />
               </div>
               <span className='hidden lg:flex lg:items-center'>
                 <span className='ml-2 text-sm font-medium text-gray-900'>
@@ -55,7 +56,7 @@ export default function Header() {
                     onClick={handleLogout}
                     className='flex w-full items-center gap-1.5 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100'
                   >
-                    <LogOut className='h-4 w-4' />
+                    <AdminIcon icon={LogOut} className='h-4 w-4' />
                     로그아웃
                   </button>
                 </div>

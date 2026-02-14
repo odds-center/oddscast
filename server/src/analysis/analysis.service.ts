@@ -40,7 +40,9 @@ export class AnalysisService {
       pythonProcess.on('close', (code) => {
         if (code !== 0) {
           reject(
-            new Error(`Python script failed (${code}): ${errorString || dataString}`),
+            new Error(
+              `Python script failed (${code}): ${errorString || dataString}`,
+            ),
           );
         } else {
           try {
@@ -110,8 +112,11 @@ export class AnalysisService {
       Busan: '3',
     };
     const meet =
-      meetMap[String(race.meet)] ?? (String(race.meet).replace(/[^123]/g, '') || '1');
-    const jockeyNos = [...new Set(race.entries.map((e) => e.jkNo).filter(Boolean))] as string[];
+      meetMap[String(race.meet)] ??
+      (String(race.meet).replace(/[^123]/g, '') || '1');
+    const jockeyNos = [
+      ...new Set(race.entries.map((e) => e.jkNo).filter(Boolean)),
+    ] as string[];
 
     const jockeys = await this.prisma.jockeyResult.findMany({
       where: {

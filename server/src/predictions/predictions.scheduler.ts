@@ -26,7 +26,9 @@ export class PredictionsScheduler {
     const raw = await this.configService.get('ai_config');
     const config = raw ? JSON.parse(raw) : {};
     if (config.enableBatchPrediction === false) {
-      this.logger.log('[Cron] Batch prediction disabled in ai_config, skipping');
+      this.logger.log(
+        '[Cron] Batch prediction disabled in ai_config, skipping',
+      );
       return;
     }
     const today = dayjs().format('YYYYMMDD');
@@ -56,7 +58,9 @@ export class PredictionsScheduler {
       try {
         await this.predictionsService.generatePrediction(race.id);
         ok++;
-        this.logger.log(`[Cron] Prediction generated: ${race.meet} R${race.rcNo}`);
+        this.logger.log(
+          `[Cron] Prediction generated: ${race.meet} R${race.rcNo}`,
+        );
       } catch (err) {
         fail++;
         this.logger.error(

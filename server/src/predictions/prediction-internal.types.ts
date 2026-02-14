@@ -34,7 +34,22 @@ export interface RaceEntryForAnalysis {
   equipment?: string;
   bleedingInfo?: unknown;
   isScratched?: boolean;
-  trainings?: Array<{ trDate?: string; intensity?: string; trTime?: string; trContent?: string }>;
+  /** KRA: 성별 (암/수/거) — 혈통·나이 분석용 */
+  sex?: string | null;
+  /** KRA: 연령 — 혈통·나이 분석용 */
+  age?: number | null;
+  /** KRA: 산지(출생지) — 혈통 분석용 */
+  prd?: string | null;
+  /** KRA: 1착상금 — 저평가 탐지용 */
+  chaksun1?: number | null;
+  /** KRA: 통산수득상금 (BigInt) — 저평가 탐지용 */
+  chaksunT?: bigint | number | null;
+  trainings?: Array<{
+    trDate?: string;
+    intensity?: string;
+    trTime?: string;
+    trContent?: string;
+  }>;
   trainingData?: unknown;
 }
 
@@ -45,6 +60,66 @@ export interface HorseAnalysisItem {
   ratingScore?: number;
   momentumScore?: number;
   experienceBonus?: number;
+}
+
+/** 승식별 예측 — Gemini가 각 승식별로 별도 추천 출력 */
+export interface BetTypePredictionSingle {
+  hrNo: string;
+  reason?: string;
+}
+export interface BetTypePredictionPair {
+  hrNos: [string, string];
+  reason?: string;
+}
+export interface BetTypePredictionExacta {
+  first: string; // 1등 hrNo
+  second: string; // 2등 hrNo
+  reason?: string;
+}
+export interface BetTypePredictionTriple {
+  hrNos: [string, string, string];
+  reason?: string;
+}
+export interface BetTypePredictionTripleExact {
+  first: string;
+  second: string;
+  third: string;
+  reason?: string;
+}
+
+/** 2마리/3마리 승식 — 3개 조합 (연승·쌍승·복연승·삼복승·삼쌍승) */
+export interface BetTypePredictionPairMulti {
+  combinations: BetTypePredictionPair[];
+  reason?: string;
+}
+export interface BetTypePredictionExactaMulti {
+  combinations: BetTypePredictionExacta[];
+  reason?: string;
+}
+export interface BetTypePredictionTripleMulti {
+  combinations: BetTypePredictionTriple[];
+  reason?: string;
+}
+export interface BetTypePredictionTripleExactMulti {
+  combinations: BetTypePredictionTripleExact[];
+  reason?: string;
+}
+
+export interface BetTypePredictions {
+  /** 단승식: 1등 1마리 */
+  SINGLE?: BetTypePredictionSingle;
+  /** 복승식: 1~3등 1마리 */
+  PLACE?: BetTypePredictionSingle;
+  /** 연승식: 3개 조합 */
+  QUINELLA?: BetTypePredictionPair | BetTypePredictionPairMulti;
+  /** 쌍승식: 3개 조합 */
+  EXACTA?: BetTypePredictionExacta | BetTypePredictionExactaMulti;
+  /** 복연승식: 3개 조합 */
+  QUINELLA_PLACE?: BetTypePredictionPair | BetTypePredictionPairMulti;
+  /** 삼복승식: 3개 조합 */
+  TRIFECTA?: BetTypePredictionTriple | BetTypePredictionTripleMulti;
+  /** 삼쌍승식: 3개 조합 */
+  TRIPLE?: BetTypePredictionTripleExact | BetTypePredictionTripleExactMulti;
 }
 
 /** Gemini JSON 응답 */
@@ -60,6 +135,8 @@ export interface GeminiPredictionJson {
       confidence?: string;
     }>;
   };
+  /** 승식별 별도 AI 예측 — 각 승식마다 구체적 추천 */
+  betTypePredictions?: BetTypePredictions;
   analysis?: string;
   preview?: string;
 }

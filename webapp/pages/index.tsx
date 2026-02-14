@@ -23,7 +23,7 @@ export default function Home() {
   const setAuth = useAuthStore((s) => s.setAuth);
 
   useEffect(() => {
-    setIsNative(NativeBridge.isNativeApp());
+    queueMicrotask(() => setIsNative(NativeBridge.isNativeApp()));
     const unsubSuccess = NativeBridge.subscribe(
       'LOGIN_SUCCESS',
       async (payload: unknown) => {

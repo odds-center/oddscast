@@ -56,7 +56,12 @@ export class BetsService {
       this.prisma.bet.count({ where }),
     ]);
 
-    return { bets: serializeItemsWithRace(bets), total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      bets: serializeItemsWithRace(bets),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: number) {

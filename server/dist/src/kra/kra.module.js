@@ -20,7 +20,13 @@ let KraModule = class KraModule {
 exports.KraModule = KraModule;
 exports.KraModule = KraModule = __decorate([
     (0, common_1.Module)({
-        imports: [axios_1.HttpModule, schedule_1.ScheduleModule.forRoot(), prisma_module_1.PrismaModule, config_1.ConfigModule, cache_module_1.CacheModule],
+        imports: [
+            axios_1.HttpModule,
+            schedule_1.ScheduleModule.forRoot(),
+            prisma_module_1.PrismaModule,
+            config_1.ConfigModule,
+            cache_module_1.CacheModule,
+        ],
         controllers: [kra_controller_1.KraController],
         providers: [kra_service_1.KraService],
         exports: [kra_service_1.KraService],

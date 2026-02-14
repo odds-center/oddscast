@@ -3,7 +3,6 @@ import CONFIG from '@/lib/config';
 import { mockPredictions } from '@/lib/mocks/data';
 import type {
   PredictionResultDto,
-  PredictionStatusDto,
   PredictionPreview,
 } from '../types/predictions';
 
@@ -11,6 +10,25 @@ import type {
  * AI 예측 API
  */
 export default class PredictionsApi {
+  /**
+   * 경주별 예측 기록 목록
+   * GET /api/predictions/race/:raceId/history
+   */
+  static async getHistoryByRaceId(
+    raceId: string,
+  ): Promise<PredictionResultDto[]> {
+    if (CONFIG.useMock) {
+      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId);
+      return pred ? [pred as unknown as PredictionResultDto] : [];
+    }
+    const response = await axiosInstance.get<
+      { data?: PredictionResultDto[] } | PredictionResultDto[]
+    >(`/predictions/race/${raceId}/history`);
+    const d = response.data as { data?: PredictionResultDto[] } | PredictionResultDto[];
+    const arr = (d as { data?: PredictionResultDto[] })?.data ?? d;
+    return Array.isArray(arr) ? arr : [];
+  }
+
   /**
    * 경주별 예측 조회 (이미 예측권 사용한 경기는 ticket 없이 재조회 가능)
    * GET /api/predictions/race/:raceId

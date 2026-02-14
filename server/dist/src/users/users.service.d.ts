@@ -10,6 +10,8 @@ export declare class UsersService {
         search?: string;
     }): Promise<{
         users: {
+            availableTickets: number;
+            totalTickets: number;
             email: string;
             name: string;
             nickname: string | null;

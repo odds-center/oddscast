@@ -28,7 +28,7 @@ let UsersService = class UsersService {
                 { nickname: { contains: search, mode: 'insensitive' } },
             ];
         }
-        const [users, total] = await Promise.all([
+        const [usersRaw, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
                 select: {
@@ -40,6 +40,7 @@ let UsersService = class UsersService {
                     role: true,
                     isActive: true,
                     createdAt: true,
+                    _count: { select: { predictionTickets: true } },
                 },
                 skip: (page - 1) * limit,
                 take: limit,
@@ -47,6 +48,25 @@ let UsersService = class UsersService {
             }),
             this.prisma.user.count({ where }),
         ]);
+        const now = new Date();
+        const userIds = usersRaw.map((u) => u.id);
+        const availableCounts = userIds.length > 0
+            ? await this.prisma.predictionTicket.groupBy({
+                by: ['userId'],
+                where: {
+                    userId: { in: userIds },
+                    status: 'AVAILABLE',
+                    expiresAt: { gte: now },
+                },
+                _count: true,
+            })
+            : [];
+        const availMap = new Map(availableCounts.map((c) => [c.userId, c._count]));
+        const users = usersRaw.map(({ _count, ...u }) => ({
+            ...u,
+            availableTickets: availMap.get(u.id) ?? 0,
+            totalTickets: _count.predictionTickets,
+        }));
         return { users, total, page, totalPages: Math.ceil(total / limit) };
     }
     async findOne(id) {

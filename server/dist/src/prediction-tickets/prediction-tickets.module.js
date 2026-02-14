@@ -10,13 +10,16 @@ exports.PredictionTicketsModule = void 0;
 const common_1 = require("@nestjs/common");
 const prediction_tickets_controller_1 = require("./prediction-tickets.controller");
 const prediction_tickets_service_1 = require("./prediction-tickets.service");
+const predictions_module_1 = require("../predictions/predictions.module");
 let PredictionTicketsModule = class PredictionTicketsModule {
 };
 exports.PredictionTicketsModule = PredictionTicketsModule;
 exports.PredictionTicketsModule = PredictionTicketsModule = __decorate([
     (0, common_1.Module)({
+        imports: [predictions_module_1.PredictionsModule],
         controllers: [prediction_tickets_controller_1.PredictionTicketsController],
         providers: [prediction_tickets_service_1.PredictionTicketsService],
+        exports: [prediction_tickets_service_1.PredictionTicketsService],
     })
 ], PredictionTicketsModule);
 //# sourceMappingURL=prediction-tickets.module.js.map

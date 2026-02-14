@@ -146,7 +146,10 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 수정' })
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateNotificationDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateNotificationDto,
+  ) {
     return this.notificationsService.update(id, dto);
   }
 

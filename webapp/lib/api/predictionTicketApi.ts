@@ -53,8 +53,12 @@ export interface UseTicketResult {
 export default class PredictionTicketsApi {
   /**
    * 예측권 사용 (AI 예측 요청)
+   * @param regenerate - true면 기존 예측 무시하고 새로 AI 예측 생성 (다시 예측)
    */
-  static async use(raceId: string): Promise<UseTicketResult> {
+  static async redeem(
+    raceId: string,
+    options?: { regenerate?: boolean },
+  ): Promise<UseTicketResult> {
     if (CONFIG.useMock) {
       const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId) ?? mockPredictions[0];
       return {
@@ -66,7 +70,8 @@ export default class PredictionTicketsApi {
     try {
       const response = await axiosInstance.post<ApiResponse<UseTicketResult>>(
         '/prediction-tickets/use',
-        { raceId },
+        { raceId, regenerate: options?.regenerate ?? false },
+        { timeout: 60000 },
       );
       return handleApiResponse(response);
     } catch (error) {
@@ -100,6 +105,7 @@ export default class PredictionTicketsApi {
    */
   static async getHistory(
     limit = 50,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- API 시그니처 호환
     _offset = 0,
     page = 1,
   ): Promise<{ tickets: PredictionTicket[]; total: number; page: number; totalPages: number }> {

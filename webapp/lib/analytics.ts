@@ -49,6 +49,8 @@ export function trackEvent(
 export const GA_EVENTS = {
   /** 예측권 사용 클릭 */
   PREDICTION_TICKET_USE: 'prediction_ticket_use',
+  /** 다시 예측하기 클릭 */
+  PREDICTION_REGENERATE: 'prediction_regenerate',
   /** 로그인 시도 */
   LOGIN_CLICK: 'login_click',
   /** 구글 로그인 클릭 */

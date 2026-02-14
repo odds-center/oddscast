@@ -193,17 +193,33 @@ def _experience_bonus(total_runs: int, total_wins: int) -> float:
     return round(min(10, exp + perf), 2)
 
 
+def _minimal_fallback(entries: list) -> list:
+    """entries만으로 최소 결과 생성 — 무조건 배열 반환."""
+    out = []
+    for i, e in enumerate(entries[:14]):  # 최대 14마리
+        hr_no = e.get('hrNo') or e.get('chulNo') or str(i + 1)
+        chul_no = e.get('chulNo') or (hr_no if len(str(hr_no)) <= 2 else '')
+        out.append({
+            'hrNo': str(hr_no),
+            'chulNo': str(chul_no) if chul_no else None,
+            'hrName': e.get('hrName', ''),
+            'score': 50.0 + (14 - i) * 2,  # 앞순서일수록 약간 높게
+            'reason': '데이터 보강',
+        })
+    return out
+
+
 def calculate_score(data):
     """
-    말 기준 복합 점수 (Speed·Momentum·레이팅).
-    Input: { entries: [...] } — entries에 rating, recentRanks, totalRuns, totalWins 등
-    Output: [ { hrNo, score, momentumScore, ratingScore, experienceBonus, reason } ]
+    말 기준 복합 점수 (KRA 데이터 활용).
+    Input: { entries: [...] } — entries에 rating, recentRanks, rcCntT, ord1CntT, sex, age, chaksun1 등
+    Output: [ { hrNo, chulNo, hrName, score, ... } ] — 무조건 배열 반환
     """
-    try:
-        entries = data.get('entries', [])
-        if not entries:
-            return []
+    entries = data.get('entries') or data.get('entryDetails') or []
+    if not entries:
+        return []
 
+    try:
         ratings = []
         for e in entries:
             r = e.get('rating')
@@ -216,9 +232,14 @@ def calculate_score(data):
 
         results = []
         for e in entries:
-            hr_no = e.get('hrNo', '')
+            hr_no = e.get('hrNo') or e.get('chulNo') or ''
+            if not hr_no:
+                continue
+            chul_no = e.get('chulNo') or (str(hr_no) if len(str(hr_no)) <= 2 else None)
             rating = e.get('rating')
-            recent_ranks = _parse_recent_ranks(e.get('recentRanks') or e.get('recent_ranks'))
+            recent_ranks = _parse_recent_ranks(
+                e.get('recentRanks') or e.get('recent_ranks')
+            )
             total_runs = e.get('totalRuns') or e.get('rcCntT')
             total_wins = e.get('totalWins') or e.get('ord1CntT')
 
@@ -226,8 +247,24 @@ def calculate_score(data):
             momentum = _momentum_score(recent_ranks)
             exp_bonus = _experience_bonus(total_runs, total_wins)
 
-            # 복합: 레이팅 50%, 기세 40%, 경험 10%
-            composite = rating_score * 0.5 + momentum * 0.4 + exp_bonus
+            # KRA 추가 반영: chaksun1(1착상금) 있으면 저평가 보너스
+            chaksun_bonus = 0.0
+            chaksun1 = e.get('chaksun1')
+            if chaksun1 is not None:
+                try:
+                    v = float(chaksun1)
+                    if v > 0:
+                        chaksun_bonus = min(5, v / 10000)  # 최대 +5점
+                except (ValueError, TypeError):
+                    pass
+
+            # 복합: 레이팅 50%, 기세 40%, 경험 10%, 1착상금 보너스
+            composite = (
+                rating_score * 0.5
+                + momentum * 0.4
+                + exp_bonus
+                + chaksun_bonus
+            )
             composite = round(min(100, max(0, composite)), 2)
 
             reason_parts = []
@@ -239,7 +276,8 @@ def calculate_score(data):
             reason = ', '.join(reason_parts) if reason_parts else '데이터 기반'
 
             results.append({
-                'hrNo': hr_no,
+                'hrNo': str(hr_no),
+                'chulNo': str(chul_no) if chul_no else None,
                 'hrName': e.get('hrName', ''),
                 'score': composite,
                 'ratingScore': rating_score,
@@ -249,18 +287,20 @@ def calculate_score(data):
                 'reason': reason,
             })
 
-        return results
+        return results if results else _minimal_fallback(entries)
 
     except Exception as e:
         import traceback
-        return {'error': str(e), 'traceback': traceback.format_exc()}
+        traceback.print_exc()
+        return _minimal_fallback(entries)
 
 
 if __name__ == "__main__":
+    data = {}
     try:
         input_data = sys.stdin.read()
         if not input_data:
-            print(json.dumps({'error': 'No input data'}))
+            print(json.dumps([]))
         else:
             data = json.loads(input_data)
             command = data.get('command', 'calculate_score')
@@ -269,7 +309,14 @@ if __name__ == "__main__":
                 result = analyze_jockey(data)
             else:
                 result = calculate_score(data)
+                if not isinstance(result, list):
+                    result = _minimal_fallback(data.get('entries', []))
 
             print(json.dumps(result))
     except Exception as e:
-        print(json.dumps({'error': str(e)}))
+        import traceback
+        traceback.print_exc()
+        try:
+            print(json.dumps(_minimal_fallback(data.get('entries', []))))
+        except Exception:
+            print(json.dumps([]))

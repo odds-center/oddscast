@@ -21,14 +21,20 @@ export interface DashboardStats {
 
 // Users
 export interface User {
-  id: string;
+  id: number | string;
   email: string;
   name: string;
   role: string;
   isActive: boolean;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   lastLoginAt?: string;
+  availableTickets?: number;
+  totalTickets?: number;
+  totalBets?: number;
+  wonBets?: number;
+  totalBetAmount?: number;
+  totalWinAmount?: number;
 }
 
 export interface UserListResponse {

@@ -6,6 +6,7 @@ import PageHeader from '@/components/common/PageHeader';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Ticket, Zap } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 export default function RevenuePage() {
   const [period, setPeriod] = useState('month');
@@ -72,11 +73,11 @@ export default function RevenuePage() {
                   </p>
                 </div>
                 <div className='p-3 bg-white bg-opacity-20 rounded-full'>
-                  <DollarSign className='w-8 h-8' />
+                  <AdminIcon icon={DollarSign} className='w-8 h-8' />
                 </div>
               </div>
               <div className='flex items-center gap-1 text-sm'>
-                <TrendingUp className='w-4 h-4' />
+                <AdminIcon icon={TrendingUp} className='w-4 h-4' />
                 <span>전월 대비 +12.5%</span>
               </div>
             </div>
@@ -90,11 +91,11 @@ export default function RevenuePage() {
                   </p>
                 </div>
                 <div className='p-3 bg-white bg-opacity-20 rounded-full'>
-                  <Zap className='w-8 h-8' />
+                  <AdminIcon icon={Zap} className='w-8 h-8' />
                 </div>
               </div>
               <div className='flex items-center gap-1 text-sm'>
-                <TrendingDown className='w-4 h-4' />
+                <AdminIcon icon={TrendingDown} className='w-4 h-4' />
                 <span>AI + 인프라</span>
               </div>
             </div>
@@ -108,7 +109,7 @@ export default function RevenuePage() {
                   </p>
                 </div>
                 <div className='p-3 bg-white bg-opacity-20 rounded-full'>
-                  <TrendingUp className='w-8 h-8' />
+                  <AdminIcon icon={TrendingUp} className='w-8 h-8' />
                 </div>
               </div>
               <div className='flex items-center gap-1 text-sm'>
@@ -125,7 +126,7 @@ export default function RevenuePage() {
                   </p>
                 </div>
                 <div className='p-3 bg-white bg-opacity-20 rounded-full'>
-                  <Users className='w-8 h-8' />
+                  <AdminIcon icon={Users} className='w-8 h-8' />
                 </div>
               </div>
               <div className='flex items-center gap-1 text-sm'>
@@ -142,7 +143,7 @@ export default function RevenuePage() {
                 <div>
                   <div className='flex justify-between items-center mb-2'>
                     <div className='flex items-center gap-2'>
-                      <CreditCard className='w-5 h-5 text-blue-600' />
+                      <AdminIcon icon={CreditCard} className='w-5 h-5 text-blue-600' />
                       <span className='font-medium'>구독 수익</span>
                     </div>
                     <span className='text-lg font-bold text-blue-600'>₩1,760,000</span>
@@ -156,7 +157,7 @@ export default function RevenuePage() {
                 <div>
                   <div className='flex justify-between items-center mb-2'>
                     <div className='flex items-center gap-2'>
-                      <Ticket className='w-5 h-5 text-green-600' />
+                      <AdminIcon icon={Ticket} className='w-5 h-5 text-green-600' />
                       <span className='font-medium'>개별 구매</span>
                     </div>
                     <span className='text-lg font-bold text-green-600'>₩180,000</span>

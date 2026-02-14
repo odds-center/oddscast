@@ -5,6 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SinglePurchasesService } from '../single-purchases/single-purchases.service';
+import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 export declare class AdminController {
     private readonly kraService;
     private readonly usersService;
@@ -13,7 +14,8 @@ export declare class AdminController {
     private readonly subscriptionsService;
     private readonly notificationsService;
     private readonly singlePurchasesService;
-    constructor(kraService: KraService, usersService: UsersService, configService: GlobalConfigService, prisma: PrismaService, subscriptionsService: SubscriptionsService, notificationsService: NotificationsService, singlePurchasesService: SinglePurchasesService);
+    private readonly predictionTicketsService;
+    constructor(kraService: KraService, usersService: UsersService, configService: GlobalConfigService, prisma: PrismaService, subscriptionsService: SubscriptionsService, notificationsService: NotificationsService, singlePurchasesService: SinglePurchasesService, predictionTicketsService: PredictionTicketsService);
     syncSchedule(date?: string): Promise<{
         message: string;
         races: number;
@@ -68,6 +70,8 @@ export declare class AdminController {
     } | undefined>;
     getUsers(page?: number, limit?: number, role?: string, search?: string): Promise<{
         data: {
+            availableTickets: number;
+            totalTickets: number;
             email: string;
             name: string;
             nickname: string | null;
@@ -124,6 +128,23 @@ export declare class AdminController {
         id: number;
         role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
+    }>;
+    grantTickets(id: number, body: {
+        count: number;
+        expiresInDays?: number;
+    }): Promise<{
+        granted: number;
+        tickets: {
+            id: number;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
+            userId: number;
+            expiresAt: Date;
+            subscriptionId: number | null;
+            predictionId: number | null;
+            usedAt: Date | null;
+            issuedAt: Date;
+        }[];
     }>;
     getAIConfig(): Promise<any>;
     updateAIConfig(body: any): Promise<any>;

@@ -12,9 +12,11 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.PredictionTicketsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const predictions_service_1 = require("../predictions/predictions.service");
 let PredictionTicketsService = class PredictionTicketsService {
-    constructor(prisma) {
+    constructor(prisma, predictionsService) {
         this.prisma = prisma;
+        this.predictionsService = predictionsService;
     }
     async useTicket(userId, dto) {
         const ticket = await this.prisma.predictionTicket.findFirst({
@@ -23,12 +25,13 @@ let PredictionTicketsService = class PredictionTicketsService {
         });
         if (!ticket)
             throw new common_1.BadRequestException('사용 가능한 예측권이 없습니다');
-        const prediction = await this.prisma.prediction.findFirst({
+        let prediction = await this.prisma.prediction.findFirst({
             where: { raceId: Number(dto.raceId), status: 'COMPLETED' },
             orderBy: { createdAt: 'desc' },
         });
-        if (!prediction)
-            throw new common_1.NotFoundException('해당 경주의 예측이 없습니다');
+        if (!prediction || dto.regenerate) {
+            prediction = await this.predictionsService.generatePrediction(Number(dto.raceId));
+        }
         const updated = await this.prisma.predictionTicket.update({
             where: { id: ticket.id },
             data: {
@@ -80,10 +83,29 @@ let PredictionTicketsService = class PredictionTicketsService {
             throw new common_1.NotFoundException('예측권을 찾을 수 없습니다');
         return ticket;
     }
+    async grantTickets(userId, count, expiresInDays = 30) {
+        if (count < 1 || count > 100) {
+            throw new common_1.BadRequestException('지급 수량은 1~100장 사이여야 합니다');
+        }
+        const expiresAt = new Date();
+        expiresAt.setDate(expiresAt.getDate() + Math.min(365, Math.max(1, expiresInDays)));
+        const tickets = await this.prisma.$transaction(Array.from({ length: count }, () => this.prisma.predictionTicket.create({
+            data: {
+                userId,
+                subscriptionId: null,
+                predictionId: null,
+                raceId: null,
+                status: 'AVAILABLE',
+                expiresAt,
+            },
+        })));
+        return { granted: tickets.length, tickets };
+    }
 };
 exports.PredictionTicketsService = PredictionTicketsService;
 exports.PredictionTicketsService = PredictionTicketsService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        predictions_service_1.PredictionsService])
 ], PredictionTicketsService);
 //# sourceMappingURL=prediction-tickets.service.js.map

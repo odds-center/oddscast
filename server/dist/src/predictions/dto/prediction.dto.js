@@ -68,7 +68,9 @@ __decorate([
     __metadata("design:type", Number)
 ], UpdatePredictionStatusDto.prototype, "accuracy", void 0);
 __decorate([
-    (0, swagger_1.ApiPropertyOptional)({ description: '검수 완료 시 true — preview API에서만 반환' }),
+    (0, swagger_1.ApiPropertyOptional)({
+        description: '검수 완료 시 true — preview API에서만 반환',
+    }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsBoolean)(),
     __metadata("design:type", Boolean)

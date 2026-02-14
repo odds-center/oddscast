@@ -15,6 +15,7 @@ import { SinglePurchasesModule } from '../single-purchases/single-purchases.modu
 import { RacesModule } from '../races/races.module';
 import { ResultsModule } from '../results/results.module';
 import { PredictionsModule } from '../predictions/predictions.module';
+import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { PredictionsModule } from '../predictions/predictions.module';
     RacesModule,
     ResultsModule,
     PredictionsModule,
+    PredictionTicketsModule,
   ],
   controllers: [
     AdminController,

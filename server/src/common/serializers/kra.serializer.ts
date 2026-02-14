@@ -2,9 +2,13 @@
  * KRA DB 값 → API 응답 enum 치환
  * DB: KRA raw (서울, 제주, 부산경남) / API: enum (SEOUL, JEJU, BUSAN)
  */
-import { Meet, meetToEnum, meetToLabel } from '@goldenrace/shared';
+import { meetToEnum, meetToLabel } from '@goldenrace/shared';
 
-type RaceLike = { meet?: string | null; meetName?: string | null; [k: string]: unknown };
+type RaceLike = {
+  meet?: string | null;
+  meetName?: string | null;
+  [k: string]: unknown;
+};
 type ResultLike = { race?: RaceLike | null; [k: string]: unknown };
 
 /**
@@ -16,7 +20,8 @@ export function serializeRace<T extends RaceLike>(race: T | null): T | null {
   return {
     ...race,
     meet: meetEnum ?? race.meet,
-    meetName: meetEnum != null ? meetToLabel(meetEnum) : (race.meetName ?? race.meet),
+    meetName:
+      meetEnum != null ? meetToLabel(meetEnum) : (race.meetName ?? race.meet),
   } as T;
 }
 
@@ -30,7 +35,9 @@ export function serializeRaces<T extends RaceLike>(races: T[]): T[] {
 /**
  * RaceResult (race 포함 시) → race.meet enum 치환
  */
-export function serializeRaceResult<T extends ResultLike>(result: T | null): T | null {
+export function serializeRaceResult<T extends ResultLike>(
+  result: T | null,
+): T | null {
   if (!result) return null;
   const race = result.race ? serializeRace(result.race) : result.race;
   return { ...result, race } as T;
@@ -44,7 +51,9 @@ export function serializeRaceResults<T extends ResultLike>(results: T[]): T[] {
 }
 
 /** race 필드가 있는 객체 배열 serialize (picks, bets 등) */
-export function serializeItemsWithRace<T extends { race?: RaceLike | null }>(items: T[]): T[] {
+export function serializeItemsWithRace<T extends { race?: RaceLike | null }>(
+  items: T[],
+): T[] {
   return items.map((item) =>
     item.race ? { ...item, race: serializeRace(item.race) } : item,
   ) as T[];

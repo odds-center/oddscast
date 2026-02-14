@@ -33,8 +33,26 @@ __decorate([
     __metadata("design:type", Number)
 ], CreatePickDto.prototype, "raceId", void 0);
 __decorate([
-    (0, swagger_1.ApiProperty)({ enum: ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'] }),
-    (0, class_validator_1.IsEnum)(['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE']),
+    (0, swagger_1.ApiProperty)({
+        enum: [
+            'SINGLE',
+            'PLACE',
+            'QUINELLA',
+            'EXACTA',
+            'QUINELLA_PLACE',
+            'TRIFECTA',
+            'TRIPLE',
+        ],
+    }),
+    (0, class_validator_1.IsEnum)([
+        'SINGLE',
+        'PLACE',
+        'QUINELLA',
+        'EXACTA',
+        'QUINELLA_PLACE',
+        'TRIFECTA',
+        'TRIPLE',
+    ]),
     __metadata("design:type", String)
 ], CreatePickDto.prototype, "pickType", void 0);
 __decorate([

@@ -105,8 +105,11 @@ let AnalysisService = class AnalysisService {
             Jeju: '2',
             Busan: '3',
         };
-        const meet = meetMap[String(race.meet)] ?? (String(race.meet).replace(/[^123]/g, '') || '1');
-        const jockeyNos = [...new Set(race.entries.map((e) => e.jkNo).filter(Boolean))];
+        const meet = meetMap[String(race.meet)] ??
+            (String(race.meet).replace(/[^123]/g, '') || '1');
+        const jockeyNos = [
+            ...new Set(race.entries.map((e) => e.jkNo).filter(Boolean)),
+        ];
         const jockeys = await this.prisma.jockeyResult.findMany({
             where: {
                 meet,

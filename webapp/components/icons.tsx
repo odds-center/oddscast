@@ -21,7 +21,6 @@ import {
   AlertCircle,
   Loader2,
   BarChart2,
-  CircleDot,
   Trash2,
   Bell,
   Check,
@@ -40,6 +39,7 @@ import {
   X,
   Key,
   Mail,
+  RefreshCw,
 } from 'lucide-react';
 
 /** 경주 아이콘 — 깃발(Flag) 사용 (경주 시작 신호) */
@@ -83,6 +83,7 @@ export const Icons = {
   X,
   Key,
   Mail,
+  RefreshCw,
 } as const;
 
 export type IconName = keyof typeof Icons;

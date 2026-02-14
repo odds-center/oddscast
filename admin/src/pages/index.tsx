@@ -5,6 +5,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import { adminDashboardApi } from '@/lib/api/admin';
 import { Users, CalendarDays, DollarSign, TrendingUp, Database } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 
 interface DashboardStats {
@@ -91,7 +92,7 @@ export default function DashboardPage() {
                 >
                   <dt>
                     <div className={`absolute rounded ${stat.color} p-2`}>
-                      <stat.icon className='h-5 w-5 text-white' aria-hidden='true' />
+                      <AdminIcon icon={stat.icon} className='h-5 w-5 text-white' />
                     </div>
                     <p className='ml-12 truncate text-sm font-medium text-gray-500'>{stat.name}</p>
                   </dt>
@@ -145,7 +146,7 @@ export default function DashboardPage() {
                     href='/users'
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
-                    <Users className='h-6 w-6 text-blue-500 mb-1.5' />
+                    <AdminIcon icon={Users} className='h-6 w-6 text-blue-500 mb-1.5' />
                     <div className='font-medium text-sm'>회원 관리</div>
                     <div className='text-xs text-gray-500'>회원 목록 조회</div>
                   </Link>
@@ -153,7 +154,7 @@ export default function DashboardPage() {
                     href='/races'
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
-                    <CalendarDays className='h-6 w-6 text-green-500 mb-1.5' />
+                    <AdminIcon icon={CalendarDays} className='h-6 w-6 text-green-500 mb-1.5' />
                     <div className='font-medium text-sm'>경주 관리</div>
                     <div className='text-xs text-gray-500'>경주 일정 관리</div>
                   </Link>
@@ -161,7 +162,7 @@ export default function DashboardPage() {
                     href='/bets'
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
-                    <DollarSign className='h-6 w-6 text-yellow-500 mb-1.5' />
+                    <AdminIcon icon={DollarSign} className='h-6 w-6 text-yellow-500 mb-1.5' />
                     <div className='font-medium text-sm'>마권 관리</div>
                     <div className='text-xs text-gray-500'>마권 내역 조회</div>
                   </Link>
@@ -169,7 +170,7 @@ export default function DashboardPage() {
                     href='/statistics'
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
-                    <TrendingUp className='h-6 w-6 text-purple-500 mb-1.5' />
+                    <AdminIcon icon={TrendingUp} className='h-6 w-6 text-purple-500 mb-1.5' />
                     <div className='font-medium text-sm'>통계</div>
                     <div className='text-xs text-gray-500'>상세 통계 보기</div>
                   </Link>
@@ -177,7 +178,7 @@ export default function DashboardPage() {
                     href='/kra'
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
-                    <Database className='h-6 w-6 text-amber-500 mb-1.5' />
+                    <AdminIcon icon={Database} className='h-6 w-6 text-amber-500 mb-1.5' />
                     <div className='font-medium text-sm'>KRA 데이터</div>
                     <div className='text-xs text-gray-500'>출전표·결과 수동 동기화</div>
                   </Link>

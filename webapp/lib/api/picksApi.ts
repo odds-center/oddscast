@@ -44,6 +44,17 @@ export const PICK_TYPE_POOL_NAMES: Record<string, string> = {
   TRIPLE: '삼쌍승식',
 };
 
+/** 승식별 선택/조합 설명 (UI 표시용, HORSE_RACING_TERMINOLOGY) */
+export const PICK_TYPE_COMBO_DESC: Record<string, string> = {
+  SINGLE: '1마리 1등',
+  PLACE: '1마리 1~3등',
+  QUINELLA: '2마리 1·2등 (순서 무관)',
+  EXACTA: '2마리 1→2등 (순서 유관)',
+  QUINELLA_PLACE: '2마리 3등 이내',
+  TRIFECTA: '3마리 1·2·3등 (순서 무관)',
+  TRIPLE: '3마리 1→2→3등 (순서 유관)',
+};
+
 /** 선택 조합에 맞는 배당 찾기 */
 export function findDividendForPick(
   dividends: { pool?: string; poolName?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number }[] | undefined,

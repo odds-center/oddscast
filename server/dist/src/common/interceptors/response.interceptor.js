@@ -9,12 +9,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.ResponseInterceptor = void 0;
 const common_1 = require("@nestjs/common");
 const operators_1 = require("rxjs/operators");
+const serialize_bigint_1 = require("../utils/serialize-bigint");
 let ResponseInterceptor = class ResponseInterceptor {
     intercept(context, next) {
         const httpContext = context.switchToHttp();
         const response = httpContext.getResponse();
         return next.handle().pipe((0, operators_1.map)((data) => ({
-            data,
+            data: (0, serialize_bigint_1.serializeBigInt)(data),
             status: response.statusCode,
         })));
     }

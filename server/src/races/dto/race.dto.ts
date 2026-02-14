@@ -8,7 +8,10 @@ export class CreateRaceDto {
   @IsString()
   rcName?: string;
 
-  @ApiProperty({ example: '서울', description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남' })
+  @ApiProperty({
+    example: '서울',
+    description: 'KRA API 기준 경마장명: 서울, 제주, 부산경남',
+  })
   @IsString()
   meet: string;
 

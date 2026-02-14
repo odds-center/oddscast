@@ -24,6 +24,7 @@ const single_purchases_module_1 = require("../single-purchases/single-purchases.
 const races_module_1 = require("../races/races.module");
 const results_module_1 = require("../results/results.module");
 const predictions_module_1 = require("../predictions/predictions.module");
+const prediction_tickets_module_1 = require("../prediction-tickets/prediction-tickets.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
@@ -41,6 +42,7 @@ exports.AdminModule = AdminModule = __decorate([
             races_module_1.RacesModule,
             results_module_1.ResultsModule,
             predictions_module_1.PredictionsModule,
+            prediction_tickets_module_1.PredictionTicketsModule,
         ],
         controllers: [
             admin_controller_1.AdminController,

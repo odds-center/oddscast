@@ -41,7 +41,9 @@ const MEET_TO_CODE: Record<string, string> = {
 
 /** meet 이름/코드 → KRA API 요청 코드 (1,2,3) */
 export function meetToCode(meet: string): string {
-  return MEET_TO_CODE[meet] ?? (meet.match(/^[123]$/) ? meet : KRA_MEET_CODE.SEOUL);
+  return (
+    MEET_TO_CODE[meet] ?? (meet.match(/^[123]$/) ? meet : KRA_MEET_CODE.SEOUL)
+  );
 }
 
 /** meet 이름/코드 → KRA API 응답값 (서울/제주/부산경남) */

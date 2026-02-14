@@ -52,7 +52,9 @@ export class UpdatePredictionStatusDto {
   @Type(() => Number)
   accuracy?: number;
 
-  @ApiPropertyOptional({ description: '검수 완료 시 true — preview API에서만 반환' })
+  @ApiPropertyOptional({
+    description: '검수 완료 시 true — preview API에서만 반환',
+  })
   @IsOptional()
   @IsBoolean()
   previewApproved?: boolean;

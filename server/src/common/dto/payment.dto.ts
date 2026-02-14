@@ -1,6 +1,6 @@
-import { IsString, IsOptional, IsInt } from 'class-validator';
+import { IsString, IsOptional, IsInt, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 
 export class PurchaseDto {
   @ApiPropertyOptional({ default: 1 })
@@ -50,4 +50,11 @@ export class UseTicketDto {
   @ApiProperty()
   @IsString()
   raceId: string;
+
+  /** true 시 기존 예측 무시하고 새로 AI 예측 생성 (다시 예측, 예측권 1장 추가 소비) */
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  regenerate?: boolean;
 }

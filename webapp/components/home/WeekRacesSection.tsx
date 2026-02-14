@@ -8,7 +8,6 @@ import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
-import { StatusBadge } from '@/components/ui';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@goldenrace/shared';
 

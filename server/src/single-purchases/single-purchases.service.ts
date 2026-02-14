@@ -110,13 +110,19 @@ export class SinglePurchasesService {
     const merged = {
       ...current,
       ...data,
-      vat: data.originalPrice != null ? Math.round(data.originalPrice * 0.1) : current.vat,
+      vat:
+        data.originalPrice != null
+          ? Math.round(data.originalPrice * 0.1)
+          : current.vat,
       totalPrice:
         data.originalPrice != null
           ? data.originalPrice + Math.round(data.originalPrice * 0.1)
           : current.totalPrice,
     };
-    await this.configService.set('single_purchase_config', JSON.stringify(merged));
+    await this.configService.set(
+      'single_purchase_config',
+      JSON.stringify(merged),
+    );
     return this.getConfig();
   }
 

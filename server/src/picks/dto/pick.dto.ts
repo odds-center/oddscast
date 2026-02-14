@@ -1,4 +1,10 @@
-import { IsString, IsOptional, IsArray, IsEnum, IsNumber } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsArray,
+  IsEnum,
+  IsNumber,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { PickType } from '@prisma/client';
@@ -19,8 +25,26 @@ export class CreatePickDto {
   @Type(() => Number)
   raceId: number;
 
-  @ApiProperty({ enum: ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'] })
-  @IsEnum(['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'])
+  @ApiProperty({
+    enum: [
+      'SINGLE',
+      'PLACE',
+      'QUINELLA',
+      'EXACTA',
+      'QUINELLA_PLACE',
+      'TRIFECTA',
+      'TRIPLE',
+    ],
+  })
+  @IsEnum([
+    'SINGLE',
+    'PLACE',
+    'QUINELLA',
+    'EXACTA',
+    'QUINELLA_PLACE',
+    'TRIFECTA',
+    'TRIPLE',
+  ])
   pickType: PickType;
 
   @ApiProperty({ description: '고른 마번 배열', example: ['1', '5'] })

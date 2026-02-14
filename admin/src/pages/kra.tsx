@@ -9,6 +9,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { adminKraApi } from '@/lib/api/admin';
 import { Database, RefreshCw, FileText, Trophy, User, Zap, History } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 
 function formatDateYyyyMmDd(s: string): string {
   if (!s || s.length < 8) return s;
@@ -145,7 +146,7 @@ export default function KraPage() {
                 disabled={syncScheduleMutation.isPending}
                 isLoading={syncScheduleMutation.isPending}
               >
-                <FileText className='w-4 h-4 mr-1.5 inline' />
+                <AdminIcon icon={FileText} className='w-4 h-4 mr-1.5 inline' />
                 출전표 동기화
               </Button>
               <span className='text-sm text-gray-500'>
@@ -169,7 +170,7 @@ export default function KraPage() {
                 disabled={syncResultsMutation.isPending}
                 isLoading={syncResultsMutation.isPending}
               >
-                <Trophy className='w-4 h-4 mr-1.5 inline' />
+                <AdminIcon icon={Trophy} className='w-4 h-4 mr-1.5 inline' />
                 경주 결과
               </Button>
               <Button
@@ -178,7 +179,7 @@ export default function KraPage() {
                 disabled={syncDetailsMutation.isPending}
                 isLoading={syncDetailsMutation.isPending}
               >
-                <Zap className='w-4 h-4 mr-1.5 inline' />
+                <AdminIcon icon={Zap} className='w-4 h-4 mr-1.5 inline' />
                 상세정보
               </Button>
               <Button
@@ -187,7 +188,7 @@ export default function KraPage() {
                 disabled={syncJockeysMutation.isPending}
                 isLoading={syncJockeysMutation.isPending}
               >
-                <User className='w-4 h-4 mr-1.5 inline' />
+                <AdminIcon icon={User} className='w-4 h-4 mr-1.5 inline' />
                 기수 전적
               </Button>
               <select
@@ -206,7 +207,7 @@ export default function KraPage() {
                 disabled={syncAllMutation.isPending}
                 isLoading={syncAllMutation.isPending}
               >
-                <RefreshCw className='w-4 h-4 mr-1.5 inline' />
+                <AdminIcon icon={RefreshCw} className='w-4 h-4 mr-1.5 inline' />
                 전체 적재
               </Button>
             </div>
@@ -228,7 +229,7 @@ export default function KraPage() {
                   disabled={seedSampleMutation.isPending}
                   isLoading={seedSampleMutation.isPending}
                 >
-                  <Database className='w-4 h-4 mr-1.5 inline' />
+                  <AdminIcon icon={Database} className='w-4 h-4 mr-1.5 inline' />
                   샘플 경주 적재
                 </Button>
                 <span className='text-sm text-gray-500'>
@@ -260,7 +261,7 @@ export default function KraPage() {
                   }
                   isLoading={syncHistoricalMutation.isPending}
                 >
-                  <History className='w-4 h-4 mr-1.5 inline' />
+                  <AdminIcon icon={History} className='w-4 h-4 mr-1.5 inline' />
                   과거 데이터 적재
                 </Button>
                 <span className='text-sm text-gray-500'>

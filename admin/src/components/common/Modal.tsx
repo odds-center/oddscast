@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { X } from 'lucide-react';
+import { AdminIcon } from '@/components/common/AdminIcon';
 import { cn } from '@/lib/utils';
 
 interface ModalProps {
@@ -50,7 +51,7 @@ export default function Modal({
             className='text-gray-400 hover:text-gray-600 p-0.5'
             aria-label='닫기'
           >
-            <X className='h-5 w-5' />
+            <AdminIcon icon={X} className='h-5 w-5' />
           </button>
         </div>
         <div className='p-4'>{children}</div>

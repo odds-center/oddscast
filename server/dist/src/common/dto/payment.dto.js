@@ -76,4 +76,11 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UseTicketDto.prototype, "raceId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Transform)(({ value }) => value === true || value === 'true'),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], UseTicketDto.prototype, "regenerate", void 0);
 //# sourceMappingURL=payment.dto.js.map

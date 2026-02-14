@@ -234,7 +234,7 @@ export default class NotificationApi {
     }[]
   > {
     try {
-      const response = await axiosInstance.get<ApiResponse<any[]>>(
+      const response = await axiosInstance.get<ApiResponse<unknown[]>>(
         `${NotificationApi.baseUrl}/templates`,
       );
       return handleApiResponse(response);

@@ -79,7 +79,8 @@ export class YourService {
 ### 1. 경주계획표 API (API72_2)
 
 - **엔드포인트**: `/B551015/API72_2/racePlan_2`
-- **설명**: 전국 경마공원 경주계획표
+- **설명**: 전국 경마공원 경주계획표 (미래 일정 포함 조회 가능)
+- **요청 파라미터**: `meet`(1:서울, 2:제주, 3:부산경남), `rc_year`, `rc_month`, `rc_date`(YYYYMMDD)
 - **메서드**:
   - `getRacePlans()` - 경주 계획 조회
   - `getRaceSchedule()` - 경주 일정 조회
@@ -114,11 +115,11 @@ export class YourService {
 
 ## 🔧 상수 및 코드
 
-### 경마장 코드
+### 경마장 코드 (meet)
 
 - `1`: 서울
-- `2`: 부산경남
-- `3`: 제주
+- `2`: 제주
+- `3`: 부산경남
 
 ### 승식 구분
 

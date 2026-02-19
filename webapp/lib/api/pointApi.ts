@@ -19,8 +19,6 @@ import {
   UserPoints,
 } from '@/lib/types/point';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockPointsBalance, mockTicketPrice } from '@/lib/mocks/data';
 import qs from 'qs';
 
 export default class PointApi {
@@ -44,7 +42,6 @@ export default class PointApi {
     totalPointsSpent: number;
     lastUpdated: string;
   }> {
-    if (CONFIG.useMock) return mockPointsBalance;
     try {
       const response = await axiosInstance.get<ApiResponse<UserPointBalance>>('/points/me/balance');
       return handleApiResponse(response);
@@ -59,9 +56,6 @@ export default class PointApi {
     limit?: number;
     type?: string;
   }): Promise<PointListResponse> {
-    if (CONFIG.useMock) {
-      return { transactions: [], total: 0, page: 1, totalPages: 1 };
-    }
     try {
       const queryString = qs.stringify(filters ?? {}, {
         skipNulls: true,
@@ -78,7 +72,6 @@ export default class PointApi {
   }
 
   static async getTicketPrice(): Promise<{ pointsPerTicket: number }> {
-    if (CONFIG.useMock) return mockTicketPrice;
     try {
       const response = await axiosInstance.get<ApiResponse<{ pointsPerTicket: number }>>(
         '/points/ticket-price',
@@ -94,15 +87,6 @@ export default class PointApi {
     pointsSpent: number;
     remainingPoints: number;
   }> {
-    if (CONFIG.useMock) {
-      let pts = mockPointsBalance.currentPoints - mockTicketPrice.pointsPerTicket * quantity;
-      if (pts < 0) pts = 0;
-      return {
-        tickets: Array(quantity).fill({ id: 'mock-ticket' }),
-        pointsSpent: mockTicketPrice.pointsPerTicket * quantity,
-        remainingPoints: pts,
-      };
-    }
     try {
       const response = await axiosInstance.post<ApiResponse<{ tickets: { id: string }[]; pointsSpent: number; remainingPoints: number }>>('/points/purchase-ticket', {
         quantity,

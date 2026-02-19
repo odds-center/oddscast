@@ -93,39 +93,48 @@ API는 크게 **①기본/서비스용**, **②심화 분석용(AI 학습)**, **
 ```
 KRA API 수집 → Race + RaceEntry + Training + JockeyResult 저장
      ↓
+NestJS 보강: recentRanks, fallHistoryHorse/Jockey, trainerWinRate, sectionalTag
+     ↓
 Python analysis.py (scripts/analysis.py)
-     ↓  입력: Race, RaceEntry, JockeyResult (DB 조회)
-     ↓  출력: horseScore, momentumScore, experienceBonus, jockeyScore, weightRatio
+     ↓  입력: Race, RaceEntry (보강됨), JockeyResult
+     ↓  출력: scores[{ score, ratingScore, momentumScore, experienceBonus, fallRiskScore }], cascadeFallRisk
+     ↓
+AnalysisService.analyzeJockey → jockeyScore, weightRatio, topPickByJockey
      ↓
 Gemini API (constructPrompt)
-     ↓  입력: raceContext, entries(정제), horseScores, jockeyAnalysis
-     ↓  출력: analysis, preview
+     ↓  입력: raceContext(cascadeFallRisk 포함), mergedEntries(horseScore, fallRiskScore, jockeyScore 등)
+     ↓  출력: horseScores, betTypePredictions, analysis, preview
      ↓
 Prediction 테이블에 scores, analysis, preview 저장
 ```
+
+> 상세 분석 명세: [ANALYSIS_SPEC.md](ANALYSIS_SPEC.md)
 
 ### 4.2 분석 단계별 사용 DB 테이블
 
 | 분석 단계 | 사용 DB | 사용 컬럼 | 역할 |
 | --------- | ------ | --------- | ---- |
-| **Python (말 기준)** | `races` | `rcDist`, `weather` | 거리·날씨 기반 보정 |
-| | `race_entries` | `recentRanks`, `rating`, `totalRuns`, `totalWins` | Speed/Momentum/경험 점수 |
-| **Python (기수 분석)** | `races` | `meet`, `rcDist`, `weather` | 가중치 비율 (혼전/특수/일반) |
+| **NestJS 보강** | `race_results` | `ord`, `ordInt`, `ordType` | recentRanks, fallHistoryHorse/Jockey (ordType=FALL) |
+| | `trainer_results` | `winRateTsum`, `quRateTsum` | 조교사 승률/복승률 |
+| **Python (말 기준)** | `races` | `rcDist`, `weather`, `track` | 거리·날씨·주로 기반 보정 |
+| | `race_entries` | `recentRanks`, `rating`, `rcCntT`, `ord1CntT`, `fallHistoryHorse`, `fallHistoryJockey`, `equipment`, `bleedingInfo`, `sectionalTag` | 레이팅·기세·경험·낙마리스크·구간별 |
+| **Python (기수 분석)** | `races` | `meet`, `rcDist`, `weather`, `track` | 가중치 비율 (혼전/특수/일반) |
 | | `race_entries` | `hrNo`, `hrName`, `jkNo`, `jkName`, `rating` | 기수-말 매칭 |
 | | `jockey_results` | `winRateTsum`, `quRateTsum`, `rcCntT` | 기수 점수 산출 |
-| | `race_results` | `rcTime`, `rcRank` | 혼전 판별 (과거 경주 있을 때) |
-| **Gemini 프롬프트** | `races` | `rcDate`, `rcNo`, `rcDist`, `weather`, `trackState` | 경주 환경 설명 |
-| | `race_entries` | `hrNo`, `hrName`, `jkName`, `weight`, `rating`, `recentRanks`, `horseWeight`, `equipment`, `totalRuns`, `totalWins`, `isScratched` | 출전마 통계 |
-| | (Python 결과) | `horseScore`, `momentumScore`, `jockeyScore`, `combinedScore`, `weightRatio` | 점수 통합 |
-| **정확도 계산** | `race_results` | `rcRank`, `hrNo` | 예측 vs 실제 비교 |
+| | `race_results` | `rcTime`, `ordType` | 혼전 판별, 낙마 이력 |
+| **Gemini 프롬프트** | `races` | `rcDate`, `rcNo`, `rcDist`, `weather`, `track`, `cascadeFallRisk` | 경주 환경·연쇄 낙마 |
+| | `race_entries` | 위 + `horseScore`, `momentumScore`, `experienceBonus`, `fallRiskScore`, `jockeyScore` | 출전마 통계 (Python 결과 병합) |
+| **정확도 계산** | `race_results` | `rcRank`, `hrNo`, `ordType` | 예측 vs 실제 (NORMAL만 포함) |
 
 ### 4.3 분석 활용 현황 (구현 완료)
 
 | 데이터 | DB 저장 | 분석 활용 | 구현 상태 |
 | ------ | ------- | --------- | --------- |
-| [구간별 성적](KRA_SECTIONAL_RECORD_SPEC.md) | 경주 결과 시 `RaceResult.sectionalTimes` | 과거 경주에서 S1F/G1F 조회 → 선행마/추입마 태깅 → Gemini 프롬프트 `sectionalTag` | ✅ 구현 |
-| [훈련](KRA_TRAINING_SPEC.md) | `trainings` 테이블, `RaceEntry.trainingData` | `trainings`/`trainingData` 요약 → `trainingSummary` → Gemini 프롬프트 | ✅ 구현 |
-| [경주로 함수율](KRA_TRACK_INFO_SPEC.md) | `races.trackState` (주로 상태) | `trackState`로 Gemini에 전달 | ✅ 적용 |
+| [구간별 성적](KRA_SECTIONAL_RECORD_SPEC.md) | `RaceResult.sectionalTimes`, `RaceEntry.sectionalStats` | S1F/G1F → 선행마/추입마 태깅 → sectionalBonus, cascadeFallRisk | ✅ |
+| [훈련](KRA_TRAINING_SPEC.md) | `trainings`, `RaceEntry.trainingData` | trainingSummary → Gemini 프롬프트 | ✅ |
+| [경주로·날씨](KRA_TRACK_INFO_SPEC.md) | `races.track`, `races.weather` | get_weight_ratio 특수 판별, Gemini 전달 | ✅ |
+| [장구·폐출혈](KRA_EQUIPMENT_BLEEDING_SPEC.md) | `RaceEntry.equipment`, `bleedingInfo` | fallRiskScore 가산 (가면 등 +8, 폐출혈 +12) | ✅ |
+| 경주 결과 ordType | `RaceResult.ordType` | ordType=FALL → fallHistoryHorse/Jockey 집계 → fallRiskScore, cascadeFallRisk | ✅ |
 
 ---
 

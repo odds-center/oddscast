@@ -206,7 +206,7 @@ export default function RacesPage() {
         <div className='space-y-4'>
           <PageHeader
             title='경주 관리'
-            description='경주 일정과 정보를 관리할 수 있습니다. (최신날짜순, 지역 필터)'
+            description='경주 일정·출전마·결과를 조회하고 KRA 데이터를 동기화합니다.'
           />
           <Card title='필터' className='mb-4'>
             <div className='flex flex-wrap items-end gap-3'>
@@ -242,130 +242,84 @@ export default function RacesPage() {
             </div>
           </Card>
 
-          {/* KRA 동기화 */}
-          <Card>
-            <h3 className='font-semibold mb-4'>경주 정보 갱신 (KRA 동기화)</h3>
-            <div className='flex flex-wrap items-center gap-3'>
-              <input
-                type='date'
-                value={
-                  syncDate && syncDate.length >= 8
-                    ? `${syncDate.slice(0, 4)}-${syncDate.slice(4, 6)}-${syncDate.slice(6, 8)}`
-                    : ''
-                }
-                onChange={(e) => setSyncDate(e.target.value.replace(/-/g, ''))}
-                className='px-3 py-2 border rounded-md'
-              />
-              <Button
-                onClick={() =>
-                  syncScheduleMutation.mutate(
-                    syncDate ||
-                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
-                  )
-                }
-                disabled={syncScheduleMutation.isPending}
-              >
-                {syncScheduleMutation.isPending ? '동기화 중...' : '출전표'}
-              </Button>
-              <Button
-                variant='secondary'
-                onClick={() =>
-                  syncResultsMutation.mutate(
-                    syncDate ||
-                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
-                  )
-                }
-                disabled={syncResultsMutation.isPending}
-              >
-                {syncResultsMutation.isPending ? '동기화 중...' : '경주 결과'}
-              </Button>
-              <Button
-                variant='secondary'
-                onClick={() =>
-                  syncDetailsMutation.mutate(
-                    syncDate ||
-                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
-                  )
-                }
-                disabled={syncDetailsMutation.isPending}
-              >
-                {syncDetailsMutation.isPending ? '동기화 중...' : '상세정보'}
-              </Button>
-              <Button
-                variant='primary'
-                onClick={() =>
-                  syncAllMutation.mutate(
-                    syncDate ||
-                      `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
-                  )
-                }
-                disabled={syncAllMutation.isPending}
-              >
-                {syncAllMutation.isPending ? '적재 중...' : '전체 적재'}
-              </Button>
+          {/* KRA 동기화 — 간편 패널 */}
+          <Card title='빠른 KRA 동기화' description='날짜 선택 후 필요한 데이터를 개별 또는 전체 동기화합니다. 자세한 설정은 KRA 데이터 관리 페이지를 이용하세요.'>
+            <div className='space-y-4'>
+              <div className='flex flex-wrap items-center gap-3'>
+                <input
+                  type='date'
+                  value={
+                    syncDate && syncDate.length >= 8
+                      ? `${syncDate.slice(0, 4)}-${syncDate.slice(4, 6)}-${syncDate.slice(6, 8)}`
+                      : ''
+                  }
+                  onChange={(e) => setSyncDate(e.target.value.replace(/-/g, ''))}
+                  className='px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none'
+                />
+                <Button
+                  onClick={() =>
+                    syncScheduleMutation.mutate(
+                      syncDate ||
+                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                    )
+                  }
+                  disabled={syncScheduleMutation.isPending}
+                  isLoading={syncScheduleMutation.isPending}
+                >
+                  출전표
+                </Button>
+                <Button
+                  variant='secondary'
+                  onClick={() =>
+                    syncResultsMutation.mutate(
+                      syncDate ||
+                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                    )
+                  }
+                  disabled={syncResultsMutation.isPending}
+                  isLoading={syncResultsMutation.isPending}
+                >
+                  경주 결과
+                </Button>
+                <Button
+                  variant='secondary'
+                  onClick={() =>
+                    syncDetailsMutation.mutate(
+                      syncDate ||
+                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                    )
+                  }
+                  disabled={syncDetailsMutation.isPending}
+                  isLoading={syncDetailsMutation.isPending}
+                >
+                  상세정보
+                </Button>
+                <Button
+                  variant='primary'
+                  onClick={() =>
+                    syncAllMutation.mutate(
+                      syncDate ||
+                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                    )
+                  }
+                  disabled={syncAllMutation.isPending}
+                  isLoading={syncAllMutation.isPending}
+                >
+                  전체 적재
+                </Button>
+              </div>
+              <div className='flex flex-wrap items-center gap-4 text-sm text-gray-500'>
+                <span>
+                  <strong>출전표</strong> = 경주계획 + 출전마 |
+                  <strong> 결과</strong> = 착순·기록·배당 |
+                  <strong> 상세</strong> = 훈련·장구·마체중 |
+                  <strong> 전체</strong> = 모두 한 번에
+                </span>
+                <a href='/kra' className='text-indigo-600 hover:underline ml-auto shrink-0'>
+                  KRA 관리 페이지로 →
+                </a>
+              </div>
             </div>
-            <p className='mt-2 text-sm text-gray-500'>
-              날짜 선택 후: 출전표·경주 결과·상세정보 각각 동기화 또는 전체 적재(한 번에 모두). KRA_SERVICE_KEY 필요.
-            </p>
-
-            <hr className='my-4' />
-            <h4 className='font-medium mb-3 text-gray-700'>
-              개발용: 샘플 데이터 적재 (KRA 키 없이 사용)
-            </h4>
-            <div className='flex flex-wrap items-center gap-3'>
-              <Button
-                variant='secondary'
-                onClick={() => seedSampleMutation.mutate(syncDate || undefined)}
-                disabled={seedSampleMutation.isPending}
-              >
-                {seedSampleMutation.isPending ? '적재 중...' : '샘플 경주 적재'}
-              </Button>
-              <span className='text-sm text-gray-500'>
-                위 날짜 기준으로 서울·부산 각 4경주, 경주당 5마리 출전마 생성
-              </span>
-            </div>
-
-            <hr className='my-4' />
-            <h4 className='font-medium mb-3 text-gray-700'>과거 데이터 적재 (KRA 누락 대비)</h4>
-            <div className='flex flex-wrap items-center gap-3'>
-              <input
-                type='date'
-                value={
-                  histFrom.length >= 8
-                    ? `${histFrom.slice(0, 4)}-${histFrom.slice(4, 6)}-${histFrom.slice(6, 8)}`
-                    : ''
-                }
-                onChange={(e) => setHistFrom(e.target.value.replace(/-/g, ''))}
-                className='px-3 py-2 border rounded-md'
-              />
-              <span className='text-gray-500'>~</span>
-              <input
-                type='date'
-                value={
-                  histTo.length >= 8
-                    ? `${histTo.slice(0, 4)}-${histTo.slice(4, 6)}-${histTo.slice(6, 8)}`
-                    : ''
-                }
-                onChange={(e) => setHistTo(e.target.value.replace(/-/g, ''))}
-                className='px-3 py-2 border rounded-md'
-              />
-              <Button
-                variant='secondary'
-                onClick={() =>
-                  syncHistoricalMutation.mutate({ from: histFrom, to: histTo })
-                }
-                disabled={
-                  syncHistoricalMutation.isPending || !histFrom || !histTo
-                }
-              >
-                {syncHistoricalMutation.isPending
-                  ? '적재 중...'
-                  : '과거 데이터 적재'}
-              </Button>
-            </div>
-            <p className='mt-2 text-sm text-gray-500'>
-              기간 선택 후 경주 결과를 DB에 백업합니다. KRA API 장애·누락 시 복구에 유리합니다.
-            </p>
           </Card>
 
           <Card>

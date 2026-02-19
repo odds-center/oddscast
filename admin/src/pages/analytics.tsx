@@ -68,7 +68,7 @@ export default function AnalyticsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='AI 예측 성과 분석'
-            description='AI 예측의 정확도, 비용, ROI를 실시간으로 분석합니다'
+            description='AI 예측의 위치별 정확도, LLM 제공자 성능, 비용 효율을 실시간 분석합니다. 실패 원인도 추적합니다.'
           />
 
           {/* 주요 지표 카드 */}

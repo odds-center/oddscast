@@ -10,7 +10,7 @@
 
 ```mermaid
 flowchart TD
-    A["⏰ Cron Scheduler\n경기 시작 3시간 전"] --> B["📡 공공데이터포털에서\n출전표 데이터 수집"]
+    A["⏰ Cron Scheduler\n경기 시작 3시간 전"] --> B["📡 공공데이터포털에서\n경주계획표(API72_2) + 출전표(API26_2) 수집"]
     B --> C["💾 Race + RaceEntry\nDB에 저장"]
     C --> D["🐍 Python Script 실행\n(python-shell)"]
     D --> E["📊 3가지 점수 계산"]
@@ -19,53 +19,45 @@ flowchart TD
     G --> H["📱 사용자 요청 시\nDB에서 즉시 응답"]
 ```
 
-### 1.2 Python 분석 알고리즘 (3가지)
+### 1.2 Python 분석 알고리즘 v2
 
-#### Speed Index (보정 주파 기록)
+> 상세: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md)
 
-```
-목적: 거리별/주로별 기록 편차 보정
-입력: 경주 기록, 거리, 주로 상태
-공식: 기준 시간 ÷ 실제 시간 × 100 (보정 계수 적용)
-의미: 100 기준. 높을수록 빠른 말
-```
+#### 말 기준 점수 (calculate_score) — 6요소 정규화 가중합
 
-#### Momentum Score (기세 지수)
+| 요소 | 가중치 | 설명 |
+|------|--------|------|
+| **레이팅** (rat) | 0.33 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
+| **폼/기세** (frm) | 0.26 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
+| **컨디션** (cnd) | 0.14 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별 |
+| **경험** (exp) | 0.10 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
+| **적합도** (suit) | 0.10 | 각질×거리 매칭 + 주로상태 영향 |
+| **조교사** (trn) | 0.07 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
+| 낙마 감점 | - | risk 50+ → ×0.88, 30+ → ×0.94, 20+ → ×0.97 |
+| **winProb** | - | softmax(T=15) 기반 승률 확률(%) |
 
-```
-목적: 최근 경기 트렌드 반영
-입력: 최근 3경기 착순 (recentRanks)
-공식: Σ(순위 점수 × 가중치)
-  - 최근 1경기: 가중치 0.5
-  - 최근 2경기: 가중치 0.3
-  - 최근 3경기: 가중치 0.2
-의미: 높을수록 상승세
-```
+#### 기수 점수·가중치 (analyze_jockey)
 
-#### Compatibility (기수-말 적합도)
+| 항목 | 설명 |
+|------|------|
+| **jockeyScore** | winRate·quRate 80점 + experienceScore 20점. 신인(100회 미만) ×0.85 |
+| **weightRatio** | 혼전 50/50, 특수(비·습·장거리) 60/40, 일반 70/30 |
+| **NestJS 통합** | finalScore = horseScore × wH + jockeyScore × wJ → softmax winProb |
 
-```
-목적: 기수와 말의 궁합 분석
-입력: 해당 기수가 해당 말을 탔을 때의 과거 성적
-공식: 해당 조합 승률 × 가중치 + 기수 전체 승률 × 보정값
-의미: 높을수록 좋은 궁합
-```
-
-### 1.3 Gemini 프롬프트 구조
+### 1.3 Gemini 프롬프트 구조 v2 (토큰 최적화)
 
 ```
-[시스템 프롬프트]
-당신은 경마 분석 전문가입니다. 아래 데이터를 바탕으로 승부 예측을 작성하세요.
+[compact 입력 (~1200 토큰, 기존 대비 ~60% 절감)]
+- 경주 정보: meet, date, dist, rank, weather, track, cascade(10+)
+- 출전마: n(번호), h(마명), j(기수), fs(통합점수), wp(승률%), hs(말점수), js(기수점수),
+          sub([rat,frm,cnd,exp,trn,suit]), r(레이팅), rk(착순), risk(낙마), t(태그)
+- Python이 처리한 raw 데이터(equipment, chaksun, ratingHistory 등)는 전송 제외
 
-[데이터]
-- 경기 정보: {race JSON}
-- 출전마 목록: {entries JSON}
-- Python 분석 결과: {scores JSON}
+[규칙]
+- sub 6요소+js+risk 수치 근거로 reason/strengths/weaknesses 작성
+- risk 30+ → weaknesses에 낙마, cascade 20+ → analysis에 연쇄낙마
 
-[요청]
-1. 각 출전마의 강점/약점 분석
-2. 상위 3마리 예측 (이유 포함)
-3. 주의할 변수 (날씨, 주로 상태 등)
+[출력] horseScores, betTypePredictions(7승식), analysis, preview
 ```
 
 ### 1.4 무료 vs 유료 콘텐츠
@@ -89,9 +81,19 @@ flowchart TD
 
 ```json
 {
-  "horseScores": [ { "hrName": "...", "hrNo": "...", "score": 85, "reason": "..." } ],
+  "horseScores": [
+    { "hrName": "...", "hrNo": "...", "score": 85, "reason": "...", "strengths": ["..."], "weaknesses": ["..."] }
+  ],
+  "betTypePredictions": { "SINGLE": { ... }, "PLACE": { ... }, ... },
   "analysisData": {
-    "horseScoreResult": [ { "hrNo": "...", "score": 75 } ],
+    "horseScoreResult": [
+      {
+        "hrNo": "...", "score": 84.26,
+        "sub": {"rat": 94.98, "frm": 88.71, "cnd": 80.0, "exp": 66.85, "trn": 82.4, "suit": 62.0},
+        "risk": 10, "winProb": 39.4,
+        "tags": ["R상위82", "기세↑", "베테랑55전9승"]
+      }
+    ],
     "jockeyAnalysis": {
       "entriesWithScores": [ { "hrNo", "hrName", "jockeyScore", "combinedScore" } ],
       "weightRatio": { "horse": 0.7, "jockey": 0.3 },
@@ -101,8 +103,9 @@ flowchart TD
 }
 ```
 
-- `horseScores`: Gemini 결과 (API/UI 호환)
-- `analysisData`: Python·기수 분석 원본 (정확도 계산·분석용) — [KRA_ANALYSIS_STRATEGY.md](../specs/KRA_ANALYSIS_STRATEGY.md) 참고
+- `horseScores`: Gemini 결과 (API/UI 호환). reason, strengths, weaknesses 포함
+- `horseScoreResult`: Python calculate_score v2 원본 (sub 6요소, risk, winProb, tags)
+- `analysisData`: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md), [KRA_ANALYSIS_STRATEGY.md](../specs/KRA_ANALYSIS_STRATEGY.md) 참고
 
 ### 1.7 예측 정확도 자동 업데이트
 
@@ -156,13 +159,60 @@ AVAILABLE → (사용) → USED
 AVAILABLE → (기간 만료) → EXPIRED
 ```
 
-### 2.4 예측권 획득 방법 추가
+### 2.4 예측권 유형 (TicketType)
 
-| 획득 방법      | 수량                       | 만료         |
-| -------------- | -------------------------- | ------------ |
-| 구독 (LIGHT/STANDARD/PREMIUM) | 플랜별: 라이트 10장, 스탠다드 20장, 프리미엄 30장 | 구독 기간 내 |
-| 개별 구매      | 구매 수량                  | 30일 후 만료 |
-| **포인트 구매**| 1장=1200pt                 | 30일 후 만료 |
+| 유형 | 설명 | 가격 | 대상 |
+|------|------|------|------|
+| `RACE` | 경주별 예측권 | 구독 포함 / 개별 구매 | 개별 경주 AI 예측 열람 |
+| `MATRIX` | 종합 예측권 | 1,000원/장 | 일일 종합 예상표 열람 |
+
+### 2.5 종합 예측권 (MATRIX) 비즈니스 규칙
+
+#### 사용 규칙
+- **1일 1장**: 하루에 1장 사용하면 해당 날짜의 전체 종합 예상표 열람 가능
+- **중복 방지**: 같은 날짜에 이미 사용한 종합 예측권이 있으면 추가 소비 없이 접근 허용 (`alreadyUsed: true`)
+- **날짜 포맷**: 서버 내부에서 `YYYYMMDD` 형식으로 정규화하여 `matrixDate` 필드에 저장
+
+#### 접근 제어 플로우
+
+```mermaid
+sequenceDiagram
+    participant App
+    participant Server
+    participant DB
+
+    App->>Server: GET /prediction-tickets/matrix/access?date=2026-02-19
+    Server->>DB: PredictionTicket.findFirst({ userId, type: MATRIX, status: USED, matrixDate: '20260219' })
+
+    alt 이미 사용한 종합 예측권 존재
+        Server-->>App: { hasAccess: true, expiresAt }
+    else 미열람
+        Server-->>App: { hasAccess: false }
+        App->>Server: POST /prediction-tickets/matrix/use { date }
+        Server->>DB: PredictionTicket.findFirst({ userId, type: MATRIX, status: AVAILABLE })
+        alt 예측권 보유
+            Server->>DB: ticket.update({ status: USED, usedAt: now, matrixDate })
+            Server-->>App: { ticket, alreadyUsed: false }
+        else 미보유
+            Server-->>App: 400 "사용 가능한 종합 예측권이 없습니다"
+        end
+    end
+```
+
+#### 잠금 UI 규칙
+- **미열람**: 3경주 미리보기 + 나머지 잠금 오버레이 (Lock 아이콘 + "나머지 N경주 예상 잠금")
+- **열람 중**: 전체 예상표 오픈 + "열람 중" 골드 배지
+- **미로그인**: `RequireLogin` 컴포넌트 표시
+
+### 2.6 예측권 획득 방법
+
+| 획득 방법      | 유형 | 수량                       | 만료         |
+| -------------- | ---- | -------------------------- | ------------ |
+| 구독 (LIGHT/STANDARD/PREMIUM) | RACE | 플랜별: 라이트 10장, 스탠다드 20장, 프리미엄 30장 | 구독 기간 내 |
+| 구독 (STANDARD 이상) | MATRIX | 5,000원당 1장 (라이트=0, 스탠다드=1, 프리미엄=2) | 구독 기간 내 |
+| 개별 구매      | RACE | 구매 수량                  | 30일 후 만료 |
+| **포인트 구매**| RACE | 1장=1200pt                 | 30일 후 만료 |
+| **종합 예측권 구매** | MATRIX | 1장=1,000원 (1~10장) | 30일 후 만료 |
 
 ---
 
@@ -347,10 +397,12 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 | **예측 = 돈벌기 수단 아님**  | 사행성 요소 없음. 분석 콘텐츠 제공 서비스        |
 | **Gemini 비용 고정**         | Cron으로 미리 분석 → 사용자 수와 무관한 API 비용 |
 | **예측권 없으면 미리보기만** | 무료 사용자도 preview 확인 가능 (검수 통과 예측만) |
+| **종합 예상표 잠금**         | 종합 예측권 미사용 시 3경주 미리보기 + 나머지 잠금 |
+| **종합 예측권 1일 1장**      | 같은 날짜 중복 사용 방지, 1장=1,000원             |
 | **구독 취소 후 잔여 기간**   | 즉시 해지 아님. 결제 기간 끝까지 사용            |
 | **개별 구매 예측권 만료**    | 30일 후 자동 만료                                |
 | **포인트 구매 예측권**       | 1장=1200pt (현금과 별도 가격)                    |
 
 ---
 
-_마지막 업데이트: 2026-02-13_
+_마지막 업데이트: 2026-02-19_

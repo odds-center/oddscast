@@ -15,7 +15,7 @@ function highlightKeywords(text: string, keywords?: string[]): React.ReactNode {
     <>
       {parts.map((p, i) =>
         keywords.includes(p) ? (
-          <strong key={i} className='text-slate-700 font-semibold'>
+          <strong key={i} className='text-stone-700 font-semibold'>
             {p}
           </strong>
         ) : (
@@ -63,7 +63,7 @@ export default function CommentaryFeed({ comments }: CommentaryFeedProps) {
                   </span>
                 </div>
                 <p className='text-sm text-foreground mb-1'>
-                  <span className='font-medium text-slate-700'>{c.hrNo}번 {c.hrName}</span>
+                  <span className='font-medium text-stone-700'>{c.hrNo}번 {c.hrName}</span>
                 </p>
                 <p className='text-text-secondary text-sm'>
                   {highlightKeywords(c.comment, c.keywords)}

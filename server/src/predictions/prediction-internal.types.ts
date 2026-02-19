@@ -22,6 +22,7 @@ export interface RaceForPython {
 export interface RaceEntryForAnalysis {
   hrNo: string;
   hrName?: string | null;
+  jkNo?: string | null;
   jkName?: string;
   trNo?: string | null;
   trName?: string | null;
@@ -55,6 +56,10 @@ export interface RaceEntryForAnalysis {
   sectionalStats?: unknown;
   /** 구간별 태그 (선행마/추입마/중간마) */
   sectionalTag?: string | null;
+  /** 과거 N경기 내 말(hrNo) 낙마 횟수 — fall risk 산출용 */
+  fallHistoryHorse?: number;
+  /** 과거 N경기 내 기수(jkNo) 낙마 횟수 — fall risk 산출용 */
+  fallHistoryJockey?: number;
   trainings?: Array<{
     trDate?: string;
     intensity?: string;
@@ -64,13 +69,36 @@ export interface RaceEntryForAnalysis {
   trainingData?: unknown;
 }
 
-/** Python 분석 결과 (말별 점수) */
+/** Python 분석 결과 (말별 점수) — v2: 정규화 sub-scores + winProb */
 export interface HorseAnalysisItem {
   hrNo: string;
+  chulNo?: string | null;
+  hrName?: string;
   score?: number;
+  /** 하위 점수 (모두 0~100 정규화) */
+  sub?: {
+    rat?: number;
+    frm?: number;
+    cnd?: number;
+    exp?: number;
+    trn?: number;
+    suit?: number;
+  };
+  /** 낙마 리스크 (0~100) */
+  risk?: number;
+  /** softmax 승률 확률 (%) */
+  winProb?: number;
+  /** 최근 착순 */
+  recentRanks?: number[];
+  /** compact 태그 배열 */
+  tags?: string[];
+  /** DB 저장용 reason */
+  reason?: string;
+  /** @deprecated v1 호환 */
   ratingScore?: number;
   momentumScore?: number;
   experienceBonus?: number;
+  fallRiskScore?: number;
 }
 
 /** 승식별 예측 — Gemini가 각 승식별로 별도 추천 출력 */

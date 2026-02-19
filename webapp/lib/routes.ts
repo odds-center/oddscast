@@ -28,6 +28,7 @@ export const routes = {
     picks: '/mypage/picks',
     subscriptions: '/mypage/subscriptions',
     subscriptionsCheckout: (planId: string) => `/mypage/subscription-checkout?planId=${planId}`,
+    matrixTicketPurchase: '/mypage/matrix-ticket-purchase',
     notifications: '/mypage/notifications',
     ticketHistory: '/mypage/ticket-history',
     pointTransactions: '/mypage/point-transactions',

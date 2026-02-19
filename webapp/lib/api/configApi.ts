@@ -1,6 +1,4 @@
 import { axiosInstance, handleApiResponse } from './axios';
-import CONFIG from '@/lib/config';
-import { mockConfig } from '@/lib/mocks/data';
 
 export interface GlobalConfig {
   show_google_login?: string;
@@ -9,7 +7,6 @@ export interface GlobalConfig {
 
 export default class ConfigApi {
   static async getConfig(): Promise<GlobalConfig> {
-    if (CONFIG.useMock) return mockConfig as GlobalConfig;
     const response = await axiosInstance.get('/config');
     return handleApiResponse(response) ?? {};
   }

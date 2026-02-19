@@ -1,5 +1,5 @@
 /**
- * 종합 예상지 미리보기 섹션 — 용산종합지 스타일 테이블 일부
+ * 종합 예상지 미리보기 — 다크 헤더 스타일
  */
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
@@ -9,21 +9,24 @@ import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 import { getGateBgColor } from '@/components/race/RaceHeaderCard';
 
-function GateBadge({ no }: { no: string }) {
-  if (!no || no === '-') return <span className='text-text-tertiary'>-</span>;
+function HorseBadge({ no, name }: { no: string; name?: string }) {
+  if (!no || no === '-') return <span className='text-stone-400'>-</span>;
   const n = parseInt(no, 10) || 0;
   const bg = getGateBgColor(n);
   const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
   return (
-    <span
-      className='inline-flex items-center justify-center w-7 h-7 text-xs font-bold rounded'
-      style={{
-        backgroundColor: bg,
-        color: isLight ? '#171717' : '#fff',
-        border: isLight ? '1px solid #e5e7eb' : 'none',
-      }}
-    >
-      {no}
+    <span className='inline-flex items-center gap-0.5 whitespace-nowrap'>
+      <span
+        className='inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-sm shrink-0'
+        style={{
+          backgroundColor: bg,
+          color: isLight ? '#1c1917' : '#fff',
+          border: isLight ? '1px solid #d6d3d1' : 'none',
+        }}
+      >
+        {no}
+      </span>
+      {name && <span className='text-[11px] text-foreground'>{name}</span>}
     </span>
   );
 }
@@ -41,44 +44,43 @@ export default function PredictionMatrixPreviewSection() {
       title='종합 예상지'
       icon='BarChart2'
       viewAllHref={routes.predictions.matrix}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
+      badge={rows.length > 0 ? `${rows.length}경` : undefined}
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>예상표를 불러오는 중...</div>
+        <div className='py-6 text-center text-stone-400 text-sm'>예상표를 불러오는 중...</div>
       ) : rows.length === 0 ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>오늘 예상 데이터가 없습니다.</div>
+        <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 데이터가 없습니다.</div>
       ) : (
-        <div className='overflow-x-auto'>
-          <table className='data-table data-table-compact w-full min-w-[280px]'>
+        <div className='overflow-x-auto rounded border border-stone-200'>
+          <table className='w-full min-w-[280px] border-collapse'>
             <thead>
-              <tr>
-                <th className='w-24'>경주</th>
-                <th className='cell-center w-20'>AI 종합</th>
+              <tr className='bg-[#292524] text-stone-300'>
+                <th className='text-left py-1.5 px-2.5 text-[11px] font-semibold whitespace-nowrap'>경주</th>
+                <th className='text-center py-1.5 px-2 text-[11px] font-semibold text-[#d4a942] whitespace-nowrap'>AI 종합</th>
               </tr>
             </thead>
             <tbody>
-              {rows.map((row: MatrixRowDto) => (
-                <tr key={row.raceId}>
-                  <td>
+              {rows.map((row: MatrixRowDto, idx) => (
+                <tr key={row.raceId} className={`border-b border-stone-100 ${idx % 2 === 1 ? 'bg-stone-50/50' : ''}`}>
+                  <td className='py-1.5 px-2.5'>
                     <Link
                       href={routes.races.detail(row.raceId)}
-                      className='font-medium text-slate-700 hover:underline'
+                      className='font-medium text-foreground hover:text-[#92702A] hover:underline text-sm whitespace-nowrap'
                     >
                       {row.meetName ?? row.meet} {row.rcNo}R
                       {row.stTime && (
-                        <span className='text-text-tertiary text-xs ml-1'>({row.stTime})</span>
+                        <span className='text-stone-400 text-xs ml-1'>({row.stTime})</span>
                       )}
                     </Link>
                   </td>
-                  <td className='cell-center'>
-                    <div className='flex items-center justify-center gap-0.5 flex-wrap'>
+                  <td className='text-center py-1.5 px-2'>
+                    <div className='flex items-center justify-center gap-1'>
                       {Array.isArray(row.predictions?.ai_consensus)
                         ? (row.predictions.ai_consensus as string[]).map((no, i) => (
-                            <GateBadge key={i} no={no} />
+                            <HorseBadge key={i} no={no} name={row.horseNames?.[no]} />
                           ))
-                        : (
-                            <GateBadge no={row.aiConsensus ?? '-'} />
-                          )}
+                        : <HorseBadge no={row.aiConsensus ?? '-'} name={row.horseNames?.[row.aiConsensus ?? '']} />}
                     </div>
                   </td>
                 </tr>

@@ -1,112 +1,179 @@
 /**
- * 종합 예상 매트릭스 표 — 용산종합지 스타일
- * 가로 스크롤, 게이트 색상, 경주 클릭 → 상세
+ * 종합 예상 매트릭스 — 용산종합지 스타일
+ * 다크 헤더, 게이트 색상 번호, 경주 정보 포함
  */
 import Link from 'next/link';
-import type { MatrixResponseDto } from '@/lib/api/predictionMatrixApi';
+import type { MatrixResponseDto, MatrixRowDto } from '@/lib/api/predictionMatrixApi';
 import { getGateBgColor } from '@/components/race/RaceHeaderCard';
 import { routes } from '@/lib/routes';
+import Icon from '@/components/icons';
 
-function GateBadge({ no, compact = false }: { no: string; compact?: boolean }) {
-  if (!no || no === '-') return <span className='text-text-tertiary'>-</span>;
+function HorseBadge({ no, name }: { no: string; name?: string }) {
+  if (!no || no === '-') return <span className='text-stone-400 text-xs'>-</span>;
   const n = parseInt(no, 10) || 0;
   const bg = getGateBgColor(n);
   const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
   return (
-    <span
-      className={`inline-flex items-center justify-center font-bold rounded ${
-        compact ? 'w-6 h-6 text-xs' : 'w-8 h-8 text-sm'
-      }`}
-      style={{
-        backgroundColor: bg,
-        color: isLight ? '#171717' : '#fff',
-        border: isLight ? '1px solid #e5e7eb' : 'none',
-      }}
-    >
-      {no}
+    <span className='inline-flex items-center gap-1 whitespace-nowrap'>
+      <span
+        className='inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-sm shrink-0'
+        style={{
+          backgroundColor: bg,
+          color: isLight ? '#1c1917' : '#fff',
+          border: isLight ? '1px solid #d6d3d1' : 'none',
+        }}
+      >
+        {no}
+      </span>
+      {name && <span className='text-xs text-foreground font-medium'>{name}</span>}
     </span>
   );
 }
 
-function PredictionCell({ val }: { val: string[] | string }) {
+function PredictionCell({ val, horseNames }: { val: string[] | string; horseNames?: Record<string, string> }) {
   const arr = Array.isArray(val) ? val : [val].filter(Boolean);
   return (
-    <div className='flex items-center gap-0.5 justify-center flex-wrap'>
-      {arr.map((v, i) => (
-        <GateBadge key={i} no={v} compact />
-      ))}
-      {arr.length === 0 && <span className='text-text-tertiary'>-</span>}
+    <div className='flex items-center justify-center gap-1.5 flex-nowrap'>
+      {arr.map((v, i) => <HorseBadge key={i} no={v} name={horseNames?.[v]} />)}
+      {arr.length === 0 && <span className='text-stone-400 text-xs'>-</span>}
     </div>
+  );
+}
+
+function RaceInfoCell({ row }: { row: MatrixRowDto }) {
+  const entryNames = (row.entries ?? [])
+    .filter((e) => e.hrName)
+    .map((e) => e.hrName);
+
+  return (
+    <Link
+      href={routes.races.detail(row.raceId)}
+      className='block hover:bg-stone-50 -mx-1 px-1 rounded transition-colors'
+    >
+      <div className='flex items-baseline gap-1.5'>
+        <span className='font-bold text-foreground text-sm whitespace-nowrap'>
+          {row.rcNo}R
+        </span>
+        <span className='text-stone-500 text-xs whitespace-nowrap'>
+          {row.meetName ?? row.meet}
+        </span>
+      </div>
+      <div className='flex items-center gap-2 text-[11px] text-stone-400 mt-0.5'>
+        {row.stTime && <span className='whitespace-nowrap'>{row.stTime}</span>}
+        {row.rcDist && <span className='whitespace-nowrap'>{row.rcDist}m</span>}
+        {row.rank && <span className='whitespace-nowrap'>{row.rank}</span>}
+        {row.entryCount != null && row.entryCount > 0 && (
+          <span className='whitespace-nowrap'>{row.entryCount}두</span>
+        )}
+      </div>
+      {entryNames.length > 0 && (
+        <p className='text-[10px] text-stone-400 mt-0.5 whitespace-normal leading-tight max-w-[160px]'>
+          {entryNames.join(' · ')}
+        </p>
+      )}
+    </Link>
   );
 }
 
 export interface PredictionMatrixTableProps {
   data: MatrixResponseDto;
   date?: string;
+  locked?: boolean;
+  previewCount?: number;
 }
 
-export default function PredictionMatrixTable({ data }: PredictionMatrixTableProps) {
+export default function PredictionMatrixTable({
+  data,
+  locked = false,
+  previewCount = 3,
+}: PredictionMatrixTableProps) {
   const { raceMatrix, experts } = data;
   const aiExpert = experts.find((e) => e.id === 'ai_consensus');
   const expertList = experts.filter((e) => e.id !== 'ai_consensus');
+  const visibleRows = locked ? raceMatrix.slice(0, previewCount) : raceMatrix;
+  const hiddenCount = locked ? Math.max(0, raceMatrix.length - previewCount) : 0;
 
   return (
-    <div className='data-table-wrapper -mx-4 sm:mx-0'>
-      <table className='data-table w-full min-w-[400px]'>
-        <thead>
-          <tr>
-            <th className='sticky left-0 z-10 bg-inherit min-w-[100px]'>
-              경주
-            </th>
-            {expertList.length > 0 && expertList.map((ex) => (
-              <th key={ex.id} className='cell-center min-w-[64px] text-text-secondary'>
-                {ex.name}
+    <div className='relative'>
+      {/* 테이블 헤더 라벨 */}
+      <div className='flex items-center justify-between bg-[#292524] text-stone-200 px-3 py-2 rounded-t text-xs font-semibold'>
+        <div className='flex items-center gap-2'>
+          <Icon name='BarChart2' size={14} className='text-[#d4a942]' />
+          <span>종합 예상표</span>
+          <span className='text-stone-500'>|</span>
+          <span className='text-stone-400 font-normal'>{raceMatrix.length}경주</span>
+        </div>
+        <span className='text-[#d4a942] font-normal'>AI GOLDEN RACE</span>
+      </div>
+
+      {/* 메인 테이블 */}
+      <div className='overflow-x-auto border border-t-0 border-stone-200 rounded-b bg-white'>
+        <table className='w-full min-w-[420px] border-collapse'>
+          <thead>
+            <tr className='bg-[#1c1917] text-stone-300'>
+              <th className='sticky left-0 z-10 bg-[#1c1917] text-left py-2 px-3 min-w-[120px] text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap'>
+                경주
               </th>
-            ))}
-            <th className='cell-center min-w-[64px] bg-slate-100 text-slate-700 font-semibold'>
-              {aiExpert?.name ?? 'AI 종합'}
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {raceMatrix.map((row) => (
-            <tr key={row.raceId}>
-              <td className='sticky left-0 z-10 bg-background'>
-                <Link
-                  href={routes.races.detail(row.raceId)}
-                  className='font-medium text-slate-700 hover:underline'
-                >
-                  {row.meetName ?? row.meet} {row.rcNo}R
-                  {row.stTime && (
-                    <span className='text-text-tertiary text-xs ml-1'>({row.stTime})</span>
-                  )}
-                </Link>
-              </td>
               {expertList.length > 0 && expertList.map((ex) => (
-                <td key={ex.id} className='cell-center'>
-                  <PredictionCell val={row.predictions[ex.id] ?? '-'} />
-                </td>
+                <th key={ex.id} className='text-center py-2 px-2 min-w-[56px] text-[11px] font-semibold whitespace-nowrap'>
+                  {ex.name}
+                </th>
               ))}
-              <td className='cell-center bg-slate-50'>
-                <div className='flex items-center justify-center gap-1 flex-wrap'>
-                  <PredictionCell
-                    val={
-                      Array.isArray(row.predictions.ai_consensus)
-                        ? row.predictions.ai_consensus
-                        : row.aiConsensus ?? '-'
-                    }
-                  />
-                  {row.consensusLabel && (
-                    <span className='text-slate-600 text-xs font-medium'>({row.consensusLabel})</span>
-                  )}
-                </div>
-              </td>
+              <th className='text-center py-2 px-2 min-w-[72px] text-[11px] font-bold text-[#d4a942] whitespace-nowrap'>
+                {aiExpert?.name ?? 'AI 종합'}
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {raceMatrix.length === 0 && (
-        <p className='text-text-secondary text-sm text-center py-8'>예상 데이터가 없습니다.</p>
+          </thead>
+          <tbody>
+            {visibleRows.map((row, idx) => (
+              <tr
+                key={row.raceId}
+                className={`border-b border-stone-100 ${idx % 2 === 1 ? 'bg-stone-50/50' : ''}`}
+              >
+                <td className='sticky left-0 z-10 bg-inherit py-1.5 px-3 whitespace-nowrap'>
+                  <RaceInfoCell row={row} />
+                </td>
+                {expertList.length > 0 && expertList.map((ex) => (
+                  <td key={ex.id} className='text-center py-1.5 px-2 whitespace-nowrap'>
+                    <PredictionCell val={row.predictions[ex.id] ?? '-'} horseNames={row.horseNames} />
+                  </td>
+                ))}
+                <td className='text-center py-1.5 px-2 bg-[rgba(146,112,42,0.04)] whitespace-nowrap'>
+                  <div className='flex items-center justify-center gap-1'>
+                    <PredictionCell
+                      val={
+                        Array.isArray(row.predictions.ai_consensus)
+                          ? row.predictions.ai_consensus
+                          : row.aiConsensus ?? '-'
+                      }
+                      horseNames={row.horseNames}
+                    />
+                    {row.consensusLabel && (
+                      <span className='text-[#92702A] text-[10px] font-semibold'>({row.consensusLabel})</span>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {raceMatrix.length === 0 && (
+          <p className='text-stone-400 text-sm text-center py-8'>예상 데이터가 없습니다</p>
+        )}
+      </div>
+
+      {/* 잠금 오버레이 */}
+      {locked && hiddenCount > 0 && (
+        <div className='relative mt-[-1px] border border-stone-200 rounded-b bg-gradient-to-b from-white to-stone-50 py-8 text-center'>
+          <div className='absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/80 to-transparent pointer-events-none' />
+          <Icon name='Lock' size={20} className='text-stone-400 mx-auto mb-2' />
+          <p className='text-foreground font-semibold text-sm mb-1'>
+            나머지 {hiddenCount}경주 예상 잠금
+          </p>
+          <p className='text-stone-400 text-xs'>
+            종합 예측권으로 오늘의 전체 예상표를 확인하세요
+          </p>
+        </div>
       )}
     </div>
   );

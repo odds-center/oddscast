@@ -56,7 +56,22 @@ let SubscriptionsService = class SubscriptionsService {
         const nextBillingDate = new Date(startedAt);
         nextBillingDate.setDate(nextBillingDate.getDate() + BILLING_PERIOD_DAYS);
         const ticketsToIssue = sub.plan.totalTickets;
+        const matrixTicketsToIssue = sub.plan.matrixTickets ?? 0;
         const ticketExpiresAt = new Date(nextBillingDate);
+        const raceTicketData = Array.from({ length: ticketsToIssue }, () => ({
+            userId: sub.userId,
+            subscriptionId: sub.id,
+            type: 'RACE',
+            status: 'AVAILABLE',
+            expiresAt: ticketExpiresAt,
+        }));
+        const matrixTicketData = Array.from({ length: matrixTicketsToIssue }, () => ({
+            userId: sub.userId,
+            subscriptionId: sub.id,
+            type: 'MATRIX',
+            status: 'AVAILABLE',
+            expiresAt: ticketExpiresAt,
+        }));
         const [updated] = await this.prisma.$transaction([
             this.prisma.subscription.update({
                 where: { id },
@@ -69,16 +84,14 @@ let SubscriptionsService = class SubscriptionsService {
                 include: { plan: true },
             }),
             this.prisma.predictionTicket.createMany({
-                data: Array.from({ length: ticketsToIssue }, () => ({
-                    userId: sub.userId,
-                    subscriptionId: sub.id,
-                    status: 'AVAILABLE',
-                    expiresAt: ticketExpiresAt,
-                })),
+                data: [...raceTicketData, ...matrixTicketData],
             }),
         ]);
-        const ticketsCreated = ticketsToIssue;
-        return { ...updated, ticketsIssued: ticketsCreated };
+        return {
+            ...updated,
+            ticketsIssued: ticketsToIssue,
+            matrixTicketsIssued: matrixTicketsToIssue,
+        };
     }
     async cancel(id, userId, dto) {
         const sub = await this.prisma.subscription.findUnique({

@@ -207,7 +207,7 @@ export default function AIConfigPage() {
         <div className='space-y-4'>
           <PageHeader
             title='AI 예측 설정'
-            description='LLM 모델, 비용 전략, 캐싱 등의 AI 시스템 설정을 관리합니다 (DB 저장)'
+            description='LLM 모델·온도·토큰·비용전략·캐싱·배치예측 등 AI 시스템의 모든 설정을 관리합니다. 변경 즉시 DB에 반영됩니다.'
           />
 
           {/* 통계 카드 */}

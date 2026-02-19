@@ -65,6 +65,8 @@ export const GA_EVENTS = {
   SUBSCRIPTION_CHECKOUT: 'subscription_checkout',
   /** 단건 결제 시도 */
   SINGLE_PURCHASE: 'single_purchase',
+  /** 종합 예측권 사용 */
+  MATRIX_TICKET_USE: 'matrix_ticket_use',
 } as const;
 
 /** CTA 트래킹 헬퍼 */

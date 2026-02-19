@@ -1,6 +1,382 @@
 # 아키텍처 변경 이력 (Changelog)
 
-> 2025-02-19 작업 내역
+> 2026-02-19 작업 내역
+
+---
+
+## 2026-02-19 (목) — 종합 예측권 구매/지급 확장 + 구독 플랜 MATRIX 포함 + 말 이름 표시
+
+### 1. 구독 플랜 종합 예측권 포함 (5,000원당 1장)
+
+- `SubscriptionPlan` 모델에 `matrixTickets Int @default(0)` 필드 추가
+- 라이트(4,900원) → 0장, 스탠다드(9,900원) → 1장, 프리미엄(14,900원) → 2장
+- 구독 활성화(`activate`) 시 `RACE` + `MATRIX` 타입 예측권 동시 발급
+- seed.sql 업데이트 (matrixTickets 컬럼 포함)
+- 구독 플랜 UI(`subscriptions.tsx`)에 "종합 N장" 표시
+
+### 2. 종합 예측권 별도 구매 페이지
+
+- **경로**: `/mypage/matrix-ticket-purchase`
+- **구매**: 1~10장 (1,000원/장), 30일 유효
+- **서버 API**: `POST /prediction-tickets/matrix/purchase`, `GET /prediction-tickets/matrix/price`
+- **UI**: 상품 안내, 보유 현황, 수량 ±선택, 결제 버튼, 이용안내
+- `routes.ts`에 `matrixTicketPurchase` 추가
+
+### 3. 어드민: 종합 예측권 지급 지원
+
+- `grantTickets()` 서비스: `type` 파라미터 추가 (RACE/MATRIX)
+- Admin controller: `body.type` 수신
+- Admin API client: `type` 파라미터 전달
+- Admin 사용자 모달: **경주 예측권 / 종합 예측권** 타입 선택 버튼 UI
+
+### 4. 예측 매트릭스 말 이름 표시 (마번 → 말 이름)
+
+- 서버 `getMatrix()`: `entries { hrNo, hrName }` select, `horseNames` 매핑 반환
+- `MatrixRowDto`: `entries`, `horseNames` 필드 추가
+- `PredictionMatrixTable`: `GateBadge` → `HorseBadge` (마번 배지 + 말 이름 텍스트)
+- `RaceInfoCell`: 출전마 이름 목록 표시 (`entryNames.join(' · ')`)
+- 홈 프리뷰(`PredictionMatrixPreviewSection`): 동일하게 말 이름 표시
+- 클라이언트 fallback builder: `horseNames` 매핑 지원
+
+### 5. 아이콘 추가
+
+- `icons.tsx`: `Plus`, `Minus`, `ShoppingCart` 아이콘 추가
+
+---
+
+## 2026-02-19 (목) — KRA 스타일 UI 전면 개편 + 종합 예측권 시스템 + 일일 종합 가이드
+
+### 1. 컬러 팔레트 전면 개편 — 다크 골드 테마
+
+- **Primary**: `#c9a227` → `#92702A` (다크 골든로드, 차분하고 격조 있는 톤)
+- **로고/포인트**: `#d4a942` (골드 포인트)
+- **배경**: `#f5f5f4` (warm stone gray)
+- **전체 색상 계열**: `slate-*`, `blue-*`, `emerald-*`, `amber-*` → `stone-*` 계열 통일 (warm gray)
+- **다크 헤더**: `#1c1917` (KRA 사이트 참고)
+- **활성 네비게이션**: 골드 컬러 (`#d4a942`)
+- **적용 파일**: `globals.css` 전면 재작성, 전 컴포넌트 색상 통일
+
+### 2. KRA 사이트 참고 UI 요소
+
+- **다크 테이블 헤더** (`.data-table-kra`): `#292524` 배경 + 연한 텍스트 — 경마 정보 사이트 스타일
+- **KRA 섹션 헤더** (`.section-header-kra`): 다크 배경 + 골드 포인트
+- **히어로 배너** (`.home-hero`): 다크 배경, 골드 그래디언트 오른쪽 장식
+- **border-radius 축소**: 전반적으로 직선적 느낌 (rounded-xl → rounded)
+- **shadow 최소화**: flat 디자인 지향
+
+### 3. nowrap 전면 적용
+
+- `globals.css`의 `.data-table th, td, a, span, p` → `white-space: nowrap`
+- 개별 컴포넌트(`StatusBadge`, `Badge`, `LinkBadge`, `RaceHeaderCard`, `FilterChips`, `SectionCard`, `DateHeader` 등)에 `whitespace-nowrap` 명시
+
+### 4. 홈페이지 보강 — KRA 스타일 일일 가이드
+
+- **히어로 배너** (`DateHeader`): 다크 배경 + 날짜/경주일 표시 + "오늘의 경주", "종합 예상" 바로가기
+- **퀵 메뉴 바**: 발매경주, 경주성적, 종합예상, 예측랭킹 바로가기 (KRA 상단 네비 스타일)
+- **퀵 스탯** (`HomeQuickStats`): 오늘/금주 경주 수 + 경마장별 분류
+
+### 5. 종합 예상 페이지 전면 재설계 (`predictions/matrix.tsx`)
+
+- **페이지 목적**: "일일 종합 가이드" — 하루의 모든 경주 AI 예상을 한눈에
+- **히어로 헤더**: 날짜, 총 경주 수, 경마장별 경주 수, 종합 예측권 상태 표시
+- **탭**: 종합 예상표 | AI 코멘트
+- **잠금 모드**: 종합 예측권 없으면 3경주 미리보기 + 나머지 잠금 오버레이
+- **구매 CTA**: 보유 예측권 있으면 "사용" 버튼, 없으면 "구매" 링크
+
+### 6. PredictionMatrixTable 리디자인 — 용산종합지 스타일
+
+- **다크 헤더 라벨**: `#292524` 배경 + 경주 수 + "AI GOLDEN RACE"
+- **다크 컬럼 헤더**: `#1c1917` 배경 + AI 종합 컬럼 골드 하이라이트
+- **경주 정보 셀**: 경주번호 + 경마장 + 출발시간 + 거리 + 등급 + 출전두수 모두 표시
+- **게이트 색상 번호 배지**: KRA 게이트 색상 반영
+- **잠금 모드 지원**: `locked`, `previewCount` props
+- **MatrixRowDto 확장**: `rcDist`, `rank`, `entryCount` 필드 추가
+
+### 7. 종합 예측권 시스템 (신규)
+
+#### Prisma 스키마 변경
+- `TicketType` enum 추가: `RACE` (기존 경주별) | `MATRIX` (종합)
+- `PredictionTicket` 모델: `type TicketType @default(RACE)`, `matrixDate String?` 추가
+
+#### 서버 API (`prediction-tickets.controller.ts`)
+- `GET /prediction-tickets/matrix/access?date=` — 해당 날짜 접근 권한 확인
+- `POST /prediction-tickets/matrix/use` — 종합 예측권 사용 (1일 1장)
+- `GET /prediction-tickets/matrix/balance` — 종합 예측권 잔액
+
+#### 서비스 로직 (`prediction-tickets.service.ts`)
+- `checkMatrixAccess(userId, date)` — 날짜별 접근 권한 확인
+- `useMatrixTicket(userId, date)` — 예측권 사용 (중복 사용 방지)
+- `getMatrixBalance(userId)` — 종합 예측권 잔액
+
+#### 프론트엔드 (`predictionTicketApi.ts`)
+- `checkMatrixAccess(date)` — API 호출
+- `useMatrixTicket(date)` — 종합 예측권 사용
+- `getMatrixBalance()` — 잔액 조회
+
+### 8. 컴포넌트 업데이트 요약
+
+| 컴포넌트 | 변경 내용 |
+|---------|----------|
+| `StatusBadge` | 진행=골드 배경, 예정=흰 배경, 종료=연회색, stone 계열 |
+| `Badge` | 모든 variant stone 계열, primary=골드 |
+| `RankBadge` | 1등=골드, 2등=중회색, 3등=연회색 |
+| `PredictionSymbol` | 기호별 골드~stone 명도 단계 |
+| `Card` | accent=좌측 골드 3px 라인 |
+| `FilterChips` | 활성 `#292524`, stone 계열 |
+| `SectionTitle` | 아이콘 골드, 배지 골드 |
+| `LinkBadge` | hover=골드 |
+| `SectionCard` | 더보기 링크 hover=골드 |
+| `BetTypePredictionsSection` | 단승=골드, 연승=다크, 삼쌍=미디엄 |
+| `PredictionMatrixTable` | 전면 재설계 (위 항목 참조) |
+| `DateHeader` | 다크 히어로 배너 + 바로가기 |
+| `HomeQuickStats` | 골드 포인트 텍스트 |
+| `Layout` | theme-color `#1c1917` |
+| `icons.tsx` | Lock, Unlock 아이콘 추가 |
+| `analytics.ts` | `MATRIX_TICKET_USE` 이벤트 추가 |
+
+### 9. 마이그레이션 안내
+
+```bash
+cd server && npx prisma db push
+# 또는 마이그레이션 파일 생성:
+cd server && npx prisma migrate dev --name add-matrix-ticket-type
+```
+
+---
+
+## 2026-02-19 (목) — 경주 상세 탭 제거·단일 뷰 + 예측 UI 리뉴얼 + ko-KR 포맷 통일
+
+### 1. 경주 상세 페이지 탭 제거 → 단일 플로우 (`webapp/pages/races/[id].tsx`)
+
+- "기록정보" / "예상정보" `TabBar` 완전 제거
+- 모든 정보를 하나의 스크롤 흐름으로 표시:
+  - 경주 헤더 → 경주 결과(있으면) → AI 예측 → 출전마 → 기수·말 통합 분석
+- `TabBar`, `SectionTitle`, `Tooltip` import 제거 (코드 경량화)
+
+### 2. 예측 정보 UI 리뉴얼 (`PredictionFullView`, `PredictionLockedView`)
+
+- `PredictionFullView`: pill 형태 예측 기록 탭, 1분 쿨다운 카운트다운, 컴팩트 말별 순위
+- `PredictionLockedView`: 블러 + 그라데이션 오버레이, 아이콘 중심 CTA
+- `useCooldown` 훅: lastUsedAt 기준 실시간 카운트다운
+
+### 3. 3가지 추천식 카드 (`BetTypePredictionsSection.tsx`)
+
+- 핵심 3개 승식(단승/연승/삼쌍)을 컬러 카드로 상단 배치 (amber/blue/purple)
+- 나머지 4개 승식은 접기/펼치기 테이블
+- `NumberBadge` 아토믹 컴포넌트로 마번 표시
+
+### 4. 경주 결과 UI 컴팩트화
+
+- 1-3위: 금/은/동 하이라이트 카드 (가로 3열)
+- 4위+: `<details>` 접기로 공간 절약
+- 배당 상세: 그리드 카드 접기
+
+### 5. 서버: 예측권 1분 쿨다운 (`prediction-tickets.service.ts`)
+
+- `useTicket()`: 같은 경주에 60초 이내 재사용 시 `BadRequestException`
+- 남은 초를 에러 메시지에 포함 ("N초 후 다시 예측할 수 있습니다")
+
+### 6. ko-KR 날짜/시간 포맷 통일 (`webapp/lib/utils/format.ts`)
+
+- `formatTime(date)` → "오후 3:05" (Asia/Seoul 타임존)
+- `formatDateTime(date)` → "2025. 2. 15. 오후 3:05"
+- `formatDateOnly(date)` → "2025. 2. 15."
+- `formatNumber(n)` → "1,234" / `formatWon(n)` → "1,234원" / `formatPoint(n)` → "1,234pt"
+- 기존 로컬 `formatDate()` 함수들 → 공용 유틸로 통합 (ticket-history, point-transactions, notifications, RaceHeaderCard)
+
+### 7. 경주 결과 목록 출전마 전체 표시 (`webapp/pages/results.tsx`)
+
+- 기존: `ord > 3` 필터로 1-3위만 표시
+- 변경: 전체 출전마·기수 표시, 1-3위 하이라이트 + "전체 출전마" 접기
+- 데스크톱 테이블: "출전마" 컬럼 추가 (N마리)
+
+### 8. 경주 상세 출전마 표시 보완 (`webapp/pages/races/[id].tsx`)
+
+- entries가 비어있어도 raceResults에서 출전마 목록 자동 추출 (fallback)
+- 완료된 경주에서도 출전마 섹션 표시 (접힌 상태)
+- `showPickPanel` 분리: Pick 기능은 경주 전 + entries 있을 때만
+
+### 9. 아토믹 디자인 패턴 정리
+
+- `RaceHeaderCard.tsx` 로컬 `formatRcDate()` 중복 → `@/lib/utils/format` import으로 통일
+- `formatNumber()` 공용 유틸 도입으로 `.toLocaleString()` 직접 호출 제거
+- 모든 날짜/시간/숫자 포맷을 `format.ts`에서 관리 (Single Source of Truth)
+
+### 10. PredictionHorseScore 타입 확장 (`webapp/lib/types/predictions.ts`)
+
+- `strengths?: string[]`, `weaknesses?: string[]`, `confidence?: 'high' | 'medium' | 'low'` 추가
+
+---
+
+## 2026-02-19 (목) — WebApp·Admin 전면 UI/UX 개선
+
+### 1. Tooltip 공용 컴포넌트 추가 (`webapp/components/ui/Tooltip.tsx`)
+
+- CSS 기반 경량 툴팁 (외부 라이브러리 없음)
+- `?` 아이콘 + hover 시 설명 표시, `top/bottom/left/right` 위치, `inline` 모드
+- `webapp/components/ui/index.ts`에 export 등록
+
+### 2. HorseEntryTable 경마 용어 툴팁 (`webapp/components/race/HorseEntryTable.tsx`)
+
+- 테이블 헤더 10개 컬럼에 Tooltip 적용: 마령, 부담, 마체중, 레이팅, 통산, 최근, 장구
+- 기존 HTML `title` 속성 → Tooltip 컴포넌트로 교체
+
+### 3. 경주 상세 결과 테이블 용어 툴팁 (`webapp/pages/races/[id].tsx`)
+
+- 기록("출발~결승 소요 시간"), 착차("1위와의 마신 차이"), 단승/복승 배당 설명
+- 마칠기삼 가중치 분석 용어 Tooltip
+- 배당 상세 영역에 설명 텍스트 추가
+
+### 4. 승식별 AI 추천 툴팁 (`webapp/components/predictions/BetTypePredictionsSection.tsx`)
+
+- 7개 승식(단승~삼쌍승) 각각에 쉬운 한글 설명 Tooltip 적용
+- PICK_TYPE_DESCRIPTIONS 활용
+
+### 5. 결과 페이지 컬럼 헤더 개선 (`webapp/pages/results.tsx`)
+
+- 1위(경주기록), 2위(착차), 3위(착차) 헤더 명시
+
+### 6. SectionCard description prop 추가 (`webapp/components/page/SectionCard.tsx`)
+
+- `description?: string` prop 추가 → 제목 아래 한 줄 설명
+- HomeSection에도 전파, 7개 홈 섹션에 description 적용
+
+### 7. 홈 DateHeader 경주일 안내 (`webapp/components/home/DateHeader.tsx`)
+
+- 금·토·일 경주일 → `RACE DAY` 배지 + "오늘은 경주일입니다"
+- 비경주일 → "다음 경주일: X요일 (M/D)" 표시
+
+### 8. HomeQuickStats 빈 상태 개선 (`webapp/components/home/HomeQuickStats.tsx`)
+
+- 경주 0건 시 "경주는 보통 금·토·일에 진행됩니다" 안내
+
+### 9. 프로필 페이지 개선 (`webapp/pages/profile/index.tsx`)
+
+- 예측권·포인트 SectionCard에 description 추가
+- Tooltip으로 "받는 방법", "사용 방법" 설명
+- 포인트 부족 시 필요/보유 금액 상세 표시
+
+### 10. 랭킹 페이지 적중 기준 설명 (`webapp/pages/ranking.tsx`)
+
+- Tooltip으로 적중 기준 안내: "AI 추천마가 실제 1~3위에 들면 적중"
+
+### 11. Admin KRA 페이지 전면 재설계 (`admin/src/pages/kra.tsx`)
+
+- **자동 동기화 현황**: 5개 Cron 스케줄 시각 카드
+- **단계별 구조 (Step 1~3)**: 출전표 → 결과 → 부가정보
+- **HelpBox**: info/warning/success 3종 안내 상자 + "언제 사용하나요?" 가이드
+- **공통 날짜 선택**: 모든 동기화에 한 곳에서 적용
+- **개발·백업용**: `details/summary`로 접어서 정리
+- **로그 테이블**: 상태 한글화(성공/실패), 아이콘, 빈 상태 안내, racePlan 필터 추가
+
+### 12. Admin 대시보드 개선 (`admin/src/pages/index.tsx`)
+
+- 통계 카드 디자인 개선 (아이콘 위치, 라운딩, 호버)
+- 빠른 링크 10개 확장 (결과, AI 분석, 수익, 알림, 설정)
+- 각 링크에 2줄 설명
+
+### 13. Admin 전체 페이지 설명 개선 (11개 페이지)
+
+- PageHeader `description`을 구체적·실용적 안내로 변경
+- 대상: 회원관리, 결제내역, 경주관리, 경기결과, 구독관리, 통계, AI설정, AI분석, 수익대시보드, 알림관리
+
+### 14. Admin Card 컴포넌트 확장 (`admin/src/components/common/Card.tsx`)
+
+- `title` prop: `string` → `ReactNode` (JSX 지원, StepBadge 등)
+
+### 15. Admin 경주 관리 동기화 패널 정리 (`admin/src/pages/races/index.tsx`)
+
+- 각 버튼 역할 한 줄 요약 추가
+- KRA 관리 페이지 링크 제공
+
+### 문서 업데이트
+
+- `docs/features/UI_PATTERNS.md`: Tooltip 섹션, SectionCard description, DateHeader, 컴포넌트 요약 확장
+- `docs/architecture/PROJECT_STRUCTURE.md`: Tooltip.tsx 추가
+- `docs/guides/ADMIN_GUIDE.md`: KRA 페이지 단계별 가이드, 주요 페이지 테이블 확장
+- `docs/architecture/CHANGELOG.md`: 이 항목
+
+---
+
+## 2026-02-19 (목) — 예측 분석 공식 v2 (정규화·변수보강·토큰최적화)
+
+### Python 분석 전면 개편 (`server/scripts/analysis.py`)
+
+- **모든 sub-score 0~100 정규화**: v1의 스케일 불균형(-2~15, 0~5 등) 완전 제거
+- **6요소 가중합 (W_HORSE, 합=1.0)**: rating 0.33, form 0.26, condition 0.14, experience 0.10, suitability 0.10, trainer 0.07
+- **신규 변수 추가**:
+  - `_condition_score`: 마체중 변화(±2kg 최적), 연령(4~5세 전성기), 부담중량(55kg 기준), 성별(거세마 안정)
+  - `_suitability_score`: 각질×거리 매칭, 주로불량 시 선행 불리/추입 유리
+- **개선된 공식**:
+  - `_rating_score`: sigmoid 상대비교(55%) + 로그 절대구간(45%) → 상위/하위 분리력 강화
+  - `_form_score`: 비선형 착순→점수(1등=100, 2등=85...), 추이(-6~+8), 레이팅 추이
+  - `_experience_score`: 로그 스케일 출전(0~50) + 승률 구간(0~50), 신인×0.6
+  - `_trainer_score`: 승률×2.0(max 35) + 복승률×0.7(max 25)
+- **낙마 리스크 감점 적용**: risk50+ → ×0.88, 30+ → ×0.94, 20+ → ×0.97
+- **softmax 승률 확률(winProb%)**: T=15 → 상위마 분리, 하위마 저확률
+- **compact tags/reason 출력**: Gemini 토큰 최적화용
+
+### NestJS 프롬프트 토큰 최적화 (`predictions.service.ts`)
+
+- **`constructPrompt` 전면 리팩토링**: ~3000+ → ~1200 토큰 (~60% 절감)
+- **compact 입력 형식**: n(번호), h(마명), j(기수), fs(통합점수), wp(승률%), sub([6요소]), risk, t(태그)
+- **raw 데이터 전송 제거**: Python이 처리한 equipment, chaksun, ratingHistory 등 중복 전송 없음
+- **`computeWinProbabilities`**: NestJS에서 finalScore(말+기수 통합) 기반 softmax 산출
+- **점수 해석 가이드/작성 원칙 섹션 제거**: Python 결과에 이미 반영, 축약된 규칙만 유지
+
+### 타입 업데이트 (`prediction-internal.types.ts`)
+
+- `HorseAnalysisItem`: sub(6요소), risk, winProb, tags, recentRanks 추가
+
+### 문서 업데이트
+
+- `docs/specs/ANALYSIS_SPEC.md`: v2 전면 재작성
+- `docs/architecture/BUSINESS_LOGIC.md`: §1.2, §1.3, §1.6 업데이트
+- `docs/specs/KRA_ANALYSIS_STRATEGY.md`: §8 v2 업데이트
+
+---
+
+## 2026-02-19 (목) — 경주 결과 테이블·Mock 제거·일러스트 제거
+
+### 경주 결과 페이지 (`/results`)
+
+- **셀 크기 축소**: `DataTable compact` 적용, 경주 `w-24`, 날짜 `w-20`, 1·2·3위 `min-w-[100px]`, 전체 `text-[13px]`
+- **기록 가로 표기**: 세로형(`flex-col`) → 가로형(`inline-flex items-center gap-1.5`) — `[마번] 마명(기수) 기록` 한 줄
+- **경주마별 기록 노출**: 1위=rcTime(경주기록), 2·3위=diffUnit(착차)
+- **서버**: `results.service.ts` findAll select에 `diffUnit` 추가
+- **타입**: `RaceResult`에 `diffUnit` 추가
+
+### Mock 데이터·설정 제거
+
+- **config.ts**: `USE_MOCK`, `CONFIG.useMock` 제거
+- **mocks 폴더 삭제**: `webapp/lib/mocks/data.ts`, `matrixData.ts`, `index.ts` 전체 삭제
+- **API 분기 제거**: 14개 API 파일에서 `CONFIG.useMock` 분기 제거 (resultApi, authApi, raceApi, predictionApi, predictionMatrixApi, predictionTicketApi, notificationApi, subscriptionApi, pointApi, paymentApi, subscriptionPlansApi, rankingApi, configApi, picksApi)
+- **페이지**: `subscription-checkout.tsx`, `auth/login.tsx`에서 mock UI(데모 안내, mock 결제 분기) 제거
+- **환경 변수**: `webapp/.env.example`, `.env.local`에서 `NEXT_PUBLIC_USE_MOCK` 제거
+- **문서**: `.cursorrules`(MOCK_PREFIX), `webapp/README.md`에서 Mock 관련 규칙·설명 제거
+
+### 시각 요소 제거
+
+- **RaceTrackIllustration.tsx**: 경기장 일러스트 SVG 컴포넌트 삭제
+- **적용 제거**: DateHeader, HomeQuickStats, RaceHeaderCard, PredictionMatrixTable에서 배경/인라인 일러스트 제거
+- **ui/index.ts**: RaceTrackIllustration export 제거
+
+### KRA 출전마(Entries) — 경기 종료 시 섹션 숨김
+
+- **출전마**: KRA 출전표 API(API26_2)에서 경주 **전** 받는 "출전 예정 말" 정보 (마명, 기수, 부담중량, 레이팅 등)
+- **경기 종료 시**: 출전마 섹션·출전마 선택 패널 숨김 (`status=COMPLETED` 또는 `view=result`). 경주 결과 테이블만 표시
+
+### Admin 미래 경주 스케줄 적재 — API72_2 경주계획표 연동
+
+- **문서**: [`docs/specs/KRA_RACE_PLAN_SPEC.md`](../specs/KRA_RACE_PLAN_SPEC.md) 신규 작성
+- **배경**: 출전표(API26_2)는 경주 2~3일 전에만 데이터 제공. 멀리 미래 날짜는 빈 응답
+- **경주계획표 API72_2 연동**: `fetchRacePlanSchedule(date)` — `racePlan_2`로 미래 일정 조회 가능
+- **공식 파라미터**: meet, rc_year, rc_month, rc_date (경주일자 YYYYMMDD)
+- **syncUpcomingSchedules 개편**: 1) 경주계획표 → 2) 출전표 순 적재
+- **Cron 추가**: `syncFutureRacePlans` 매주 월 03:00 — 1년 내 금·토·일 전체 적재
+- **Cron 수정**: `syncWeeklySchedule` (수·목 18:00) — 경주계획표 선 호출 후 출전표
+- **Admin syncSchedule**: date 지정 시 `syncScheduleForDate` (경주계획표→출전표), 미지정 시 `syncUpcomingSchedules`
+- **Admin kra.tsx**: KRA 동기화 실패 시 `getErrorMessage(err)`로 실제 오류 메시지 toast 표시
 
 ---
 

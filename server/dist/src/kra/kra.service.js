@@ -87,13 +87,21 @@ let KraService = KraService_1 = class KraService {
             serviceKeyConfigured: this.ensureServiceKey(),
         };
     }
+    async syncFutureRacePlans() {
+        if (!this.ensureServiceKey())
+            return;
+        this.logger.log('Running Future Race Plans Sync (API72_2)');
+        await this.syncUpcomingSchedules();
+    }
     async syncWeeklySchedule() {
         if (!this.ensureServiceKey())
             return;
         this.logger.log('Running Weekly Schedule Sync (Pre-fetch)');
         const dates = this.getUpcomingWeekendDates();
         for (const date of dates) {
+            await this.fetchRacePlanSchedule(date);
             await this.syncEntrySheet(date);
+            await this.delay(300);
         }
     }
     async syncRaceDayMorning() {
@@ -381,6 +389,23 @@ let KraService = KraService_1 = class KraService {
         }
         await this.cache.del(`race:${race.id}`);
     }
+    async syncScheduleForDate(date) {
+        if (!this.ensureServiceKey()) {
+            return {
+                message: 'KRA_SERVICE_KEY 미설정.',
+                races: 0,
+                entries: 0,
+            };
+        }
+        const d = this.normalizeToYyyyMmDd(date);
+        const planRes = await this.fetchRacePlanSchedule(d);
+        const entryRes = await this.syncEntrySheet(d);
+        return {
+            message: `스케줄 적재 완료: ${planRes.races}경주(계획표), ${entryRes.entries}출마`,
+            races: Math.max(planRes.races ?? 0, entryRes.races ?? 0),
+            entries: entryRes.entries ?? 0,
+        };
+    }
     async syncAll(date) {
         if (!this.ensureServiceKey()) {
             return { message: 'KRA_SERVICE_KEY 미설정.' };
@@ -391,6 +416,7 @@ let KraService = KraService_1 = class KraService {
             message: '',
         };
         try {
+            await this.fetchRacePlanSchedule(d);
             const entryRes = await this.syncEntrySheet(d);
             out.entrySheet = { races: entryRes.races, entries: entryRes.entries };
             await this.delay(300);
@@ -458,10 +484,73 @@ let KraService = KraService_1 = class KraService {
         }
         return dates;
     }
+    async fetchRacePlanSchedule(date) {
+        if (!this.ensureServiceKey()) {
+            return { races: 0 };
+        }
+        const d = this.normalizeToYyyyMmDd(date);
+        const baseUrl = await this.resolveBaseUrl();
+        const url = `${baseUrl}/API72_2/racePlan_2`;
+        let totalRaces = 0;
+        for (const meet of constants_1.KRA_MEETS) {
+            try {
+                const params = {
+                    serviceKey: decodeURIComponent(this.serviceKey),
+                    meet: meet.code,
+                    rc_year: d.slice(0, 4),
+                    rc_month: d.slice(0, 6),
+                    rc_date: d,
+                    numOfRows: 500,
+                    pageNo: 1,
+                    _type: 'json',
+                };
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                let items = [];
+                const bodyItems = response.data?.response?.body?.items;
+                if (bodyItems) {
+                    if (Array.isArray(bodyItems)) {
+                        items = bodyItems;
+                    }
+                    else if (bodyItems.item) {
+                        const raw = bodyItems.item;
+                        items = Array.isArray(raw) ? raw : [raw];
+                    }
+                }
+                for (const item of items) {
+                    const v = (key) => {
+                        const x = item[key] ?? item[key.replace(/([A-Z])/g, '_$1').toLowerCase()];
+                        return x != null ? String(x) : null;
+                    };
+                    const rcNo = v('rcNo') || v('rc_no') || '';
+                    if (!rcNo)
+                        continue;
+                    const meetName = meet.name;
+                    const rcName = (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
+                    const rcDist = v('rcDist') ?? v('rc_dist');
+                    const rcDay = v('rcDay') ?? v('rc_day');
+                    const rank = v('rank') ?? v('rcGrade') ?? v('rc_grade');
+                    const prizeRaw = v('rcPrize') ?? v('rc_prize') ?? v('chaksun1') ?? v('chaksun_1') ?? '0';
+                    const prize = parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
+                    const stTime = v('rcStartTime') ?? v('rc_start_time') ?? v('stTime') ?? v('st_time');
+                    await this.prisma.race.upsert({
+                        where: { meet_rcDate_rcNo: { meet: meetName, rcDate: d, rcNo } },
+                        update: { rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, stTime: stTime ?? undefined },
+                        create: { meet: meetName, rcDate: d, rcNo, rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, meetName, stTime: stTime ?? undefined },
+                    });
+                    totalRaces++;
+                }
+                await this.delay(200);
+            }
+            catch (err) {
+                this.logger.warn(`[fetchRacePlanSchedule] ${meet.name} ${d} 실패`, err);
+            }
+        }
+        return { races: totalRaces };
+    }
     async syncUpcomingSchedules() {
         if (!this.ensureServiceKey()) {
             return {
-                message: 'KRA_SERVICE_KEY 미설정.',
+                message: 'KRA_SERVICE_KEY 미설정. server/.env에 KRA_SERVICE_KEY를 추가하세요.',
                 races: 0,
                 entries: 0,
                 datesProcessed: 0,
@@ -470,14 +559,15 @@ let KraService = KraService_1 = class KraService {
         const today = this.formatYyyyMmDd((0, dayjs_1.default)());
         const oneYearLater = this.formatYyyyMmDd((0, dayjs_1.default)().add(1, 'year'));
         const dates = this.getRaceDateRange(today, oneYearLater);
-        this.logger.log(`[syncUpcomingSchedules] ${dates.length}일(금·토·일) 출전표 적재: ${today} ~ ${oneYearLater}`);
+        this.logger.log(`[syncUpcomingSchedules] ${dates.length}일(금·토·일) 경주계획표+출전표 적재: ${today} ~ ${oneYearLater}`);
         let totalRaces = 0;
         let totalEntries = 0;
         for (const d of dates) {
             try {
-                const res = await this.syncEntrySheet(d);
-                totalRaces += res.races ?? 0;
-                totalEntries += res.entries ?? 0;
+                const planRes = await this.fetchRacePlanSchedule(d);
+                const entryRes = await this.syncEntrySheet(d);
+                totalRaces += Math.max(planRes.races ?? 0, entryRes.races ?? 0);
+                totalEntries += entryRes.entries ?? 0;
                 await this.delay(300);
             }
             catch (err) {
@@ -1903,6 +1993,12 @@ let KraService = KraService_1 = class KraService {
     }
 };
 exports.KraService = KraService;
+__decorate([
+    (0, schedule_1.Cron)('0 3 * * 1'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], KraService.prototype, "syncFutureRacePlans", null);
 __decorate([
     (0, schedule_1.Cron)('0 18 * * 3,4'),
     __metadata("design:type", Function),

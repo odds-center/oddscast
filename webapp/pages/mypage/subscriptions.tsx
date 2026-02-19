@@ -64,7 +64,7 @@ export default function SubscriptionsPage() {
                   <span
                     className={
                       h.status === 'ACTIVE'
-                        ? 'text-slate-700 font-medium'
+                        ? 'text-stone-700 font-medium'
                         : h.status === 'CANCELLED'
                           ? 'text-text-tertiary'
                           : 'text-text-secondary'
@@ -121,11 +121,16 @@ export default function SubscriptionsPage() {
                   <div>
                     <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
                     <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
-                    <p className='text-slate-800 font-bold mt-2'>
+                    <p className='text-stone-800 font-bold mt-2'>
                       {plan.totalPrice?.toLocaleString() ?? plan.totalPrice}원/월
                     </p>
                     <p className='text-text-tertiary text-xs mt-1'>
                       예측권 {plan.totalTickets ?? plan.baseTickets}장/월
+                      {plan.matrixTickets > 0 && (
+                        <span className='ml-1 text-[#92702A] font-medium'>
+                          + 종합 {plan.matrixTickets}장
+                        </span>
+                      )}
                     </p>
                   </div>
                   {isLoggedIn && !status?.isActive && (

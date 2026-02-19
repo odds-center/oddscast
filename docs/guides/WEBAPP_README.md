@@ -28,7 +28,6 @@ npm run dev
 
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
-| `NEXT_PUBLIC_USE_MOCK` | Mock 모드 | `false` |
 | `NEXT_PUBLIC_API_URL` | Server API | `http://localhost:3001/api` |
 | `NEXT_PUBLIC_WEBAPP_URL` | 배포 URL | `http://localhost:3000` |
 
@@ -50,4 +49,4 @@ npm run dev
 
 ## 참조
 
-**상세:** [WEBAPP_DEVELOPMENT.md](WEBAPP_DEVELOPMENT.md) — Mock 모드, 페이지 컴포넌트, 모바일 최적화, 구독 플로우
+**상세:** [WEBAPP_DEVELOPMENT.md](WEBAPP_DEVELOPMENT.md) — 페이지 컴포넌트, 모바일 최적화, 구독 플로우

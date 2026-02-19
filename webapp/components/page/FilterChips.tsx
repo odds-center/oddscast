@@ -10,12 +10,9 @@ interface FilterChipsProps {
   className?: string;
 }
 
-const chipBase =
-  'inline-flex items-center justify-center px-3 py-2 sm:px-3.5 sm:py-1.5 min-h-[44px] sm:min-h-[36px] rounded-full text-sm font-medium transition-all duration-250 ease touch-manipulation focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
-
 export default function FilterChips({ options, value, onChange, className = '' }: FilterChipsProps) {
   return (
-    <div className={`flex flex-wrap gap-2 ${className}`} role='group' aria-label='필터 옵션'>
+    <div className={`flex flex-wrap gap-1 ${className}`} role='group' aria-label='필터 옵션'>
       {options.map((opt) => {
         const isActive = value === opt.value;
         return (
@@ -24,11 +21,10 @@ export default function FilterChips({ options, value, onChange, className = '' }
             onClick={() => onChange(opt.value)}
             type='button'
             aria-pressed={isActive}
-            aria-label={opt.label}
-            className={`${chipBase} ${
+            className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors touch-manipulation whitespace-nowrap ${
               isActive
-                ? 'bg-primary text-primary-foreground border border-primary-dark shadow-sm hover:bg-primary-dark'
-                : 'bg-white/80 border border-border text-text-secondary hover:border-slate-300 hover:text-foreground hover:bg-slate-50 hover:shadow-sm'
+                ? 'bg-[#292524] text-white'
+                : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-800 hover:border-stone-300'
             }`}
           >
             {opt.label}

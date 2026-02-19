@@ -79,6 +79,12 @@ server/
 │   │   ├── results.service.ts
 │   │   └── dto/result.dto.ts
 │   │
+│   ├── kra/                             # 🏇 KRA 연동 (경주계획표·출전표·결과·Cron)
+│   │   ├── kra.module.ts
+│   │   ├── kra.controller.ts            # /kra/* (Admin용)
+│   │   ├── kra.service.ts               # API72_2, API26_2, Cron 스케줄
+│   │   └── constants.ts
+│   │
 │   ├── predictions/                     # 🤖 AI 예측 모듈
 │   │   ├── predictions.module.ts
 │   │   ├── predictions.controller.ts    # /predictions/* 엔드포인트
@@ -221,6 +227,7 @@ webapp/
 │       ├── StatusBadge.tsx           # 경주 상태 배지
 │       ├── RankBadge.tsx             # 1·2·3등 배지
 │       ├── SectionTitle.tsx
+│       ├── Tooltip.tsx              # CSS 기반 경량 툴팁 (경마 용어 설명)
 │       ├── Toggle.tsx
 │       └── Dropdown.tsx
 │   ├── race/                         # HorseEntryTable, RaceHeaderCard, PredictionSymbol
@@ -228,8 +235,6 @@ webapp/
 │   └── predictions/                  # PredictionMatrixTable, CommentaryFeed, HitRecordBanner
 ├── lib/
 │   ├── api/                          # Server API 클라이언트
-│   ├── mocks/
-│   │   └── data.ts                   # Mock 모드 데이터
 │   ├── store/
 │   │   └── authStore.ts              # Zustand 인증 상태
 │   ├── hooks/
@@ -297,7 +302,7 @@ admin/
 │   └── pages/
 │       ├── login.tsx
 │       ├── index.tsx             # 대시보드
-│       ├── kra.tsx               # KRA 데이터 관리 (출전표 수동 동기화, 동기화 로그)
+│       ├── kra.tsx               # KRA 데이터 관리 (경주계획표·출전표 수동/Cron)
 │       ├── races/
 │       ├── users/
 │       └── ...

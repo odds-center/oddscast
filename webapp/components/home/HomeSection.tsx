@@ -6,6 +6,8 @@ import type { IconName } from '../icons';
 
 interface HomeSectionProps {
   title: string;
+  /** 제목 아래 설명 */
+  description?: string;
   icon?: IconName;
   /** 더보기 링크 (href + label) */
   viewAllHref?: string;
@@ -14,6 +16,8 @@ interface HomeSectionProps {
   /** accent 스타일 (좌측 금색 라인) */
   accent?: boolean;
   className?: string;
+  /** 제목 옆 인포 뱃지 (예: "6경기") */
+  badge?: string | number;
 }
 
 export default function HomeSection(props: HomeSectionProps) {

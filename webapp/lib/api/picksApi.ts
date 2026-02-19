@@ -1,6 +1,5 @@
 import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
 
 export const PICK_TYPE_LABELS: Record<string, string> = {
   SINGLE: '단승식',
@@ -105,17 +104,6 @@ export default class PicksApi {
       ...dto,
       raceId: typeof dto.raceId === 'string' ? parseInt(dto.raceId, 10) : dto.raceId,
     };
-    if (CONFIG.useMock) {
-      return {
-        id: 'mock-pick',
-        userId: 'mock-user',
-        raceId: String(payload.raceId),
-        pickType: payload.pickType,
-        hrNos: payload.hrNos,
-        hrNames: payload.hrNames ?? [],
-        createdAt: new Date().toISOString(),
-      } as Pick;
-    }
     try {
       const response = await axiosInstance.post<ApiResponse<Pick>>('/picks', payload);
       return handleApiResponse(response);
@@ -130,9 +118,6 @@ export default class PicksApi {
     page: number;
     totalPages: number;
   }> {
-    if (CONFIG.useMock) {
-      return { picks: [], total: 0, page, totalPages: 1 };
-    }
     try {
       const response = await axiosInstance.get<
         ApiResponse<{ picks: Pick[]; total: number; page: number; totalPages: number }>
@@ -144,7 +129,6 @@ export default class PicksApi {
   }
 
   static async getByRace(raceId: string): Promise<Pick | null> {
-    if (CONFIG.useMock) return null;
     try {
       const response = await axiosInstance.get<ApiResponse<Pick>>(`/picks/race/${raceId}`);
       return handleApiResponse(response);
@@ -154,7 +138,6 @@ export default class PicksApi {
   }
 
   static async delete(raceId: string): Promise<{ message: string }> {
-    if (CONFIG.useMock) return { message: 'OK' };
     try {
       const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
         `/picks/race/${raceId}`,

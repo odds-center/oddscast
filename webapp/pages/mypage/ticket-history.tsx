@@ -10,6 +10,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
+import { formatDateTime } from '@/lib/utils/format';
 import type { PredictionTicket } from '@/lib/api/predictionTicketApi';
 
 type StatusFilter = 'all' | 'AVAILABLE' | 'USED' | 'EXPIRED';
@@ -31,9 +32,6 @@ export default function TicketHistoryPage() {
     return allTickets.filter((t: PredictionTicket) => t.status === statusFilter);
   }, [allTickets, statusFilter]);
   const totalPages = data?.totalPages ?? 1;
-
-  const formatDate = (d: string | null) =>
-    d ? new Date(d).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' }) : '-';
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -109,17 +107,17 @@ export default function TicketHistoryPage() {
                       {t.raceId && (
                         <Link
                           href={routes.races.detail(t.raceId)}
-                          className='text-slate-700 text-sm font-medium hover:underline'
+                          className='text-stone-700 text-sm font-medium hover:underline'
                         >
                           경주 보기 →
                         </Link>
                       )}
                     </div>
                     <p className='text-text-secondary text-xs'>
-                      발급 {formatDate(t.issuedAt)} · 만료 {formatDate(t.expiresAt)}
+                      발급 {formatDateTime(t.issuedAt)} · 만료 {formatDateTime(t.expiresAt)}
                     </p>
                     {t.usedAt && (
-                      <p className='text-text-tertiary text-xs mt-0.5'>사용 {formatDate(t.usedAt)}</p>
+                      <p className='text-text-tertiary text-xs mt-0.5'>사용 {formatDateTime(t.usedAt)}</p>
                     )}
                   </div>
                 </div>

@@ -1,6 +1,7 @@
 /**
- * 전체 경주 목록 페이지 — 필터 + 테이블 + 페이지네이션
+ * 전체 경주 목록 — 필터(날짜·상태·지역) + 테이블 + 페이지네이션
  */
+import { useMemo } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -10,7 +11,7 @@ import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
-import { formatRcDate } from '@/lib/utils/format';
+import { formatRcDate, isPastRaceDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery } from '@tanstack/react-query';
 
@@ -20,6 +21,7 @@ export default function RacesListPage() {
   const router = useRouter();
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
+  const qStatus = (router.query?.status as string) || '';
   const dateFilter =
     qDate === 'today'
       ? 'today'
@@ -41,7 +43,7 @@ export default function RacesListPage() {
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'list', dateFilter, qMeet, page],
+    queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
     queryFn: () => {
       let date: string | undefined;
       if (dateFilter === 'today') {
@@ -62,6 +64,18 @@ export default function RacesListPage() {
     },
   });
 
+  const filteredRaces = useMemo(() => {
+    const races = data?.races ?? [];
+    if (!qStatus) return races;
+    return races.filter((race) => {
+      const s = race.status || (race as RaceDto & { raceStatus?: string }).raceStatus || '';
+      const isCompleted = s.toUpperCase() === 'COMPLETED' || isPastRaceDate(race.rcDate);
+      if (qStatus === 'COMPLETED') return isCompleted;
+      if (qStatus === 'SCHEDULED') return !isCompleted;
+      return true;
+    });
+  }, [data?.races, qStatus]);
+
   return (
     <Layout title='GOLDEN RACE'>
       <CompactPageTitle title='전체 경주' backHref={routes.home} />
@@ -80,16 +94,13 @@ export default function RacesListPage() {
             ? dateFilter.includes('-')
               ? dateFilter
               : `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
-            : dateFilter === 'yesterday'
-              ? (() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() - 1);
-                  return d.toISOString().slice(0, 10);
-                })()
-              : ''
+            : ''
         }
         onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateId='races-list-date'
+        showStatusFilter
+        statusValue={qStatus}
+        onStatusChange={(v) => updateQuery({ status: v || undefined, page: 1 })}
         showMeetFilter
         meetValue={qMeet}
         onMeetChange={(v) => updateQuery({ meet: v || undefined, page: 1 })}
@@ -99,10 +110,10 @@ export default function RacesListPage() {
         isLoading={isLoading}
         error={error as Error | null}
         onRetry={() => refetch()}
-        isEmpty={!data?.races?.length}
+        isEmpty={!filteredRaces.length}
         emptyIcon='Flag'
-        emptyTitle='진행 중인 경주가 없습니다'
-        emptyDescription='다른 날짜를 선택하거나 나중에 다시 확인해주세요.'
+        emptyTitle='경주가 없습니다'
+        emptyDescription='다른 날짜나 조건을 선택해보세요.'
         loadingLabel='경주 정보를 불러오는 중...'
         errorTitle='경주 정보를 불러오지 못했습니다'
       >
@@ -111,18 +122,18 @@ export default function RacesListPage() {
             {
               key: 'race',
               header: '경주',
-              headerClassName: 'w-24 whitespace-nowrap',
+              headerClassName: 'w-28 whitespace-nowrap',
               cellClassName: 'whitespace-nowrap',
               render: (race) => (
-                <LinkBadge href={routes.races.detail(race.id)} icon='Flag' iconSize={14}>
-                  {race.meetName ?? '-'} {race.rcNo}경
+                <LinkBadge href={routes.races.detail(race.id)} icon='Flag' iconSize={13}>
+                  {race.meetName ?? '-'} {race.rcNo}R
                 </LinkBadge>
               ),
             },
             {
               key: 'date',
               header: '날짜',
-              headerClassName: 'w-20 whitespace-nowrap',
+              headerClassName: 'w-24 whitespace-nowrap',
               cellClassName: 'whitespace-nowrap',
               render: (race) => (
                 <span className='text-text-secondary'>{formatRcDate(race.rcDate)}</span>
@@ -135,7 +146,7 @@ export default function RacesListPage() {
               cellClassName: 'whitespace-nowrap',
               render: (race) =>
                 race.rcDist ? (
-                  <span className='badge-muted'>{race.rcDist}m</span>
+                  <span className='text-text-secondary'>{race.rcDist}m</span>
                 ) : (
                   <span className='text-text-tertiary'>-</span>
                 ),
@@ -147,39 +158,28 @@ export default function RacesListPage() {
               cellClassName: 'whitespace-nowrap',
               render: (race) => {
                 const st = race.stTime ?? (race as RaceDto & { rcStartTime?: string }).rcStartTime;
-                return st ? (
-                  <span className='badge-muted'>{st}</span>
-                ) : (
-                  <span className='text-text-tertiary'>-</span>
-                );
+                return <span className='text-text-secondary'>{st || '-'}</span>;
               },
             },
             {
               key: 'entries',
-              header: '출전마',
-              headerClassName: 'w-[120px] max-w-[120px] whitespace-nowrap',
-              cellClassName: 'text-text-secondary w-[120px] max-w-[120px] overflow-x-auto',
+              header: '두수',
+              headerClassName: 'w-14 whitespace-nowrap',
+              cellClassName: 'whitespace-nowrap',
+              align: 'center',
               render: (race) => {
                 const r = race as RaceDto & {
                   entries?: { hrName?: string }[];
                   entryDetails?: { hrName?: string }[];
                 };
-                const entries = (r.entries ?? r.entryDetails ?? []) as Array<{ hrName?: string }>;
-                const preview = entries
-                  .map((e) => e.hrName ?? '')
-                  .filter(Boolean)
-                  .join(', ');
-                return (
-                  <div className='whitespace-nowrap min-w-max' title={preview}>
-                    {preview || '-'}
-                  </div>
-                );
+                const count = (r.entries ?? r.entryDetails ?? []).length;
+                return <span className='text-text-secondary'>{count > 0 ? `${count}두` : '-'}</span>;
               },
             },
             {
               key: 'status',
               header: '상태',
-              headerClassName: 'w-20 whitespace-nowrap',
+              headerClassName: 'w-16 whitespace-nowrap',
               cellClassName: 'whitespace-nowrap',
               render: (race) => (
                 <StatusBadge
@@ -189,17 +189,17 @@ export default function RacesListPage() {
               ),
             },
           ]}
-          data={data?.races ?? []}
+          data={filteredRaces}
           getRowKey={(race) => race.id}
           getRowHref={(race) => routes.races.detail(race.id)}
-          rowClassName={() => 'group'}
           className='data-table-kra'
+          compact
         />
         <Pagination
           page={page}
           totalPages={data?.totalPages ?? 1}
           onPageChange={(p) => updateQuery({ page: p })}
-          className='mt-4'
+          className='mt-3'
         />
       </DataFetchState>
     </Layout>

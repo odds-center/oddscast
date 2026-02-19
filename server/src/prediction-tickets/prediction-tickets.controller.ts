@@ -36,6 +36,46 @@ export class PredictionTicketsController {
     return this.ticketsService.getBalance(user.sub);
   }
 
+  @Get('matrix/access')
+  @ApiOperation({ summary: '종합 예측권 접근 권한 확인' })
+  checkMatrixAccess(
+    @CurrentUser() user: JwtPayload,
+    @Query('date') date: string,
+  ) {
+    return this.ticketsService.checkMatrixAccess(user.sub, date || new Date().toISOString().slice(0, 10));
+  }
+
+  @Post('matrix/use')
+  @ApiOperation({ summary: '종합 예측권 사용' })
+  useMatrixTicket(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { date?: string },
+  ) {
+    return this.ticketsService.useMatrixTicket(user.sub, body.date || new Date().toISOString().slice(0, 10));
+  }
+
+  @Get('matrix/balance')
+  @ApiOperation({ summary: '종합 예측권 잔액' })
+  getMatrixBalance(@CurrentUser() user: JwtPayload) {
+    return this.ticketsService.getMatrixBalance(user.sub);
+  }
+
+  @Post('matrix/purchase')
+  @ApiOperation({ summary: '종합 예측권 개별 구매 (1,000원/장)' })
+  purchaseMatrixTicket(
+    @CurrentUser() user: JwtPayload,
+    @Body() body: { count?: number },
+  ) {
+    const count = Math.min(10, Math.max(1, Number(body.count) || 1));
+    return this.ticketsService.purchaseMatrixTickets(user.sub, count);
+  }
+
+  @Get('matrix/price')
+  @ApiOperation({ summary: '종합 예측권 가격 정보' })
+  getMatrixPrice() {
+    return { pricePerTicket: 1000, currency: 'KRW', maxPerPurchase: 10 };
+  }
+
   @Get('history')
   @ApiOperation({ summary: '예측권 사용 이력' })
   getHistory(

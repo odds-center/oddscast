@@ -1,6 +1,5 @@
 import { axiosInstance, handleApiResponse, handleApiError } from '@/lib/api/axios';
 import { ApiResponse } from '@/lib/types/api';
-import CONFIG from '@/lib/config';
 
 /**
  * 구독 결제 요청 (서버 API 스펙)
@@ -77,7 +76,6 @@ export default class PaymentsApi {
   static async processSubscription(
     data: ProcessSubscriptionRequest,
   ): Promise<{ billing: BillingHistory; planName: string }> {
-    if (CONFIG.useMock) return { billing: { id: 'mock', amount: 0, billingDate: new Date().toISOString(), status: 'SUCCESS', pgProvider: 'MOCK', pgTransactionId: '' }, planName: 'Mock' };
     try {
       const response = await axiosInstance.post<ApiResponse<{ billing: BillingHistory; planName: string }>>('/payments/subscribe', data);
       return handleApiResponse(response);

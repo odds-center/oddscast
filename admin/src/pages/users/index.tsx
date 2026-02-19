@@ -35,6 +35,7 @@ export default function UsersPage() {
   const [grantModalUser, setGrantModalUser] = useState<User | null>(null);
   const [grantCount, setGrantCount] = useState(5);
   const [grantExpiresDays, setGrantExpiresDays] = useState(30);
+  const [grantTicketType, setGrantTicketType] = useState<'RACE' | 'MATRIX'>('RACE');
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-users', page, search],
@@ -53,14 +54,16 @@ export default function UsersPage() {
   });
 
   const grantTicketsMutation = useMutation({
-    mutationFn: ({ userId, count, expiresInDays }: { userId: number | string; count: number; expiresInDays: number }) =>
-      adminUsersApi.grantTickets(String(userId), count, expiresInDays),
+    mutationFn: ({ userId, count, expiresInDays, type }: { userId: number | string; count: number; expiresInDays: number; type: 'RACE' | 'MATRIX' }) =>
+      adminUsersApi.grantTickets(String(userId), count, expiresInDays, type),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      toast.success(`예측권 ${res.granted}장 지급 완료`);
+      const typeLabel = res.type === 'MATRIX' ? '종합 예측권' : '예측권';
+      toast.success(`${typeLabel} ${res.granted}장 지급 완료`);
       setGrantModalUser(null);
       setGrantCount(5);
       setGrantExpiresDays(30);
+      setGrantTicketType('RACE');
     },
     onError: (err: unknown) => {
       toast.error(err instanceof Error ? err.message : '예측권 지급에 실패했습니다');
@@ -177,7 +180,7 @@ export default function UsersPage() {
         <div className='space-y-4'>
           <PageHeader
             title='회원 관리'
-            description='가입한 회원들을 관리하고 예측권을 지급할 수 있습니다.'
+            description='전체 회원 목록을 조회하고, 예측권 지급·계정 활성화/비활성화를 관리합니다.'
           />
 
           <Card>
@@ -346,6 +349,35 @@ export default function UsersPage() {
             <div className='space-y-4'>
               <div>
                 <label className='block text-sm font-medium text-gray-700 mb-2'>
+                  예측권 유형
+                </label>
+                <div className='flex gap-2'>
+                  <button
+                    type='button'
+                    onClick={() => setGrantTicketType('RACE')}
+                    className={`flex-1 px-3 py-2 rounded-md border text-sm font-medium transition-colors ${
+                      grantTicketType === 'RACE'
+                        ? 'bg-blue-600 text-white border-blue-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    경주 예측권
+                  </button>
+                  <button
+                    type='button'
+                    onClick={() => setGrantTicketType('MATRIX')}
+                    className={`flex-1 px-3 py-2 rounded-md border text-sm font-medium transition-colors ${
+                      grantTicketType === 'MATRIX'
+                        ? 'bg-amber-600 text-white border-amber-600'
+                        : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    종합 예측권
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-2'>
                   지급 수량 (1~100장)
                 </label>
                 <input
@@ -383,12 +415,13 @@ export default function UsersPage() {
                       userId: grantModalUser.id,
                       count: grantCount,
                       expiresInDays: grantExpiresDays,
+                      type: grantTicketType,
                     })
                   }
                   disabled={grantTicketsMutation.isPending}
                   isLoading={grantTicketsMutation.isPending}
                 >
-                  예측권 {grantCount}장 지급
+                  {grantTicketType === 'MATRIX' ? '종합 예측권' : '예측권'} {grantCount}장 지급
                 </Button>
                 <Button variant='ghost' onClick={() => setGrantModalUser(null)}>
                   취소

@@ -105,7 +105,7 @@ export default function HorsePickPanel({
       </div>
 
       {/* 선택 내역 — 항상 눈에 띄게 */}
-      <div className='shrink-0 mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200'>
+      <div className='shrink-0 mt-4 p-3 rounded-xl bg-stone-50 border border-stone-200'>
         <h4 className='text-foreground text-sm font-semibold mb-2 flex items-center gap-1.5'>
           <Icon name='CheckCircle' size={16} />
           내가 고른 말 ({selectedHorses.length}/{requiredCount})
@@ -118,7 +118,7 @@ export default function HorsePickPanel({
               {selectedHorses.map((h, i) => (
                 <span
                   key={`${h.hrNo}-${i}`}
-                  className='inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium'
+                  className='inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-stone-200 text-stone-700 text-xs font-medium'
                 >
                   {requiredCount > 1 && <span className='text-text-tertiary'>{i + 1}.</span>}
                   {h.hrName}
@@ -126,9 +126,9 @@ export default function HorsePickPanel({
               ))}
             </div>
             {canSave && (
-              <div className='mt-2 pt-2 border-t border-slate-200'>
+              <div className='mt-2 pt-2 border-t border-stone-200'>
                 {matchedOdds != null ? (
-                  <p className='text-slate-700 font-semibold text-sm'>
+                  <p className='text-stone-700 font-semibold text-sm'>
                     {PICK_TYPE_LABELS[pickType]} 배율 {matchedOdds.toLocaleString()}원
                   </p>
                 ) : (dividends?.length ?? 0) > 0 ? (
@@ -161,7 +161,7 @@ export default function HorsePickPanel({
                 }`}
               >
                 <div className='flex items-center gap-2 flex-1 min-w-0'>
-                  <span className='text-slate-700 font-bold w-7 shrink-0'>{entry.chulNo ?? '-'}</span>
+                  <span className='text-stone-700 font-bold w-7 shrink-0'>{entry.chulNo ?? '-'}</span>
                   <span className='font-medium flex-1 truncate'>{entry.hrName}</span>
                   {selected && <Icon name='Check' size={14} className='shrink-0' />}
                 </div>

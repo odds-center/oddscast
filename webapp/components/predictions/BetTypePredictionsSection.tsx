@@ -1,22 +1,18 @@
 /**
  * 승식별 AI 예측 섹션
- * HORSE_RACING_TERMINOLOGY 기준 — 승식 | 선택/조합 | 표시 예 테이블 형태
- * 7개 승식(단승·복승·연승·쌍승·복연승·삼복승·삼쌍승) 항상 표시
- * 표시 예: 마번만 (6, 5→6→1 등), 아이콘으로 구분
+ * compact(기본): 핵심 3가지 추천식 카드 (단승, 연승, 삼쌍)
+ * full: 7개 승식 전체 테이블
  */
 import { ArrowRight, Circle } from 'lucide-react';
-import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC } from '@/lib/api/picksApi';
+import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC, PICK_TYPE_DESCRIPTIONS } from '@/lib/api/picksApi';
+import { Tooltip } from '@/components/ui';
 import type { BetTypePredictions, PredictionHorseScore } from '@/lib/types/predictions';
 
 const BET_TYPE_ORDER: (keyof BetTypePredictions)[] = [
-  'SINGLE',
-  'PLACE',
-  'QUINELLA',
-  'EXACTA',
-  'QUINELLA_PLACE',
-  'TRIFECTA',
-  'TRIPLE',
+  'SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE',
 ];
+
+const TOP_3_BET_TYPES: (keyof BetTypePredictions)[] = ['SINGLE', 'QUINELLA', 'TRIPLE'];
 
 interface Entry {
   hrNo: string;
@@ -28,11 +24,9 @@ interface BetTypePredictionsSectionProps {
   betTypePredictions?: BetTypePredictions | null;
   horseScores?: PredictionHorseScore[];
   entries: Entry[];
-  /** true: 단승식만 표시 (무료 요약용, 예측권 유인) */
   showOnlySingle?: boolean;
 }
 
-/** 출주번호(마번)만 반환 — chulNo 우선, 없으면 hrNo(2자 이내) */
 function toHorseNoOnly(hrNoOrChulNo: string, entries: Entry[]): string {
   const v = String(hrNoOrChulNo).trim();
   if (!v) return '';
@@ -44,7 +38,15 @@ function toHorseNoOnly(hrNoOrChulNo: string, entries: Entry[]): string {
   return (e.chulNo ?? (e.hrNo && e.hrNo.length <= 2 ? e.hrNo : '')) || v;
 }
 
-/** horseScores + entries에서 승식별 기본 조합 유도 (2마리/3마리 승식은 3개 조합) */
+function toHorseName(hrNoOrChulNo: string, entries: Entry[]): string {
+  const v = String(hrNoOrChulNo).trim();
+  const e = entries.find(
+    (x) =>
+      String(x.hrNo || '').trim() === v || String(x.chulNo || '').trim() === v,
+  );
+  return e?.hrName ?? '';
+}
+
 function deriveFromHorseScores(
   horseScores: PredictionHorseScore[],
   entries: Entry[],
@@ -57,55 +59,24 @@ function deriveFromHorseScores(
   if (ids.length < 4) {
     ids = [
       ...ids,
-      ...entries
-        .slice(ids.length, 6)
-        .map((e) => e.hrNo ?? e.chulNo ?? '')
-        .filter(Boolean),
+      ...entries.slice(ids.length, 6).map((e) => e.hrNo ?? e.chulNo ?? '').filter(Boolean),
     ];
   }
   const [a, b, c, d] = ids;
   if (!a) return {};
 
-  const pairCombos =
-    b && c
-      ? [
-          { hrNos: [a, b] as [string, string] },
-          { hrNos: [a, c] as [string, string] },
-          { hrNos: [b, c] as [string, string] },
-        ]
-      : b
-        ? [{ hrNos: [a, b] as [string, string] }]
-        : [];
-  const exactaCombos =
-    b && c
-      ? [
-          { first: a, second: b },
-          { first: a, second: c },
-          { first: b, second: a },
-        ]
-      : b
-        ? [{ first: a, second: b }]
-        : [];
-  const tripleCombos =
-    a && b && c && d
-      ? [
-          { hrNos: [a, b, c] as [string, string, string] },
-          { hrNos: [a, b, d] as [string, string, string] },
-          { hrNos: [a, c, d] as [string, string, string] },
-        ]
-      : a && b && c
-        ? [{ hrNos: [a, b, c] as [string, string, string] }]
-        : [];
-  const tripleExactCombos =
-    a && b && c && d
-      ? [
-          { first: a, second: b, third: c },
-          { first: a, second: b, third: d },
-          { first: a, second: c, third: b },
-        ]
-      : a && b && c
-        ? [{ first: a, second: b, third: c }]
-        : [];
+  const pairCombos = b && c
+    ? [{ hrNos: [a, b] as [string, string] }, { hrNos: [a, c] as [string, string] }, { hrNos: [b, c] as [string, string] }]
+    : b ? [{ hrNos: [a, b] as [string, string] }] : [];
+  const exactaCombos = b && c
+    ? [{ first: a, second: b }, { first: a, second: c }, { first: b, second: a }]
+    : b ? [{ first: a, second: b }] : [];
+  const tripleCombos = a && b && c && d
+    ? [{ hrNos: [a, b, c] as [string, string, string] }, { hrNos: [a, b, d] as [string, string, string] }, { hrNos: [a, c, d] as [string, string, string] }]
+    : a && b && c ? [{ hrNos: [a, b, c] as [string, string, string] }] : [];
+  const tripleExactCombos = a && b && c && d
+    ? [{ first: a, second: b, third: c }, { first: a, second: b, third: d }, { first: a, second: c, third: b }]
+    : a && b && c ? [{ first: a, second: b, third: c }] : [];
 
   return {
     SINGLE: { hrNo: a, reason: '1등 예상' },
@@ -120,7 +91,6 @@ function deriveFromHorseScores(
 
 type DisplayNodes = { numbers: string[]; ordered: boolean };
 
-/** 단일 조합을 표시용 노드로 변환 (SINGLE/Pair/Exacta/Triple/TripleExact) */
 function comboToDisplayNodes(
   combo: { hrNo?: string; hrNos?: string[]; first?: string; second?: string; third?: string },
   entries: Entry[],
@@ -143,7 +113,6 @@ function comboToDisplayNodes(
   return null;
 }
 
-/** 예측을 표시용 노드 배열로 변환 (combinations 있으면 최대 3개, 없으면 단일) */
 function predToDisplayNodesList(
   pred: BetTypePredictions[keyof BetTypePredictions],
   entries: Entry[],
@@ -162,16 +131,53 @@ function predToDisplayNodesList(
   return single ? [single] : [];
 }
 
+function getReason(pred: BetTypePredictions[keyof BetTypePredictions]): string {
+  if (!pred) return '';
+  if ('reason' in pred && pred.reason) return pred.reason;
+  return '';
+}
+
+function getFirstHrNo(pred: BetTypePredictions[keyof BetTypePredictions]): string {
+  if (!pred) return '';
+  if ('hrNo' in pred && pred.hrNo) return pred.hrNo;
+  if ('first' in pred && pred.first) return pred.first;
+  if ('combinations' in pred && pred.combinations?.[0]) {
+    const c = pred.combinations[0] as { hrNo?: string; first?: string; hrNos?: string[] };
+    return c.hrNo ?? c.first ?? c.hrNos?.[0] ?? '';
+  }
+  return '';
+}
+
+const BET_COLORS: Record<string, { bg: string; border: string; badge: string }> = {
+  SINGLE: { bg: 'bg-[rgba(146,112,42,0.04)]', border: 'border-[rgba(146,112,42,0.15)]', badge: 'bg-[#92702A] text-white' },
+  QUINELLA: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-700 text-white' },
+  TRIPLE: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-500 text-white' },
+};
+
+function NumberBadge({ num, ordered, isLast }: { num: string; ordered: boolean; isLast: boolean }) {
+  return (
+    <span className='inline-flex items-center gap-1'>
+          <span className='inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded bg-white border border-stone-200 text-foreground font-bold text-sm'>
+        {num}
+      </span>
+      {!isLast && (
+        ordered
+          ? <ArrowRight size={12} className='text-stone-400 shrink-0' strokeWidth={2.5} />
+          : <Circle size={4} className='text-stone-300 fill-stone-300 shrink-0' />
+      )}
+    </span>
+  );
+}
+
 export default function BetTypePredictionsSection({
   betTypePredictions,
   horseScores,
   entries,
   showOnlySingle = false,
 }: BetTypePredictionsSectionProps) {
-  const derived =
-    horseScores?.length || entries.length
-      ? deriveFromHorseScores(horseScores ?? [], entries)
-      : {};
+  const derived = horseScores?.length || entries.length
+    ? deriveFromHorseScores(horseScores ?? [], entries)
+    : {};
   const merged: BetTypePredictions = {
     SINGLE: betTypePredictions?.SINGLE ?? derived.SINGLE,
     PLACE: betTypePredictions?.PLACE ?? derived.PLACE,
@@ -182,63 +188,120 @@ export default function BetTypePredictionsSection({
     TRIPLE: betTypePredictions?.TRIPLE ?? derived.TRIPLE,
   };
 
-  const orderToShow: (keyof BetTypePredictions)[] = showOnlySingle
-    ? ['SINGLE']
-    : BET_TYPE_ORDER;
-  const items = orderToShow.map((key) => {
+  if (showOnlySingle) {
+    const pred = merged.SINGLE;
+    const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
+    const hrNo = getFirstHrNo(pred);
+    const name = hrNo ? toHorseName(hrNo, entries) : '';
+    return (
+      <div className='py-2'>
+        <div className='flex items-center gap-3 p-3 rounded border border-[rgba(146,112,42,0.15)] bg-[rgba(146,112,42,0.04)]'>
+          <span className='text-sm font-semibold px-2 py-0.5 rounded bg-[#92702A] text-white'>단승</span>
+          {nodesList[0] && (
+            <span className='font-bold text-foreground text-base'>{nodesList[0].numbers[0]}번</span>
+          )}
+          {name && <span className='text-stone-500 text-sm'>{name}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  // 핵심 3가지 추천식 카드
+  const top3Items = TOP_3_BET_TYPES.map((key) => {
     const pred = merged[key];
     const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
-    return {
-      key,
-      label: PICK_TYPE_POOL_NAMES[key] ?? key,
-      comboDesc: PICK_TYPE_COMBO_DESC[key] ?? '',
-      nodesList,
-    };
+    const reason = getReason(pred);
+    const colors = BET_COLORS[key] ?? BET_COLORS.SINGLE;
+    return { key, label: PICK_TYPE_POOL_NAMES[key] ?? key, desc: PICK_TYPE_COMBO_DESC[key] ?? '', nodesList, reason, colors };
+  });
+
+  // 나머지 4개 승식 (접기 가능)
+  const restKeys = BET_TYPE_ORDER.filter((k) => !TOP_3_BET_TYPES.includes(k));
+  const restItems = restKeys.map((key) => {
+    const pred = merged[key];
+    const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
+    return { key, label: PICK_TYPE_POOL_NAMES[key] ?? key, comboDesc: PICK_TYPE_COMBO_DESC[key] ?? '', nodesList };
   });
 
   return (
-    <div className='py-3'>
-      <p className='text-text-secondary text-xs font-medium mb-2'>승식별 AI 추천</p>
-      <div className='data-table-wrapper -mx-2 sm:mx-0 overflow-x-auto rounded-lg border border-border'>
-        <table className='data-table data-table-compact w-full min-w-[320px]'>
+    <div className='space-y-3'>
+      <p className='text-text-secondary text-sm font-semibold'>AI 추천 승식</p>
+
+      {/* 핵심 3가지 카드 */}
+      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2.5'>
+        {top3Items.map((item) => (
+          <div
+            key={item.key}
+            className={`rounded border ${item.colors.border} ${item.colors.bg} p-3 flex flex-col gap-2`}
+          >
+            <div className='flex items-center gap-2'>
+              <span className={`text-xs font-semibold px-2 py-0.5 rounded ${item.colors.badge}`}>
+                {item.label}
+              </span>
+              <span className='text-text-secondary text-sm'>{item.desc}</span>
+            </div>
+            {item.nodesList.length > 0 ? (
+              <div className='flex flex-col gap-1.5'>
+                {item.nodesList.map((nodes, ci) => (
+                  <div key={ci} className='flex items-center gap-1'>
+                    {nodes.numbers.map((num, i) => (
+                      <NumberBadge key={i} num={num} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <span className='text-text-tertiary text-sm'>—</span>
+            )}
+            {item.reason && (
+              <p className='text-text-secondary text-sm leading-snug mt-0.5 line-clamp-2'>{item.reason}</p>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* 나머지 승식 — 아코디언 없이 바로 표시 */}
+      <div className='overflow-x-auto rounded-lg border border-border'>
+        <table className='data-table data-table-compact w-full min-w-[300px]'>
           <thead>
             <tr>
-              <th className='w-20 text-left py-2.5'>승식</th>
-              <th className='min-w-[120px] text-left py-2.5'>선택/조합</th>
-              <th className='text-left py-2.5'>추천</th>
+              <th className='w-24 text-left py-2 text-sm'>승식</th>
+              <th className='text-left py-2 text-sm'>추천 조합</th>
             </tr>
           </thead>
           <tbody>
-            {items.map((item) => (
+            {restItems.map((item) => (
               <tr key={item.key} className='border-t border-border'>
-                <td className='py-2 font-medium text-foreground'>{item.label}</td>
-                <td className='py-2 text-text-secondary text-sm'>{item.comboDesc}</td>
-                <td className='py-2'>
+                <td className='py-2.5 font-medium text-foreground text-sm'>
+                  <Tooltip content={PICK_TYPE_DESCRIPTIONS[item.key] ?? item.comboDesc} inline position='right'>
+                    {item.label}
+                  </Tooltip>
+                </td>
+                <td className='py-2.5'>
                   {item.nodesList.length > 0 ? (
                     <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-                      {item.nodesList.map((nodes, comboIdx) => (
-                        <span key={comboIdx} className='inline-flex items-center gap-1'>
+                      {item.nodesList.map((nodes, ci) => (
+                        <span key={ci} className='inline-flex items-center gap-0.5'>
                           {nodes.numbers.map((num, i) => (
                             <span key={i} className='flex items-center gap-0.5'>
-                              <span className='inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-slate-100 text-slate-700 font-bold text-sm'>
+                              <span className='inline-flex items-center justify-center min-w-6 h-6 px-1 rounded bg-stone-100 text-stone-700 font-bold text-sm'>
                                 {num}
                               </span>
-                              {i < nodes.numbers.length - 1 &&
-                                (nodes.ordered ? (
-                                  <ArrowRight size={14} className='text-text-tertiary shrink-0' strokeWidth={2.5} />
-                                ) : (
-                                  <Circle size={6} className='text-text-tertiary fill-text-tertiary shrink-0' />
-                                ))}
+                              {i < nodes.numbers.length - 1 && (
+                                nodes.ordered
+                                  ? <ArrowRight size={14} className='text-text-tertiary shrink-0' strokeWidth={2.5} />
+                                  : <Circle size={5} className='text-text-tertiary fill-text-tertiary shrink-0' />
+                              )}
                             </span>
                           ))}
-                          {comboIdx < item.nodesList.length - 1 && (
-                            <span className='text-text-tertiary text-xs'>|</span>
+                          {ci < item.nodesList.length - 1 && (
+                            <span className='text-text-tertiary text-sm ml-1'>|</span>
                           )}
                         </span>
                       ))}
                     </div>
                   ) : (
-                    <span className='text-text-secondary'>—</span>
+                    <span className='text-text-secondary text-sm'>—</span>
                   )}
                 </td>
               </tr>

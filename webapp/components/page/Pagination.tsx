@@ -13,8 +13,8 @@ const btnClass =
   'min-w-[2.5rem] min-h-[44px] sm:min-h-[36px] px-2.5 rounded-lg bg-card border border-border hover:border-border-gold disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm transition-colors flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
 const pageBtnClass =
   'min-w-[2.5rem] min-h-[44px] sm:min-h-[36px] px-2.5 rounded-lg border font-medium text-sm transition-colors flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
-const activeClass = 'bg-slate-700 text-white border-slate-700';
-const inactiveClass = 'bg-card border-border hover:border-slate-300 hover:bg-slate-50';
+const activeClass = 'bg-stone-700 text-white border-stone-700';
+const inactiveClass = 'bg-card border-border hover:border-stone-300 hover:bg-stone-50';
 
 function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) {

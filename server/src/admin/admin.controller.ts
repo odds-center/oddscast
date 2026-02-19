@@ -48,12 +48,12 @@ export class AdminController {
   @ApiOperation({
     summary: '[Admin] KRA 경주 계획/출전표 동기화',
     description:
-      'date 미지정 시 오늘부터 1년 내 미래 경주일(금·토·일) 전체 적재. date 지정 시 해당 날짜만 적재.',
+      'date 미지정 시 오늘~1년 내 미래 경주일(금·토·일) 전체 적재(경주계획표+출전표). date 지정 시 해당 날짜만 경주계획표→출전표 순으로 적재.',
   })
   async syncSchedule(@Query('date') date?: string) {
     const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
     if (date && norm(date)) {
-      return this.kraService.syncEntrySheet(norm(date));
+      return this.kraService.syncScheduleForDate(norm(date));
     }
     return this.kraService.syncUpcomingSchedules();
   }
@@ -203,17 +203,18 @@ export class AdminController {
   }
 
   @Post('users/:id/grant-tickets')
-  @ApiOperation({ summary: '[Admin] 사용자에게 예측권 지급' })
+  @ApiOperation({ summary: '[Admin] 사용자에게 예측권 지급 (RACE/MATRIX)' })
   async grantTickets(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { count: number; expiresInDays?: number },
+    @Body() body: { count: number; expiresInDays?: number; type?: 'RACE' | 'MATRIX' },
   ) {
     const count = Math.min(100, Math.max(1, Number(body.count) || 1));
     const expiresInDays = Math.min(
       365,
       Math.max(1, Number(body.expiresInDays) || 30),
     );
-    return this.predictionTicketsService.grantTickets(id, count, expiresInDays);
+    const type = body.type === 'MATRIX' ? 'MATRIX' : 'RACE';
+    return this.predictionTicketsService.grantTickets(id, count, expiresInDays, type);
   }
 
   // --- AI Config (Gemini) ---

@@ -193,17 +193,26 @@ SinglePurchase[]
 
 > 테이블명: `prediction_tickets`
 
-| 필드             | 타입          | 설명      | 비고                 |
-| ---------------- | ------------- | --------- | -------------------- |
-| `id`             | String (UUID) | 고유 ID   | PK                   |
-| `userId`         | String        | 사용자 FK | → User.id (CASCADE)  |
-| `subscriptionId` | String?       | 구독 FK   | 구독으로 발급된 경우 |
-| `predictionId`   | String?       | 예측 FK   | 사용된 예측          |
-| `raceId`         | String?       | 경기 ID   | 사용된 경기          |
-| `status`         | TicketStatus  | 상태      | default: AVAILABLE   |
-| `usedAt`         | DateTime?     | 사용 일시 |                      |
-| `issuedAt`       | DateTime      | 발급 일시 | auto                 |
-| `expiresAt`      | DateTime      | 만료 일시 |                      |
+| 필드             | 타입          | 설명              | 비고                          |
+| ---------------- | ------------- | ----------------- | ----------------------------- |
+| `id`             | String (UUID) | 고유 ID           | PK                            |
+| `userId`         | String        | 사용자 FK         | → User.id (CASCADE)           |
+| `subscriptionId` | String?       | 구독 FK           | 구독으로 발급된 경우          |
+| `predictionId`   | String?       | 예측 FK           | 사용된 예측                   |
+| `raceId`         | String?       | 경기 ID           | 사용된 경기                   |
+| `type`           | TicketType    | 예측권 유형       | default: RACE (신규 필드)     |
+| `status`         | TicketStatus  | 상태              | default: AVAILABLE            |
+| `usedAt`         | DateTime?     | 사용 일시         |                               |
+| `matrixDate`     | String?       | MATRIX용 날짜     | YYYYMMDD 형식 (신규 필드)     |
+| `issuedAt`       | DateTime      | 발급 일시         | auto                          |
+| `expiresAt`      | DateTime      | 만료 일시         |                               |
+
+#### 예측권 유형 (`TicketType`)
+
+| 값 | 설명 | 비고 |
+|----|------|------|
+| `RACE` | 경주별 예측권 | 개별 경주 AI 예측 열람 (기존) |
+| `MATRIX` | 종합 예측권 | 일일 종합 예상표 열람 (1일 1장, 1,000원) |
 
 ---
 
@@ -223,6 +232,7 @@ SinglePurchase[]
 | `baseTickets`   | Int           | 기본 예측권 수   |                         |
 | `bonusTickets`  | Int           | 보너스 예측권 수 |                         |
 | `totalTickets`  | Int           | 총 예측권 수     |                         |
+| `matrixTickets` | Int           | 종합 예측권 수 (5,000원당 1장) | @default(0)      |
 | `isActive`      | Boolean       | 활성 여부        | default: true           |
 | `sortOrder`     | Int           | 정렬 순서        | default: 0              |
 
@@ -365,6 +375,7 @@ SinglePurchase[]
 | `UserRole`             | USER, ADMIN                                       | User, JWT/Guard (AdminUser는 DB에 role 없음) |
 | `RaceStatus`           | SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED      | Race             |
 | `PredictionStatus`     | PENDING, PROCESSING, COMPLETED, FAILED            | Prediction       |
+| `TicketType`           | RACE, MATRIX                                      | PredictionTicket (신규) |
 | `TicketStatus`         | AVAILABLE, USED, EXPIRED                          | PredictionTicket |
 | `SubscriptionStatus`   | PENDING, ACTIVE, CANCELLED, EXPIRED               | Subscription     |
 | `NotificationType`     | SYSTEM, RACE, PREDICTION, PROMOTION, SUBSCRIPTION | Notification     |

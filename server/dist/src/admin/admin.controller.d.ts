@@ -35,13 +35,13 @@ export declare class AdminController {
     getKraSyncLogs(endpoint?: string, rcDate?: string, limit?: number): Promise<{
         logs: {
             id: number;
+            status: string;
             createdAt: Date;
             meet: string | null;
             rcDate: string | null;
-            status: string;
-            errorMessage: string | null;
             endpoint: string;
             recordCount: number;
+            errorMessage: string | null;
             durationMs: number | null;
         }[];
         total: number;
@@ -76,14 +76,14 @@ export declare class AdminController {
         data: {
             availableTickets: number;
             totalTickets: number;
-            email: string;
+            id: number;
+            createdAt: Date;
             name: string;
+            email: string;
             nickname: string | null;
             avatar: string | null;
-            id: number;
             role: import("@prisma/client").$Enums.UserRole;
             isActive: boolean;
-            createdAt: Date;
         }[];
         meta: {
             total: number;
@@ -93,22 +93,22 @@ export declare class AdminController {
         };
     }>;
     getUser(id: number): Promise<{
-        email: string;
+        id: number;
+        createdAt: Date;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: number;
         role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
         lastLoginAt: Date | null;
-        createdAt: Date;
     }>;
     updateUser(id: number, body: any): Promise<{
-        email: string;
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: number;
         role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
@@ -116,38 +116,40 @@ export declare class AdminController {
         message: string;
     }>;
     activateUser(id: number): Promise<{
-        email: string;
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: number;
         role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
     deactivateUser(id: number): Promise<{
-        email: string;
+        id: number;
         name: string;
+        email: string;
         nickname: string | null;
         avatar: string | null;
-        id: number;
         role: import("@prisma/client").$Enums.UserRole;
         isActive: boolean;
     }>;
     grantTickets(id: number, body: {
         count: number;
         expiresInDays?: number;
+        type?: 'RACE' | 'MATRIX';
     }): Promise<{
         granted: number;
+        type: "MATRIX" | "RACE";
         tickets: {
             id: number;
-            userId: number;
-            expiresAt: Date;
-            status: import("@prisma/client").$Enums.TicketStatus;
             raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
+            expiresAt: Date;
         }[];
     }>;
     getAIConfig(): Promise<any>;
@@ -176,29 +178,29 @@ export declare class AdminController {
         data: ({
             race: {
                 id: number;
+                status: import("@prisma/client").$Enums.RaceStatus;
                 createdAt: Date;
                 updatedAt: Date;
                 rcName: string | null;
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
+                rcDay: string | null;
                 rcNo: string;
+                stTime: string | null;
                 rcDist: string | null;
                 rank: string | null;
                 rcCondition: string | null;
                 rcPrize: number | null;
                 weather: string | null;
                 track: string | null;
-                status: import("@prisma/client").$Enums.RaceStatus;
-                rcDay: string | null;
-                stTime: string | null;
             };
         } & {
             id: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
             userId: number;
-            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -233,36 +235,36 @@ export declare class AdminController {
         };
     }>;
     getBet(id: number): Promise<({
-        user: {
-            email: string;
-            name: string;
-            id: number;
-        };
         race: {
             id: number;
+            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
+            rcDay: string | null;
             rcNo: string;
+            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
             track: string | null;
-            status: import("@prisma/client").$Enums.RaceStatus;
-            rcDay: string | null;
-            stTime: string | null;
+        };
+        user: {
+            id: number;
+            name: string;
+            email: string;
         };
     } & {
         id: number;
+        raceId: number;
         createdAt: Date;
         updatedAt: Date;
         userId: number;
-        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -290,13 +292,13 @@ export declare class AdminController {
         notes: string | null;
     }) | null>;
     getSubscriptionPlans(): Promise<{
-        description: string | null;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -318,13 +320,13 @@ export declare class AdminController {
         isActive?: boolean;
         sortOrder?: number;
     }): Promise<{
-        description: string | null;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -334,13 +336,13 @@ export declare class AdminController {
         sortOrder: number;
     }>;
     getSubscriptionPlan(id: number): Promise<{
-        description: string | null;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -350,13 +352,13 @@ export declare class AdminController {
         sortOrder: number;
     } | null>;
     updateSubscriptionPlan(id: number, body: Record<string, unknown>): Promise<{
-        description: string | null;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -366,13 +368,13 @@ export declare class AdminController {
         sortOrder: number;
     }>;
     deleteSubscriptionPlan(id: number): Promise<{
-        description: string | null;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        isActive: boolean;
         planName: string;
         displayName: string;
+        description: string | null;
         originalPrice: number;
         vat: number;
         totalPrice: number;
@@ -384,19 +386,19 @@ export declare class AdminController {
     getNotifications(page?: number, limit?: number): Promise<{
         data: ({
             user: {
-                email: string;
-                name: string;
                 id: number;
+                name: string;
+                email: string;
             };
         } & {
-            type: import("@prisma/client").$Enums.NotificationType;
-            title: string;
-            message: string;
             id: number;
             createdAt: Date;
             updatedAt: Date;
             data: import("@prisma/client/runtime/client").JsonValue | null;
             userId: number;
+            type: import("@prisma/client").$Enums.NotificationType;
+            title: string;
+            message: string;
             category: import("@prisma/client").$Enums.NotificationCategory;
             isRead: boolean;
             readAt: Date | null;

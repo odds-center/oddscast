@@ -3,36 +3,26 @@ import Icon, { IconName } from '../icons';
 interface SectionTitleProps {
   title: string;
   icon?: IconName;
-  /** h3 vs h4 등 — 기본 h3 */
   as?: 'h2' | 'h3' | 'h4';
   className?: string;
-  /** 아이콘 없이 제목만 */
   noIcon?: boolean;
+  badge?: string | number;
 }
 
-const baseClass =
-  'text-foreground font-bold flex items-center gap-2';
 const sizeClass = {
-  h2: 'text-base sm:text-lg md:text-xl mb-3 sm:mb-4 pb-2 sm:pb-3',
-  h3: 'text-base sm:text-[18px] mb-3 sm:mb-4 pb-2 sm:pb-3',
-  h4: 'text-sm sm:text-base mb-2 pb-2',
+  h2: 'text-sm mb-2 pb-1',
+  h3: 'text-sm mb-1.5 pb-0.5',
+  h4: 'text-sm mb-1 pb-0.5',
 };
 
-export default function SectionTitle({
-  title,
-  icon,
-  as: Tag = 'h3',
-  className = '',
-  noIcon = false,
-}: SectionTitleProps) {
+export default function SectionTitle({ title, icon, as: Tag = 'h3', className = '', noIcon = false, badge }: SectionTitleProps) {
   return (
-    <Tag className={`${baseClass} ${sizeClass[Tag]} ${className}`.trim()}>
-      {!noIcon && icon && (
-        <span className='inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-100 border border-slate-200 shrink-0'>
-          <Icon name={icon} size={18} className='text-slate-600' strokeWidth={2.5} />
-        </span>
-      )}
+    <Tag className={`text-foreground font-bold flex items-center gap-1 ${sizeClass[Tag]} ${className}`.trim()}>
+      {!noIcon && icon && <Icon name={icon} size={14} className='text-[#92702A] shrink-0' strokeWidth={2} />}
       {title}
+      {badge != null && badge !== '' && (
+        <span className='text-xs font-medium text-[#92702A] ml-0.5'>{badge}</span>
+      )}
     </Tag>
   );
 }

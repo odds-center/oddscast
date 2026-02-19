@@ -8,6 +8,7 @@ import RequireLogin from '@/components/page/RequireLogin';
 import { Card } from '@/components/ui';
 import NotificationApi from '@/lib/api/notificationApi';
 import { useAuthStore } from '@/lib/store/authStore';
+import { formatDateTime } from '@/lib/utils/format';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
@@ -94,7 +95,7 @@ export default function NotificationsPage() {
                   <Card
                     key={n.id}
                     variant={isUnread ? 'accent' : 'default'}
-                    className={`py-4 ${isUnread ? 'bg-slate-50' : ''}`}
+                    className={`py-4 ${isUnread ? 'bg-stone-50' : ''}`}
                   >
                       <div className='flex items-start justify-between gap-2'>
                         <div className='flex-1 min-w-0'>
@@ -105,7 +106,7 @@ export default function NotificationsPage() {
                                 {n.message}
                               </p>
                               <p className='text-text-tertiary text-xs mt-1'>
-                                {n.createdAt ? new Date(n.createdAt).toLocaleString('ko-KR') : ''}
+                                {formatDateTime(n.createdAt)}
                               </p>
                             </Link>
                           ) : (
@@ -115,7 +116,7 @@ export default function NotificationsPage() {
                                 {n.message}
                               </p>
                               <p className='text-text-tertiary text-xs mt-1'>
-                                {n.createdAt ? new Date(n.createdAt).toLocaleString('ko-KR') : ''}
+                                {formatDateTime(n.createdAt)}
                               </p>
                             </>
                           )}
@@ -128,7 +129,7 @@ export default function NotificationsPage() {
                                 e.stopPropagation();
                                 markReadMutation.mutate(n.id);
                               }}
-                              className='p-1.5 text-text-tertiary hover:text-slate-700 transition-colors'
+                              className='p-1.5 text-text-tertiary hover:text-stone-700 transition-colors'
                               aria-label='읽음'
                             >
                               <Icon name='Check' size={16} />

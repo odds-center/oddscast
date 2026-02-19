@@ -1,5 +1,5 @@
 /**
- * 금주의 경주 섹션 — KRA 발매경주표 스타일 테이블
+ * 금주의 경주 섹션
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -9,7 +9,6 @@ import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 import type { RaceDto } from '@/lib/types/race';
-import type { RaceDetailDto } from '@goldenrace/shared';
 
 function getWeekDates(): string[] {
   const dates: string[] = [];
@@ -43,29 +42,32 @@ export default function WeekRacesSection() {
       title='금주의 경주'
       icon='Calendar'
       viewAllHref={routes.races.list}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
+      badge={races.length > 0 ? `${races.length}경` : undefined}
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>경주 정보를 불러오는 중...</div>
+        <div className='py-4 text-center text-text-secondary text-sm'>로딩 중...</div>
       ) : races.length === 0 ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
+        <div className='py-4 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
       ) : (
         <DataTable
           className='data-table-kra'
           columns={[
             {
-              key: 'meet',
-              header: '지역',
-              headerClassName: 'w-16 cell-center',
+              key: 'race',
+              header: '경주',
+              headerClassName: 'w-24 cell-center',
               align: 'center',
               render: (row) => (
-                <span className='font-medium text-foreground'>{row.meetName ?? row.meet ?? '-'}</span>
+                <Link href={routes.races.detail(row.id)} className='text-stone-700 font-semibold hover:underline text-sm'>
+                  {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
+                </Link>
               ),
             },
             {
               key: 'date',
               header: '날짜',
-              headerClassName: 'w-20 cell-center',
+              headerClassName: 'w-16 cell-center',
               align: 'center',
               render: (row) => {
                 const d = (row.rcDate ?? '').replace(/-/g, '');
@@ -74,44 +76,21 @@ export default function WeekRacesSection() {
               },
             },
             {
-              key: 'rcNo',
-              header: '경주번호',
-              headerClassName: 'w-20 cell-center',
-              align: 'center',
-              render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-slate-700 font-semibold hover:underline'>
-                  {row.rcNo}R
-                </Link>
-              ),
-            },
-            {
               key: 'dist',
               header: '거리',
-              headerClassName: 'w-20 cell-center',
+              headerClassName: 'w-16 cell-center',
               align: 'center',
               render: (row) => (
                 <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
               ),
             },
             {
-              key: 'entries',
-              header: '출전',
-              headerClassName: 'w-14 cell-center',
-              align: 'center',
-              render: (row) => {
-                const detail = row as RaceDetailDto;
-                const entries = detail.entries ?? detail.entryDetails ?? [];
-                const count = entries.length;
-                return <span className='text-text-secondary'>{count > 0 ? `${count}두` : '-'}</span>;
-              },
-            },
-            {
               key: 'detail',
-              header: '상세',
-              headerClassName: 'w-16 cell-center',
+              header: '',
+              headerClassName: 'w-12 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-slate-700 text-sm font-medium hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-foreground text-xs font-medium hover:underline'>
                   보기
                 </Link>
               ),

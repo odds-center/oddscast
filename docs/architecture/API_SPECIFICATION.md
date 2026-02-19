@@ -393,12 +393,49 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 > Server: `server/src/prediction-tickets/prediction-tickets.controller.ts` WebApp:
 > `webapp/lib/api/predictionTicketApi.ts`
 
+### 10.1 경주별 예측권 (RACE)
+
 | Method | Route                         | 설명        | Auth |
 | ------ | ----------------------------- | ----------- | ---- |
 | `POST` | `/prediction-tickets/use`     | 예측권 사용 | 🔐   |
 | `GET`  | `/prediction-tickets/balance` | 잔여 수량   | 🔐   |
 | `GET`  | `/prediction-tickets/history` | 사용 이력   | 🔐   |
 | `GET`  | `/prediction-tickets/:id`     | 상세 조회   | 🔐   |
+
+### 10.2 종합 예측권 (MATRIX) — 신규
+
+| Method | Route                              | 설명                           | Auth |
+| ------ | ---------------------------------- | ------------------------------ | ---- |
+| `GET`  | `/prediction-tickets/matrix/access` | 해당 날짜 종합 예측 접근 확인  | 🔐   |
+| `POST` | `/prediction-tickets/matrix/use`    | 종합 예측권 사용 (1일 1장)     | 🔐   |
+| `GET`  | `/prediction-tickets/matrix/balance`| 종합 예측권 잔액               | 🔐   |
+| `POST` | `/prediction-tickets/matrix/purchase` | 종합 예측권 개별 구매 (1,000원/장, 1~10장) | 🔐   |
+| `GET`  | `/prediction-tickets/matrix/price`  | 종합 예측권 가격 정보          | 🔐   |
+
+#### `GET /prediction-tickets/matrix/access`
+
+- **Query**: `date` (YYYY-MM-DD, 기본=오늘)
+- **Response**: `{ hasAccess: boolean, expiresAt?: string }`
+
+#### `POST /prediction-tickets/matrix/use`
+
+- **Body**: `{ date?: string }` (YYYY-MM-DD, 기본=오늘)
+- **Response**: `{ ticket: PredictionTicket, alreadyUsed: boolean }`
+- **규칙**: 같은 날짜에 이미 사용한 종합 예측권이 있으면 `alreadyUsed: true` 반환 (중복 사용 허용)
+
+#### `GET /prediction-tickets/matrix/balance`
+
+- **Response**: `{ available: number, used: number, total: number }`
+- **설명**: MATRIX 타입 예측권만 집계
+
+#### `POST /prediction-tickets/matrix/purchase`
+
+- **Body**: `{ count?: number }` (default 1, max 10)
+- **Response**: `{ purchased, totalPrice, pricePerTicket, expiresAt, tickets }`
+
+#### `GET /prediction-tickets/matrix/price`
+
+- **Response**: `{ pricePerTicket: 1000, currency: 'KRW', maxPerPurchase: 10 }`
 
 ---
 
@@ -472,11 +509,11 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | Method | Route                         | 설명                    | Auth        |
 | ------ | ----------------------------- | ----------------------- | ----------- |
 | `GET`  | `/admin/kra/sync-logs`       | KRA 동기화 로그 조회 (endpoint, rcDate, limit) | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/schedule`   | KRA 경주 계획/출전표 동기화 (date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/schedule`   | KRA 경주계획표(API72_2)+출전표 동기화. date 미지정: 1년 내 금·토·일 전체 | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/results`    | KRA 경주 결과 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/details`    | KRA 상세/훈련정보 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/jockeys`    | KRA 기수 통산전적 동기화 (meet?: 1\|2\|3) | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/all`        | KRA 전체 적재 (출전표→결과→상세→기수, date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/all`        | KRA 전체 적재 (경주계획표→출전표→결과→상세→기수, date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/historical`  | KRA 과거 데이터 일괄 적재 (dateFrom, dateTo: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/seed-sample`       | 샘플 경주 데이터 시드 (date?: YYYYMMDD) | 🔐 Admin    |
 | `GET`  | `/admin/users`                | 사용자 목록             | 🔐 Admin    |
@@ -513,7 +550,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | Method | Route                | 설명                     | Auth     |
 | ------ | -------------------- | ------------------------ | -------- |
 | `GET`  | `/kra/sync-logs`     | KRA 동기화 로그 조회     | 🔐 Admin |
-| `POST` | `/kra/sync/schedule` | 경주 계획/출전표 동기화  | 🔐 Admin |
+| `POST` | `/kra/sync/schedule` | 경주계획표(API72_2)+출전표 동기화 | 🔐 Admin |
 | `POST` | `/kra/sync/results`  | 경주 결과 동기화         | 🔐 Admin |
 | `POST` | `/kra/sync/details`  | 상세/훈련정보 동기화     | 🔐 Admin |
 | `POST` | `/kra/sync/jockeys`  | 기수 통산전적 동기화     | 🔐 Admin |

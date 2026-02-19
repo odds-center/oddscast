@@ -1,6 +1,4 @@
 import { ApiResponse } from '@/lib/types/api';
-import CONFIG from '@/lib/config';
-import { mockNotifications } from '@/lib/mocks/data';
 import type {
   CreateNotificationRequest,
   Notification,
@@ -21,14 +19,6 @@ export default class NotificationApi {
     page: number;
     totalPages: number;
   }> {
-    if (CONFIG.useMock) {
-      return {
-        notifications: mockNotifications as unknown as Notification[],
-        total: mockNotifications.length,
-        page: 1,
-        totalPages: 1,
-      };
-    }
     try {
       const queryString = qs.stringify(filters, {
         skipNulls: true,
@@ -95,7 +85,6 @@ export default class NotificationApi {
 
   // 알림 읽음 처리
   static async markAsRead(notificationId: string): Promise<Notification> {
-    if (CONFIG.useMock) return {} as Notification;
     try {
       const response = await axiosInstance.patch<ApiResponse<Notification>>(
         `${NotificationApi.baseUrl}/${notificationId}/read`,
@@ -108,7 +97,6 @@ export default class NotificationApi {
 
   // 모든 알림 읽음 처리
   static async markAllAsRead(): Promise<{ updatedCount: number }> {
-    if (CONFIG.useMock) return { updatedCount: 1 };
     try {
       const response = await axiosInstance.patch<ApiResponse<{ updatedCount: number }>>(
         `${NotificationApi.baseUrl}/read-all`,
@@ -121,7 +109,6 @@ export default class NotificationApi {
 
   // 알림 삭제
   static async deleteNotification(notificationId: string): Promise<{ message: string }> {
-    if (CONFIG.useMock) return { message: 'OK' };
     try {
       const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
         `${NotificationApi.baseUrl}/${notificationId}`,
@@ -146,16 +133,6 @@ export default class NotificationApi {
 
   // 알림 설정 조회
   static async getNotificationPreferences(): Promise<NotificationPreferences> {
-    if (CONFIG.useMock) {
-      return {
-        pushEnabled: true,
-        raceEnabled: true,
-        predictionEnabled: true,
-        subscriptionEnabled: true,
-        systemEnabled: true,
-        promotionEnabled: false,
-      };
-    }
     try {
       const response = await axiosInstance.get<ApiResponse<NotificationPreferences>>(
         `${NotificationApi.baseUrl}/preferences`,
@@ -170,17 +147,6 @@ export default class NotificationApi {
   static async updateNotificationPreferences(
     preferences: Partial<NotificationPreferences>,
   ): Promise<NotificationPreferences> {
-    if (CONFIG.useMock) {
-      const defaults: NotificationPreferences = {
-        pushEnabled: true,
-        raceEnabled: true,
-        predictionEnabled: true,
-        subscriptionEnabled: true,
-        systemEnabled: true,
-        promotionEnabled: false,
-      };
-      return { ...defaults, ...preferences };
-    }
     try {
       const response = await axiosInstance.put<ApiResponse<NotificationPreferences>>(
         `${NotificationApi.baseUrl}/preferences`,

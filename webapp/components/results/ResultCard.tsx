@@ -41,9 +41,9 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
       <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-slate-400 h-full'>
         {/* 경주 정보 */}
         <div className='flex items-center gap-3 min-w-0'>
-          <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-slate-100 border border-slate-200 shrink-0'>
-            <Icon name='Trophy' size={16} className='text-slate-500 mb-0.5' strokeWidth={2} />
-            <span className='font-display font-bold text-sm text-slate-700'>{rcNo}경</span>
+          <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-stone-100 border border-stone-200 shrink-0'>
+            <Icon name='Trophy' size={16} className='text-stone-500 mb-0.5' strokeWidth={2} />
+            <span className='font-display font-bold text-sm text-stone-700'>{rcNo}경</span>
             <span className='text-text-tertiary text-[12px] mt-0.5 truncate max-w-full'>{meetName}</span>
           </div>
           <div className='flex-1 min-w-0 space-y-0.5'>
@@ -90,7 +90,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
         </div>
 
         <div className='flex justify-end'>
-          <Icon name='ChevronRight' size={18} className='text-text-tertiary shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-slate-600 transition-all' />
+          <Icon name='ChevronRight' size={18} className='text-text-tertiary shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-stone-600 transition-all' />
         </div>
       </div>
     </Link>

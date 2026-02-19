@@ -97,7 +97,7 @@ export default function SubscriptionsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='구독 관리'
-            description='구독 플랜과 사용자 구독을 관리할 수 있습니다.'
+            description='구독 플랜별 가격·예측권 수량을 관리합니다. 활성/비활성으로 앱 노출을 제어할 수 있습니다.'
           >
             <Button onClick={() => setShowCreateModal(true)}>플랜 추가</Button>
           </PageHeader>

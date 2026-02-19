@@ -6,8 +6,6 @@
 import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
 import RaceApi from './raceApi';
 import PredictionApi from './predictionApi';
-import CONFIG from '@/lib/config';
-import { mockMatrixData, mockCommentaryData, mockHitRecords } from '@/lib/mocks/matrixData';
 
 /** 경주별 예상 매트릭스 행 */
 export interface MatrixRowDto {
@@ -16,9 +14,14 @@ export interface MatrixRowDto {
   meetName?: string;
   rcNo: string;
   stTime?: string;
-  predictions: Record<string, string[] | string>; // expertId: ["8","1"] or "8"
+  rcDist?: string;
+  rank?: string;
+  entryCount?: number;
+  entries?: Array<{ hrNo: string; hrName: string }>;
+  predictions: Record<string, string[] | string>;
+  horseNames?: Record<string, string>;
   aiConsensus: string;
-  consensusLabel?: string; // "축"
+  consensusLabel?: string;
 }
 
 /** 매트릭스 응답 */
@@ -61,9 +64,6 @@ export default class PredictionMatrixApi {
    * date: YYYY-MM-DD, meet: 서울|제주|부산경남
    */
   static async getMatrix(date?: string, meet?: string): Promise<MatrixResponseDto> {
-    if (CONFIG.useMock) {
-      return mockMatrixData;
-    }
     try {
       const response = await axiosInstance.get<{ data?: MatrixResponseDto } | MatrixResponseDto>(
         '/predictions/matrix',
@@ -85,10 +85,10 @@ export default class PredictionMatrixApi {
     const useToday = !date || date === 'today';
     const list = useToday
       ? await RaceApi.getTodayRaces()
-      : (await RaceApi.getRaces({ date, meet, limit: 20 })).races;
+      : (await RaceApi.getRaces({ date, meet, limit: 100 })).races;
 
     const rows: MatrixRowDto[] = [];
-    for (const race of list.slice(0, 12)) {
+    for (const race of list) {
       const rid = String(race.id);
       let preview;
       try {
@@ -98,11 +98,22 @@ export default class PredictionMatrixApi {
       }
 
       const scores =
-        (preview as { scores?: { horseScores?: { hrNo?: string }[] } })?.scores?.horseScores ?? [];
+        (preview as { scores?: { horseScores?: { hrNo?: string; hrName?: string }[] } })?.scores?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
       const consensusArr = top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
+
+      const raceAny = race as unknown as Record<string, unknown>;
+      const entryRaw = (raceAny.entries ?? raceAny.entryDetails ?? []) as Array<{ hrNo?: string; hrName?: string }>;
+
+      const horseNames: Record<string, string> = {};
+      for (const e of entryRaw) {
+        if (e.hrNo && e.hrName) horseNames[e.hrNo] = e.hrName;
+      }
+      for (const s of scores) {
+        if (s.hrNo && s.hrName && !horseNames[s.hrNo]) horseNames[s.hrNo] = s.hrName;
+      }
 
       rows.push({
         raceId: rid,
@@ -110,10 +121,15 @@ export default class PredictionMatrixApi {
         meetName: race.meetName,
         rcNo: race.rcNo ?? '',
         stTime: race.stTime,
+        rcDist: (raceAny.rcDist as string) ?? undefined,
+        rank: (raceAny.rank as string) ?? undefined,
+        entryCount: entryRaw.length > 0 ? entryRaw.length : undefined,
+        entries: entryRaw.map((e) => ({ hrNo: e.hrNo ?? '', hrName: e.hrName ?? '' })),
         predictions: {
           ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
           expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
         },
+        horseNames,
         aiConsensus: consensus,
         consensusLabel: top1 ? '축' : undefined,
       });
@@ -134,10 +150,6 @@ export default class PredictionMatrixApi {
     offset = 0,
     meet?: string,
   ): Promise<CommentaryResponseDto> {
-    if (CONFIG.useMock) {
-      const comments = mockCommentaryData.comments.slice(offset, offset + limit);
-      return { comments, total: mockCommentaryData.comments.length };
-    }
     try {
       const response = await axiosInstance.get<{ data?: CommentaryResponseDto } | CommentaryResponseDto>(
         '/predictions/commentary',
@@ -153,9 +165,6 @@ export default class PredictionMatrixApi {
    * 적중 내역 (배너용)
    */
   static async getHitRecords(limit = 5): Promise<HitRecordDto[]> {
-    if (CONFIG.useMock) {
-      return mockHitRecords.slice(0, limit);
-    }
     try {
       const response = await axiosInstance.get<{ data?: HitRecordDto[] } | HitRecordDto[]>(
         '/predictions/hit-record',

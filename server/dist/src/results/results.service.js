@@ -42,6 +42,7 @@ let ResultsService = class ResultsService {
                     hrName: true,
                     jkName: true,
                     rcTime: true,
+                    diffUnit: true,
                     race: {
                         select: { meet: true, meetName: true, rcNo: true, rcDate: true, rcDist: true },
                     },

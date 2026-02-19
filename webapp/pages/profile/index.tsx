@@ -7,6 +7,7 @@ import MenuList from '@/components/page/MenuList';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
 import Dropdown from '@/components/ui/Dropdown';
+import { Tooltip } from '@/components/ui';
 import PointApi from '@/lib/api/pointApi';
 import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
@@ -83,12 +84,13 @@ export default function Profile() {
           loadingLabel='정보를 불러오는 중...'
         >
           <div className='space-y-6'>
-            <SectionCard title='예측권' icon='Ticket'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-slate-800 tracking-tight'>
+            <SectionCard title='예측권' icon='Ticket' description='경주별 AI 분석을 열람할 때 1장씩 사용됩니다'>
+              <p className='text-3xl sm:text-[2rem] font-bold text-stone-800 tracking-tight'>
                 {ticketBalance?.availableTickets ?? 0}장
               </p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
-                AI 예측을 보려면 예측권이 필요합니다. 포인트로 구매하거나 구독으로 받을 수 있습니다.
+                AI가 분석한 마별 점수, 7개 승식 추천 조합을 확인하려면 예측권이 필요합니다.
+                <Tooltip content='포인트로 구매하거나, 구독 플랜을 이용하면 매달 자동 지급됩니다' inline> 받는 방법</Tooltip>
               </p>
             </SectionCard>
 
@@ -105,10 +107,11 @@ export default function Profile() {
               </SectionCard>
             )}
 
-            <SectionCard title='포인트' icon='Gem'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-slate-800 tracking-tight'>{points.toLocaleString()}pt</p>
+            <SectionCard title='포인트' icon='Gem' description='예측권 구매에 사용하는 앱 내 재화'>
+              <p className='text-3xl sm:text-[2rem] font-bold text-stone-800 tracking-tight'>{points.toLocaleString()}pt</p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
-                프로모션, 이벤트, 구독 등으로 포인트를 받을 수 있습니다. 포인트로 예측권을 구매할 수 있습니다.
+                프로모션, 이벤트, 구독 등으로 포인트를 받을 수 있습니다.
+                <Tooltip content='예측권 1장 = 포인트로 구매 가능. 구독 플랜에 따라 보너스 포인트도 지급됩니다' inline> 사용 방법</Tooltip>
               </p>
             </SectionCard>
 
@@ -143,7 +146,9 @@ export default function Profile() {
             </button>
           </div>
           {!canPurchase && points > 0 && (
-            <p className='msg-warning mt-2'>포인트가 부족합니다.</p>
+            <p className='msg-warning mt-2'>
+              포인트가 부족합니다 (필요: {(perTicket * purchaseQty).toLocaleString()}pt, 보유: {points.toLocaleString()}pt)
+            </p>
           )}
           {purchaseMutation.isSuccess && (
             <p className='msg-success mt-2'>

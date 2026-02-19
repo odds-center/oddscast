@@ -17,7 +17,7 @@
 | 구분 | 내용 |
 |------|------|
 | **핵심 가치** | AI 분석 결과를 통해 경주 정보를 이해하기 쉽게 전달 |
-| **수익 모델** | 구독료(월 구독) + 예측권 개별 구매 |
+| **수익 모델** | 구독료(월 구독) + 예측권 개별 구매 + 종합 예측권 판매 |
 | **대상 사용자** | 40~60대, 경마·경주 정보에 관심 있는 사용자 |
 | **법적 성격** | 정보 제공 서비스 (주식 투자 정보 서비스와 유사) |
 
@@ -46,13 +46,14 @@
 | 5 | **랭킹** | 예측 적중 횟수 순위 | WebApp, Mobile | 공개(목록), 로그인(내 랭킹) |
 | 6 | ~~**내가 고른 말**~~ | ~~승식별 선택 기록, 적중 시 포인트~~ | **제외** | — |
 | 7 | **즐겨찾기** | 관심 경주 저장 (RACE만) | ~~WebApp~~, Server API | 로그인 |
-| 8 | **예측권** | 구독·포인트·개별 구매로 획득 | WebApp, Mobile | 로그인 |
-| 9 | **포인트** | 예측권 구매에 사용 (프로모션 등 지급) | WebApp, Mobile | 로그인 |
-| 10 | **구독** | 월 정기 구독, 예측권 자동 발급 | WebApp, Mobile | 로그인 |
-| 11 | **알림** | 경주·예측·구독·시스템·프로모션 | WebApp, Mobile | 로그인 |
-| 12 | **프로필·설정** | 프로필 수정, 알림 설정 | WebApp, Mobile | 로그인 |
-| 13 | **기수·말 분석** | 마칠기삼 통합 분석 (선택) | WebApp, Mobile | 공개 |
-| 14 | **종합 예상표** | 경주×AI 예상 매트릭스, 코멘트 피드 | WebApp, Mobile | 로그인 |
+| 8 | **예측권 (RACE)** | 구독·포인트·개별 구매로 획득, 경주별 예측 열람 | WebApp, Mobile | 로그인 |
+| 9 | **종합 예측권 (MATRIX)** | 구독 포함 (5천원당 1장) + 개별 구매 1,000원/장, 일일 종합 예상표 전체 열람 | WebApp, Mobile | 로그인 |
+| 10 | **포인트** | 예측권 구매에 사용 (프로모션 등 지급) | WebApp, Mobile | 로그인 |
+| 11 | **구독** | 월 정기 구독, 예측권 자동 발급 | WebApp, Mobile | 로그인 |
+| 12 | **알림** | 경주·예측·구독·시스템·프로모션 | WebApp, Mobile | 로그인 |
+| 13 | **프로필·설정** | 프로필 수정, 알림 설정 | WebApp, Mobile | 로그인 |
+| 14 | **기수·말 분석** | 마칠기삼 통합 분석 (선택) | WebApp, Mobile | 공개 |
+| 15 | **일일 종합 가이드** | 하루 전체 경주 AI 예상 매트릭스 (용산종합지 스타일) | WebApp, Mobile | 로그인 |
 
 ### 2.2 클라이언트 구성
 
@@ -89,11 +90,23 @@
 - **유료(Full)**: 예측권 1장 소비 → 전체 분석글 + 상세 점수
 - **API**: `GET /api/predictions/race/:raceId/preview`, `POST /api/prediction-tickets/use`
 
-#### 종합 예상표 (predictions/matrix)
-- **내용**: 경주별 AI 1·2위 예상 매트릭스, AI/전문가 코멘트 피드
+#### 일일 종합 가이드 (predictions/matrix) — 리디자인 완료
+
+- **페이지 목적**: 하루의 모든 경주 AI 예상을 한눈에 보는 "일일 종합 가이드"
 - **라우트**: `/predictions/matrix`
+- **UI 스타일**: 용산종합지 (전통 경마 예상지) 참고, KRA 다크 헤더
 - **필터**: 날짜(오늘/어제/날짜 선택), 경마장(전체/서울/제주/부산)
-- **API**: `GET /api/predictions/matrix`, `GET /api/predictions/commentary`, `GET /api/predictions/hit-record`
+- **탭**: 종합 예상표 | AI 코멘트
+- **종합 예상표**: 모든 경주의 AI 예상을 매트릭스 형태로 표시 (경주정보 + 게이트별 마번 + AI 종합)
+- **잠금 모드**: 종합 예측권 미사용 시 3경주 미리보기 + 잠금 오버레이
+- **API**: `GET /api/predictions/matrix`, `GET /api/predictions/commentary`, `GET /api/prediction-tickets/matrix/access`, `POST /api/prediction-tickets/matrix/use`
+
+#### 종합 예측권 (MATRIX Ticket)
+
+- **가격**: 1,000원/장 (개별 판매)
+- **사용 규칙**: 1일 1장 사용 → 해당 날짜 전체 종합 예상표 열람
+- **중복 방지**: 같은 날짜에 이미 사용한 종합 예측권이 있으면 추가 차감 없이 접근
+- **API**: `GET /api/prediction-tickets/matrix/access`, `POST /api/prediction-tickets/matrix/use`, `GET /api/prediction-tickets/matrix/balance`
 
 ### 3.2 사용자 기능 (Auth Required)
 
@@ -243,7 +256,9 @@
 | 인증 (구글/이메일) | ✅ | ✅ | ✅(Native Bridge) | |
 | ~~내가 고른 말~~ | ✅ | ❌ (제외) | ❌ | 서비스에서 제외 |
 | 즐겨찾기 | ✅ | ❌ (제거) | - | Server API RACE만 |
-| 예측권 | ✅ | ✅ | ✅ | |
+| 예측권 (RACE) | ✅ | ✅ | ✅ | 경주별 예측 열람 |
+| 종합 예측권 (MATRIX) | ✅ | ✅ | ✅ | 일일 종합 예상표 열람, 1,000원/장 |
+| 일일 종합 가이드 | ✅ | ✅ | ✅ | 용산종합지 스타일, 잠금 모드 |
 | 프로필 | ✅ | ✅ | ✅ | |
 
 ### Monetization (P2)
@@ -252,7 +267,8 @@
 |------|--------|--------|--------|------|
 | 포인트 | ✅ | ✅ | ✅ | |
 | 구독 | ✅ | ✅ | ✅ | |
-| 결제 | ✅ | ✅ | ✅ | Mock 지원 |
+| 결제 | ✅ | ✅ | ✅ | |
+| 종합 예측권 판매 | ✅ | ✅ | ✅ | 1,000원/장, 1일 1장 |
 | 알림 설정 | ✅ | ✅ | ✅ | 푸시 mobile만 |
 | 랭킹 | ✅ | ✅ | ✅ | |
 
@@ -275,8 +291,9 @@
 | [API_SPECIFICATION.md](architecture/API_SPECIFICATION.md) | 전체 API 엔드포인트 |
 | [BUSINESS_LOGIC.md](architecture/BUSINESS_LOGIC.md) | 상세 비즈니스 규칙 |
 | [DATABASE_SCHEMA.md](architecture/DATABASE_SCHEMA.md) | DB 스키마 |
+| [UI_PATTERNS.md](features/UI_PATTERNS.md) | KRA 스타일 UI 디자인 패턴 |
 | [LEGAL_NOTICE.md](legal/LEGAL_NOTICE.md) | 법적 고지사항 |
 
 ---
 
-**마지막 업데이트**: 2026-02-13 (내가 고른 말 제외 반영)
+**마지막 업데이트**: 2026-02-19 (KRA 스타일 UI 개편, 종합 예측권 시스템, 일일 종합 가이드 반영)

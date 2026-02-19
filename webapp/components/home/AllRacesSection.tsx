@@ -59,7 +59,7 @@ export default function AllRacesSection() {
       title='전체 경주'
       icon='ClipboardList'
       viewAllHref={routes.races.list}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
     >
       <FilterDateBar
         filterOptions={[
@@ -128,7 +128,7 @@ export default function AllRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-slate-700 font-semibold hover:underline'
+                  className='text-stone-700 font-semibold hover:underline'
                 >
                   {row.rcNo}R
                 </Link>
@@ -140,7 +140,7 @@ export default function AllRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-slate-700 hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-stone-700 hover:underline'>
                   {row.rcDist ? `${row.rcDist}M` : '-'}
                 </Link>
               ),
@@ -174,7 +174,7 @@ export default function AllRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-slate-700 text-sm font-medium hover:underline'
+                  className='text-stone-700 text-sm font-medium hover:underline'
                 >
                   보기
                 </Link>

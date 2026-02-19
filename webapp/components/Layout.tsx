@@ -31,7 +31,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
           name='viewport'
           content='width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover'
         />
-        <meta name='theme-color' content='#fafafa' />
+        <meta name='theme-color' content='#1c1917' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
       </Head>
@@ -49,13 +49,13 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
       <footer className='site-footer-fixed'>
         <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:gap-x-4 text-text-tertiary text-[12px] sm:text-xs px-2 sm:px-4'>
           <span className='font-medium text-foreground/80'>© GOLDEN RACE</span>
-          <Link href={routes.legal.terms} className='hover:text-slate-700 hover:underline transition-colors'>
+          <Link href={routes.legal.terms} className='hover:text-stone-700 hover:underline transition-colors'>
             이용약관
           </Link>
-          <Link href={routes.legal.privacy} className='hover:text-slate-700 hover:underline transition-colors'>
+          <Link href={routes.legal.privacy} className='hover:text-stone-700 hover:underline transition-colors'>
             개인정보처리방침
           </Link>
-          <Link href={routes.legal.refund} className='hover:text-slate-700 hover:underline transition-colors'>
+          <Link href={routes.legal.refund} className='hover:text-stone-700 hover:underline transition-colors'>
             환불정책
           </Link>
           <span className='text-text-tertiary/80'>사행성 없음</span>

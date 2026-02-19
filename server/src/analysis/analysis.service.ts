@@ -143,6 +143,7 @@ export class AnalysisService {
         rcNo: race.rcNo,
         rcDist: race.rcDist,
         weather: race.weather,
+        track: race.track ?? undefined,
       },
       entries: race.entries.map((e) => ({
         hrNo: e.hrNo,

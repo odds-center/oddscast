@@ -360,8 +360,10 @@ model PredictionTicket {
   subscriptionId Int?
   predictionId   Int?
   raceId         Int?
+  type           TicketType   @default(RACE)
   status         TicketStatus @default(AVAILABLE)
   usedAt         DateTime?
+  matrixDate     String?      /// MATRIX 타입 전용: 해당 날짜 (YYYYMMDD)
   issuedAt       DateTime     @default(now())
   expiresAt      DateTime
 
@@ -378,9 +380,15 @@ enum TicketStatus {
   EXPIRED
 }
 
+enum TicketType {
+  RACE
+  MATRIX
+}
+
 // ============================================
 // 구독 플랜 (SubscriptionPlan)
 // seed: LIGHT(10장/4,900원), STANDARD(20장/9,900원), PREMIUM(30장 27+3/14,900원), 1장=500원
+// matrixTickets: 종합 예측권 — 5,000원당 1장 (LIGHT=0, STANDARD=1, PREMIUM=2)
 // ============================================
 model SubscriptionPlan {
   id            Int      @id @default(autoincrement())
@@ -393,6 +401,7 @@ model SubscriptionPlan {
   baseTickets   Int
   bonusTickets  Int      @default(0)
   totalTickets  Int
+  matrixTickets Int      @default(0) /// 종합 예측권 수 (5,000원당 1장)
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
   createdAt     DateTime @default(now())

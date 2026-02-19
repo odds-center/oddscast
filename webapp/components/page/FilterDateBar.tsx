@@ -1,11 +1,9 @@
 /**
- * 필터 칩 + 날짜 선택 공용 컴포넌트
- * 경주, 결과, 종합예상표 등에서 일관된 compact 스타일 적용
+ * 필터 바 — 날짜(DatePicker) + 상태 + 지역 필터 통합
+ * 경마 정보 사이트 스타일의 컴팩트 필터 영역
  */
 import FilterChips from './FilterChips';
-
-const dateInputClass =
-  'min-h-[44px] sm:h-9 px-2.5 rounded-lg text-sm border border-border bg-card text-foreground focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[110px] sm:min-w-[120px] max-w-[150px] transition-all duration-200';
+import DatePicker from '@/components/ui/DatePicker';
 
 /** 지역(경마장) 필터 옵션: 서울, 제주, 부산 */
 export const MEET_FILTER_OPTIONS = [
@@ -15,31 +13,29 @@ export const MEET_FILTER_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
+/** 경주 상태 필터 옵션 */
+export const STATUS_FILTER_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'SCHEDULED', label: '예정' },
+  { value: 'COMPLETED', label: '종료' },
+] as const;
+
 export interface FilterDateBarProps {
-  /** 필터 옵션 (전체/오늘 등) */
   filterOptions: { value: string; label: string }[];
-  /** 현재 필터 값 */
   filterValue: string;
-  /** 필터 변경 */
   onFilterChange: (value: string) => void;
-  /** 날짜 입력 표시 여부 */
   showDatePicker?: boolean;
-  /** 날짜 입력 값 (필터가 날짜일 때만 표시) */
   dateValue?: string;
-  /** 날짜 변경 */
   onDateChange?: (value: string) => void;
-  /** 날짜 라벨 */
   dateLabel?: string;
-  /** 고유 ID (한 페이지에 여러 개일 때) */
   dateId?: string;
-  /** 지역(경마장) 필터 표시 여부 */
   showMeetFilter?: boolean;
-  /** 지역 필터 값 (서울/제주/부산경남) */
   meetValue?: string;
-  /** 지역 필터 변경 */
   onMeetChange?: (value: string) => void;
+  showStatusFilter?: boolean;
+  statusValue?: string;
+  onStatusChange?: (value: string) => void;
   className?: string;
-  /** card 스타일 생략 (섹션 내 중첩 시 사용) */
   inline?: boolean;
 }
 
@@ -50,40 +46,53 @@ export default function FilterDateBar({
   showDatePicker = true,
   dateValue = '',
   onDateChange,
-  dateLabel = '날짜',
   dateId = 'filter-date',
   showMeetFilter = false,
   meetValue = '',
   onMeetChange,
+  showStatusFilter = false,
+  statusValue = '',
+  onStatusChange,
   className = '',
   inline = false,
 }: FilterDateBarProps) {
   const wrapClass = inline
-    ? `flex flex-wrap gap-2 items-center mb-4 ${className}`.trim()
-    : `card p-4 mb-4 border-slate-200 flex flex-wrap gap-2 items-center ${className}`.trim();
+    ? `flex flex-wrap gap-2 items-center mb-3 ${className}`.trim()
+    : `rounded-lg border border-border bg-white px-3 py-2.5 mb-3 flex flex-wrap gap-2 items-center ${className}`.trim();
+
   return (
     <div className={wrapClass}>
       <FilterChips options={filterOptions} value={filterValue} onChange={onFilterChange} />
+
       {showDatePicker && onDateChange && (
-        <div className='flex items-center gap-1.5'>
-          <label htmlFor={dateId} className='text-text-secondary text-sm font-medium shrink-0'>
-            {dateLabel}
-          </label>
-          <input
-            id={dateId}
-            type='date'
-            value={dateValue}
-            onChange={(e) => onDateChange(e.target.value || '')}
-            className={dateInputClass}
-          />
-        </div>
-      )}
-      {showMeetFilter && onMeetChange && (
-        <FilterChips
-          options={[...MEET_FILTER_OPTIONS]}
-          value={meetValue}
-          onChange={onMeetChange}
+        <DatePicker
+          value={dateValue ?? ''}
+          onChange={onDateChange}
+          id={dateId}
+          placeholder='날짜 선택'
         />
+      )}
+
+      {showStatusFilter && onStatusChange && (
+        <>
+          <span className='w-px h-5 bg-border mx-1 hidden sm:block' />
+          <FilterChips
+            options={[...STATUS_FILTER_OPTIONS]}
+            value={statusValue ?? ''}
+            onChange={onStatusChange}
+          />
+        </>
+      )}
+
+      {showMeetFilter && onMeetChange && (
+        <>
+          <span className='w-px h-5 bg-border mx-1 hidden sm:block' />
+          <FilterChips
+            options={[...MEET_FILTER_OPTIONS]}
+            value={meetValue}
+            onChange={onMeetChange}
+          />
+        </>
       )}
     </div>
   );

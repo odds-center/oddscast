@@ -27,9 +27,11 @@
 - [`HORSE_RACING_SPEC.md`](specs/HORSE_RACING_SPEC.md) — NestJS + Python + PostgreSQL 기술 명세
 - [`COST_ANALYSIS.md`](specs/COST_ANALYSIS.md) — Gemini API 비용 분석 & 서버 캐싱 전략
 - [`PREDICTION_TICKET_PRICING_SIMULATION.md`](specs/PREDICTION_TICKET_PRICING_SIMULATION.md) — 토큰 모의 계산 기반 예측권·구독 가격 권장
+- [`ANALYSIS_SPEC.md`](specs/ANALYSIS_SPEC.md) — **Python 분석 알고리즘 총괄** (레이팅·기세·경험·낙마·연쇄 낙마)
 - [`KRA_API_ANALYSIS_SPEC.md`](specs/KRA_API_ANALYSIS_SPEC.md) — KRA API 선정 및 활용 전략
-- [`KRA_ANALYSIS_STRATEGY.md`](specs/KRA_ANALYSIS_STRATEGY.md) — KRA 마칠기삼·기수 점수·가중치 분석 전략
-- [`KRA_ENTRY_SHEET_SPEC.md`](specs/KRA_ENTRY_SHEET_SPEC.md) — 출전표 상세정보 API
+- [`KRA_ANALYSIS_STRATEGY.md`](specs/KRA_ANALYSIS_STRATEGY.md) — KRA 마칠기삼·기수 점수·가중치·낙마 리스크
+- [`KRA_RACE_PLAN_SPEC.md`](specs/KRA_RACE_PLAN_SPEC.md) — 경주계획표 API (API72_2, 미래 일정)
+- [`KRA_ENTRY_SHEET_SPEC.md`](specs/KRA_ENTRY_SHEET_SPEC.md) — 출전표 상세정보 API (API26_2, 경주 2~3일 전)
 - [`KRA_EQUIPMENT_BLEEDING_SPEC.md`](specs/KRA_EQUIPMENT_BLEEDING_SPEC.md) — 출전마 장구사용 및 폐출혈 정보 API
 - [`KRA_TRAINING_SPEC.md`](specs/KRA_TRAINING_SPEC.md) — 말훈련내역 API
 - [`KRA_TRACK_INFO_SPEC.md`](specs/KRA_TRACK_INFO_SPEC.md) — 경주로정보 API
@@ -44,9 +46,9 @@
 
 ### 📖 Guides (개발 가이드)
 
-- [`DATA_LOADING.md`](DATA_LOADING.md) — KRA 데이터 적재, 출전마 보이지 않을 때 대응, Admin 수동 동기화
+- [`DATA_LOADING.md`](DATA_LOADING.md) — KRA 데이터 적재 (경주계획표 API72_2 + 출전표 API26_2), Cron·Admin 수동 동기화
 - [`PRISMA_SETUP.md`](guides/PRISMA_SETUP.md) — Prisma 7 설정 (Accelerate, 직접 연결, 포트 구성)
-- [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp Mock 모드, 페이지 컴포넌트, 모바일 최적화, 구독 플로우
+- [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp 페이지 컴포넌트, 모바일 최적화, 구독 플로우
 - [`WEBAPP_README.md`](guides/WEBAPP_README.md) — WebApp 요약 (테마, 환경변수, 라우트)
 - [`ADMIN_GUIDE.md`](guides/ADMIN_GUIDE.md) — Admin 대시보드 가이드
 - [`MOBILE_GUIDE.md`](guides/MOBILE_GUIDE.md) — Mobile (WebView) 앱 가이드

@@ -8,9 +8,9 @@ import { RankBadge } from '@/components/ui';
 import { routes } from '@/lib/routes';
 
 const RANK_COLORS: Record<number, string> = {
-  1: 'text-emerald-600',
-  2: 'text-[#64748b]',
-  3: 'text-[var(--color-rank-3)]',
+  1: 'text-[#92702A]',
+  2: 'text-stone-600',
+  3: 'text-stone-400',
 };
 
 export default function RankingPreviewSection() {
@@ -26,7 +26,7 @@ export default function RankingPreviewSection() {
       title='예측 랭킹'
       icon='Medal'
       viewAllHref={routes.ranking}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
       accent
     >
       {isLoading ? (
@@ -46,10 +46,10 @@ export default function RankingPreviewSection() {
                 <span className='inline-flex items-center justify-center min-w-[28px] text-sm font-bold text-text-tertiary'>{rank}</span>
               );
             return (
-              <li key={item.id} className='flex items-center gap-4 py-3 first:pt-0 last:pb-0'>
+              <li key={item.id} className='flex items-center gap-3 py-2 first:pt-0 last:pb-0'>
                 {rankEl}
                 <span className={`font-medium flex-1 truncate ${RANK_COLORS[rank] ?? 'text-foreground'}`}>{name}</span>
-                <span className='text-slate-700 font-semibold shrink-0'>{correctCount}회 적중</span>
+                <span className='text-stone-700 font-semibold shrink-0'>{correctCount}회 적중</span>
               </li>
             );
           })}

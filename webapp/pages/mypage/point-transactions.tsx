@@ -9,6 +9,7 @@ import PointApi from '@/lib/api/pointApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
+import { formatDateTime } from '@/lib/utils/format';
 
 export default function PointTransactionsPage() {
   const [page, setPage] = useState(1);
@@ -22,9 +23,6 @@ export default function PointTransactionsPage() {
 
   const transactions = data?.transactions ?? [];
   const totalPages = data?.totalPages ?? 1;
-
-  const formatDate = (d: string | Date) =>
-    new Date(d).toLocaleString('ko-KR', { dateStyle: 'short', timeStyle: 'short' });
 
   const getTypeLabel = (type: string) => {
     const labels: Record<string, string> = {
@@ -70,7 +68,7 @@ export default function PointTransactionsPage() {
             { key: 'type', header: '유형', headerClassName: 'min-w-[100px]', cellClassName: 'font-medium', render: (t) => getTypeLabel(t.transactionType) },
             { key: 'desc', header: '설명', cellClassName: 'text-text-secondary', render: (t) => t.description ?? '-' },
             { key: 'amount', header: '포인트', align: 'right', headerClassName: 'w-24', cellClassName: (t) => `font-semibold ${isPositive(t.transactionType) ? 'text-emerald-600' : 'text-text-secondary'}`, render: (t) => `${isPositive(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt` },
-            { key: 'date', header: '일시', align: 'center', headerClassName: 'w-32', cellClassName: 'text-text-tertiary', render: (t) => { const v = t.transactionTime ?? t.createdAt; return v ? formatDate(v) : '-'; } },
+            { key: 'date', header: '일시', align: 'center', headerClassName: 'w-32', cellClassName: 'text-text-tertiary', render: (t) => { const v = t.transactionTime ?? t.createdAt; return formatDateTime(v); } },
           ]}
           data={transactions}
           getRowKey={(t) => t.id}

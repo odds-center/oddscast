@@ -10,6 +10,8 @@
 
 출전마 데이터는 KRA 출전표 API(API26_2)에서 가져와 `race_entries` 테이블에 저장됨.
 
+> **참고:** 경기 종료 후(`status=COMPLETED`)에는 출전마 섹션이 숨겨지고 경주 결과 테이블만 표시됩니다.
+
 ---
 
 ## 1. KRA API 동기화 (실제 경마 데이터)
@@ -24,16 +26,36 @@
 
 | API | 설명 |
 |-----|------|
-| `POST /api/admin/kra/sync/schedule` | 미래 스케줄 전체 적재 (오늘~1년 내 금·토·일) |
-| `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 해당 날짜 출전표만 적재 (경주 + 출전마) |
+| `POST /api/admin/kra/sync/schedule` | 미래 스케줄 전체 적재 (오늘~1년 내 금·토·일, 경주계획표+출전표) |
+| `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 해당 날짜 적재 (경주계획표→출전표) |
 | `POST /api/admin/kra/sync/results` | 과거 1년 결과 적재 (금·토·일) |
 | `POST /api/admin/kra/sync/results?date=YYYYMMDD` | 해당 날짜 경주 결과만 적재 |
 | `POST /api/admin/kra/sync/details?date=YYYYMMDD` | 상세 분석 데이터 |
 | `POST /api/admin/kra/sync/jockeys?meet=1|2|3` | 기수 통산전적 |
-| `POST /api/admin/kra/sync/all?date=YYYYMMDD` | 전체 적재 (출전표→결과→상세→기수) |
+| `POST /api/admin/kra/sync/all?date=YYYYMMDD` | 전체 적재 (경주계획표→출전표→결과→상세→기수) |
 | `POST /api/admin/kra/sync/historical?dateFrom=YYYYMMDD&dateTo=YYYYMMDD` | 과거 데이터 일괄 적재 |
 | `POST /api/admin/kra/seed-sample?date=YYYYMMDD` | 샘플 경주 데이터 (KRA 키 없음) |
 | `GET /api/admin/kra/sync-logs` | 동기화 로그 조회 |
+
+### Cron 스케줄 (자동 동기화)
+
+| Cron | 시각 | 동작 |
+|------|------|------|
+| `syncFutureRacePlans` | 매주 월 03:00 | API72_2 경주계획표 → 오늘~1년 내 금·토·일 Race 적재 |
+| `syncWeeklySchedule` | 수·목 18:00 | 금·토·일 경주계획표+출전표 선적재 |
+| `syncRaceDayMorning` | 금·토·일 08:00 | 당일 출전표+상세정보 |
+| `syncRealtimeResults` | 금·토·일 10:30~19:00 (30분 간격) | 결과·상세 갱신 |
+| `syncPreviousDayResults` | 매일 06:00 | 전날(금·토·일) 결과 사후 동기화 |
+
+### KRA API 2종 (경주계획표 vs 출전표)
+
+| API | 엔드포인트 | 용도 | 데이터 시점 |
+|-----|------------|------|-------------|
+| **API72_2** | `racePlan_2` | 경주계획표 (시행예정 경주 정보) | 미래 일정 포함 (년·월·일 전체 조회 가능) |
+| **API26_2** | `entrySheet_2` | 출전표 (출전마 상세) | 경주 2~3일 전부터 제공 |
+
+- **미래 스케줄**: API72_2로 Race 레코드 선생성 → API26_2로 출전마 추가(출전표 열린 날짜에만)
+- **상세 명세**: [`KRA_RACE_PLAN_SPEC.md`](specs/KRA_RACE_PLAN_SPEC.md), [`KRA_ENTRY_SHEET_SPEC.md`](specs/KRA_ENTRY_SHEET_SPEC.md)
 
 ### 개선 사항 (적재 성공률 향상)
 - 날짜 정규화: `YYYY-MM-DD` → `YYYYMMDD` 자동 변환

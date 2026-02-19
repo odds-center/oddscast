@@ -70,7 +70,7 @@ export default function DataTable<T>({
             const href = getRowHref?.(row, i);
             const trClass = [
               rowClassName?.(row, i),
-              href ? 'cursor-pointer hover:bg-slate-50' : '',
+              href ? 'cursor-pointer hover:bg-stone-50' : '',
             ].filter(Boolean).join(' ');
             const handleRowClick = href
               ? (e: MouseEvent<HTMLTableRowElement>) => {

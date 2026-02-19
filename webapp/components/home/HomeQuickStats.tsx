@@ -1,5 +1,5 @@
 /**
- * 홈 상단 퀵 스탯 — 오늘/이번주 경주 요약
+ * 홈 퀵 스탯 — 경주 정보 바
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
@@ -18,10 +18,19 @@ function getWeekDates(): string[] {
   return dates;
 }
 
+function groupByMeet(races: { meet?: string; meetName?: string }[]): Record<string, number> {
+  const map: Record<string, number> = {};
+  for (const r of races) {
+    const name = r.meetName ?? r.meet ?? '기타';
+    map[name] = (map[name] ?? 0) + 1;
+  }
+  return map;
+}
+
 export default function HomeQuickStats() {
   const { data: todayData } = useQuery({
-    queryKey: ['races', 'today', 'count'],
-    queryFn: () => RaceApi.getRaces({ limit: 1, page: 1, date: 'today' }),
+    queryKey: ['races', 'today', 'stats'],
+    queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
   });
 
   const { data: weekData } = useQuery({
@@ -38,32 +47,52 @@ export default function HomeQuickStats() {
     },
   });
 
-  const todayCount = todayData?.total ?? 0;
+  const todayRaces = todayData?.races ?? [];
+  const todayCount = todayData?.total ?? todayRaces.length;
   const weekCount = weekData?.total ?? 0;
-
-  if (todayCount === 0 && weekCount === 0) return null;
-
-  const allItems: { href: string; label: string; count: number; icon: 'Flag' | 'Calendar' }[] = [
-    { href: `${routes.races.list}?date=today`, label: '오늘', count: todayCount, icon: 'Flag' },
-    { href: routes.races.list, label: '이번 주', count: weekCount, icon: 'Calendar' },
-  ];
-  const items = allItems.filter((i) => i.count > 0);
-
-  if (items.length === 0) return null;
+  const meetCounts = groupByMeet(todayRaces);
 
   return (
-    <div className='flex flex-wrap gap-2 sm:gap-3 mb-4 sm:mb-5'>
-      {items.map((item) => (
+    <div className='flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs'>
+      {todayCount > 0 ? (
         <Link
-          key={item.label}
-          href={item.href}
-          className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-card border border-border hover:border-slate-300 hover:bg-slate-50 transition-colors'
+          href={`${routes.races.list}?date=today`}
+          className='inline-flex items-center gap-1.5 font-semibold text-[#92702A] hover:underline whitespace-nowrap'
         >
-          <Icon name={item.icon} size={16} className='text-slate-500 shrink-0' />
-          <span className='text-text-secondary text-sm'>{item.label}</span>
-          <span className='font-semibold text-foreground'>{item.count}경</span>
+          <Icon name='Flag' size={13} />
+          오늘 {todayCount}경
         </Link>
-      ))}
+      ) : (
+        <span className='inline-flex items-center gap-1.5 text-stone-400 whitespace-nowrap'>
+          <Icon name='Flag' size={13} />
+          오늘 경주 없음
+        </span>
+      )}
+      <span className='w-px h-3 bg-stone-200' />
+      {weekCount > 0 && (
+        <Link
+          href={routes.races.list}
+          className='text-stone-500 hover:text-foreground transition-colors whitespace-nowrap'
+        >
+          금주 <span className='font-semibold'>{weekCount}경</span>
+        </Link>
+      )}
+      {todayCount > 0 && Object.keys(meetCounts).length > 0 && (
+        <>
+          <span className='w-px h-3 bg-stone-200' />
+          {Object.entries(meetCounts)
+            .sort(([, a], [, b]) => b - a)
+            .map(([meet, cnt]) => (
+              <Link
+                key={meet}
+                href={`${routes.races.list}?date=today&meet=${encodeURIComponent(meet)}`}
+                className='text-stone-500 hover:text-foreground transition-colors whitespace-nowrap'
+              >
+                {meet} {cnt}경
+              </Link>
+            ))}
+        </>
+      )}
     </div>
   );
 }

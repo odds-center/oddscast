@@ -43,12 +43,12 @@
 | **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
 | **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
 | **결제/구독 관련** | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` + `PREDICTION_TICKET_PRICING_SIMULATION.md` |
-| **AI 예측 관련** | `BUSINESS_LOGIC.md` + `HORSE_RACING_SPEC.md` |
+| **AI 예측 관련** | `BUSINESS_LOGIC.md` + `ANALYSIS_SPEC.md` + `KRA_ANALYSIS_STRATEGY.md` |
 | **알림 설정 관련** | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
 | **즐겨찾기 관련** | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
 | **UI 컴포넌트/테이블/페이지네이션** | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md` |
 | **경주·결과 UI 작업** | `RACE_DETAIL_UI_SPEC.md` + `UI_PATTERNS.md` |
-| **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` |
+| **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` + `KRA_RACE_PLAN_SPEC.md` + `KRA_ENTRY_SHEET_SPEC.md` |
 | **구글 로그인/OAuth 설정** | `guides/GOOGLE_OAUTH_SETUP.md` + `API_SPECIFICATION.md` |
 | **TypeScript/타입 안전성** | `COMPATIBILITY_RULES.md` §6, `WEBAPP_DEVELOPMENT.md` §6 |
 
@@ -179,7 +179,7 @@ catch (err: any) { ... }
 |------|------|------|
 | **React 컴포넌트** | PascalCase, default export | `Layout`, `PageHeader`, `FormInput` |
 | **함수·변수** | camelCase | `getRankings`, `handleSubmit`, `isLoggedIn` |
-| **상수 (진짜 상수)** | UPPER_SNAKE | `PICK_TYPE_HORSE_COUNTS`, `MOCK_PREFIX` |
+| **상수 (진짜 상수)** | UPPER_SNAKE | `PICK_TYPE_HORSE_COUNTS` |
 | **타입·인터페이스** | PascalCase | `RankingUser`, `ProfileForm`, `IconName` |
 | **API 클래스** | PascalCase + Api 접미사 | `RankingApi`, `AuthApi`, `PredictionTicketApi` |
 | **파일명 (컴포넌트)** | PascalCase.tsx | `Layout.tsx`, `PageHeader.tsx` |
@@ -281,5 +281,4 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 ### 기타
 
 - **아이콘**: `components/icons.tsx`의 `Icon` 컴포넌트, `IconName` 타입.
-- **Mock**: `lib/mocks/data.ts`, `CONFIG.useMock`로 분기.
 - **인증 상태**: `useAuthStore`, `isLoggedIn` 체크 후 인증 API 호출.

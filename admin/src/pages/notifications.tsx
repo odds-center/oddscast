@@ -141,7 +141,7 @@ export default function NotificationsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='알림 관리'
-            description='사용자에게 푸시 알림을 전송하고 내역을 조회할 수 있습니다.'
+            description='모바일 앱 사용자에게 푸시 알림을 전송합니다. 전체/활성/구독자 대상으로 구분 전송이 가능합니다.'
           />
 
           <Card title='알림 전송' description='모바일 앱 사용자들에게 푸시 알림을 전송합니다.'>

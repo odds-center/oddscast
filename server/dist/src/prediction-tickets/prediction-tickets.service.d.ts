@@ -8,26 +8,26 @@ export declare class PredictionTicketsService {
     useTicket(userId: number, dto: UseTicketDto): Promise<{
         ticket: {
             id: number;
-            userId: number;
-            expiresAt: Date;
-            status: import("@prisma/client").$Enums.TicketStatus;
             raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
+            expiresAt: Date;
         };
         prediction: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PredictionStatus;
             raceId: number;
             scores: import("@prisma/client/runtime/client").JsonValue | null;
             analysis: string | null;
             preview: string | null;
             previewApproved: boolean;
             accuracy: number | null;
+            status: import("@prisma/client").$Enums.PredictionStatus;
+            createdAt: Date;
+            updatedAt: Date;
         };
     }>;
     getBalance(userId: number): Promise<{
@@ -40,26 +40,26 @@ export declare class PredictionTicketsService {
         tickets: ({
             prediction: {
                 id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                status: import("@prisma/client").$Enums.PredictionStatus;
                 raceId: number;
                 scores: import("@prisma/client/runtime/client").JsonValue | null;
                 analysis: string | null;
                 preview: string | null;
                 previewApproved: boolean;
                 accuracy: number | null;
+                status: import("@prisma/client").$Enums.PredictionStatus;
+                createdAt: Date;
+                updatedAt: Date;
             } | null;
         } & {
             id: number;
-            userId: number;
-            expiresAt: Date;
-            status: import("@prisma/client").$Enums.TicketStatus;
             raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
+            expiresAt: Date;
         })[];
         total: number;
         page: number;
@@ -68,22 +68,22 @@ export declare class PredictionTicketsService {
     findOne(id: number): Promise<{
         prediction: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            status: import("@prisma/client").$Enums.PredictionStatus;
             raceId: number;
             scores: import("@prisma/client/runtime/client").JsonValue | null;
             analysis: string | null;
             preview: string | null;
             previewApproved: boolean;
             accuracy: number | null;
+            status: import("@prisma/client").$Enums.PredictionStatus;
+            createdAt: Date;
+            updatedAt: Date;
         } | null;
         subscription: {
             id: number;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
             createdAt: Date;
             updatedAt: Date;
             userId: number;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
             planId: number;
             price: number;
             billingKey: string | null;
@@ -95,27 +95,68 @@ export declare class PredictionTicketsService {
         } | null;
     } & {
         id: number;
-        userId: number;
-        expiresAt: Date;
-        status: import("@prisma/client").$Enums.TicketStatus;
         raceId: number | null;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        userId: number;
         subscriptionId: number | null;
         predictionId: number | null;
         usedAt: Date | null;
         issuedAt: Date;
+        expiresAt: Date;
     }>;
-    grantTickets(userId: number, count: number, expiresInDays?: number): Promise<{
-        granted: number;
-        tickets: {
+    checkMatrixAccess(userId: number, date: string): Promise<{
+        hasAccess: boolean;
+        expiresAt?: Date;
+    }>;
+    useMatrixTicket(userId: number, date: string): Promise<{
+        ticket: {
             id: number;
-            userId: number;
-            expiresAt: Date;
-            status: import("@prisma/client").$Enums.TicketStatus;
             raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
             issuedAt: Date;
+            expiresAt: Date;
+        };
+        alreadyUsed: boolean;
+    }>;
+    getMatrixBalance(userId: number): Promise<{
+        available: number;
+        used: number;
+        total: number;
+    }>;
+    purchaseMatrixTickets(userId: number, count: number): Promise<{
+        purchased: number;
+        totalPrice: number;
+        pricePerTicket: number;
+        expiresAt: Date;
+        tickets: {
+            id: number;
+            raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
+            subscriptionId: number | null;
+            predictionId: number | null;
+            usedAt: Date | null;
+            issuedAt: Date;
+            expiresAt: Date;
+        }[];
+    }>;
+    grantTickets(userId: number, count: number, expiresInDays?: number, type?: 'RACE' | 'MATRIX'): Promise<{
+        granted: number;
+        type: "MATRIX" | "RACE";
+        tickets: {
+            id: number;
+            raceId: number | null;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            userId: number;
+            subscriptionId: number | null;
+            predictionId: number | null;
+            usedAt: Date | null;
+            issuedAt: Date;
+            expiresAt: Date;
         }[];
     }>;
 }

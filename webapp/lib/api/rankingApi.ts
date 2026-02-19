@@ -1,6 +1,4 @@
 import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockRankings } from '@/lib/mocks/data';
 
 export interface RankingUser {
   id: string;
@@ -35,9 +33,6 @@ export default class RankingApi {
     limit?: number;
   }): Promise<RankingUser[]> {
     const { limit = 20 } = params;
-    if (CONFIG.useMock) {
-      return mockRankings.slice(0, limit) as unknown as RankingUser[];
-    }
     const { type = 'overall' } = params;
     try {
       const response = await axiosInstance.get('/rankings', {
@@ -57,7 +52,6 @@ export default class RankingApi {
   static async getMyRanking(
     type: 'overall' | 'weekly' | 'monthly' = 'overall',
   ): Promise<{ id: string; rank: number; name: string; correctCount: number; isCurrentUser: boolean } | null> {
-    if (CONFIG.useMock) return null;
     try {
       const response = await axiosInstance.get('/rankings/me', { params: { type } });
       const result = handleApiResponse(response) as

@@ -31,15 +31,15 @@ const RaceCard: React.FC<RaceCardProps> = ({ race }) => {
   return (
     <Link href={routes.races.detail(race.id)} className='block group touch-manipulation'>
       <div className='card card-hover flex items-center gap-3 sm:gap-4 py-4 sm:py-5 px-4 sm:px-5 lg:px-6 border-l-[4px] border-l-slate-400'>
-        <div className='flex flex-col items-center justify-center min-w-[56px] sm:min-w-[64px] py-2 rounded-lg bg-slate-100 border border-slate-200 shrink-0'>
-          <Icon name='Flag' size={18} className='text-slate-500 mb-0.5 sm:mb-1' strokeWidth={2} />
-          <span className='font-display font-bold text-base lg:text-lg text-slate-700'>
+        <div className='flex flex-col items-center justify-center min-w-[56px] sm:min-w-[64px] py-2 rounded-lg bg-stone-100 border border-stone-200 shrink-0'>
+          <Icon name='Flag' size={18} className='text-stone-500 mb-0.5 sm:mb-1' strokeWidth={2} />
+          <span className='font-display font-bold text-base lg:text-lg text-stone-700'>
             {race.rcNo}경
           </span>
           <span className='text-text-tertiary text-xs mt-0.5'>{race.meetName}</span>
         </div>
         <div className='flex-1 min-w-0'>
-          <div className='text-foreground font-semibold truncate lg:truncate-none group-hover:text-slate-700 transition-colors'>
+          <div className='text-foreground font-semibold truncate lg:truncate-none group-hover:text-stone-700 transition-colors'>
             {name}
           </div>
           <div className='flex items-center gap-3 text-text-secondary text-xs lg:text-sm mt-1.5'>

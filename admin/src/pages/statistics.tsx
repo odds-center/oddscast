@@ -34,7 +34,7 @@ export default function StatisticsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='통계'
-            description='플랫폼의 주요 지표와 통계를 확인할 수 있습니다.'
+            description='사용자 증가 추이, 예측권 사용량 등 플랫폼 핵심 지표를 기간별로 확인합니다.'
           />
 
           <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>

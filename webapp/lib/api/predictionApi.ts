@@ -1,6 +1,4 @@
 import { axiosInstance } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockPredictions } from '@/lib/mocks/data';
 import type {
   PredictionResultDto,
   PredictionPreview,
@@ -17,10 +15,6 @@ export default class PredictionsApi {
   static async getHistoryByRaceId(
     raceId: string,
   ): Promise<PredictionResultDto[]> {
-    if (CONFIG.useMock) {
-      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId);
-      return pred ? [pred as unknown as PredictionResultDto] : [];
-    }
     const response = await axiosInstance.get<
       { data?: PredictionResultDto[] } | PredictionResultDto[]
     >(`/predictions/race/${raceId}/history`);
@@ -34,10 +28,6 @@ export default class PredictionsApi {
    * GET /api/predictions/race/:raceId
    */
   static async getByRaceId(raceId: string): Promise<PredictionResultDto> {
-    if (CONFIG.useMock) {
-      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId);
-      return (pred ?? mockPredictions[0]) as unknown as PredictionResultDto;
-    }
     const response = await axiosInstance.get<{ data?: PredictionResultDto } | PredictionResultDto>(
       `/predictions/race/${raceId}`,
     );
@@ -50,10 +40,6 @@ export default class PredictionsApi {
    * GET /predictions/race/:raceId/preview
    */
   static async getPreview(raceId: string): Promise<PredictionPreview> {
-    if (CONFIG.useMock) {
-      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId);
-      return (pred ?? mockPredictions[0]) as unknown as PredictionPreview;
-    }
     const response = await axiosInstance.get<{ data?: PredictionPreview } | PredictionPreview>(
       `/predictions/race/${raceId}/preview`,
     );
@@ -135,9 +121,6 @@ export default class PredictionsApi {
    * GET /predictions → { predictions, total, page, totalPages }
    */
   static async getPredictions(limit = 20): Promise<PredictionResultDto[]> {
-    if (CONFIG.useMock) {
-      return mockPredictions.slice(0, limit) as unknown as PredictionResultDto[];
-    }
     try {
       const response = await axiosInstance.get('/predictions', {
         params: { limit, page: 1 },

@@ -6,35 +6,36 @@ import type { IconName } from '../icons';
 interface SectionCardProps {
   children: React.ReactNode;
   title?: string;
+  description?: string;
   icon?: IconName;
   accent?: boolean;
   className?: string;
-  /** 더보기 링크 */
   viewAllHref?: string;
   viewAllLabel?: string;
+  badge?: string | number;
 }
 
 export default function SectionCard({
-  children,
-  title,
-  icon,
-  accent,
-  className = '',
-  viewAllHref,
-  viewAllLabel = '전체보기',
+  children, title, description, icon, accent, className = '',
+  viewAllHref, viewAllLabel = '더보기', badge,
 }: SectionCardProps) {
   return (
     <Card as='section' variant={accent ? 'accent' : 'default'} className={className}>
       {title && (
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${viewAllHref ? 'mb-5' : 'mb-4'}`}>
-          <SectionTitle title={title} icon={icon} as='h3' className={viewAllHref ? 'mb-0' : ''} />
+        <div className='flex items-center justify-between gap-2 mb-2'>
+          <div className='flex items-center gap-1.5 min-w-0'>
+            <SectionTitle title={title} icon={icon} badge={badge} as='h3' className='mb-0 pb-0' />
+            {description && (
+              <span className='text-stone-400 text-xs hidden sm:inline whitespace-nowrap'>— {description}</span>
+            )}
+          </div>
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className='inline-flex items-center gap-1 py-2 px-1 -m-1 text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline transition-colors shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2'
+              className='inline-flex items-center gap-0.5 text-xs font-medium text-stone-400 hover:text-[#92702A] transition-colors shrink-0 whitespace-nowrap'
             >
               {viewAllLabel}
-              <Icon name='ChevronRight' size={16} />
+              <Icon name='ChevronRight' size={13} />
             </Link>
           )}
         </div>

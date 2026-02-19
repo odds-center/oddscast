@@ -1,6 +1,4 @@
 import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockSubscriptionPlans } from '@/lib/mocks/data';
 
 /**
  * 구독 플랜 인터페이스 (DB 스키마 기준)
@@ -16,6 +14,7 @@ export interface SubscriptionPlan {
   baseTickets: number; // 기본 예측권
   bonusTickets: number; // 보너스 예측권
   totalTickets: number; // 총 예측권
+  matrixTickets: number; // 종합 예측권 수 (5,000원당 1장)
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -30,7 +29,6 @@ export default class SubscriptionPlansApi {
    * 구독 플랜 목록 조회 (인증 불필요)
    */
   static async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
-    if (CONFIG.useMock) return mockSubscriptionPlans as SubscriptionPlan[];
     const response = await axiosInstance.get('/subscriptions/plans');
     const data = handleApiResponse<SubscriptionPlan[] | { plans?: SubscriptionPlan[] }>(response);
     return Array.isArray(data) ? data : (data as { plans?: SubscriptionPlan[] })?.plans ?? [];

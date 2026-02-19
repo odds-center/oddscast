@@ -24,7 +24,7 @@ export default function CompactPageTitle({
       {backHref && (
         <Link
           href={backHref}
-          className='flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 -ml-1 sm:-ml-2 shrink-0 text-foreground touch-manipulation rounded-xl hover:bg-slate-100 active:opacity-80'
+          className='flex items-center justify-center w-11 h-11 sm:w-10 sm:h-10 -ml-1 sm:-ml-2 shrink-0 text-foreground touch-manipulation rounded-xl hover:bg-stone-100 active:opacity-80'
           aria-label='뒤로'
         >
           <Icon name='ChevronLeft' size={24} />

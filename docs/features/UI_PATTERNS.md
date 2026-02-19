@@ -6,15 +6,29 @@
 
 ## 테마·레이아웃
 
-### 테마 (라이트)
+### 테마 — 다크 골드 (KRA 참고)
 
-| 구분    | 값                   |
-| ------- | -------------------- |
-| 배경    | `#fafafa`            |
-| 카드    | `#ffffff`            |
-| Primary | `#c9a227` (골드)     |
-| 텍스트  | `#18181b`, `#52525b` |
-| 테두리  | `#e4e4e7`            |
+| 구분 | 값 | 비고 |
+|------|-----|------|
+| 배경 | `#f5f5f4` | warm stone gray |
+| 카드 | `#ffffff` | 흰 배경 |
+| Primary | `#92702A` | 다크 골드 (세련된 톤) |
+| Primary Dark | `#7A5D1F` | hover/active |
+| 로고/포인트 | `#d4a942` | 골드 포인트 |
+| 헤더 | `#1c1917` | 다크 헤더 (KRA 스타일) |
+| 섹션 헤더 | `#292524` | KRA 테이블 헤더 |
+| 텍스트 (주) | `#1c1917` | foreground |
+| 텍스트 (보조) | `#57534e` | text-secondary |
+| 텍스트 (약) | `#a8a29e` | text-tertiary |
+| 테두리 | `#e7e5e4` | stone-200 |
+| Accent 라인 | `var(--primary)` | 좌측 3px 골드 |
+| 색상 계열 | `stone-*` | warm gray 통일 (slate/gray 미사용) |
+
+### nowrap 규칙
+
+- 테이블 `th`, `td`, `a`, `span`, `p` → `white-space: nowrap` (globals.css)
+- 설명문 외 모든 텍스트 요소에 `whitespace-nowrap` 적용
+- 배지, 상태, 링크, 날짜 등 한 줄 요소는 반드시 nowrap
 
 ### 콘텐츠 최대 너비
 
@@ -101,6 +115,15 @@ import { DataTable } from '@/components/ui';
 | 종합예상표 (PredictionMatrixTable) | 매트릭스 표                                  |
 | 포인트, 예측권, 알림               | 목록 테이블                                  |
 | 랭킹                               | 랭킹 테이블                                  |
+
+### 경주 결과 테이블 (`/results`) 전용 패턴
+
+- **compact**: `compact={true}` 권장 (패딩 축소)
+- **1·2·3위 셀**: 가로형 `[마번] 마명(기수) 기록` 한 줄 배치
+- **기록 표기**:
+  - 1위: rcTime (경주기록, 예: `1:12.3`)
+  - 2·3위: diffUnit (착차, 예: `0.3`, `0.8`)
+- **컬럼 너비**: 경주 `w-24`, 날짜 `w-20`, 1·2·3위 `min-w-[100px]`
 
 ### 테이블 내 링크
 
@@ -313,11 +336,221 @@ onDateChange={(v) => { setDateFilter(v); setPage(1); }}
 
 ---
 
+## 툴팁 (Tooltip)
+
+경마 용어를 처음 접하는 사용자에게 맥락 설명을 제공하는 CSS 기반 경량 툴팁.
+
+```tsx
+import { Tooltip } from '@/components/ui';
+
+<Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
+<Tooltip content='1위를 맞추는 배당. 높을수록 고배당' inline position='right'>단승</Tooltip>
+```
+
+### Props
+
+| Prop     | 설명                                           | 기본값 |
+| -------- | ---------------------------------------------- | ------ |
+| content  | 툴팁에 표시될 설명 텍스트                      | 필수   |
+| children | 감싸는 자식 요소                               | 필수   |
+| position | `top` \| `bottom` \| `left` \| `right`         | `top`  |
+| inline   | `th`, `span` 등에 적용 시 `true` (인라인 래핑) | false  |
+
+### 적용 위치
+
+| 영역            | 용어                                         |
+| --------------- | -------------------------------------------- |
+| HorseEntryTable | 마령, 부담, 마체중, 레이팅, 통산, 최근, 장구 |
+| 경주 결과 테이블 | 기록, 착차, 단승, 복승                       |
+| 승식별 AI 추천  | 단승식~삼쌍승식 7개 승식 설명                |
+| 마칠기삼 분석   | 말·기수·조교사 가중치 분석 설명              |
+| 랭킹 페이지     | 적중 기준 설명                               |
+| 프로필          | 예측권·포인트 사용 방법                      |
+
+### 스타일
+
+- `?` 아이콘 (SVG) + `group-hover` 트리거
+- 배경 `bg-slate-800`, 텍스트 `text-white`, 라운딩 `rounded-lg`
+- 화살표 CSS border-trick
+- `opacity-0 → opacity-100` + `scale-95 → scale-100` 트랜지션
+
+---
+
+## SectionCard description
+
+SectionCard에 `description` prop을 지원하여 섹션 제목 아래 한 줄 설명을 표시합니다.
+
+```tsx
+<SectionCard title='예측권' icon='Ticket' description='경주별 AI 분석을 열람할 때 1장씩 사용됩니다'>
+  {/* 콘텐츠 */}
+</SectionCard>
+```
+
+### 홈 섹션 설명
+
+| 섹션           | description                           |
+| -------------- | ------------------------------------- |
+| 발매경주       | 오늘 진행되는 경주 목록               |
+| 금주의 경주    | 이번 주 금·토·일 예정 경주            |
+| 종합 예상지    | 경주별 AI 추천 마번 종합표            |
+| 최근 결과      | 가장 최근 완료된 경주의 1·2·3위 결과  |
+| 예측 랭킹      | AI 예측 적중률 기반 사용자 순위       |
+| 경주 예상지    | 각 경주별 AI 예측 요약 및 추천마      |
+| 전체 경주      | 서울·부산·제주 경마장 경주 일정 및 상태 |
+
+---
+
+## 홈 DateHeader
+
+- **경주일 표시**: 금·토·일에 `RACE DAY` 배지 + "오늘은 경주일입니다" 안내
+- **비경주일**: "다음 경주일: X요일 (M/D)" 표시
+- 경주일 판별: `[5, 6, 0]` (금, 토, 일)
+
+---
+
+## 공용 포맷 유틸 (`webapp/lib/utils/format.ts`)
+
+모든 날짜·시간·숫자 포맷을 `format.ts`에서 관리합니다. 로컬 `formatDate()` 등은 사용하지 않고 반드시 공용 유틸을 import합니다.
+
+| 함수 | 입력 | 출력 예 | 용도 |
+| --- | --- | --- | --- |
+| `formatRcDate(rcDate)` | `"20250215"` | `"2025.02.15"` | YYYYMMDD 날짜 |
+| `formatRcDateShort(rcDate)` | `"20250215"` | `"2월 15일"` | 간략 날짜 |
+| `formatTime(date)` | ISO/Date | `"오후 3:05"` | 시간 (ko-KR) |
+| `formatDateTime(date)` | ISO/Date | `"2025. 2. 15. 오후 3:05"` | 날짜+시간 |
+| `formatDateOnly(date)` | ISO/Date | `"2025. 2. 15."` | 날짜만 |
+| `formatNumber(n)` | `1234` | `"1,234"` | 천단위 |
+| `formatWon(n)` | `1234` | `"1,234원"` | 금액 |
+| `formatPoint(n)` | `1234` | `"1,234pt"` | 포인트 |
+
+> **규칙**: `toLocaleString()`, `toLocaleTimeString()` 직접 호출 금지. 반드시 공용 유틸 사용.
+
+---
+
+## 경주 상세 페이지 구조 (`webapp/pages/races/[id].tsx`)
+
+탭 없이 단일 스크롤 플로우:
+
+1. **경주 헤더** — `RaceHeaderCard` (경마장, 경주번호, 거리, 시간 등)
+2. **경주 결과** — 결과 있을 때만. 1-3위 하이라이트 카드 + 4위 이하 접기 + 배당 접기
+3. **AI 예측** — `PredictionFullView` (예측권 사용) 또는 `PredictionLockedView` (미사용)
+4. **출전마** — `<details>` 접기. entries 없으면 raceResults에서 자동 추출
+5. **기수·말 통합 분석** — `<details>` 접기
+
+### AI 예측 3가지 추천식 (`BetTypePredictionsSection`)
+
+- 핵심 3개 승식(단승/연승/삼쌍)을 컬러 카드로 표시 (amber/blue/purple)
+- 나머지 4개 승식은 "나머지 N개 승식 보기" 접기
+
+### 예측권 1분 쿨다운
+
+- 서버: `useTicket()` 시 같은 경주 60초 이내 재사용 차단
+- 클라이언트: `useCooldown(lastUsedAt)` 훅 → 실시간 카운트다운 표시
+
+### 예측 기록
+
+- 복수 예측 시 pill 형태 탭("최신", "2번째"…)으로 전환
+- 각 기록에 생성 시간 표시 (`formatTime`)
+
+---
+
+## 경주 결과 목록 (`webapp/pages/results.tsx`)
+
+- 모바일: 1-3위 하이라이트 카드 + "전체 출전마 (N마리)" 접기
+- 데스크톱: DataTable에 "출전마" 컬럼 추가
+- 전체 출전마·기수 표시 (기존 1-3위만 필터 제거)
+
+---
+
+## 홈페이지 패턴 (`webapp/pages/index.tsx`)
+
+### 히어로 배너 (`DateHeader`)
+
+- 클래스: `.home-hero` — 다크 배경(`#1c1917`) + 우측 골드 그래디언트 장식
+- 날짜 표시 + 경주 진행 상태 + "오늘의 경주", "종합 예상" 바로가기
+- 경주일이면 "오늘 경주가 진행됩니다" / 비경주일이면 "다음 경주: X일"
+
+### 퀵 메뉴 바 (KRA 스타일)
+
+- 발매경주, 경주성적, 종합예상, 예측랭킹 4개 링크
+- `border-b-2 border-transparent hover:border-[#92702A]` — 하단 밑줄 hover 효과
+- `overflow-x-auto` 가로 스크롤 대응
+
+### 섹션 레이아웃
+
+- `SectionCard` — 제목 + 설명 + "더보기" 링크
+- 2열 그리드 (lg:grid-cols-2): 오늘의 경주 | 종합 예상 미리보기
+- 하단: 금주 경주, 최근 결과
+
+---
+
+## 종합 예상 페이지 패턴 (`predictions/matrix.tsx`)
+
+### 페이지 구조 — 일일 종합 가이드
+
+```
+히어로 헤더 (날짜 + 경주 수 + 경마장별 + 예측권 상태)
+├── 날짜/경마장 필터 (FilterDateBar)
+├── 종합 예측권 CTA (비열람 상태일 때)
+├── 탭 (종합 예상표 | AI 코멘트)
+└── PredictionMatrixTable 또는 AI 코멘트 목록
+```
+
+### 종합 예측권 상태 표시
+
+- 열람 중: `bg-[#92702A] text-white` 배지 ("열람 중")
+- 잠금: `bg-stone-200 text-stone-600` 배지 ("잠금")
+- 보유 예측권 수 표시
+
+### 종합 예측권 CTA 카드
+
+- 비열람 상태일 때 테이블 위에 표시
+- 정보: "1일 1장", "1,000원/장", "전체 N경주 예상"
+- 보유 시: "종합 예측권 사용" 버튼 → `useMatrixMutation`
+- 미보유 시: "종합 예측권 구매 — 1,000원" 링크
+
+### PredictionMatrixTable — 용산종합지 스타일
+
+- **헤더**: 다크 배경 + 골드 아이콘 + "종합 예상표" + 경주 수
+- **컬럼 헤더**: `#1c1917` + AI 종합 골드 하이라이트
+- **경주 정보 셀** (`RaceInfoCell`): 경주번호, 경마장, 출발시간, 거리, 등급, 출전두수
+- **게이트 배지** (`GateBadge`): KRA 게이트 색상 (`w-6 h-6 text-[11px]`)
+- **잠금 오버레이**: `locked=true` 시 `previewCount`경주만 노출, 나머지 블러+잠금 메시지
+- **교차 행 색상**: 짝수 행 `bg-stone-50/50`
+
+---
+
+## 컴포넌트 색상 맵 (stone 계열)
+
+| 컴포넌트 | 활성/강조 | 기본/비활성 | 비고 |
+|---------|----------|-----------|------|
+| `StatusBadge` | `#92702A` (진행) | `stone-600` (예정), `stone-500` (종료) | |
+| `Badge` | `#92702A` (primary) | `stone-50/200/500` (muted) | |
+| `RankBadge` | `#92702A` (1위) | `stone-200/100` (2,3위) | |
+| `FilterChips` | `#292524` (활성) | `stone-200/500` (비활성) | |
+| `SectionTitle` | `#92702A` (아이콘, 배지) | | |
+| `LinkBadge` | `#92702A` (hover) | `stone-400` (아이콘) | |
+| `PredictionSymbol` | `#92702A` (BEST), `#7A5D1F` (GOOD) | `stone-500/400/700` | |
+| `BetTypePredictions` | `#92702A` (단승) | `stone-700/500` (연승/삼쌍) | |
+
+---
+
 ## 컴포넌트 요약
 
 | 구분  | 컴포넌트                                           | 경로                 |
 | ----- | -------------------------------------------------- | -------------------- |
 | page/ | PageHeader, SectionCard, DataFetchState, FormInput | `@/components/page/` |
 | page/ | BackLink, FilterDateBar, FilterChips, Pagination   | `@/components/page/` |
+| page/ | CompactPageTitle, RequireLogin, PageContent, MenuList | `@/components/page/` |
 | ui/   | TabBar, LinkBadge, StatusBadge, RankBadge          | `@/components/ui`    |
 | ui/   | Card, Badge, Toggle, Dropdown, SectionTitle        | `@/components/ui`    |
+| ui/   | Tooltip, DataTable, LinkCard                       | `@/components/ui`    |
+| home/ | DateHeader, HomeQuickStats, TodayRacesSection      | `@/components/home/` |
+| home/ | WeekRacesSection, RecentResultsSection             | `@/components/home/` |
+| home/ | PredictionMatrixPreviewSection                     | `@/components/home/` |
+| pred/ | PredictionMatrixTable, BetTypePredictionsSection   | `@/components/predictions/` |
+| race/ | PredictionSymbol, HorseEntryTable                  | `@/components/race/` |
+| icons | Icon (Lock, Unlock 포함)                           | `@/components/icons` |
+| utils | formatRcDate, formatTime, formatDateTime, formatNumber | `@/lib/utils/format` |
+| utils | getErrorMessage                                    | `@/lib/utils/error`  |
+| analytics | trackCTA, GA_EVENTS (MATRIX_TICKET_USE 포함)   | `@/lib/analytics`    |

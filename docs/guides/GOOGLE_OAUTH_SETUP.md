@@ -93,7 +93,6 @@ INSERT INTO global_config (key, value, updated_at) VALUES
 
 ---
 
-## 5. Mock 모드
+## 5. 테스트
 
-`NEXT_PUBLIC_USE_MOCK=true` 시 구글 버튼 클릭 → 실제 구글 로그인 후 Mock 응답 반환  
-(서버 호출 없이 `google-demo@goldenrace.com` 계정으로 로그인 시뮬레이션)
+실제 구글 로그인 후 서버 `POST /auth/google`가 idToken을 검증하고 회원가입/로그인 처리.

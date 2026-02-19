@@ -120,40 +120,75 @@ jockeyScore = (winRateTsum × 0.4) + (quRateTsum × 0.4) + (experienceScore × 0
 
 ---
 
-## 8. Python 분석 로직 예시 (의사코드)
+## 8. Python 분석 로직 v2 (실제 구현 기준)
+
+> 상세: [ANALYSIS_SPEC.md](ANALYSIS_SPEC.md)
+
+### 8.1 핵심 변경 (v1→v2)
+
+| 항목 | v1 | v2 |
+|------|-----|-----|
+| 하위 점수 스케일 | 불균형 (0-100, -2~15, 0~5 혼재) | **모두 0~100 정규화** |
+| 가중치 | 0.45/0.35 + 잔여 보너스 | **6요소 합=1.0** |
+| 누락 변수 | 레이팅·기세·경험·조교사·각질 | **+컨디션(마체중·연령·부담중량·성별), 거리적합도** |
+| 낙마 리스크 | 별도 출력만 | **감점 적용 (고위험 -12%)** |
+| 승률 확률 | 없음 | **softmax winProb(%)** |
+| Gemini 토큰 | ~3000+ | **~1200 (~60% 절감)** |
+
+### 8.2 가중치 배분 (W_HORSE)
 
 ```python
-def calculate_jockey_score(jockey: dict) -> float:
-    win_rate = float(jockey.get("winRateTsum", 0))
-    qu_rate = float(jockey.get("quRateTsum", 0))
-    rc_cnt = int(jockey.get("rcCntT", 0))
+rating: 0.33, form: 0.26, condition: 0.14, experience: 0.10, suitability: 0.10, trainer: 0.07
+```
 
-    exp_score = 1.0 if rc_cnt >= 1000 else (0.5 + rc_cnt / 2000)  # 100회 미만 시 0.55
-    if rc_cnt < 100:
-        exp_score *= 0.9  # 신인 감점
+### 8.3 Sub-score 요약
 
-    return (win_rate * 0.4 + qu_rate * 0.4 + exp_score * 20) / 2  # 스케일 조정
+- **레이팅**: sigmoid 상대(55%) + 로그 절대(45%)
+- **폼/기세**: 착순 가중평균 + 추이(-6~+8) + 레이팅 추이
+- **컨디션**: 마체중 변화(±2kg=최적) + 연령(4세 전성기) + 부담중량 + 성별
+- **경험**: 로그 출전(0~50) + 승률 구간(0~50), 신인×0.6
+- **적합도**: 각질×거리 + 주로상태(불량 시 선행 불리/추입 유리)
+- **조교사**: 승률 보너스(max 35) + 복승률 보너스(max 25)
 
-def get_weight_ratio(race: dict, horses: list):
-    # 혼전: 상위 5마리 기록 차이 0.5초 이내
-    times = sorted([h["rcTime"] for h in horses if h.get("rcTime")])[:5]
-    is_close = len(times) >= 2 and (max(times) - min(times)) <= 0.5
+### 8.4 NestJS 통합
 
-    # 특수: 비/장거리
-    is_special = race.get("weather") != "맑음" or int(race.get("rcDist", 0)) >= 1800
-
-    if is_close:
-        return 0.5, 0.5  # 말 50%, 기수 50%
-    if is_special:
-        return 0.6, 0.4  # 말 60%, 기수 40%
-    return 0.7, 0.3     # 말 70%, 기수 30%
+```
+finalScore = horseScore × wH + jockeyScore × wJ
+winProb = softmax(finalScores, T=15)
 ```
 
 ---
 
-## 9. 요약
+## 9. 낙마·연쇄 낙마 리스크 (Fall Risk & Cascade)
+
+### 9.1 낙마 확률 산출 (fallRiskScore, 0~100)
+
+| 요인 | 가산 |
+|------|------|
+| 말 과거 낙마 1회 | +20 |
+| 말 과거 낙마 2회+ | +35 |
+| 기수 과거 낙마 1회 | +15 |
+| 기수 과거 낙마 2회+ | +25 |
+| 신인 기수(rcCntT<100) | +10 |
+| 장구(가면·눈가리개 등) | +8 |
+| 폐출혈 이력 | +12 |
+
+- **데이터**: `RaceResult.ordType='FALL'` 이력 → `enrichEntriesWithFallHistory`로 말/기수별 집계
+
+### 9.2 연쇄 낙마 (Cascade Fall Risk)
+
+선행마 낙마 시 뒤따르는 추입마들이 볼링핀처럼 연쇄 낙마할 수 있는 정도.
+
+- **로직**: 선행마 fallRisk 높을수록 + 추입마 비율 높을수록 → cascade 상승
+- **공식**: `max_leading_risk ≥ 50` → 30 + closer_ratio×40 | `≥ 30` → 15 + closer_ratio×25
+- **Gemini**: `cascadeFallRisk` 20+ 이면 analysis에 "선행마 낙마 시 추입마 연쇄 낙마 가능성" 언급
+
+---
+
+## 10. 요약
 
 1. **마칠기삼** — 기본적으로 말 7, 기수 3. 단, 비슷한 말들이 겨룰 때는 기수가 승부를 좌우.
 2. **기수 점수** — `winRateTsum`, `quRateTsum`, `rcCntT`로 산출. 신인(100회 미만)은 감점.
 3. **가중치** — 상황별 70/30, 50/50, 60/40 동적 적용.
 4. **2단계 필터링** — 1차: 말 기록으로 후보 3~5마리 추출 → 2차: 기수 점수로 "AI 강력 추천" 선정.
+5. **낙마·연쇄 리스크** — fallRiskScore(말/기수), cascadeFallRisk(경주) 산출 후 AI weaknesses·analysis에 반영.

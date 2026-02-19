@@ -1,7 +1,5 @@
 import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockSubscriptionStatus } from '@/lib/mocks/data';
 
 /**
  * 구독 상태
@@ -47,7 +45,6 @@ export default class SubscriptionsApi {
    * @returns subscription { id, planId, status, ... }
    */
   static async subscribe(data: CreateSubscriptionRequest) {
-    if (CONFIG.useMock) return { id: 'mock-sub', status: 'PENDING', planId: data.planId };
     try {
       const response = await axiosInstance.post<ApiResponse<SubscriptionStatus>>('/subscriptions/subscribe', data);
       return handleApiResponse(response);
@@ -60,7 +57,6 @@ export default class SubscriptionsApi {
    * 구독 활성화 (결제 완료 후)
    */
   static async activate(subscriptionId: string, billingKey: string) {
-    if (CONFIG.useMock) return { id: subscriptionId, status: 'ACTIVE' };
     try {
       const response = await axiosInstance.post<ApiResponse<SubscriptionStatus>>(
         `/subscriptions/${subscriptionId}/activate`,
@@ -76,7 +72,6 @@ export default class SubscriptionsApi {
    * 구독 취소
    */
   static async cancel(reason?: string) {
-    if (CONFIG.useMock) return { message: 'OK' };
     try {
       const response = await axiosInstance.post<ApiResponse<{ message?: string }>>('/subscriptions/cancel', {
         reason,
@@ -91,7 +86,6 @@ export default class SubscriptionsApi {
    * 구독 상태 조회
    */
   static async getStatus(): Promise<SubscriptionStatus | null> {
-    if (CONFIG.useMock) return mockSubscriptionStatus;
     try {
       const response =
         await axiosInstance.get<ApiResponse<SubscriptionStatus | null>>('/subscriptions/status');

@@ -99,11 +99,12 @@ export class AdminUsersApi {
     id: string | number,
     count: number,
     expiresInDays?: number,
-  ): Promise<{ granted: number; tickets: unknown[] }> {
+    type: 'RACE' | 'MATRIX' = 'RACE',
+  ): Promise<{ granted: number; type: string; tickets: unknown[] }> {
     try {
-      const response = await axiosInstance.post<{ granted: number; tickets: unknown[] }>(
+      const response = await axiosInstance.post<{ granted: number; type: string; tickets: unknown[] }>(
         `/users/${id}/grant-tickets`,
-        { count, expiresInDays },
+        { count, expiresInDays, type },
       );
       return handleApiResponse(response);
     } catch (error) {

@@ -1,7 +1,5 @@
 import type { ApiResponseDto } from '@goldenrace/shared';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockResults } from '@/lib/mocks/data';
 
 // 경마 결과 관련 타입 정의
 export interface RaceResult {
@@ -14,7 +12,8 @@ export interface RaceResult {
   jkName: string;
   trName: string;
   owName: string;
-  rcTime: string;
+  rcTime?: string;
+  diffUnit?: string;
   chaksun1?: number;
   track?: string;
   weather?: string;
@@ -127,14 +126,6 @@ export default class ResultApi {
     page: number;
     totalPages: number;
   }> {
-    if (CONFIG.useMock) {
-      return {
-        results: mockResults as unknown as RaceResult[],
-        total: mockResults.length,
-        page: 1,
-        totalPages: 1,
-      };
-    }
     try {
       const params = new URLSearchParams();
 

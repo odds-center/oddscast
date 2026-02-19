@@ -40,6 +40,11 @@ import {
   Key,
   Mail,
   RefreshCw,
+  Lock,
+  Unlock,
+  Plus,
+  Minus,
+  ShoppingCart,
 } from 'lucide-react';
 
 /** 경주 아이콘 — 깃발(Flag) 사용 (경주 시작 신호) */
@@ -84,6 +89,11 @@ export const Icons = {
   Key,
   Mail,
   RefreshCw,
+  Lock,
+  Unlock,
+  Plus,
+  Minus,
+  ShoppingCart,
 } as const;
 
 export type IconName = keyof typeof Icons;

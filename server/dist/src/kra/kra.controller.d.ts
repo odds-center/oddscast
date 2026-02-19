@@ -8,14 +8,14 @@ export declare class KraController {
     getSyncLogs(endpoint?: string, rcDate?: string, limit?: number): Promise<{
         logs: {
             id: number;
-            createdAt: Date;
+            endpoint: string;
             meet: string | null;
             rcDate: string | null;
             status: string;
-            errorMessage: string | null;
-            endpoint: string;
             recordCount: number;
+            errorMessage: string | null;
             durationMs: number | null;
+            createdAt: Date;
         }[];
         total: number;
     }>;

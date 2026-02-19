@@ -29,6 +29,22 @@ let PredictionTicketsController = class PredictionTicketsController {
     getBalance(user) {
         return this.ticketsService.getBalance(user.sub);
     }
+    checkMatrixAccess(user, date) {
+        return this.ticketsService.checkMatrixAccess(user.sub, date || new Date().toISOString().slice(0, 10));
+    }
+    useMatrixTicket(user, body) {
+        return this.ticketsService.useMatrixTicket(user.sub, body.date || new Date().toISOString().slice(0, 10));
+    }
+    getMatrixBalance(user) {
+        return this.ticketsService.getMatrixBalance(user.sub);
+    }
+    purchaseMatrixTicket(user, body) {
+        const count = Math.min(10, Math.max(1, Number(body.count) || 1));
+        return this.ticketsService.purchaseMatrixTickets(user.sub, count);
+    }
+    getMatrixPrice() {
+        return { pricePerTicket: 1000, currency: 'KRW', maxPerPurchase: 10 };
+    }
     getHistory(user, page, limit) {
         return this.ticketsService.getHistory(user.sub, page, limit);
     }
@@ -54,6 +70,48 @@ __decorate([
     __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload]),
     __metadata("design:returntype", void 0)
 ], PredictionTicketsController.prototype, "getBalance", null);
+__decorate([
+    (0, common_1.Get)('matrix/access'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예측권 접근 권한 확인' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('date')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, String]),
+    __metadata("design:returntype", void 0)
+], PredictionTicketsController.prototype, "checkMatrixAccess", null);
+__decorate([
+    (0, common_1.Post)('matrix/use'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예측권 사용' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Object]),
+    __metadata("design:returntype", void 0)
+], PredictionTicketsController.prototype, "useMatrixTicket", null);
+__decorate([
+    (0, common_1.Get)('matrix/balance'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예측권 잔액' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload]),
+    __metadata("design:returntype", void 0)
+], PredictionTicketsController.prototype, "getMatrixBalance", null);
+__decorate([
+    (0, common_1.Post)('matrix/purchase'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예측권 개별 구매 (1,000원/장)' }),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [current_user_decorator_1.JwtPayload, Object]),
+    __metadata("design:returntype", void 0)
+], PredictionTicketsController.prototype, "purchaseMatrixTicket", null);
+__decorate([
+    (0, common_1.Get)('matrix/price'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예측권 가격 정보' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], PredictionTicketsController.prototype, "getMatrixPrice", null);
 __decorate([
     (0, common_1.Get)('history'),
     (0, swagger_1.ApiOperation)({ summary: '예측권 사용 이력' }),

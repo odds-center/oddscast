@@ -55,7 +55,7 @@ export default function RevenuePage() {
         <div className='space-y-4'>
           <PageHeader
             title='수익 대시보드'
-            description='매출, 비용, 마진을 실시간으로 분석합니다'
+            description='구독·개별구매 매출, AI API 비용, 순이익을 일별/월별/연별로 분석합니다.'
           >
             <select
               value={period}

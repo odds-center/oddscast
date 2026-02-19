@@ -8,6 +8,12 @@ export interface PredictionHorseScore {
   score?: number;
   reason?: string;
   chulNo?: string;
+  /** 강점 요약 */
+  strengths?: string[];
+  /** 약점 요약 */
+  weaknesses?: string[];
+  /** AI 확신도: high/medium/low */
+  confidence?: 'high' | 'medium' | 'low';
 }
 
 /** 승식별 AI 예측 — 각 승식마다 별도 추천 */

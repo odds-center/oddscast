@@ -509,7 +509,7 @@ export default function ResultsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='경기 결과'
-            description='경주 결과를 조회하고 수동 등록/수정/삭제할 수 있습니다. (최신날짜순, 지역 필터)'
+            description='경주 결과(착순·기록·배당)를 조회·등록·수정합니다. Cron으로 매일 17:30 자동 수집되며, 누락 시 수동 동기화할 수 있습니다.'
           >
             <Button onClick={() => setCreateModalOpen(true)}>결과 수동 등록</Button>
           </PageHeader>

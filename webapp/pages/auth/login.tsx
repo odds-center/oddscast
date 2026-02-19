@@ -9,7 +9,6 @@ import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import ConfigApi from '@/lib/api/configApi';
-import CONFIG from '@/lib/config';
 import { useAuthStore } from '@/lib/store/authStore';
 import GoogleSignInButton from '@/components/GoogleSignInButton';
 
@@ -64,12 +63,6 @@ export default function Login() {
   return (
     <Layout title='GOLDEN RACE'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        {CONFIG.useMock && (
-          <p className='text-text-secondary text-sm mb-4 p-3 rounded-lg bg-secondary border border-border'>
-            데모: demo@goldenrace.com / demo123
-          </p>
-        )}
-
         {showGoogleLogin && (
           <>
             <div className='mb-4'>

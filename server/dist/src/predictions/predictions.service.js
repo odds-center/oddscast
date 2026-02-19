@@ -282,12 +282,14 @@ let PredictionsService = class PredictionsService {
                 meetName: true,
                 rcNo: true,
                 stTime: true,
+                rcDist: true,
+                rank: true,
+                entries: { select: { hrNo: true, hrName: true } },
             },
-            orderBy: { rcNo: 'asc' },
-            take: 20,
+            orderBy: [{ meet: 'asc' }, { rcNo: 'asc' }],
         });
         const rows = [];
-        for (const race of races.slice(0, 12)) {
+        for (const race of races) {
             const pred = await this.prisma.prediction.findFirst({
                 where: { raceId: race.id, previewApproved: true, status: 'COMPLETED' },
                 orderBy: { createdAt: 'desc' },
@@ -299,16 +301,32 @@ let PredictionsService = class PredictionsService {
             const top2 = scores[1]?.hrNo;
             const consensus = top1 ?? '-';
             const consensusArr = top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
+            const horseNames = {};
+            const entryList = race.entries ?? [];
+            for (const e of entryList) {
+                if (e.hrNo && e.hrName)
+                    horseNames[e.hrNo] = e.hrName;
+            }
+            for (const s of scores) {
+                if (s.hrNo && s.hrName && !horseNames[s.hrNo]) {
+                    horseNames[s.hrNo] = s.hrName;
+                }
+            }
             rows.push({
                 raceId: String(race.id),
                 meet: race.meet ?? '',
                 meetName: race.meetName ?? undefined,
                 rcNo: race.rcNo ?? '',
                 stTime: race.stTime ?? undefined,
+                rcDist: race.rcDist ?? undefined,
+                rank: race.rank ?? undefined,
+                entryCount: entryList.length > 0 ? entryList.length : undefined,
+                entries: entryList.map((e) => ({ hrNo: e.hrNo ?? '', hrName: e.hrName ?? '' })),
                 predictions: {
                     ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
                     expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
                 },
+                horseNames,
                 aiConsensus: consensus,
                 consensusLabel: top1 ? '축' : undefined,
             });
@@ -428,11 +446,12 @@ let PredictionsService = class PredictionsService {
             throw new common_1.NotFoundException('Race not found');
         const sectionalByHorse = await this.getSectionalAnalysisByHorse(race);
         const raceWithRecentRanks = await this.enrichEntriesWithRecentRanks(race);
-        const raceWithTrainer = await this.enrichEntriesWithTrainerResults(raceWithRecentRanks);
+        const raceWithFallHistory = await this.enrichEntriesWithFallHistory(raceWithRecentRanks);
+        const raceWithTrainer = await this.enrichEntriesWithTrainerResults(raceWithFallHistory);
         const raceWithSectional = this.enrichEntriesWithSectionalTag(raceWithTrainer, sectionalByHorse);
         const path = require('path');
         const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
-        const horseScoreResult = await this.runPythonScript(scriptPath, raceWithSectional);
+        const { horseScores: horseScoreResult, cascadeFallRisk } = await this.runPythonScript(scriptPath, raceWithSectional);
         let jockeyAnalysis = null;
         try {
             jockeyAnalysis = await this.analysisService.analyzeJockey(raceId);
@@ -440,7 +459,7 @@ let PredictionsService = class PredictionsService {
         catch (e) {
             console.warn('Jockey analysis skipped:', e.message);
         }
-        const prompt = this.constructPrompt(raceWithTrainer, horseScoreResult, jockeyAnalysis, sectionalByHorse);
+        const prompt = this.constructPrompt(raceWithTrainer, horseScoreResult, jockeyAnalysis, sectionalByHorse, cascadeFallRisk);
         const generationConfig = {
             temperature,
             maxOutputTokens: maxTokens,
@@ -508,31 +527,36 @@ let PredictionsService = class PredictionsService {
                 errorString += data.toString();
             });
             pythonProcess.on('close', (code) => {
-                let result;
+                let horseScores;
+                let cascadeFallRisk;
                 try {
                     const parsed = JSON.parse(dataString || '[]');
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        result = parsed;
+                    if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scores)) {
+                        horseScores = parsed.scores;
+                        cascadeFallRisk = typeof parsed.cascadeFallRisk === 'number' ? parsed.cascadeFallRisk : undefined;
+                    }
+                    else if (Array.isArray(parsed) && parsed.length > 0) {
+                        horseScores = parsed;
                     }
                     else {
-                        result = this.fallbackHorseScoresFromEntries(entries);
+                        horseScores = this.fallbackHorseScoresFromEntries(entries);
                         if (code !== 0 || parsed?.error) {
                             console.warn(`Python analysis fallback (code=${code}): ${errorString || parsed?.error || 'no valid output'}`);
                         }
                     }
                 }
                 catch {
-                    result = this.fallbackHorseScoresFromEntries(entries);
+                    horseScores = this.fallbackHorseScoresFromEntries(entries);
                     console.warn(`Python parse fallback: ${dataString?.slice(0, 100) || errorString}`);
                 }
-                resolve(result);
+                resolve({ horseScores, cascadeFallRisk });
             });
             pythonProcess.stdin.write(JSON.stringify(raceData, (_, value) => typeof value === 'bigint' ? value.toString() : value));
             pythonProcess.stdin.end();
         });
     }
-    buildRaceContext(race) {
-        return {
+    buildRaceContext(race, cascadeFallRisk) {
+        const ctx = {
             meet: race.meet,
             meetName: race.meetName,
             rcDate: race.rcDate,
@@ -544,6 +568,10 @@ let PredictionsService = class PredictionsService {
             weather: race.weather ?? '미상',
             track: race.track ?? '미상',
         };
+        if (cascadeFallRisk != null && cascadeFallRisk >= 10) {
+            ctx.cascadeFallRisk = cascadeFallRisk;
+        }
+        return ctx;
     }
     buildEntrySummary(entry, trainingSummary, sectionalTag) {
         const chaksunTStr = entry.chaksunT != null
@@ -561,6 +589,7 @@ let PredictionsService = class PredictionsService {
         const base = {
             hrNo: entry.hrNo,
             hrName: entry.hrName,
+            jkNo: entry.jkNo ?? undefined,
             jkName: entry.jkName,
             trName: entry.trName,
             wgBudam: entry.wgBudam,
@@ -584,6 +613,10 @@ let PredictionsService = class PredictionsService {
             base.equipment = entry.equipment;
         if (entry.bleedingInfo)
             base.bleedingInfo = entry.bleedingInfo;
+        if (entry.fallHistoryHorse != null)
+            base.fallHistoryHorse = entry.fallHistoryHorse;
+        if (entry.fallHistoryJockey != null)
+            base.fallHistoryJockey = entry.fallHistoryJockey;
         if (trainSummary)
             base.trainingSummary = trainSummary;
         if (sectionalTag)
@@ -647,6 +680,44 @@ let PredictionsService = class PredictionsService {
             ...e,
             sectionalTag: sectionalByHorse[e.hrNo]?.tag,
         }));
+        return { ...race, entries: enrichedEntries };
+    }
+    async enrichEntriesWithFallHistory(race) {
+        const entries = race.entries ?? [];
+        if (!entries.length)
+            return race;
+        const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+        const jkNos = [
+            ...new Set(entries.map((e) => e.jkNo).filter(Boolean)),
+        ];
+        const beforeRcDate = race.rcDate ?? '';
+        if (!beforeRcDate)
+            return race;
+        const fallResults = await this.prisma.raceResult.findMany({
+            where: {
+                ordType: 'FALL',
+                race: { rcDate: { lt: beforeRcDate } },
+                OR: [{ hrNo: { in: hrNos } }, { jkNo: { in: jkNos } }],
+            },
+            select: { hrNo: true, jkNo: true },
+            take: 2000,
+        });
+        const byHorse = new Map();
+        const byJockey = new Map();
+        for (const r of fallResults) {
+            if (r.hrNo)
+                byHorse.set(r.hrNo, (byHorse.get(r.hrNo) ?? 0) + 1);
+            if (r.jkNo)
+                byJockey.set(r.jkNo, (byJockey.get(r.jkNo) ?? 0) + 1);
+        }
+        const enrichedEntries = entries.map((e) => {
+            const jkNo = e.jkNo;
+            return {
+                ...e,
+                fallHistoryHorse: byHorse.get(e.hrNo) ?? 0,
+                fallHistoryJockey: jkNo ? byJockey.get(jkNo) ?? 0 : 0,
+            };
+        });
         return { ...race, entries: enrichedEntries };
     }
     async enrichEntriesWithTrainerResults(race) {
@@ -809,58 +880,104 @@ let PredictionsService = class PredictionsService {
         const n = Number(val);
         return Number.isFinite(n) && n > 0 ? n : null;
     }
-    constructPrompt(race, horseAnalysis, jockeyAnalysis, sectionalByHorse = {}) {
-        const raceContext = this.buildRaceContext(race);
-        const entries = (race.entries || []).map((e) => this.buildEntrySummary(e, this.summarizeTraining(e), sectionalByHorse[e.hrNo]?.tag));
+    computeWinProbabilities(scores) {
+        if (!scores.length)
+            return [];
+        const T = 15;
+        const maxS = Math.max(...scores);
+        const exps = scores.map((s) => Math.exp((s - maxS) / T));
+        const total = exps.reduce((a, b) => a + b, 0);
+        if (total === 0)
+            return scores.map(() => Math.round((100 / scores.length) * 10) / 10);
+        return exps.map((e) => Math.round((e / total) * 1000) / 10);
+    }
+    constructPrompt(race, horseAnalysis, jockeyAnalysis, _sectionalByHorse = {}, cascadeFallRisk) {
         const horseScores = Array.isArray(horseAnalysis)
             ? horseAnalysis
             : [];
+        const wH = jockeyAnalysis?.weightRatio?.horse ?? 0.7;
+        const wJ = jockeyAnalysis?.weightRatio?.jockey ?? 0.3;
         const jockeyMap = new Map();
         for (const x of jockeyAnalysis?.entriesWithScores || []) {
             const key = x.hrNo ?? x.hrName;
             if (key)
-                jockeyMap.set(key, {
-                    jockeyScore: x.jockeyScore,
-                    combinedScore: x.combinedScore,
-                });
+                jockeyMap.set(key, x.jockeyScore);
         }
-        const mergedEntries = entries.map((e) => {
-            const hs = horseScores.find((h) => String(h.hrNo) === String(e.hrNo));
-            const js = jockeyMap.get(String(e.hrNo)) ?? jockeyMap.get(String(e.hrName));
-            return {
-                ...e,
-                horseScore: hs?.score ?? hs?.ratingScore,
-                momentumScore: hs?.momentumScore,
-                experienceBonus: hs?.experienceBonus,
-                jockeyScore: js?.jockeyScore,
-                combinedScore: js?.combinedScore,
+        const entryMap = new Map();
+        for (const e of race.entries || []) {
+            entryMap.set(e.hrNo, e);
+        }
+        const compactEntries = [];
+        const finalScores = [];
+        for (const hs of horseScores) {
+            const hrNo = String(hs.hrNo);
+            const entry = entryMap.get(hrNo);
+            const jScore = jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
+            const hScore = hs.score ?? 50;
+            const finalScore = Math.round((hScore * wH + jScore * wJ) * 100) / 100;
+            finalScores.push(finalScore);
+            const compact = {
+                n: hs.chulNo ?? hrNo,
+                h: hs.hrName ?? entry?.hrName ?? '',
+                j: entry?.jkName ?? '',
+                fs: finalScore,
+                hs: hScore,
+                js: Math.round(jScore * 100) / 100,
             };
-        });
-        const weightH = ((jockeyAnalysis?.weightRatio?.horse ?? 0.7) * 100) | 0;
-        const weightJ = ((jockeyAnalysis?.weightRatio?.jockey ?? 0.3) * 100) | 0;
+            if (hs.sub) {
+                compact.sub = [
+                    hs.sub.rat ?? 0, hs.sub.frm ?? 0, hs.sub.cnd ?? 0,
+                    hs.sub.exp ?? 0, hs.sub.trn ?? 0, hs.sub.suit ?? 0,
+                ];
+            }
+            if (entry?.rating != null)
+                compact.r = entry.rating;
+            if (hs.recentRanks?.length)
+                compact.rk = hs.recentRanks;
+            if (hs.risk && hs.risk >= 15)
+                compact.risk = hs.risk;
+            if (hs.tags?.length)
+                compact.t = hs.tags;
+            compactEntries.push(compact);
+        }
+        const probs = this.computeWinProbabilities(finalScores);
+        for (let i = 0; i < compactEntries.length; i++) {
+            if (probs[i] != null)
+                compactEntries[i].wp = probs[i];
+        }
+        const raceCtx = {
+            meet: race.meetName ?? race.meet,
+            date: race.rcDate,
+            no: race.rcNo,
+            dist: race.rcDist,
+            rank: race.rank,
+            weather: race.weather ?? '미상',
+            track: race.track ?? '미상',
+        };
+        if (cascadeFallRisk != null && cascadeFallRisk >= 10) {
+            raceCtx.cascade = cascadeFallRisk;
+        }
         const topJ = jockeyAnalysis?.topPickByJockey;
-        return `한국 경마 승부 예측 전문가. 제시된 통계만 근거로 세부 분석. 데이터 없으면 "미확인".
-가중치: 말 ${weightH}% / 기수 ${weightJ}%${topJ ? ` | 기수1위: ${topJ.hrName}(${topJ.jkName})` : ''}
+        const weightH = Math.round(wH * 100);
+        const weightJ = Math.round(wJ * 100);
+        return `한국경마 AI 예측분석가. Python 통계분석(정규화 0~100) 기반 승부예측. 데이터 없으면 "미확인".
+가중치: 말${weightH}/기수${weightJ}${topJ ? ` | 기수1위:${topJ.hrName}(${topJ.jkName})` : ''}
 
-## 1. 경주 정보
-\`\`\`json
-${JSON.stringify(raceContext)}
-\`\`\`
+## 경주
+${JSON.stringify(raceCtx)}
 
-## 2. 출전마 통계 (rating, recentRanks, sectionalTag, trainerWinRate 등 포함)
-\`\`\`json
-${JSON.stringify(mergedEntries)}
-\`\`\`
+## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
+${JSON.stringify(compactEntries)}
 
-## 3. 출력 (JSON만)
-- horseScores: 각 마별 score, reason, strengths(강점 1~2개), weaknesses(약점/리스크 1개), confidence(high/medium/low)
-- analysis: 날씨·주로·거리·우승후보·각질(선행/추입)·주의변수·종합 5~8문장
-- preview: 무료용 2~3문장 요약. 반드시 단승식(1등 예상마 1마리)만 언급. 복승·연승·쌍승·삼복·삼쌍 등 다른 승식 절대 언급 금지.
-\`\`\`json
-{"scores":{"horseScores":[{"hrNo":"","hrName":"","score":0,"reason":"","strengths":[""],"weaknesses":[""],"confidence":""}]},"betTypePredictions":{"SINGLE":{"hrNo":"","reason":""},"PLACE":{"hrNo":"","reason":""},"QUINELLA":{"hrNos":["",""],"reason":""},"EXACTA":{"first":"","second":"","reason":""},"QUINELLA_PLACE":{"hrNos":["",""],"reason":""},"TRIFECTA":{"hrNos":["","",""],"reason":""},"TRIPLE":{"first":"","second":"","third":"","reason":""}},"analysis":"","preview":""}
-\`\`\`
-- betTypePredictions: 7개 승식 모두 출력. hrNo는 Section2 값 사용. 각 추천에 구체적 이유 필수.
-- 단승 1마1등 | 복승 1마1~3등 | 연승 2마1·2등 | 쌍승 2마1→2등 | 복연승 2마3등이내 | 삼복 3마1·2·3등 | 삼쌍 3마1→2→3등`;
+## 규칙
+- reason/strengths/weaknesses: sub 6요소+js(기수)+risk 수치 근거. 같은 표현 금지.
+- risk30+→weaknesses에 낙마위험 언급. cascade(경주정보)20+→analysis에 연쇄낙마 가능성.
+- strengths: 강점 1~2개. weaknesses: 약점/리스크 1개.
+- analysis: 날씨·주로·거리·후보·각질·변수 5~8문장. preview: 2~3문장(단승식 1등예상마만, 다른승식 금지).
+- 7승식 모두 출력. hrNo=n값.
+
+## 출력(JSON만)
+{"scores":{"horseScores":[{"hrNo":"","hrName":"","score":0,"reason":"","strengths":[""],"weaknesses":[""],"confidence":""}]},"betTypePredictions":{"SINGLE":{"hrNo":"","reason":""},"PLACE":{"hrNo":"","reason":""},"QUINELLA":{"hrNos":["",""],"reason":""},"EXACTA":{"first":"","second":"","reason":""},"QUINELLA_PLACE":{"hrNos":["",""],"reason":""},"TRIFECTA":{"hrNos":["","",""],"reason":""},"TRIPLE":{"first":"","second":"","third":"","reason":""}},"analysis":"","preview":""}`;
     }
     parseGeminiResponse(text) {
         let cleanText = text

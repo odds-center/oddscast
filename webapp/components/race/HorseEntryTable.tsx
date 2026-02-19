@@ -4,6 +4,7 @@
  */
 import { getGateBgColor } from './RaceHeaderCard';
 import Icon from '@/components/icons';
+import { Tooltip } from '@/components/ui';
 
 /** 렌더링에 필요한 출전마 필드 */
 export interface HorseEntryRow {
@@ -90,7 +91,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
               className={`
                 rounded-xl border overflow-hidden transition-all duration-200
                 ${onSelectHorse ? 'cursor-pointer active:scale-[0.99]' : ''}
-                ${isSelected?.(e.hrNo) ? 'ring-2 ring-primary-500 border-primary-400 bg-primary-50/30' : 'border-border bg-card hover:border-slate-300'}
+                ${isSelected?.(e.hrNo) ? 'ring-2 ring-primary-500 border-primary-400 bg-primary-50/30' : 'border-border bg-card hover:border-stone-300'}
               `}
             >
               <div className='flex items-start gap-3 p-4'>
@@ -124,7 +125,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                       <span>
                         마체중 {hwBase}kg
                         {hwDelta != null && (
-                          <span className={hwDelta > 0 ? ' text-red-600' : hwDelta < 0 ? ' text-blue-600' : ''}>
+                          <span className={hwDelta > 0 ? ' text-stone-700' : hwDelta < 0 ? ' text-stone-500' : ''}>
                             {' '}({hwDelta >= 0 ? '+' : ''}{hwDelta})
                           </span>
                         )}
@@ -148,17 +149,31 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
       <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
         <table className='data-table data-table-compact w-full'>
           <thead>
-            <tr className='bg-slate-50 border-b border-border'>
+            <tr className='bg-stone-50 border-b border-border'>
               <th className='cell-center w-10 py-3'>No</th>
               <th className='text-left py-3 min-w-[90px]'>마명</th>
               <th className='text-left py-3'>기수/조교사</th>
-              <th className='cell-center py-3 w-16' title='산지·연령·성별'>마령</th>
-              <th className='cell-center py-3 w-16' title='말이 짊어지는 무게'>부담</th>
-              <th className='cell-center py-3 w-16' title='말의 몸무게'>마체중</th>
-              <th className='cell-center py-3 w-14'>레이팅</th>
-              <th className='cell-center py-3 w-20'>통산</th>
-              <th className='cell-center py-3 w-24'>최근</th>
-              <th className='text-left py-3 w-16 hidden md:table-cell'>장구</th>
+              <th className='cell-center py-3 w-16'>
+                <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
+              </th>
+              <th className='cell-center py-3 w-16'>
+                <Tooltip content='기수 포함 경주 시 짊어지는 무게 (kg)' inline>부담</Tooltip>
+              </th>
+              <th className='cell-center py-3 w-16'>
+                <Tooltip content='경주 당일 말의 체중. 괄호 안은 전 대비 증감' inline>마체중</Tooltip>
+              </th>
+              <th className='cell-center py-3 w-14'>
+                <Tooltip content='KRA 능력 지표. 높을수록 경쟁력 우수' inline>레이팅</Tooltip>
+              </th>
+              <th className='cell-center py-3 w-20'>
+                <Tooltip content='통산 출전 횟수와 1위 횟수' inline>통산</Tooltip>
+              </th>
+              <th className='cell-center py-3 w-24'>
+                <Tooltip content='최근 5경기 착순 (1위=1, 미입상=0)' inline>최근</Tooltip>
+              </th>
+              <th className='text-left py-3 w-16 hidden md:table-cell'>
+                <Tooltip content='경주 시 말에 장착하는 보조 장비 (차안대, 혀묶개 등)' inline>장구</Tooltip>
+              </th>
             </tr>
           </thead>
           <tbody className='divide-y divide-border'>
@@ -174,7 +189,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                   onClick={() => onSelectHorse?.(e.hrNo, e.hrName)}
                   className={`
                     transition-colors
-                    ${onSelectHorse ? 'cursor-pointer hover:bg-slate-50' : ''}
+                    ${onSelectHorse ? 'cursor-pointer hover:bg-stone-50' : ''}
                     ${isSelected?.(e.hrNo) ? 'bg-primary-50/50' : ''}
                   `}
                 >
@@ -208,7 +223,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                       <>
                         <span>{hwBase}kg</span>
                         {hwDelta != null && (
-                          <span className={`ml-0.5 ${hwDelta > 0 ? 'text-red-600' : hwDelta < 0 ? 'text-blue-600' : 'text-text-tertiary'}`}>
+                          <span className={`ml-0.5 ${hwDelta > 0 ? 'text-stone-700' : hwDelta < 0 ? 'text-stone-500' : 'text-text-tertiary'}`}>
                             ({hwDelta >= 0 ? '+' : ''}{hwDelta})
                           </span>
                         )}

@@ -15,8 +15,8 @@ export default function PageHeader({ icon, title, description, subtitle, childre
       <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4'>
         <div className='min-w-0 flex-1'>
           <h1 className='font-display text-xl sm:text-2xl lg:text-[1.625rem] font-bold flex items-center gap-3 flex-wrap'>
-            <span className='inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-slate-100 border border-slate-200 shrink-0'>
-              <Icon name={icon} size={24} className='text-slate-600' strokeWidth={2.5} />
+            <span className='inline-flex items-center justify-center w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-stone-100 border border-stone-200 shrink-0'>
+              <Icon name={icon} size={24} className='text-stone-600' strokeWidth={2.5} />
             </span>
             <span className='text-foreground truncate'>{title}</span>
           </h1>

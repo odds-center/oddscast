@@ -1,6 +1,12 @@
 /**
- * 날짜 헤더 — KRA 스타일 (예: 2026년 02월 13일 금요일)
+ * 홈 히어로 배너 — KRA 스타일 다크 배너
  */
+import Icon from '@/components/icons';
+import Link from 'next/link';
+import { routes } from '@/lib/routes';
+
+const RACE_DAYS = [5, 6, 0];
+
 export default function DateHeader() {
   const now = new Date();
   const year = now.getFullYear();
@@ -8,13 +14,59 @@ export default function DateHeader() {
   const day = now.getDate();
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const weekDay = weekDays[now.getDay()];
+  const isRaceDay = RACE_DAYS.includes(now.getDay());
+
+  const nextRaceDay = (() => {
+    if (isRaceDay) return null;
+    const d = new Date(now);
+    for (let i = 1; i <= 7; i++) {
+      d.setDate(now.getDate() + i);
+      if (RACE_DAYS.includes(d.getDay())) {
+        return `${weekDays[d.getDay()]}요일 (${d.getMonth() + 1}/${d.getDate()})`;
+      }
+    }
+    return null;
+  })();
 
   return (
-    <div className='date-header-kra'>
-      <h1 className='text-lg sm:text-xl font-bold text-foreground'>
-        {year}년 {month.toString().padStart(2, '0')}월 {day.toString().padStart(2, '0')}일 {weekDay}요일
-      </h1>
-      <p className='text-text-tertiary text-sm mt-0.5'>오늘의 경마 정보를 확인하세요</p>
+    <div className='home-hero'>
+      <div className='relative z-10 flex items-center justify-between gap-4'>
+        <div>
+          <p className='text-stone-400 text-xs mb-1 whitespace-nowrap'>
+            {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDay})
+          </p>
+          <h1 className='text-base sm:text-lg font-bold text-white mb-1'>
+            {isRaceDay ? '오늘 경주가 진행됩니다' : 'GOLDEN RACE'}
+          </h1>
+          <p className='text-stone-400 text-xs'>
+            {isRaceDay ? (
+              'AI 분석으로 경주를 예측해보세요'
+            ) : nextRaceDay ? (
+              <>다음 경주일: <span className='text-[#d4a942]'>{nextRaceDay}</span></>
+            ) : (
+              '경마 정보·분석 서비스'
+            )}
+          </p>
+        </div>
+        <div className='flex items-center gap-2 shrink-0'>
+          {isRaceDay && (
+            <Link
+              href={`${routes.races.list}?date=today`}
+              className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#92702A] text-white text-xs font-semibold hover:bg-[#7A5D1F] transition-colors whitespace-nowrap'
+            >
+              <Icon name='Flag' size={13} />
+              오늘의 경주
+            </Link>
+          )}
+          <Link
+            href={routes.predictions.matrix}
+            className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/10 text-stone-300 text-xs font-medium hover:bg-white/15 transition-colors whitespace-nowrap'
+          >
+            <Icon name='BarChart2' size={13} />
+            종합 예상
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

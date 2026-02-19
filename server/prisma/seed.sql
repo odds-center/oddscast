@@ -24,11 +24,11 @@ INSERT INTO "point_ticket_prices" ("pointsPerTicket", "isActive", "effectiveFrom
 SELECT 1200, true, NOW(), NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM "point_ticket_prices" LIMIT 1);
 
--- SubscriptionPlan (라이트 / 스탠다드 / 프리미엄) — 1장=500원 기준
-INSERT INTO "subscription_plans" ("planName", "displayName", "description", "originalPrice", "vat", "totalPrice", "baseTickets", "bonusTickets", "totalTickets", "isActive", "sortOrder", "createdAt", "updatedAt") VALUES
-('LIGHT', '라이트', '월 10장 예측권 (입문)', 4455, 445, 4900, 10, 0, 10, true, 1, NOW(), NOW()),
-('STANDARD', '스탠다드', '월 20장 예측권 (일반)', 9000, 900, 9900, 20, 0, 20, true, 2, NOW(), NOW()),
-('PREMIUM', '프리미엄', '월 30장 예측권 (27+3 보너스, 헤비)', 13545, 1355, 14900, 27, 3, 30, true, 3, NOW(), NOW())
+-- SubscriptionPlan (라이트 / 스탠다드 / 프리미엄) — 1장=500원 기준, 종합예측권=5,000원당 1장
+INSERT INTO "subscription_plans" ("planName", "displayName", "description", "originalPrice", "vat", "totalPrice", "baseTickets", "bonusTickets", "totalTickets", "matrixTickets", "isActive", "sortOrder", "createdAt", "updatedAt") VALUES
+('LIGHT', '라이트', '월 10장 예측권 (입문)', 4455, 445, 4900, 10, 0, 10, 0, true, 1, NOW(), NOW()),
+('STANDARD', '스탠다드', '월 20장 예측권 + 종합 1장 (일반)', 9000, 900, 9900, 20, 0, 20, 1, true, 2, NOW(), NOW()),
+('PREMIUM', '프리미엄', '월 30장 예측권 + 종합 2장 (27+3 보너스, 헤비)', 13545, 1355, 14900, 27, 3, 30, 2, true, 3, NOW(), NOW())
 ON CONFLICT ("planName") DO UPDATE SET
   "displayName" = EXCLUDED."displayName",
   "description" = EXCLUDED."description",
@@ -38,6 +38,7 @@ ON CONFLICT ("planName") DO UPDATE SET
   "baseTickets" = EXCLUDED."baseTickets",
   "bonusTickets" = EXCLUDED."bonusTickets",
   "totalTickets" = EXCLUDED."totalTickets",
+  "matrixTickets" = EXCLUDED."matrixTickets",
   "sortOrder" = EXCLUDED."sortOrder",
   "updatedAt" = NOW();
 

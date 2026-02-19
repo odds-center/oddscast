@@ -1,7 +1,5 @@
 import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockTicketBalance, mockPredictions } from '@/lib/mocks/data';
 import type { PredictionResultDto } from '@/lib/types/predictions';
 
 /**
@@ -59,14 +57,6 @@ export default class PredictionTicketsApi {
     raceId: string,
     options?: { regenerate?: boolean },
   ): Promise<UseTicketResult> {
-    if (CONFIG.useMock) {
-      const pred = mockPredictions.find((p: { raceId?: string }) => p.raceId === raceId) ?? mockPredictions[0];
-      return {
-        prediction: pred as unknown as PredictionResultDto,
-        ticketUsed: true,
-        ticket: { id: 'mock-ticket', usedAt: new Date().toISOString() },
-      };
-    }
     try {
       const response = await axiosInstance.post<ApiResponse<UseTicketResult>>(
         '/prediction-tickets/use',
@@ -84,7 +74,6 @@ export default class PredictionTicketsApi {
    * 서버 필드(available,used,expired,total)를 availableTickets 등으로 정규화
    */
   static async getBalance(): Promise<TicketBalance> {
-    if (CONFIG.useMock) return mockTicketBalance;
     try {
       const response = await axiosInstance.get('/prediction-tickets/balance');
       const d = handleApiResponse(response) as Record<string, number | undefined>;
@@ -109,9 +98,6 @@ export default class PredictionTicketsApi {
     _offset = 0,
     page = 1,
   ): Promise<{ tickets: PredictionTicket[]; total: number; page: number; totalPages: number }> {
-    if (CONFIG.useMock) {
-      return { tickets: [], total: 0, page: 1, totalPages: 1 };
-    }
     try {
       const response = await axiosInstance.get('/prediction-tickets/history', {
         params: { limit, page },
@@ -130,6 +116,62 @@ export default class PredictionTicketsApi {
       };
     } catch (error) {
       throw handleApiError(error);
+    }
+  }
+
+  /** 종합 예측권 접근 권한 확인 */
+  static async checkMatrixAccess(date: string): Promise<{ hasAccess: boolean; expiresAt?: string }> {
+    try {
+      const response = await axiosInstance.get('/prediction-tickets/matrix/access', { params: { date } });
+      return handleApiResponse(response);
+    } catch {
+      return { hasAccess: false };
+    }
+  }
+
+  /** 종합 예측권 사용 */
+  static async useMatrixTicket(date: string): Promise<{ ticket: PredictionTicket; alreadyUsed: boolean }> {
+    try {
+      const response = await axiosInstance.post('/prediction-tickets/matrix/use', { date });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** 종합 예측권 잔액 */
+  static async getMatrixBalance(): Promise<{ available: number; used: number; total: number }> {
+    try {
+      const response = await axiosInstance.get('/prediction-tickets/matrix/balance');
+      const d = handleApiResponse(response) as { available?: number; used?: number; total?: number };
+      return { available: d?.available ?? 0, used: d?.used ?? 0, total: d?.total ?? 0 };
+    } catch {
+      return { available: 0, used: 0, total: 0 };
+    }
+  }
+
+  /** 종합 예측권 개별 구매 */
+  static async purchaseMatrixTickets(count: number = 1): Promise<{
+    purchased: number;
+    totalPrice: number;
+    pricePerTicket: number;
+    expiresAt: string;
+  }> {
+    try {
+      const response = await axiosInstance.post('/prediction-tickets/matrix/purchase', { count });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** 종합 예측권 가격 조회 */
+  static async getMatrixPrice(): Promise<{ pricePerTicket: number; currency: string; maxPerPurchase: number }> {
+    try {
+      const response = await axiosInstance.get('/prediction-tickets/matrix/price');
+      return handleApiResponse(response);
+    } catch {
+      return { pricePerTicket: 1000, currency: 'KRW', maxPerPurchase: 10 };
     }
   }
 

@@ -1,45 +1,26 @@
 # WebApp 개발 가이드
 
-> WebApp (`webapp/`) UI/UX, Mock 모드, API 연동, 모바일 최적화 가이드
+> WebApp (`webapp/`) UI/UX, API 연동, 모바일 최적화 가이드
 
 ---
 
 ## 1. 실행 방법
 
-### Mock 모드 (DB 없이)
-```bash
-cd webapp
-NEXT_PUBLIC_USE_MOCK=true npm run dev
-# → http://localhost:3000
-# 데모 로그인: demo@goldenrace.com / demo123
-```
-
-### 실제 서버 연동
 ```bash
 # 터미널 1: 서버 실행
 cd server && npm run dev
 
 # 터미널 2: WebApp 실행
 cd webapp
-# .env.local에 NEXT_PUBLIC_USE_MOCK=false 또는 미설정
 npm run dev
+# → http://localhost:3000
 ```
 
----
-
-## 2. Mock 모드
-
-| 항목 | 설명 |
-|------|------|
-| **환경 변수** | `NEXT_PUBLIC_USE_MOCK=true` 또는 `1` |
-| **Config** | `lib/config.ts` — `CONFIG.useMock` |
-| **데이터** | `lib/mocks/data.ts` — races, results, predictions, rankings, points, tickets, subscriptions, notifications, user, config |
-| **데모 계정** | `demo@goldenrace.com` / `demo123` |
-| **적용 API** | RaceApi, ResultApi, PredictionApi, RankingApi, FavoriteApi, NotificationApi, PointApi, PredictionTicketApi, SubscriptionApi, SubscriptionPlansApi, ConfigApi, AuthApi |
+**환경 변수**: `webapp/.env.local` 또는 `.env`에 `NEXT_PUBLIC_API_URL` 설정 (기본: `http://localhost:3001/api`)
 
 ---
 
-## 3. Form — react-hook-form
+## 2. Form — react-hook-form
 
 모든 폼은 `react-hook-form`을 사용합니다. (`.cursorrules` 규칙 8)
 
@@ -52,7 +33,7 @@ npm run dev
 
 ---
 
-## 4. 공통 UI 컴포넌트
+## 3. 공통 UI 컴포넌트
 
 ### 기본 컴포넌트
 
@@ -98,7 +79,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 5. 모바일 레이아웃 & CSS
+## 4. 모바일 레이아웃 & CSS
 
 ### Safe Area (노치/라운드 대응)
 
@@ -123,7 +104,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 6. 타입 안전성 (TypeScript)
+## 5. 타입 안전성 (TypeScript)
 
 ### any 금지
 - **`any` 사용 금지.** 변수·매개변수·반환값에 구체적 타입 필수.
@@ -137,7 +118,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 7. 페이지별 API & 상태 처리
+## 6. 페이지별 API & 상태 처리
 
 | 페이지 | API | 로딩 | 에러 | 빈 상태 |
 |--------|-----|------|------|---------|
@@ -154,7 +135,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 8. 구독 결제 플로우
+## 7. 구독 결제 플로우
 
 플랜 선택 → 결제 → 활성화 순서:
 
@@ -166,18 +147,17 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 9. 환경 변수
+## 8. 환경 변수
 
 | 변수 | 설명 | 기본값 |
 |------|------|--------|
-| `NEXT_PUBLIC_USE_MOCK` | Mock 모드 활성화 | `false` |
 | `NEXT_PUBLIC_API_URL` | NestJS 서버 API URL | `http://localhost:3001/api` |
 | `NEXT_PUBLIC_WEBAPP_URL` | WebApp 배포 URL (선택) | `http://localhost:3000` |
 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In Web Client ID | — |
 
 ---
 
-## 10. 알림 설정 (settings/notifications)
+## 9. 알림 설정 (settings/notifications)
 
 - **경로**: `/settings/notifications` — `routes.settingsNotifications`
 - **API**: `NotificationApi.getNotificationPreferences()`, `updateNotificationPreferences()`
@@ -187,7 +167,7 @@ import BackLink from '@/components/page/BackLink';
 
 ---
 
-## 11. Mobile WebView 연동
+## 10. Mobile WebView 연동
 
 Mobile 앱은 WebView로 WebApp을 로드합니다.
 

@@ -8,7 +8,6 @@ import ResultApi from '@/lib/api/resultApi';
 import type { RaceResult } from '@/lib/api/resultApi';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
-import { formatRcDate } from '@/lib/utils/format';
 
 interface GroupedResult {
   ord: string;
@@ -84,7 +83,8 @@ export default function RecentResultsSection() {
       title='최근 결과'
       icon='TrendingUp'
       viewAllHref={routes.results}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
+      badge={grouped.length > 0 ? `${grouped.length}경기` : undefined}
     >
       {isLoading ? (
         <div className='py-8 text-center text-text-secondary text-sm'>결과를 불러오는 중...</div>
@@ -92,14 +92,13 @@ export default function RecentResultsSection() {
         <div className='py-8 text-center text-text-secondary text-sm'>최근 결과가 없습니다.</div>
       ) : (
         <div className='overflow-x-auto'>
-          <table className='data-table data-table-compact w-full min-w-[420px]'>
+          <table className='data-table data-table-compact w-full min-w-[320px]'>
             <thead>
               <tr>
-                <th className='w-24'>경주</th>
-                <th className='w-20'>날짜</th>
-                <th className='min-w-[100px]'>1위</th>
-                <th className='min-w-[100px]'>2위</th>
-                <th className='min-w-[100px]'>3위</th>
+                <th className='w-28'>경주</th>
+                <th className='min-w-[80px]'>1위</th>
+                <th className='min-w-[80px]'>2위</th>
+                <th className='min-w-[80px]'>3위</th>
               </tr>
             </thead>
             <tbody>
@@ -108,24 +107,17 @@ export default function RecentResultsSection() {
                   <td>
                     <Link
                       href={routes.resultsDetail(row.raceId)}
-                      className='font-medium text-slate-700 hover:text-slate-900 hover:underline'
+                      className='font-medium text-stone-700 hover:text-stone-900 hover:underline'
                     >
                       {row.meetName} {row.rcNo}경
                     </Link>
                   </td>
-                  <td className='text-text-secondary text-sm'>{formatRcDate(row.rcDate)}</td>
                   {(['1', '2', '3'] as const).map((ord) => {
                     const r = row.results.find((x) => x.ord === ord);
                     return (
                       <td key={ord} className='text-sm'>
                         {r ? (
-                          <span>
-                            <span className='font-medium'>{r.hrName}</span>
-                            <span className='text-text-secondary'> ({r.jkName})</span>
-                            {ord === '1' && r.rcTime && (
-                              <span className='block text-xs text-text-tertiary font-mono mt-0.5'>{r.rcTime}</span>
-                            )}
-                          </span>
+                          <span className='font-medium'>{r.hrName}</span>
                         ) : (
                           <span className='text-text-tertiary'>-</span>
                         )}

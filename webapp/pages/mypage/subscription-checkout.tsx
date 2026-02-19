@@ -19,7 +19,6 @@ import SubscriptionPlansApi from '@/lib/api/subscriptionPlansApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import PaymentsApi from '@/lib/api/paymentApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import CONFIG from '@/lib/config';
 import type { SubscriptionPlan } from '@/lib/api/subscriptionPlansApi';
 
 type Step = 'loading' | 'plan' | 'paying' | 'success' | 'error';
@@ -79,11 +78,11 @@ export default function SubscriptionCheckoutPage() {
       // 2. 결제 처리
       await PaymentsApi.processSubscription({
         planId: String(plan.id),
-        paymentMethod: CONFIG.useMock ? 'MOCK' : 'CARD',
+        paymentMethod: 'CARD',
       });
 
       // 3. 구독 활성화
-      await SubscriptionApi.activate(subId, CONFIG.useMock ? 'mock-billing-key' : 'billing-key-from-pg');
+      await SubscriptionApi.activate(subId, 'billing-key-from-pg');
 
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
       setStep('success');
@@ -134,7 +133,7 @@ export default function SubscriptionCheckoutPage() {
     return (
       <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto text-center'>
-          <div className='card border-slate-200 mb-6'>
+          <div className='card border-stone-200 mb-6'>
             <Icon name='CheckCircle' size={48} className='text-success mx-auto mb-3' />
             <h2 className='text-lg font-bold text-foreground mb-2'>구독이 완료되었습니다</h2>
             <p className='text-text-secondary text-sm'>
@@ -144,7 +143,7 @@ export default function SubscriptionCheckoutPage() {
           <Link href={routes.profile.index} className='btn-primary block'>
             내 정보로
           </Link>
-          <Link href={routes.mypage.subscriptions} className='block mt-3 text-slate-700 text-sm hover:underline'>
+          <Link href={routes.mypage.subscriptions} className='block mt-3 text-stone-700 text-sm hover:underline'>
             구독 관리
           </Link>
         </div>
@@ -162,15 +161,9 @@ export default function SubscriptionCheckoutPage() {
         <SectionCard className='mb-6'>
           <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
           <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
-          <p className='text-slate-800 font-bold mt-2'>{plan.totalPrice?.toLocaleString()}원/월</p>
+          <p className='text-stone-800 font-bold mt-2'>{plan.totalPrice?.toLocaleString()}원/월</p>
           <p className='text-text-tertiary text-xs mt-1'>예측권 {plan.totalTickets ?? plan.baseTickets}장/월</p>
         </SectionCard>
-
-        {CONFIG.useMock && (
-          <p className='text-text-secondary text-sm mb-4 p-3 rounded bg-secondary'>
-            데모 모드: 테스트 결제로 진행됩니다.
-          </p>
-        )}
 
         <div className='flex gap-3'>
           <button

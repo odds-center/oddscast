@@ -128,7 +128,7 @@ export default function BetsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='결제 내역'
-            description='결제·예측권 구매 기록을 조회할 수 있습니다.'
+            description='사용자별 결제·예측권 구매 내역을 조회합니다. 사용자 ID로 특정 사용자의 결제 이력을 검색할 수 있습니다.'
           />
 
           <Card>

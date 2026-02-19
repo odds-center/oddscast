@@ -38,10 +38,10 @@ export default function QuickLinks({ items = DEFAULT_LINKS, columns = 3 }: Quick
           href={href}
           className='card card-hover flex flex-col items-center justify-center gap-2 py-6 px-4 text-center touch-manipulation group'
         >
-          <span className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 group-hover:bg-slate-200 transition-colors shrink-0'>
-            <Icon name={icon} size={24} className='text-slate-500' strokeWidth={2} />
+          <span className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-stone-100 border border-stone-200 group-hover:bg-stone-200 transition-colors shrink-0'>
+            <Icon name={icon} size={24} className='text-stone-500' strokeWidth={2} />
           </span>
-          <span className='font-semibold text-foreground group-hover:text-slate-700 transition-colors'>{label}</span>
+          <span className='font-semibold text-foreground group-hover:text-stone-700 transition-colors'>{label}</span>
           {description && <span className='text-xs text-text-secondary'>{description}</span>}
         </Link>
       ))}

@@ -17,6 +17,7 @@ export declare class KraService {
         baseUrlInUse: string;
         serviceKeyConfigured: boolean;
     }>;
+    syncFutureRacePlans(): Promise<void>;
     syncWeeklySchedule(): Promise<void>;
     syncRaceDayMorning(): Promise<void>;
     syncRealtimeResults(): Promise<void>;
@@ -34,6 +35,11 @@ export declare class KraService {
         entries: number;
     }>;
     private processEntrySheetItem;
+    syncScheduleForDate(date: string): Promise<{
+        message: string;
+        races: number;
+        entries: number;
+    }>;
     syncAll(date: string): Promise<{
         message: string;
         entrySheet?: {
@@ -53,6 +59,9 @@ export declare class KraService {
         totalResults: number;
     } | undefined>;
     private getRaceDateRange;
+    fetchRacePlanSchedule(date: string): Promise<{
+        races: number;
+    }>;
     syncUpcomingSchedules(): Promise<{
         message: string;
         races: number;

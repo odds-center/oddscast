@@ -16,14 +16,14 @@ function PickBadge({ no }: { no: string }) {
   const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
   return (
     <span
-      className='inline-flex items-center justify-center w-8 h-8 text-sm font-bold rounded-lg'
+      className='inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded'
       style={{
         backgroundColor: bg,
         color: isLight ? '#171717' : '#fff',
         border: isLight ? '1px solid #e5e7eb' : 'none',
       }}
     >
-      {no}번
+      {no}
     </span>
   );
 }
@@ -41,7 +41,7 @@ export default function RacePredictionsPreviewSection() {
       title='경주 예상지'
       icon='Target'
       viewAllHref={routes.predictions.matrix}
-      viewAllLabel='전체보기'
+      viewAllLabel='더보기'
       accent
     >
       {isLoading ? (
@@ -54,7 +54,7 @@ export default function RacePredictionsPreviewSection() {
             <li key={row.raceId}>
               <Link
                 href={routes.races.detail(row.raceId)}
-                className='flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition-colors'
+                className='flex items-center justify-between py-2 first:pt-0 last:pb-0 hover:bg-stone-50 -mx-1 px-1 rounded transition-colors'
               >
                 <span className='font-medium text-foreground'>
                   {row.meetName ?? row.meet} {row.rcNo}경

@@ -206,6 +206,8 @@ const handleApiResponse = <T>(response): T => {
 | 서비스             | 용도                         | 연동 방식                        |
 | ------------------ | ---------------------------- | -------------------------------- |
 | **공공데이터포털** | 경마 경기/결과 실시간 데이터 | REST API (axios)                 |
+| **KRA API72_2**    | 경주계획표 (미래 일정)       | `racePlan_2` — Cron·Admin 수동   |
+| **KRA API26_2**    | 출전표 (출전마)              | `entrySheet_2` — 경주 2~3일 전   |
 | **Google Gemini**  | AI 분석 코멘트 생성          | REST API (@google/generative-ai) |
 | **Python Scripts** | 통계 분석 (Speed Index 등)   | python-shell (stdin/stdout JSON) |
 | **PostgreSQL**     | 데이터 저장소                | Prisma ORM                       |

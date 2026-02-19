@@ -9,8 +9,6 @@ import type {
 } from '@goldenrace/shared';
 import { RaceFilters } from '@/lib/types/race';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-import CONFIG from '@/lib/config';
-import { mockRaces, mockRaceResults, mockDividends } from '@/lib/mocks/data';
 
 export default class RaceApi {
   private static instance: RaceApi;
@@ -30,11 +28,6 @@ export default class RaceApi {
    * 오늘 경주 목록 (서버: GET /races/today)
    */
   static async getTodayRaces(): Promise<RaceDto[]> {
-    if (CONFIG.useMock) {
-      const today = new Date().toISOString().slice(0, 10);
-      const filtered = mockRaces.filter((r: RaceDto) => r.rcDate === today);
-      return (filtered.length > 0 ? filtered : mockRaces) as unknown as RaceDto[];
-    }
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceDto[]>>('/races/today');
       const data = handleApiResponse(response) as RaceDto[] | undefined;
@@ -45,29 +38,6 @@ export default class RaceApi {
   }
 
   static async getRaces(filters?: RaceFilters): Promise<RaceListResponseDto> {
-    if (CONFIG.useMock) {
-      let list = [...mockRaces];
-      if (filters?.date) {
-        const d = filters.date === 'today' ? new Date().toISOString().slice(0, 10) : filters.date;
-        list = list.filter((r: RaceDto) => (r.rcDate ?? '').replace(/-/g, '').slice(0, 8) === (String(d).replace(/-/g, '').slice(0, 8)));
-      }
-      if (filters?.meet) {
-        const m = String(filters.meet);
-        list = list.filter(
-          (r: RaceDto) =>
-            (r.meet ?? r.meetName ?? '') === m || (m === '부산경남' && ((r.meet ?? r.meetName) === '부산'))
-        );
-      }
-      const page = filters?.page ?? 1;
-      const limit = filters?.limit ?? 20;
-      const start = (page - 1) * limit;
-      return {
-        races: list.slice(start, start + limit) as unknown as RaceDto[],
-        total: list.length,
-        page,
-        totalPages: Math.ceil(list.length / limit) || 1,
-      };
-    }
     try {
       const params = new URLSearchParams();
 
@@ -91,11 +61,6 @@ export default class RaceApi {
   }
 
   static async getRace(raceId: string): Promise<RaceDetailDto> {
-    if (CONFIG.useMock) {
-      const race = mockRaces.find((r: RaceDto) => r.id === raceId);
-      if (race) return race as unknown as RaceDetailDto;
-      throw new Error('경주를 찾을 수 없습니다.');
-    }
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceDetailDto>>(`/races/${raceId}`);
       return handleApiResponse(response) as RaceDetailDto;
@@ -134,9 +99,6 @@ export default class RaceApi {
   }
 
   static async getRaceResults(raceId: string): Promise<RaceResultDto[]> {
-    if (CONFIG.useMock) {
-      return (mockRaceResults as Record<string, RaceResultDto[]>)[raceId] ?? [];
-    }
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceResultDto[]>>(
         `/races/${raceId}/results`,
@@ -160,9 +122,6 @@ export default class RaceApi {
   }
 
   static async getRaceDividends(raceId: string): Promise<DividendDto[]> {
-    if (CONFIG.useMock) {
-      return (mockDividends as Record<string, DividendDto[]>)[raceId] ?? [];
-    }
     try {
       const response = await axiosInstance.get<ApiResponseDto<DividendDto[]>>(
         `/races/${raceId}/dividends`,

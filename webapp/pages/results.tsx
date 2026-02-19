@@ -20,6 +20,7 @@ interface TableResult {
   hrName: string;
   jkName: string;
   rcTime?: string;
+  diffUnit?: string;
 }
 
 interface GroupedRace {
@@ -85,9 +86,6 @@ export default function Results() {
     >();
 
     for (const r of rawResults) {
-      const ord = parseInt(r.ord ?? '99', 10) || 99;
-      if (ord > 3) continue;
-
       const rWithRace = r as RaceResult & {
         race?: { meetName?: string; rcNo?: string; rcDate?: string; rcDist?: string; id?: string };
         meetName?: string;
@@ -104,13 +102,15 @@ export default function Results() {
       if (!byRace.has(raceId)) {
         byRace.set(raceId, { meetName, rcNo, rcDate, rcDist, results: [] });
       }
+      const rr = r as RaceResult;
       byRace.get(raceId)!.results.push({
-        ord: r.ord ?? String(ord),
+        ord: r.ord ?? '99',
         chulNo: r.chulNo,
         hrNo: r.hrNo,
         hrName: r.hrName,
         jkName: r.jkName,
-        rcTime: (r as { rcTime?: string }).rcTime,
+        rcTime: rr.rcTime,
+        diffUnit: rr.diffUnit,
       });
     }
 
@@ -130,19 +130,22 @@ export default function Results() {
 
   const totalPages = data?.totalPages ?? 1;
 
+  /** 1·2·3위 셀: 가로형 (마명·기수·기록 한 줄) */
   function renderRankCell(race: GroupedRace, ord: '1' | '2' | '3') {
     const r = race.results.find((x) => x.ord === ord);
     if (!r) return <span className='text-text-tertiary'>-</span>;
     const no = r.chulNo ?? (r.hrNo && r.hrNo.length <= 2 ? r.hrNo : '-');
+    // 기록: 1위=rcTime, 2·3위=diffUnit(착차)
+    const record = ord === '1' && r.rcTime ? r.rcTime : r.diffUnit;
     return (
-      <span className='inline-flex flex-col gap-0.5'>
-        <span className='inline-flex items-center gap-1.5 flex-wrap'>
-          <span className='badge-muted'>{no}</span>
-          <span className='font-medium'>{r.hrName}</span>
-          <span className='text-text-secondary text-sm'>({r.jkName})</span>
-        </span>
-        {ord === '1' && r.rcTime && (
-          <span className='text-text-tertiary text-xs font-mono'>{r.rcTime}</span>
+      <span className='inline-flex items-center gap-1.5 flex-wrap text-sm'>
+        <span className='badge-muted shrink-0'>{no}</span>
+        <span className='font-medium'>{r.hrName}</span>
+        <span className='text-text-secondary'>({r.jkName})</span>
+        {record && (
+          <span className='text-text-tertiary font-mono text-xs ml-1' title='기록'>
+            {record}
+          </span>
         )}
       </span>
     );
@@ -193,69 +196,59 @@ export default function Results() {
         emptyDescription='해당 조건에 맞는 경주 결과가 없습니다.'
         loadingLabel='결과를 불러오는 중...'
       >
-        {/* 모바일: 카드형 | 데스크톱: 테이블 */}
-        <div className='block lg:hidden space-y-3'>
+        {/* 모바일: 컴팩트 카드 */}
+        <div className='block lg:hidden space-y-2'>
           {groupedRaces.map((row) => (
-            <Link
-              key={row.raceId}
-              href={routes.resultsDetail(row.raceId)}
-              className='block card card-hover p-4 border-l-4 border-l-primary/60 touch-manipulation'
-            >
-              <div className='flex items-center justify-between mb-3'>
-                <span className='font-semibold text-foreground'>{row.meetName} {row.rcNo}경</span>
-                <span className='text-text-secondary text-sm'>{formatRcDate(row.rcDate)}</span>
+            <Link key={row.raceId} href={routes.resultsDetail(row.raceId)} className='block rounded-md border border-stone-200 bg-white p-2.5 hover:bg-stone-50 transition-colors'>
+              <div className='flex items-center justify-between mb-1.5'>
+                <span className='font-semibold text-foreground text-sm'>{row.meetName} {row.rcNo}R</span>
+                <span className='text-text-tertiary text-xs'>{formatRcDate(row.rcDate)}{row.rcDist ? ` · ${row.rcDist}m` : ''}</span>
               </div>
-              {row.rcDist && (
-                <span className='text-text-tertiary text-xs mb-2 block'>{row.rcDist}m</span>
-              )}
-              <div className='grid grid-cols-3 gap-2 text-sm'>
+              <div className='flex items-center gap-3 text-xs'>
                 {(['1', '2', '3'] as const).map((ord) => {
                   const r = row.results.find((x) => x.ord === ord);
-                  const rankStyle = ord === '1' ? 'bg-emerald-50 text-emerald-800' : ord === '2' ? 'bg-slate-100 text-slate-700' : 'bg-amber-50/80 text-amber-800';
+                  const cls = ord === '1' ? 'text-foreground' : ord === '2' ? 'text-stone-600' : 'text-stone-500';
                   return (
-                    <div key={ord} className={`rounded-lg p-2.5 ${rankStyle}`}>
-                      <span className='text-[10px] font-medium text-text-tertiary block mb-0.5'>{ord}위</span>
+                    <span key={ord} className='inline-flex items-center gap-1'>
+                      <span className={`font-bold ${cls}`}>{ord}위</span>
                       {r ? (
-                        <>
-                          <span className='font-medium block truncate'>{r.hrName}</span>
-                          <span className='text-xs text-text-secondary truncate block'>{r.jkName}</span>
-                          {ord === '1' && r.rcTime && (
-                            <span className='text-xs font-mono text-text-tertiary block mt-1'>{r.rcTime}</span>
-                          )}
-                        </>
+                        <span className='font-medium text-foreground'>{r.chulNo ? `${r.chulNo} ` : ''}{r.hrName}</span>
                       ) : (
                         <span className='text-text-tertiary'>-</span>
                       )}
-                    </div>
+                    </span>
                   );
                 })}
+                <span className='text-text-tertiary ml-auto'>{row.results.length}두</span>
               </div>
             </Link>
           ))}
         </div>
+
+        {/* 데스크톱: 테이블 */}
         <div className='hidden lg:block overflow-x-auto'>
           <DataTable
+            compact
             columns={[
-              { key: 'race', header: '경주', headerClassName: 'w-28 whitespace-nowrap', cellClassName: 'whitespace-nowrap', render: (row) => (
-                <LinkBadge href={routes.resultsDetail(row.raceId)} icon='Flag' iconSize={14}>
-                  {row.meetName} {row.rcNo}경
+              { key: 'race', header: '경주', headerClassName: 'w-24 whitespace-nowrap', cellClassName: 'whitespace-nowrap', render: (row) => (
+                <LinkBadge href={routes.resultsDetail(row.raceId)} icon='Flag' iconSize={12}>
+                  {row.meetName} {row.rcNo}R
                 </LinkBadge>
               ) },
-              { key: 'date', header: '날짜', headerClassName: 'w-24', render: (row) => (
-                <div>
-                  <span className='text-text-secondary text-sm block'>{formatRcDate(row.rcDate)}</span>
-                  {row.rcDist && <span className='text-text-tertiary text-xs'>{row.rcDist}m</span>}
-                </div>
+              { key: 'date', header: '날짜', headerClassName: 'w-20', render: (row) => (
+                <span className='text-text-secondary text-xs'>{formatRcDate(row.rcDate)}{row.rcDist ? ` · ${row.rcDist}m` : ''}</span>
               ) },
-              { key: 'ord1', header: '1위', headerClassName: 'min-w-[120px]', render: (row) => renderRankCell(row, '1') },
-              { key: 'ord2', header: '2위', headerClassName: 'min-w-[120px]', render: (row) => renderRankCell(row, '2') },
-              { key: 'ord3', header: '3위', headerClassName: 'min-w-[120px]', render: (row) => renderRankCell(row, '3') },
+              { key: 'ord1', header: '1위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '1') },
+              { key: 'ord2', header: '2위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '2') },
+              { key: 'ord3', header: '3위', headerClassName: 'min-w-[100px]', render: (row) => renderRankCell(row, '3') },
+              { key: 'entries', header: '두수', headerClassName: 'w-14', align: 'center', render: (row) => (
+                <span className='text-text-tertiary text-xs'>{row.results.length}</span>
+              ) },
             ]}
             data={groupedRaces}
             getRowKey={(row) => row.raceId}
             getRowHref={(row) => routes.resultsDetail(row.raceId)}
-            rowClassName={() => 'group hover:bg-slate-50/50'}
-            className='text-[14px]'
+            className='data-table-kra'
           />
         </div>
 
@@ -263,7 +256,7 @@ export default function Results() {
           page={page}
           totalPages={totalPages}
           onPageChange={(p) => updateQuery({ page: p })}
-          className='mt-4'
+          className='mt-3'
         />
       </DataFetchState>
     </Layout>

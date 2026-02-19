@@ -17,7 +17,7 @@ let SinglePurchasesService = class SinglePurchasesService {
     constructor(prisma, configService) {
         this.prisma = prisma;
         this.configService = configService;
-        this.DEFAULT_PRICE_PER_TICKET = 1000;
+        this.DEFAULT_PRICE_PER_TICKET = 550;
     }
     async getPricePerTicket() {
         const raw = await this.configService.get('single_purchase_config');

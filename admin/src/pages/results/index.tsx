@@ -9,7 +9,8 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { adminResultsApi, adminRacesApi } from '@/lib/api/admin';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
+import { adminResultsApi, adminRacesApi, adminKraApi } from '@/lib/api/admin';
 import { formatDate, getErrorMessage } from '@/lib/utils';
 
 interface RaceResult {
@@ -340,10 +341,18 @@ function groupResultsByRace(raw: RaceResult[]): GroupedRace[] {
 
 const GROUPS_PER_PAGE = 20;
 
+const MEET_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: '서울', label: '서울' },
+  { value: '제주', label: '제주' },
+  { value: '부산경남', label: '부산' },
+] as const;
+
 export default function ResultsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('');
+  const [meetFilter, setMeetFilter] = useState('');
   const [selectedResult, setSelectedResult] = useState<RaceResult | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupedRace | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -354,6 +363,15 @@ export default function ResultsPage() {
   const dateTo = toDate(new Date());
   const dateFrom = toDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
 
+  const syncResultsMutation = useMutation({
+    mutationFn: (date: string) => adminKraApi.syncResults(date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      toast.success('경기 결과 KRA 동기화 완료');
+    },
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
+  });
+
   const { data: racesData } = useQuery({
     queryKey: ['admin-races-for-result', dateFrom, dateTo],
     queryFn: () => adminRacesApi.getAll({ page: 1, limit: 200, dateFrom, dateTo }),
@@ -362,9 +380,14 @@ export default function ResultsPage() {
   const raceOptions: RaceOption[] = (racesData?.data ?? []) as RaceOption[];
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-results', dateFilter],
+    queryKey: ['admin-results', dateFilter, meetFilter],
     queryFn: async () => {
-      const res = await adminResultsApi.getAll({ page: 1, limit: 250, date: dateFilter });
+      const res = await adminResultsApi.getAll({
+        page: 1,
+        limit: 250,
+        ...(dateFilter && { date: dateFilter.replace(/-/g, '') }),
+        ...(meetFilter && { meet: meetFilter }),
+      });
       const normalized = (res.data || []).map(normalizeResult);
       return { data: normalized };
     },
@@ -486,34 +509,84 @@ export default function ResultsPage() {
         <div className='space-y-4'>
           <PageHeader
             title='경기 결과'
-            description='경주 결과를 조회하고 수동 등록/수정/삭제할 수 있습니다.'
+            description='경주 결과를 조회하고 수동 등록/수정/삭제할 수 있습니다. (최신날짜순, 지역 필터)'
           >
             <Button onClick={() => setCreateModalOpen(true)}>결과 수동 등록</Button>
           </PageHeader>
 
           <Card>
-            <div className='mb-4 flex gap-4'>
-              <input
-                type='date'
-                value={
-                  dateFilter && dateFilter.length >= 8
-                    ? `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
-                    : ''
-                }
-                onChange={(e) => {
-                  setDateFilter(e.target.value.replace(/-/g, ''));
-                  setPage(1);
-                }}
-                className='px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
-              />
-              {dateFilter && (
-                <Button variant='ghost' onClick={() => { setDateFilter(''); setPage(1); }}>
-                  필터 초기화
-                </Button>
+            <div className='relative'>
+              {syncResultsMutation.isPending && (
+                <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm'>
+                  <LoadingSpinner size='lg' label='경기 결과 적재 중... (수 분 소요될 수 있습니다)' />
+                </div>
               )}
-            </div>
+              <div className='mb-4 flex flex-wrap items-end gap-3'>
+                <div className='flex flex-col'>
+                  <label className='mb-1 block text-xs font-medium text-gray-500'>날짜</label>
+                  <input
+                    type='date'
+                    value={
+                      dateFilter && dateFilter.length >= 8
+                        ? `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
+                        : ''
+                    }
+                    onChange={(e) => {
+                      setDateFilter(e.target.value.replace(/-/g, ''));
+                      setPage(1);
+                    }}
+                    className='h-9 min-w-[140px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  />
+                </div>
+                <div className='flex flex-col'>
+                  <label className='mb-1 block text-xs font-medium text-gray-500'>지역</label>
+                  <select
+                    value={meetFilter}
+                    onChange={(e) => {
+                      setMeetFilter(e.target.value);
+                      setPage(1);
+                    }}
+                    className='h-9 min-w-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  >
+                    {MEET_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {(dateFilter || meetFilter) && (
+                  <Button
+                    variant='ghost'
+                    size='md'
+                    onClick={() => {
+                      setDateFilter('');
+                      setMeetFilter('');
+                      setPage(1);
+                    }}
+                    className='h-9'
+                  >
+                    필터 초기화
+                  </Button>
+                )}
+                <Button
+                  variant='primary'
+                  size='md'
+                  onClick={() =>
+                    syncResultsMutation.mutate(dateFilter || toDate(new Date()))
+                  }
+                  disabled={syncResultsMutation.isPending}
+                  isLoading={syncResultsMutation.isPending}
+                  className='h-9'
+                >
+                  {syncResultsMutation.isPending ? '적재 중...' : '경기 결과 적재 (KRA)'}
+                </Button>
+                <span className='text-sm text-gray-500'>
+                  선택 날짜 또는 오늘 기준 KRA에서 경주 결과 가져오기
+                </span>
+              </div>
 
-            <Table
+              <Table
               data={paginatedGroups}
               columns={columns}
               isLoading={isLoading}
@@ -528,6 +601,7 @@ export default function ResultsPage() {
                 onPageChange={setPage}
               />
             )}
+            </div>
           </Card>
         </div>
 

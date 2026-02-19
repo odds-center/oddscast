@@ -8,7 +8,7 @@ import { RankBadge } from '@/components/ui';
 import { routes } from '@/lib/routes';
 
 const RANK_COLORS: Record<number, string> = {
-  1: 'text-primary',
+  1: 'text-emerald-600',
   2: 'text-[#64748b]',
   3: 'text-[var(--color-rank-3)]',
 };
@@ -16,7 +16,7 @@ const RANK_COLORS: Record<number, string> = {
 export default function RankingPreviewSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['rankings', 'preview'],
-    queryFn: () => RankingApi.getRankings({ limit: 3 }),
+    queryFn: () => RankingApi.getRankings({ limit: 5 }),
   });
 
   const items = data ?? [];
@@ -49,7 +49,7 @@ export default function RankingPreviewSection() {
               <li key={item.id} className='flex items-center gap-4 py-3 first:pt-0 last:pb-0'>
                 {rankEl}
                 <span className={`font-medium flex-1 truncate ${RANK_COLORS[rank] ?? 'text-foreground'}`}>{name}</span>
-                <span className='text-primary font-semibold shrink-0'>{correctCount}회 적중</span>
+                <span className='text-slate-700 font-semibold shrink-0'>{correctCount}회 적중</span>
               </li>
             );
           })}

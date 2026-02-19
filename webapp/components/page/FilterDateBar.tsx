@@ -7,6 +7,14 @@ import FilterChips from './FilterChips';
 const dateInputClass =
   'min-h-[44px] sm:h-9 px-2.5 rounded-lg text-sm border border-border bg-card text-foreground focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-primary/20 min-w-[110px] sm:min-w-[120px] max-w-[150px] transition-all duration-200';
 
+/** 지역(경마장) 필터 옵션: 서울, 제주, 부산 */
+export const MEET_FILTER_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: '서울', label: '서울' },
+  { value: '제주', label: '제주' },
+  { value: '부산경남', label: '부산' },
+] as const;
+
 export interface FilterDateBarProps {
   /** 필터 옵션 (전체/오늘 등) */
   filterOptions: { value: string; label: string }[];
@@ -24,6 +32,12 @@ export interface FilterDateBarProps {
   dateLabel?: string;
   /** 고유 ID (한 페이지에 여러 개일 때) */
   dateId?: string;
+  /** 지역(경마장) 필터 표시 여부 */
+  showMeetFilter?: boolean;
+  /** 지역 필터 값 (서울/제주/부산경남) */
+  meetValue?: string;
+  /** 지역 필터 변경 */
+  onMeetChange?: (value: string) => void;
   className?: string;
   /** card 스타일 생략 (섹션 내 중첩 시 사용) */
   inline?: boolean;
@@ -38,36 +52,39 @@ export default function FilterDateBar({
   onDateChange,
   dateLabel = '날짜',
   dateId = 'filter-date',
+  showMeetFilter = false,
+  meetValue = '',
+  onMeetChange,
   className = '',
   inline = false,
 }: FilterDateBarProps) {
   const wrapClass = inline
     ? `flex flex-wrap gap-2 items-center mb-4 ${className}`.trim()
-    : `card p-4 mb-4 border-primary/10 flex flex-wrap gap-2 items-center ${className}`.trim();
+    : `card p-4 mb-4 border-slate-200 flex flex-wrap gap-2 items-center ${className}`.trim();
   return (
     <div className={wrapClass}>
+      <FilterChips options={filterOptions} value={filterValue} onChange={onFilterChange} />
+      {showDatePicker && onDateChange && (
+        <div className='flex items-center gap-1.5'>
+          <label htmlFor={dateId} className='text-text-secondary text-sm font-medium shrink-0'>
+            {dateLabel}
+          </label>
+          <input
+            id={dateId}
+            type='date'
+            value={dateValue}
+            onChange={(e) => onDateChange(e.target.value || '')}
+            className={dateInputClass}
+          />
+        </div>
+      )}
+      {showMeetFilter && onMeetChange && (
         <FilterChips
-          options={filterOptions}
-          value={filterValue}
-          onChange={onFilterChange}
+          options={[...MEET_FILTER_OPTIONS]}
+          value={meetValue}
+          onChange={onMeetChange}
         />
-        {showDatePicker && onDateChange && (
-          <div className='flex items-center gap-1.5'>
-            <label
-              htmlFor={dateId}
-              className='text-text-secondary text-sm font-medium shrink-0'
-            >
-              {dateLabel}
-            </label>
-            <input
-              id={dateId}
-              type='date'
-              value={dateValue}
-              onChange={(e) => onDateChange(e.target.value || '')}
-              className={dateInputClass}
-            />
-          </div>
-        )}
+      )}
     </div>
   );
 }

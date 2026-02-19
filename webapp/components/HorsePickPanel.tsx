@@ -92,7 +92,7 @@ export default function HorsePickPanel({
                 onClick={() => setPickType(t)}
                 className={`shrink-0 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all ${
                   isActive
-                    ? 'bg-primary/20 border border-primary/50 text-primary'
+                    ? 'bg-emerald-50 border border-emerald-200 text-emerald-700'
                     : 'bg-card border border-border text-text-secondary hover:border-border-gold'
                 }`}
               >
@@ -105,7 +105,7 @@ export default function HorsePickPanel({
       </div>
 
       {/* 선택 내역 — 항상 눈에 띄게 */}
-      <div className='shrink-0 mt-4 p-3 rounded-xl bg-primary/10 border border-primary/20'>
+      <div className='shrink-0 mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200'>
         <h4 className='text-foreground text-sm font-semibold mb-2 flex items-center gap-1.5'>
           <Icon name='CheckCircle' size={16} />
           내가 고른 말 ({selectedHorses.length}/{requiredCount})
@@ -118,7 +118,7 @@ export default function HorsePickPanel({
               {selectedHorses.map((h, i) => (
                 <span
                   key={`${h.hrNo}-${i}`}
-                  className='inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-primary/20 text-primary text-xs font-medium'
+                  className='inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-200 text-slate-700 text-xs font-medium'
                 >
                   {requiredCount > 1 && <span className='text-text-tertiary'>{i + 1}.</span>}
                   {h.hrName}
@@ -126,9 +126,9 @@ export default function HorsePickPanel({
               ))}
             </div>
             {canSave && (
-              <div className='mt-2 pt-2 border-t border-primary/20'>
+              <div className='mt-2 pt-2 border-t border-slate-200'>
                 {matchedOdds != null ? (
-                  <p className='text-primary font-semibold text-sm'>
+                  <p className='text-slate-700 font-semibold text-sm'>
                     {PICK_TYPE_LABELS[pickType]} 배율 {matchedOdds.toLocaleString()}원
                   </p>
                 ) : (dividends?.length ?? 0) > 0 ? (
@@ -156,12 +156,12 @@ export default function HorsePickPanel({
                 disabled={isSaving || isDeleting}
                 className={`w-full flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2 p-2.5 sm:p-2 rounded-xl border text-left transition-colors touch-manipulation ${
                   selected
-                    ? 'border-primary bg-primary/15 text-primary'
+                    ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
                     : 'border-border bg-card hover:border-border-gold'
                 }`}
               >
                 <div className='flex items-center gap-2 flex-1 min-w-0'>
-                  <span className='text-primary font-bold w-7 shrink-0'>{entry.chulNo ?? '-'}</span>
+                  <span className='text-slate-700 font-bold w-7 shrink-0'>{entry.chulNo ?? '-'}</span>
                   <span className='font-medium flex-1 truncate'>{entry.hrName}</span>
                   {selected && <Icon name='Check' size={14} className='shrink-0' />}
                 </div>
@@ -189,7 +189,7 @@ export default function HorsePickPanel({
               onSave();
             }}
             disabled={isSaving}
-            className='btn-primary flex-1 py-2 text-sm flex items-center justify-center gap-1.5'
+            className='btn-primary flex-1 py-1.5 text-sm flex items-center justify-center gap-1'
           >
             {isSaving ? (
               <>
@@ -205,7 +205,7 @@ export default function HorsePickPanel({
           <button
             onClick={onDelete}
             disabled={isDeleting}
-            className='btn-secondary py-2 px-4 text-sm flex items-center gap-1.5'
+            className='btn-secondary py-1.5 px-3 text-sm flex items-center gap-1'
           >
             <Icon name='Trash2' size={14} />
             삭제

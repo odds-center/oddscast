@@ -13,6 +13,7 @@ export declare class ResultsService {
                 meetName: string | null;
                 rcDate: string;
                 rcNo: string;
+                rcDist: string | null;
             };
             id: number;
             hrNo: string;
@@ -21,6 +22,7 @@ export declare class ResultsService {
             raceId: number;
             chulNo: string | null;
             ord: string | null;
+            rcTime: string | null;
         }[];
         total: number;
         page: number;

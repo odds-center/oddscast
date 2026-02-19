@@ -103,6 +103,7 @@ export class PredictionsController {
   @ApiOperation({ summary: '전문가 코멘트 피드' })
   getCommentary(
     @Query('date') date?: string,
+    @Query('meet') meet?: string,
     @Query('limit') limit?: string,
     @Query('offset') offset?: string,
   ) {
@@ -110,6 +111,7 @@ export class PredictionsController {
       date,
       limit ? parseInt(limit, 10) : 20,
       offset ? parseInt(offset, 10) : 0,
+      meet,
     );
   }
 

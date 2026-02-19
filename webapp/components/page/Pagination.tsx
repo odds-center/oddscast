@@ -13,8 +13,8 @@ const btnClass =
   'min-w-[2.25rem] h-9 px-2.5 rounded-lg bg-card border border-border hover:border-border-gold disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm transition-colors flex items-center justify-center';
 const pageBtnClass =
   'min-w-[2.25rem] h-9 px-2.5 rounded-lg border font-medium text-sm transition-colors flex items-center justify-center';
-const activeClass = 'bg-primary text-white border-primary';
-const inactiveClass = 'bg-card border-border hover:border-border-gold hover:bg-primary/5';
+const activeClass = 'bg-slate-700 text-white border-slate-700';
+const inactiveClass = 'bg-card border-border hover:border-slate-300 hover:bg-slate-50';
 
 function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) {

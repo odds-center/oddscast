@@ -15,6 +15,15 @@ export function formatDateTime(date: string | Date): string {
   return dayjs(date).format('YYYY.MM.DD HH:mm');
 }
 
+/** rcDate(YYYYMMDD)가 오늘 이전이면 true — 날짜 지난 경주는 종료로 간주 */
+export function isPastRaceDate(rcDate: string | null | undefined): boolean {
+  if (!rcDate || typeof rcDate !== 'string') return false;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return false;
+  const today = dayjs().format('YYYYMMDD');
+  return norm < today;
+}
+
 /** YYYYMMDD → YYYY-MM-DD */
 export function formatYyyyMmDd(s: string): string {
   if (!isString(s) || s.length < 8) return s;

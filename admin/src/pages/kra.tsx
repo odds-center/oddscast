@@ -35,7 +35,11 @@ export default function KraPage() {
       );
     }
   }, [dateFromQuery]);
-  const [histFrom, setHistFrom] = useState('2024-01-01');
+  const [histFrom, setHistFrom] = useState(() => {
+    const d = new Date();
+    d.setFullYear(d.getFullYear() - 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  });
   const [histTo, setHistTo] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -44,21 +48,25 @@ export default function KraPage() {
   const [logEndpointFilter, setLogEndpointFilter] = useState('');
 
   const syncScheduleMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncSchedule(toYyyyMmDd(date)),
-    onSuccess: () => {
+    mutationFn: (date?: string) =>
+      adminKraApi.syncSchedule(date ? toYyyyMmDd(date) : undefined),
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      toast.success('출전표 동기화 완료 (경주 + 출전마 정보)');
+      const msg = (res as { message?: string })?.message;
+      toast.success(msg ?? '출전표 동기화 완료 (경주 + 출전마 정보)');
     },
-    onError: (err: unknown) => toast.error( '동기화 실패'),
+    onError: (err: unknown) => toast.error('동기화 실패'),
   });
 
   const syncResultsMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncResults(toYyyyMmDd(date)),
-    onSuccess: () => {
+    mutationFn: (date?: string) =>
+      adminKraApi.syncResults(date ? toYyyyMmDd(date) : undefined),
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      toast.success('경주 결과 동기화 완료');
+      const msg = (res as { message?: string })?.message;
+      toast.success(msg ?? '경주 결과 동기화 완료');
     },
-    onError: (err: unknown) => toast.error( '동기화 실패'),
+    onError: (err: unknown) => toast.error('동기화 실패'),
   });
 
   const syncDetailsMutation = useMutation({
@@ -189,6 +197,20 @@ export default function KraPage() {
                 선택한 날짜의 경주 계획 + 출전마 적재
               </span>
             </div>
+            <div className='mt-3 flex flex-wrap items-center gap-3'>
+              <Button
+                variant='ghost'
+                onClick={() => syncScheduleMutation.mutate(undefined)}
+                disabled={syncScheduleMutation.isPending}
+                isLoading={syncScheduleMutation.isPending}
+              >
+                <AdminIcon icon={FileText} className='w-4 h-4 mr-1.5 inline' />
+                미래 스케줄 전체 적재
+              </Button>
+              <span className='text-sm text-gray-500'>
+                오늘부터 1년 내 금·토·일 경주 전체 출전표 적재
+              </span>
+            </div>
           </Card>
 
           {/* 기타 수동 동기화 */}
@@ -208,6 +230,15 @@ export default function KraPage() {
               >
                 <AdminIcon icon={Trophy} className='w-4 h-4 mr-1.5 inline' />
                 경주 결과
+              </Button>
+              <Button
+                variant='ghost'
+                onClick={() => syncResultsMutation.mutate(undefined)}
+                disabled={syncResultsMutation.isPending}
+                isLoading={syncResultsMutation.isPending}
+              >
+                <AdminIcon icon={Trophy} className='w-4 h-4 mr-1.5 inline' />
+                과거 1년 결과 적재
               </Button>
               <Button
                 variant='secondary'

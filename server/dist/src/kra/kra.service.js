@@ -112,6 +112,17 @@ let KraService = KraService_1 = class KraService {
         await this.fetchRaceResults(today);
         await this.syncAnalysisData(today);
     }
+    async syncPreviousDayResults() {
+        if (!this.ensureServiceKey())
+            return;
+        const yesterday = (0, dayjs_1.default)().subtract(1, 'day');
+        const day = yesterday.day();
+        if (day !== 0 && day !== 5 && day !== 6)
+            return;
+        const dateStr = this.formatYyyyMmDd(yesterday);
+        this.logger.log(`Running Previous Day Result Sync: ${dateStr}`);
+        await this.fetchRaceResults(dateStr);
+    }
     formatYyyyMmDd(d) {
         return d.format('YYYYMMDD');
     }
@@ -204,20 +215,27 @@ let KraService = KraService_1 = class KraService {
                         items = Array.isArray(rawItems) ? rawItems : [rawItems];
                     }
                 }
-                const totalCount = body?.totalCount != null ? Number(body.totalCount) : items.length;
-                if (totalCount > items.length && totalCount > 0) {
-                    for (let pageNo = 2; items.length < totalCount; pageNo++) {
-                        const nextRes = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
-                            params: { ...params, pageNo, numOfRows: 1000 },
-                        }));
-                        const raw = nextRes?.data?.response?.body?.items?.item;
-                        if (!raw)
-                            break;
-                        const arr = Array.isArray(raw) ? raw : [raw];
-                        items.push(...arr);
-                        if (arr.length < 1000)
-                            break;
-                    }
+                const numOfRows = 1000;
+                const totalCount = body?.totalCount != null ? Number(body.totalCount) : null;
+                let pageNo = 2;
+                for (;;) {
+                    const shouldFetchMore = totalCount != null
+                        ? totalCount > items.length && totalCount > 0
+                        : items.length >= numOfRows;
+                    if (!shouldFetchMore)
+                        break;
+                    const nextRes = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, {
+                        params: { ...params, pageNo, numOfRows },
+                    }));
+                    const nextBody = nextRes?.data?.response?.body;
+                    const raw = nextBody?.items?.item;
+                    if (!raw)
+                        break;
+                    const arr = Array.isArray(raw) ? raw : [raw];
+                    items.push(...arr);
+                    pageNo++;
+                    if (arr.length < numOfRows)
+                        break;
                 }
                 if (items.length === 0) {
                     this.logger.warn(`No entries found for meet ${meet.name} on ${date}`);
@@ -439,6 +457,39 @@ let KraService = KraService_1 = class KraService {
             }
         }
         return dates;
+    }
+    async syncUpcomingSchedules() {
+        if (!this.ensureServiceKey()) {
+            return {
+                message: 'KRA_SERVICE_KEY 미설정.',
+                races: 0,
+                entries: 0,
+                datesProcessed: 0,
+            };
+        }
+        const today = this.formatYyyyMmDd((0, dayjs_1.default)());
+        const oneYearLater = this.formatYyyyMmDd((0, dayjs_1.default)().add(1, 'year'));
+        const dates = this.getRaceDateRange(today, oneYearLater);
+        this.logger.log(`[syncUpcomingSchedules] ${dates.length}일(금·토·일) 출전표 적재: ${today} ~ ${oneYearLater}`);
+        let totalRaces = 0;
+        let totalEntries = 0;
+        for (const d of dates) {
+            try {
+                const res = await this.syncEntrySheet(d);
+                totalRaces += res.races ?? 0;
+                totalEntries += res.entries ?? 0;
+                await this.delay(300);
+            }
+            catch (err) {
+                this.logger.warn(`[syncUpcomingSchedules] ${d} 실패`, err);
+            }
+        }
+        return {
+            message: `미래 스케줄 적재 완료: ${dates.length}일, ${totalRaces}경주, ${totalEntries}출마`,
+            races: totalRaces,
+            entries: totalEntries,
+            datesProcessed: dates.length,
+        };
     }
     delay(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
@@ -722,6 +773,26 @@ let KraService = KraService_1 = class KraService {
         }
         if (failed500Meets.length > 0) {
             this.logger.warn(`KRA API 500 for ${date} (${failed500Meets.join(', ')}) - 해당 날짜 경주 없을 수 있음`);
+        }
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
+        const today = (0, dayjs_1.default)().format('YYYYMMDD');
+        if (normalizedDate < today) {
+            const updated = await this.prisma.race.updateMany({
+                where: {
+                    rcDate: normalizedDate,
+                    status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+                },
+                data: { status: 'COMPLETED' },
+            });
+            if (updated.count > 0) {
+                this.logger.log(`날짜 지난 경주 ${updated.count}건 COMPLETED 처리 (rcDate=${normalizedDate})`);
+                for (const r of await this.prisma.race.findMany({
+                    where: { rcDate: normalizedDate },
+                    select: { id: true },
+                })) {
+                    await this.cache.del(`race:${r.id}`);
+                }
+            }
         }
         return {
             message: `Synced ${totalResults} results for ${date}`,
@@ -1845,11 +1916,17 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], KraService.prototype, "syncRaceDayMorning", null);
 __decorate([
-    (0, schedule_1.Cron)('0,30 10-18 * * 5,6,0'),
+    (0, schedule_1.Cron)('0,30 10-19 * * 5,6,0'),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], KraService.prototype, "syncRealtimeResults", null);
+__decorate([
+    (0, schedule_1.Cron)('0 6 * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], KraService.prototype, "syncPreviousDayResults", null);
 exports.KraService = KraService = KraService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(4, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),

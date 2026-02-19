@@ -40,14 +40,22 @@ let AdminController = AdminController_1 = class AdminController {
         this.predictionTicketsService = predictionTicketsService;
     }
     async syncSchedule(date) {
-        const d = date?.replace(/-/g, '').slice(0, 8) ||
-            new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        return this.kraService.syncEntrySheet(d);
+        const norm = (s) => s.replace(/-/g, '').slice(0, 8);
+        if (date && norm(date)) {
+            return this.kraService.syncEntrySheet(norm(date));
+        }
+        return this.kraService.syncUpcomingSchedules();
     }
     async syncResults(date) {
-        const d = date?.replace(/-/g, '').slice(0, 8) ||
-            new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        return this.kraService.fetchRaceResults(d);
+        const norm = (s) => s.replace(/-/g, '').slice(0, 8);
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        if (date && norm(date)) {
+            return this.kraService.fetchRaceResults(norm(date));
+        }
+        const oneYearAgo = new Date();
+        oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+        const dateFrom = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, '');
+        return this.kraService.syncHistoricalBackfill(dateFrom, today);
     }
     async syncDetails(date) {
         const d = date?.replace(/-/g, '').slice(0, 8) ||
@@ -459,33 +467,32 @@ let AdminController = AdminController_1 = class AdminController {
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, count]) => ({ date, count }));
     }
-    async getBetsTrend(days) {
+    async getTicketUsageTrend(days) {
         const d = Math.min(90, Math.max(7, Number(days) || 30));
         const start = new Date();
         start.setDate(start.getDate() - d);
         start.setHours(0, 0, 0, 0);
-        const bets = await this.prisma.bet.findMany({
-            where: { betTime: { gte: start } },
-            select: { betAmount: true, actualWin: true, betTime: true },
+        const tickets = await this.prisma.predictionTicket.findMany({
+            where: { status: 'USED', usedAt: { gte: start } },
+            select: { usedAt: true },
         });
         const byDate = {};
         for (let i = 0; i < d; i++) {
             const dt = new Date(start);
             dt.setDate(dt.getDate() + i);
             const key = dt.toISOString().slice(0, 10);
-            byDate[key] = { count: 0, amount: 0, winAmount: 0 };
+            byDate[key] = 0;
         }
-        bets.forEach((b) => {
-            const key = b.betTime.toISOString().slice(0, 10);
-            if (byDate[key]) {
-                byDate[key].count++;
-                byDate[key].amount += b.betAmount ?? 0;
-                byDate[key].winAmount += b.actualWin ?? 0;
+        tickets.forEach((t) => {
+            if (t.usedAt) {
+                const key = t.usedAt.toISOString().slice(0, 10);
+                if (byDate[key] != null)
+                    byDate[key]++;
             }
         });
         return Object.entries(byDate)
             .sort(([a], [b]) => a.localeCompare(b))
-            .map(([date, v]) => ({ date, ...v }));
+            .map(([date, count]) => ({ date, count }));
     }
 };
 exports.AdminController = AdminController;
@@ -502,7 +509,10 @@ AdminController.MODEL_COST = {
 AdminController.RACES_PER_MONTH = 50;
 __decorate([
     (0, common_1.Post)('kra/sync/schedule'),
-    (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 경주 계획/출전표 동기화' }),
+    (0, swagger_1.ApiOperation)({
+        summary: '[Admin] KRA 경주 계획/출전표 동기화',
+        description: 'date 미지정 시 오늘부터 1년 내 미래 경주일(금·토·일) 전체 적재. date 지정 시 해당 날짜만 적재.',
+    }),
     __param(0, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -510,7 +520,10 @@ __decorate([
 ], AdminController.prototype, "syncSchedule", null);
 __decorate([
     (0, common_1.Post)('kra/sync/results'),
-    (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 경주 결과 동기화' }),
+    (0, swagger_1.ApiOperation)({
+        summary: '[Admin] KRA 경주 결과 동기화',
+        description: 'date 미지정 시 오늘 기준 과거 1년(금·토·일 경주일만) 적재. date 지정 시 해당 날짜만 적재.',
+    }),
     __param(0, (0, common_1.Query)('date')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [String]),
@@ -790,13 +803,13 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getUsersGrowth", null);
 __decorate([
-    (0, common_1.Get)('statistics/bets-trend'),
-    (0, swagger_1.ApiOperation)({ summary: '[Admin] 마권 트렌드' }),
+    (0, common_1.Get)('statistics/ticket-usage-trend'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] 예측권 사용량 추이' }),
     __param(0, (0, common_1.Query)('days')),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
-], AdminController.prototype, "getBetsTrend", null);
+], AdminController.prototype, "getTicketUsageTrend", null);
 exports.AdminController = AdminController = AdminController_1 = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, common_1.Controller)('admin'),

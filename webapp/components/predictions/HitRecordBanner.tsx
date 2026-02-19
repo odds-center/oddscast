@@ -13,10 +13,10 @@ export default function HitRecordBanner({ records }: HitRecordBannerProps) {
   if (!records.length) return null;
 
   return (
-    <div className='rounded-xl border border-primary/30 bg-primary/5 overflow-hidden mb-4'>
+    <div className='rounded-xl border border-slate-200 bg-slate-50 overflow-hidden mb-4'>
       <div className='flex items-center gap-2 px-4 py-2.5 border-b border-border'>
-        <Icon name='Trophy' size={18} className='text-primary shrink-0' />
-        <span className='font-bold text-primary text-sm'>적중 내역</span>
+        <Icon name='Trophy' size={18} className='text-slate-600 shrink-0' />
+        <span className='font-bold text-slate-800 text-sm'>적중 내역</span>
       </div>
       <div className='divide-y divide-border'>
         {records.map((r) => (

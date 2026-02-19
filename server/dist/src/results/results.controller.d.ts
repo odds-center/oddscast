@@ -10,6 +10,7 @@ export declare class ResultsController {
                 meetName: string | null;
                 rcDate: string;
                 rcNo: string;
+                rcDist: string | null;
             };
             id: number;
             hrNo: string;
@@ -18,6 +19,7 @@ export declare class ResultsController {
             raceId: number;
             chulNo: string | null;
             ord: string | null;
+            rcTime: string | null;
         }[];
         total: number;
         page: number;

@@ -27,7 +27,7 @@ export class ResultsService {
     const where: Prisma.RaceResultWhereInput = {};
     if (date || meet) {
       where.race = {
-        ...(date && { rcDate: date }),
+        ...(date && { rcDate: String(date).replace(/-/g, '').slice(0, 8) }),
         ...(meet && { meet: toKraMeetName(meet) }),
       };
     }
@@ -43,13 +43,14 @@ export class ResultsService {
           hrNo: true,
           hrName: true,
           jkName: true,
+          rcTime: true,
           race: {
-            select: { meet: true, meetName: true, rcNo: true, rcDate: true },
+            select: { meet: true, meetName: true, rcNo: true, rcDate: true, rcDist: true },
           },
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: [{ race: { rcDate: 'desc' } }, { ordInt: 'asc' }, { ord: 'asc' }],
       }),
       this.prisma.raceResult.count({ where }),
     ]);

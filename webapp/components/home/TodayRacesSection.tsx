@@ -16,7 +16,7 @@ export default function TodayRacesSection() {
     queryKey: ['races', 'today'],
     queryFn: async () => {
       const res = await RaceApi.getRaces({
-        limit: 8,
+        limit: 12,
         page: 1,
         date: 'today',
       });
@@ -58,7 +58,7 @@ export default function TodayRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-primary font-semibold hover:underline'
+                  className='text-slate-700 font-semibold hover:underline'
                 >
                   {row.rcNo}R
                 </Link>
@@ -77,7 +77,7 @@ export default function TodayRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-primary hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-slate-700 hover:underline'>
                   {row.rcDist ? `${row.rcDist}M` : '-'}
                 </Link>
               ),
@@ -109,7 +109,7 @@ export default function TodayRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <StatusBadge status={row.status ?? row.raceStatus ?? ''} />
+                <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} />
               ),
             },
             {
@@ -120,7 +120,7 @@ export default function TodayRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-primary text-sm font-medium hover:underline'
+                  className='text-slate-700 text-sm font-medium hover:underline'
                 >
                   보기
                 </Link>

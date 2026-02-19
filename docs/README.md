@@ -18,6 +18,7 @@
 ### 📦 Features (기능 명세)
 
 - [`UI_PATTERNS.md`](features/UI_PATTERNS.md) — **공용 UI 패턴** (테이블, 페이지네이션, TabBar, LinkBadge, FilterDateBar 등)
+- [`RACE_DETAIL_UI_SPEC.md`](features/RACE_DETAIL_UI_SPEC.md) — **경주 상세 UI** (헤더, 결과 테이블, 배당, TabBar)
 - [`NOTIFICATION_SETTINGS.md`](features/NOTIFICATION_SETTINGS.md) — 알림 설정 (플랫폼별 푸시, 플래그 구조)
 - [`POINT_PICK_SYSTEM.md`](features/POINT_PICK_SYSTEM.md) — 포인트·승식 시스템
 
@@ -49,7 +50,8 @@
 - [`WEBAPP_README.md`](guides/WEBAPP_README.md) — WebApp 요약 (테마, 환경변수, 라우트)
 - [`ADMIN_GUIDE.md`](guides/ADMIN_GUIDE.md) — Admin 대시보드 가이드
 - [`MOBILE_GUIDE.md`](guides/MOBILE_GUIDE.md) — Mobile (WebView) 앱 가이드
-- [`GOOGLE_AUTH_SETUP.md`](guides/authentication/GOOGLE_AUTH_SETUP.md) — Google 로그인 설정
+- [`GOOGLE_OAUTH_SETUP.md`](guides/GOOGLE_OAUTH_SETUP.md) — Google OAuth 로그인 설정 (Web + 신규/기존 회원 자동 처리)
+- [`guides/authentication/GOOGLE_AUTH_SETUP.md`](guides/authentication/GOOGLE_AUTH_SETUP.md) — Mobile WebView ↔ Native 구글 로그인 흐름
 
 ### 📦 Legacy (참고용)
 

@@ -78,6 +78,7 @@ export default function Register() {
                 onError={(msg) => setError('root', { message: msg })}
                 theme='outline'
                 size='large'
+                text='continue_with'
               />
             </div>
             <div className='relative my-4'>

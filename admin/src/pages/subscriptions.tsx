@@ -143,8 +143,8 @@ export default function SubscriptionsPage() {
                           <span className='text-gray-600'>할인율</span>
                           <span className='font-medium text-green-600'>
                             {Math.round(
-                              ((plan.totalTickets * 1100 - plan.totalPrice) /
-                                (plan.totalTickets * 1100)) *
+                              ((plan.totalTickets * 550 - plan.totalPrice) /
+                                (plan.totalTickets * 550)) *
                                 100
                             )}
                             %

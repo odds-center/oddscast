@@ -15,7 +15,7 @@ interface LinkBadgeProps {
 }
 
 const linkBadgeClass =
-  'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-primary/15 border border-primary/30 text-primary font-semibold hover:bg-primary/25 transition-colors';
+  'inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 border border-slate-200 text-slate-700 font-semibold hover:bg-slate-200 transition-colors';
 
 export default function LinkBadge({
   href,

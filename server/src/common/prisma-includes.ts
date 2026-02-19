@@ -19,7 +19,7 @@ export const RACE_INCLUDE_ENTRIES_ACTIVE: Prisma.RaceInclude = {
   },
 };
 
-/** 경주 + 출전마 + 결과 + 예측 — 상세 조회용 (렌더링 필수 필드만) */
+/** 경주 + 출전마 + 결과 + 예측 — 상세 조회용 (렌더링 필수 필드 + 통계) */
 export const RACE_INCLUDE_FULL: Prisma.RaceInclude = {
   entries: {
     select: {
@@ -32,17 +32,34 @@ export const RACE_INCLUDE_FULL: Prisma.RaceInclude = {
       wgBudam: true,
       horseWeight: true,
       trName: true,
+      rating: true,
+      sex: true,
+      age: true,
+      prd: true,
+      rcCntT: true,
+      ord1CntT: true,
+      recentRanks: true,
+      equipment: true,
+      budam: true,
+      owName: true,
     },
   },
   results: {
     select: {
       id: true,
       ord: true,
+      ordType: true,
       chulNo: true,
       hrNo: true,
       hrName: true,
       jkName: true,
+      trName: true,
+      wgBudam: true,
+      wgHr: true,
       rcTime: true,
+      diffUnit: true,
+      winOdds: true,
+      plcOdds: true,
     },
   },
   predictions: {

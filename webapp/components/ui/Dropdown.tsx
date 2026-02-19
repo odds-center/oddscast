@@ -59,7 +59,7 @@ export default function Dropdown<T extends string | number>({
         disabled={disabled}
         aria-haspopup='listbox'
         aria-expanded={open}
-        className='dropdown-trigger w-full flex items-center justify-between gap-2 px-4 py-3 min-h-[48px] rounded-xl bg-card border border-border text-foreground text-base font-medium touch-manipulation transition-colors hover:border-border-gold focus:outline-none focus:border-primary/50 focus:ring-2 focus:ring-primary/20 disabled:opacity-50 disabled:cursor-not-allowed'
+        className='dropdown-trigger w-full flex items-center justify-between gap-2 px-4 py-3 min-h-[48px] rounded-xl bg-card border border-border text-foreground text-base font-medium touch-manipulation transition-colors hover:border-slate-300 focus:outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200 disabled:opacity-50 disabled:cursor-not-allowed'
       >
         <span className='truncate'>{displayText}</span>
         <Icon
@@ -91,12 +91,12 @@ export default function Dropdown<T extends string | number>({
                 tabIndex={0}
                 className={`dropdown-option flex items-center justify-between gap-2 px-4 py-3 cursor-pointer transition-colors touch-manipulation ${
                   isSelected
-                    ? 'bg-primary/20 text-primary font-medium'
-                    : 'text-foreground hover:bg-primary/10'
+                    ? 'bg-slate-100 text-slate-800 font-medium'
+                    : 'text-foreground hover:bg-slate-50'
                 }`}
               >
                 <span>{opt.label}</span>
-                {isSelected && <Icon name='Check' size={16} className='shrink-0 text-primary' />}
+                {isSelected && <Icon name='Check' size={16} className='shrink-0 text-slate-600' />}
               </li>
             );
           })}

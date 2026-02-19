@@ -19,6 +19,7 @@ export default function SettingsPage() {
               { href: routes.settingsNotifications, icon: 'Bell', label: '알림 설정' },
               { href: routes.legal.terms, icon: 'AlertCircle', label: '이용약관' },
               { href: routes.legal.privacy, icon: 'AlertCircle', label: '개인정보처리방침' },
+              { href: routes.legal.refund, icon: 'CreditCard', label: '환불 및 결제 정책' },
             ]}
             className='mb-4'
           />
@@ -33,6 +34,7 @@ export default function SettingsPage() {
               items={[
                 { href: routes.legal.terms, icon: 'AlertCircle', label: '이용약관' },
                 { href: routes.legal.privacy, icon: 'AlertCircle', label: '개인정보처리방침' },
+                { href: routes.legal.refund, icon: 'CreditCard', label: '환불 및 결제 정책' },
               ]}
               className='mb-4'
             />

@@ -24,7 +24,7 @@ export declare class AdminController {
     syncResults(date?: string): Promise<{
         message: string;
         totalResults?: number;
-    }>;
+    } | undefined>;
     syncDetails(date?: string): Promise<{
         message: string;
     }>;
@@ -478,10 +478,8 @@ export declare class AdminController {
         date: string;
         count: number;
     }[]>;
-    getBetsTrend(days?: number): Promise<{
-        count: number;
-        amount: number;
-        winAmount: number;
+    getTicketUsageTrend(days?: number): Promise<{
         date: string;
+        count: number;
     }[]>;
 }

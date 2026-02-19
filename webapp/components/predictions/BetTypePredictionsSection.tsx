@@ -28,6 +28,8 @@ interface BetTypePredictionsSectionProps {
   betTypePredictions?: BetTypePredictions | null;
   horseScores?: PredictionHorseScore[];
   entries: Entry[];
+  /** true: 단승식만 표시 (무료 요약용, 예측권 유인) */
+  showOnlySingle?: boolean;
 }
 
 /** 출주번호(마번)만 반환 — chulNo 우선, 없으면 hrNo(2자 이내) */
@@ -164,6 +166,7 @@ export default function BetTypePredictionsSection({
   betTypePredictions,
   horseScores,
   entries,
+  showOnlySingle = false,
 }: BetTypePredictionsSectionProps) {
   const derived =
     horseScores?.length || entries.length
@@ -179,7 +182,10 @@ export default function BetTypePredictionsSection({
     TRIPLE: betTypePredictions?.TRIPLE ?? derived.TRIPLE,
   };
 
-  const items = BET_TYPE_ORDER.map((key) => {
+  const orderToShow: (keyof BetTypePredictions)[] = showOnlySingle
+    ? ['SINGLE']
+    : BET_TYPE_ORDER;
+  const items = orderToShow.map((key) => {
     const pred = merged[key];
     const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
     return {
@@ -191,15 +197,15 @@ export default function BetTypePredictionsSection({
   });
 
   return (
-    <div className='pb-4 border-b border-border'>
-      <p className='text-text-secondary text-xs font-medium mb-3'>승식별 AI 추천</p>
-      <div className='data-table-wrapper -mx-2 sm:mx-0 overflow-x-auto'>
+    <div className='py-3'>
+      <p className='text-text-secondary text-xs font-medium mb-2'>승식별 AI 추천</p>
+      <div className='data-table-wrapper -mx-2 sm:mx-0 overflow-x-auto rounded-lg border border-border'>
         <table className='data-table data-table-compact w-full min-w-[320px]'>
           <thead>
             <tr>
-              <th className='w-20 text-left py-2'>승식</th>
-              <th className='min-w-[140px] text-left py-2'>선택/조합</th>
-              <th className='text-left py-2'>표시 예</th>
+              <th className='w-20 text-left py-2.5'>승식</th>
+              <th className='min-w-[120px] text-left py-2.5'>선택/조합</th>
+              <th className='text-left py-2.5'>추천</th>
             </tr>
           </thead>
           <tbody>
@@ -214,7 +220,7 @@ export default function BetTypePredictionsSection({
                         <span key={comboIdx} className='inline-flex items-center gap-1'>
                           {nodes.numbers.map((num, i) => (
                             <span key={i} className='flex items-center gap-0.5'>
-                              <span className='inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-primary/15 text-primary font-bold text-sm'>
+                              <span className='inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded-md bg-slate-100 text-slate-700 font-bold text-sm'>
                                 {num}
                               </span>
                               {i < nodes.numbers.length - 1 &&

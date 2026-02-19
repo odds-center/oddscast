@@ -10,7 +10,7 @@ import Button from '@/components/common/Button';
 import Modal from '@/components/common/Modal';
 import PageHeader from '@/components/common/PageHeader';
 import { adminRacesApi, adminKraApi } from '@/lib/api/admin';
-import { formatDate } from '@/lib/utils';
+import { formatDate, isPastRaceDate } from '@/lib/utils';
 
 interface RaceData {
   id: string;
@@ -24,9 +24,18 @@ interface RaceData {
   status?: string;
 }
 
+const MEET_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: '서울', label: '서울' },
+  { value: '제주', label: '제주' },
+  { value: '부산경남', label: '부산' },
+] as const;
+
 export default function RacesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [meetFilter, setMeetFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('');
   const [selectedRace, setSelectedRace] = useState<RaceData | null>(null);
   const [syncDate, setSyncDate] = useState(() => {
     const d = new Date();
@@ -96,10 +105,16 @@ export default function RacesPage() {
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-races', page],
-    queryFn: () => adminRacesApi.getAll({ page, limit: 20 }),
-    placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
-    staleTime: 2 * 60 * 1000, // 2분
+    queryKey: ['admin-races', page, meetFilter, dateFilter],
+    queryFn: () =>
+      adminRacesApi.getAll({
+        page,
+        limit: 20,
+        ...(meetFilter && { meet: meetFilter }),
+        ...(dateFilter && { date: dateFilter.replace(/-/g, '') }),
+      }),
+    placeholderData: (previousData) => previousData,
+    staleTime: 2 * 60 * 1000,
   });
 
   const columns = [
@@ -153,14 +168,18 @@ export default function RacesPage() {
           COMPLETED: '완료',
           CANCELLED: '취소',
         };
-        const key = (race.status || '').toUpperCase().replace(/-/g, '_');
+        const effectiveStatus =
+          race.rcDate != null && isPastRaceDate(race.rcDate) && race.status !== 'CANCELLED'
+            ? 'COMPLETED'
+            : (race.status || '');
+        const key = effectiveStatus.toUpperCase().replace(/-/g, '_');
         return (
           <span
             className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
               statusColors[key] || 'bg-gray-100 text-gray-800'
             }`}
           >
-            {statusLabels[key] || race.status || '-'}
+            {statusLabels[key] || effectiveStatus || '-'}
           </span>
         );
       },
@@ -187,8 +206,41 @@ export default function RacesPage() {
         <div className='space-y-4'>
           <PageHeader
             title='경주 관리'
-            description='경주 일정과 정보를 관리할 수 있습니다.'
+            description='경주 일정과 정보를 관리할 수 있습니다. (최신날짜순, 지역 필터)'
           />
+          <Card title='필터' className='mb-4'>
+            <div className='flex flex-wrap items-end gap-3'>
+              <div className='flex flex-col'>
+                <label className='mb-1 block text-xs font-medium text-gray-500'>지역</label>
+                <select
+                  value={meetFilter}
+                  onChange={(e) => {
+                    setMeetFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className='h-9 min-w-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                >
+                  {MEET_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className='flex flex-col'>
+                <label className='mb-1 block text-xs font-medium text-gray-500'>날짜</label>
+                <input
+                  type='date'
+                  value={dateFilter}
+                  onChange={(e) => {
+                    setDateFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className='h-9 min-w-[140px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                />
+              </div>
+            </div>
+          </Card>
 
           {/* KRA 동기화 */}
           <Card>

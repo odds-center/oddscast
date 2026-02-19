@@ -9,6 +9,7 @@ export interface Top3Item {
   hrNo: string;
   hrName: string;
   jkName: string;
+  rcTime?: string;
 }
 
 export interface ResultCardProps {
@@ -17,33 +18,42 @@ export interface ResultCardProps {
   meetName?: string;
   rcNo?: string;
   rcDate?: string;
+  rcDist?: string;
   top3: Top3Item[];
 }
 
 const RANK_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  '1': { bg: 'bg-primary/15', text: 'text-primary', border: 'border-primary/35' },
+  '1': { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200' },
   '2': { bg: 'bg-[#c0c0c5]/12', text: 'text-[#c0c0c5]', border: 'border-[#c0c0c5]/25' },
   '3': { bg: 'bg-[#cd7f32]/12', text: 'text-[#cd7f32]', border: 'border-[#cd7f32]/25' },
 };
 
-export default function ResultCard({ meetName, rcNo, rcDate, top3, raceId, id }: ResultCardProps) {
+export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceId, id }: ResultCardProps) {
   const linkId = raceId ?? id ?? '';
+  const firstPlace = top3.find((p) => p.ord === '1');
+  const winTime = firstPlace?.rcTime;
 
   return (
     <Link
       href={routes.races.detail(linkId)}
       className='block group touch-manipulation'
     >
-      <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-primary h-full'>
+      <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-slate-400 h-full'>
         {/* 경주 정보 */}
         <div className='flex items-center gap-3 min-w-0'>
-          <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-primary/10 border border-primary/25 shrink-0'>
-            <Icon name='Trophy' size={16} className='text-primary/90 mb-0.5' strokeWidth={2} />
-            <span className='font-display font-bold text-sm text-primary'>{rcNo}경</span>
+          <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-slate-100 border border-slate-200 shrink-0'>
+            <Icon name='Trophy' size={16} className='text-slate-500 mb-0.5' strokeWidth={2} />
+            <span className='font-display font-bold text-sm text-slate-700'>{rcNo}경</span>
             <span className='text-text-tertiary text-[12px] mt-0.5 truncate max-w-full'>{meetName}</span>
           </div>
-          <div className='flex-1 min-w-0'>
-            <span className='text-text-secondary text-sm'>{formatRcDate(rcDate)}</span>
+          <div className='flex-1 min-w-0 space-y-0.5'>
+            <span className='text-text-secondary text-sm block'>{formatRcDate(rcDate)}</span>
+            {(rcDist || winTime) && (
+              <span className='text-text-tertiary text-xs flex items-center gap-2'>
+                {rcDist && <span>{rcDist}m</span>}
+                {winTime && <span className='font-mono'>{winTime}</span>}
+              </span>
+            )}
           </div>
         </div>
 
@@ -80,7 +90,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, top3, raceId, id }:
         </div>
 
         <div className='flex justify-end'>
-          <Icon name='ChevronRight' size={18} className='text-text-tertiary shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-primary transition-all' />
+          <Icon name='ChevronRight' size={18} className='text-text-tertiary shrink-0 opacity-60 group-hover:opacity-100 group-hover:text-slate-600 transition-all' />
         </div>
       </div>
     </Link>

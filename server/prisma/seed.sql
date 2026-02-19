@@ -24,11 +24,11 @@ INSERT INTO "point_ticket_prices" ("pointsPerTicket", "isActive", "effectiveFrom
 SELECT 1200, true, NOW(), NULL, NOW(), NOW()
 WHERE NOT EXISTS (SELECT 1 FROM "point_ticket_prices" LIMIT 1);
 
--- SubscriptionPlan (라이트 / 스탠다드 / 프리미엄)
+-- SubscriptionPlan (라이트 / 스탠다드 / 프리미엄) — 1장=500원 기준
 INSERT INTO "subscription_plans" ("planName", "displayName", "description", "originalPrice", "vat", "totalPrice", "baseTickets", "bonusTickets", "totalTickets", "isActive", "sortOrder", "createdAt", "updatedAt") VALUES
-('LIGHT', '라이트', '월 5장 예측권', 9900, 990, 10890, 5, 0, 5, true, 1, NOW(), NOW()),
-('STANDARD', '스탠다드', '월 10장 예측권', 14900, 1490, 16390, 10, 0, 10, true, 2, NOW(), NOW()),
-('PREMIUM', '프리미엄', '월 18장 예측권 (15+3 보너스)', 19900, 1990, 21890, 15, 3, 18, true, 3, NOW(), NOW())
+('LIGHT', '라이트', '월 10장 예측권 (입문)', 4455, 445, 4900, 10, 0, 10, true, 1, NOW(), NOW()),
+('STANDARD', '스탠다드', '월 20장 예측권 (일반)', 9000, 900, 9900, 20, 0, 20, true, 2, NOW(), NOW()),
+('PREMIUM', '프리미엄', '월 30장 예측권 (27+3 보너스, 헤비)', 13545, 1355, 14900, 27, 3, 30, true, 3, NOW(), NOW())
 ON CONFLICT ("planName") DO UPDATE SET
   "displayName" = EXCLUDED."displayName",
   "description" = EXCLUDED."description",
@@ -41,9 +41,10 @@ ON CONFLICT ("planName") DO UPDATE SET
   "sortOrder" = EXCLUDED."sortOrder",
   "updatedAt" = NOW();
 
--- GlobalConfig (기능 플래그)
+-- GlobalConfig (기능 플래그, 개별 구매 설정)
 INSERT INTO "global_config" ("key", "value", "updatedAt") VALUES
-('show_google_login', 'true', NOW())
+('show_google_login', 'true', NOW()),
+('single_purchase_config', '{"id":"default","configName":"single_purchase","displayName":"예측권 개별 구매","description":"1장 단위 예측권 구매","originalPrice":500,"vat":50,"totalPrice":550,"isActive":true}', NOW())
 ON CONFLICT ("key") DO UPDATE SET "value" = EXCLUDED."value", "updatedAt" = NOW();
 
 -- AdminUser (아이디: admin / 비밀번호: admin1234) — Node bcrypt 해시 사용

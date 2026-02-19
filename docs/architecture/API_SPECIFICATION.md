@@ -142,6 +142,21 @@ CreateRaceDto { raceName?, meet, meetName?, rcDate, rcNo, rcDist?, rcGrade?, rcC
 CreateRaceEntryDto { hrNo, hrName, jkName, trName?, owName?, weight?, recentRanks? }
 ```
 
+### 경주 결과 응답 (`GET /races/:id/results`)
+
+```typescript
+RaceResultDto[] {
+  id, raceId, ord, ordType?, chulNo?, hrNo, hrName, jkName?, trName?,
+  wgBudam?, wgHr?, rcTime?, diffUnit?,  // 착차
+  winOdds?, plcOdds?                    // 단승/복승 배당율
+}
+```
+
+### 구글 로그인 동작
+
+- **신규**: 이메일·이름·프로필 이미지로 자동 회원가입
+- **기존**: 즉시 로그인, avatar 갱신
+
 ---
 
 ## 3. Results (결과) — `/api/results`
@@ -164,6 +179,11 @@ CreateRaceEntryDto { hrNo, hrName, jkName, trName?, owName?, weight?, recentRank
 | `PUT`    | `/results/:id`              | 결과 수정               | 🔐   |
 | `DELETE` | `/results/:id`              | 결과 삭제               | 🔐   |
 
+### 결과 목록 응답 (`GET /results`)
+
+- **race**: meetName, rcNo, rcDate, **rcDist**
+- **결과 항목**: ord, chulNo, hrNo, hrName, jkName, **rcTime** (1위 기록)
+
 ---
 
 ## 4. Predictions (AI 예측) — `/api/predictions`
@@ -183,6 +203,9 @@ CreateRaceEntryDto { hrNo, hrName, jkName, trName?, owName?, weight?, recentRank
 | `GET`   | `/predictions/race/:raceId`          | 경주별 예측           | 🔓   |
 | `GET`   | `/predictions/race/:raceId/preview`  | 예측 미리보기 (무료, 검수 통과만) | 🔓   |
 | `GET`   | `/predictions/preview/:raceId`       | 예측 미리보기 (alias) | 🔓   |
+| `GET`   | `/predictions/matrix`                | 종합 예상 매트릭스    | 🔓   | date, meet |
+| `GET`   | `/predictions/commentary`            | AI 코멘트 피드        | 🔓   | date, meet, limit, offset |
+| `GET`   | `/predictions/hit-record`            | 적중 내역 배너        | 🔓   | limit |
 | `GET`   | `/predictions/:id`                   | 예측 상세             | 🔓   |
 | `POST`  | `/predictions`                       | 예측 생성             | 🔐   |
 | `PATCH` | `/predictions/:id/status`            | 예측 상태 변경        | 🔐   |
@@ -476,7 +499,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `GET`  | `/admin/statistics/dashboard` | 대시보드 통계          | 🔐 Admin    |
 | `GET`  | `/admin/statistics/revenue`   | 수익 통계              | 🔐 Admin    |
 | `GET`  | `/admin/statistics/users-growth` | 사용자 증가 추이   | 🔐 Admin    |
-| `GET`  | `/admin/statistics/bets-trend` | 마권 트렌드         | 🔐 Admin    |
+| `GET`  | `/admin/statistics/ticket-usage-trend` | 예측권 사용량 추이 | 🔐 Admin    |
 | `GET`  | `/admin/ai/estimate-cost`      | AI 예상 비용        | 🔐 Admin    |
 
 ---

@@ -10,16 +10,23 @@ import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 import { formatRcDate } from '@/lib/utils/format';
 
+interface GroupedResult {
+  ord: string;
+  hrName: string;
+  jkName: string;
+  rcTime?: string;
+}
+
 interface GroupedRace {
   raceId: string;
   meetName: string;
   rcNo: string;
   rcDate: string;
-  results: { ord: string; hrName: string; jkName: string }[];
+  results: GroupedResult[];
 }
 
 function groupResults(raw: RaceResult[]): GroupedRace[] {
-  const byRace = new Map<string, { meetName: string; rcNo: string; rcDate: string; results: { ord: string; hrName: string; jkName: string }[] }>();
+  const byRace = new Map<string, { meetName: string; rcNo: string; rcDate: string; results: GroupedResult[] }>();
 
   for (const r of raw) {
     const ord = parseInt(r.ord ?? '99', 10) || 99;
@@ -43,6 +50,7 @@ function groupResults(raw: RaceResult[]): GroupedRace[] {
       ord: r.ord ?? String(ord),
       hrName: r.hrName ?? '-',
       jkName: r.jkName ?? '-',
+      rcTime: (r as { rcTime?: string }).rcTime,
     });
   }
 
@@ -64,7 +72,7 @@ export default function RecentResultsSection() {
     queryKey: ['results', 'recent'],
     queryFn: () =>
       ResultApi.getResults({
-        limit: 30,
+        limit: 60,
         page: 1,
       }),
   });
@@ -95,12 +103,12 @@ export default function RecentResultsSection() {
               </tr>
             </thead>
             <tbody>
-              {grouped.slice(0, 3).map((row) => (
+              {grouped.slice(0, 6).map((row) => (
                 <tr key={row.raceId}>
                   <td>
                     <Link
                       href={routes.resultsDetail(row.raceId)}
-                      className='font-medium text-primary hover:text-primary-dark'
+                      className='font-medium text-slate-700 hover:text-slate-900 hover:underline'
                     >
                       {row.meetName} {row.rcNo}경
                     </Link>
@@ -114,6 +122,9 @@ export default function RecentResultsSection() {
                           <span>
                             <span className='font-medium'>{r.hrName}</span>
                             <span className='text-text-secondary'> ({r.jkName})</span>
+                            {ord === '1' && r.rcTime && (
+                              <span className='block text-xs text-text-tertiary font-mono mt-0.5'>{r.rcTime}</span>
+                            )}
                           </span>
                         ) : (
                           <span className='text-text-tertiary'>-</span>

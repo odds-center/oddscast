@@ -59,7 +59,7 @@ export interface RaceResultDto {
   raceId: number;
   ord?: string;
   ordInt?: number;
-  ordType?: string | null; // NORMAL|FALL|DQ|WITHDRAWN. accuracy 계산 시 NORMAL/null만 포함
+  ordType?: string | null; // NORMAL|FALL|DQ|WITHDRAWN
   hrNo: string;
   hrName: string;
   chulNo?: string;
@@ -67,7 +67,11 @@ export interface RaceResultDto {
   trName?: string;
   owName?: string;
   wgBudam?: number;
+  wgHr?: string; // 마체감량 (e.g. 502(-2))
   rcTime?: string;
+  diffUnit?: string; // 착차
+  winOdds?: number; // 단승식배당율
+  plcOdds?: number; // 복승식배당율
   chaksun1?: number;
   track?: string;
   weather?: string;

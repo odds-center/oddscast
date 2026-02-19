@@ -11,7 +11,7 @@ export default function BackLink({ href, label, className = '' }: BackLinkProps)
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-2 py-2 mt-6 min-h-[44px] text-primary font-medium text-sm hover:text-primary/90 transition-colors touch-manipulation ${className}`}
+      className={`inline-flex items-center gap-1.5 py-1.5 mt-6 text-slate-700 font-medium text-sm hover:text-slate-900 hover:underline transition-colors touch-manipulation ${className}`}
     >
       <Icon name='ChevronLeft' size={18} strokeWidth={2.5} />
       {label}

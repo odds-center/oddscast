@@ -94,7 +94,7 @@ export default function NotificationsPage() {
                   <Card
                     key={n.id}
                     variant={isUnread ? 'accent' : 'default'}
-                    className={`py-4 ${isUnread ? 'bg-primary/5' : ''}`}
+                    className={`py-4 ${isUnread ? 'bg-slate-50' : ''}`}
                   >
                       <div className='flex items-start justify-between gap-2'>
                         <div className='flex-1 min-w-0'>
@@ -128,7 +128,7 @@ export default function NotificationsPage() {
                                 e.stopPropagation();
                                 markReadMutation.mutate(n.id);
                               }}
-                              className='p-1.5 text-text-tertiary hover:text-primary transition-colors'
+                              className='p-1.5 text-text-tertiary hover:text-slate-700 transition-colors'
                               aria-label='읽음'
                             >
                               <Icon name='Check' size={16} />

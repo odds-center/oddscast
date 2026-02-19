@@ -11,7 +11,7 @@ export class SinglePurchasesService {
     private configService: GlobalConfigService,
   ) {}
 
-  private readonly DEFAULT_PRICE_PER_TICKET = 1000;
+  private readonly DEFAULT_PRICE_PER_TICKET = 550; // 500원 원가 + 10% VAT
 
   private async getPricePerTicket(): Promise<number> {
     const raw = await this.configService.get('single_purchase_config');

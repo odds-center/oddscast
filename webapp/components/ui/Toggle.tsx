@@ -20,7 +20,7 @@ export default function Toggle({
   return (
     <label
       className={`flex items-center gap-4 py-4 min-h-[56px] cursor-pointer select-none rounded-xl transition-colors ${
-        disabled ? 'cursor-not-allowed opacity-70' : 'active:opacity-90 focus-within:bg-primary/5'
+        disabled ? 'cursor-not-allowed opacity-70' : 'active:opacity-90 focus-within:bg-slate-100'
       }`}
     >
       <span className='relative inline-flex shrink-0'>
@@ -35,7 +35,7 @@ export default function Toggle({
         />
         <span
           className={`block w-12 h-7 rounded-full transition-colors duration-200 ${
-            checked ? 'bg-primary' : 'bg-border'
+            checked ? 'bg-slate-600' : 'bg-border'
           }`}
         />
         <span

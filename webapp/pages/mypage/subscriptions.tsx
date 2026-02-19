@@ -64,7 +64,7 @@ export default function SubscriptionsPage() {
                   <span
                     className={
                       h.status === 'ACTIVE'
-                        ? 'text-primary font-medium'
+                        ? 'text-slate-700 font-medium'
                         : h.status === 'CANCELLED'
                           ? 'text-text-tertiary'
                           : 'text-text-secondary'
@@ -91,7 +91,7 @@ export default function SubscriptionsPage() {
             <button
               onClick={() => cancelMutation.mutate()}
               disabled={cancelMutation.isPending}
-              className='btn-secondary mt-3 text-sm'
+              className='btn-secondary mt-3 text-sm px-3 py-1.5'
             >
               {cancelMutation.isPending ? '처리 중...' : '구독 취소'}
             </button>
@@ -108,7 +108,7 @@ export default function SubscriptionsPage() {
             title='플랜을 불러오지 못했습니다'
             description={(plansError as Error)?.message}
             action={
-              <button onClick={() => refetchPlans()} className='btn-secondary px-4 py-2 text-sm'>
+              <button onClick={() => refetchPlans()} className='btn-secondary px-3 py-1.5 text-sm'>
                 다시 시도
               </button>
             }
@@ -121,7 +121,7 @@ export default function SubscriptionsPage() {
                   <div>
                     <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
                     <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
-                    <p className='text-primary font-bold mt-2'>
+                    <p className='text-slate-800 font-bold mt-2'>
                       {plan.totalPrice?.toLocaleString() ?? plan.totalPrice}원/월
                     </p>
                     <p className='text-text-tertiary text-xs mt-1'>
@@ -131,7 +131,7 @@ export default function SubscriptionsPage() {
                   {isLoggedIn && !status?.isActive && (
                     <Link
                       href={routes.mypage.subscriptionsCheckout(plan.id)}
-                      className='btn-primary shrink-0 flex items-center gap-2 no-underline'
+                      className='btn-primary shrink-0 flex items-center gap-1.5 no-underline text-sm px-3 py-1.5'
                     >
                       구독하기
                     </Link>

@@ -15,7 +15,7 @@ import type {
   AIFailureAnalysis,
   RevenueStats,
   UsersGrowth,
-  BetsTrend,
+  TicketUsageTrend,
   Revenue,
 } from '../types/admin';
 
@@ -439,18 +439,20 @@ export class AdminKraApi {
     }
   }
 
-  static async syncSchedule(date: string): Promise<any> {
+  static async syncSchedule(date?: string): Promise<any> {
     try {
-      const response = await axiosInstance.post(`/kra/sync/schedule?date=${date}`, {}, { timeout: 120_000 });
+      const url = date ? `/kra/sync/schedule?date=${date}` : '/kra/sync/schedule';
+      const response = await axiosInstance.post(url, {}, { timeout: 600_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
     }
   }
 
-  static async syncResults(date: string): Promise<any> {
+  static async syncResults(date?: string): Promise<any> {
     try {
-      const response = await axiosInstance.post(`/kra/sync/results?date=${date}`, {}, { timeout: 120_000 });
+      const url = date ? `/kra/sync/results?date=${date}` : '/kra/sync/results';
+      const response = await axiosInstance.post(url, {}, { timeout: 300_000 });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -554,6 +556,7 @@ export class AdminRacesApi {
     date?: string;
     dateFrom?: string;
     dateTo?: string;
+    meet?: string;
   }): Promise<{
     data: unknown[];
     meta: { totalPages: number };
@@ -612,7 +615,12 @@ export class AdminRacesApi {
  * Results API — Server /api/results 사용
  */
 export class AdminResultsApi {
-  static async getAll(params?: { page?: number; limit?: number; date?: string }): Promise<any> {
+  static async getAll(params?: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    meet?: string;
+  }): Promise<any> {
     try {
       const response = await axiosInstance.get('/results', { params });
       const payload = handleApiResponse(response) as any;
@@ -744,11 +752,12 @@ export class AdminStatisticsApi {
     }
   }
 
-  static async getBetsTrend(days?: number): Promise<BetsTrend[]> {
+  static async getTicketUsageTrend(days?: number): Promise<TicketUsageTrend[]> {
     try {
-      const response = await axiosInstance.get<BetsTrend[]>('/statistics/bets-trend', {
-        params: { days },
-      });
+      const response = await axiosInstance.get<TicketUsageTrend[]>(
+        '/statistics/ticket-usage-trend',
+        { params: { days } }
+      );
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);

@@ -52,6 +52,7 @@
 | 11 | **알림** | 경주·예측·구독·시스템·프로모션 | WebApp, Mobile | 로그인 |
 | 12 | **프로필·설정** | 프로필 수정, 알림 설정 | WebApp, Mobile | 로그인 |
 | 13 | **기수·말 분석** | 마칠기삼 통합 분석 (선택) | WebApp, Mobile | 공개 |
+| 14 | **종합 예상표** | 경주×AI 예상 매트릭스, 코멘트 피드 | WebApp, Mobile | 로그인 |
 
 ### 2.2 클라이언트 구성
 
@@ -87,6 +88,12 @@
 - **무료(Preview)**: 상위 3마리 + 간단 코멘트 (검수 통과 예측만)
 - **유료(Full)**: 예측권 1장 소비 → 전체 분석글 + 상세 점수
 - **API**: `GET /api/predictions/race/:raceId/preview`, `POST /api/prediction-tickets/use`
+
+#### 종합 예상표 (predictions/matrix)
+- **내용**: 경주별 AI 1·2위 예상 매트릭스, AI/전문가 코멘트 피드
+- **라우트**: `/predictions/matrix`
+- **필터**: 날짜(오늘/어제/날짜 선택), 경마장(전체/서울/제주/부산)
+- **API**: `GET /api/predictions/matrix`, `GET /api/predictions/commentary`, `GET /api/predictions/hit-record`
 
 ### 3.2 사용자 기능 (Auth Required)
 
@@ -125,6 +132,16 @@
 - **라우트**: `/mypage/subscriptions`, `/mypage/subscription-checkout?planId=`
 - **API**: `GET /api/subscriptions/plans`, `POST /api/subscriptions/subscribe`, `POST /api/subscriptions/cancel`
 
+**구독 플랜 (3종, 1장=500원 기준):**
+
+| 플랜 | 표시명 | 예측권/월 | 월 가격 |
+|------|--------|-----------|---------|
+| LIGHT | 라이트 | 10장 | 4,900원 |
+| STANDARD | 스탠다드 | 20장 | 9,900원 |
+| PREMIUM | 프리미엄 | 30장 (27+3) | 14,900원 |
+
+- 개별 구매: 1장 550원
+
 ### 3.4 알림·설정
 
 #### 알림 설정
@@ -142,8 +159,9 @@
 
 | 페이지 | 라우트 | 설명 |
 |--------|--------|------|
-| 이용약관 | `/legal/terms` | 서비스 이용 약관 요약 |
-| 개인정보처리방침 | `/legal/privacy` | 개인정보 수집·이용 안내 |
+| 이용약관 | `/legal/terms` | 서비스 이용 약관 (제1~14조, 결제·환불·면책 등) |
+| 개인정보처리방침 | `/legal/privacy` | 개인정보 수집·이용·보관·제3자·정보주체 권리 등 |
+| 환불·결제 정책 | `/legal/refund` | 구독·개별 구매 환불 기준, 전자상거래법 소비자 보호 |
 | 404 | (자동) | 맞춤 NotFound |
 
 ---

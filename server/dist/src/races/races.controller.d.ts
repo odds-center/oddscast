@@ -1420,18 +1420,32 @@ export declare class RacesController {
         hrNo: string;
         hrName: string;
         jkName: string | null;
+        trName: string | null;
+        wgBudam: number | null;
         chulNo: string | null;
         ord: string | null;
+        ordType: string | null;
+        wgHr: string | null;
         rcTime: string | null;
+        diffUnit: string | null;
+        winOdds: number | null;
+        plcOdds: number | null;
     }[]>;
     getRaceResult(id: number): Promise<{
         id: number;
         hrNo: string;
         hrName: string;
         jkName: string | null;
+        trName: string | null;
+        wgBudam: number | null;
         chulNo: string | null;
         ord: string | null;
+        ordType: string | null;
+        wgHr: string | null;
         rcTime: string | null;
+        diffUnit: string | null;
+        winOdds: number | null;
+        plcOdds: number | null;
     }[]>;
     getEntries(id: number): Promise<{
         bets: {

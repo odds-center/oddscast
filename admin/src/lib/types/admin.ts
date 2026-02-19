@@ -218,11 +218,17 @@ export interface UsersGrowth {
   count: number;
 }
 
+/** @deprecated 베팅 없음. TicketUsageTrend 사용 */
 export interface BetsTrend {
   date: string;
   count: number;
-  amount: number;
-  winAmount: number;
+  amount?: number;
+  winAmount?: number;
+}
+
+export interface TicketUsageTrend {
+  date: string;
+  count: number;
 }
 
 export interface Revenue {

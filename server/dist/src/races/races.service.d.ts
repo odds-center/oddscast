@@ -1109,9 +1109,16 @@ export declare class RacesService {
         hrNo: string;
         hrName: string;
         jkName: string | null;
+        trName: string | null;
+        wgBudam: number | null;
         chulNo: string | null;
         ord: string | null;
+        ordType: string | null;
+        wgHr: string | null;
         rcTime: string | null;
+        diffUnit: string | null;
+        winOdds: number | null;
+        plcOdds: number | null;
     }[]>;
     createEntry(raceId: number, dto: CreateRaceEntryDto): Promise<{
         id: number;

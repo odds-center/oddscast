@@ -147,8 +147,8 @@ import Pagination from '@/components/page/Pagination';
 
 | 페이지 | URL 예 | 적용 |
 |--------|--------|------|
-| 경주 목록 | `/races?date=today&page=3` | O |
-| 경주 결과 | `/results?date=2026-02-13&page=2` | O |
+| 경주 목록 | `/races?date=today&meet=서울&page=3` | O |
+| 경주 결과 | `/results?date=2026-02-13&meet=제주&page=2` | O |
 | 내가 고른 말 | `/mypage/picks?page=2` | O |
 | 포인트·예측권·알림 | `useState`만 사용 | - |
 
@@ -178,9 +178,9 @@ const updateQuery = (updates: Record<string, string | number | undefined>) => {
 
 ---
 
-## 필터·날짜 (FilterDateBar)
+## 필터·날짜·지역 (FilterDateBar)
 
-필터 칩 + 날짜 선택을 묶은 공용 컴포넌트. 필터/날짜 변경 시 페이지는 1로 초기화합니다.
+필터 칩 + 날짜 선택 + 지역(경마장) 필터를 묶은 공용 컴포넌트. 경주·결과는 **최신날짜순**, **지역(서울/제주/부산) 필터** 지원.
 
 **URL 동기화 사용 시** (경주 목록, 경주 결과):
 
@@ -195,6 +195,9 @@ const updateQuery = (updates: Record<string, string | number | undefined>) => {
   dateValue={dateFilter}
   onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
   dateId='race-date'
+  showMeetFilter
+  meetValue={meetFilter}
+  onMeetChange={(v) => updateQuery({ meet: v || undefined, page: 1 })}
 />
 ```
 

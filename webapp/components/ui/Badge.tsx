@@ -10,7 +10,7 @@ interface BadgeProps {
 }
 
 const variantClass = {
-  primary: 'bg-primary/20 text-primary border-primary/30',
+  primary: 'bg-slate-200 text-slate-700 border-slate-300',
   muted: 'bg-secondary text-text-secondary border-border',
   success: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
   warning: 'bg-amber-500/15 text-amber-400 border-amber-500/30',

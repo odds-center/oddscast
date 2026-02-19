@@ -380,6 +380,7 @@ enum TicketStatus {
 
 // ============================================
 // 구독 플랜 (SubscriptionPlan)
+// seed: LIGHT(10장/4,900원), STANDARD(20장/9,900원), PREMIUM(30장 27+3/14,900원), 1장=500원
 // ============================================
 model SubscriptionPlan {
   id            Int      @id @default(autoincrement())
@@ -390,7 +391,7 @@ model SubscriptionPlan {
   vat           Int
   totalPrice    Int
   baseTickets   Int
-  bonusTickets  Int
+  bonusTickets  Int      @default(0)
   totalTickets  Int
   isActive      Boolean  @default(true)
   sortOrder     Int      @default(0)
@@ -571,11 +572,12 @@ enum PaymentStatus {
 
 // ============================================
 // 개별 구매 (SinglePurchase)
+// single_purchase_config: 500원/장, VAT포함 550원
 // ============================================
 model SinglePurchase {
   id              Int      @id @default(autoincrement())
   userId          Int
-  quantity        Int
+  quantity        Int      @default(1)
   totalAmount     Int
   paymentMethod   String?
   pgTransactionId String?
@@ -789,10 +791,11 @@ model PointConfig {
 
 // ============================================
 // 포인트 예측권 가격 (PointTicketPrice)
+// seed: 1장=1200pt. Admin에서 수정 가능.
 // ============================================
 model PointTicketPrice {
   id              Int       @id @default(autoincrement())
-  pointsPerTicket Int // 1장당 포인트 (예: 1200)
+  pointsPerTicket Int       @default(1200) // 1장당 포인트
   isActive        Boolean   @default(true)
   effectiveFrom   DateTime  @default(now())
   effectiveTo     DateTime?
@@ -823,6 +826,7 @@ model KraSyncLog {
 
 // ============================================
 // 글로벌 설정 (Key-Value, NoSQL 스타일)
+// seed: show_google_login, single_purchase_config(500원/장→550원 VAT포함)
 // ============================================
 model GlobalConfig {
   id        Int      @id @default(autoincrement())

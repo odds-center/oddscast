@@ -1,6 +1,48 @@
 # 아키텍처 변경 이력 (Changelog)
 
-> 2026-02-13 작업 내역
+> 2025-02-19 작업 내역
+
+---
+
+## 2025-02-19 (수) — 법적 문서 확장, 경주 결과 UI 강화, 구글 로그인 활성화
+
+### 법적 문서
+
+- **서비스 이용약관** (`/legal/terms`): 제1~14조 + 부칙, 결제·환불·면책·회사정보·통지 등 전자상거래법·콘텐츠산업진흥법 반영
+- **개인정보처리방침** (`/legal/privacy`): 개인정보보호법 준수, 수집·이용·보관·파기·제3자·위탁·정보주체 권리·책임자·쿠키 등 14조 구성
+- **환불 및 결제 정책** (`/legal/refund`): 신규 페이지, 구독·개별 구매 환불 기준, 전자상거래법 소비자 보호
+
+### 경주 결과·경주 상세 UI
+
+- **경주 결과 테이블**: 착차(diffUnit), 단승(winOdds), 복승(plcOdds) 컬럼 추가, ordType(낙마/실격/기권) 표시
+- **경주 헤더**: rcDate(날짜), rcPrize(1착상금) 표시
+- **배당 섹션**: 카드 그리드 레이아웃, 접기/펼치기
+- **결과 페이지**: 모바일 카드형 + 데스크톱 테이블, rcTime·rcDist 표시
+- **서버 API**: `getRaceResult`, `findAll(results)`에 rcTime, diffUnit, winOdds, plcOdds, rcDist 반환
+
+### 구글 로그인
+
+- **활성화**: 신규 → 자동 회원가입, 기존 → 로그인 (auth.service.googleLogin)
+- **회원가입 페이지**: `text='continue_with'` (Google로 계속하기)
+- **Mock 모드**: AuthApi.googleLogin Mock 응답 지원
+- **가이드**: `docs/guides/GOOGLE_OAUTH_SETUP.md` 신규 작성
+
+### 문서
+
+- `.cursorrules`: 구글 로그인/OAuth 참조 문서 추가
+- `LEGAL_NOTICE.md`: 약관·개인정보·환불정책 링크 갱신
+
+### 종합 예상표·경주 목록
+
+- **predictions/matrix**: 날짜(오늘/어제/날짜 선택), 경마장 필터, URL 동기화
+- **URL 동기화**: `?date=`, `?meet=`, `?tab=` 쿼리로 필터·탭 상태 유지
+- **API**: `GET /predictions/matrix`, `GET /predictions/commentary`, `GET /predictions/hit-record`
+- **서버**: getMatrix — horseScores 1·2위 → AI 종합 컬럼에 복승 형식([top1, top2]) 표시
+- **commentary**: meet 파라미터 추가, 경마장별 코멘트 필터
+- **코멘트 탭**: DataFetchState 로딩·빈 상태 처리
+- **경주 목록** (`/races`): 어제 필터 추가
+- **경주 결과** (`/results`): 오늘/어제 필터 추가
+- **CommentaryFeed**: rcNo 숫자만 있으면 "1R" 형식 표시
 
 ---
 
@@ -24,7 +66,7 @@
 
 - **subscription_plans**: LIGHT, PREMIUM → **LIGHT, STANDARD, PREMIUM** 3플랜
 - **표시명**: 라이트 / 스탠다드 / 프리미엄
-- **seed.sql**: LIGHT(5장/9,900원), STANDARD(10장/14,900원), PREMIUM(18장/19,900원), ON CONFLICT DO UPDATE로 기존 플랜 동기화
+- **seed.sql**: LIGHT(10장/4,900원), STANDARD(20장/9,900원), PREMIUM(30장 27+3/14,900원), 개별구매 500원/장(550원 VAT포함)
 - **webapp mock**: 3플랜 mockSubscriptionPlans
 - **admin**: grid md:grid-cols-3 (3열)
 - **문서**: PREDICTION_TICKET_PRICING_SIMULATION, DATABASE_SCHEMA, BUSINESS_LOGIC 반영

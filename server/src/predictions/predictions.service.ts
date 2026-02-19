@@ -317,6 +317,8 @@ export class PredictionsService {
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
+      const consensusArr =
+        top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
 
       rows.push({
         raceId: String(race.id),
@@ -325,7 +327,7 @@ export class PredictionsService {
         rcNo: race.rcNo ?? '',
         stTime: race.stTime ?? undefined,
         predictions: {
-          ai_consensus: consensus,
+          ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
           expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
         },
         aiConsensus: consensus,
@@ -342,15 +344,17 @@ export class PredictionsService {
   /**
    * 전문가 코멘트 피드 (AI 예측 preview/analysis 기반)
    */
-  async getCommentary(date?: string, limit = 20, offset = 0) {
+  async getCommentary(date?: string, limit = 20, offset = 0, meet?: string) {
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
       : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const raceWhere: Prisma.RaceWhereInput = { rcDate };
+    if (meet) raceWhere.meet = toKraMeetName(meet);
     const preds = await this.prisma.prediction.findMany({
       where: {
         previewApproved: true,
         status: 'COMPLETED',
-        race: { rcDate },
+        race: raceWhere,
       },
       include: {
         race: { select: { id: true, meet: true, meetName: true, rcNo: true } },
@@ -402,7 +406,7 @@ export class PredictionsService {
     }
 
     const total = await this.prisma.prediction.count({
-      where: { previewApproved: true, status: 'COMPLETED', race: { rcDate } },
+      where: { previewApproved: true, status: 'COMPLETED', race: raceWhere },
     });
     return { comments, total };
   }
@@ -1082,7 +1086,7 @@ ${JSON.stringify(mergedEntries)}
 ## 3. 출력 (JSON만)
 - horseScores: 각 마별 score, reason, strengths(강점 1~2개), weaknesses(약점/리스크 1개), confidence(high/medium/low)
 - analysis: 날씨·주로·거리·우승후보·각질(선행/추입)·주의변수·종합 5~8문장
-- preview: 무료용 2~3문장 요약
+- preview: 무료용 2~3문장 요약. 반드시 단승식(1등 예상마 1마리)만 언급. 복승·연승·쌍승·삼복·삼쌍 등 다른 승식 절대 언급 금지.
 \`\`\`json
 {"scores":{"horseScores":[{"hrNo":"","hrName":"","score":0,"reason":"","strengths":[""],"weaknesses":[""],"confidence":""}]},"betTypePredictions":{"SINGLE":{"hrNo":"","reason":""},"PLACE":{"hrNo":"","reason":""},"QUINELLA":{"hrNos":["",""],"reason":""},"EXACTA":{"first":"","second":"","reason":""},"QUINELLA_PLACE":{"hrNos":["",""],"reason":""},"TRIFECTA":{"hrNos":["","",""],"reason":""},"TRIPLE":{"first":"","second":"","third":"","reason":""}},"analysis":"","preview":""}
 \`\`\`

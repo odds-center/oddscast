@@ -35,6 +35,7 @@ type AIConfigFormData = z.infer<typeof aiConfigSchema>;
 
 // 모델 정보 (Gemini - Admin에서 선택 가능)
 const GEMINI_MODELS = [
+  { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash (권장)', cost: 5, accuracy: 29 },
   { id: 'gemini-2.0-flash-exp', name: 'Gemini 2.0 Flash (실험)', cost: 5, accuracy: 28 },
   { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', cost: 12, accuracy: 30 },
   { id: 'gemini-1.5-pro-002', name: 'Gemini 1.5 Pro 002', cost: 12, accuracy: 30 },
@@ -44,6 +45,7 @@ const GEMINI_MODELS = [
 ] as const;
 
 const MODEL_INFO: Record<string, { cost: number; speed: number; accuracy: number; provider: string }> = {
+  'gemini-2.5-flash': { cost: 5, speed: 5, accuracy: 29, provider: 'gemini' },
   'gemini-2.0-flash-exp': { cost: 5, speed: 5, accuracy: 28, provider: 'gemini' },
   'gemini-1.5-pro': { cost: 12, speed: 4, accuracy: 30, provider: 'gemini' },
   'gemini-1.5-pro-002': { cost: 12, speed: 4, accuracy: 30, provider: 'gemini' },
@@ -58,7 +60,7 @@ function getCostCalculationText(
   enableCaching: boolean,
   estimatedMonthly: number
 ): string {
-  const modelCost = MODEL_INFO[primaryModel]?.cost ?? 12;
+  const modelCost = MODEL_INFO[primaryModel]?.cost ?? 5; // 기본 gemini-2.5-flash
   const racesPerMonth = 50; // 금/토/일 × 4주 ≈ 50경기
   const rawMonthly = modelCost * racesPerMonth;
   if (enableCaching) {
@@ -67,25 +69,25 @@ function getCostCalculationText(
   return `경주당 ₩${modelCost} × ${racesPerMonth}경기/월 ≈ ₩${rawMonthly.toLocaleString()} (캐싱 ON 시 99%↓)`;
 }
 
-// 비용 전략 (Gemini 전용)
+// 비용 전략 (Gemini 전용) — 기본 gemini-2.5-flash
 const COST_STRATEGIES = {
   premium: {
     name: 'Premium',
     cost: 7200,
     accuracy: 30,
-    description: 'Gemini 1.5 Pro만 사용 (최고 정확도)',
+    description: 'Gemini 1.5 Pro (최고 정확도)',
   },
   balanced: {
     name: 'Balanced',
     cost: 3600,
-    accuracy: 27,
-    description: 'Gemini 1.5 Pro + Flash 혼용 (추천)',
+    accuracy: 29,
+    description: 'Gemini 2.5 Flash 기본 (권장)',
   },
   budget: {
     name: 'Budget',
     cost: 1200,
     accuracy: 25,
-    description: 'Gemini 1.5 Flash / Pro 위주 (최저 비용)',
+    description: 'Gemini Flash 위주 (최저 비용)',
   },
 };
 
@@ -110,8 +112,8 @@ export default function AIConfigPage() {
     resolver: zodResolver(aiConfigSchema),
     defaultValues: {
       llmProvider: 'gemini',
-      primaryModel: 'gemini-1.5-pro',
-      fallbackModels: ['gemini-1.5-flash', 'gemini-pro'],
+      primaryModel: 'gemini-2.5-flash',
+      fallbackModels: ['gemini-2.0-flash-exp', 'gemini-1.5-flash'],
       costStrategy: 'balanced',
       temperature: 0.7,
       maxTokens: 1000,
@@ -132,8 +134,8 @@ export default function AIConfigPage() {
     if (configData) {
       reset({
         llmProvider: configData.llmProvider || 'gemini',
-        primaryModel: configData.primaryModel || 'gemini-1.5-pro',
-        fallbackModels: configData.fallbackModels || ['gemini-1.5-flash', 'gemini-pro'],
+        primaryModel: configData.primaryModel || 'gemini-2.5-flash',
+        fallbackModels: configData.fallbackModels || ['gemini-2.0-flash-exp', 'gemini-1.5-flash'],
         costStrategy: configData.costStrategy || 'balanced',
         temperature: configData.temperature || 0.7,
         maxTokens: configData.maxTokens || 1000,
@@ -577,7 +579,7 @@ export default function AIConfigPage() {
                 <strong>• Premium 전략:</strong> Gemini 1.5 Pro만 사용, 최고 정확도 (30%), 월 ₩7,200
               </p>
               <p>
-                <strong>• Balanced 전략 (추천):</strong> Pro + Flash 혼용, 정확도 27%, 월 ₩3,600
+                <strong>• Balanced 전략 (추천):</strong> Gemini 2.5 Flash 기본, 정확도 29%, 월 ₩3,600
               </p>
               <p>
                 <strong>• Budget 전략:</strong> Flash 위주, 정확도 25%, 월 ₩1,200
@@ -586,9 +588,9 @@ export default function AIConfigPage() {
                 <strong>📊 예상 비용 계산식</strong>
                 <pre className='mt-2 p-2 bg-white rounded text-xs overflow-x-auto'>
 {`경주당 비용(모델별) × 월 경기 수(≈50) = 월 비용(캐싱 OFF)
+  - gemini-2.5-flash (권장): ₩5 × 50 = ₩250
   - gemini-1.5-pro: ₩12 × 50 = ₩600
   - gemini-1.5-flash: ₩4 × 50 = ₩200
-  - gemini-2.0-flash-exp: ₩5 × 50 = ₩250
 
 캐싱 ON 시: 위 금액 × 1% ≈ 월 ₩2~₩6 (99% 절감)
 무료 tier(1,500 RPD) 내면 $0`}

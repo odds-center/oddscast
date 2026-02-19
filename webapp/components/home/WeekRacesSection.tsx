@@ -36,7 +36,7 @@ export default function WeekRacesSection() {
     },
   });
 
-  const races = useMemo(() => (data ?? []).slice(0, 5), [data]);
+  const races = useMemo(() => (data ?? []).slice(0, 10), [data]);
 
   return (
     <HomeSection
@@ -79,7 +79,7 @@ export default function WeekRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-primary font-semibold hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-slate-700 font-semibold hover:underline'>
                   {row.rcNo}R
                 </Link>
               ),
@@ -111,7 +111,7 @@ export default function WeekRacesSection() {
               headerClassName: 'w-16 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-primary text-sm font-medium hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-slate-700 text-sm font-medium hover:underline'>
                   보기
                 </Link>
               ),

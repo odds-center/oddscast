@@ -47,5 +47,6 @@ export const routes = {
   legal: {
     terms: '/legal/terms',
     privacy: '/legal/privacy',
+    refund: '/legal/refund',
   },
 } as const;

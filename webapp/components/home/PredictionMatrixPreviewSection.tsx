@@ -34,7 +34,7 @@ export default function PredictionMatrixPreviewSection() {
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
   });
 
-  const rows = (data?.raceMatrix ?? []).slice(0, 3);
+  const rows = (data?.raceMatrix ?? []).slice(0, 6);
 
   return (
     <HomeSection
@@ -62,7 +62,7 @@ export default function PredictionMatrixPreviewSection() {
                   <td>
                     <Link
                       href={routes.races.detail(row.raceId)}
-                      className='font-medium text-primary hover:underline'
+                      className='font-medium text-slate-700 hover:underline'
                     >
                       {row.meetName ?? row.meet} {row.rcNo}R
                       {row.stTime && (
@@ -71,7 +71,15 @@ export default function PredictionMatrixPreviewSection() {
                     </Link>
                   </td>
                   <td className='cell-center'>
-                    <GateBadge no={row.aiConsensus ?? '-'} />
+                    <div className='flex items-center justify-center gap-0.5 flex-wrap'>
+                      {Array.isArray(row.predictions?.ai_consensus)
+                        ? (row.predictions.ai_consensus as string[]).map((no, i) => (
+                            <GateBadge key={i} no={no} />
+                          ))
+                        : (
+                            <GateBadge no={row.aiConsensus ?? '-'} />
+                          )}
+                    </div>
                   </td>
                 </tr>
               ))}

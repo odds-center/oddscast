@@ -85,10 +85,10 @@ export class KraService {
   }
 
   /**
-   * 3. Real-time Results & Updates (Fri, Sat, Sun 10:30 - 18:00, every 30 mins)
+   * 3. Real-time Results & Updates (Fri, Sat, Sun 10:30 - 19:00, every 30 mins)
    * Fetches race results as they happen and updates analysis data.
    */
-  @Cron('0,30 10-18 * * 5,6,0')
+  @Cron('0,30 10-19 * * 5,6,0')
   async syncRealtimeResults() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Real-time Result Sync');
@@ -98,8 +98,22 @@ export class KraService {
     await this.fetchRaceResults(today);
 
     // 2. Update Analysis (in case of weight changes or late info)
-    // We can optimize this to only run for today's races
     await this.syncAnalysisData(today);
+  }
+
+  /**
+   * 4. 다음날 새벽 — 전날(금·토·일) 경주 결과 사후 동기화
+   * KRA API에 결과가 올라온 뒤 DB에 미리 적재해 두어 사용자 요청 시 즉시 응답
+   */
+  @Cron('0 6 * * *') // 매일 06:00
+  async syncPreviousDayResults() {
+    if (!this.ensureServiceKey()) return;
+    const yesterday = dayjs().subtract(1, 'day');
+    const day = yesterday.day();
+    if (day !== 0 && day !== 5 && day !== 6) return;
+    const dateStr = this.formatYyyyMmDd(yesterday);
+    this.logger.log(`Running Previous Day Result Sync: ${dateStr}`);
+    await this.fetchRaceResults(dateStr);
   }
 
   // --- Helper Methods ---
@@ -235,21 +249,29 @@ export class KraService {
           }
         }
 
-        const totalCount =
-          body?.totalCount != null ? Number(body.totalCount) : items.length;
-        if (totalCount > items.length && totalCount > 0) {
-          for (let pageNo = 2; items.length < totalCount; pageNo++) {
-            const nextRes = await firstValueFrom(
-              this.httpService.get(url, {
-                params: { ...params, pageNo, numOfRows: 1000 },
-              }),
-            );
-            const raw = nextRes?.data?.response?.body?.items?.item;
-            if (!raw) break;
-            const arr = Array.isArray(raw) ? raw : [raw];
-            items.push(...arr);
-            if (arr.length < 1000) break;
-          }
+        // totalCount가 없어도 전체 페이지 수집: 마지막 페이지가 numOfRows 미만일 때까지 페이징
+        const numOfRows = 1000;
+        const totalCount = body?.totalCount != null ? Number(body.totalCount) : null;
+        let pageNo = 2;
+        for (;;) {
+          const shouldFetchMore =
+            totalCount != null
+              ? totalCount > items.length && totalCount > 0
+              : items.length >= numOfRows; // 마지막 응답이 꽉 찼으면 다음 페이지 있을 수 있음
+          if (!shouldFetchMore) break;
+
+          const nextRes = await firstValueFrom(
+            this.httpService.get(url, {
+              params: { ...params, pageNo, numOfRows },
+            }),
+          );
+          const nextBody = nextRes?.data?.response?.body;
+          const raw = nextBody?.items?.item;
+          if (!raw) break;
+          const arr = Array.isArray(raw) ? raw : [raw];
+          items.push(...arr);
+          pageNo++;
+          if (arr.length < numOfRows) break;
         }
 
         if (items.length === 0) {
@@ -531,6 +553,54 @@ export class KraService {
       }
     }
     return dates;
+  }
+
+  /**
+   * 오늘부터 1년 내 미래 경주일(금·토·일) 전체에 대해 출전표 적재.
+   * date 미지정 시 sync/schedule에서 호출.
+   */
+  async syncUpcomingSchedules(): Promise<{
+    message: string;
+    races: number;
+    entries: number;
+    datesProcessed: number;
+  }> {
+    if (!this.ensureServiceKey()) {
+      return {
+        message: 'KRA_SERVICE_KEY 미설정.',
+        races: 0,
+        entries: 0,
+        datesProcessed: 0,
+      };
+    }
+    const today = this.formatYyyyMmDd(dayjs());
+    const oneYearLater = this.formatYyyyMmDd(dayjs().add(1, 'year'));
+    const dates = this.getRaceDateRange(today, oneYearLater);
+
+    this.logger.log(
+      `[syncUpcomingSchedules] ${dates.length}일(금·토·일) 출전표 적재: ${today} ~ ${oneYearLater}`,
+    );
+
+    let totalRaces = 0;
+    let totalEntries = 0;
+
+    for (const d of dates) {
+      try {
+        const res = await this.syncEntrySheet(d);
+        totalRaces += res.races ?? 0;
+        totalEntries += res.entries ?? 0;
+        await this.delay(300);
+      } catch (err) {
+        this.logger.warn(`[syncUpcomingSchedules] ${d} 실패`, err);
+      }
+    }
+
+    return {
+      message: `미래 스케줄 적재 완료: ${dates.length}일, ${totalRaces}경주, ${totalEntries}출마`,
+      races: totalRaces,
+      entries: totalEntries,
+      datesProcessed: dates.length,
+    };
   }
 
   private delay(ms: number): Promise<void> {
@@ -867,6 +937,31 @@ export class KraService {
       this.logger.warn(
         `KRA API 500 for ${date} (${failed500Meets.join(', ')}) - 해당 날짜 경주 없을 수 있음`,
       );
+    }
+
+    // 날짜가 지났으면 결과 데이터 수신 여부와 관계없이 해당 날짜 경주를 COMPLETED로 업데이트
+    // (KRA API 실패·데이터 미수신 시에도 종료 처리)
+    const normalizedDate = this.normalizeToYyyyMmDd(date);
+    const today = dayjs().format('YYYYMMDD');
+    if (normalizedDate < today) {
+      const updated = await this.prisma.race.updateMany({
+        where: {
+          rcDate: normalizedDate,
+          status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+        },
+        data: { status: 'COMPLETED' },
+      });
+      if (updated.count > 0) {
+        this.logger.log(
+          `날짜 지난 경주 ${updated.count}건 COMPLETED 처리 (rcDate=${normalizedDate})`,
+        );
+        for (const r of await this.prisma.race.findMany({
+          where: { rcDate: normalizedDate },
+          select: { id: true },
+        })) {
+          await this.cache.del(`race:${r.id}`);
+        }
+      }
     }
 
     return {

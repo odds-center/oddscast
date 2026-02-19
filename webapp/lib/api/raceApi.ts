@@ -49,7 +49,14 @@ export default class RaceApi {
       let list = [...mockRaces];
       if (filters?.date) {
         const d = filters.date === 'today' ? new Date().toISOString().slice(0, 10) : filters.date;
-        list = list.filter((r: RaceDto) => r.rcDate === d);
+        list = list.filter((r: RaceDto) => (r.rcDate ?? '').replace(/-/g, '').slice(0, 8) === (String(d).replace(/-/g, '').slice(0, 8)));
+      }
+      if (filters?.meet) {
+        const m = String(filters.meet);
+        list = list.filter(
+          (r: RaceDto) =>
+            (r.meet ?? r.meetName ?? '') === m || (m === '부산경남' && ((r.meet ?? r.meetName) === '부산'))
+        );
       }
       const page = filters?.page ?? 1;
       const limit = filters?.limit ?? 20;

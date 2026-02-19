@@ -33,8 +33,8 @@ export default function RaceDetailPage() {
   const [pickType, setPickType] = useState<string>('SINGLE');
   const [selectedHorses, setSelectedHorses] = useState<{ hrNo: string; hrName: string }[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  type TabId = 'basic' | 'record' | 'prediction';
-  const [activeTab, setActiveTab] = useState<TabId>(isResultView ? 'record' : 'basic');
+  type TabId = 'record' | 'prediction';
+  const [activeTab, setActiveTab] = useState<TabId>(isResultView ? 'record' : 'record');
 
   const {
     data: race,
@@ -241,10 +241,25 @@ export default function RaceDetailPage() {
   const r = race as {
     rcName?: string; rcNo?: string; meetName?: string; rcDate?: string;
     rcDist?: string; stTime?: string;
-    entries?: Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
-    entryDetails?: Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
+    entries?: Array<{
+      id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
+      wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
+      age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
+      equipment?: string; budam?: string;
+    }>;
+    entryDetails?: Array<{
+      id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
+      wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
+      age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
+      equipment?: string; budam?: string;
+    }>;
   };
-  const entries = (r.entries ?? r.entryDetails ?? []) as Array<{ id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string; wgBudam?: number; horseWeight?: string; trName?: string }>;
+  const entries = (r.entries ?? r.entryDetails ?? []) as Array<{
+    id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
+    wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
+    age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
+    equipment?: string; budam?: string;
+  }>;
 
   return (
     <Layout title='GOLDEN RACE'>
@@ -263,61 +278,64 @@ export default function RaceDetailPage() {
           meetName={r.meetName}
           rcDay={(r as { rcDay?: string }).rcDay}
           rcNo={r.rcNo}
+          rcDate={r.rcDate}
           stTime={r.stTime}
           rcDist={r.rcDist}
           rank={(r as { rank?: string }).rank}
           rcCondition={(r as { rcCondition?: string }).rcCondition}
+          rcPrize={(r as { rcPrize?: number }).rcPrize}
           weather={(r as { weather?: string }).weather}
           track={(r as { track?: string }).track}
         />
       </div>
 
-      {/* 기본정보 탭: 출전마 (RACE_DETAIL_UI_SPEC 2.2) */}
-      {(activeTab === 'basic' || isResultView) && (
-        <section className='mb-5 md:mb-6'>
-          <SectionTitle title='출전마' className='text-base md:text-lg' />
-          {isLoggedIn && !isResultView && (
-            <p className='text-text-secondary text-xs mb-2'>
-              오른쪽(데스크톱) 또는 하단 버튼(모바일)에서 고를 말을 선택하세요.
-            </p>
-          )}
-          {entries.length > 0 ? (
-            <HorseEntryTable
-              entries={entries}
-              onSelectHorse={!isResultView && isLoggedIn && CONFIG.picksEnabled ? handleSelectHorse : undefined}
-              isSelected={isHorseSelected}
-            />
-          ) : (
-            <div className='rounded-xl border border-dashed border-border bg-muted/30 p-6 text-center'>
-              <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
-              <p className='text-text-tertiary text-xs mt-1'>KRA 출전표 적재 후 표시됩니다.</p>
-              <button
-                type='button'
-                onClick={() => refetchRace()}
-                className='btn-secondary mt-3 text-sm'
-              >
-                다시 불러오기
-              </button>
-            </div>
-          )}
-        </section>
-      )}
+      {/* 기본정보: 출전마 — 항상 표시 (RACE_DETAIL_UI_SPEC 2.2) */}
+      <section className='mb-5 md:mb-6'>
+        <div className='rounded-xl border border-border bg-card overflow-hidden shadow-sm'>
+          <div className='px-4 sm:px-5 py-3 border-b border-border bg-slate-50/50'>
+            <SectionTitle title='출전마' className='text-base md:text-lg !mb-0' />
+            {isLoggedIn && !isResultView && (
+              <p className='text-text-secondary text-xs mt-1'>
+                오른쪽(데스크톱) 또는 카드(모바일)에서 고를 말을 선택하세요.
+              </p>
+            )}
+          </div>
+          <div className='p-4 sm:p-5'>
+            {entries.length > 0 ? (
+              <HorseEntryTable
+                entries={entries}
+                onSelectHorse={!isResultView && isLoggedIn && CONFIG.picksEnabled ? handleSelectHorse : undefined}
+                isSelected={isHorseSelected}
+              />
+            ) : (
+              <div className='rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center'>
+                <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
+                <p className='text-text-tertiary text-xs mt-1'>KRA 출전표 적재 후 표시됩니다.</p>
+                <button
+                  type='button'
+                  onClick={() => refetchRace()}
+                  className='btn-secondary mt-3 text-sm px-3 py-1.5'
+                >
+                  다시 불러오기
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
 
-      {/* 탭: 기본정보 | 기록정보 | 예상정보 (RACE_DETAIL_UI_SPEC 3) */}
-      {!isResultView && (
-        <TabBar
-          options={[
-            { value: 'basic', label: '기본정보' },
-            { value: 'record', label: '기록정보' },
-            { value: 'prediction', label: '예상정보' },
-          ]}
-          value={activeTab}
-          onChange={(v) => setActiveTab(v)}
-          variant='subtle'
-          size='md'
-          className='mb-4'
-        />
-      )}
+      {/* 탭: 기록정보 | 예상정보 — 끝난 경주에서도 AI 예측 탭 노출 */}
+      <TabBar
+        options={[
+          { value: 'record', label: '기록정보' },
+          { value: 'prediction', label: '예상정보' },
+        ]}
+        value={activeTab}
+        onChange={(v) => setActiveTab(v as TabId)}
+        variant='subtle'
+        size='md'
+        className='mb-4'
+      />
 
       {(activeTab === 'record' || isResultView) && (
         <>
@@ -325,29 +343,42 @@ export default function RaceDetailPage() {
             <SectionTitle title='경주 결과' icon='BarChart2' />
             {(raceResults?.length ?? 0) > 0 ? (
               <>
-                <div className='data-table-wrapper mt-3'>
-                  <table className='data-table data-table-compact'>
+                <div className='data-table-wrapper mt-3 overflow-x-auto -mx-2 sm:mx-0'>
+                  <table className='data-table data-table-compact w-full min-w-[320px]'>
                     <thead>
                       <tr>
                         <th className='cell-center w-10'>순위</th>
                         <th className='cell-center w-10'>No</th>
-                        <th className='min-w-[70px]'>마명</th>
-                        <th>기수</th>
-                        <th className='cell-center w-16'>기록</th>
+                        <th className='min-w-[72px]'>마명</th>
+                        <th className='hidden sm:table-cell'>기수</th>
+                        <th className='cell-center w-14 sm:w-16'>기록</th>
+                        <th className='cell-center w-14 hidden md:table-cell'>착차</th>
+                        <th className='cell-center w-14 hidden lg:table-cell'>단승</th>
+                        <th className='cell-center w-14 hidden lg:table-cell'>복승</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {raceResults?.slice(0, 14).map((r: { id?: string; ord?: string | number; chulNo?: string; hrNo?: string; hrName?: string; jkName?: string; rcTime?: string }, i: number) => {
+                      {raceResults?.slice(0, 14).map((r, i) => {
+                        const row = r as { ordType?: string | null; diffUnit?: string; winOdds?: number; plcOdds?: number };
                         const ord = String(r.ord ?? i + 1);
                         const rankClass = ord === '1' ? 'text-[var(--color-rank-1)]' : ord === '2' ? 'text-[var(--color-rank-2)]' : ord === '3' ? 'text-[var(--color-rank-3)]' : 'text-text-tertiary';
                         const no = r.chulNo ?? (r.hrNo && r.hrNo.length <= 2 ? r.hrNo : '-');
+                        const ordSuffix = row.ordType === 'FALL' ? '(낙마)' : row.ordType === 'DQ' ? '(실격)' : row.ordType === 'WITHDRAWN' ? '(기권)' : '';
                         return (
-                          <tr key={r.id ?? i}>
-                            <td className={`cell-center font-bold ${rankClass}`}>{ord}</td>
+                          <tr key={r.id ?? i} className='hover:bg-slate-50/50 transition-colors'>
+                            <td className={`cell-center font-bold ${rankClass}`}>
+                              {ord}{ordSuffix ? <span className='text-[10px] font-normal text-text-tertiary block'>{ordSuffix}</span> : null}
+                            </td>
                             <td className='cell-center'>{no}</td>
-                            <td className='font-medium text-foreground'>{r.hrName}</td>
-                            <td className='text-text-secondary'>{r.jkName}</td>
-                            <td className='cell-center text-text-tertiary text-xs'>{r.rcTime ?? '-'}</td>
+                            <td className='font-medium text-foreground'>
+                              <span className='sm:hidden'>{r.hrName}{r.jkName ? ` (${r.jkName})` : ''}</span>
+                              <span className='hidden sm:inline'>{r.hrName}</span>
+                            </td>
+                            <td className='text-text-secondary hidden sm:table-cell'>{r.jkName ?? '-'}</td>
+                            <td className='cell-center text-text-tertiary text-xs font-mono'>{r.rcTime ?? '-'}</td>
+                            <td className='cell-center text-text-tertiary text-xs hidden md:table-cell'>{row.diffUnit ?? '-'}</td>
+                            <td className='cell-center text-amber-700 text-xs font-medium hidden lg:table-cell'>{row.winOdds != null ? `${row.winOdds}배` : '-'}</td>
+                            <td className='cell-center text-emerald-700 text-xs font-medium hidden lg:table-cell'>{row.plcOdds != null ? `${row.plcOdds}배` : '-'}</td>
                           </tr>
                         );
                       })}
@@ -355,19 +386,31 @@ export default function RaceDetailPage() {
                   </table>
                 </div>
                 {(dividends?.length ?? 0) > 0 && (
-                  <details className='mt-3'>
-                    <summary className='text-text-secondary text-sm cursor-pointer py-2 hover:text-foreground'>
-                      배당 상세 보기
+                  <details className='mt-4 group' open={false}>
+                    <summary className='list-none cursor-pointer py-3 px-4 rounded-lg bg-slate-50 border border-border hover:bg-slate-100 transition-colors flex items-center justify-between touch-manipulation min-h-[44px]'>
+                      <span className='text-text-secondary text-sm font-medium flex items-center gap-2'>
+                        <Icon name='CreditCard' size={16} className='text-text-tertiary' />
+                        배당 상세
+                      </span>
+                      <Icon name='ChevronDown' size={18} className='text-text-tertiary group-open:rotate-180 transition-transform' />
                     </summary>
-                    <Card className='mt-2 p-3'>
-                      <div className='flex flex-wrap gap-2 text-xs'>
-                        {dividends?.slice(0, 6).map((d: { id?: string; poolName?: string; pool?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number }, i: number) => (
-                          <span key={d.id ?? i} className='px-2 py-1 rounded bg-secondary text-text-secondary'>
-                            {d.poolName ?? d.pool}: {[d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-')} {d.odds != null ? `→ ${d.odds}원` : ''}
-                          </span>
-                        ))}
+                    <div className='mt-2 p-4 rounded-xl border border-border bg-card'>
+                      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
+                        {dividends?.slice(0, 12).map((d: { id?: string; poolName?: string; pool?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number }, i: number) => {
+                          const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
+                          const label = d.poolName ?? d.pool ?? '배당';
+                          return (
+                            <div key={d.id ?? i} className='flex flex-col gap-1 p-3 rounded-lg bg-slate-50/80 border border-slate-200'>
+                              <span className='text-text-tertiary text-xs font-medium'>{label}</span>
+                              <span className='text-foreground font-semibold'>{combo || '-'}</span>
+                              {d.odds != null && (
+                                <span className='text-amber-700 font-bold text-sm'>{d.odds.toLocaleString()}원</span>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
-                    </Card>
+                    </div>
                   </details>
                 )}
               </>
@@ -384,7 +427,7 @@ export default function RaceDetailPage() {
             </summary>
           <section className='mt-2'>
             {!showJockeyAnalysis ? (
-              <button type='button' onClick={() => setShowJockeyAnalysis(true)} className='btn-secondary w-full sm:w-auto px-4 py-2 text-sm'>
+              <button type='button' onClick={() => setShowJockeyAnalysis(true)} className='btn-secondary w-full sm:w-auto px-3 py-1.5 text-sm'>
                 분석 보기
               </button>
             ) : jockeyLoading ? (
@@ -392,7 +435,7 @@ export default function RaceDetailPage() {
             ) : jockeyError ? (
               <Card className='mt-3 py-4'>
                 <p className='text-text-secondary text-sm'>분석 데이터를 불러올 수 없습니다. (KRA 기수 데이터 필요)</p>
-                <button type='button' onClick={() => refetchJockey()} className='btn-secondary mt-2 text-sm'>다시 시도</button>
+                <button type='button' onClick={() => refetchJockey()} className='btn-secondary mt-2 text-sm px-3 py-1.5'>다시 시도</button>
               </Card>
             ) : jockeyAnalysis?.entriesWithScores?.length ? (
               <Card className='mt-3 space-y-3'>
@@ -408,7 +451,7 @@ export default function RaceDetailPage() {
                     return (
                     <div key={e.hrNo} className='flex items-center justify-between py-1 border-b border-border last:border-0'>
                       <span className='text-foreground font-medium'>{noLabel}{e.hrName} ({e.jkName})</span>
-                      <span className='text-primary font-bold'>{Math.round(e.combinedScore ?? 0)}</span>
+                      <span className='text-slate-700 font-bold'>{Math.round(e.combinedScore ?? 0)}</span>
                     </div>
                   );
                   })}
@@ -416,7 +459,7 @@ export default function RaceDetailPage() {
                 {jockeyAnalysis.topPickByJockey && (
                   <div className='pt-2 border-t border-border'>
                     <p className='text-text-secondary text-xs mb-1'>기수 점수 1위</p>
-                    <p className='text-primary font-semibold'>
+                    <p className='text-slate-700 font-semibold'>
                       {jockeyAnalysis.topPickByJockey.hrName} · {jockeyAnalysis.topPickByJockey.jkName}
                     </p>
                   </div>
@@ -430,7 +473,7 @@ export default function RaceDetailPage() {
         </>
       )}
 
-      {activeTab === 'prediction' && !isResultView && (
+      {activeTab === 'prediction' && (
       <>
       {/* AI 예측 */}
       <section className='mb-5 md:mb-6'>
@@ -439,19 +482,15 @@ export default function RaceDetailPage() {
           icon='Target'
         />
         {displayPrediction ? (
-          <Card className='mt-3 bg-primary/5 border-primary/30'>
-            <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-3'>
-              {list.length > 1 ? (
-                <div className='flex flex-col gap-1.5'>
-                  <span className='text-text-secondary text-xs font-medium'>
-                    예측 기록 ({list.length}건)
-                  </span>
-                  <div className='flex flex-wrap gap-1.5'>
-                    {list.map((p, i) => {
-                      const pid = (p as unknown as { id?: number }).id ?? i;
-                      const isActive =
-                        (selectedPredictionId ?? (displayPrediction as unknown as { id?: number }).id ?? (list[0] as unknown as { id?: number })?.id) ===
-                        pid;
+          <Card className='mt-3 bg-slate-50 border-slate-200'>
+            <div className='flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-3'>
+              {list.length > 1 && (
+                <div className='min-w-0 flex-1 overflow-x-auto'>
+                  <p className='text-text-secondary text-xs font-medium mb-2'>예측 기록 ({list.length}건)</p>
+                  <div className='min-w-[240px]'>
+                  <TabBar<string>
+                    options={list.map((p, i) => {
+                      const pid = String((p as unknown as { id?: number }).id ?? i);
                       const num = list.length - i;
                       const createdAt = (p as unknown as { createdAt?: string }).createdAt;
                       const timeStr =
@@ -459,45 +498,23 @@ export default function RaceDetailPage() {
                         (() => {
                           try {
                             const d = new Date(createdAt);
-                            return d.toLocaleTimeString('ko-KR', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            });
+                            return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
                           } catch {
                             return '';
                           }
                         })();
-                      return (
-                        <button
-                          key={pid}
-                          type='button'
-                          onClick={() => setSelectedPredictionId(pid)}
-                          className={`
-                            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium
-                            transition-colors touch-manipulation
-                            ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'bg-background-elevated text-text-secondary hover:text-foreground hover:bg-background'}
-                          `}
-                        >
-                          <span>{num}번</span>
-                          {num === 1 && (
-                            <span
-                              className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                isActive ? 'bg-white/25' : 'bg-primary/15 text-primary'
-                              }`}
-                            >
-                              최신
-                            </span>
-                          )}
-                          {timeStr && (
-                            <span className='text-[10px] opacity-80'>{timeStr}</span>
-                          )}
-                        </button>
-                      );
+                      return {
+                        value: pid,
+                        label: num === 1 ? `최신${timeStr ? ` (${timeStr})` : ''}` : `${num}번째${timeStr ? ` ${timeStr}` : ''}`,
+                      };
                     })}
+                    value={String(selectedPredictionId ?? (displayPrediction as unknown as { id?: number }).id ?? (list[0] as unknown as { id?: number })?.id ?? '')}
+                    onChange={(v) => setSelectedPredictionId(Number(v))}
+                    variant='subtle'
+                    size='sm'
+                  />
                   </div>
                 </div>
-              ) : (
-                <div />
               )}
               {availableTickets > 0 && (
                 <button
@@ -507,7 +524,7 @@ export default function RaceDetailPage() {
                     useTicketMutation.mutate({ raceId: id as string, regenerate: true });
                   }}
                   disabled={useTicketMutation.isPending}
-                  className='btn-secondary text-sm px-3 py-1.5 flex items-center gap-2 shrink-0 self-start sm:self-center'
+                  className='btn-secondary text-sm px-2.5 py-1 flex items-center gap-1.5 shrink-0 self-start sm:self-center'
                 >
                   {useTicketMutation.isPending ? (
                     <>
@@ -533,16 +550,18 @@ export default function RaceDetailPage() {
                   if (!jc?.jockeyAnalysis) return null;
                   const { weightRatio, topPickByJockey } = jc.jockeyAnalysis;
                   return (
-                    <div className='flex flex-wrap items-center gap-3 pb-3 border-b border-border'>
-                      {weightRatio && (
-                        <span className='text-text-secondary text-sm'>
-                          마칠기삼: 말 {Math.round(weightRatio.horse * 100)}% · 기수 {Math.round(weightRatio.jockey * 100)}%
-                        </span>
-                      )}
+                    <div className='rounded-lg bg-background/60 border border-border p-3 mb-3'>
                       {topPickByJockey && (
-                        <span className='px-2 py-1 rounded bg-primary/20 text-primary font-semibold text-sm'>
-                          AI 강력 추천: {topPickByJockey.hrName} ({topPickByJockey.jkName})
-                        </span>
+                        <div className='flex items-center gap-2 mb-2'>
+                          <span className='text-[10px] font-medium text-emerald-700 px-1.5 py-0.5 rounded bg-emerald-50'>AI 강력 추천</span>
+                          <span className='text-foreground font-semibold'>{topPickByJockey.hrName}</span>
+                          <span className='text-text-secondary text-sm'>({topPickByJockey.jkName})</span>
+                        </div>
+                      )}
+                      {weightRatio && (
+                        <p className='text-text-tertiary text-xs'>
+                          마칠기삼: 말 {Math.round(weightRatio.horse * 100)}% · 기수 {Math.round(weightRatio.jockey * 100)}%
+                        </p>
                       )}
                     </div>
                   );
@@ -557,21 +576,34 @@ export default function RaceDetailPage() {
                       entries={entries}
                     />
                   )}
-                {/* 말별 점수 */}
-                {displayPrediction.scores!.horseScores!.map((h, i) => (
-                  <div key={i} className='flex items-center gap-3 py-2 border-b border-border last:border-0'>
-                    <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                    <div className='flex-1 min-w-0'>
-                      <span className='text-foreground font-medium'>
-                        {(h.chulNo ?? (h.hrNo && String(h.hrNo).length <= 2 ? `${h.hrNo}번 ` : ''))}{h.hrName ?? h.horseName ?? '-'}
-                      </span>
-                      {h.reason && <p className='text-text-secondary text-xs mt-0.5'>{h.reason}</p>}
-                    </div>
-                    {h.score != null && (
-                      <span className='text-primary font-bold shrink-0'>{Math.round(h.score)}%</span>
-                    )}
+                {/* 말별 점수 — 1·2·3순위는 점수 기준 추천이며 확정 아님 */}
+                <div className='space-y-2 mt-3'>
+                  <p className='text-text-secondary text-xs font-medium'>
+                    AI 추천 순위 (참고용)
+                    <span className='block mt-0.5 text-[10px] text-text-tertiary font-normal'>
+                      1·2·3순위는 점수 기준이며, 실제 결과와 다를 수 있습니다.
+                    </span>
+                  </p>
+                  <div className='grid grid-cols-1 sm:grid-cols-2 gap-2'>
+                    {displayPrediction.scores!.horseScores!.map((h, i) => (
+                      <div
+                        key={i}
+                        className='flex items-center gap-3 p-3 rounded-lg bg-background/60 border border-border'
+                      >
+                        <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
+                        <div className='flex-1 min-w-0'>
+                          <span className='text-foreground font-medium block'>
+                            {(h.chulNo ?? (h.hrNo && String(h.hrNo).length <= 2 ? `${h.hrNo}번 ` : ''))}{h.hrName ?? h.horseName ?? '-'}
+                          </span>
+                          {h.reason && <p className='text-text-secondary text-xs mt-0.5 line-clamp-2'>{h.reason}</p>}
+                        </div>
+                        {h.score != null && (
+                          <span className='text-slate-700 font-bold shrink-0'>{Math.round(h.score)}%</span>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
                 {displayPrediction.analysis && (
                   <div className='mt-3 pt-3 border-t border-border'>
                     <p className='text-text-secondary text-sm whitespace-pre-wrap'>
@@ -587,29 +619,29 @@ export default function RaceDetailPage() {
             )}
           </Card>
         ) : (
-          <div className='relative overflow-hidden rounded-xl border border-primary/20 bg-primary/5 min-h-[160px]'>
-            {/* 블러 처리 — 실제 데이터 미사전 로드, 가려진 프리뷰 느낌 */}
-            <div className='absolute inset-0 p-4 opacity-30' aria-hidden>
+          <div className='relative overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 min-h-[180px]'>
+            {/* 블러 처리 — 실제 데이터 미사전 로드, 가려진 프리뷰 */}
+            <div className='absolute inset-0 p-4 opacity-25' aria-hidden>
               <div className='space-y-2'>
                 {[1, 2, 3, 4, 5].map((i) => (
-                  <div key={i} className='flex justify-between h-5 bg-primary/20 rounded w-full max-w-[90%]' />
+                  <div key={i} className='flex justify-between h-5 bg-slate-200 rounded w-full max-w-[90%]' />
                 ))}
-                <div className='h-12 bg-primary/10 rounded mt-3 w-full' />
+                <div className='h-12 bg-slate-100 rounded mt-3 w-full' />
               </div>
             </div>
-            <div className='absolute inset-0 backdrop-blur-lg bg-background/50' aria-hidden />
-            <div className='relative z-10 p-4 sm:p-6 text-center'>
+            <div className='absolute inset-0 backdrop-blur-md bg-background/60' aria-hidden />
+            <div className='relative z-10 p-5 sm:p-6 text-center'>
               {predictionPreview?.preview && (
-                <div className='mb-4 p-3 rounded-lg bg-primary/10 border border-primary/20'>
-                  <p className='text-text-secondary text-xs mb-1'>AI 예측 요약 (저장됨)</p>
-                  <p className='text-foreground text-sm'>{predictionPreview.preview}</p>
+                <div className='mb-4 p-3 rounded-lg bg-background/80 border border-border'>
+                  <p className='text-text-tertiary text-[10px] font-medium mb-1'>AI 예측 요약</p>
+                  <p className='text-foreground text-sm leading-relaxed line-clamp-2'>{predictionPreview.preview}</p>
                 </div>
               )}
-              <p className='text-foreground font-medium mb-1'>
-                예측권을 사용해서 전체 AI 분석을 받아보세요
+              <p className='text-foreground font-semibold text-base mb-1'>
+                예측권으로 전체 AI 분석 받기
               </p>
               <p className='text-text-secondary text-sm mb-4'>
-                마별 승률 예상·승식별 추천·상세 분석을 확인할 수 있습니다
+                마별 점수 · 승식별 추천 · 상세 분석
               </p>
               {isLoggedIn && availableTickets > 0 && (
                 <>
@@ -620,7 +652,7 @@ export default function RaceDetailPage() {
                       useTicketMutation.mutate({ raceId: id as string });
                     }}
                     disabled={useTicketMutation.isPending}
-                    className='btn-primary px-5 py-2.5 text-sm flex items-center gap-2 mx-auto'
+                    className='btn-primary px-4 py-2 text-sm flex items-center gap-2 mx-auto'
                   >
                     {useTicketMutation.isPending ? (
                       <>
@@ -644,7 +676,7 @@ export default function RaceDetailPage() {
               {isLoggedIn && availableTickets === 0 && (
                 <p className='text-text-secondary text-sm'>
                   예측권이 없습니다.{' '}
-                  <Link href={routes.profile.index} className='text-primary hover:underline'>
+                  <Link href={routes.profile.index} className='text-slate-700 hover:underline font-medium'>
                     내 정보
                   </Link>
                   에서 구매하세요.
@@ -652,7 +684,7 @@ export default function RaceDetailPage() {
               )}
               {!isLoggedIn && (
                 <p className='text-text-secondary text-sm'>
-                  <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>
+                  <Link href={routes.auth.login} className='text-slate-700 font-medium hover:underline'>
                     로그인
                   </Link>
                   후 예측권으로 전체 AI 분석을 확인할 수 있습니다.
@@ -693,7 +725,7 @@ export default function RaceDetailPage() {
           <>
             <button
               onClick={() => setDrawerOpen(true)}
-              className='lg:hidden fixed right-4 z-20 flex items-center gap-2 px-4 py-3 rounded-2xl bg-primary text-primary-foreground font-semibold shadow-lg touch-manipulation'
+              className='lg:hidden fixed right-4 z-20 flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg touch-manipulation'
               style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
               aria-label='출전마 고르기'
             >
@@ -717,7 +749,7 @@ export default function RaceDetailPage() {
                 />
                 <div className='lg:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-3xl bg-background-elevated border-t border-border overflow-hidden flex flex-col'>
                   <div className='flex items-center justify-between p-4 border-b border-border shrink-0'>
-                    <h3 className='text-lg font-bold text-primary'>출전마 선택</h3>
+                    <h3 className='text-lg font-bold text-slate-800'>출전마 선택</h3>
                     <button
                       onClick={() => setDrawerOpen(false)}
                       className='p-2 -mr-2 text-text-secondary hover:text-foreground rounded-xl'

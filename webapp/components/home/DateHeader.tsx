@@ -11,9 +11,10 @@ export default function DateHeader() {
 
   return (
     <div className='date-header-kra'>
-      <h2 className='text-lg sm:text-xl font-semibold text-foreground'>
+      <h1 className='text-lg sm:text-xl font-bold text-foreground'>
         {year}년 {month.toString().padStart(2, '0')}월 {day.toString().padStart(2, '0')}일 {weekDay}요일
-      </h2>
+      </h1>
+      <p className='text-text-tertiary text-sm mt-0.5'>오늘의 경마 정보를 확인하세요</p>
     </div>
   );
 }

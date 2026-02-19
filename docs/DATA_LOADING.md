@@ -24,8 +24,10 @@
 
 | API | 설명 |
 |-----|------|
-| `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 출전표 적재 (경주 + 출전마) |
-| `POST /api/admin/kra/sync/results?date=YYYYMMDD` | 경주 결과 적재 |
+| `POST /api/admin/kra/sync/schedule` | 미래 스케줄 전체 적재 (오늘~1년 내 금·토·일) |
+| `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 해당 날짜 출전표만 적재 (경주 + 출전마) |
+| `POST /api/admin/kra/sync/results` | 과거 1년 결과 적재 (금·토·일) |
+| `POST /api/admin/kra/sync/results?date=YYYYMMDD` | 해당 날짜 경주 결과만 적재 |
 | `POST /api/admin/kra/sync/details?date=YYYYMMDD` | 상세 분석 데이터 |
 | `POST /api/admin/kra/sync/jockeys?meet=1|2|3` | 기수 통산전적 |
 | `POST /api/admin/kra/sync/all?date=YYYYMMDD` | 전체 적재 (출전표→결과→상세→기수) |

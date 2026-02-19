@@ -6,7 +6,7 @@ interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 const inputClass =
-  'input-base w-full px-4 text-foreground focus:border-primary/50 focus:outline-none focus:ring-2 focus:ring-primary/20';
+  'input-base w-full px-4 text-foreground focus:border-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200';
 
 const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ({ label, error, className = '', ...props }, ref) => (

@@ -34,7 +34,7 @@ export default function RacePredictionsPreviewSection() {
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
   });
 
-  const rows = (data?.raceMatrix ?? []).slice(0, 3) as MatrixRowDto[];
+  const rows = (data?.raceMatrix ?? []).slice(0, 6) as MatrixRowDto[];
 
   return (
     <HomeSection
@@ -54,7 +54,7 @@ export default function RacePredictionsPreviewSection() {
             <li key={row.raceId}>
               <Link
                 href={routes.races.detail(row.raceId)}
-                className='flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-primary/5 -mx-2 px-2 rounded-lg transition-colors'
+                className='flex items-center justify-between py-3 first:pt-0 last:pb-0 hover:bg-slate-50 -mx-2 px-2 rounded-lg transition-colors'
               >
                 <span className='font-medium text-foreground'>
                   {row.meetName ?? row.meet} {row.rcNo}경
@@ -63,8 +63,21 @@ export default function RacePredictionsPreviewSection() {
                   )}
                 </span>
                 <span className='flex items-center gap-2'>
-                  <span className='text-text-secondary text-sm'>1위 예상</span>
-                  <PickBadge no={row.aiConsensus ?? '-'} />
+                  <span className='text-text-secondary text-sm'>
+                    {Array.isArray(row.predictions?.ai_consensus) &&
+                    (row.predictions.ai_consensus as string[]).length > 1
+                      ? '1·2위 예상'
+                      : '1위 예상'}
+                  </span>
+                  <span className='flex items-center gap-1'>
+                    {Array.isArray(row.predictions?.ai_consensus)
+                      ? (row.predictions.ai_consensus as string[]).map((no, i) => (
+                          <PickBadge key={i} no={no} />
+                        ))
+                      : (
+                          <PickBadge no={row.aiConsensus ?? '-'} />
+                        )}
+                  </span>
                 </span>
               </Link>
             </li>

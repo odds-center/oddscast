@@ -134,7 +134,7 @@ export default function SubscriptionCheckoutPage() {
     return (
       <Layout title='GOLDEN RACE'>
         <div className='max-w-md mx-auto text-center'>
-          <div className='card border-primary/50 mb-6'>
+          <div className='card border-slate-200 mb-6'>
             <Icon name='CheckCircle' size={48} className='text-success mx-auto mb-3' />
             <h2 className='text-lg font-bold text-foreground mb-2'>구독이 완료되었습니다</h2>
             <p className='text-text-secondary text-sm'>
@@ -144,7 +144,7 @@ export default function SubscriptionCheckoutPage() {
           <Link href={routes.profile.index} className='btn-primary block'>
             내 정보로
           </Link>
-          <Link href={routes.mypage.subscriptions} className='block mt-3 text-primary text-sm'>
+          <Link href={routes.mypage.subscriptions} className='block mt-3 text-slate-700 text-sm hover:underline'>
             구독 관리
           </Link>
         </div>
@@ -162,7 +162,7 @@ export default function SubscriptionCheckoutPage() {
         <SectionCard className='mb-6'>
           <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
           <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
-          <p className='text-primary font-bold mt-2'>{plan.totalPrice?.toLocaleString()}원/월</p>
+          <p className='text-slate-800 font-bold mt-2'>{plan.totalPrice?.toLocaleString()}원/월</p>
           <p className='text-text-tertiary text-xs mt-1'>예측권 {plan.totalTickets ?? plan.baseTickets}장/월</p>
         </SectionCard>
 
@@ -176,7 +176,7 @@ export default function SubscriptionCheckoutPage() {
           <button
             onClick={handlePay}
             disabled={step === 'paying'}
-            className='btn-primary flex-1 flex items-center justify-center gap-2'
+            className='btn-primary flex-1 flex items-center justify-center gap-1.5 text-sm px-4 py-2'
           >
             {step === 'paying' ? (
               <>

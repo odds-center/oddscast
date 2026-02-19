@@ -146,13 +146,20 @@ SinglePurchase[]
 | `id`               | String (UUID) | 고유 ID   | PK                  |
 | `raceId`           | String        | 경기 FK   | → Race.id (CASCADE) |
 | `ord`              | String?       | 순서      |                     |
+| `ordType`          | String?       | 낙마/실격/기권 | NORMAL, FALL, DQ, WITHDRAWN |
+| `chulNo`           | String?       | 출전번호  | KRA                 |
 | `hrNo`             | String        | 마번      |                     |
 | `hrName`           | String        | 마명      |                     |
 | `jkName`           | String?       | 기수명    |                     |
 | `trName`           | String?       | 조교사명  |                     |
 | `owName`           | String?       | 마주명    |                     |
+| `wgBudam`          | Float?        | 부담중량  |                     |
+| `wgHr`             | String?       | 마체감량  | 예: 502(-2)         |
 | `rcRank`           | String?       | 착순      |                     |
 | `rcTime`           | String?       | 기록 시간 |                     |
+| `diffUnit`         | String?       | 착차      | 1위 대비 기록차     |
+| `winOdds`          | Float?        | 단승 배당율 |                    |
+| `plcOdds`          | Float?        | 복승 배당율 |                    |
 | `rcPrize`          | Int?          | 상금      |                     |
 | `rcDist`           | String?       | 거리      |                     |
 | `rcGrade`          | String?       | 등급      |                     |
@@ -218,6 +225,14 @@ SinglePurchase[]
 | `totalTickets`  | Int           | 총 예측권 수     |                         |
 | `isActive`      | Boolean       | 활성 여부        | default: true           |
 | `sortOrder`     | Int           | 정렬 순서        | default: 0              |
+
+**기본 3플랜 (seed, 1장=500원 기준):**
+
+| planName | displayName | 예측권 (기본+보너스) | 월 가격 (VAT 포함) |
+|----------|-------------|---------------------|--------------------|
+| LIGHT | 라이트 | 10장 | 4,900원 |
+| STANDARD | 스탠다드 | 20장 | 9,900원 |
+| PREMIUM | 프리미엄 | 30장 (27+3) | 14,900원 |
 
 ---
 

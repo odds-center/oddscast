@@ -13,7 +13,7 @@ export default function LoadingSpinner({
 }: LoadingSpinnerProps) {
   return (
     <div className={`flex flex-col items-center justify-center gap-3 text-text-secondary ${className}`}>
-      <Icon name='Loader2' size={size} className='animate-spin shrink-0 text-primary/60' />
+      <Icon name='Loader2' size={size} className='animate-spin shrink-0 text-slate-500' />
       {label && <span className='text-[16px] text-text-secondary'>{label}</span>}
     </div>
   );

@@ -19,14 +19,17 @@ const RACES_PER_PAGE = 20;
 export default function RacesListPage() {
   const router = useRouter();
   const qDate = router.query?.date as string | undefined;
+  const qMeet = (router.query?.meet as string) || '';
   const dateFilter =
     qDate === 'today'
       ? 'today'
-      : qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))
-        ? qDate.includes('-')
-          ? qDate
-          : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`
-        : '';
+      : qDate === 'yesterday'
+        ? 'yesterday'
+        : qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))
+          ? qDate.includes('-')
+            ? qDate
+            : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`
+          : '';
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
 
   const updateQuery = (updates: Record<string, string | number | undefined>) => {
@@ -38,14 +41,23 @@ export default function RacesListPage() {
   };
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'list', dateFilter, page],
+    queryKey: ['races', 'list', dateFilter, qMeet, page],
     queryFn: () => {
-      const date =
-        dateFilter === 'today' ? new Date().toISOString().slice(0, 10).replace(/-/g, '') : dateFilter;
+      let date: string | undefined;
+      if (dateFilter === 'today') {
+        date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      } else if (dateFilter === 'yesterday') {
+        const d = new Date();
+        d.setDate(d.getDate() - 1);
+        date = d.toISOString().slice(0, 10).replace(/-/g, '');
+      } else if (dateFilter) {
+        date = dateFilter.replace(/-/g, '');
+      }
       return RaceApi.getRaces({
         limit: RACES_PER_PAGE,
         page,
         ...(date && { date }),
+        ...(qMeet && { meet: qMeet }),
       });
     },
   });
@@ -57,12 +69,30 @@ export default function RacesListPage() {
         filterOptions={[
           { value: '', label: '전체' },
           { value: 'today', label: '오늘' },
+          { value: 'yesterday', label: '어제' },
         ]}
-        filterValue={dateFilter === 'today' ? 'today' : dateFilter || ''}
+        filterValue={
+          dateFilter === 'today' ? 'today' : dateFilter === 'yesterday' ? 'yesterday' : dateFilter || ''
+        }
         onFilterChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
-        dateValue={dateFilter && dateFilter !== 'today' ? dateFilter : ''}
+        dateValue={
+          dateFilter && dateFilter !== 'today' && dateFilter !== 'yesterday'
+            ? dateFilter.includes('-')
+              ? dateFilter
+              : `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
+            : dateFilter === 'yesterday'
+              ? (() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - 1);
+                  return d.toISOString().slice(0, 10);
+                })()
+              : ''
+        }
         onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateId='races-list-date'
+        showMeetFilter
+        meetValue={qMeet}
+        onMeetChange={(v) => updateQuery({ meet: v || undefined, page: 1 })}
       />
 
       <DataFetchState
@@ -154,6 +184,7 @@ export default function RacesListPage() {
               render: (race) => (
                 <StatusBadge
                   status={race.status || (race as RaceDto & { raceStatus?: string }).raceStatus || '-'}
+                  rcDate={race.rcDate}
                 />
               ),
             },

@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.29.3",
   "scripts": {
+    "dev": "pnpm run --parallel dev:server dev:webapp",
     "setup-env": "node scripts/setup-env.mjs",
     "setup-env:force": "node scripts/setup-env.mjs --force",
     "setup-env:generate": "node scripts/setup-env.mjs --generate",

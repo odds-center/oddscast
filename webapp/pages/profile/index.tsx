@@ -84,7 +84,7 @@ export default function Profile() {
         >
           <div className='space-y-6'>
             <SectionCard title='예측권' icon='Ticket'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-primary tracking-tight'>
+              <p className='text-3xl sm:text-[2rem] font-bold text-slate-800 tracking-tight'>
                 {ticketBalance?.availableTickets ?? 0}장
               </p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
@@ -106,7 +106,7 @@ export default function Profile() {
             )}
 
             <SectionCard title='포인트' icon='Gem'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-primary tracking-tight'>{points.toLocaleString()}pt</p>
+              <p className='text-3xl sm:text-[2rem] font-bold text-slate-800 tracking-tight'>{points.toLocaleString()}pt</p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
                 프로모션, 이벤트, 구독 등으로 포인트를 받을 수 있습니다. 포인트로 예측권을 구매할 수 있습니다.
               </p>
@@ -130,7 +130,7 @@ export default function Profile() {
             <button
               onClick={handlePurchase}
               disabled={!canPurchase || purchaseMutation.isPending}
-              className='btn-primary px-5 py-2.5 disabled:opacity-50 flex items-center gap-2 min-h-[44px]'
+              className='btn-primary px-4 py-2 disabled:opacity-50 flex items-center gap-2'
             >
               {purchaseMutation.isPending ? (
                 <>

@@ -5,7 +5,7 @@ interface RankBadgeProps {
 }
 
 const RANK_STYLES: Record<string, string> = {
-  '1': 'bg-primary/20 text-primary border-primary/40', // 금
+  '1': 'bg-emerald-100 text-emerald-700 border-emerald-200', // 1등 (우승 강조)
   '2': 'bg-[#c0c0c5]/15 text-[#c0c0c5] border-[#c0c0c5]/30', // 은
   '3': 'bg-[#cd7f32]/15 text-[#cd7f32] border-[#cd7f32]/30', // 동
 };

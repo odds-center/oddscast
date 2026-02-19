@@ -102,6 +102,7 @@ export default class PredictionMatrixApi {
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
+      const consensusArr = top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
 
       rows.push({
         raceId: rid,
@@ -110,8 +111,8 @@ export default class PredictionMatrixApi {
         rcNo: race.rcNo ?? '',
         stTime: race.stTime,
         predictions: {
-          ai_consensus: consensus,
-          expert_1: top1 && top2 ? [top1, top2] : (top1 ? [top1] : []),
+          ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
+          expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
         },
         aiConsensus: consensus,
         consensusLabel: top1 ? '축' : undefined,
@@ -131,6 +132,7 @@ export default class PredictionMatrixApi {
     date?: string,
     limit = 20,
     offset = 0,
+    meet?: string,
   ): Promise<CommentaryResponseDto> {
     if (CONFIG.useMock) {
       const comments = mockCommentaryData.comments.slice(offset, offset + limit);
@@ -139,7 +141,7 @@ export default class PredictionMatrixApi {
     try {
       const response = await axiosInstance.get<{ data?: CommentaryResponseDto } | CommentaryResponseDto>(
         '/predictions/commentary',
-        { params: { date, limit, offset } },
+        { params: { date, meet, limit, offset } },
       );
       return handleApiResponse(response) as CommentaryResponseDto;
     } catch {

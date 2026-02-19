@@ -1,27 +1,49 @@
 /**
  * KRA DB 값 → API 응답 enum 치환
  * DB: KRA raw (서울, 제주, 부산경남) / API: enum (SEOUL, JEJU, BUSAN)
+ *
+ * 날짜 지난 경기: rcDate < today 이면 status를 COMPLETED로 override
+ * (결과 데이터 미수신 시에도 종료로 간주)
  */
+import dayjs from 'dayjs';
 import { meetToEnum, meetToLabel } from '@goldenrace/shared';
 
 type RaceLike = {
   meet?: string | null;
   meetName?: string | null;
+  rcDate?: string | null;
+  status?: string | null;
   [k: string]: unknown;
 };
 type ResultLike = { race?: RaceLike | null; [k: string]: unknown };
 
+/** rcDate(YYYYMMDD 또는 YYYY-MM-DD)가 오늘 이전이면 true */
+function isPastDate(rcDate: string | null | undefined): boolean {
+  if (!rcDate || typeof rcDate !== 'string') return false;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return false;
+  const today = dayjs().format('YYYYMMDD');
+  return norm < today;
+}
+
 /**
  * DB Race → API 응답 (meet을 enum으로 치환)
+ * 날짜 지난 경기는 status COMPLETED로 override
  */
 export function serializeRace<T extends RaceLike>(race: T | null): T | null {
   if (!race) return null;
   const meetEnum = meetToEnum(race.meet);
+  let status = race.status ?? race.raceStatus;
+  if (isPastDate(race.rcDate) && status !== 'CANCELLED') {
+    status = 'COMPLETED';
+  }
   return {
     ...race,
     meet: meetEnum ?? race.meet,
     meetName:
       meetEnum != null ? meetToLabel(meetEnum) : (race.meetName ?? race.meet),
+    status,
+    raceStatus: status,
   } as T;
 }
 

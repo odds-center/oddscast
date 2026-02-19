@@ -58,8 +58,8 @@ let PredictionsController = class PredictionsController {
     getMatrix(date, meet) {
         return this.predictionsService.getMatrix(date, meet);
     }
-    getCommentary(date, limit, offset) {
-        return this.predictionsService.getCommentary(date, limit ? parseInt(limit, 10) : 20, offset ? parseInt(offset, 10) : 0);
+    getCommentary(date, meet, limit, offset) {
+        return this.predictionsService.getCommentary(date, limit ? parseInt(limit, 10) : 20, offset ? parseInt(offset, 10) : 0, meet);
     }
     getHitRecords(limit) {
         return this.predictionsService.getHitRecords(limit ? parseInt(limit, 10) : 5);
@@ -179,10 +179,11 @@ __decorate([
     (0, common_1.Get)('commentary'),
     (0, swagger_1.ApiOperation)({ summary: '전문가 코멘트 피드' }),
     __param(0, (0, common_1.Query)('date')),
-    __param(1, (0, common_1.Query)('limit')),
-    __param(2, (0, common_1.Query)('offset')),
+    __param(1, (0, common_1.Query)('meet')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('offset')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:paramtypes", [String, String, String, String]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getCommentary", null);
 __decorate([

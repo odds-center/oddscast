@@ -2,6 +2,7 @@
  * 홈 페이지 전용 섹션 컴포넌트
  */
 export { default as DateHeader } from './DateHeader';
+export { default as HomeQuickStats } from './HomeQuickStats';
 export { default as HomeSection } from './HomeSection';
 export { default as TodayRacesSection } from './TodayRacesSection';
 export { default as WeekRacesSection } from './WeekRacesSection';

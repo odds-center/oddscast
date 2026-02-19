@@ -6,6 +6,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { routes } from '@/lib/routes';
 import {
   DateHeader,
+  HomeQuickStats,
   TodayRacesSection,
   WeekRacesSection,
   RecentResultsSection,
@@ -15,12 +16,24 @@ import {
   AllRacesSection,
 } from '@/components/home';
 import { useEffect, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import ResultApi from '@/lib/api/resultApi';
 
 export default function Home() {
   const [isNative, setIsNative] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const setAuth = useAuthStore((s) => s.setAuth);
+  const queryClient = useQueryClient();
+
+  // 결과 페이지 진입 시 즉시 표시되도록 API 미리 prefetch
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['results', 1, ''],
+      queryFn: () => ResultApi.getResults({ limit: 250, page: 1 }),
+      staleTime: 60 * 1000,
+    });
+  }, [queryClient]);
 
   useEffect(() => {
     queueMicrotask(() => setIsNative(NativeBridge.isNativeApp()));
@@ -61,13 +74,14 @@ export default function Home() {
 
   return (
     <Layout title='GOLDEN RACE'>
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-5 mb-5 sm:mb-8'>
-        <DateHeader />
+      <div className='flex flex-col gap-4 sm:gap-5 mb-5 sm:mb-8'>
+        <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+          <DateHeader />
         {!isLoggedIn && (
           <div className='flex flex-col items-start sm:items-end gap-2 shrink-0'>
             <button
               onClick={handleGoogleLogin}
-              className='btn-primary flex items-center gap-2 px-5 py-2.5 text-sm'
+              className='btn-primary flex items-center gap-1.5 px-4 py-2 text-sm'
             >
               <Icon name='LogIn' size={18} />
               {isNative ? 'Google 로그인' : '로그인'}
@@ -75,6 +89,8 @@ export default function Home() {
             {loginError && <p className='msg-error'>{loginError}</p>}
           </div>
         )}
+        </div>
+        <HomeQuickStats />
       </div>
 
       {/* 섹션 미리보기 — 모바일: gap-4 단일열, 데스크: gap-6 2열 */}

@@ -75,6 +75,22 @@ export default class AuthApi {
   }
 
   static async googleLogin(idToken: string): Promise<AuthResponse> {
+    if (CONFIG.useMock) {
+      // Mock: 구글 로그인 시뮬레이션 — 신규/기존 구분 없이 mock 유저로 로그인
+      const mockRes = {
+        accessToken: 'mock-google-jwt-token',
+        refreshToken: 'mock-google-refresh',
+        expiresIn: 3600,
+        tokenType: 'Bearer',
+        user: {
+          ...mockUser,
+          email: 'google-demo@goldenrace.com',
+          name: 'Google 사용자',
+          nickname: 'Google 사용자',
+        },
+      } as unknown as AuthResponse;
+      return mockRes;
+    }
     try {
       const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
         '/auth/google',

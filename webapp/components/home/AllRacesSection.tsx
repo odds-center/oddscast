@@ -15,26 +15,29 @@ import { StatusBadge } from '@/components/ui';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@goldenrace/shared';
 
-const PREVIEW_LIMIT = 5;
+const PREVIEW_LIMIT = 10;
 
 export default function AllRacesSection() {
   const router = useRouter();
   const [dateFilter, setDateFilter] = useState<string>('');
+  const [meetFilter, setMeetFilter] = useState<string>('');
 
   useEffect(() => {
     const q = router.query?.date as string | undefined;
+    const qMeet = router.query?.meet as string | undefined;
     const updater = () => {
       if (q === 'today') setDateFilter('today');
       else if (q && /^\d{4}-?\d{2}-?\d{2}$/.test(q.replace(/-/g, ''))) {
         const normalized = q.includes('-') ? q : `${q.slice(0, 4)}-${q.slice(4, 6)}-${q.slice(6, 8)}`;
         setDateFilter(normalized);
       }
+      if (qMeet !== undefined) setMeetFilter(qMeet || '');
     };
     queueMicrotask(updater);
-  }, [router.query?.date]);
+  }, [router.query?.date, router.query?.meet]);
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'all', dateFilter],
+    queryKey: ['races', 'all', dateFilter, meetFilter],
     queryFn: () => {
       const date =
         dateFilter === 'today'
@@ -44,6 +47,7 @@ export default function AllRacesSection() {
         limit: PREVIEW_LIMIT,
         page: 1,
         ...(date && { date }),
+        ...(meetFilter && { meet: meetFilter }),
       });
     },
   });
@@ -67,6 +71,16 @@ export default function AllRacesSection() {
         dateValue={dateFilter && dateFilter !== 'today' ? dateFilter : ''}
         onDateChange={(v) => setDateFilter(v || '')}
         dateId='all-race-date'
+        showMeetFilter
+        meetValue={meetFilter}
+        onMeetChange={(v) => {
+          setMeetFilter(v);
+          router.replace(
+            { pathname: router.pathname, query: { ...router.query, meet: v || undefined } },
+            undefined,
+            { shallow: true }
+          );
+        }}
         inline
       />
 
@@ -114,7 +128,7 @@ export default function AllRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-primary font-semibold hover:underline'
+                  className='text-slate-700 font-semibold hover:underline'
                 >
                   {row.rcNo}R
                 </Link>
@@ -126,7 +140,7 @@ export default function AllRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-primary hover:underline'>
+                <Link href={routes.races.detail(row.id)} className='text-slate-700 hover:underline'>
                   {row.rcDist ? `${row.rcDist}M` : '-'}
                 </Link>
               ),
@@ -150,7 +164,7 @@ export default function AllRacesSection() {
               header: '상태',
               headerClassName: 'w-20 cell-center',
               align: 'center',
-              render: (row) => <StatusBadge status={row.status ?? row.raceStatus ?? ''} />,
+              render: (row) => <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} />,
             },
             {
               key: 'detail',
@@ -160,7 +174,7 @@ export default function AllRacesSection() {
               render: (row) => (
                 <Link
                   href={routes.races.detail(row.id)}
-                  className='text-primary text-sm font-medium hover:underline'
+                  className='text-slate-700 text-sm font-medium hover:underline'
                 >
                   보기
                 </Link>

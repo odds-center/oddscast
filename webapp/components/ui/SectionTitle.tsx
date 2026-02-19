@@ -28,8 +28,8 @@ export default function SectionTitle({
   return (
     <Tag className={`${baseClass} ${sizeClass[Tag]} ${className}`.trim()}>
       {!noIcon && icon && (
-        <span className='inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-primary/15 border border-primary/30 shrink-0'>
-          <Icon name={icon} size={18} className='text-primary' strokeWidth={2.5} />
+        <span className='inline-flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-lg bg-slate-100 border border-slate-200 shrink-0'>
+          <Icon name={icon} size={18} className='text-slate-600' strokeWidth={2.5} />
         </span>
       )}
       {title}

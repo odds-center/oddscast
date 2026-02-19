@@ -5,14 +5,13 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import { adminStatisticsApi } from '@/lib/api/admin';
-import { formatCurrency, formatNumber } from '@/lib/utils';
-import { BarChart3, TrendingUp, Users, DollarSign } from 'lucide-react';
+import { BarChart3, Users } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function StatisticsPage() {
   const [usersDays, setUsersDays] = useState(30);
-  const [betsDays, setBetsDays] = useState(30);
+  const [ticketDays, setTicketDays] = useState(30);
 
   // 사용자 증가 추이
   const { data: usersGrowth, isLoading: usersLoading } = useQuery({
@@ -20,10 +19,10 @@ export default function StatisticsPage() {
     queryFn: () => adminStatisticsApi.getUsersGrowth(usersDays),
   });
 
-  // 베팅 트렌드
-  const { data: betsTrend, isLoading: betsLoading } = useQuery({
-    queryKey: ['bets-trend', betsDays],
-    queryFn: () => adminStatisticsApi.getBetsTrend(betsDays),
+  // 예측권 사용량 추이
+  const { data: ticketUsageTrend, isLoading: ticketLoading } = useQuery({
+    queryKey: ['ticket-usage-trend', ticketDays],
+    queryFn: () => adminStatisticsApi.getTicketUsageTrend(ticketDays),
   });
 
   return (
@@ -86,12 +85,12 @@ export default function StatisticsPage() {
               )}
             </Card>
 
-            {/* 결제 트렌드 */}
-            <Card title='결제 트렌드' description='일별 결제 건수 및 금액'>
+            {/* 예측권 사용량 추이 */}
+            <Card title='예측권 사용량 추이' description='일별 예측권 사용 건수'>
               <div className='mb-4 flex justify-between items-center'>
                 <select
-                  value={betsDays}
-                  onChange={(e) => setBetsDays(Number(e.target.value))}
+                  value={ticketDays}
+                  onChange={(e) => setTicketDays(Number(e.target.value))}
                   className='px-3 py-2 border rounded-lg'
                 >
                   <option value={7}>최근 7일</option>
@@ -99,29 +98,34 @@ export default function StatisticsPage() {
                   <option value={90}>최근 90일</option>
                 </select>
               </div>
-              {betsLoading ? (
+              {ticketLoading ? (
                 <div className='flex items-center justify-center h-64'>
                   <LoadingSpinner size='md' label='로딩 중...' />
                 </div>
-              ) : betsTrend && betsTrend.length > 0 ? (
-                <div className='space-y-3'>
-                  {betsTrend.slice(0, 10).map((day, idx) => (
-                    <div key={idx} className='border-b pb-3 last:border-0'>
-                      <div className='flex justify-between items-center mb-2'>
-                        <span className='text-sm font-medium text-gray-700'>{day.date}</span>
-                        <span className='text-sm text-gray-600'>{Number(day.count)}건</span>
-                      </div>
-                      <div className='grid grid-cols-2 gap-4 text-sm'>
-                        <div>
-                          <div className='text-gray-500'>베팅 금액</div>
-                          <div className='font-semibold text-blue-600'>
-                            ₩{formatNumber(Number(day.amount))}
-                          </div>
-                        </div>
-                        <div>
-                          <div className='text-gray-500'>당첨 금액</div>
-                          <div className='font-semibold text-green-600'>
-                            ₩{formatNumber(Number(day.winAmount))}
+              ) : ticketUsageTrend && ticketUsageTrend.length > 0 ? (
+                <div className='space-y-2'>
+                  {ticketUsageTrend.slice(0, 10).map((day, idx) => (
+                    <div key={idx} className='flex items-center gap-4'>
+                      <div className='w-24 text-sm text-gray-600'>{day.date}</div>
+                      <div className='flex-1'>
+                        <div className='bg-gray-200 rounded-full h-6'>
+                          <div
+                            className='bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2'
+                            style={{
+                              width: `${Math.min(
+                                (Number(day.count) /
+                                  Math.max(
+                                    ...ticketUsageTrend.map((d) => Number(d.count)),
+                                    1
+                                  )) *
+                                  100,
+                                100
+                              )}%`,
+                            }}
+                          >
+                            <span className='text-xs text-white font-semibold'>
+                              {day.count}장
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -131,7 +135,7 @@ export default function StatisticsPage() {
               ) : (
                 <div className='flex items-center justify-center h-64'>
                   <div className='text-center text-gray-500'>
-                    <AdminIcon icon={DollarSign} className='h-16 w-16 mx-auto mb-4' />
+                    <AdminIcon icon={BarChart3} className='h-16 w-16 mx-auto mb-4' />
                     <p>데이터가 없습니다</p>
                   </div>
                 </div>

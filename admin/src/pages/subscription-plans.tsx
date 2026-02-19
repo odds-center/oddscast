@@ -212,8 +212,8 @@ export default function SubscriptionPlansPage() {
                       <span className='text-gray-600'>개별 구매 대비</span>
                       <span className='font-semibold text-green-600'>
                         {Math.round(
-                          ((plan.totalTickets * 1100 - plan.totalPrice) /
-                            (plan.totalTickets * 1100)) *
+                          ((plan.totalTickets * 550 - plan.totalPrice) /
+                            (plan.totalTickets * 550)) *
                             100
                         )}
                         % 할인
@@ -344,15 +344,15 @@ export default function SubscriptionPlansPage() {
                       <span className='font-bold text-green-600'>
                         {watchedOriginalPrice && watchedBaseTickets && watchedBonusTickets
                           ? Math.round(
-                              (((watchedBaseTickets + watchedBonusTickets) * 1100 -
+                              (((watchedBaseTickets + watchedBonusTickets) * 550 -
                                 (watchedOriginalPrice + Math.round(watchedOriginalPrice * 0.1))) /
-                                ((watchedBaseTickets + watchedBonusTickets) * 1100)) *
+                                ((watchedBaseTickets + watchedBonusTickets) * 550)) *
                                 100
                             )
                           : editingPlan
                           ? Math.round(
-                              ((editingPlan.totalTickets * 1100 - editingPlan.totalPrice) /
-                                (editingPlan.totalTickets * 1100)) *
+                              ((editingPlan.totalTickets * 550 - editingPlan.totalPrice) /
+                                (editingPlan.totalTickets * 550)) *
                                 100
                             )
                           : 0}

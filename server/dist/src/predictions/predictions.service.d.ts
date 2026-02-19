@@ -379,7 +379,7 @@ export declare class PredictionsService {
             name: string;
         }[];
     }>;
-    getCommentary(date?: string, limit?: number, offset?: number): Promise<{
+    getCommentary(date?: string, limit?: number, offset?: number, meet?: string): Promise<{
         comments: {
             id: string;
             expertId: string;

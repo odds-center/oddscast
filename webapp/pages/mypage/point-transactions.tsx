@@ -69,7 +69,7 @@ export default function PointTransactionsPage() {
           columns={[
             { key: 'type', header: '유형', headerClassName: 'min-w-[100px]', cellClassName: 'font-medium', render: (t) => getTypeLabel(t.transactionType) },
             { key: 'desc', header: '설명', cellClassName: 'text-text-secondary', render: (t) => t.description ?? '-' },
-            { key: 'amount', header: '포인트', align: 'right', headerClassName: 'w-24', cellClassName: (t) => `font-semibold ${isPositive(t.transactionType) ? 'text-primary' : 'text-text-secondary'}`, render: (t) => `${isPositive(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt` },
+            { key: 'amount', header: '포인트', align: 'right', headerClassName: 'w-24', cellClassName: (t) => `font-semibold ${isPositive(t.transactionType) ? 'text-emerald-600' : 'text-text-secondary'}`, render: (t) => `${isPositive(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt` },
             { key: 'date', header: '일시', align: 'center', headerClassName: 'w-32', cellClassName: 'text-text-tertiary', render: (t) => { const v = t.transactionTime ?? t.createdAt; return v ? formatDate(v) : '-'; } },
           ]}
           data={transactions}

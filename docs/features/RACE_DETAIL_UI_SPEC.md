@@ -23,15 +23,17 @@
 |----------------|--------|-------------|------|
 | Location | rcDay + meetName | 일요 서울 | 시행 경마장 및 요일 |
 | RaceNo | rcNo | 제 9 경주 | 경주 번호 |
+| **rcDate** | rcDate | 2025-02-19 | 경주 날짜 |
 | Time | stTime | 17:25 | 출발 시각 |
 | Distance | rcDist | 1800M | 경주 거리 |
 | Grade | rank | 3등급 | 경주 등급 (Class) |
+| **rcPrize** | rcPrize | 1착 8,000만원 | 1착 상금 |
 | Type | budam (entry 기준) | 핸디캡 일반 | 경주 방식 |
 | Condition | rcCondition | 연령오픈 / 성별오픈 | 출전 조건 |
 | Weather | weather | 맑음 | 날씨 (선택) |
 | Track | track | 건조 (2%) | 주로 상태 (선택) |
 
-**UI 표현**: 카드 형태, 상단 Location+경주번호, 하단 거리·등급·조건 그리드.
+**UI 표현**: 카드 형태, 상단 Location+경주번호, rcDate·rcPrize 아이콘(Calendar, Award), 하단 거리·등급·조건 그리드.
 
 ---
 
@@ -111,6 +113,33 @@
 
 ---
 
+### 2.5. 경주 결과 테이블 (Result Table)
+
+경주 종료 후 표시되는 결과 테이블. `GET /races/:id/results` 또는 Race 상세 include results.
+
+| 컬럼 | DTO | 설명 |
+|------|-----|------|
+| 순위 | ord | 도착 순위 |
+| 기번 | chulNo | 게이트 번호 |
+| 마번 | hrNo | 마번호 |
+| 마명 | hrName | 마명 |
+| 기수 | jkName | 기수명 |
+| 조교사 | trName | 조교사명 |
+| **착차** | diffUnit | 1위 대비 기록차 (예: 1.0, 0.5, 3/4) |
+| **단승** | winOdds | 단승 배당율 |
+| **복승** | plcOdds | 복승 배당율 |
+| ordType | ordType | 낙마(DISQ)/실격(EQ)/기권(WDR) 등 |
+
+**모바일**: 일부 컬럼(착차, 단승·복승)은 공간에 따라 숨김 가능.
+
+---
+
+### 2.6. 배당 섹션 (Dividends)
+
+배당 정보는 카드 그리드 형태, 접기/펼치기 지원.
+
+---
+
 ## 4. 시각적 계층 (Design Guidelines)
 
 ### 4.1. 중요도
@@ -144,4 +173,5 @@
 
 - Race: `RaceDto`, `RaceDetailDto` (`shared/types/dto/race.dto.ts`)
 - Entry: `RaceEntryDto` (chulNo, hrNo, hrName, jkName, trName, wgBudam, age, sex, prd, rating, horseWeight, rcCntT, ord1CntT)
+- **RaceResult**: `RaceResultDto` (ord, chulNo, hrNo, hrName, jkName, trName, wgBudam, wgHr, rcTime, diffUnit, winOdds, plcOdds, ordType)
 - 예측: `horseScores` 배열의 순서로 ◎○△※ 매핑

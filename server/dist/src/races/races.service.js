@@ -159,11 +159,18 @@ let RacesService = class RacesService {
             select: {
                 id: true,
                 ord: true,
+                ordType: true,
                 chulNo: true,
                 hrNo: true,
                 hrName: true,
                 jkName: true,
+                trName: true,
+                wgBudam: true,
+                wgHr: true,
                 rcTime: true,
+                diffUnit: true,
+                winOdds: true,
+                plcOdds: true,
             },
             orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
         });

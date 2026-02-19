@@ -214,10 +214,11 @@
 
 ## 🔄 약관 및 정책
 
-- [서비스 이용 약관](https://goldenrace.app/terms)
-- [개인정보 처리방침](https://goldenrace.app/privacy)
-- [구독 및 환불 정책](https://goldenrace.app/refund)
-- [AI 예측 면책 조항](https://goldenrace.app/disclaimer)
+- [서비스 이용 약관](/legal/terms)
+- [개인정보 처리방침](/legal/privacy)
+- [환불 및 결제 정책](/legal/refund)
+
+AI 예측 면책 조항은 서비스 이용 약관 제10조에 포함되어 있습니다.
 
 ---
 
@@ -235,5 +236,5 @@
 
 ---
 
-**마지막 업데이트**: 2025년 10월 10일  
-**버전**: 2.0 (구독 서비스 모델)
+**마지막 업데이트**: 2025년 2월 19일  
+**버전**: 2.1 (법적 문서 확장, 환불·결제 정책 추가)

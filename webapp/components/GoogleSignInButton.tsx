@@ -35,11 +35,15 @@ declare global {
   }
 }
 
+type GoogleButtonText = 'signin_with' | 'signup_with' | 'continue_with' | 'signin';
+
 interface GoogleSignInButtonProps {
   onSuccess?: (idToken: string) => void | Promise<void>;
   onError?: (error: string) => void;
   theme?: 'outline' | 'filled_blue' | 'filled_black';
   size?: 'large' | 'medium' | 'small';
+  /** signin_with(기본) | signup_with(회원가입) | continue_with(계속하기) */
+  text?: GoogleButtonText;
 }
 
 export default function GoogleSignInButton({
@@ -47,6 +51,7 @@ export default function GoogleSignInButton({
   onError,
   theme = 'outline',
   size = 'large',
+  text = 'signin_with',
 }: GoogleSignInButtonProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const initializedRef = useRef(false);
@@ -105,11 +110,11 @@ export default function GoogleSignInButton({
         theme,
         size,
         type: 'standard',
-        text: 'signin_with',
+        text,
         shape: 'rectangular',
       });
     }
-  }, [scriptLoaded, onSuccess, onError, theme, size]);
+  }, [scriptLoaded, onSuccess, onError, theme, size, text]);
 
   // WebView(Native 앱) 내부일 때: Native Google Sign-In 버튼
   if (nativeBridge.isNativeApp()) {
@@ -117,7 +122,7 @@ export default function GoogleSignInButton({
       <button
         type='button'
         onClick={handleNativeGoogleLogin}
-        className='w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg border border-border bg-card hover:bg-secondary transition-colors'
+        className='w-full flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg border border-border bg-card hover:bg-secondary transition-colors text-sm'
         style={{ minHeight: 44 }}
       >
         <svg width='18' height='18' viewBox='0 0 18 18'>

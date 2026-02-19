@@ -28,7 +28,7 @@ export default function RequireLogin({
   const button =
     action ??
     (showLoginButton ? (
-      <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 px-6 py-3'>
+      <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-1.5 px-4 py-2'>
         <Icon name='LogIn' size={18} />
         {linkText}
       </Link>

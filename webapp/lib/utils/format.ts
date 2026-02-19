@@ -2,6 +2,19 @@
  * 표시용 포맷 유틸
  */
 
+/** rcDate(YYYYMMDD)가 오늘 이전이면 true — 날짜 지난 경주는 종료로 간주 */
+export function isPastRaceDate(rcDate: string | null | undefined): boolean {
+  if (!rcDate || typeof rcDate !== 'string') return false;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return false;
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${y}${m}${d}`;
+  return norm < todayStr;
+}
+
 /** YYYYMMDD 또는 YYYY-MM-DD → "2025.02.15" */
 export function formatRcDate(rcDate: string | undefined): string {
   if (!rcDate) return '-';

@@ -45,21 +45,35 @@ export class AdminController {
   // --- KRA Data Sync Endpoints ---
 
   @Post('kra/sync/schedule')
-  @ApiOperation({ summary: '[Admin] KRA 경주 계획/출전표 동기화' })
+  @ApiOperation({
+    summary: '[Admin] KRA 경주 계획/출전표 동기화',
+    description:
+      'date 미지정 시 오늘부터 1년 내 미래 경주일(금·토·일) 전체 적재. date 지정 시 해당 날짜만 적재.',
+  })
   async syncSchedule(@Query('date') date?: string) {
-    const d =
-      date?.replace(/-/g, '').slice(0, 8) ||
-      new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return this.kraService.syncEntrySheet(d);
+    const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
+    if (date && norm(date)) {
+      return this.kraService.syncEntrySheet(norm(date));
+    }
+    return this.kraService.syncUpcomingSchedules();
   }
 
   @Post('kra/sync/results')
-  @ApiOperation({ summary: '[Admin] KRA 경주 결과 동기화' })
+  @ApiOperation({
+    summary: '[Admin] KRA 경주 결과 동기화',
+    description:
+      'date 미지정 시 오늘 기준 과거 1년(금·토·일 경주일만) 적재. date 지정 시 해당 날짜만 적재.',
+  })
   async syncResults(@Query('date') date?: string) {
-    const d =
-      date?.replace(/-/g, '').slice(0, 8) ||
-      new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    return this.kraService.fetchRaceResults(d);
+    const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
+    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    if (date && norm(date)) {
+      return this.kraService.fetchRaceResults(norm(date));
+    }
+    const oneYearAgo = new Date();
+    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+    const dateFrom = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, '');
+    return this.kraService.syncHistoricalBackfill(dateFrom, today);
   }
 
   @Post('kra/sync/details')
@@ -702,40 +716,35 @@ export class AdminController {
       .map(([date, count]) => ({ date, count }));
   }
 
-  @Get('statistics/bets-trend')
-  @ApiOperation({ summary: '[Admin] 마권 트렌드' })
-  async getBetsTrend(@Query('days') days?: number) {
+  @Get('statistics/ticket-usage-trend')
+  @ApiOperation({ summary: '[Admin] 예측권 사용량 추이' })
+  async getTicketUsageTrend(@Query('days') days?: number) {
     const d = Math.min(90, Math.max(7, Number(days) || 30));
     const start = new Date();
     start.setDate(start.getDate() - d);
     start.setHours(0, 0, 0, 0);
 
-    const bets = await this.prisma.bet.findMany({
-      where: { betTime: { gte: start } },
-      select: { betAmount: true, actualWin: true, betTime: true },
+    const tickets = await this.prisma.predictionTicket.findMany({
+      where: { status: 'USED', usedAt: { gte: start } },
+      select: { usedAt: true },
     });
 
-    const byDate: Record<
-      string,
-      { count: number; amount: number; winAmount: number }
-    > = {};
+    const byDate: Record<string, number> = {};
     for (let i = 0; i < d; i++) {
       const dt = new Date(start);
       dt.setDate(dt.getDate() + i);
       const key = dt.toISOString().slice(0, 10);
-      byDate[key] = { count: 0, amount: 0, winAmount: 0 };
+      byDate[key] = 0;
     }
-    bets.forEach((b) => {
-      const key = b.betTime.toISOString().slice(0, 10);
-      if (byDate[key]) {
-        byDate[key].count++;
-        byDate[key].amount += b.betAmount ?? 0;
-        byDate[key].winAmount += b.actualWin ?? 0;
+    tickets.forEach((t) => {
+      if (t.usedAt) {
+        const key = t.usedAt.toISOString().slice(0, 10);
+        if (byDate[key] != null) byDate[key]++;
       }
     });
 
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, v]) => ({ date, ...v }));
+      .map(([date, count]) => ({ date, count }));
   }
 }

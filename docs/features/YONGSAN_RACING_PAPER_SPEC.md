@@ -158,8 +158,10 @@ GET /api/predictions/matrix?date=2026-02-08&meet=서울
 ### 5.2. 전문가 코멘트 API
 
 ```
-GET /api/predictions/commentary?date=2026-02-08&limit=20&offset=0
+GET /api/predictions/commentary?date=2026-02-08&meet=서울&limit=20&offset=0
 ```
+
+**파라미터**: `date`, `meet`(선택), `limit`, `offset`
 
 **응답 구조**
 

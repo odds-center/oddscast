@@ -63,7 +63,7 @@ export default function PredictionMatrixTable({ data }: PredictionMatrixTablePro
                 {ex.name}
               </th>
             ))}
-            <th className='cell-center min-w-[64px] bg-primary/20 text-primary font-semibold'>
+            <th className='cell-center min-w-[64px] bg-slate-100 text-slate-700 font-semibold'>
               {aiExpert?.name ?? 'AI 종합'}
             </th>
           </tr>
@@ -74,7 +74,7 @@ export default function PredictionMatrixTable({ data }: PredictionMatrixTablePro
               <td className='sticky left-0 z-10 bg-background'>
                 <Link
                   href={routes.races.detail(row.raceId)}
-                  className='font-medium text-primary hover:underline'
+                  className='font-medium text-slate-700 hover:underline'
                 >
                   {row.meetName ?? row.meet} {row.rcNo}R
                   {row.stTime && (
@@ -87,11 +87,17 @@ export default function PredictionMatrixTable({ data }: PredictionMatrixTablePro
                   <PredictionCell val={row.predictions[ex.id] ?? '-'} />
                 </td>
               ))}
-              <td className='cell-center bg-primary/5'>
-                <div className='flex items-center justify-center gap-1'>
-                  <GateBadge no={row.aiConsensus} compact />
+              <td className='cell-center bg-slate-50'>
+                <div className='flex items-center justify-center gap-1 flex-wrap'>
+                  <PredictionCell
+                    val={
+                      Array.isArray(row.predictions.ai_consensus)
+                        ? row.predictions.ai_consensus
+                        : row.aiConsensus ?? '-'
+                    }
+                  />
                   {row.consensusLabel && (
-                    <span className='text-primary text-xs font-medium'>({row.consensusLabel})</span>
+                    <span className='text-slate-600 text-xs font-medium'>({row.consensusLabel})</span>
                   )}
                 </div>
               </td>

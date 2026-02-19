@@ -3,7 +3,8 @@
  * 로그인 필요. (향후 예측권/종합예상권 게이트 예정)
  * 탭: 종합 예상표 (Matrix) | AI/전문가 코멘트 (Feed)
  */
-import { useState } from 'react';
+import { useCallback } from 'react';
+import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { TabBar } from '@/components/ui';
@@ -21,30 +22,65 @@ import { useAuthStore } from '@/lib/store/authStore';
 
 type TabId = 'matrix' | 'commentary';
 
+function getDateParam(filter: string): string | undefined {
+  if (!filter || filter === 'today') return undefined; // 오늘 = today
+  if (filter === 'yesterday') {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10);
+  }
+  // YYYY-MM-DD
+  if (/^\d{4}-?\d{2}-?\d{2}$/.test(filter.replace(/-/g, ''))) {
+    return filter.includes('-') ? filter : `${filter.slice(0, 4)}-${filter.slice(4, 6)}-${filter.slice(6, 8)}`;
+  }
+  return undefined;
+}
+
 export default function PredictionMatrixPage() {
+  const router = useRouter();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const [activeTab, setActiveTab] = useState<TabId>('matrix');
-  const [dateFilter, setDateFilter] = useState<string>('today');
+  const qDate = (router.query?.date as string) ?? 'today';
+  const qMeet = (router.query?.meet as string) ?? '';
+  const qTab = (router.query?.tab as TabId) ?? 'matrix';
+  const activeTab = ['matrix', 'commentary'].includes(qTab) ? qTab : 'matrix';
+  const dateFilter = qDate || 'today';
+  const meetFilter = qMeet || '';
+
+  const updateQuery = useCallback(
+    (updates: Record<string, string | undefined>) => {
+      const next = { ...router.query, ...updates };
+      (Object.keys(updates) as (keyof typeof updates)[]).forEach((k) => {
+        if (updates[k] === undefined || updates[k] === '') delete next[k];
+      });
+      router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
+    },
+    [router],
+  );
+
+  const apiDate = getDateParam(dateFilter);
 
   const { data: hitRecords } = useQuery({
     queryKey: ['predictions', 'hit-record'],
     queryFn: () => PredictionMatrixApi.getHitRecords(5),
+    enabled: isLoggedIn,
   });
 
   const { data: matrixData, isLoading, error, refetch } = useQuery({
-    queryKey: ['predictions', 'matrix', dateFilter],
-    queryFn: () =>
-      PredictionMatrixApi.getMatrix(
-        dateFilter === 'today' ? undefined : dateFilter,
-        undefined,
-      ),
+    queryKey: ['predictions', 'matrix', dateFilter, meetFilter],
+    queryFn: () => PredictionMatrixApi.getMatrix(apiDate, meetFilter || undefined),
+    enabled: isLoggedIn,
   });
 
-  const { data: commentaryData } = useQuery({
-    queryKey: ['predictions', 'commentary', dateFilter],
+  const {
+    data: commentaryData,
+    isLoading: commentaryLoading,
+    error: commentaryError,
+    refetch: commentaryRefetch,
+  } = useQuery({
+    queryKey: ['predictions', 'commentary', dateFilter, meetFilter],
     queryFn: () =>
-      PredictionMatrixApi.getCommentary(dateFilter === 'today' ? undefined : dateFilter),
-    enabled: activeTab === 'commentary',
+      PredictionMatrixApi.getCommentary(apiDate, 20, 0, meetFilter || undefined),
+    enabled: isLoggedIn && activeTab === 'commentary',
   });
 
   return (
@@ -52,18 +88,18 @@ export default function PredictionMatrixPage() {
       <CompactPageTitle title='종합 예상표' backHref={routes.home} />
 
       {!isLoggedIn ? (
-        <div className='rounded-xl border border-primary/30 bg-primary/5 p-6 text-center'>
+        <div className='rounded-xl border border-slate-200 bg-slate-50 p-6 text-center'>
           <RequireLogin
             suffix='종합 예상표를 확인할 수 있습니다'
             action={
-              <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 px-6 py-3'>
+              <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-1.5 px-4 py-2'>
                 로그인하고 보기
               </Link>
             }
           />
           <p className='text-text-tertiary text-xs mt-4'>
             예측권으로 경주별 AI 분석을 더 자세히 확인하세요. —{' '}
-            <Link href={routes.profile.index} className='text-primary hover:underline'>
+            <Link href={routes.profile.index} className='text-slate-700 font-medium hover:underline'>
               내 정보
             </Link>
           </p>
@@ -75,12 +111,49 @@ export default function PredictionMatrixPage() {
       )}
 
       <FilterDateBar
-        filterOptions={[{ value: 'today', label: '오늘' }]}
-        filterValue={dateFilter === 'today' ? 'today' : dateFilter || ''}
-        onFilterChange={(v) => setDateFilter(v || 'today')}
-        dateValue={dateFilter !== 'today' && dateFilter ? dateFilter : ''}
-        onDateChange={(v) => setDateFilter(v || 'today')}
+        filterOptions={[
+          { value: 'today', label: '오늘' },
+          { value: 'yesterday', label: '어제' },
+          { value: 'date', label: '날짜' },
+        ]}
+        filterValue={
+          dateFilter === 'today'
+            ? 'today'
+            : dateFilter === 'yesterday'
+              ? 'yesterday'
+              : /^\d{4}-?\d{2}-?\d{2}$/.test(String(dateFilter).replace(/-/g, ''))
+                ? 'date'
+                : 'today'
+        }
+        onFilterChange={(v) => {
+          if (v === 'today') updateQuery({ date: 'today' });
+          else if (v === 'yesterday') updateQuery({ date: 'yesterday' });
+          else {
+            const d = new Date();
+            updateQuery({ date: d.toISOString().slice(0, 10) });
+          }
+        }}
+        showDatePicker
+        dateValue={
+          dateFilter && dateFilter !== 'today' && dateFilter !== 'yesterday'
+            ? dateFilter.includes('-')
+              ? dateFilter
+              : `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
+            : dateFilter === 'yesterday'
+              ? (() => {
+                  const d = new Date();
+                  d.setDate(d.getDate() - 1);
+                  return d.toISOString().slice(0, 10);
+                })()
+              : dateFilter === 'today'
+                ? new Date().toISOString().slice(0, 10)
+                : ''
+        }
+        onDateChange={(v) => updateQuery({ date: v || undefined, meet: meetFilter || undefined })}
         dateId='matrix-date'
+        showMeetFilter
+        meetValue={meetFilter}
+        onMeetChange={(v) => updateQuery({ date: dateFilter || undefined, meet: v || undefined })}
       />
 
       <TabBar
@@ -89,7 +162,7 @@ export default function PredictionMatrixPage() {
           { value: 'commentary', label: 'AI/전문가 코멘트' },
         ]}
         value={activeTab}
-        onChange={(v) => setActiveTab(v)}
+        onChange={(v) => updateQuery({ tab: v })}
         size='md'
         className='mb-4'
       />
@@ -111,13 +184,20 @@ export default function PredictionMatrixPage() {
       )}
 
       {activeTab === 'commentary' && (
-        <section>
-          {commentaryData?.comments ? (
+        <DataFetchState
+          isLoading={commentaryLoading}
+          error={commentaryError as Error | null}
+          onRetry={() => commentaryRefetch()}
+          isEmpty={!commentaryData?.comments?.length}
+          emptyIcon='Sparkles'
+          emptyTitle='코멘트가 없습니다'
+          emptyDescription='해당 날짜에 AI 예측 코멘트가 없습니다.'
+          loadingLabel='코멘트를 불러오는 중...'
+        >
+          {commentaryData?.comments && commentaryData.comments.length > 0 ? (
             <CommentaryFeed comments={commentaryData.comments} />
-          ) : (
-            <p className='text-text-secondary text-sm text-center py-12'>코멘트를 불러오는 중...</p>
-          )}
-        </section>
+          ) : null}
+        </DataFetchState>
       )}
         </>
       )}

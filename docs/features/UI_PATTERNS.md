@@ -288,6 +288,13 @@ onDateChange={(v) => { setDateFilter(v); setPage(1); }}
 - `btn-secondary`: 보조 액션, 취소
 - `msg-error`, `msg-success`: 폼 피드백
 
+### 접근성·터치 (Accessibility & Touch)
+
+- **터치 영역**: 모바일(768px 미만)에서 버튼·칩·페이지네이션 등 **min-height 44px** 적용 (UI_PATTERNS 권장)
+- **포커스**: `focus-visible:ring-2 focus-visible:ring-primary/40` — 키보드 네비게이션 시 링 표시
+- **FilterChips**: 활성 칩 `bg-primary` (브랜드 골드), `aria-pressed`, `aria-label` 적용
+- **LinkBadge**: `focus-visible` 링, `hover:border-primary/30`
+
 ---
 
 ## 페이지 레이아웃

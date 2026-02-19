@@ -31,7 +31,7 @@ export default function SectionCard({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className='inline-flex items-center gap-1 text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline transition-colors shrink-0'
+              className='inline-flex items-center gap-1 py-2 px-1 -m-1 text-sm font-medium text-slate-600 hover:text-slate-900 hover:underline transition-colors shrink-0 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2'
             >
               {viewAllLabel}
               <Icon name='ChevronRight' size={16} />

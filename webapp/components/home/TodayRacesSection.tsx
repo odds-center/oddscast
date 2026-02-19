@@ -1,13 +1,13 @@
 /**
  * 오늘의 경주 섹션 — KRA 발매경주표 스타일 테이블
  */
-import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
-import { StatusBadge } from '@/components/ui';
+import { StatusBadge, LinkBadge } from '@/components/ui';
+import LoadingSpinner from '@/components/LoadingSpinner';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@goldenrace/shared';
 
@@ -34,7 +34,9 @@ export default function TodayRacesSection() {
       viewAllLabel='전체보기'
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>경주 정보를 불러오는 중...</div>
+        <div className='py-12'>
+          <LoadingSpinner size={32} label='경주 정보를 불러오는 중...' />
+        </div>
       ) : races.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>
       ) : (
@@ -56,12 +58,9 @@ export default function TodayRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link
-                  href={routes.races.detail(row.id)}
-                  className='text-slate-700 font-semibold hover:underline'
-                >
+                <LinkBadge href={routes.races.detail(row.id)} icon='Flag' iconSize={12}>
                   {row.rcNo}R
-                </Link>
+                </LinkBadge>
               ),
             },
             {
@@ -77,9 +76,9 @@ export default function TodayRacesSection() {
               headerClassName: 'w-20 cell-center',
               align: 'center',
               render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-slate-700 hover:underline'>
+                <LinkBadge href={routes.races.detail(row.id)}>
                   {row.rcDist ? `${row.rcDist}M` : '-'}
-                </Link>
+                </LinkBadge>
               ),
             },
             {
@@ -118,12 +117,9 @@ export default function TodayRacesSection() {
               headerClassName: 'w-16 cell-center',
               align: 'center',
               render: (row) => (
-                <Link
-                  href={routes.races.detail(row.id)}
-                  className='text-slate-700 text-sm font-medium hover:underline'
-                >
+                <LinkBadge href={routes.races.detail(row.id)}>
                   보기
-                </Link>
+                </LinkBadge>
               ),
             },
           ]}

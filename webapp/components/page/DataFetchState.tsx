@@ -50,7 +50,7 @@ export default function DataFetchState({
         description={error.message}
         action={
           onRetry ? (
-            <button onClick={onRetry} className='btn-secondary px-3 py-1.5 text-sm'>
+            <button onClick={onRetry} className='btn-secondary px-4 py-2 text-sm' aria-label='다시 시도'>
               다시 시도
             </button>
           ) : undefined

@@ -4,6 +4,46 @@
 
 ---
 
+## 2025-02-19 (목) — UI/UX 개선 (접근성·터치 영역·브랜드 일관성)
+
+### FilterChips
+
+- **활성 칩**: `bg-slate-700` → `bg-primary` (브랜드 골드) + `text-primary-foreground`
+- **터치 영역**: 모바일 `min-h-[44px]` (UI_PATTERNS 권장)
+- **접근성**: `focus-visible:ring-2`, `aria-pressed`, `aria-label`, `role='group'`
+
+### LinkBadge
+
+- **호버**: `hover:border-primary/30` 추가
+- **포커스**: `focus-visible:ring-2 focus-visible:ring-primary/40`
+- **터치**: `min-h-[36px]`, `py-1.5` (터치 영역 확대)
+
+### 버튼 (globals.css)
+
+- **모바일 터치**: `.btn-primary`, `.btn-secondary` → `min-height: 44px` (768px 미만)
+- **포커스**: `focus-visible` 링 추가 (키보드 네비게이션)
+
+### Pagination
+
+- **터치**: `min-h-[44px]` (모바일), `focus-visible` 링
+- **버튼**: `min-w-[2.5rem]` 확대
+
+### 카드·섹션
+
+- **card-hover**: `:active` 시 `scale(0.995)` 탭 피드백
+- **SectionCard viewAll**: `focus-visible` 링, 패딩 확대
+
+### TodayRacesSection
+
+- **로딩**: 텍스트 → `LoadingSpinner` 컴포넌트 통일
+- **링크**: `Link` → `LinkBadge` (rcNo, 거리, 상세 컬럼)
+
+### DataFetchState
+
+- **다시 시도 버튼**: `aria-label`, 패딩 확대
+
+---
+
 ## 2025-02-19 (수) — 법적 문서 확장, 경주 결과 UI 강화, 구글 로그인 활성화
 
 ### 법적 문서

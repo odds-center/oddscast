@@ -23,7 +23,7 @@ const navigation = [
   { name: '경주 관리', href: '/races', icon: CalendarDays },
   { name: '경기 결과', href: '/results', icon: Trophy },
   { name: 'KRA 데이터', href: '/kra', icon: Database },
-  { name: '마권 관리', href: '/bets', icon: DollarSign },
+  { name: '결제 내역', href: '/bets', icon: DollarSign },
   { name: '구독 관리', href: '/subscriptions', icon: CreditCard },
   { name: '구독 플랜', href: '/subscription-plans', icon: CreditCard },
   { name: '개별 구매', href: '/single-purchase-config', icon: Ticket },

@@ -60,6 +60,20 @@ export declare class AuthService {
         accessToken: string;
         refreshToken: string;
     }>;
+    forgotPassword(email: string): Promise<{
+        message: string;
+        resetToken?: string;
+    }>;
+    resetPassword(token: string, newPassword: string): Promise<{
+        message: string;
+    }>;
+    verifyEmail(token: string): Promise<{
+        message: string;
+    }>;
+    resendVerification(email: string): Promise<{
+        message: string;
+        verificationToken?: string;
+    }>;
     private generateToken;
     private sanitize;
     private sanitizeAdmin;

@@ -72,12 +72,14 @@ export declare class PredictionsService {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: Prisma.JsonValue | null;
                 recentRanks: Prisma.JsonValue | null;
                 trainingData: Prisma.JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: Prisma.JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: Prisma.JsonValue | null;
             }[];
         } & {
             id: number;
@@ -254,12 +256,14 @@ export declare class PredictionsService {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: Prisma.JsonValue | null;
                 recentRanks: Prisma.JsonValue | null;
                 trainingData: Prisma.JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: Prisma.JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: Prisma.JsonValue | null;
             }[];
         } & {
             id: number;
@@ -319,12 +323,14 @@ export declare class PredictionsService {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: Prisma.JsonValue | null;
                 recentRanks: Prisma.JsonValue | null;
                 trainingData: Prisma.JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: Prisma.JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: Prisma.JsonValue | null;
             }[];
         } & {
             id: number;
@@ -357,6 +363,43 @@ export declare class PredictionsService {
         previewApproved: boolean;
         accuracy: number | null;
     })[]>;
+    getMatrix(date?: string, meet?: string): Promise<{
+        raceMatrix: {
+            raceId: string;
+            meet: string;
+            meetName?: string;
+            rcNo: string;
+            stTime?: string;
+            predictions: Record<string, string[] | string>;
+            aiConsensus: string;
+            consensusLabel?: string;
+        }[];
+        experts: {
+            id: string;
+            name: string;
+        }[];
+    }>;
+    getCommentary(date?: string, limit?: number, offset?: number): Promise<{
+        comments: {
+            id: string;
+            expertId: string;
+            expertName: string;
+            raceId: string;
+            meet: string;
+            rcNo: string;
+            hrNo: string;
+            hrName: string;
+            comment: string;
+            keywords?: string[];
+        }[];
+        total: number;
+    }>;
+    getHitRecords(limit?: number): Promise<{
+        id: string;
+        hitDate: string;
+        description: string;
+        details: string | undefined;
+    }[]>;
     generatePrediction(raceId: number): Promise<{
         id: number;
         createdAt: Date;
@@ -374,6 +417,8 @@ export declare class PredictionsService {
     private buildRaceContext;
     private buildEntrySummary;
     private enrichEntriesWithRecentRanks;
+    private enrichEntriesWithSectionalTag;
+    private enrichEntriesWithTrainerResults;
     private summarizeTraining;
     private getSectionalAnalysisByHorse;
     private parseSectionalTime;

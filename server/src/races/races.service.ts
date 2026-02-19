@@ -32,7 +32,7 @@ export class RacesService {
   async findAll(filters: RaceFilterDto) {
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
-    const { date, dateFrom, dateTo, meet, status } = filters;
+    const { q, date, dateFrom, dateTo, meet, status } = filters;
     const where: Prisma.RaceWhereInput = {};
     if (date) {
       where.rcDate = date.replace(/-/g, '').slice(0, 8);
@@ -43,6 +43,14 @@ export class RacesService {
     }
     if (meet) where.meet = toKraMeetName(meet);
     if (status) where.status = status as Prisma.EnumRaceStatusFilter;
+    if (q && q.trim()) {
+      const term = q.trim();
+      where.OR = [
+        { rcName: { contains: term, mode: 'insensitive' } },
+        { meet: { contains: term, mode: 'insensitive' } },
+        { rcNo: { contains: term, mode: 'insensitive' } },
+      ];
+    }
 
     const [races, total] = await Promise.all([
       this.prisma.race.findMany({
@@ -200,5 +208,54 @@ export class RacesService {
       orderBy: { createdAt: 'desc' },
     });
     return prediction || null;
+  }
+
+  /**
+   * 경주 통계 (meet/date/month/year 기준 집계)
+   */
+  async getStatistics(filters: {
+    meet?: string;
+    date?: string;
+    month?: string;
+    year?: string;
+  }) {
+    const where: Prisma.RaceWhereInput = {};
+    if (filters.meet) where.meet = toKraMeetName(filters.meet);
+    if (filters.date) {
+      where.rcDate = filters.date.replace(/-/g, '').slice(0, 8);
+    } else if (filters.year && filters.month) {
+      const m = String(filters.month).padStart(2, '0');
+      const prefix = `${filters.year}${m}`;
+      where.rcDate = { gte: `${prefix}01`, lte: `${prefix}31` };
+    } else if (filters.year) {
+      where.rcDate = {
+        gte: `${filters.year}0101`,
+        lte: `${filters.year}1231`,
+      };
+    }
+
+    const [total, byStatus] = await Promise.all([
+      this.prisma.race.count({ where }),
+      this.prisma.race.groupBy({
+        by: ['status'],
+        where,
+        _count: { id: true },
+      }),
+    ]);
+
+    const statusCounts: Record<string, number> = {
+      SCHEDULED: 0,
+      IN_PROGRESS: 0,
+      COMPLETED: 0,
+      CANCELLED: 0,
+    };
+    for (const g of byStatus) {
+      statusCounts[g.status] = g._count.id;
+    }
+
+    return {
+      total,
+      byStatus: statusCounts,
+    };
   }
 }

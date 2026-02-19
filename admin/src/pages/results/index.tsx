@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Head from 'next/head';
+import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
@@ -8,7 +9,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { adminResultsApi } from '@/lib/api/admin';
+import { adminResultsApi, adminRacesApi } from '@/lib/api/admin';
 import { formatDate, getErrorMessage } from '@/lib/utils';
 
 interface RaceResult {
@@ -35,6 +36,8 @@ interface RaceResult {
 
 type ResultUpdateDto = { ord?: string; rcTime?: string; chaksun1?: number };
 
+type EditResultForm = { ord: string; rcTime: string; chaksun1: string };
+
 // 결과 수정 모달
 function EditResultModal({
   result,
@@ -47,9 +50,29 @@ function EditResultModal({
   onSave: (dto: ResultUpdateDto) => void;
   isPending: boolean;
 }) {
-  const [ord, setOrd] = useState(result.ord || result.rcRank || '');
-  const [rcTime, setRcTime] = useState(result.rcTime || '');
-  const [chaksun1, setChaksun1] = useState(String(result.chaksun1 ?? result.rcPrize ?? ''));
+  const { register, handleSubmit, reset } = useForm<EditResultForm>({
+    defaultValues: {
+      ord: result.ord || result.rcRank || '',
+      rcTime: result.rcTime || '',
+      chaksun1: String(result.chaksun1 ?? result.rcPrize ?? ''),
+    },
+  });
+
+  useEffect(() => {
+    reset({
+      ord: result.ord || result.rcRank || '',
+      rcTime: result.rcTime || '',
+      chaksun1: String(result.chaksun1 ?? result.rcPrize ?? ''),
+    });
+  }, [result, reset]);
+
+  const onSubmit = (data: EditResultForm) => {
+    onSave({
+      ord: data.ord,
+      rcTime: data.rcTime,
+      chaksun1: data.chaksun1 ? parseInt(data.chaksun1, 10) : undefined,
+    });
+  };
 
   return (
     <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
@@ -58,55 +81,74 @@ function EditResultModal({
         <p className='text-sm text-gray-600 mb-4'>
           {result.hrName} (#{result.hrNo})
         </p>
-        <div className='space-y-4'>
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>착순</label>
             <input
               type='text'
-              value={ord}
-              onChange={(e) => setOrd(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='1'
+              {...register('ord')}
             />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>기록</label>
             <input
               type='text'
-              value={rcTime}
-              onChange={(e) => setRcTime(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='1:12.3'
+              {...register('rcTime')}
             />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>상금 (원)</label>
             <input
               type='number'
-              value={chaksun1}
-              onChange={(e) => setChaksun1(e.target.value)}
               className='w-full px-3 py-2 border rounded-md'
               placeholder='0'
+              {...register('chaksun1')}
             />
           </div>
-        </div>
-        <div className='flex gap-2 mt-6'>
-          <Button variant='primary' onClick={() => onSave({ ord, rcTime, chaksun1: chaksun1 ? parseInt(chaksun1) : undefined })} disabled={isPending}>
-            저장
-          </Button>
-          <Button variant='ghost' onClick={onClose}>취소</Button>
-        </div>
+          <div className='flex gap-2 mt-6'>
+            <Button type='submit' variant='primary' disabled={isPending} isLoading={isPending}>
+              저장
+            </Button>
+            <Button type='button' variant='ghost' onClick={onClose}>취소</Button>
+          </div>
+        </form>
       </div>
     </div>
   );
 }
 
+interface RaceOption {
+  id: number;
+  meet?: string;
+  meetName?: string;
+  rcDate?: string;
+  rcNo?: string;
+  rcName?: string;
+}
+
+type CreateResultForm = {
+  raceId: string;
+  hrNo: string;
+  hrName: string;
+  jkName: string;
+  trName: string;
+  ord: string;
+  rcTime: string;
+  chaksun1: string;
+};
+
 // 결과 등록 모달
 function CreateResultModal({
+  races,
   onClose,
   onSave,
   isPending,
 }: {
+  races: RaceOption[];
   onClose: () => void;
   onSave: (dto: {
     raceId: string;
@@ -120,30 +162,33 @@ function CreateResultModal({
   }) => void;
   isPending: boolean;
 }) {
-  const [raceId, setRaceId] = useState('');
-  const [hrNo, setHrNo] = useState('');
-  const [hrName, setHrName] = useState('');
-  const [jkName, setJkName] = useState('');
-  const [trName, setTrName] = useState('');
-  const [ord, setOrd] = useState('');
-  const [rcTime, setRcTime] = useState('');
-  const [chaksun1, setChaksun1] = useState('');
+  const { register, handleSubmit, formState: { errors } } = useForm<CreateResultForm>({
+    defaultValues: {
+      raceId: '',
+      hrNo: '',
+      hrName: '',
+      jkName: '',
+      trName: '',
+      ord: '',
+      rcTime: '',
+      chaksun1: '',
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!raceId || !hrNo || !hrName) {
-      toast.error('경주ID, 마번, 마명은 필수입니다');
+  const onSubmit = (data: CreateResultForm) => {
+    if (!data.raceId || !data.hrNo || !data.hrName) {
+      toast.error('경주, 마번, 마명은 필수입니다');
       return;
     }
     onSave({
-      raceId,
-      hrNo,
-      hrName,
-      jkName: jkName || undefined,
-      trName: trName || undefined,
-      ord: ord || undefined,
-      rcTime: rcTime || undefined,
-      chaksun1: chaksun1 ? parseInt(chaksun1) : undefined,
+      raceId: data.raceId,
+      hrNo: data.hrNo,
+      hrName: data.hrName,
+      jkName: data.jkName || undefined,
+      trName: data.trName || undefined,
+      ord: data.ord || undefined,
+      rcTime: data.rcTime || undefined,
+      chaksun1: data.chaksun1 ? parseInt(data.chaksun1, 10) : undefined,
     });
   };
 
@@ -151,89 +196,73 @@ function CreateResultModal({
     <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50'>
       <div className='bg-white rounded-lg p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto' onClick={(e) => e.stopPropagation()}>
         <h2 className='text-xl font-bold mb-4'>결과 수동 등록</h2>
-        <form onSubmit={handleSubmit} className='space-y-4'>
+        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>경주 ID *</label>
-            <input
-              type='text'
-              value={raceId}
-              onChange={(e) => setRaceId(e.target.value)}
-              required
+            <label className='block text-sm font-medium text-gray-700 mb-1'>경주 *</label>
+            <select
               className='w-full px-3 py-2 border rounded-md'
-              placeholder='UUID'
-            />
+              {...register('raceId', { required: '경주를 선택하세요.' })}
+            >
+              <option value=''>경주 선택</option>
+              {races.map((r) => {
+                const dateStr =
+                  r.rcDate && r.rcDate.length >= 8
+                    ? `${r.rcDate.slice(0, 4)}-${r.rcDate.slice(4, 6)}-${r.rcDate.slice(6, 8)}`
+                    : r.rcDate;
+                const label = `${r.meetName ?? r.meet ?? ''} ${r.rcNo ?? ''}경 (${dateStr ?? ''})`;
+                return (
+                  <option key={r.id} value={String(r.id)}>
+                    {label}
+                  </option>
+                );
+              })}
+            </select>
+            {errors.raceId && <p className='text-sm text-red-600 mt-1'>{errors.raceId.message}</p>}
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>마번 *</label>
             <input
               type='text'
-              value={hrNo}
-              onChange={(e) => setHrNo(e.target.value)}
-              required
               className='w-full px-3 py-2 border rounded-md'
               placeholder='등록번호'
+              {...register('hrNo', { required: '마번을 입력하세요.' })}
             />
+            {errors.hrNo && <p className='text-sm text-red-600 mt-1'>{errors.hrNo.message}</p>}
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>마명 *</label>
             <input
               type='text'
-              value={hrName}
-              onChange={(e) => setHrName(e.target.value)}
-              required
               className='w-full px-3 py-2 border rounded-md'
               placeholder='마명'
+              {...register('hrName', { required: '마명을 입력하세요.' })}
             />
+            {errors.hrName && <p className='text-sm text-red-600 mt-1'>{errors.hrName.message}</p>}
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>기수명</label>
-            <input
-              type='text'
-              value={jkName}
-              onChange={(e) => setJkName(e.target.value)}
-              className='w-full px-3 py-2 border rounded-md'
-            />
+            <input type='text' className='w-full px-3 py-2 border rounded-md' {...register('jkName')} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>조교사명</label>
-            <input
-              type='text'
-              value={trName}
-              onChange={(e) => setTrName(e.target.value)}
-              className='w-full px-3 py-2 border rounded-md'
-            />
+            <input type='text' className='w-full px-3 py-2 border rounded-md' {...register('trName')} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>착순</label>
-            <input
-              type='text'
-              value={ord}
-              onChange={(e) => setOrd(e.target.value)}
-              className='w-full px-3 py-2 border rounded-md'
-              placeholder='1'
-            />
+            <input type='text' className='w-full px-3 py-2 border rounded-md' placeholder='1' {...register('ord')} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>기록</label>
-            <input
-              type='text'
-              value={rcTime}
-              onChange={(e) => setRcTime(e.target.value)}
-              className='w-full px-3 py-2 border rounded-md'
-              placeholder='1:12.3'
-            />
+            <input type='text' className='w-full px-3 py-2 border rounded-md' placeholder='1:12.3' {...register('rcTime')} />
           </div>
           <div>
             <label className='block text-sm font-medium text-gray-700 mb-1'>상금 (원)</label>
-            <input
-              type='number'
-              value={chaksun1}
-              onChange={(e) => setChaksun1(e.target.value)}
-              className='w-full px-3 py-2 border rounded-md'
-            />
+            <input type='number' className='w-full px-3 py-2 border rounded-md' {...register('chaksun1')} />
           </div>
           <div className='flex gap-2 pt-4'>
-            <Button type='submit' disabled={isPending}>등록</Button>
+            <Button type='submit' disabled={isPending} isLoading={isPending}>
+              등록
+            </Button>
             <Button type='button' variant='ghost' onClick={onClose}>취소</Button>
           </div>
         </form>
@@ -319,6 +348,18 @@ export default function ResultsPage() {
   const [selectedGroup, setSelectedGroup] = useState<GroupedRace | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+
+  const toDate = (d: Date) =>
+    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+  const dateTo = toDate(new Date());
+  const dateFrom = toDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+
+  const { data: racesData } = useQuery({
+    queryKey: ['admin-races-for-result', dateFrom, dateTo],
+    queryFn: () => adminRacesApi.getAll({ page: 1, limit: 200, dateFrom, dateTo }),
+    enabled: createModalOpen,
+  });
+  const raceOptions: RaceOption[] = (racesData?.data ?? []) as RaceOption[];
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-results', dateFilter],
@@ -511,6 +552,7 @@ export default function ResultsPage() {
         {/* 결과 등록 모달 */}
         {createModalOpen && (
           <CreateResultModal
+            races={raceOptions}
             onClose={() => setCreateModalOpen(false)}
             onSave={(dto) => createMutation.mutate(dto)}
             isPending={createMutation.isPending}

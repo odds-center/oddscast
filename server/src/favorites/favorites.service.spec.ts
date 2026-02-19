@@ -46,15 +46,15 @@ describe('FavoritesService', () => {
         tags: ['fast', 'winner'],
       };
 
-      const expectedResult = { id: '1', ...dto, createdAt: new Date() };
+      const expectedResult = { id: 1, ...dto, createdAt: new Date() };
 
       (prisma.favorite.create as jest.Mock).mockResolvedValue(expectedResult);
 
-      const result = await service.create('user-1', dto as any);
+      const result = await service.create(1, dto as any);
 
       expect(prisma.favorite.create).toHaveBeenCalledWith({
         data: {
-          userId: 'user-1',
+          userId: 1,
           type: 'HORSE',
           targetId: '123',
           targetName: 'Thunder',
@@ -71,7 +71,7 @@ describe('FavoritesService', () => {
   describe('toggle', () => {
     it('should add a favorite if not exists', async () => {
       (prisma.favorite.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.favorite.create as jest.Mock).mockResolvedValue({ id: '1' });
+      (prisma.favorite.create as jest.Mock).mockResolvedValue({ id: 1 });
 
       const dto = {
         type: 'RACE',
@@ -81,15 +81,15 @@ describe('FavoritesService', () => {
         tags: ['weekend'],
       };
 
-      const result = await service.toggle('user-1', dto as any);
+      const result = await service.toggle(1, dto as any);
 
-      expect(result).toEqual({ action: 'ADDED', favorite: { id: '1' } });
+      expect(result).toEqual({ action: 'ADDED', favorite: { id: 1 } });
       expect(prisma.favorite.create).toHaveBeenCalled();
     });
 
     it('should remove a favorite if exists', async () => {
-      (prisma.favorite.findUnique as jest.Mock).mockResolvedValue({ id: '1' });
-      (prisma.favorite.delete as jest.Mock).mockResolvedValue({ id: '1' });
+      (prisma.favorite.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
+      (prisma.favorite.delete as jest.Mock).mockResolvedValue({ id: 1 });
 
       const dto = {
         type: 'RACE',
@@ -97,11 +97,11 @@ describe('FavoritesService', () => {
         targetName: 'Seoul Race 1',
       };
 
-      const result = await service.toggle('user-1', dto as any);
+      const result = await service.toggle(1, dto as any);
 
       expect(result).toEqual({ action: 'REMOVED' });
       expect(prisma.favorite.delete).toHaveBeenCalledWith({
-        where: { id: '1' },
+        where: { id: 1 },
       });
     });
   });

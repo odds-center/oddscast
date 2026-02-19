@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { RegisterDto, LoginDto, AdminLoginDto, GoogleAuthDto, UpdateProfileDto, ChangePasswordDto } from './dto/auth.dto';
+import { RegisterDto, LoginDto, AdminLoginDto, GoogleAuthDto, UpdateProfileDto, ChangePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyEmailDto, ResendVerificationDto } from './dto/auth.dto';
 import { JwtPayload } from '../common/decorators/current-user.decorator';
 export declare class AuthController {
     private authService;
@@ -36,27 +36,20 @@ export declare class AuthController {
     changePassword(user: JwtPayload, dto: ChangePasswordDto): Promise<{
         message: string;
     }>;
-    forgotPassword(_body: {
-        email: string;
-    }): {
+    forgotPassword(dto: ForgotPasswordDto): Promise<{
         message: string;
-    };
-    resetPassword(_body: {
-        token: string;
-        newPassword: string;
-    }): {
+        resetToken?: string;
+    }>;
+    resetPassword(dto: ResetPasswordDto): Promise<{
         message: string;
-    };
-    verifyEmail(_body: {
-        token: string;
-    }): {
+    }>;
+    verifyEmail(dto: VerifyEmailDto): Promise<{
         message: string;
-    };
-    resendVerification(_body: {
-        email: string;
-    }): {
+    }>;
+    resendVerification(dto: ResendVerificationDto): Promise<{
         message: string;
-    };
+        verificationToken?: string;
+    }>;
     deleteAccount(user: JwtPayload): Promise<{
         message: string;
     }>;

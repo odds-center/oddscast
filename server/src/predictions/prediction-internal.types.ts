@@ -23,9 +23,12 @@ export interface RaceEntryForAnalysis {
   hrNo: string;
   hrName?: string | null;
   jkName?: string;
+  trNo?: string | null;
   trName?: string | null;
   wgBudam?: number;
   rating?: number;
+  /** KRA API77: 레이팅 추이 [rating2, rating3, rating4] */
+  ratingHistory?: number[] | null;
   chulNo?: string;
   rcCntT?: number;
   ord1CntT?: number;
@@ -44,6 +47,14 @@ export interface RaceEntryForAnalysis {
   chaksun1?: number | null;
   /** KRA: 통산수득상금 (BigInt) — 저평가 탐지용 */
   chaksunT?: bigint | number | null;
+  /** 조교사 통산승률 (TrainerResult) — API19_1 */
+  trainerWinRate?: number | null;
+  /** 조교사 통산복승률 (TrainerResult) — API19_1 */
+  trainerQuRate?: number | null;
+  /** API37_1 마필 구간별 기록 (s1fAvg, g1fAvg 등) */
+  sectionalStats?: unknown;
+  /** 구간별 태그 (선행마/추입마/중간마) */
+  sectionalTag?: string | null;
   trainings?: Array<{
     trDate?: string;
     intensity?: string;

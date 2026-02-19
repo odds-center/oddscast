@@ -30,7 +30,7 @@ export default function CompactPageTitle({
           <Icon name='ChevronLeft' size={24} />
         </Link>
       )}
-      <h2 className='text-[15px] sm:text-base font-semibold text-foreground flex-1 min-w-0'>
+      <h2 className='text-base sm:text-lg font-semibold text-foreground flex-1 min-w-0'>
         {title}
       </h2>
     </div>

@@ -120,7 +120,35 @@ https://apis.data.go.kr/B551015/API77/raceHorseRating?ServiceKey=[인증키]&num
 
 ---
 
-## 6. NestJS 연동 가이드 (Implementation)
+## 6. 실제 응답 샘플 (API 호출 검증)
+
+`server/scripts/fetch-kra-sample.mjs`에서 `raceHorseRating` 엔드포인트 호출 후  
+`kra-sample-responses/raceHorseRating-{rcDate}.json`에 저장됩니다.
+
+**실행**: `KRA_SERVICE_KEY=xxx node scripts/fetch-kra-sample.mjs [YYYYMMDD]`
+
+### meet 값 형식
+
+- **숫자 코드**: `"1"`(서울), `"2"`(제주), `"3"`(부산경남) — 공식 명세상 샘플이 숫자로 올 수 있음
+- **한글**: `"서울"`, `"제주"`, `"부산경남"` — 둘 다 지원되며 KraService에서 통일 처리
+
+### response.body.items.item 구조
+
+| 필드     | 타입   | 예시값      | 설명                        |
+| -------- | ------ | ----------- | --------------------------- |
+| meet     | string | "1" 또는 "서울" | 경마장 코드 또는 한글명     |
+| hrNo     | string | "018128"    | 경주마 고유 번호            |
+| hrName   | string | "군함"      | 경주마 이름                 |
+| rating1  | string | "83"        | 최신 레이팅 (최우선 사용)   |
+| rating2  | string | "103"       | 이전 레이팅 2               |
+| rating3  | string | "82"        | 이전 레이팅 3               |
+| rating4  | string | "81"        | 이전 레이팅 4               |
+
+- `item`이 단일 객체일 경우 `body.items.item`는 배열이 아님. KraService에서 `Array.isArray(raw) ? raw : [raw]`로 정규화.
+
+---
+
+## 7. NestJS 연동 가이드 (Implementation)
 
 ### KraService 메서드 예시
 
@@ -158,7 +186,7 @@ async getRaceHorseRating(params: {
 
 ---
 
-## 7. 에러 코드 (Error Codes)
+## 8. 에러 코드 (Error Codes)
 
 | 코드   | 메시지                                | 설명                               |
 | ------ | ------------------------------------- | ---------------------------------- |
@@ -174,7 +202,7 @@ async getRaceHorseRating(params: {
 
 ---
 
-## 8. AI 활용 전략 (KRA_API_ANALYSIS_SPEC 연계)
+## 9. AI 활용 전략 (KRA_API_ANALYSIS_SPEC 연계)
 
 | 데이터 필드      | AI 분석 활용 예시                                                    |
 | ---------------- | -------------------------------------------------------------------- |

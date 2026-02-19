@@ -8,6 +8,7 @@ import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { BarChart3, TrendingUp, Users, DollarSign } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 export default function StatisticsPage() {
   const [usersDays, setUsersDays] = useState(30);
@@ -53,7 +54,7 @@ export default function StatisticsPage() {
               </div>
               {usersLoading ? (
                 <div className='flex items-center justify-center h-64'>
-                  <div className='text-gray-500'>로딩 중...</div>
+                  <LoadingSpinner size='md' label='로딩 중...' />
                 </div>
               ) : usersGrowth && usersGrowth.length > 0 ? (
                 <div className='space-y-2'>
@@ -85,8 +86,8 @@ export default function StatisticsPage() {
               )}
             </Card>
 
-            {/* 베팅 트렌드 */}
-            <Card title='베팅 트렌드' description='일별 베팅 건수 및 금액'>
+            {/* 결제 트렌드 */}
+            <Card title='결제 트렌드' description='일별 결제 건수 및 금액'>
               <div className='mb-4 flex justify-between items-center'>
                 <select
                   value={betsDays}
@@ -100,7 +101,7 @@ export default function StatisticsPage() {
               </div>
               {betsLoading ? (
                 <div className='flex items-center justify-center h-64'>
-                  <div className='text-gray-500'>로딩 중...</div>
+                  <LoadingSpinner size='md' label='로딩 중...' />
                 </div>
               ) : betsTrend && betsTrend.length > 0 ? (
                 <div className='space-y-3'>

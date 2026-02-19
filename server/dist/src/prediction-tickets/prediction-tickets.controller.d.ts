@@ -7,10 +7,10 @@ export declare class PredictionTicketsController {
     useTicket(user: JwtPayload, dto: UseTicketDto): Promise<{
         ticket: {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
@@ -51,10 +51,10 @@ export declare class PredictionTicketsController {
             } | null;
         } & {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
@@ -81,8 +81,8 @@ export declare class PredictionTicketsController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
             planId: number;
             price: number;
             billingKey: string | null;
@@ -94,10 +94,10 @@ export declare class PredictionTicketsController {
         } | null;
     } & {
         id: number;
-        status: import("@prisma/client").$Enums.TicketStatus;
-        raceId: number | null;
         userId: number;
         expiresAt: Date;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        raceId: number | null;
         subscriptionId: number | null;
         predictionId: number | null;
         usedAt: Date | null;

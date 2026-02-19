@@ -7,6 +7,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import PageLoading from '@/components/common/PageLoading';
 import { adminSinglePurchaseApi } from '@/lib/api/admin';
 
 // Zod 스키마
@@ -87,7 +88,7 @@ export default function SinglePurchaseConfigPage() {
           <title>개별 구매 설정 | GoldenRace Admin</title>
         </Head>
         <Layout>
-          <div className='p-8'>로딩 중...</div>
+          <PageLoading label='설정을 불러오는 중...' />
         </Layout>
       </>
     );

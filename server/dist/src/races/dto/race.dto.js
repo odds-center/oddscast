@@ -127,6 +127,12 @@ class RaceFilterDto {
 }
 exports.RaceFilterDto = RaceFilterDto;
 __decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '검색어 (rcName, meet, rcNo)' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RaceFilterDto.prototype, "q", void 0);
+__decorate([
     (0, swagger_1.ApiPropertyOptional)({ description: 'YYYYMMDD 또는 YYYY-MM-DD' }),
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

@@ -11,7 +11,7 @@ interface CardProps {
 const variantClass = {
   default: 'card',
   hover: 'card card-hover',
-  accent: 'card border-l-[5px] border-l-primary',
+  accent: 'card border-l-[4px] border-l-primary',
 };
 
 export default function Card({

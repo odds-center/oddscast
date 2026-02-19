@@ -71,6 +71,12 @@ export class AdminController {
     return this.kraService.syncAnalysisData(d);
   }
 
+  @Get('kra/status')
+  @ApiOperation({ summary: '[Admin] KRA 설정 상태 (Base URL, API 키 여부)' })
+  async getKraStatus() {
+    return this.kraService.getKraStatus();
+  }
+
   @Get('kra/sync-logs')
   @ApiOperation({ summary: '[Admin] KRA 동기화 로그 조회' })
   async getKraSyncLogs(
@@ -381,6 +387,27 @@ export class AdminController {
     return this.subscriptionsService.getPlansAdmin();
   }
 
+  @Post('subscriptions/plans')
+  @ApiOperation({ summary: '[Admin] 구독 플랜 생성' })
+  async createSubscriptionPlan(
+    @Body()
+    body: {
+      planName: string;
+      displayName: string;
+      description?: string;
+      originalPrice: number;
+      vat: number;
+      totalPrice: number;
+      baseTickets: number;
+      bonusTickets: number;
+      totalTickets: number;
+      isActive?: boolean;
+      sortOrder?: number;
+    },
+  ) {
+    return this.subscriptionsService.createPlan(body);
+  }
+
   @Get('subscriptions/plans/:id')
   @ApiOperation({ summary: '[Admin] 구독 플랜 상세' })
   async getSubscriptionPlan(@Param('id', ParseIntPipe) id: number) {
@@ -393,9 +420,15 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] 구독 플랜 수정' })
   async updateSubscriptionPlan(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: any,
+    @Body() body: Record<string, unknown>,
   ) {
     return this.subscriptionsService.updatePlan(id, body);
+  }
+
+  @Delete('subscriptions/plans/:id')
+  @ApiOperation({ summary: '[Admin] 구독 플랜 삭제 또는 비활성화' })
+  async deleteSubscriptionPlan(@Param('id', ParseIntPipe) id: number) {
+    return this.subscriptionsService.deletePlan(id);
   }
 
   // --- Notifications (Admin) ---
@@ -508,20 +541,122 @@ export class AdminController {
       include: { plan: true },
     });
     const monthlyRevenue = subs.reduce((s, sub) => s + (sub.price ?? 0), 0);
-    const singlePurchases = await this.prisma.singlePurchase.aggregate({
+
+    const singleAgg = await this.prisma.singlePurchase.aggregate({
       _sum: { totalAmount: true },
+      _count: { id: true },
     });
-    const singleRevenue = singlePurchases._sum?.totalAmount ?? 0;
+    const singleRevenue = singleAgg._sum?.totalAmount ?? 0;
+    const singlePurchaseCount = singleAgg._count?.id ?? 0;
+
     const totalRevenue = monthlyRevenue + singleRevenue;
-    const monthlyCost = 0;
+    const monthlyCost = 0; // AI/인프라 비용은 추후 연동
     const monthlyProfit = totalRevenue - monthlyCost;
     const margin = totalRevenue > 0 ? (monthlyProfit / totalRevenue) * 100 : 0;
-    const periodLabel =
-      period === 'day'
-        ? new Date().toISOString().slice(0, 10)
-        : period === 'year'
-          ? new Date().getFullYear().toString()
-          : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
+    const subscriptionByPlan: Array<{
+      planName: string;
+      count: number;
+      revenue: number;
+    }> = [];
+    const planMap = new Map<string, { count: number; revenue: number }>();
+    for (const sub of subs) {
+      const name = sub.plan?.planName ?? 'Unknown';
+      const curr = planMap.get(name) ?? { count: 0, revenue: 0 };
+      curr.count++;
+      curr.revenue += sub.price ?? 0;
+      planMap.set(name, curr);
+    }
+    planMap.forEach((v, k) =>
+      subscriptionByPlan.push({
+        planName: k,
+        count: v.count,
+        revenue: v.revenue,
+      }),
+    );
+
+    const periodType = period || 'month';
+    const rows: Array<{
+      period: string;
+      revenue: number;
+      payout: number;
+      profit: number;
+    }> = [];
+
+    if (periodType === 'day') {
+      const today = new Date().toISOString().slice(0, 10);
+      const daySingle = await this.prisma.singlePurchase.aggregate({
+        where: {
+          purchasedAt: {
+            gte: new Date(today + 'T00:00:00.000Z'),
+            lt: new Date(new Date(today).getTime() + 86400000),
+          },
+        },
+        _sum: { totalAmount: true },
+      });
+      const dayRev = daySingle._sum?.totalAmount ?? 0;
+      rows.push({
+        period: today,
+        revenue: dayRev,
+        payout: 0,
+        profit: dayRev,
+      });
+    } else if (periodType === 'year') {
+      const y = new Date().getFullYear();
+      const yearSingle = await this.prisma.singlePurchase.aggregate({
+        where: {
+          purchasedAt: {
+            gte: new Date(`${y}-01-01`),
+            lt: new Date(`${y + 1}-01-01`),
+          },
+        },
+        _sum: { totalAmount: true },
+      });
+      const yearRev = monthlyRevenue * 12 + (yearSingle._sum?.totalAmount ?? 0);
+      rows.push({
+        period: String(y),
+        revenue: yearRev,
+        payout: 0,
+        profit: yearRev,
+      });
+    } else {
+      const now = new Date();
+      const m =
+        now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      rows.push({
+        period: m,
+        revenue: totalRevenue,
+        payout: monthlyCost,
+        profit: monthlyProfit,
+      });
+      for (let i = 1; i <= 11; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const mp =
+          d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const start = new Date(d.getFullYear(), d.getMonth(), 1);
+        const end = new Date(
+          d.getFullYear(),
+          d.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
+        const monthSingle = await this.prisma.singlePurchase.aggregate({
+          where: { purchasedAt: { gte: start, lte: end } },
+          _sum: { totalAmount: true },
+        });
+        const rev = monthSingle._sum?.totalAmount ?? 0;
+        rows.unshift({
+          period: mp,
+          revenue: rev,
+          payout: 0,
+          profit: rev,
+        });
+      }
+    }
+
     return {
       monthlyRevenue,
       singleRevenue,
@@ -531,14 +666,9 @@ export class AdminController {
       margin,
       activeSubscribers: subs.length,
       avgRevenuePerUser: subs.length > 0 ? monthlyRevenue / subs.length : 0,
-      rows: [
-        {
-          period: periodLabel,
-          revenue: totalRevenue,
-          payout: monthlyCost,
-          profit: monthlyProfit,
-        },
-      ],
+      subscriptionByPlan,
+      singlePurchaseCount,
+      rows,
     };
   }
 

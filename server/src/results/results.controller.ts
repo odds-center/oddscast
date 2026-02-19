@@ -20,7 +20,9 @@ import {
   CreateResultDto,
   UpdateResultDto,
   BulkCreateResultDto,
+  BulkUpdateResultDto,
   ResultFilterDto,
+  ResultSearchDto,
   ResultStatisticsFilterDto,
 } from './dto/result.dto';
 
@@ -48,6 +50,20 @@ export class ResultsController {
     @Query() filters: ResultStatisticsFilterDto,
   ) {
     return this.resultsService.exportResults(format, filters);
+  }
+
+  @Get('search')
+  @ApiOperation({ summary: '결과 검색 (q: 마명/마번/기수명)' })
+  search(@Query() filters: ResultSearchDto) {
+    return this.resultsService.search(filters);
+  }
+
+  @Get('validate/:raceId')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '경주별 결과 검증' })
+  validate(@Param('raceId', ParseIntPipe) raceId: number) {
+    return this.resultsService.validateByRaceId(raceId);
   }
 
   @Get('race/:raceId')
@@ -78,6 +94,15 @@ export class ResultsController {
   @ApiOperation({ summary: '결과 일괄 등록 (Admin)' })
   bulkCreate(@Body() dto: BulkCreateResultDto) {
     return this.resultsService.bulkCreate(dto);
+  }
+
+  @Put('bulk-update')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: '결과 일괄 수정 (Admin)' })
+  bulkUpdate(@Body() dto: BulkUpdateResultDto) {
+    return this.resultsService.bulkUpdate(dto);
   }
 
   @Put(':id')

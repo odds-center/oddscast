@@ -36,9 +36,8 @@ let RacesController = class RacesController {
     }
     search(q, meet, grade, distance, status, page, limit) {
         return this.racesService.findAll({
+            q,
             meet,
-            grade,
-            distance,
             status,
             page,
             limit,
@@ -49,8 +48,8 @@ let RacesController = class RacesController {
         const dateTo = year && month ? `${year}${String(month).padStart(2, '0')}31` : undefined;
         return this.racesService.getSchedule({ dateFrom, dateTo });
     }
-    getStatistics(meet, _date, _month, _year) {
-        return this.racesService.findAll({ meet });
+    getStatistics(meet, date, month, year) {
+        return this.racesService.getStatistics({ meet, date, month, year });
     }
     findOne(id) {
         return this.racesService.findOne(id);

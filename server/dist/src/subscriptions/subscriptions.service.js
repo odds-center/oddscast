@@ -198,6 +198,38 @@ let SubscriptionsService = class SubscriptionsService {
             data,
         });
     }
+    async createPlan(data) {
+        const existing = await this.prisma.subscriptionPlan.findUnique({
+            where: { planName: data.planName },
+        });
+        if (existing) {
+            throw new common_1.BadRequestException(`플랜 코드 '${data.planName}'가 이미 존재합니다.`);
+        }
+        return this.prisma.subscriptionPlan.create({
+            data: {
+                ...data,
+                isActive: data.isActive ?? true,
+                sortOrder: data.sortOrder ?? 0,
+            },
+        });
+    }
+    async deletePlan(id) {
+        const plan = await this.prisma.subscriptionPlan.findUnique({
+            where: { id },
+        });
+        if (!plan)
+            throw new common_1.NotFoundException('플랜을 찾을 수 없습니다.');
+        const subscriptionCount = await this.prisma.subscription.count({
+            where: { planId: id },
+        });
+        if (subscriptionCount > 0) {
+            return this.prisma.subscriptionPlan.update({
+                where: { id },
+                data: { isActive: false },
+            });
+        }
+        return this.prisma.subscriptionPlan.delete({ where: { id } });
+    }
     async resolvePlan(planId) {
         if (planId != null && planId !== '') {
             const plan = await this.prisma.subscriptionPlan.findUnique({

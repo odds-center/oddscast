@@ -14,8 +14,8 @@ const baseClass =
   'text-foreground font-bold flex items-center gap-2';
 const sizeClass = {
   h2: 'text-base sm:text-lg md:text-xl mb-3 sm:mb-4 pb-2 sm:pb-3',
-  h3: 'text-[15px] sm:text-base mb-3 sm:mb-4 pb-2 sm:pb-3',
-  h4: 'text-sm mb-2 pb-2',
+  h3: 'text-base sm:text-[18px] mb-3 sm:mb-4 pb-2 sm:pb-3',
+  h4: 'text-sm sm:text-base mb-2 pb-2',
 };
 
 export default function SectionTitle({

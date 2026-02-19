@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
@@ -46,6 +46,8 @@ export default function ProfileEditPage() {
       const uExt = u as { name?: string; nickname?: string; avatar?: string };
       profileForm.reset({ name: uExt.name ?? '', nickname: uExt.nickname ?? '' });
     }
+    // profileForm.reset는 currentUser/user 변경 시에만 호출
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- profileForm은 의도적으로 제외
   }, [currentUser, user]);
 
   const profileMutation = useMutation({
@@ -78,8 +80,8 @@ export default function ProfileEditPage() {
     passwordMutation.mutate({ oldPassword: data.currentPassword, newPassword: data.newPassword });
   };
 
-  const newPassword = passwordForm.watch('newPassword');
-  const newPasswordConfirm = passwordForm.watch('newPasswordConfirm');
+  const newPassword = useWatch({ control: passwordForm.control, name: 'newPassword', defaultValue: '' });
+  const newPasswordConfirm = useWatch({ control: passwordForm.control, name: 'newPasswordConfirm', defaultValue: '' });
 
   if (!isLoggedIn) {
     return (
@@ -174,7 +176,7 @@ export default function ProfileEditPage() {
               type='password'
               {...passwordForm.register('newPasswordConfirm', {
                 required: '비밀번호 확인을 입력하세요.',
-                validate: (v) => v === newPassword || '비밀번호가 일치하지 않습니다.',
+                validate: (v) => v === passwordForm.getValues('newPassword') || '비밀번호가 일치하지 않습니다.',
               })}
               error={passwordForm.formState.errors.newPasswordConfirm?.message}
             />

@@ -150,12 +150,14 @@ export declare class PredictionsController {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
                 recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
                 trainingData: import("@prisma/client/runtime/client").JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
             }[];
         } & {
             id: number;
@@ -215,12 +217,14 @@ export declare class PredictionsController {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
                 recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
                 trainingData: import("@prisma/client/runtime/client").JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
             }[];
         } & {
             id: number;
@@ -253,6 +257,43 @@ export declare class PredictionsController {
         previewApproved: boolean;
         accuracy: number | null;
     }) | null>;
+    getMatrix(date?: string, meet?: string): Promise<{
+        raceMatrix: {
+            raceId: string;
+            meet: string;
+            meetName?: string;
+            rcNo: string;
+            stTime?: string;
+            predictions: Record<string, string[] | string>;
+            aiConsensus: string;
+            consensusLabel?: string;
+        }[];
+        experts: {
+            id: string;
+            name: string;
+        }[];
+    }>;
+    getCommentary(date?: string, limit?: string, offset?: string): Promise<{
+        comments: {
+            id: string;
+            expertId: string;
+            expertName: string;
+            raceId: string;
+            meet: string;
+            rcNo: string;
+            hrNo: string;
+            hrName: string;
+            comment: string;
+            keywords?: string[];
+        }[];
+        total: number;
+    }>;
+    getHitRecords(limit?: string): Promise<{
+        id: string;
+        hitDate: string;
+        description: string;
+        details: string | undefined;
+    }[]>;
     findOne(id: number): Promise<{
         race: {
             entries: {
@@ -280,12 +321,14 @@ export declare class PredictionsController {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
                 recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
                 trainingData: import("@prisma/client/runtime/client").JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
             }[];
         } & {
             id: number;

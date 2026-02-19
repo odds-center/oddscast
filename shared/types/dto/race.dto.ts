@@ -38,6 +38,7 @@ export interface RaceEntryDto {
   trNameEn?: string;
   owName?: string;
   wgBudam?: number;
+  ratingHistory?: number[] | null; // KRA API77: [rating2, rating3, rating4]
   chulNo?: string;
   dusu?: number;
   age?: number;
@@ -58,6 +59,7 @@ export interface RaceResultDto {
   raceId: number;
   ord?: string;
   ordInt?: number;
+  ordType?: string | null; // NORMAL|FALL|DQ|WITHDRAWN. accuracy 계산 시 NORMAL/null만 포함
   hrNo: string;
   hrName: string;
   chulNo?: string;

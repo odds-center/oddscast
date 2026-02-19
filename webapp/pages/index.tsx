@@ -61,7 +61,7 @@ export default function Home() {
 
   return (
     <Layout title='GOLDEN RACE'>
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4 mb-4 sm:mb-6'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-5 mb-5 sm:mb-8'>
         <DateHeader />
         {!isLoggedIn && (
           <div className='flex flex-col items-start sm:items-end gap-2 shrink-0'>
@@ -78,23 +78,23 @@ export default function Home() {
       </div>
 
       {/* 섹션 미리보기 — 모바일: gap-4 단일열, 데스크: gap-6 2열 */}
-      <div className='grid lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 mb-5 sm:mb-6 lg:mb-8'>
+      <div className='grid lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-10'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
-      <div className='grid lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 mb-5 sm:mb-6 lg:mb-8'>
+      <div className='grid lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-10'>
         <RecentResultsSection />
         <PredictionMatrixPreviewSection />
       </div>
 
-      <div className='grid lg:grid-cols-2 gap-4 sm:gap-5 lg:gap-6 mb-5 sm:mb-6 lg:mb-8'>
+      <div className='grid lg:grid-cols-2 gap-5 sm:gap-6 lg:gap-8 mb-6 sm:mb-8 lg:mb-10'>
         <RacePredictionsPreviewSection />
         <RankingPreviewSection />
       </div>
 
       {/* 전체 경주 목록 */}
-      <div className='mb-5 sm:mb-6 lg:mb-8'>
+      <div className='mb-6 sm:mb-8 lg:mb-10'>
         <AllRacesSection />
       </div>
     </Layout>

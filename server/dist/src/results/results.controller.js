@@ -34,6 +34,12 @@ let ResultsController = class ResultsController {
     exportResults(format = 'json', filters) {
         return this.resultsService.exportResults(format, filters);
     }
+    search(filters) {
+        return this.resultsService.search(filters);
+    }
+    validate(raceId) {
+        return this.resultsService.validateByRaceId(raceId);
+    }
     getByRace(raceId) {
         return this.resultsService.getByRace(raceId);
     }
@@ -45,6 +51,9 @@ let ResultsController = class ResultsController {
     }
     bulkCreate(dto) {
         return this.resultsService.bulkCreate(dto);
+    }
+    bulkUpdate(dto) {
+        return this.resultsService.bulkUpdate(dto);
     }
     update(id, dto) {
         return this.resultsService.update(id, dto);
@@ -79,6 +88,24 @@ __decorate([
     __metadata("design:paramtypes", [String, result_dto_1.ResultStatisticsFilterDto]),
     __metadata("design:returntype", void 0)
 ], ResultsController.prototype, "exportResults", null);
+__decorate([
+    (0, common_1.Get)('search'),
+    (0, swagger_1.ApiOperation)({ summary: '결과 검색 (q: 마명/마번/기수명)' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [result_dto_1.ResultSearchDto]),
+    __metadata("design:returntype", void 0)
+], ResultsController.prototype, "search", null);
+__decorate([
+    (0, common_1.Get)('validate/:raceId'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, swagger_1.ApiOperation)({ summary: '경주별 결과 검증' }),
+    __param(0, (0, common_1.Param)('raceId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", void 0)
+], ResultsController.prototype, "validate", null);
 __decorate([
     (0, common_1.Get)('race/:raceId'),
     (0, swagger_1.ApiOperation)({ summary: '경주별 결과 조회' }),
@@ -117,6 +144,17 @@ __decorate([
     __metadata("design:paramtypes", [result_dto_1.BulkCreateResultDto]),
     __metadata("design:returntype", void 0)
 ], ResultsController.prototype, "bulkCreate", null);
+__decorate([
+    (0, common_1.Put)('bulk-update'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
+    (0, swagger_1.ApiOperation)({ summary: '결과 일괄 수정 (Admin)' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [result_dto_1.BulkUpdateResultDto]),
+    __metadata("design:returntype", void 0)
+], ResultsController.prototype, "bulkUpdate", null);
 __decorate([
     (0, common_1.Put)(':id'),
     (0, swagger_1.ApiBearerAuth)(),

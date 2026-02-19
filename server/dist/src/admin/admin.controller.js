@@ -54,6 +54,9 @@ let AdminController = AdminController_1 = class AdminController {
             new Date().toISOString().slice(0, 10).replace(/-/g, '');
         return this.kraService.syncAnalysisData(d);
     }
+    async getKraStatus() {
+        return this.kraService.getKraStatus();
+    }
     async getKraSyncLogs(endpoint, rcDate, limit) {
         const take = Math.min(Number(limit) || 50, 100);
         const logs = await this.prisma.kraSyncLog.findMany({
@@ -242,6 +245,9 @@ let AdminController = AdminController_1 = class AdminController {
     async getSubscriptionPlans() {
         return this.subscriptionsService.getPlansAdmin();
     }
+    async createSubscriptionPlan(body) {
+        return this.subscriptionsService.createPlan(body);
+    }
     async getSubscriptionPlan(id) {
         return this.prisma.subscriptionPlan.findUnique({
             where: { id },
@@ -249,6 +255,9 @@ let AdminController = AdminController_1 = class AdminController {
     }
     async updateSubscriptionPlan(id, body) {
         return this.subscriptionsService.updatePlan(id, body);
+    }
+    async deleteSubscriptionPlan(id) {
+        return this.subscriptionsService.deletePlan(id);
     }
     async getNotifications(page, limit) {
         return this.notificationsService.findAllAdmin({ page, limit });
@@ -320,19 +329,97 @@ let AdminController = AdminController_1 = class AdminController {
             include: { plan: true },
         });
         const monthlyRevenue = subs.reduce((s, sub) => s + (sub.price ?? 0), 0);
-        const singlePurchases = await this.prisma.singlePurchase.aggregate({
+        const singleAgg = await this.prisma.singlePurchase.aggregate({
             _sum: { totalAmount: true },
+            _count: { id: true },
         });
-        const singleRevenue = singlePurchases._sum?.totalAmount ?? 0;
+        const singleRevenue = singleAgg._sum?.totalAmount ?? 0;
+        const singlePurchaseCount = singleAgg._count?.id ?? 0;
         const totalRevenue = monthlyRevenue + singleRevenue;
         const monthlyCost = 0;
         const monthlyProfit = totalRevenue - monthlyCost;
         const margin = totalRevenue > 0 ? (monthlyProfit / totalRevenue) * 100 : 0;
-        const periodLabel = period === 'day'
-            ? new Date().toISOString().slice(0, 10)
-            : period === 'year'
-                ? new Date().getFullYear().toString()
-                : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+        const subscriptionByPlan = [];
+        const planMap = new Map();
+        for (const sub of subs) {
+            const name = sub.plan?.planName ?? 'Unknown';
+            const curr = planMap.get(name) ?? { count: 0, revenue: 0 };
+            curr.count++;
+            curr.revenue += sub.price ?? 0;
+            planMap.set(name, curr);
+        }
+        planMap.forEach((v, k) => subscriptionByPlan.push({
+            planName: k,
+            count: v.count,
+            revenue: v.revenue,
+        }));
+        const periodType = period || 'month';
+        const rows = [];
+        if (periodType === 'day') {
+            const today = new Date().toISOString().slice(0, 10);
+            const daySingle = await this.prisma.singlePurchase.aggregate({
+                where: {
+                    purchasedAt: {
+                        gte: new Date(today + 'T00:00:00.000Z'),
+                        lt: new Date(new Date(today).getTime() + 86400000),
+                    },
+                },
+                _sum: { totalAmount: true },
+            });
+            const dayRev = daySingle._sum?.totalAmount ?? 0;
+            rows.push({
+                period: today,
+                revenue: dayRev,
+                payout: 0,
+                profit: dayRev,
+            });
+        }
+        else if (periodType === 'year') {
+            const y = new Date().getFullYear();
+            const yearSingle = await this.prisma.singlePurchase.aggregate({
+                where: {
+                    purchasedAt: {
+                        gte: new Date(`${y}-01-01`),
+                        lt: new Date(`${y + 1}-01-01`),
+                    },
+                },
+                _sum: { totalAmount: true },
+            });
+            const yearRev = monthlyRevenue * 12 + (yearSingle._sum?.totalAmount ?? 0);
+            rows.push({
+                period: String(y),
+                revenue: yearRev,
+                payout: 0,
+                profit: yearRev,
+            });
+        }
+        else {
+            const now = new Date();
+            const m = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+            rows.push({
+                period: m,
+                revenue: totalRevenue,
+                payout: monthlyCost,
+                profit: monthlyProfit,
+            });
+            for (let i = 1; i <= 11; i++) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                const mp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                const start = new Date(d.getFullYear(), d.getMonth(), 1);
+                const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+                const monthSingle = await this.prisma.singlePurchase.aggregate({
+                    where: { purchasedAt: { gte: start, lte: end } },
+                    _sum: { totalAmount: true },
+                });
+                const rev = monthSingle._sum?.totalAmount ?? 0;
+                rows.unshift({
+                    period: mp,
+                    revenue: rev,
+                    payout: 0,
+                    profit: rev,
+                });
+            }
+        }
         return {
             monthlyRevenue,
             singleRevenue,
@@ -342,14 +429,9 @@ let AdminController = AdminController_1 = class AdminController {
             margin,
             activeSubscribers: subs.length,
             avgRevenuePerUser: subs.length > 0 ? monthlyRevenue / subs.length : 0,
-            rows: [
-                {
-                    period: periodLabel,
-                    revenue: totalRevenue,
-                    payout: monthlyCost,
-                    profit: monthlyProfit,
-                },
-            ],
+            subscriptionByPlan,
+            singlePurchaseCount,
+            rows,
         };
     }
     async getUsersGrowth(days) {
@@ -442,6 +524,13 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "syncDetails", null);
+__decorate([
+    (0, common_1.Get)('kra/status'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 설정 상태 (Base URL, API 키 여부)' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getKraStatus", null);
 __decorate([
     (0, common_1.Get)('kra/sync-logs'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] KRA 동기화 로그 조회' }),
@@ -613,6 +702,14 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getSubscriptionPlans", null);
 __decorate([
+    (0, common_1.Post)('subscriptions/plans'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] 구독 플랜 생성' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "createSubscriptionPlan", null);
+__decorate([
     (0, common_1.Get)('subscriptions/plans/:id'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 구독 플랜 상세' }),
     __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
@@ -629,6 +726,14 @@ __decorate([
     __metadata("design:paramtypes", [Number, Object]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "updateSubscriptionPlan", null);
+__decorate([
+    (0, common_1.Delete)('subscriptions/plans/:id'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] 구독 플랜 삭제 또는 비활성화' }),
+    __param(0, (0, common_1.Param)('id', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "deleteSubscriptionPlan", null);
 __decorate([
     (0, common_1.Get)('notifications'),
     (0, swagger_1.ApiOperation)({ summary: '[Admin] 알림 목록 조회' }),

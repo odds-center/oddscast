@@ -14,8 +14,8 @@ export declare class FavoritesService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
@@ -32,8 +32,8 @@ export declare class FavoritesService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
@@ -46,8 +46,8 @@ export declare class FavoritesService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
@@ -60,8 +60,8 @@ export declare class FavoritesService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
@@ -82,8 +82,8 @@ export declare class FavoritesService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
@@ -99,8 +99,8 @@ export declare class FavoritesService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: Prisma.JsonValue | null;
@@ -120,8 +120,8 @@ export declare class FavoritesService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;
@@ -134,8 +134,8 @@ export declare class FavoritesService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: Prisma.JsonValue | null;

@@ -98,6 +98,24 @@ const ENDPOINTS = [
     params: { hrno: '0015447', tr_date_fr: '20231001', tr_date_to: '20231015', numOfRows: 10, pageNo: 1, _type: 'json' },
     desc: '말훈련내역 (hrno 샘플)',
   },
+  {
+    name: 'raceHorseRating',
+    url: `${BASE_URL}/API77/raceHorseRating`,
+    params: { numOfRows: 10, pageNo: 1, _type: 'json' },
+    desc: '경주마 레이팅 정보 (API77)',
+  },
+  {
+    name: 'trainerInfo',
+    url: `${BASE_URL}/API19_1/trainerInfo_1`,
+    params: { meet: '1', numOfRows: 20, pageNo: 1, _type: 'json' },
+    desc: '조교사 상세정보 (API19_1)',
+  },
+  {
+    name: 'horseSectional',
+    url: `${BASE_URL}/API37_1/sectionRecord_1`,
+    params: { meet: '1', rc_date: rcDate, numOfRows: 20, pageNo: 1, _type: 'json' },
+    desc: '마필 구간별 경주기록 (API37_1)',
+  },
 ];
 
 async function fetchOne(endpoint, key) {

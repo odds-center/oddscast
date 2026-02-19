@@ -4,6 +4,7 @@ import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { Prisma } from '@prisma/client';
 import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
+import { meetToCode, toKraMeetName } from '../kra/constants';
 import {
   CreatePredictionDto,
   UpdatePredictionStatusDto,
@@ -269,6 +270,168 @@ export class PredictionsService {
     });
   }
 
+  /**
+   * 종합 예상 매트릭스 (용산종합지 스타일)
+   * date: YYYYMMDD 또는 YYYY-MM-DD, meet: 서울|제주|부산경남
+   */
+  async getMatrix(date?: string, meet?: string) {
+    const rcDate = date
+      ? date.replace(/-/g, '').slice(0, 8)
+      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const where: Prisma.RaceWhereInput = { rcDate };
+    if (meet) where.meet = toKraMeetName(meet);
+
+    const races = await this.prisma.race.findMany({
+      where,
+      select: {
+        id: true,
+        meet: true,
+        meetName: true,
+        rcNo: true,
+        stTime: true,
+      },
+      orderBy: { rcNo: 'asc' },
+      take: 20,
+    });
+
+    const rows: Array<{
+      raceId: string;
+      meet: string;
+      meetName?: string;
+      rcNo: string;
+      stTime?: string;
+      predictions: Record<string, string[] | string>;
+      aiConsensus: string;
+      consensusLabel?: string;
+    }> = [];
+
+    for (const race of races.slice(0, 12)) {
+      const pred = await this.prisma.prediction.findFirst({
+        where: { raceId: race.id, previewApproved: true, status: 'COMPLETED' },
+        orderBy: { createdAt: 'desc' },
+        select: { scores: true },
+      });
+      const scores =
+        (pred?.scores as { horseScores?: Array<{ hrNo?: string }> })
+          ?.horseScores ?? [];
+      const top1 = scores[0]?.hrNo;
+      const top2 = scores[1]?.hrNo;
+      const consensus = top1 ?? '-';
+
+      rows.push({
+        raceId: String(race.id),
+        meet: race.meet ?? '',
+        meetName: race.meetName ?? undefined,
+        rcNo: race.rcNo ?? '',
+        stTime: race.stTime ?? undefined,
+        predictions: {
+          ai_consensus: consensus,
+          expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
+        },
+        aiConsensus: consensus,
+        consensusLabel: top1 ? '축' : undefined,
+      });
+    }
+
+    return {
+      raceMatrix: rows,
+      experts: [{ id: 'ai_consensus', name: 'AI 종합' }],
+    };
+  }
+
+  /**
+   * 전문가 코멘트 피드 (AI 예측 preview/analysis 기반)
+   */
+  async getCommentary(date?: string, limit = 20, offset = 0) {
+    const rcDate = date
+      ? date.replace(/-/g, '').slice(0, 8)
+      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const preds = await this.prisma.prediction.findMany({
+      where: {
+        previewApproved: true,
+        status: 'COMPLETED',
+        race: { rcDate },
+      },
+      include: {
+        race: { select: { id: true, meet: true, meetName: true, rcNo: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+      skip: offset,
+      take: limit,
+    });
+
+    const comments: Array<{
+      id: string;
+      expertId: string;
+      expertName: string;
+      raceId: string;
+      meet: string;
+      rcNo: string;
+      hrNo: string;
+      hrName: string;
+      comment: string;
+      keywords?: string[];
+    }> = [];
+
+    for (const p of preds) {
+      const scores =
+        (
+          p.scores as {
+            horseScores?: Array<{
+              hrNo?: string;
+              hrName?: string;
+              reason?: string;
+            }>;
+          }
+        )?.horseScores ?? [];
+      const top = scores[0];
+      if (!top || !p.race) continue;
+      comments.push({
+        id: `pred-${p.id}`,
+        expertId: 'ai',
+        expertName: 'AI 종합',
+        raceId: String(p.raceId),
+        meet: p.race.meet ?? '',
+        rcNo: p.race.rcNo ?? '',
+        hrNo: top.hrNo ?? '',
+        hrName: top.hrName ?? '',
+        comment:
+          top.reason ?? (p.preview && String(p.preview).slice(0, 120)) ?? '',
+        keywords: top.reason ? [top.reason.slice(0, 30)] : undefined,
+      });
+    }
+
+    const total = await this.prisma.prediction.count({
+      where: { previewApproved: true, status: 'COMPLETED', race: { rcDate } },
+    });
+    return { comments, total };
+  }
+
+  /**
+   * 적중 내역 배너 (높은 정확도 예측)
+   */
+  async getHitRecords(limit = 5) {
+    const preds = await this.prisma.prediction.findMany({
+      where: { status: 'COMPLETED', accuracy: { not: null, gte: 33 } },
+      include: { race: { select: { rcDate: true, meet: true } } },
+      orderBy: { createdAt: 'desc' },
+      take: Math.min(limit, 20),
+    });
+
+    return preds.map((p) => {
+      const d = p.race?.rcDate
+        ? `${p.race.rcDate.slice(0, 4)}-${p.race.rcDate.slice(4, 6)}-${p.race.rcDate.slice(6, 8)}`
+        : new Date(p.createdAt).toISOString().slice(0, 10);
+      const acc = Math.round(p.accuracy ?? 0);
+      return {
+        id: `hit-${p.id}`,
+        hitDate: d,
+        description: `${acc}% 적중! ${d} ${p.race?.meet ?? ''} 경주`,
+        details: p.race?.meet ? `${p.race.meet}` : undefined,
+      };
+    });
+  }
+
   // --- Gemini Integration ---
 
   async generatePrediction(raceId: number) {
@@ -330,16 +493,22 @@ export class PredictionsService {
     });
     if (!race) throw new NotFoundException('Race not found');
 
-    // 3a. 과거 구간별 성적 (선행마/추입마) 조회 — 같은 hrNo의 RaceResult.sectionalTimes 활용
+    // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
     const sectionalByHorse = await this.getSectionalAnalysisByHorse(
-      (race.entries || []).map((e) => e.hrNo),
-      race.meet,
-      race.rcDate,
+      race as RaceForPython,
     );
 
     // 3b. recentRanks 보강 — DB에 없으면 RaceResult에서 과거 착순 조회 (KRA_API_ANALYSIS_SPEC §4.2)
     const raceWithRecentRanks = await this.enrichEntriesWithRecentRanks(
       race as RaceForPython,
+    );
+    // 3c. 조교사 승률/복승률 보강 — TrainerResult (API19_1)
+    const raceWithTrainer =
+      await this.enrichEntriesWithTrainerResults(raceWithRecentRanks);
+    // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
+    const raceWithSectional = this.enrichEntriesWithSectionalTag(
+      raceWithTrainer,
+      sectionalByHorse,
     );
 
     // 3. Run Python Analysis (말 기준 점수 + 기수 통합 분석)
@@ -347,7 +516,7 @@ export class PredictionsService {
     const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
     const horseScoreResult = await this.runPythonScript(
       scriptPath,
-      raceWithRecentRanks,
+      raceWithSectional,
     );
 
     let jockeyAnalysis: {
@@ -371,7 +540,7 @@ export class PredictionsService {
 
     // 4. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
     const prompt = this.constructPrompt(
-      raceWithRecentRanks,
+      raceWithTrainer,
       horseScoreResult,
       jockeyAnalysis,
       sectionalByHorse,
@@ -525,13 +694,23 @@ export class PredictionsService {
     trainingSummary?: string,
     sectionalTag?: string,
   ): Record<string, unknown> {
-    // chaksunT(BigInt) → JSON 호환 문자열 (Gemini 프롬프트용)
     const chaksunTStr =
       entry.chaksunT != null
         ? typeof entry.chaksunT === 'bigint'
           ? entry.chaksunT.toString()
           : String(entry.chaksunT)
         : undefined;
+
+    const ratingHist = entry.ratingHistory as number[] | null | undefined;
+    const ratingHistoryLimited =
+      Array.isArray(ratingHist) && ratingHist.length > 0
+        ? ratingHist.slice(0, 3)
+        : undefined;
+
+    const trainSummary =
+      trainingSummary && trainingSummary.length > 80
+        ? trainingSummary.slice(0, 77) + '...'
+        : trainingSummary;
 
     const base: Record<string, unknown> = {
       hrNo: entry.hrNo,
@@ -540,22 +719,24 @@ export class PredictionsService {
       trName: entry.trName,
       wgBudam: entry.wgBudam,
       rating: entry.rating,
+      ratingHistory: ratingHistoryLimited,
       chulNo: entry.chulNo,
       rcCntT: entry.rcCntT,
       ord1CntT: entry.ord1CntT,
       recentRanks: entry.recentRanks,
       horseWeight: entry.horseWeight,
-      equipment: entry.equipment,
-      bleedingInfo: entry.bleedingInfo,
       isScratched: entry.isScratched,
-      // KRA: 혈통·나이·저평가 분석용 (KRA_API_ANALYSIS_SPEC §4.2)
       sex: entry.sex ?? undefined,
       age: entry.age ?? undefined,
       prd: entry.prd ?? undefined,
       chaksun1: entry.chaksun1 ?? undefined,
       chaksunT: chaksunTStr,
+      trainerWinRate: entry.trainerWinRate ?? undefined,
+      trainerQuRate: entry.trainerQuRate ?? undefined,
     };
-    if (trainingSummary) base.trainingSummary = trainingSummary;
+    if (entry.equipment) base.equipment = entry.equipment;
+    if (entry.bleedingInfo) base.bleedingInfo = entry.bleedingInfo;
+    if (trainSummary) base.trainingSummary = trainSummary;
     if (sectionalTag) base.sectionalTag = sectionalTag;
     return base;
   }
@@ -618,6 +799,70 @@ export class PredictionsService {
     return { ...race, entries: enrichedEntries };
   }
 
+  /**
+   * 구간별 태그(선행마/추입마/중간마) merge — Python calculate_score에서 sectionalBonus 계산에 사용
+   */
+  private enrichEntriesWithSectionalTag(
+    race: RaceForPython,
+    sectionalByHorse: Record<string, { tag: string }>,
+  ): RaceForPython {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+    const enrichedEntries = entries.map((e) => ({
+      ...e,
+      sectionalTag: sectionalByHorse[e.hrNo]?.tag,
+    }));
+    return { ...race, entries: enrichedEntries };
+  }
+
+  /**
+   * 조교사 승률/복승률 보강 — TrainerResult에서 해당 trNo(meet)의 통계를 조회해 entries에 채움
+   * @see docs/specs/KRA_TRAINER_SPEC.md
+   */
+  private async enrichEntriesWithTrainerResults(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+
+    const meetCode = meetToCode(race.meet ?? '');
+    const trNos = [
+      ...new Set(
+        entries.map((e) => e.trNo).filter((v): v is string => Boolean(v)),
+      ),
+    ];
+    if (!trNos.length) return race;
+
+    const trainers = await this.prisma.trainerResult.findMany({
+      where: { meet: meetCode, trNo: { in: trNos } },
+      select: {
+        trNo: true,
+        winRateTsum: true,
+        quRateTsum: true,
+      },
+    });
+    const byTrNo = new Map(
+      trainers.map((t) => [
+        t.trNo,
+        { winRateTsum: t.winRateTsum, quRateTsum: t.quRateTsum },
+      ]),
+    );
+
+    const enrichedEntries = entries.map((e) => {
+      const trNo = e.trNo;
+      if (!trNo) return e;
+      const t = byTrNo.get(trNo);
+      if (!t) return e;
+      return {
+        ...e,
+        trainerWinRate: t.winRateTsum,
+        trainerQuRate: t.quRateTsum,
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
   private summarizeTraining(entry: RaceEntryForAnalysis): string | undefined {
     const trainings = entry.trainings;
     const trainingData = entry.trainingData;
@@ -641,20 +886,61 @@ export class PredictionsService {
   }
 
   /**
-   * 과거 경주 결과(RaceResult)에서 같은 말(hrNo)의 구간별 기록(sectionalTimes) 조회 후
-   * 선행마(S1F 빠름) / 추입마(G1F 빠름) 태깅. KRA_API_ANALYSIS_SPEC 4.3 확장.
+   * 구간별 성적(선행마/추입마) 조회. RaceEntry.sectionalStats(API37_1) 우선 사용, 없으면
+   * RaceResult.sectionalTimes 기반 fallback.
    */
   private async getSectionalAnalysisByHorse(
-    hrNos: string[],
-    meet: string,
-    beforeRcDate: string,
+    race: RaceForPython,
   ): Promise<Record<string, { tag: string; s1f?: number; g1f?: number }>> {
+    const entries = race.entries ?? [];
+    const hrNos = entries.map((e) => e.hrNo).filter(Boolean);
     if (!hrNos.length) return {};
+
+    const out: Record<string, { tag: string; s1f?: number; g1f?: number }> = {};
+
+    // 1. RaceEntry.sectionalStats (API37_1) 우선
+    for (const e of entries) {
+      const st = e.sectionalStats;
+      if (!st || typeof st !== 'object') continue;
+      const obj = st as Record<string, unknown>;
+      const s1f =
+        this.parseSectionalTime(
+          obj.s1fAvg ?? obj['s1f_avg'] ?? obj.S1F ?? obj.seS1fAccTime,
+        ) ?? null;
+      const g1f =
+        this.parseSectionalTime(
+          obj.g1fAvg ?? obj['g1f_avg'] ?? obj.G1F ?? obj.seG1fAccTime,
+        ) ?? null;
+      if (s1f == null && g1f == null) continue;
+      let tag = '미분류';
+      if (s1f != null && g1f != null) {
+        tag =
+          s1f < 13.5
+            ? '선행마(초반 빠름)'
+            : g1f < 12.5
+              ? '추입마(막판 스퍼트)'
+              : '중간마';
+      } else if (s1f != null && s1f < 13.5) {
+        tag = '선행마';
+      } else if (g1f != null && g1f < 12.5) {
+        tag = '추입마';
+      }
+      out[e.hrNo] = { tag, s1f: s1f ?? undefined, g1f: g1f ?? undefined };
+    }
+
+    // 2. sectionalStats 없는 hrNo는 RaceResult fallback
+    const covered = new Set(Object.keys(out));
+    const hrNosWithout = hrNos.filter((h) => !covered.has(h));
+    if (hrNosWithout.length === 0) return out;
+
     const results = await this.prisma.raceResult.findMany({
       where: {
-        hrNo: { in: hrNos },
+        hrNo: { in: hrNosWithout },
         sectionalTimes: { not: Prisma.JsonNull },
-        race: { rcDate: { lt: beforeRcDate } },
+        race: {
+          rcDate: { lt: race.rcDate ?? '' },
+          meet: race.meet ?? undefined,
+        },
       },
       orderBy: { createdAt: 'desc' },
       take: 200,
@@ -681,7 +967,6 @@ export class PredictionsService {
         byHorse[key].g1fN += 1;
       }
     }
-    const out: Record<string, { tag: string; s1f?: number; g1f?: number }> = {};
     for (const [hrNo, data] of Object.entries(byHorse)) {
       const n = data.s1fN + data.g1fN;
       if (n < 2) continue;
@@ -781,78 +1066,28 @@ export class PredictionsService {
     const weightJ = ((jockeyAnalysis?.weightRatio?.jockey ?? 0.3) * 100) | 0;
     const topJ = jockeyAnalysis?.topPickByJockey;
 
-    return `당신은 한국 경마 승부 예측 전문가입니다. **반드시 제시된 통계와 데이터만**을 근거로 분석하세요. 추측·감정은 배제하고, 데이터가 없는 항목은 "미확인" 등으로 명시하세요.
-
-## 원칙 (마칠기삼)
-- 말의 능력(레이팅·최근성적·기록)이 기본. 기수(승률·복승률·경험)는 보조.
-- 본 경주 가중치: 말 ${weightH}% / 기수 ${weightJ}%
-${topJ ? `- 기수 점수 1위: ${topJ.hrName} (${topJ.jkName}, 기수점수 ${topJ.jockeyScore})` : ''}
+    return `한국 경마 승부 예측 전문가. 제시된 통계만 근거로 세부 분석. 데이터 없으면 "미확인".
+가중치: 말 ${weightH}% / 기수 ${weightJ}%${topJ ? ` | 기수1위: ${topJ.hrName}(${topJ.jkName})` : ''}
 
 ## 1. 경주 정보
 \`\`\`json
 ${JSON.stringify(raceContext)}
 \`\`\`
 
-## 2. 출전마 통계 (정제된 데이터, KRA API 기반)
-- sex, age, prd: 성별·연령·산지 — 혈통·나이 분석
-- chaksun1, chaksunT: 1착상금·통산상금 — 저평가/실적 참고
-- trainingSummary: 최근 훈련 요약 (있을 경우)
-- sectionalTag: 과거 구간 기록 기반 각질 (선행마/추입마/중간마, 있을 경우)
+## 2. 출전마 통계 (rating, recentRanks, sectionalTag, trainerWinRate 등 포함)
 \`\`\`json
-${JSON.stringify(mergedEntries, null, 2)}
+${JSON.stringify(mergedEntries)}
 \`\`\`
 
-## 3. 말 기준 분석 결과 (Python)
-- ratingScore: 레이팅 정규화 점수
-- momentumScore: 기세 지수 (최근 3경기 착순)
-- experienceBonus: 경험·승률 보너스
+## 3. 출력 (JSON만)
+- horseScores: 각 마별 score, reason, strengths(강점 1~2개), weaknesses(약점/리스크 1개), confidence(high/medium/low)
+- analysis: 날씨·주로·거리·우승후보·각질(선행/추입)·주의변수·종합 5~8문장
+- preview: 무료용 2~3문장 요약
 \`\`\`json
-${JSON.stringify(horseScores)}
+{"scores":{"horseScores":[{"hrNo":"","hrName":"","score":0,"reason":"","strengths":[""],"weaknesses":[""],"confidence":""}]},"betTypePredictions":{"SINGLE":{"hrNo":"","reason":""},"PLACE":{"hrNo":"","reason":""},"QUINELLA":{"hrNos":["",""],"reason":""},"EXACTA":{"first":"","second":"","reason":""},"QUINELLA_PLACE":{"hrNos":["",""],"reason":""},"TRIFECTA":{"hrNos":["","",""],"reason":""},"TRIPLE":{"first":"","second":"","third":"","reason":""}},"analysis":"","preview":""}
 \`\`\`
-
-## 4. 기수 통합 점수 (있을 경우)
-\`\`\`json
-${JSON.stringify(jockeyAnalysis?.entriesWithScores || [])}
-\`\`\`
-
-## 5. 출력 형식 (엄격히 준수)
-
-아래 JSON 형식으로만 응답하세요. 다른 텍스트는 넣지 마세요.
-
-\`\`\`json
-{
-  "scores": {
-    "horseScores": [
-      {
-        "hrNo": "마번",
-        "hrName": "마명",
-        "score": 85,
-        "reason": "데이터 기반 한 줄 이유",
-        "strengths": ["강점1", "강점2"],
-        "weaknesses": ["약점 또는 리스크"],
-        "confidence": "high|medium|low"
-      }
-    ]
-  },
-  "betTypePredictions": {
-    "SINGLE": { "hrNo": "1등추천 마번", "reason": "이유" },
-    "PLACE": { "hrNo": "1~3등 추천 마번", "reason": "이유" },
-    "QUINELLA": { "hrNos": ["1등마번","2등마번"], "reason": "1·2등 순서무관" },
-    "EXACTA": { "first": "1등마번", "second": "2등마번", "reason": "1→2등 순서" },
-    "QUINELLA_PLACE": { "hrNos": ["마번1","마번2"], "reason": "3등이내 2마리" },
-    "TRIFECTA": { "hrNos": ["1등","2등","3등 마번"], "reason": "1·2·3등 순서무관" },
-    "TRIPLE": { "first": "1등", "second": "2등", "third": "3등", "reason": "1→2→3등 순서" }
-  },
-  "analysis": "종합 분석 (4~7문장). 날씨·주로·거리·우승후보·주의변수.",
-  "preview": "무료 사용자용 2문장 요약."
-}
-\`\`\`
-
-**승식별 조합 (HORSE_RACING_TERMINOLOGY)**:
-- 단승식: 1마리 1등 | 복승식: 1마리 1~3등 | 연승식: 2마리 1·2등(순서무관) | 쌍승식: 2마리 1→2등(순서유관)
-- 복연승식: 2마리 3등이내 | 삼복승식: 3마리 1·2·3등(순서무관) | 삼쌍승식: 3마리 1→2→3등(순서유관)
-- 7개 승식 모두 반드시 출력. 하나도 누락 금지.
-- 마식별자: 2번 출전마 JSON의 hrNo 또는 chulNo 값을 그대로 사용. horseScores 1·2·3위 마번을 betTypePredictions에 활용.`;
+- betTypePredictions: 7개 승식 모두 출력. hrNo는 Section2 값 사용. 각 추천에 구체적 이유 필수.
+- 단승 1마1등 | 복승 1마1~3등 | 연승 2마1·2등 | 쌍승 2마1→2등 | 복연승 2마3등이내 | 삼복 3마1·2·3등 | 삼쌍 3마1→2→3등`;
   }
 
   private parseGeminiResponse(text: string): GeminiPredictionJson {

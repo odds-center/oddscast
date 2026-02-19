@@ -65,13 +65,12 @@ export class RacesController {
     @Query('limit') limit?: number,
   ) {
     return this.racesService.findAll({
+      q,
       meet,
-      grade,
-      distance,
       status,
       page,
       limit,
-    } as any);
+    });
   }
 
   @Get('calendar')
@@ -88,11 +87,11 @@ export class RacesController {
   @ApiOperation({ summary: '경주 통계' })
   getStatistics(
     @Query('meet') meet?: string,
-    @Query('date') _date?: string,
-    @Query('month') _month?: string,
-    @Query('year') _year?: string,
+    @Query('date') date?: string,
+    @Query('month') month?: string,
+    @Query('year') year?: string,
   ) {
-    return this.racesService.findAll({ meet } as any);
+    return this.racesService.getStatistics({ meet, date, month, year });
   }
 
   @Get(':id')

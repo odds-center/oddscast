@@ -53,17 +53,17 @@ let AuthController = class AuthController {
     changePassword(user, dto) {
         return this.authService.changePassword(user.sub, dto.oldPassword, dto.newPassword);
     }
-    forgotPassword(_body) {
-        return { message: '비밀번호 재설정 이메일이 발송되었습니다.' };
+    forgotPassword(dto) {
+        return this.authService.forgotPassword(dto.email);
     }
-    resetPassword(_body) {
-        return { message: '비밀번호가 재설정되었습니다.' };
+    resetPassword(dto) {
+        return this.authService.resetPassword(dto.token, dto.newPassword);
     }
-    verifyEmail(_body) {
-        return { message: '이메일이 인증되었습니다.' };
+    verifyEmail(dto) {
+        return this.authService.verifyEmail(dto.token);
     }
-    resendVerification(_body) {
-        return { message: '인증 메일이 재발송되었습니다.' };
+    resendVerification(dto) {
+        return this.authService.resendVerification(dto.email);
     }
     deleteAccount(user) {
         return this.authService.deleteAccount(user.sub);
@@ -179,7 +179,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '비밀번호 찾기' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.ForgotPasswordDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "forgotPassword", null);
 __decorate([
@@ -187,7 +187,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '비밀번호 재설정' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.ResetPasswordDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "resetPassword", null);
 __decorate([
@@ -195,7 +195,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '이메일 인증' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.VerifyEmailDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "verifyEmail", null);
 __decorate([
@@ -203,7 +203,7 @@ __decorate([
     (0, swagger_1.ApiOperation)({ summary: '인증 메일 재발송' }),
     __param(0, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [auth_dto_1.ResendVerificationDto]),
     __metadata("design:returntype", void 0)
 ], AuthController.prototype, "resendVerification", null);
 __decorate([

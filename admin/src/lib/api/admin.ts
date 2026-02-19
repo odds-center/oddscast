@@ -202,9 +202,12 @@ export class AdminSubscriptionsApi {
     }
   }
 
-  static async deletePlan(planId: string): Promise<void> {
+  static async deletePlan(planId: string): Promise<SubscriptionPlan | { isActive: boolean }> {
     try {
-      await axiosInstance.delete(`/subscriptions/plans/${planId}`);
+      const response = await axiosInstance.delete<SubscriptionPlan | { isActive: boolean }>(
+        `/subscriptions/plans/${planId}`
+      );
+      return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
     }
@@ -427,6 +430,15 @@ export class AdminAIConfigApi {
  * KRA 동기화 API
  */
 export class AdminKraApi {
+  static async getStatus(): Promise<{ baseUrlInUse: string; serviceKeyConfigured: boolean }> {
+    try {
+      const response = await axiosInstance.get('/kra/status');
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
   static async syncSchedule(date: string): Promise<any> {
     try {
       const response = await axiosInstance.post(`/kra/sync/schedule?date=${date}`, {}, { timeout: 120_000 });
@@ -533,31 +545,63 @@ export class AdminKraApi {
 }
 
 /**
- * Races API — Server /api/races 사용
+ * Races API — Server /api/admin/races 사용
  */
 export class AdminRacesApi {
-  static async getAll(params?: { page?: number; limit?: number }): Promise<any> {
+  static async getAll(params?: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{
+    data: unknown[];
+    meta: { totalPages: number };
+  }> {
     try {
-      const response = await axiosInstance.get<{ data: { races: any[]; total: number; page: number; totalPages: number } }>(
-        '/races',
-        { params }
-      );
-      const body = response.data as any;
+      const response = await axiosInstance.get<{
+        data?: { races?: unknown[]; totalPages?: number };
+      }>('/races', { params });
+      const body = response.data;
       const payload = body?.data ?? body;
       return {
-        data: payload?.races ?? [],
-        meta: { totalPages: payload?.totalPages ?? 1 },
+        data: Array.isArray((payload as { races?: unknown[] })?.races)
+          ? (payload as { races: unknown[] }).races
+          : [],
+        meta: {
+          totalPages: (payload as { totalPages?: number })?.totalPages ?? 1,
+        },
       };
     } catch (error) {
       throw handleApiError(error);
     }
   }
 
-  static async getOne(id: string): Promise<any> {
+  static async getOne(id: string): Promise<unknown> {
     try {
       const response = await axiosInstance.get(`/races/${id}`);
-      const body = response.data as any;
-      return body?.data ?? body;
+      const body = response.data as { data?: unknown } | unknown;
+      return body && typeof body === 'object' && 'data' in body
+        ? (body as { data: unknown }).data
+        : body;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  static async update(
+    id: string,
+    data: Record<string, unknown>
+  ): Promise<unknown> {
+    try {
+      const response = await axiosInstance.patch<{ data?: unknown }>(
+        `/races/${id}`,
+        data
+      );
+      const body = response.data;
+      return body && typeof body === 'object' && 'data' in body
+        ? (body as { data: unknown }).data
+        : body;
     } catch (error) {
       throw handleApiError(error);
     }
@@ -720,6 +764,8 @@ export class AdminStatisticsApi {
     margin: number;
     activeSubscribers: number;
     avgRevenuePerUser: number;
+    subscriptionByPlan: Array<{ planName: string; count: number; revenue: number }>;
+    singlePurchaseCount: number;
     rows: Revenue[];
   }> {
     try {

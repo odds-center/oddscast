@@ -7,6 +7,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import PageLoading from '@/components/common/PageLoading';
 import { adminAIConfigApi } from '@/lib/api/admin';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
@@ -189,7 +190,7 @@ export default function AIConfigPage() {
           <title>AI 설정 | GoldenRace Admin</title>
         </Head>
         <Layout>
-          <div className='p-8'>로딩 중...</div>
+          <PageLoading label='AI 설정을 불러오는 중...' />
         </Layout>
       </>
     );

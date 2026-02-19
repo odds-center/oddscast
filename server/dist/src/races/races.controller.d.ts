@@ -9,8 +9,8 @@ export declare class RacesController {
                 id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
                 betType: import("@prisma/client").$Enums.BetType;
                 betName: string;
                 betDescription: string | null;
@@ -40,8 +40,8 @@ export declare class RacesController {
             picks: {
                 id: number;
                 createdAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
                 pickType: import("@prisma/client").$Enums.PickType;
                 hrNos: string[];
                 hrNames: string[];
@@ -52,9 +52,9 @@ export declare class RacesController {
                 createdAt: Date;
                 updatedAt: Date;
                 bets: import("@prisma/client/runtime/client").JsonValue;
+                userId: number;
                 status: import("@prisma/client").$Enums.BetSlipStatus;
                 raceId: number;
-                userId: number;
                 totalAmount: number;
             }[];
             _count: {
@@ -90,12 +90,14 @@ export declare class RacesController {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
                 recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
                 trainingData: import("@prisma/client/runtime/client").JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
             }[];
             results: {
                 id: number;
@@ -117,6 +119,7 @@ export declare class RacesController {
                 chaksun1: number | null;
                 ord: string | null;
                 ordInt: number | null;
+                ordType: string | null;
                 wgHr: string | null;
                 hrTool: string | null;
                 rcTime: string | null;
@@ -165,8 +168,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -196,8 +199,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -208,9 +211,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -246,12 +249,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -273,6 +278,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -317,8 +323,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -348,8 +354,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -360,9 +366,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -398,12 +404,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -425,6 +433,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -469,8 +478,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -500,8 +509,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -512,9 +521,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -550,12 +559,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -577,6 +588,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -622,8 +634,8 @@ export declare class RacesController {
                 id: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
                 betType: import("@prisma/client").$Enums.BetType;
                 betName: string;
                 betDescription: string | null;
@@ -653,8 +665,8 @@ export declare class RacesController {
             picks: {
                 id: number;
                 createdAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
                 pickType: import("@prisma/client").$Enums.PickType;
                 hrNos: string[];
                 hrNames: string[];
@@ -665,9 +677,9 @@ export declare class RacesController {
                 createdAt: Date;
                 updatedAt: Date;
                 bets: import("@prisma/client/runtime/client").JsonValue;
+                userId: number;
                 status: import("@prisma/client").$Enums.BetSlipStatus;
                 raceId: number;
-                userId: number;
                 totalAmount: number;
             }[];
             _count: {
@@ -703,12 +715,14 @@ export declare class RacesController {
                 rcCntT: number | null;
                 ord1CntT: number | null;
                 budam: string | null;
+                ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
                 recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
                 trainingData: import("@prisma/client/runtime/client").JsonValue | null;
                 equipment: string | null;
                 horseWeight: string | null;
                 bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
                 isScratched: boolean;
+                sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
             }[];
             results: {
                 id: number;
@@ -730,6 +744,7 @@ export declare class RacesController {
                 chaksun1: number | null;
                 ord: string | null;
                 ordInt: number | null;
+                ordType: string | null;
                 wgHr: string | null;
                 hrTool: string | null;
                 rcTime: string | null;
@@ -778,8 +793,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -809,8 +824,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -821,9 +836,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -859,12 +874,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -886,6 +903,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -925,170 +943,17 @@ export declare class RacesController {
         rcDay: string | null;
         stTime: string | null;
     })[]>;
-    getStatistics(meet?: string, _date?: string, _month?: string, _year?: string): Promise<{
-        races: ({
-            bets: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                raceId: number;
-                userId: number;
-                betType: import("@prisma/client").$Enums.BetType;
-                betName: string;
-                betDescription: string | null;
-                betAmount: number;
-                potentialWin: number | null;
-                odds: number | null;
-                selections: import("@prisma/client/runtime/client").JsonValue;
-                betStatus: import("@prisma/client").$Enums.BetStatus;
-                betResult: import("@prisma/client").$Enums.BetResult;
-                betTime: Date;
-                raceTime: Date | null;
-                resultTime: Date | null;
-                actualWin: number | null;
-                actualOdds: number | null;
-                confidenceLevel: number | null;
-                betReason: string | null;
-                analysisData: import("@prisma/client/runtime/client").JsonValue | null;
-                apiVersion: string | null;
-                dataSource: string | null;
-                ipAddress: string | null;
-                userAgent: string | null;
-                roi: number | null;
-                riskLevel: string | null;
-                isFavorite: boolean;
-                notes: string | null;
-            }[];
-            picks: {
-                id: number;
-                createdAt: Date;
-                raceId: number;
-                userId: number;
-                pickType: import("@prisma/client").$Enums.PickType;
-                hrNos: string[];
-                hrNames: string[];
-                pointsAwarded: number | null;
-            }[];
-            betSlips: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                bets: import("@prisma/client/runtime/client").JsonValue;
-                status: import("@prisma/client").$Enums.BetSlipStatus;
-                raceId: number;
-                userId: number;
-                totalAmount: number;
-            }[];
-            _count: {
-                entries: number;
-                results: number;
-                predictions: number;
-                bets: number;
-                picks: number;
-                betSlips: number;
-            };
-            entries: {
-                id: number;
-                hrNo: string;
-                hrName: string;
-                jkName: string;
-                trName: string | null;
-                owName: string | null;
-                wgBudam: number | null;
-                raceId: number;
-                hrNameEn: string | null;
-                jkNo: string | null;
-                jkNameEn: string | null;
-                trNo: string | null;
-                owNo: string | null;
-                rating: number | null;
-                chulNo: string | null;
-                dusu: number | null;
-                sex: string | null;
-                age: number | null;
-                prd: string | null;
-                chaksun1: number | null;
-                chaksunT: bigint | null;
-                rcCntT: number | null;
-                ord1CntT: number | null;
-                budam: string | null;
-                recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
-                trainingData: import("@prisma/client/runtime/client").JsonValue | null;
-                equipment: string | null;
-                horseWeight: string | null;
-                bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
-                isScratched: boolean;
-            }[];
-            results: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                weather: string | null;
-                track: string | null;
-                hrNo: string;
-                hrName: string;
-                jkName: string | null;
-                trName: string | null;
-                owName: string | null;
-                wgBudam: number | null;
-                raceId: number;
-                jkNo: string | null;
-                chulNo: string | null;
-                sex: string | null;
-                age: string | null;
-                chaksun1: number | null;
-                ord: string | null;
-                ordInt: number | null;
-                wgHr: string | null;
-                hrTool: string | null;
-                rcTime: string | null;
-                diffUnit: string | null;
-                winOdds: number | null;
-                plcOdds: number | null;
-                sectionalTimes: import("@prisma/client/runtime/client").JsonValue | null;
-            }[];
-            predictions: {
-                id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                status: import("@prisma/client").$Enums.PredictionStatus;
-                raceId: number;
-                scores: import("@prisma/client/runtime/client").JsonValue | null;
-                analysis: string | null;
-                preview: string | null;
-                previewApproved: boolean;
-                accuracy: number | null;
-            }[];
-        } & {
-            id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            rcName: string | null;
-            meet: string;
-            meetName: string | null;
-            rcDate: string;
-            rcNo: string;
-            rcDist: string | null;
-            rank: string | null;
-            rcCondition: string | null;
-            rcPrize: number | null;
-            weather: string | null;
-            track: string | null;
-            status: import("@prisma/client").$Enums.RaceStatus;
-            rcDay: string | null;
-            stTime: string | null;
-        })[];
+    getStatistics(meet?: string, date?: string, month?: string, year?: string): Promise<{
         total: number;
-        page: number;
-        totalPages: number;
+        byStatus: Record<string, number>;
     }>;
     findOne(id: number): Promise<{
         bets: {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1118,8 +983,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1130,9 +995,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1168,12 +1033,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -1195,6 +1062,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -1239,8 +1107,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1270,8 +1138,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1282,9 +1150,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1320,12 +1188,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -1347,6 +1217,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -1391,8 +1262,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1422,8 +1293,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1434,9 +1305,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1472,12 +1343,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -1499,6 +1372,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -1564,8 +1438,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1595,8 +1469,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1607,9 +1481,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1645,12 +1519,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -1672,6 +1548,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -1716,8 +1593,8 @@ export declare class RacesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1747,8 +1624,8 @@ export declare class RacesController {
         picks: {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1759,9 +1636,9 @@ export declare class RacesController {
             createdAt: Date;
             updatedAt: Date;
             bets: import("@prisma/client/runtime/client").JsonValue;
+            userId: number;
             status: import("@prisma/client").$Enums.BetSlipStatus;
             raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1797,12 +1674,14 @@ export declare class RacesController {
             rcCntT: number | null;
             ord1CntT: number | null;
             budam: string | null;
+            ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
             recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
             trainingData: import("@prisma/client/runtime/client").JsonValue | null;
             equipment: string | null;
             horseWeight: string | null;
             bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
             isScratched: boolean;
+            sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
         }[];
         results: {
             id: number;
@@ -1824,6 +1703,7 @@ export declare class RacesController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -1900,12 +1780,14 @@ export declare class RacesController {
         rcCntT: number | null;
         ord1CntT: number | null;
         budam: string | null;
+        ratingHistory: import("@prisma/client/runtime/client").JsonValue | null;
         recentRanks: import("@prisma/client/runtime/client").JsonValue | null;
         trainingData: import("@prisma/client/runtime/client").JsonValue | null;
         equipment: string | null;
         horseWeight: string | null;
         bleedingInfo: import("@prisma/client/runtime/client").JsonValue | null;
         isScratched: boolean;
+        sectionalStats: import("@prisma/client/runtime/client").JsonValue | null;
     }>;
     createBulkEntries(raceId: number, body: {
         entries: CreateRaceEntryDto[];

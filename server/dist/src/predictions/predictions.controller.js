@@ -55,6 +55,15 @@ let PredictionsController = class PredictionsController {
     getByRace(raceId) {
         return this.predictionsService.getByRace(raceId);
     }
+    getMatrix(date, meet) {
+        return this.predictionsService.getMatrix(date, meet);
+    }
+    getCommentary(date, limit, offset) {
+        return this.predictionsService.getCommentary(date, limit ? parseInt(limit, 10) : 20, offset ? parseInt(offset, 10) : 0);
+    }
+    getHitRecords(limit) {
+        return this.predictionsService.getHitRecords(limit ? parseInt(limit, 10) : 5);
+    }
     findOne(id) {
         return this.predictionsService.findOne(id);
     }
@@ -157,6 +166,33 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", void 0)
 ], PredictionsController.prototype, "getByRace", null);
+__decorate([
+    (0, common_1.Get)('matrix'),
+    (0, swagger_1.ApiOperation)({ summary: '종합 예상 매트릭스 (용산종합지 스타일)' }),
+    __param(0, (0, common_1.Query)('date')),
+    __param(1, (0, common_1.Query)('meet')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String]),
+    __metadata("design:returntype", void 0)
+], PredictionsController.prototype, "getMatrix", null);
+__decorate([
+    (0, common_1.Get)('commentary'),
+    (0, swagger_1.ApiOperation)({ summary: '전문가 코멘트 피드' }),
+    __param(0, (0, common_1.Query)('date')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('offset')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], PredictionsController.prototype, "getCommentary", null);
+__decorate([
+    (0, common_1.Get)('hit-record'),
+    (0, swagger_1.ApiOperation)({ summary: '적중 내역 배너' }),
+    __param(0, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PredictionsController.prototype, "getHitRecords", null);
 __decorate([
     (0, common_1.Get)(':id'),
     (0, swagger_1.ApiOperation)({ summary: '예측 상세 조회' }),

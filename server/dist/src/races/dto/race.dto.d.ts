@@ -23,6 +23,7 @@ export declare class CreateRaceEntryDto {
     wgBudam?: number;
 }
 export declare class RaceFilterDto {
+    q?: string;
     date?: string;
     dateFrom?: string;
     dateTo?: string;

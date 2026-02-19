@@ -27,8 +27,8 @@ export declare class PicksService {
     } & {
         id: number;
         createdAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
@@ -58,8 +58,8 @@ export declare class PicksService {
         } & {
             id: number;
             createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -92,8 +92,8 @@ export declare class PicksService {
     } & {
         id: number;
         createdAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];

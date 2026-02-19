@@ -2,15 +2,21 @@ import type { Cache } from '@nestjs/cache-manager';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { GlobalConfigService } from '../config/config.service';
 export declare class KraService {
     private httpService;
     private configService;
+    private globalConfigService;
     private prisma;
     private cache;
     private readonly logger;
     private readonly serviceKey;
-    private readonly baseUrl;
-    constructor(httpService: HttpService, configService: ConfigService, prisma: PrismaService, cache: Cache);
+    constructor(httpService: HttpService, configService: ConfigService, globalConfigService: GlobalConfigService, prisma: PrismaService, cache: Cache);
+    private resolveBaseUrl;
+    getKraStatus(): Promise<{
+        baseUrlInUse: string;
+        serviceKeyConfigured: boolean;
+    }>;
     syncWeeklySchedule(): Promise<void>;
     syncRaceDayMorning(): Promise<void>;
     syncRealtimeResults(): Promise<void>;
@@ -63,7 +69,17 @@ export declare class KraService {
     fetchJockeyTotalResults(meet?: string): Promise<{
         message: string;
     }>;
+    fetchTrainerInfo(meet?: string): Promise<{
+        updated: number;
+    }>;
     fetchTrackInfo(date: string): Promise<void>;
+    fetchRaceHorseRatings(date: string): Promise<{
+        updated: number;
+    }>;
+    fetchHorseSectionalRecords(date: string): Promise<{
+        updated: number;
+    }>;
+    private parseSectionalVal;
     fetchHorseWeight(date: string): Promise<void>;
     fetchEquipmentBleeding(date: string): Promise<void>;
     fetchHorseCancel(date: string): Promise<void>;

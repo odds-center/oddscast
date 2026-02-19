@@ -7,6 +7,7 @@ import { z } from 'zod';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import PageLoading from '@/components/common/PageLoading';
 import { adminSubscriptionsApi } from '@/lib/api/admin';
 
 interface SubscriptionPlan {
@@ -45,6 +46,7 @@ type PlanFormData = z.infer<typeof planSchema>;
 export default function SubscriptionPlansPage() {
   const queryClient = useQueryClient();
   const [editingPlan, setEditingPlan] = useState<SubscriptionPlan | null>(null);
+  const [deletingPlan, setDeletingPlan] = useState<SubscriptionPlan | null>(null);
 
   // react-hook-form 설정
   const {
@@ -71,16 +73,29 @@ export default function SubscriptionPlansPage() {
 
   // 플랜 수정 mutation
   const updatePlanMutation = useMutation({
-    mutationFn: (plan: PlanFormData) => adminSubscriptionsApi.updatePlan(plan.id, plan),
+    mutationFn: (plan: PlanFormData) => adminSubscriptionsApi.updatePlan(String(plan.id), plan),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
       toast.success('저장되었습니다');
       setEditingPlan(null);
       reset();
     },
-    onError: (error) => {
+    onError: (error: unknown) => {
       console.error('저장 실패:', error);
       toast.error('저장에 실패했습니다. 다시 시도해주세요.');
+    },
+  });
+
+  // 플랜 삭제/비활성화 mutation
+  const deletePlanMutation = useMutation({
+    mutationFn: (id: string | number) => adminSubscriptionsApi.deletePlan(String(id)),
+    onSuccess: (result: { isActive?: boolean } | void) => {
+      queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
+      toast.success(result && 'isActive' in result && !result.isActive ? '플랜이 비활성화되었습니다' : '플랜이 삭제되었습니다');
+      setDeletingPlan(null);
+    },
+    onError: (error: unknown) => {
+      toast.error(error instanceof Error ? error.message : '삭제에 실패했습니다');
     },
   });
 
@@ -115,7 +130,7 @@ export default function SubscriptionPlansPage() {
           <title>구독 플랜 관리 | GoldenRace Admin</title>
         </Head>
         <Layout>
-          <div className='p-8'>로딩 중...</div>
+          <PageLoading label='구독 플랜을 불러오는 중...' />
         </Layout>
       </>
     );
@@ -139,12 +154,20 @@ export default function SubscriptionPlansPage() {
                       <h2 className='text-lg font-bold text-gray-900'>{plan.displayName}</h2>
                       <p className='text-sm text-gray-500'>{plan.planName}</p>
                     </div>
-                    <button
-                      onClick={() => handleEditClick(plan)}
-                      className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
-                    >
-                      수정
-                    </button>
+                    <div className='flex gap-2'>
+                      <button
+                        onClick={() => handleEditClick(plan)}
+                        className='px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700'
+                      >
+                        수정
+                      </button>
+                      <button
+                        onClick={() => setDeletingPlan(plan)}
+                        className='px-4 py-2 bg-red-100 text-red-700 rounded hover:bg-red-200'
+                      >
+                        {plan.isActive ? '비활성화' : '삭제'}
+                      </button>
+                    </div>
                   </div>
 
                   <div className='space-y-3'>
@@ -358,6 +381,33 @@ export default function SubscriptionPlansPage() {
                     </button>
                   </div>
                 </form>
+              </div>
+            </div>
+          )}
+
+          {deletingPlan && (
+            <div className='fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50'>
+              <div className='bg-white rounded-lg p-6 max-w-sm w-full'>
+                <h2 className='text-lg font-bold mb-2'>플랜 삭제</h2>
+                <p className='text-gray-600 mb-4'>
+                  {deletingPlan.displayName}({deletingPlan.planName})를
+                  {deletingPlan.isActive ? ' 비활성화' : ' 삭제'}하시겠습니까?
+                </p>
+                <div className='flex gap-2'>
+                  <button
+                    onClick={() => deletePlanMutation.mutate(deletingPlan.id)}
+                    disabled={deletePlanMutation.isPending}
+                    className='flex-1 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50'
+                  >
+                    {deletePlanMutation.isPending ? '처리 중...' : '확인'}
+                  </button>
+                  <button
+                    onClick={() => setDeletingPlan(null)}
+                    className='flex-1 px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300'
+                  >
+                    취소
+                  </button>
+                </div>
               </div>
             </div>
           )}

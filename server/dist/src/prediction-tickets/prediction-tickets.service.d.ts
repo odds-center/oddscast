@@ -8,10 +8,10 @@ export declare class PredictionTicketsService {
     useTicket(userId: number, dto: UseTicketDto): Promise<{
         ticket: {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
@@ -52,10 +52,10 @@ export declare class PredictionTicketsService {
             } | null;
         } & {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
@@ -82,8 +82,8 @@ export declare class PredictionTicketsService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
             planId: number;
             price: number;
             billingKey: string | null;
@@ -95,10 +95,10 @@ export declare class PredictionTicketsService {
         } | null;
     } & {
         id: number;
-        status: import("@prisma/client").$Enums.TicketStatus;
-        raceId: number | null;
         userId: number;
         expiresAt: Date;
+        status: import("@prisma/client").$Enums.TicketStatus;
+        raceId: number | null;
         subscriptionId: number | null;
         predictionId: number | null;
         usedAt: Date | null;
@@ -108,10 +108,10 @@ export declare class PredictionTicketsService {
         granted: number;
         tickets: {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;

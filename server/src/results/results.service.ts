@@ -3,13 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { Prisma } from '@prisma/client';
 import { toKraMeetName } from '../kra/constants';
+import { isEligibleForAccuracy } from '../kra/ord-parser';
 import { serializeRaceResults } from '../common/serializers/kra.serializer';
 import {
   CreateResultDto,
   UpdateResultDto,
   BulkCreateResultDto,
+  BulkUpdateResultDto,
   ResultFilterDto,
   ResultStatisticsFilterDto,
+  ResultSearchDto,
 } from './dto/result.dto';
 
 @Injectable()
@@ -123,13 +126,22 @@ export class ResultsService {
     const results = await this.prisma.raceResult.findMany({
       where: { raceId },
       orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+      select: {
+        hrNo: true,
+        hrName: true,
+        ordType: true,
+        ordInt: true,
+        ord: true,
+      },
     });
     if (!results.length) return;
 
     const predictedOrder = horseScores
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .map((h) => String(h.hrNo ?? h.hrName ?? '').trim());
+    // ordType이 NORMAL 또는 null인 결과만 actualTop에 포함 (낙마·실격·기권 제외)
     const actualTop = results
+      .filter((r) => isEligibleForAccuracy(r.ordType))
       .slice(0, 3)
       .map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
 
@@ -178,5 +190,108 @@ export class ResultsService {
       take: 100,
     });
     return { format, count: results.length, data: results };
+  }
+
+  /**
+   * 결과 검색 (q: 마명/마번/기수명, date, meet)
+   */
+  async search(filters: ResultSearchDto) {
+    const { q, date, meet, page = 1, limit = 20 } = filters;
+    const where: Prisma.RaceResultWhereInput = {};
+    if (date || meet) {
+      where.race = {
+        ...(date && { rcDate: date }),
+        ...(meet && { meet: toKraMeetName(meet) }),
+      };
+    }
+    if (q && q.trim()) {
+      const qTrim = q.trim();
+      where.OR = [
+        { hrName: { contains: qTrim, mode: 'insensitive' } },
+        { hrNo: { contains: qTrim, mode: 'insensitive' } },
+        { jkName: { contains: qTrim, mode: 'insensitive' } },
+      ];
+    }
+
+    const [results, total] = await Promise.all([
+      this.prisma.raceResult.findMany({
+        where,
+        select: {
+          id: true,
+          raceId: true,
+          ord: true,
+          chulNo: true,
+          hrNo: true,
+          hrName: true,
+          jkName: true,
+          race: {
+            select: { meet: true, meetName: true, rcNo: true, rcDate: true },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.raceResult.count({ where }),
+    ]);
+
+    return {
+      results: serializeRaceResults(results),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * 경주별 결과 검증 (필수 필드, 중복, 순위 연속성)
+   */
+  async validateByRaceId(raceId: number) {
+    const results = await this.prisma.raceResult.findMany({
+      where: { raceId },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+    });
+
+    const errors: string[] = [];
+    const hrNos = new Set<string>();
+
+    for (const r of results) {
+      if (!r.hrNo || !r.hrName) {
+        errors.push(`결과 id=${r.id}: hrNo, hrName 필수`);
+      }
+      if (hrNos.has(r.hrNo)) {
+        errors.push(`중복 마번: ${r.hrNo}`);
+      }
+      hrNos.add(r.hrNo);
+    }
+
+    return {
+      valid: errors.length === 0,
+      raceId,
+      count: results.length,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  }
+
+  /**
+   * 결과 일괄 수정
+   */
+  async bulkUpdate(dto: BulkUpdateResultDto) {
+    let updated = 0;
+    for (const item of dto.updates) {
+      const data: Prisma.RaceResultUpdateInput = {};
+      if (item.ord !== undefined) data.ord = item.ord;
+      if (item.ordType !== undefined) data.ordType = item.ordType;
+      if (item.rcTime !== undefined) data.rcTime = item.rcTime;
+      if (item.chaksun1 !== undefined) data.chaksun1 = item.chaksun1;
+      if (Object.keys(data).length > 0) {
+        await this.prisma.raceResult.update({
+          where: { id: item.id },
+          data,
+        });
+        updated++;
+      }
+    }
+    return { updated };
   }
 }

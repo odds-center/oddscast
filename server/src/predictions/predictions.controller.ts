@@ -93,6 +93,34 @@ export class PredictionsController {
     return this.predictionsService.getByRace(raceId);
   }
 
+  @Get('matrix')
+  @ApiOperation({ summary: '종합 예상 매트릭스 (용산종합지 스타일)' })
+  getMatrix(@Query('date') date?: string, @Query('meet') meet?: string) {
+    return this.predictionsService.getMatrix(date, meet);
+  }
+
+  @Get('commentary')
+  @ApiOperation({ summary: '전문가 코멘트 피드' })
+  getCommentary(
+    @Query('date') date?: string,
+    @Query('limit') limit?: string,
+    @Query('offset') offset?: string,
+  ) {
+    return this.predictionsService.getCommentary(
+      date,
+      limit ? parseInt(limit, 10) : 20,
+      offset ? parseInt(offset, 10) : 0,
+    );
+  }
+
+  @Get('hit-record')
+  @ApiOperation({ summary: '적중 내역 배너' })
+  getHitRecords(@Query('limit') limit?: string) {
+    return this.predictionsService.getHitRecords(
+      limit ? parseInt(limit, 10) : 5,
+    );
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '예측 상세 조회' })
   findOne(@Param('id', ParseIntPipe) id: number) {

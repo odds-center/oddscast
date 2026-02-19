@@ -318,7 +318,7 @@ export default function RacesPage() {
 
           <Card>
             <Table
-              data={data?.data || []}
+              data={(data?.data || []) as RaceData[]}
               columns={columns}
               isLoading={isLoading}
               emptyMessage='경주가 없습니다.'

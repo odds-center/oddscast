@@ -193,6 +193,52 @@ def _experience_bonus(total_runs: int, total_wins: int) -> float:
     return round(min(10, exp + perf), 2)
 
 
+def _trainer_bonus(entry: dict) -> float:
+    """조교사 승률/복승률 보너스 (API19_1). 0~5점."""
+    win_rate = entry.get("trainerWinRate")
+    qu_rate = entry.get("trainerQuRate")
+    if win_rate is None and qu_rate is None:
+        return 0.0
+    bonus = 0.0
+    try:
+        if qu_rate is not None:
+            q = float(qu_rate)
+            if q >= 30:
+                bonus += 2.0
+            elif q >= 25:
+                bonus += 1.0
+        if win_rate is not None:
+            w = float(win_rate)
+            if w >= 15:
+                bonus += 1.0
+            elif w >= 10:
+                bonus += 0.5
+    except (ValueError, TypeError):
+        pass
+    return round(min(5, bonus), 2)
+
+
+def _sectional_bonus(entry: dict, rc_dist: int) -> float:
+    """구간별(선행마/추입마) 보너스. ±2점."""
+    tag = entry.get("sectionalTag") or ""
+    if not tag:
+        return 0.0
+    tag_lower = str(tag).lower()
+    # 선행마: 단거리(rcDist < 1400) 유리
+    if "선행" in tag or "선행마" in tag:
+        if rc_dist < 1400:
+            return 2.0
+        if rc_dist >= 1800:
+            return -1.0  # 장거리에서는 불리할 수 있음
+    # 추입마: 장거리(rcDist >= 1600) 유리
+    if "추입" in tag or "추입마" in tag:
+        if rc_dist >= 1600:
+            return 2.0
+        if rc_dist < 1200:
+            return -1.0
+    return 0.0
+
+
 def _minimal_fallback(entries: list) -> list:
     """entries만으로 최소 결과 생성 — 무조건 배열 반환."""
     out = []
@@ -220,6 +266,9 @@ def calculate_score(data):
         return []
 
     try:
+        race = data.get('race') or {}
+        rc_dist = int(race.get('rcDist') or 0)
+
         ratings = []
         for e in entries:
             r = e.get('rating')
@@ -247,6 +296,20 @@ def calculate_score(data):
             momentum = _momentum_score(recent_ranks)
             exp_bonus = _experience_bonus(total_runs, total_wins)
 
+            # KRA API77: ratingHistory(추이) — 상승 시 가산, 하락 시 감점
+            rating_trend_bonus = 0.0
+            rating_history = e.get('ratingHistory')
+            if isinstance(rating_history, list) and len(rating_history) > 0 and rating is not None:
+                try:
+                    prev = float(rating_history[0])
+                    curr = float(rating)
+                    if curr > prev:
+                        rating_trend_bonus = 2.0  # 상승 추이
+                    elif curr < prev and prev > 0:
+                        rating_trend_bonus = -1.0  # 하락 추이
+                except (ValueError, TypeError):
+                    pass
+
             # KRA 추가 반영: chaksun1(1착상금) 있으면 저평가 보너스
             chaksun_bonus = 0.0
             chaksun1 = e.get('chaksun1')
@@ -258,12 +321,21 @@ def calculate_score(data):
                 except (ValueError, TypeError):
                     pass
 
-            # 복합: 레이팅 50%, 기세 40%, 경험 10%, 1착상금 보너스
+            # 조교사 보너스 (API19_1 trainerWinRate, trainerQuRate)
+            trainer_bonus = _trainer_bonus(e)
+
+            # 구간별 보너스 (선행마/추입마 + rcDist)
+            sectional_bonus = _sectional_bonus(e, rc_dist)
+
+            # 복합: 레이팅 50%, 기세 40%, 경험 10%, 보너스들
             composite = (
                 rating_score * 0.5
                 + momentum * 0.4
                 + exp_bonus
                 + chaksun_bonus
+                + rating_trend_bonus
+                + trainer_bonus
+                + sectional_bonus
             )
             composite = round(min(100, max(0, composite)), 2)
 
@@ -272,7 +344,29 @@ def calculate_score(data):
                 recent_str = '→'.join(str(r) + '위' for r in recent_ranks[:3])
                 reason_parts.append(f'최근순위 {recent_str}')
             if rating is not None:
-                reason_parts.append(f'레이팅 {rating}')
+                reason_parts.append(f'레이팅{rating}')
+            if rating_trend_bonus > 0:
+                reason_parts.append('레이팅상승추세')
+            elif rating_trend_bonus < 0:
+                reason_parts.append('레이팅하락')
+            if trainer_bonus > 0:
+                tr_w = e.get('trainerWinRate')
+                tr_q = e.get('trainerQuRate')
+                tr_parts = []
+                if tr_w is not None:
+                    tr_parts.append(f'조승률{float(tr_w):.1f}%')
+                if tr_q is not None:
+                    tr_parts.append(f'복승률{float(tr_q):.1f}%')
+                reason_parts.append('조교사' + '/'.join(tr_parts) if tr_parts else '조교사우수')
+            if sectional_bonus > 0:
+                tag = e.get('sectionalTag') or ''
+                reason_parts.append(f'각질유리({tag})' if tag else '구간유리')
+            elif sectional_bonus < 0:
+                tag = e.get('sectionalTag') or ''
+                reason_parts.append(f'각질불리({tag})' if tag else '구간불리')
+            if total_runs and total_wins:
+                win_rate = (total_wins / total_runs * 100) if total_runs else 0
+                reason_parts.append(f'통산{total_runs}전{total_wins}승({win_rate:.1f}%)')
             reason = ', '.join(reason_parts) if reason_parts else '데이터 기반'
 
             results.append({
@@ -283,6 +377,8 @@ def calculate_score(data):
                 'ratingScore': rating_score,
                 'momentumScore': momentum,
                 'experienceBonus': exp_bonus,
+                'trainerBonus': trainer_bonus,
+                'sectionalBonus': sectional_bonus,
                 'recentRanks': recent_ranks[:5],
                 'reason': reason,
             })

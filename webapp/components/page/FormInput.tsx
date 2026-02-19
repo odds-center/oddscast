@@ -11,7 +11,7 @@ const inputClass =
 const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ({ label, error, className = '', ...props }, ref) => (
     <div>
-      <label className='block text-sm font-medium mb-2'>{label}</label>
+      <label className='block text-[16px] font-medium mb-2 text-foreground'>{label}</label>
       <input ref={ref} className={`${inputClass} ${className}`} {...props} />
       {error && <p className='msg-error mt-1.5'>{error}</p>}
     </div>

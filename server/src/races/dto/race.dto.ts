@@ -93,6 +93,11 @@ export class CreateRaceEntryDto {
 }
 
 export class RaceFilterDto {
+  @ApiPropertyOptional({ description: '검색어 (rcName, meet, rcNo)' })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
   @ApiPropertyOptional({ description: 'YYYYMMDD 또는 YYYY-MM-DD' })
   @IsOptional()
   @IsString()

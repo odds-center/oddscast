@@ -1,5 +1,6 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import LoadingSpinner from './LoadingSpinner';
 
 interface Column<T> {
   key: string;
@@ -27,7 +28,7 @@ export default function Table<T extends object>({
   if (isLoading) {
     return (
       <div className='flex items-center justify-center py-8'>
-        <div className='animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600'></div>
+        <LoadingSpinner size='md' />
       </div>
     );
   }

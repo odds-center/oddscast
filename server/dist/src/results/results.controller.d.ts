@@ -1,5 +1,5 @@
 import { ResultsService } from './results.service';
-import { CreateResultDto, UpdateResultDto, BulkCreateResultDto, ResultFilterDto, ResultStatisticsFilterDto } from './dto/result.dto';
+import { CreateResultDto, UpdateResultDto, BulkCreateResultDto, BulkUpdateResultDto, ResultFilterDto, ResultSearchDto, ResultStatisticsFilterDto } from './dto/result.dto';
 export declare class ResultsController {
     private resultsService;
     constructor(resultsService: ResultsService);
@@ -70,6 +70,7 @@ export declare class ResultsController {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -78,6 +79,32 @@ export declare class ResultsController {
             plcOdds: number | null;
             sectionalTimes: import("@prisma/client/runtime/client").JsonValue | null;
         })[];
+    }>;
+    search(filters: ResultSearchDto): Promise<{
+        results: {
+            race: {
+                meet: string;
+                meetName: string | null;
+                rcDate: string;
+                rcNo: string;
+            };
+            id: number;
+            hrNo: string;
+            hrName: string;
+            jkName: string | null;
+            raceId: number;
+            chulNo: string | null;
+            ord: string | null;
+        }[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }>;
+    validate(raceId: number): Promise<{
+        valid: boolean;
+        raceId: number;
+        count: number;
+        errors: string[] | undefined;
     }>;
     getByRace(raceId: number): Promise<{
         id: number;
@@ -99,6 +126,7 @@ export declare class ResultsController {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -147,6 +175,7 @@ export declare class ResultsController {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -195,6 +224,7 @@ export declare class ResultsController {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -205,6 +235,9 @@ export declare class ResultsController {
     }>;
     bulkCreate(dto: BulkCreateResultDto): Promise<{
         count: number;
+    }>;
+    bulkUpdate(dto: BulkUpdateResultDto): Promise<{
+        updated: number;
     }>;
     update(id: number, dto: UpdateResultDto): Promise<{
         race: {
@@ -246,6 +279,7 @@ export declare class ResultsController {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;

@@ -47,6 +47,7 @@ const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const google_auth_library_1 = require("google-auth-library");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto = __importStar(require("crypto"));
 const config_1 = require("@nestjs/config");
 const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
@@ -210,6 +211,87 @@ let AuthService = class AuthService {
         if (!user)
             throw new common_1.UnauthorizedException();
         return this.generateToken(user.id, user.email, user.role);
+    }
+    async forgotPassword(email) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (!user || !user.isActive) {
+            return { message: '비밀번호 재설정 이메일이 발송되었습니다.' };
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
+        await this.prisma.passwordResetToken.deleteMany({
+            where: { userId: user.id },
+        });
+        await this.prisma.passwordResetToken.create({
+            data: { userId: user.id, token, expiresAt },
+        });
+        const resendApiKey = this.config.get('RESEND_API_KEY');
+        if (resendApiKey) {
+        }
+        const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
+        return {
+            message: '비밀번호 재설정 이메일이 발송되었습니다.',
+            ...(devReturnToken && { resetToken: token }),
+        };
+    }
+    async resetPassword(token, newPassword) {
+        const record = await this.prisma.passwordResetToken.findUnique({
+            where: { token },
+            include: { user: true },
+        });
+        if (!record || record.expiresAt < new Date()) {
+            throw new common_1.BadRequestException('유효하지 않거나 만료된 토큰입니다.');
+        }
+        const hashed = await bcrypt.hash(newPassword, 10);
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: record.userId },
+                data: { password: hashed },
+            }),
+            this.prisma.passwordResetToken.delete({ where: { id: record.id } }),
+        ]);
+        return { message: '비밀번호가 재설정되었습니다.' };
+    }
+    async verifyEmail(token) {
+        const record = await this.prisma.emailVerificationToken.findUnique({
+            where: { token },
+        });
+        if (!record || record.expiresAt < new Date()) {
+            throw new common_1.BadRequestException('유효하지 않거나 만료된 토큰입니다.');
+        }
+        await this.prisma.$transaction([
+            this.prisma.user.update({
+                where: { id: record.userId },
+                data: { isEmailVerified: true },
+            }),
+            this.prisma.emailVerificationToken.delete({ where: { id: record.id } }),
+        ]);
+        return { message: '이메일이 인증되었습니다.' };
+    }
+    async resendVerification(email) {
+        const user = await this.prisma.user.findUnique({ where: { email } });
+        if (!user || !user.isActive) {
+            return { message: '인증 메일이 재발송되었습니다.' };
+        }
+        if (user.isEmailVerified) {
+            return { message: '이미 인증된 이메일입니다.' };
+        }
+        const token = crypto.randomBytes(32).toString('hex');
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await this.prisma.emailVerificationToken.deleteMany({
+            where: { userId: user.id },
+        });
+        await this.prisma.emailVerificationToken.create({
+            data: { userId: user.id, token, expiresAt },
+        });
+        const resendApiKey = this.config.get('RESEND_API_KEY');
+        if (resendApiKey) {
+        }
+        const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
+        return {
+            message: '인증 메일이 재발송되었습니다.',
+            ...(devReturnToken && { verificationToken: token }),
+        };
     }
     generateToken(userId, email, role) {
         const payload = { sub: userId, email, role };

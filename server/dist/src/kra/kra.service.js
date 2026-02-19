@@ -56,22 +56,36 @@ const axios_1 = require("@nestjs/axios");
 const config_1 = require("@nestjs/config");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
+const config_service_1 = require("../config/config.service");
 const schedule_1 = require("@nestjs/schedule");
 const rxjs_1 = require("rxjs");
 const xml2js = __importStar(require("xml2js"));
 const dayjs_1 = __importDefault(require("dayjs"));
 const customParseFormat_1 = __importDefault(require("dayjs/plugin/customParseFormat"));
 const constants_1 = require("./constants");
+const ord_parser_1 = require("./ord-parser");
+const DEFAULT_KRA_BASE_URL = 'http://apis.data.go.kr/B551015';
 let KraService = KraService_1 = class KraService {
-    constructor(httpService, configService, prisma, cache) {
+    constructor(httpService, configService, globalConfigService, prisma, cache) {
         this.httpService = httpService;
         this.configService = configService;
+        this.globalConfigService = globalConfigService;
         this.prisma = prisma;
         this.cache = cache;
         this.logger = new common_1.Logger(KraService_1.name);
-        this.baseUrl = 'http://apis.data.go.kr/B551015';
         dayjs_1.default.extend(customParseFormat_1.default);
         this.serviceKey = this.configService.get('KRA_SERVICE_KEY', '');
+    }
+    async resolveBaseUrl() {
+        const override = await this.globalConfigService.get('kra_base_url_override');
+        return (override?.trim() && override.length > 0) ? override.trim() : DEFAULT_KRA_BASE_URL;
+    }
+    async getKraStatus() {
+        const baseUrlInUse = await this.resolveBaseUrl();
+        return {
+            baseUrlInUse,
+            serviceKeyConfigured: this.ensureServiceKey(),
+        };
     }
     async syncWeeklySchedule() {
         if (!this.ensureServiceKey())
@@ -156,12 +170,13 @@ let KraService = KraService_1 = class KraService {
         const normalizedDate = this.normalizeToYyyyMmDd(date);
         this.logger.log(`Syncing Entry Sheet for date: ${normalizedDate}`);
         const endpoint = 'entrySheet';
+        const baseUrl = await this.resolveBaseUrl();
         let totalRaces = 0;
         let totalEntries = 0;
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/API26_2/entrySheet_2`;
+                const url = `${baseUrl}/API26_2/entrySheet_2`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -434,13 +449,14 @@ let KraService = KraService_1 = class KraService {
         }
         this.logger.log(`Fetching race results for date: ${date}`);
         const endpoint = 'raceResult';
+        const baseUrl = await this.resolveBaseUrl();
         let totalResults = 0;
         const failed500Meets = [];
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
                 const normalizedDate = this.normalizeToYyyyMmDd(date);
-                const url = `${this.baseUrl}/API4_3/raceResult_3`;
+                const url = `${baseUrl}/API4_3/raceResult_3`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -618,15 +634,14 @@ let KraService = KraService_1 = class KraService {
                         : undefined;
                     const sv = (val) => (val != null ? String(val) : undefined);
                     const ordStr = sv(item.ord);
-                    const ordIntVal = ordStr != null && /^\d+$/.test(ordStr)
-                        ? parseInt(ordStr, 10)
-                        : undefined;
+                    const { ordInt: ordIntVal, ordType: ordTypeVal } = (0, ord_parser_1.parseOrd)(ordStr);
                     const resultData = {
                         raceId: race.id,
                         hrNo: sv(item.hrNo ?? item.hr_no) ?? '',
                         hrName: sv(item.hrName ?? item.hr_name) ?? '',
                         ord: ordStr,
                         ordInt: ordIntVal,
+                        ordType: ordTypeVal,
                         rcTime: sv(item.rcTime),
                         chulNo: sv(item.chulNo ?? item.chul_no),
                         age: sv(item.age),
@@ -718,8 +733,9 @@ let KraService = KraService_1 = class KraService {
             return { message: 'KRA_SERVICE_KEY 미설정' };
         const meetCode = this.meetNameToCode(meet);
         const normalizedDate = this.normalizeToYyyyMmDd(date);
+        const baseUrl = await this.resolveBaseUrl();
         try {
-            const url = `${this.baseUrl}/API26_2/entrySheet_2`;
+            const url = `${baseUrl}/API26_2/entrySheet_2`;
             const params = {
                 serviceKey: decodeURIComponent(this.serviceKey),
                 meet: meetCode,
@@ -800,6 +816,7 @@ let KraService = KraService_1 = class KraService {
     async fetchHorseDetails(meet, date, raceNo) {
         if (!this.ensureServiceKey())
             return { message: 'KRA_SERVICE_KEY 미설정' };
+        const baseUrl = await this.resolveBaseUrl();
         const race = await this.prisma.race.findUnique({
             where: {
                 meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
@@ -813,7 +830,7 @@ let KraService = KraService_1 = class KraService {
             if (!entry.hrNo)
                 continue;
             try {
-                const url = `${this.baseUrl}/API8_2/raceHorseInfo_2`;
+                const url = `${baseUrl}/API8_2/raceHorseInfo_2`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meetCode,
@@ -872,6 +889,7 @@ let KraService = KraService_1 = class KraService {
     async fetchTrainingData(meet, date, raceNo) {
         if (!this.ensureServiceKey())
             return { message: 'KRA_SERVICE_KEY 미설정' };
+        const baseUrl = await this.resolveBaseUrl();
         const race = await this.prisma.race.findUnique({
             where: {
                 meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
@@ -888,7 +906,7 @@ let KraService = KraService_1 = class KraService {
             if (!entry.hrNo)
                 continue;
             try {
-                const url = `${this.baseUrl}/trcontihi/gettrcontihi`;
+                const url = `${baseUrl}/trcontihi/gettrcontihi`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     hrno: entry.hrNo,
@@ -960,6 +978,7 @@ let KraService = KraService_1 = class KraService {
     async fetchJockeyTotalResults(meet) {
         this.logger.log(`Fetching jockey total results${meet ? ` for meet ${meet}` : ''}`);
         const endpoint = 'jockeyResult';
+        const baseUrl = await this.resolveBaseUrl();
         const meetsToFetch = meet
             ? [{ code: (0, constants_1.meetToCode)(meet), name: meet }]
             : constants_1.KRA_MEETS;
@@ -967,7 +986,7 @@ let KraService = KraService_1 = class KraService {
         for (const m of meetsToFetch) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/jktresult/getjktresult`;
+                const url = `${baseUrl}/jktresult/getjktresult`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: m.code,
@@ -1060,12 +1079,156 @@ let KraService = KraService_1 = class KraService {
         }
         return { message: `Synced ${totalJockeys} jockey records` };
     }
+    async fetchTrainerInfo(meet) {
+        this.logger.log(`Fetching trainer info${meet ? ` for meet ${meet}` : ''}`);
+        const endpoint = 'trainerInfo';
+        const baseUrl = await this.resolveBaseUrl();
+        const meetsToFetch = meet
+            ? [{ code: (0, constants_1.meetToCode)(meet), name: meet }]
+            : constants_1.KRA_MEETS;
+        let totalTrainers = 0;
+        for (const m of meetsToFetch) {
+            let pageNo = 1;
+            const numOfRows = 500;
+            let hasMore = true;
+            while (hasMore) {
+                const start = Date.now();
+                try {
+                    const url = `${baseUrl}/API19_1/trainerInfo_1`;
+                    const params = {
+                        serviceKey: decodeURIComponent(this.serviceKey),
+                        meet: m.code,
+                        numOfRows,
+                        pageNo,
+                        _type: 'json',
+                    };
+                    const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                    let items = [];
+                    if (response.data?.response?.body?.items?.item) {
+                        const raw = response.data.response.body.items.item;
+                        items = Array.isArray(raw) ? raw : [raw];
+                    }
+                    const totalCount = response.data?.response?.body?.totalCount ??
+                        response.data?.response?.body?.totalcount ??
+                        0;
+                    for (const item of items) {
+                        const trNo = String(item.trNo ?? item['tr_no'] ?? '').trim();
+                        if (!trNo)
+                            continue;
+                        const trName = String(item.trName ?? item['tr_name'] ?? '');
+                        const rcCntT = parseInt(String(item.rcCntT ?? item['rc_cnt_t'] ?? ''), 10) || 0;
+                        const ord1CntT = parseInt(String(item.ord1CntT ?? item['ord1_cnt_t'] ?? ''), 10) ||
+                            0;
+                        const ord2CntT = parseInt(String(item.ord2CntT ?? item['ord2_cnt_t'] ?? ''), 10) ||
+                            0;
+                        const ord3CntT = parseInt(String(item.ord3CntT ?? item['ord3_cnt_t'] ?? ''), 10) ||
+                            0;
+                        const winRateTsum = parseFloat(String(item.winRateTsum ?? item['win_rate_tsum'] ?? '')) || 0.0;
+                        const quRateTsum = parseFloat(String(item.quRateTsum ?? item['qu_rate_tsum'] ?? '')) || 0.0;
+                        const plRateTsumRaw = item.plRateTsum ?? item['pl_rate_tsum'];
+                        const plRateTsum = plRateTsumRaw != null
+                            ? parseFloat(String(plRateTsumRaw))
+                            : undefined;
+                        const rcCntY = item.rcCntY != null || item['rc_cnt_y'] != null
+                            ? parseInt(String(item.rcCntY ?? item['rc_cnt_y'] ?? ''), 10) ||
+                                0
+                            : undefined;
+                        const ord1CntY = item.ord1CntY != null || item['ord1_cnt_y'] != null
+                            ? parseInt(String(item.ord1CntY ?? item['ord1_cnt_y'] ?? ''), 10) || 0
+                            : undefined;
+                        const ord2CntY = item.ord2CntY != null || item['ord2_cnt_y'] != null
+                            ? parseInt(String(item.ord2CntY ?? item['ord2_cnt_y'] ?? ''), 10) || 0
+                            : undefined;
+                        const ord3CntY = item.ord3CntY != null || item['ord3_cnt_y'] != null
+                            ? parseInt(String(item.ord3CntY ?? item['ord3_cnt_y'] ?? ''), 10) || 0
+                            : undefined;
+                        const winRateY = item.winRateY != null || item['win_rate_y'] != null
+                            ? parseFloat(String(item.winRateY ?? item['win_rate_y'] ?? '')) || undefined
+                            : undefined;
+                        const quRateY = item.quRateY != null || item['qu_rate_y'] != null
+                            ? parseFloat(String(item.quRateY ?? item['qu_rate_y'] ?? '')) ||
+                                undefined
+                            : undefined;
+                        const plRateY = item.plRateY != null || item['pl_rate_y'] != null
+                            ? parseFloat(String(item.plRateY ?? item['pl_rate_y'] ?? '')) ||
+                                undefined
+                            : undefined;
+                        await this.prisma.trainerResult.upsert({
+                            where: {
+                                meet_trNo: { meet: m.code, trNo },
+                            },
+                            update: {
+                                trName,
+                                rcCntT,
+                                ord1CntT,
+                                ord2CntT,
+                                ord3CntT,
+                                winRateTsum,
+                                quRateTsum,
+                                plRateTsum: plRateTsum ?? undefined,
+                                rcCntY,
+                                ord1CntY,
+                                ord2CntY,
+                                ord3CntY,
+                                winRateY,
+                                quRateY,
+                                plRateY,
+                            },
+                            create: {
+                                meet: m.code,
+                                trNo,
+                                trName,
+                                rcCntT,
+                                ord1CntT,
+                                ord2CntT,
+                                ord3CntT,
+                                winRateTsum,
+                                quRateTsum,
+                                plRateTsum: plRateTsum ?? undefined,
+                                rcCntY,
+                                ord1CntY,
+                                ord2CntY,
+                                ord3CntY,
+                                winRateY,
+                                quRateY,
+                                plRateY,
+                            },
+                        });
+                        totalTrainers++;
+                    }
+                    const total = typeof totalCount === 'number'
+                        ? totalCount
+                        : parseInt(String(totalCount), 10) || 0;
+                    hasMore = items.length >= numOfRows && total > pageNo * numOfRows;
+                    pageNo++;
+                    await this.logKraSync(endpoint, {
+                        meet: m.code,
+                        status: 'SUCCESS',
+                        recordCount: items.length,
+                        durationMs: Date.now() - start,
+                    });
+                }
+                catch (error) {
+                    hasMore = false;
+                    await this.logKraSync(endpoint, {
+                        meet: m.code,
+                        status: 'FAILED',
+                        errorMessage: error instanceof Error ? error.message : String(error),
+                        durationMs: Date.now() - start,
+                    });
+                    this.logger.error(`Failed to fetch trainer info for ${m.name}`, error);
+                }
+            }
+        }
+        return { updated: totalTrainers };
+    }
     async fetchTrackInfo(date) {
         const endpoint = 'trackInfo';
+        const baseUrl = await this.resolveBaseUrl();
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/API189_1/Track_1`;
+                const url = `${baseUrl}/API189_1/Track_1`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -1123,12 +1286,227 @@ let KraService = KraService_1 = class KraService {
             }
         }
     }
+    async fetchRaceHorseRatings(date) {
+        const endpoint = 'raceHorseRating';
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
+        const baseUrl = await this.resolveBaseUrl();
+        const entries = await this.prisma.raceEntry.findMany({
+            where: { race: { rcDate: normalizedDate } },
+            select: { id: true, hrNo: true, race: { select: { meet: true } } },
+        });
+        if (entries.length === 0)
+            return { updated: 0 };
+        const needKeys = new Set(entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`));
+        const entryByKey = new Map(entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]));
+        let updated = 0;
+        let pageNo = 1;
+        const numOfRows = 500;
+        let hasMore = true;
+        while (hasMore && needKeys.size > 0) {
+            const start = Date.now();
+            try {
+                const url = `${baseUrl}/API77/raceHorseRating`;
+                const params = {
+                    serviceKey: decodeURIComponent(this.serviceKey),
+                    numOfRows,
+                    pageNo,
+                    _type: 'json',
+                };
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                let items = [];
+                const body = response.data?.response?.body;
+                if (body?.items?.item) {
+                    const raw = body.items.item;
+                    items = Array.isArray(raw) ? raw : [raw];
+                }
+                for (const item of items) {
+                    const meetRaw = String(item.meet ?? '');
+                    const meetStr = ['서울', '제주', '부산경남'].includes(meetRaw)
+                        ? meetRaw
+                        : meetRaw === '1'
+                            ? '서울'
+                            : meetRaw === '2'
+                                ? '제주'
+                                : meetRaw === '3'
+                                    ? '부산경남'
+                                    : null;
+                    const hrNo = item.hrNo != null ? String(item.hrNo) : '';
+                    if (!meetStr || !hrNo)
+                        continue;
+                    const key = `${meetStr}:${hrNo}`;
+                    if (!needKeys.has(key))
+                        continue;
+                    const entry = entryByKey.get(key);
+                    if (!entry)
+                        continue;
+                    const r1 = item.rating1;
+                    const rating1 = r1 != null ? parseFloat(String(r1)) : undefined;
+                    const ratingHistory = [];
+                    for (const r of [item.rating2, item.rating3, item.rating4]) {
+                        if (r != null) {
+                            const v = parseFloat(String(r));
+                            if (!Number.isNaN(v))
+                                ratingHistory.push(v);
+                        }
+                    }
+                    await this.prisma.raceEntry.update({
+                        where: { id: entry.id },
+                        data: {
+                            rating: rating1 ?? undefined,
+                            ratingHistory: ratingHistory.length > 0 ? ratingHistory : undefined,
+                        },
+                    });
+                    needKeys.delete(key);
+                    updated++;
+                }
+                hasMore = items.length >= numOfRows;
+                pageNo++;
+                if (items.length === 0)
+                    hasMore = false;
+                await this.logKraSync(endpoint, {
+                    rcDate: normalizedDate,
+                    status: 'SUCCESS',
+                    recordCount: items.length,
+                    durationMs: Date.now() - start,
+                });
+                await this.delay(200);
+            }
+            catch (error) {
+                await this.logKraSync(endpoint, {
+                    rcDate: normalizedDate,
+                    status: 'FAILED',
+                    errorMessage: error instanceof Error ? error.message : String(error),
+                    durationMs: Date.now() - start,
+                });
+                this.logger.error('Failed to fetch race horse ratings', error);
+                break;
+            }
+        }
+        return { updated };
+    }
+    async fetchHorseSectionalRecords(date) {
+        const endpoint = 'horseSectional';
+        const normalizedDate = this.normalizeToYyyyMmDd(date);
+        const baseUrl = await this.resolveBaseUrl();
+        const entries = await this.prisma.raceEntry.findMany({
+            where: { race: { rcDate: normalizedDate } },
+            select: { id: true, hrNo: true, race: { select: { meet: true } } },
+        });
+        if (entries.length === 0)
+            return { updated: 0 };
+        const needKeys = new Set(entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`));
+        const entryByKey = new Map(entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]));
+        let updated = 0;
+        for (const meet of constants_1.KRA_MEETS) {
+            let pageNo = 1;
+            const numOfRows = 100;
+            let hasMore = true;
+            while (hasMore) {
+                const start = Date.now();
+                try {
+                    const url = `${baseUrl}/API37_1/sectionRecord_1`;
+                    const params = {
+                        serviceKey: decodeURIComponent(this.serviceKey),
+                        meet: meet.code,
+                        rc_date: normalizedDate,
+                        numOfRows,
+                        pageNo,
+                        _type: 'json',
+                    };
+                    const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                    const body = response.data?.response?.body;
+                    let items = [];
+                    if (body?.items?.item) {
+                        const raw = body.items.item;
+                        items = Array.isArray(raw) ? raw : [raw];
+                    }
+                    for (const item of items) {
+                        const meetStr = meet.name;
+                        const hrNo = String(item.hrNo ?? item['hr_no'] ?? '').trim();
+                        if (!hrNo)
+                            continue;
+                        const key = `${meetStr}:${hrNo}`;
+                        if (!needKeys.has(key))
+                            continue;
+                        const entry = entryByKey.get(key);
+                        if (!entry)
+                            continue;
+                        const s1fAvg = this.parseSectionalVal(item.s1fAvg ??
+                            item['s1f_avg'] ??
+                            item.S1F_AVG ??
+                            item['S1F'] ??
+                            item.seS1fAccTime);
+                        const g1fAvg = this.parseSectionalVal(item.g1fAvg ??
+                            item['g1f_avg'] ??
+                            item.G1F_AVG ??
+                            item['G1F'] ??
+                            item.seG1fAccTime);
+                        const s1fMin = this.parseSectionalVal(item.s1fMin ?? item['s1f_min'] ?? item.S1F_MIN);
+                        const s1fMax = this.parseSectionalVal(item.s1fMax ?? item['s1f_max'] ?? item.S1F_MAX);
+                        const g1fMin = this.parseSectionalVal(item.g1fMin ?? item['g1f_min'] ?? item.G1F_MIN);
+                        const g1fMax = this.parseSectionalVal(item.g1fMax ?? item['g1f_max'] ?? item.G1F_MAX);
+                        const stats = {};
+                        if (s1fAvg != null)
+                            stats.s1fAvg = s1fAvg;
+                        if (g1fAvg != null)
+                            stats.g1fAvg = g1fAvg;
+                        if (s1fMin != null)
+                            stats.s1fMin = s1fMin;
+                        if (s1fMax != null)
+                            stats.s1fMax = s1fMax;
+                        if (g1fMin != null)
+                            stats.g1fMin = g1fMin;
+                        if (g1fMax != null)
+                            stats.g1fMax = g1fMax;
+                        const sectionalStats = Object.keys(stats).length > 0 ? stats : undefined;
+                        if (sectionalStats) {
+                            await this.prisma.raceEntry.update({
+                                where: { id: entry.id },
+                                data: { sectionalStats },
+                            });
+                            needKeys.delete(key);
+                            updated++;
+                        }
+                    }
+                    hasMore = items.length >= numOfRows;
+                    pageNo++;
+                    await this.logKraSync(endpoint, {
+                        meet: meet.code,
+                        rcDate: normalizedDate,
+                        status: 'SUCCESS',
+                        recordCount: items.length,
+                        durationMs: Date.now() - start,
+                    });
+                    await this.delay(200);
+                }
+                catch (error) {
+                    hasMore = false;
+                    await this.logKraSync(endpoint, {
+                        meet: meet.code,
+                        rcDate: normalizedDate,
+                        status: 'FAILED',
+                        errorMessage: error instanceof Error ? error.message : String(error),
+                        durationMs: Date.now() - start,
+                    });
+                    this.logger.error(`Failed to fetch horse sectional for ${meet.name}`, error);
+                }
+            }
+        }
+        return { updated };
+    }
+    parseSectionalVal(val) {
+        if (val == null)
+            return null;
+        const n = Number(val);
+        return Number.isFinite(n) && n > 0 ? n : null;
+    }
     async fetchHorseWeight(date) {
         const endpoint = 'horseWeight';
+        const baseUrl = await this.resolveBaseUrl();
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/API25_1/entryHorseWeightInfo_1`;
+                const url = `${baseUrl}/API25_1/entryHorseWeightInfo_1`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -1186,10 +1564,11 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchEquipmentBleeding(date) {
         const endpoint = 'equipmentBleeding';
+        const baseUrl = await this.resolveBaseUrl();
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/API24_1/horseMedicalAndEquipment_1`;
+                const url = `${baseUrl}/API24_1/horseMedicalAndEquipment_1`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -1258,10 +1637,11 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchHorseCancel(date) {
         const endpoint = 'horseCancel';
+        const baseUrl = await this.resolveBaseUrl();
         for (const meet of constants_1.KRA_MEETS) {
             const start = Date.now();
             try {
-                const url = `${this.baseUrl}/API9_1/raceHorseCancelInfo_1`;
+                const url = `${baseUrl}/API9_1/raceHorseCancelInfo_1`;
                 const params = {
                     serviceKey: decodeURIComponent(this.serviceKey),
                     meet: meet.code,
@@ -1335,6 +1715,9 @@ let KraService = KraService_1 = class KraService {
         await this.fetchHorseWeight(date);
         await this.fetchEquipmentBleeding(date);
         await this.fetchHorseCancel(date);
+        await this.fetchTrainerInfo();
+        await this.fetchRaceHorseRatings(date);
+        await this.fetchHorseSectionalRecords(date);
         let processedCount = 0;
         for (const race of races) {
             await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
@@ -1469,9 +1852,10 @@ __decorate([
 ], KraService.prototype, "syncRealtimeResults", null);
 exports.KraService = KraService = KraService_1 = __decorate([
     (0, common_1.Injectable)(),
-    __param(3, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
+    __param(4, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),
     __metadata("design:paramtypes", [axios_1.HttpService,
         config_1.ConfigService,
+        config_service_1.GlobalConfigService,
         prisma_service_1.PrismaService, Function])
 ], KraService);
 //# sourceMappingURL=kra.service.js.map

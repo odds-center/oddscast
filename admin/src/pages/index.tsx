@@ -47,7 +47,7 @@ export default function DashboardPage() {
       color: 'bg-green-500',
     },
     {
-      name: '오늘 마권',
+      name: '오늘 결제',
       value: stats?.todayBets ? formatCurrency(stats.todayBets.amount) : '-',
       change: stats?.todayBets ? `${formatNumber(stats.todayBets.count)}건` : '-',
       icon: DollarSign,
@@ -110,16 +110,16 @@ export default function DashboardPage() {
           {stats && (
             <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
               <div className='bg-white rounded-md shadow p-4'>
-                <h3 className='text-sm font-semibold mb-3'>전체 베팅 통계</h3>
+                <h3 className='text-sm font-semibold mb-3'>결제·예측권 통계</h3>
                 <div className='space-y-2'>
                   <div className='flex justify-between items-center'>
-                    <span className='text-gray-600'>총 베팅 건수</span>
+                    <span className='text-gray-600'>총 결제 건수</span>
                     <span className='text-base font-bold'>
                       {formatNumber(stats.totalBets.count)}건
                     </span>
                   </div>
                   <div className='flex justify-between items-center'>
-                    <span className='text-gray-600'>총 베팅 금액</span>
+                    <span className='text-gray-600'>총 결제 금액</span>
                     <span className='text-base font-bold text-blue-600'>
                       {formatCurrency(stats.totalBets.amount)}
                     </span>
@@ -163,8 +163,8 @@ export default function DashboardPage() {
                     className='p-3 border rounded hover:bg-gray-50 transition-colors block'
                   >
                     <AdminIcon icon={DollarSign} className='h-6 w-6 text-yellow-500 mb-1.5' />
-                    <div className='font-medium text-sm'>마권 관리</div>
-                    <div className='text-xs text-gray-500'>마권 내역 조회</div>
+                    <div className='font-medium text-sm'>결제 내역</div>
+                    <div className='text-xs text-gray-500'>결제·예측권 내역 조회</div>
                   </Link>
                   <Link
                     href='/statistics'

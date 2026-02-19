@@ -19,6 +19,11 @@ export class CreateResultDto {
   @IsString()
   ord?: string;
 
+  @ApiPropertyOptional({ description: 'NORMAL|FALL|DQ|WITHDRAWN' })
+  @IsOptional()
+  @IsString()
+  ordType?: string;
+
   @ApiProperty()
   @IsString()
   hrNo: string;
@@ -59,6 +64,11 @@ export class UpdateResultDto {
   @IsOptional()
   @IsString()
   ord?: string;
+
+  @ApiPropertyOptional({ description: 'NORMAL|FALL|DQ|WITHDRAWN' })
+  @IsOptional()
+  @IsString()
+  ordType?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -119,4 +129,69 @@ export class ResultStatisticsFilterDto {
   @IsOptional()
   @IsString()
   meet?: string;
+}
+
+export class ResultSearchDto {
+  @ApiPropertyOptional({ description: '마명, 마번, 기수명 검색' })
+  @IsOptional()
+  @IsString()
+  q?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  date?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  meet?: string;
+
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20 })
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  limit?: number;
+}
+
+export class BulkUpdateResultItemDto {
+  @ApiProperty()
+  @IsInt()
+  @Type(() => Number)
+  id: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ord?: string;
+
+  @ApiPropertyOptional({ description: 'NORMAL|FALL|DQ|WITHDRAWN' })
+  @IsOptional()
+  @IsString()
+  ordType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  rcTime?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsInt()
+  @Type(() => Number)
+  chaksun1?: number;
+}
+
+export class BulkUpdateResultDto {
+  @ApiProperty({ type: [BulkUpdateResultItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => BulkUpdateResultItemDto)
+  updates: BulkUpdateResultItemDto[];
 }

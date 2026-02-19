@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
@@ -7,6 +8,7 @@ import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Ticket, Zap } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
+import PageLoading from '@/components/common/PageLoading';
 
 export default function RevenuePage() {
   const [period, setPeriod] = useState('month');
@@ -18,8 +20,12 @@ export default function RevenuePage() {
   });
 
   const revenueRows = revenueData?.rows ?? [];
+  const subscriptionByPlan = revenueData?.subscriptionByPlan ?? [];
+  const singlePurchaseCount = revenueData?.singlePurchaseCount ?? 0;
   const dashboard = revenueData || {
     monthlyRevenue: 0,
+    singleRevenue: 0,
+    totalRevenue: 0,
     monthlyCost: 0,
     monthlyProfit: 0,
     margin: 0,
@@ -34,7 +40,7 @@ export default function RevenuePage() {
           <title>수익 대시보드 | GoldenRace Admin</title>
         </Head>
         <Layout>
-          <div className='p-8'>로딩 중...</div>
+          <PageLoading label='수익 데이터를 불러오는 중...' />
         </Layout>
       </>
     );
@@ -78,7 +84,21 @@ export default function RevenuePage() {
               </div>
               <div className='flex items-center gap-1 text-sm'>
                 <AdminIcon icon={TrendingUp} className='w-4 h-4' />
-                <span>전월 대비 +12.5%</span>
+                <span>
+                  {period === 'month' && revenueRows.length >= 2
+                    ? (() => {
+                        const curr = revenueRows[revenueRows.length - 1]?.revenue ?? 0;
+                        const prev = revenueRows[revenueRows.length - 2]?.revenue ?? 0;
+                        const pct =
+                          prev > 0 ? (((curr - prev) / prev) * 100).toFixed(1) : null;
+                        return pct != null
+                          ? `전월 대비 ${Number(pct) >= 0 ? '+' : ''}${pct}%`
+                          : '전월 데이터 없음';
+                      })()
+                    : period === 'month'
+                      ? '전월 데이터 없음'
+                      : '실제 데이터'}
+                </span>
               </div>
             </div>
 
@@ -146,12 +166,28 @@ export default function RevenuePage() {
                       <AdminIcon icon={CreditCard} className='w-5 h-5 text-blue-600' />
                       <span className='font-medium'>구독 수익</span>
                     </div>
-                    <span className='text-lg font-bold text-blue-600'>₩1,760,000</span>
+                    <span className='text-lg font-bold text-blue-600'>
+                      ₩{formatNumber(dashboard?.monthlyRevenue ?? 0)}
+                    </span>
                   </div>
                   <div className='bg-gray-200 rounded-full h-3'>
-                    <div className='bg-blue-600 h-3 rounded-full' style={{ width: '90%' }}></div>
+                    <div
+                      className='bg-blue-600 h-3 rounded-full'
+                      style={{
+                        width:
+                          (dashboard?.totalRevenue ?? 0) > 0
+                            ? `${((dashboard?.monthlyRevenue ?? 0) / (dashboard?.totalRevenue ?? 1)) * 100}%`
+                            : '0%',
+                      }}
+                    ></div>
                   </div>
-                  <div className='text-sm text-gray-500 mt-1'>라이트: 40명, 프리미엄: 50명</div>
+                  <div className='text-sm text-gray-500 mt-1'>
+                    {subscriptionByPlan.length > 0
+                      ? subscriptionByPlan
+                          .map((p) => `${p.planName}: ${p.count}명`)
+                          .join(', ')
+                      : '구독자 없음'}
+                  </div>
                 </div>
 
                 <div>
@@ -160,19 +196,36 @@ export default function RevenuePage() {
                       <AdminIcon icon={Ticket} className='w-5 h-5 text-green-600' />
                       <span className='font-medium'>개별 구매</span>
                     </div>
-                    <span className='text-lg font-bold text-green-600'>₩180,000</span>
+                    <span className='text-lg font-bold text-green-600'>
+                      ₩{formatNumber(dashboard?.singleRevenue ?? 0)}
+                    </span>
                   </div>
                   <div className='bg-gray-200 rounded-full h-3'>
-                    <div className='bg-green-600 h-3 rounded-full' style={{ width: '10%' }}></div>
+                    <div
+                      className='bg-green-600 h-3 rounded-full'
+                      style={{
+                        width:
+                          (dashboard?.totalRevenue ?? 0) > 0
+                            ? `${((dashboard?.singleRevenue ?? 0) / (dashboard?.totalRevenue ?? 1)) * 100}%`
+                            : '0%',
+                      }}
+                    ></div>
                   </div>
-                  <div className='text-sm text-gray-500 mt-1'>164장 판매 (₩1,100/장)</div>
+                  <div className='text-sm text-gray-500 mt-1'>
+                    {singlePurchaseCount}장 판매
+                    {(dashboard?.singleRevenue ?? 0) > 0 && singlePurchaseCount > 0
+                      ? ` (₩${formatNumber(Math.round((dashboard?.singleRevenue ?? 0) / singlePurchaseCount))}/장)`
+                      : ''}
+                  </div>
                 </div>
               </div>
 
               <div className='border-t mt-6 pt-4'>
                 <div className='flex justify-between items-center'>
                   <span className='font-semibold text-gray-900'>총 수익</span>
-                  <span className='text-base font-bold text-gray-900'>₩1,940,000</span>
+                  <span className='text-base font-bold text-gray-900'>
+                    ₩{formatNumber(dashboard?.totalRevenue ?? 0)}
+                  </span>
                 </div>
               </div>
             </div>
@@ -180,40 +233,48 @@ export default function RevenuePage() {
             <div className='bg-white rounded-md shadow p-4'>
               <h3 className='text-lg font-semibold mb-4'>비용 구성</h3>
               <div className='space-y-4'>
-                <div>
-                  <div className='flex justify-between items-center mb-2'>
-                    <span className='font-medium'>AI 비용 (LLM)</span>
-                    <span className='text-lg font-bold text-red-600'>₩30,240</span>
+                {(dashboard?.monthlyCost ?? 0) > 0 ? (
+                  <>
+                    <div>
+                      <div className='flex justify-between items-center mb-2'>
+                        <span className='font-medium'>총 비용</span>
+                        <span className='text-lg font-bold text-red-600'>
+                          ₩{formatNumber(dashboard?.monthlyCost ?? 0)}
+                        </span>
+                      </div>
+                      <div className='bg-gray-200 rounded-full h-3'>
+                        <div
+                          className='bg-red-600 h-3 rounded-full'
+                          style={{
+                            width:
+                              (dashboard?.totalRevenue ?? 0) > 0
+                                ? `${Math.min(100, ((dashboard?.monthlyCost ?? 0) / (dashboard?.totalRevenue ?? 1)) * 100)}%`
+                                : '0%',
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <div className='text-sm text-gray-500 py-4 space-y-2'>
+                    <p>비용 데이터가 없습니다.</p>
+                    <p>
+                      AI 비용은{' '}
+                      <Link href='/analytics' className='text-blue-600 hover:underline'>
+                        AI 분석
+                      </Link>{' '}
+                      페이지에서 확인할 수 있습니다.
+                    </p>
                   </div>
-                  <div className='bg-gray-200 rounded-full h-3'>
-                    <div className='bg-red-600 h-3 rounded-full' style={{ width: '48.7%' }}></div>
-                  </div>
-                  <div className='text-sm text-gray-500 mt-1'>
-                    GPT-4: ₩648/일, 업데이트: ₩360/일
-                  </div>
-                </div>
-
-                <div>
-                  <div className='flex justify-between items-center mb-2'>
-                    <span className='font-medium'>인프라 비용</span>
-                    <span className='text-lg font-bold text-orange-600'>₩31,900</span>
-                  </div>
-                  <div className='bg-gray-200 rounded-full h-3'>
-                    <div
-                      className='bg-orange-600 h-3 rounded-full'
-                      style={{ width: '51.3%' }}
-                    ></div>
-                  </div>
-                  <div className='text-sm text-gray-500 mt-1'>
-                    Railway: ₩23,900, Cloudflare: ₩8,000
-                  </div>
-                </div>
+                )}
               </div>
 
               <div className='border-t mt-6 pt-4'>
                 <div className='flex justify-between items-center'>
                   <span className='font-semibold text-gray-900'>총 비용</span>
-                  <span className='text-base font-bold text-gray-900'>₩62,140</span>
+                  <span className='text-base font-bold text-gray-900'>
+                    ₩{formatNumber(dashboard?.monthlyCost ?? 0)}
+                  </span>
                 </div>
               </div>
             </div>

@@ -36,8 +36,8 @@ export declare class SubscriptionsService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -68,8 +68,8 @@ export declare class SubscriptionsService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -100,8 +100,8 @@ export declare class SubscriptionsService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -133,8 +133,8 @@ export declare class SubscriptionsService {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -166,8 +166,8 @@ export declare class SubscriptionsService {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
             planId: number;
             price: number;
             billingKey: string | null;
@@ -225,6 +225,50 @@ export declare class SubscriptionsService {
         isActive: boolean;
         sortOrder: number;
     }>): Promise<{
+        description: string | null;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        planName: string;
+        displayName: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        sortOrder: number;
+    }>;
+    createPlan(data: {
+        planName: string;
+        displayName: string;
+        description?: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        isActive?: boolean;
+        sortOrder?: number;
+    }): Promise<{
+        description: string | null;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        planName: string;
+        displayName: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        sortOrder: number;
+    }>;
+    deletePlan(id: number): Promise<{
         description: string | null;
         id: number;
         isActive: boolean;

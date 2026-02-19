@@ -1,7 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
 import { Prisma } from '@prisma/client';
-import { CreateResultDto, UpdateResultDto, BulkCreateResultDto, ResultFilterDto, ResultStatisticsFilterDto } from './dto/result.dto';
+import { CreateResultDto, UpdateResultDto, BulkCreateResultDto, BulkUpdateResultDto, ResultFilterDto, ResultStatisticsFilterDto, ResultSearchDto } from './dto/result.dto';
 export declare class ResultsService {
     private prisma;
     private pointsService;
@@ -66,6 +66,7 @@ export declare class ResultsService {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -114,6 +115,7 @@ export declare class ResultsService {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -162,6 +164,7 @@ export declare class ResultsService {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -197,6 +200,7 @@ export declare class ResultsService {
         chaksun1: number | null;
         ord: string | null;
         ordInt: number | null;
+        ordType: string | null;
         wgHr: string | null;
         hrTool: string | null;
         rcTime: string | null;
@@ -252,6 +256,7 @@ export declare class ResultsService {
             chaksun1: number | null;
             ord: string | null;
             ordInt: number | null;
+            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
@@ -260,5 +265,34 @@ export declare class ResultsService {
             plcOdds: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         })[];
+    }>;
+    search(filters: ResultSearchDto): Promise<{
+        results: {
+            race: {
+                meet: string;
+                meetName: string | null;
+                rcDate: string;
+                rcNo: string;
+            };
+            id: number;
+            hrNo: string;
+            hrName: string;
+            jkName: string | null;
+            raceId: number;
+            chulNo: string | null;
+            ord: string | null;
+        }[];
+        total: number;
+        page: number;
+        totalPages: number;
+    }>;
+    validateByRaceId(raceId: number): Promise<{
+        valid: boolean;
+        raceId: number;
+        count: number;
+        errors: string[] | undefined;
+    }>;
+    bulkUpdate(dto: BulkUpdateResultDto): Promise<{
+        updated: number;
     }>;
 }

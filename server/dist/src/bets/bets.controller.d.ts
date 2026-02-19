@@ -9,8 +9,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -62,8 +62,8 @@ export declare class BetsController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -109,9 +109,9 @@ export declare class BetsController {
         createdAt: Date;
         updatedAt: Date;
         bets: import("@prisma/client/runtime/client").JsonValue;
+        userId: number;
         status: import("@prisma/client").$Enums.BetSlipStatus;
         raceId: number;
-        userId: number;
         totalAmount: number;
     }>;
     findOne(id: number): Promise<{
@@ -138,8 +138,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -170,8 +170,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -202,8 +202,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -234,8 +234,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -269,8 +269,8 @@ export declare class BetsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;

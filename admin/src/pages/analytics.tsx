@@ -16,6 +16,7 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
+import PageLoading from '@/components/common/PageLoading';
 
 export default function AnalyticsPage() {
   const [dateRange, setDateRange] = useState({
@@ -52,7 +53,7 @@ export default function AnalyticsPage() {
           <title>AI 분석 | GoldenRace Admin</title>
         </Head>
         <Layout>
-          <div className='p-8'>로딩 중...</div>
+          <PageLoading label='데이터를 불러오는 중...' />
         </Layout>
       </>
     );
@@ -245,12 +246,28 @@ export default function AnalyticsPage() {
           </div>
 
           {/* 실패 원인 분석 */}
-          {failureAnalysis && (
-            <div className='bg-white rounded-md shadow p-4'>
-              <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
-                <AdminIcon icon={AlertTriangle} className='w-5 h-5 text-yellow-600' />
-                실패 원인 분석
-              </h3>
+          <div className='bg-white rounded-md shadow p-4'>
+            <h3 className='text-lg font-semibold mb-4 flex items-center gap-2'>
+              <AdminIcon icon={AlertTriangle} className='w-5 h-5 text-yellow-600' />
+              실패 원인 분석
+            </h3>
+            <div className='flex flex-wrap items-center gap-3 mb-4'>
+              <input
+                type='date'
+                value={dateRange.startDate}
+                onChange={(e) => setDateRange((prev) => ({ ...prev, startDate: e.target.value }))}
+                className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+              />
+              <span className='text-gray-500'>~</span>
+              <input
+                type='date'
+                value={dateRange.endDate}
+                onChange={(e) => setDateRange((prev) => ({ ...prev, endDate: e.target.value }))}
+                className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+              />
+              <span className='text-sm text-gray-500'>분석 기간</span>
+            </div>
+          {failureAnalysis ? (
               <div className='space-y-4'>
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
@@ -306,8 +323,10 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               </div>
-            </div>
+          ) : (
+            <div className='text-sm text-gray-500 py-4'>선택 기간 내 실패 데이터가 없습니다.</div>
           )}
+          </div>
         </div>
       </Layout>
     </>

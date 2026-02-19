@@ -14,6 +14,7 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const points_service_1 = require("../points/points.service");
 const constants_1 = require("../kra/constants");
+const ord_parser_1 = require("../kra/ord-parser");
 const kra_serializer_1 = require("../common/serializers/kra.serializer");
 let ResultsService = class ResultsService {
     constructor(prisma, pointsService) {
@@ -112,6 +113,13 @@ let ResultsService = class ResultsService {
         const results = await this.prisma.raceResult.findMany({
             where: { raceId },
             orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+            select: {
+                hrNo: true,
+                hrName: true,
+                ordType: true,
+                ordInt: true,
+                ord: true,
+            },
         });
         if (!results.length)
             return;
@@ -119,6 +127,7 @@ let ResultsService = class ResultsService {
             .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
             .map((h) => String(h.hrNo ?? h.hrName ?? '').trim());
         const actualTop = results
+            .filter((r) => (0, ord_parser_1.isEligibleForAccuracy)(r.ordType))
             .slice(0, 3)
             .map((r) => String(r.hrNo ?? r.hrName ?? '').trim());
         const topN = Math.min(3, predictedOrder.length, actualTop.length);
@@ -162,6 +171,96 @@ let ResultsService = class ResultsService {
             take: 100,
         });
         return { format, count: results.length, data: results };
+    }
+    async search(filters) {
+        const { q, date, meet, page = 1, limit = 20 } = filters;
+        const where = {};
+        if (date || meet) {
+            where.race = {
+                ...(date && { rcDate: date }),
+                ...(meet && { meet: (0, constants_1.toKraMeetName)(meet) }),
+            };
+        }
+        if (q && q.trim()) {
+            const qTrim = q.trim();
+            where.OR = [
+                { hrName: { contains: qTrim, mode: 'insensitive' } },
+                { hrNo: { contains: qTrim, mode: 'insensitive' } },
+                { jkName: { contains: qTrim, mode: 'insensitive' } },
+            ];
+        }
+        const [results, total] = await Promise.all([
+            this.prisma.raceResult.findMany({
+                where,
+                select: {
+                    id: true,
+                    raceId: true,
+                    ord: true,
+                    chulNo: true,
+                    hrNo: true,
+                    hrName: true,
+                    jkName: true,
+                    race: {
+                        select: { meet: true, meetName: true, rcNo: true, rcDate: true },
+                    },
+                },
+                skip: (page - 1) * limit,
+                take: limit,
+                orderBy: { createdAt: 'desc' },
+            }),
+            this.prisma.raceResult.count({ where }),
+        ]);
+        return {
+            results: (0, kra_serializer_1.serializeRaceResults)(results),
+            total,
+            page,
+            totalPages: Math.ceil(total / limit),
+        };
+    }
+    async validateByRaceId(raceId) {
+        const results = await this.prisma.raceResult.findMany({
+            where: { raceId },
+            orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+        });
+        const errors = [];
+        const hrNos = new Set();
+        for (const r of results) {
+            if (!r.hrNo || !r.hrName) {
+                errors.push(`결과 id=${r.id}: hrNo, hrName 필수`);
+            }
+            if (hrNos.has(r.hrNo)) {
+                errors.push(`중복 마번: ${r.hrNo}`);
+            }
+            hrNos.add(r.hrNo);
+        }
+        return {
+            valid: errors.length === 0,
+            raceId,
+            count: results.length,
+            errors: errors.length > 0 ? errors : undefined,
+        };
+    }
+    async bulkUpdate(dto) {
+        let updated = 0;
+        for (const item of dto.updates) {
+            const data = {};
+            if (item.ord !== undefined)
+                data.ord = item.ord;
+            if (item.ordType !== undefined)
+                data.ordType = item.ordType;
+            if (item.rcTime !== undefined)
+                data.rcTime = item.rcTime;
+            if (item.chaksun1 !== undefined)
+                data.chaksun1 = item.chaksun1;
+            if (Object.keys(data).length > 0) {
+                await this.prisma.raceResult.update({
+                    where: { id: item.id },
+                    data,
+                });
+                updated++;
+            }
+        }
+        return { updated };
     }
 };
 exports.ResultsService = ResultsService;

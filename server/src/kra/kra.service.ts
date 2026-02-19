@@ -5,30 +5,47 @@ import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { GlobalConfigService } from '../config/config.service';
 import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import * as xml2js from 'xml2js';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { KRA_MEETS, meetToCode } from './constants';
+import { parseOrd } from './ord-parser';
 import type { KraApiItem, KraSyncAllOutput } from '@goldenrace/shared';
+
+const DEFAULT_KRA_BASE_URL = 'http://apis.data.go.kr/B551015';
+
 @Injectable()
 export class KraService {
   private readonly logger = new Logger(KraService.name);
   private readonly serviceKey: string;
-  // Base URL for KRA API (Service ID: B551015)
-  // We might needed different base URLs for different endpoints if they are versioned differently
-  // But generally they follow http://apis.data.go.kr/B551015/{SERVICE_NAME}
-  private readonly baseUrl = 'http://apis.data.go.kr/B551015';
 
   constructor(
     private httpService: HttpService,
     private configService: ConfigService,
+    private globalConfigService: GlobalConfigService,
     private prisma: PrismaService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
     dayjs.extend(customParseFormat);
     this.serviceKey = this.configService.get<string>('KRA_SERVICE_KEY', '');
+  }
+
+  /** GlobalConfig의 kra_base_url_override 사용, 없으면 기본 URL 반환 */
+  private async resolveBaseUrl(): Promise<string> {
+    const override = await this.globalConfigService.get('kra_base_url_override');
+    return (override?.trim() && override.length > 0) ? override.trim() : DEFAULT_KRA_BASE_URL;
+  }
+
+  /** Admin용: 현재 KRA 설정 상태 (Base URL, API 키 여부) */
+  async getKraStatus(): Promise<{ baseUrlInUse: string; serviceKeyConfigured: boolean }> {
+    const baseUrlInUse = await this.resolveBaseUrl();
+    return {
+      baseUrlInUse,
+      serviceKeyConfigured: this.ensureServiceKey(),
+    };
   }
 
   // --- Scheduler ---
@@ -175,6 +192,7 @@ export class KraService {
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     this.logger.log(`Syncing Entry Sheet for date: ${normalizedDate}`);
     const endpoint = 'entrySheet';
+    const baseUrl = await this.resolveBaseUrl();
 
     let totalRaces = 0;
     let totalEntries = 0;
@@ -182,7 +200,7 @@ export class KraService {
     for (const meet of KRA_MEETS) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/API26_2/entrySheet_2`;
+        const url = `${baseUrl}/API26_2/entrySheet_2`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -528,6 +546,7 @@ export class KraService {
     }
     this.logger.log(`Fetching race results for date: ${date}`);
     const endpoint = 'raceResult';
+    const baseUrl = await this.resolveBaseUrl();
 
     let totalResults = 0;
     const failed500Meets: string[] = [];
@@ -537,7 +556,7 @@ export class KraService {
       try {
         const normalizedDate = this.normalizeToYyyyMmDd(date);
         // KRA 공식: API4_3/raceResult_3 (docs/legacy/KRA_OFFICIAL_GUIDE.md)
-        const url = `${this.baseUrl}/API4_3/raceResult_3`;
+        const url = `${baseUrl}/API4_3/raceResult_3`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -749,16 +768,14 @@ export class KraService {
 
           const sv = (val: unknown) => (val != null ? String(val) : undefined);
           const ordStr = sv(item.ord);
-          const ordIntVal =
-            ordStr != null && /^\d+$/.test(ordStr)
-              ? parseInt(ordStr, 10)
-              : undefined;
+          const { ordInt: ordIntVal, ordType: ordTypeVal } = parseOrd(ordStr);
           const resultData: Record<string, unknown> = {
             raceId: race.id,
             hrNo: sv(item.hrNo ?? item.hr_no) ?? '',
             hrName: sv(item.hrName ?? item.hr_name) ?? '',
             ord: ordStr,
             ordInt: ordIntVal,
+            ordType: ordTypeVal,
             rcTime: sv(item.rcTime),
             chulNo: sv(item.chulNo ?? item.chul_no),
             age: sv(item.age),
@@ -868,9 +885,10 @@ export class KraService {
 
     const meetCode = this.meetNameToCode(meet);
     const normalizedDate = this.normalizeToYyyyMmDd(date);
+    const baseUrl = await this.resolveBaseUrl();
 
     try {
-      const url = `${this.baseUrl}/API26_2/entrySheet_2`;
+      const url = `${baseUrl}/API26_2/entrySheet_2`;
       const params = {
         serviceKey: decodeURIComponent(this.serviceKey),
         meet: meetCode,
@@ -971,6 +989,7 @@ export class KraService {
   async fetchHorseDetails(meet: string, date: string, raceNo: string) {
     if (!this.ensureServiceKey()) return { message: 'KRA_SERVICE_KEY 미설정' };
 
+    const baseUrl = await this.resolveBaseUrl();
     const race = await this.prisma.race.findUnique({
       where: {
         meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
@@ -986,7 +1005,7 @@ export class KraService {
       if (!entry.hrNo) continue;
 
       try {
-        const url = `${this.baseUrl}/API8_2/raceHorseInfo_2`;
+        const url = `${baseUrl}/API8_2/raceHorseInfo_2`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meetCode,
@@ -1061,6 +1080,7 @@ export class KraService {
   async fetchTrainingData(meet: string, date: string, raceNo: string) {
     if (!this.ensureServiceKey()) return { message: 'KRA_SERVICE_KEY 미설정' };
 
+    const baseUrl = await this.resolveBaseUrl();
     const race = await this.prisma.race.findUnique({
       where: {
         meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
@@ -1079,7 +1099,7 @@ export class KraService {
       if (!entry.hrNo) continue;
 
       try {
-        const url = `${this.baseUrl}/trcontihi/gettrcontihi`;
+        const url = `${baseUrl}/trcontihi/gettrcontihi`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           hrno: entry.hrNo,
@@ -1171,6 +1191,7 @@ export class KraService {
       `Fetching jockey total results${meet ? ` for meet ${meet}` : ''}`,
     );
     const endpoint = 'jockeyResult';
+    const baseUrl = await this.resolveBaseUrl();
 
     const meetsToFetch = meet
       ? [{ code: meetToCode(meet), name: meet }]
@@ -1181,7 +1202,7 @@ export class KraService {
     for (const m of meetsToFetch) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/jktresult/getjktresult`;
+        const url = `${baseUrl}/jktresult/getjktresult`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: m.code,
@@ -1302,14 +1323,215 @@ export class KraService {
     return { message: `Synced ${totalJockeys} jockey records` };
   }
 
+  // --- KRA API: 조교사 상세정보 (API19_1 trainerInfo_1) ---
+  /**
+   * meet별 조교사 통산 성적 조회 후 TrainerResult에 저장
+   * @see docs/specs/KRA_TRAINER_SPEC.md
+   */
+  async fetchTrainerInfo(meet?: string): Promise<{ updated: number }> {
+    this.logger.log(`Fetching trainer info${meet ? ` for meet ${meet}` : ''}`);
+    const endpoint = 'trainerInfo';
+    const baseUrl = await this.resolveBaseUrl();
+
+    const meetsToFetch = meet
+      ? [{ code: meetToCode(meet), name: meet }]
+      : KRA_MEETS;
+
+    let totalTrainers = 0;
+
+    for (const m of meetsToFetch) {
+      let pageNo = 1;
+      const numOfRows = 500;
+      let hasMore = true;
+
+      while (hasMore) {
+        const start = Date.now();
+        try {
+          const url = `${baseUrl}/API19_1/trainerInfo_1`;
+          const params = {
+            serviceKey: decodeURIComponent(this.serviceKey),
+            meet: m.code,
+            numOfRows,
+            pageNo,
+            _type: 'json',
+          };
+
+          const response = await firstValueFrom(
+            this.httpService.get(url, { params }),
+          );
+
+          // API 응답: camelCase 또는 snake_case 지원
+          let items: Array<Record<string, unknown>> = [];
+
+          if (response.data?.response?.body?.items?.item) {
+            const raw = response.data.response.body.items.item;
+            items = Array.isArray(raw) ? raw : [raw];
+          }
+
+          const totalCount =
+            response.data?.response?.body?.totalCount ??
+            response.data?.response?.body?.totalcount ??
+            0;
+
+          for (const item of items) {
+            const trNo = String(item.trNo ?? item['tr_no'] ?? '').trim();
+            if (!trNo) continue;
+
+            const trName = String(item.trName ?? item['tr_name'] ?? '');
+            const rcCntT =
+              parseInt(String(item.rcCntT ?? item['rc_cnt_t'] ?? ''), 10) || 0;
+            const ord1CntT =
+              parseInt(String(item.ord1CntT ?? item['ord1_cnt_t'] ?? ''), 10) ||
+              0;
+            const ord2CntT =
+              parseInt(String(item.ord2CntT ?? item['ord2_cnt_t'] ?? ''), 10) ||
+              0;
+            const ord3CntT =
+              parseInt(String(item.ord3CntT ?? item['ord3_cnt_t'] ?? ''), 10) ||
+              0;
+            const winRateTsum =
+              parseFloat(
+                String(item.winRateTsum ?? item['win_rate_tsum'] ?? ''),
+              ) || 0.0;
+            const quRateTsum =
+              parseFloat(
+                String(item.quRateTsum ?? item['qu_rate_tsum'] ?? ''),
+              ) || 0.0;
+            const plRateTsumRaw = item.plRateTsum ?? item['pl_rate_tsum'];
+            const plRateTsum =
+              plRateTsumRaw != null
+                ? parseFloat(String(plRateTsumRaw))
+                : undefined;
+
+            const rcCntY =
+              item.rcCntY != null || item['rc_cnt_y'] != null
+                ? parseInt(String(item.rcCntY ?? item['rc_cnt_y'] ?? ''), 10) ||
+                  0
+                : undefined;
+            const ord1CntY =
+              item.ord1CntY != null || item['ord1_cnt_y'] != null
+                ? parseInt(
+                    String(item.ord1CntY ?? item['ord1_cnt_y'] ?? ''),
+                    10,
+                  ) || 0
+                : undefined;
+            const ord2CntY =
+              item.ord2CntY != null || item['ord2_cnt_y'] != null
+                ? parseInt(
+                    String(item.ord2CntY ?? item['ord2_cnt_y'] ?? ''),
+                    10,
+                  ) || 0
+                : undefined;
+            const ord3CntY =
+              item.ord3CntY != null || item['ord3_cnt_y'] != null
+                ? parseInt(
+                    String(item.ord3CntY ?? item['ord3_cnt_y'] ?? ''),
+                    10,
+                  ) || 0
+                : undefined;
+            const winRateY =
+              item.winRateY != null || item['win_rate_y'] != null
+                ? parseFloat(
+                    String(item.winRateY ?? item['win_rate_y'] ?? ''),
+                  ) || undefined
+                : undefined;
+            const quRateY =
+              item.quRateY != null || item['qu_rate_y'] != null
+                ? parseFloat(String(item.quRateY ?? item['qu_rate_y'] ?? '')) ||
+                  undefined
+                : undefined;
+            const plRateY =
+              item.plRateY != null || item['pl_rate_y'] != null
+                ? parseFloat(String(item.plRateY ?? item['pl_rate_y'] ?? '')) ||
+                  undefined
+                : undefined;
+
+            await this.prisma.trainerResult.upsert({
+              where: {
+                meet_trNo: { meet: m.code, trNo },
+              },
+              update: {
+                trName,
+                rcCntT,
+                ord1CntT,
+                ord2CntT,
+                ord3CntT,
+                winRateTsum,
+                quRateTsum,
+                plRateTsum: plRateTsum ?? undefined,
+                rcCntY,
+                ord1CntY,
+                ord2CntY,
+                ord3CntY,
+                winRateY,
+                quRateY,
+                plRateY,
+              },
+              create: {
+                meet: m.code,
+                trNo,
+                trName,
+                rcCntT,
+                ord1CntT,
+                ord2CntT,
+                ord3CntT,
+                winRateTsum,
+                quRateTsum,
+                plRateTsum: plRateTsum ?? undefined,
+                rcCntY,
+                ord1CntY,
+                ord2CntY,
+                ord3CntY,
+                winRateY,
+                quRateY,
+                plRateY,
+              },
+            });
+            totalTrainers++;
+          }
+
+          const total =
+            typeof totalCount === 'number'
+              ? totalCount
+              : parseInt(String(totalCount), 10) || 0;
+          hasMore = items.length >= numOfRows && total > pageNo * numOfRows;
+          pageNo++;
+
+          await this.logKraSync(endpoint, {
+            meet: m.code,
+            status: 'SUCCESS',
+            recordCount: items.length,
+            durationMs: Date.now() - start,
+          });
+        } catch (error) {
+          hasMore = false;
+          await this.logKraSync(endpoint, {
+            meet: m.code,
+            status: 'FAILED',
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
+            durationMs: Date.now() - start,
+          });
+          this.logger.error(
+            `Failed to fetch trainer info for ${m.name}`,
+            error,
+          );
+        }
+      }
+    }
+
+    return { updated: totalTrainers };
+  }
+
   // --- KRA API: 경주로정보 (API189_1) ---
   async fetchTrackInfo(date: string) {
     const endpoint = 'trackInfo';
+    const baseUrl = await this.resolveBaseUrl();
 
     for (const meet of KRA_MEETS) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/API189_1/Track_1`;
+        const url = `${baseUrl}/API189_1/Track_1`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -1374,14 +1596,293 @@ export class KraService {
     }
   }
 
+  // --- KRA API: 경주마 레이팅 정보 (API77) ---
+  /**
+   * 당일 출전마의 레이팅 추이(rating1~4) 조회 후 RaceEntry 업데이트
+   * API77은 meet/hr_no 필터 미지원 → 페이지네이션하여 당일 hrNo 세트와 매칭
+   * @see docs/specs/KRA_RATING_SPEC.md
+   */
+  async fetchRaceHorseRatings(date: string): Promise<{ updated: number }> {
+    const endpoint = 'raceHorseRating';
+    const normalizedDate = this.normalizeToYyyyMmDd(date);
+    const baseUrl = await this.resolveBaseUrl();
+
+    const entries = await this.prisma.raceEntry.findMany({
+      where: { race: { rcDate: normalizedDate } },
+      select: { id: true, hrNo: true, race: { select: { meet: true } } },
+    });
+    if (entries.length === 0) return { updated: 0 };
+
+    const needKeys = new Set(
+      entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`),
+    );
+    const entryByKey = new Map(
+      entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]),
+    );
+
+    let updated = 0;
+    let pageNo = 1;
+    const numOfRows = 500;
+    let hasMore = true;
+
+    while (hasMore && needKeys.size > 0) {
+      const start = Date.now();
+      try {
+        const url = `${baseUrl}/API77/raceHorseRating`;
+        const params = {
+          serviceKey: decodeURIComponent(this.serviceKey),
+          numOfRows,
+          pageNo,
+          _type: 'json',
+        };
+
+        const response = await firstValueFrom(
+          this.httpService.get(url, { params }),
+        );
+
+        let items: Array<{
+          meet?: string;
+          hrNo?: string;
+          hrName?: string;
+          rating1?: string | number;
+          rating2?: string | number;
+          rating3?: string | number;
+          rating4?: string | number;
+        }> = [];
+        const body = response.data?.response?.body;
+        if (body?.items?.item) {
+          const raw = body.items.item;
+          items = Array.isArray(raw) ? raw : [raw];
+        }
+
+        for (const item of items) {
+          const meetRaw = String(item.meet ?? '');
+          const meetStr = ['서울', '제주', '부산경남'].includes(meetRaw)
+            ? meetRaw
+            : meetRaw === '1'
+              ? '서울'
+              : meetRaw === '2'
+                ? '제주'
+                : meetRaw === '3'
+                  ? '부산경남'
+                  : null;
+          const hrNo = item.hrNo != null ? String(item.hrNo) : '';
+          if (!meetStr || !hrNo) continue;
+
+          const key = `${meetStr}:${hrNo}`;
+          if (!needKeys.has(key)) continue;
+
+          const entry = entryByKey.get(key);
+          if (!entry) continue;
+
+          const r1 = item.rating1;
+          const rating1 = r1 != null ? parseFloat(String(r1)) : undefined;
+          const ratingHistory: number[] = [];
+          for (const r of [item.rating2, item.rating3, item.rating4]) {
+            if (r != null) {
+              const v = parseFloat(String(r));
+              if (!Number.isNaN(v)) ratingHistory.push(v);
+            }
+          }
+
+          await this.prisma.raceEntry.update({
+            where: { id: entry.id },
+            data: {
+              rating: rating1 ?? undefined,
+              ratingHistory:
+                ratingHistory.length > 0 ? ratingHistory : undefined,
+            },
+          });
+          needKeys.delete(key);
+          updated++;
+        }
+
+        hasMore = items.length >= numOfRows;
+        pageNo++;
+        if (items.length === 0) hasMore = false;
+
+        await this.logKraSync(endpoint, {
+          rcDate: normalizedDate,
+          status: 'SUCCESS',
+          recordCount: items.length,
+          durationMs: Date.now() - start,
+        });
+
+        await this.delay(200);
+      } catch (error) {
+        await this.logKraSync(endpoint, {
+          rcDate: normalizedDate,
+          status: 'FAILED',
+          errorMessage: error instanceof Error ? error.message : String(error),
+          durationMs: Date.now() - start,
+        });
+        this.logger.error('Failed to fetch race horse ratings', error);
+        break;
+      }
+    }
+
+    return { updated };
+  }
+
+  // --- KRA API: 마필 구간별 경주기록 (API37_1 sectionRecord_1) ---
+  /**
+   * 당일 출전마의 구간별(S1F, G3F, G1F) 기록 조회 후 RaceEntry.sectionalStats 저장
+   * @see docs/specs/KRA_HORSE_SECTIONAL_SPEC.md
+   */
+  async fetchHorseSectionalRecords(date: string): Promise<{ updated: number }> {
+    const endpoint = 'horseSectional';
+    const normalizedDate = this.normalizeToYyyyMmDd(date);
+    const baseUrl = await this.resolveBaseUrl();
+
+    const entries = await this.prisma.raceEntry.findMany({
+      where: { race: { rcDate: normalizedDate } },
+      select: { id: true, hrNo: true, race: { select: { meet: true } } },
+    });
+    if (entries.length === 0) return { updated: 0 };
+
+    const needKeys = new Set(
+      entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`),
+    );
+    const entryByKey = new Map(
+      entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]),
+    );
+    let updated = 0;
+
+    for (const meet of KRA_MEETS) {
+      let pageNo = 1;
+      const numOfRows = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const start = Date.now();
+        try {
+          const url = `${baseUrl}/API37_1/sectionRecord_1`;
+          const params = {
+            serviceKey: decodeURIComponent(this.serviceKey),
+            meet: meet.code,
+            rc_date: normalizedDate,
+            numOfRows,
+            pageNo,
+            _type: 'json',
+          };
+
+          const response = await firstValueFrom(
+            this.httpService.get(url, { params }),
+          );
+
+          const body = response.data?.response?.body;
+          let items: Array<Record<string, unknown>> = [];
+          if (body?.items?.item) {
+            const raw = body.items.item;
+            items = Array.isArray(raw) ? raw : [raw];
+          }
+
+          for (const item of items) {
+            const meetStr = meet.name;
+            const hrNo = String(item.hrNo ?? item['hr_no'] ?? '').trim();
+            if (!hrNo) continue;
+
+            const key = `${meetStr}:${hrNo}`;
+            if (!needKeys.has(key)) continue;
+
+            const entry = entryByKey.get(key);
+            if (!entry) continue;
+
+            const s1fAvg = this.parseSectionalVal(
+              item.s1fAvg ??
+                item['s1f_avg'] ??
+                item.S1F_AVG ??
+                item['S1F'] ??
+                item.seS1fAccTime,
+            );
+            const g1fAvg = this.parseSectionalVal(
+              item.g1fAvg ??
+                item['g1f_avg'] ??
+                item.G1F_AVG ??
+                item['G1F'] ??
+                item.seG1fAccTime,
+            );
+            const s1fMin = this.parseSectionalVal(
+              item.s1fMin ?? item['s1f_min'] ?? item.S1F_MIN,
+            );
+            const s1fMax = this.parseSectionalVal(
+              item.s1fMax ?? item['s1f_max'] ?? item.S1F_MAX,
+            );
+            const g1fMin = this.parseSectionalVal(
+              item.g1fMin ?? item['g1f_min'] ?? item.G1F_MIN,
+            );
+            const g1fMax = this.parseSectionalVal(
+              item.g1fMax ?? item['g1f_max'] ?? item.G1F_MAX,
+            );
+
+            const stats: Record<string, number> = {};
+            if (s1fAvg != null) stats.s1fAvg = s1fAvg;
+            if (g1fAvg != null) stats.g1fAvg = g1fAvg;
+            if (s1fMin != null) stats.s1fMin = s1fMin;
+            if (s1fMax != null) stats.s1fMax = s1fMax;
+            if (g1fMin != null) stats.g1fMin = g1fMin;
+            if (g1fMax != null) stats.g1fMax = g1fMax;
+            const sectionalStats: Prisma.InputJsonValue | undefined =
+              Object.keys(stats).length > 0 ? stats : undefined;
+
+            if (sectionalStats) {
+              await this.prisma.raceEntry.update({
+                where: { id: entry.id },
+                data: { sectionalStats },
+              });
+              needKeys.delete(key);
+              updated++;
+            }
+          }
+
+          hasMore = items.length >= numOfRows;
+          pageNo++;
+
+          await this.logKraSync(endpoint, {
+            meet: meet.code,
+            rcDate: normalizedDate,
+            status: 'SUCCESS',
+            recordCount: items.length,
+            durationMs: Date.now() - start,
+          });
+
+          await this.delay(200);
+        } catch (error) {
+          hasMore = false;
+          await this.logKraSync(endpoint, {
+            meet: meet.code,
+            rcDate: normalizedDate,
+            status: 'FAILED',
+            errorMessage:
+              error instanceof Error ? error.message : String(error),
+            durationMs: Date.now() - start,
+          });
+          this.logger.error(
+            `Failed to fetch horse sectional for ${meet.name}`,
+            error,
+          );
+        }
+      }
+    }
+
+    return { updated };
+  }
+
+  private parseSectionalVal(val: unknown): number | null {
+    if (val == null) return null;
+    const n = Number(val);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
   // --- KRA API: 출전마 체중 (API25_1) ---
   async fetchHorseWeight(date: string) {
     const endpoint = 'horseWeight';
+    const baseUrl = await this.resolveBaseUrl();
 
     for (const meet of KRA_MEETS) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/API25_1/entryHorseWeightInfo_1`;
+        const url = `${baseUrl}/API25_1/entryHorseWeightInfo_1`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -1451,11 +1952,12 @@ export class KraService {
   // --- KRA API: 장구·폐출혈 (API24_1) ---
   async fetchEquipmentBleeding(date: string) {
     const endpoint = 'equipmentBleeding';
+    const baseUrl = await this.resolveBaseUrl();
 
     for (const meet of KRA_MEETS) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/API24_1/horseMedicalAndEquipment_1`;
+        const url = `${baseUrl}/API24_1/horseMedicalAndEquipment_1`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -1538,11 +2040,12 @@ export class KraService {
   // --- KRA API: 출전취소 (API9_1) ---
   async fetchHorseCancel(date: string) {
     const endpoint = 'horseCancel';
+    const baseUrl = await this.resolveBaseUrl();
 
     for (const meet of KRA_MEETS) {
       const start = Date.now();
       try {
-        const url = `${this.baseUrl}/API9_1/raceHorseCancelInfo_1`;
+        const url = `${baseUrl}/API9_1/raceHorseCancelInfo_1`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
           meet: meet.code,
@@ -1637,6 +2140,16 @@ export class KraService {
     // 4. 출전취소
     await this.fetchHorseCancel(date);
 
+    // 5. 조교사 상세정보 (API19_1) — 승률/복승률
+    await this.fetchTrainerInfo();
+
+    // 6. 경주마 레이팅 정보 (API77) — rating1~4 추이
+    await this.fetchRaceHorseRatings(date);
+
+    // 6.5. 마필 구간별 경주기록 (API37_1) — S1F/G3F/G1F
+    await this.fetchHorseSectionalRecords(date);
+
+    // 7. 훈련·경주마상세 (경주별)
     let processedCount = 0;
     for (const race of races) {
       await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);

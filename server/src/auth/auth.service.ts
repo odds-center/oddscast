@@ -2,10 +2,12 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
@@ -226,6 +228,116 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
     return this.generateToken(user.id, user.email, user.role);
+  }
+
+  /** 비밀번호 찾기: 토큰 생성·저장. 이메일 미설정 시 개발용 토큰 반환 */
+  async forgotPassword(
+    email: string,
+  ): Promise<{ message: string; resetToken?: string }> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive) {
+      return { message: '비밀번호 재설정 이메일이 발송되었습니다.' };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1시간
+
+    await this.prisma.passwordResetToken.deleteMany({
+      where: { userId: user.id },
+    });
+    await this.prisma.passwordResetToken.create({
+      data: { userId: user.id, token, expiresAt },
+    });
+
+    const resendApiKey = this.config.get('RESEND_API_KEY');
+    if (resendApiKey) {
+      // TODO: Resend 등 이메일 발송 연동
+      // await this.sendPasswordResetEmail(user.email, token);
+    }
+
+    const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
+    return {
+      message: '비밀번호 재설정 이메일이 발송되었습니다.',
+      ...(devReturnToken && { resetToken: token }),
+    };
+  }
+
+  /** 비밀번호 재설정: 토큰 검증 후 갱신 */
+  async resetPassword(
+    token: string,
+    newPassword: string,
+  ): Promise<{ message: string }> {
+    const record = await this.prisma.passwordResetToken.findUnique({
+      where: { token },
+      include: { user: true },
+    });
+    if (!record || record.expiresAt < new Date()) {
+      throw new BadRequestException('유효하지 않거나 만료된 토큰입니다.');
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { password: hashed },
+      }),
+      this.prisma.passwordResetToken.delete({ where: { id: record.id } }),
+    ]);
+    return { message: '비밀번호가 재설정되었습니다.' };
+  }
+
+  /** 이메일 인증: 토큰 검증 후 isEmailVerified 갱신 */
+  async verifyEmail(token: string): Promise<{ message: string }> {
+    const record = await this.prisma.emailVerificationToken.findUnique({
+      where: { token },
+    });
+    if (!record || record.expiresAt < new Date()) {
+      throw new BadRequestException('유효하지 않거나 만료된 토큰입니다.');
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.user.update({
+        where: { id: record.userId },
+        data: { isEmailVerified: true },
+      }),
+      this.prisma.emailVerificationToken.delete({ where: { id: record.id } }),
+    ]);
+    return { message: '이메일이 인증되었습니다.' };
+  }
+
+  /** 인증 메일 재발송 */
+  async resendVerification(
+    email: string,
+  ): Promise<{ message: string; verificationToken?: string }> {
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user || !user.isActive) {
+      return { message: '인증 메일이 재발송되었습니다.' };
+    }
+    if (user.isEmailVerified) {
+      return { message: '이미 인증된 이메일입니다.' };
+    }
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24시간
+
+    await this.prisma.emailVerificationToken.deleteMany({
+      where: { userId: user.id },
+    });
+    await this.prisma.emailVerificationToken.create({
+      data: { userId: user.id, token, expiresAt },
+    });
+
+    const resendApiKey = this.config.get('RESEND_API_KEY');
+    if (resendApiKey) {
+      // TODO: Resend 등 이메일 발송 연동
+      // await this.sendVerificationEmail(user.email, token);
+    }
+
+    const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
+    return {
+      message: '인증 메일이 재발송되었습니다.',
+      ...(devReturnToken && { verificationToken: token }),
+    };
   }
 
   private generateToken(userId: number, email: string, role: string) {

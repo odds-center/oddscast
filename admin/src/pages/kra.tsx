@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useRouter } from 'next/router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
@@ -8,13 +9,10 @@ import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { adminKraApi } from '@/lib/api/admin';
+import { formatYyyyMmDd } from '@/lib/utils';
 import { Database, RefreshCw, FileText, Trophy, User, Zap, History } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
-
-function formatDateYyyyMmDd(s: string): string {
-  if (!s || s.length < 8) return s;
-  return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}`;
-}
+import LoadingSpinner from '@/components/common/LoadingSpinner';
 
 function toYyyyMmDd(s: string): string {
   return s.replace(/-/g, '').slice(0, 8);
@@ -43,6 +41,7 @@ export default function KraPage() {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   });
   const [meetFilter, setMeetFilter] = useState('');
+  const [logEndpointFilter, setLogEndpointFilter] = useState('');
 
   const syncScheduleMutation = useMutation({
     mutationFn: (date: string) => adminKraApi.syncSchedule(toYyyyMmDd(date)),
@@ -109,10 +108,16 @@ export default function KraPage() {
     onError: (err: unknown) => toast.error( '과거 데이터 적재 실패'),
   });
 
+  const { data: kraStatus } = useQuery({
+    queryKey: ['kra-status'],
+    queryFn: () => adminKraApi.getStatus(),
+  });
+
   const { data: logsData, isLoading: logsLoading } = useQuery({
-    queryKey: ['kra-sync-logs'],
+    queryKey: ['kra-sync-logs', logEndpointFilter, syncDate],
     queryFn: () =>
       adminKraApi.getSyncLogs({
+        endpoint: logEndpointFilter || undefined,
         rcDate: syncDate ? toYyyyMmDd(syncDate) : undefined,
         limit: 30,
       }),
@@ -130,6 +135,37 @@ export default function KraPage() {
             title='KRA 데이터 관리'
             description='한국마사회(KRA) 출전표·경주 결과·상세정보를 수동으로 동기화합니다. 출전마가 보이지 않을 때 날짜 선택 후 출전표를 먼저 실행하세요.'
           />
+
+          {/* KRA 설정 상태 */}
+          <Card title='KRA 설정 상태' description='현재 적용 중인 KRA API 설정'>
+            <div className='flex flex-wrap gap-4 text-sm'>
+              <div>
+                <span className='text-gray-500'>API 키:</span>{' '}
+                <span
+                  className={`font-medium ${
+                    kraStatus?.serviceKeyConfigured ? 'text-green-600' : 'text-amber-600'
+                  }`}
+                >
+                  {kraStatus?.serviceKeyConfigured ? '설정됨' : '미설정 (.env)'}
+                </span>
+              </div>
+              <div>
+                <span className='text-gray-500'>Base URL:</span>{' '}
+                <span className='font-mono text-xs break-all'>
+                  {kraStatus?.baseUrlInUse || '-'}
+                </span>
+                {kraStatus?.baseUrlInUse?.includes('apis.data.go.kr') && (
+                  <span className='ml-1 text-gray-400'>(기본값)</span>
+                )}
+              </div>
+              <Link
+                href='/settings'
+                className='text-blue-600 hover:underline'
+              >
+                설정에서 Base URL 변경 →
+              </Link>
+            </div>
+          </Card>
 
           {/* 출전표 수동 동기화 — 가장 핵심 */}
           <Card title='출전표 수동 동기화' description='경주별 출전마(말·기수·조교사) 정보를 KRA에서 가져옵니다. 웹앱에서 "출전마 정보가 없습니다"가 뜨면 이 버튼을 실행하세요.'>
@@ -273,8 +309,36 @@ export default function KraPage() {
 
           {/* 동기화 로그 */}
           <Card title='동기화 로그' description='최근 KRA API 호출 이력'>
+            <div className='flex flex-wrap items-center gap-3 mb-4'>
+              <input
+                type='date'
+                value={syncDate}
+                onChange={(e) => setSyncDate(e.target.value)}
+                className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+              />
+              <select
+                value={logEndpointFilter}
+                onChange={(e) => setLogEndpointFilter(e.target.value)}
+                className='px-3 py-2 border border-gray-300 rounded-md text-sm'
+              >
+                <option value=''>전체 엔드포인트</option>
+                <option value='entrySheet'>entrySheet</option>
+                <option value='raceResult'>raceResult</option>
+                <option value='jockeyResult'>jockeyResult</option>
+                <option value='trainerInfo'>trainerInfo</option>
+                <option value='trackInfo'>trackInfo</option>
+                <option value='raceHorseRating'>raceHorseRating</option>
+                <option value='horseSectional'>horseSectional</option>
+                <option value='horseWeight'>horseWeight</option>
+                <option value='equipmentBleeding'>equipmentBleeding</option>
+                <option value='horseCancel'>horseCancel</option>
+              </select>
+              <span className='text-sm text-gray-500'>날짜·엔드포인트로 필터</span>
+            </div>
             {logsLoading ? (
-              <div className='py-8 text-center text-gray-500'>로딩 중...</div>
+              <div className='py-8 flex justify-center'>
+                <LoadingSpinner size='md' label='동기화 로그 불러오는 중...' />
+              </div>
             ) : (
               <div className='overflow-x-auto'>
                 <table className='min-w-full divide-y divide-gray-200 text-sm'>
@@ -307,7 +371,7 @@ export default function KraPage() {
                           <td className='py-2 font-mono text-xs'>{log.endpoint}</td>
                           <td className='py-2'>{log.meet ?? '-'}</td>
                           <td className='py-2'>
-                            {log.rcDate ? formatDateYyyyMmDd(log.rcDate) : '-'}
+                            {log.rcDate ? formatYyyyMmDd(log.rcDate) : '-'}
                           </td>
                           <td className='py-2'>
                             <span

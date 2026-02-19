@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ResultStatisticsFilterDto = exports.ResultFilterDto = exports.BulkCreateResultDto = exports.UpdateResultDto = exports.CreateResultDto = void 0;
+exports.BulkUpdateResultDto = exports.BulkUpdateResultItemDto = exports.ResultSearchDto = exports.ResultStatisticsFilterDto = exports.ResultFilterDto = exports.BulkCreateResultDto = exports.UpdateResultDto = exports.CreateResultDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
@@ -28,6 +28,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateResultDto.prototype, "ord", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'NORMAL|FALL|DQ|WITHDRAWN' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateResultDto.prototype, "ordType", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
@@ -78,6 +84,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateResultDto.prototype, "ord", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'NORMAL|FALL|DQ|WITHDRAWN' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateResultDto.prototype, "ordType", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
@@ -151,4 +163,83 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ResultStatisticsFilterDto.prototype, "meet", void 0);
+class ResultSearchDto {
+}
+exports.ResultSearchDto = ResultSearchDto;
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '마명, 마번, 기수명 검색' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ResultSearchDto.prototype, "q", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ResultSearchDto.prototype, "date", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ResultSearchDto.prototype, "meet", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: 1 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], ResultSearchDto.prototype, "page", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ default: 20 }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], ResultSearchDto.prototype, "limit", void 0);
+class BulkUpdateResultItemDto {
+}
+exports.BulkUpdateResultItemDto = BulkUpdateResultItemDto;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], BulkUpdateResultItemDto.prototype, "id", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkUpdateResultItemDto.prototype, "ord", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: 'NORMAL|FALL|DQ|WITHDRAWN' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkUpdateResultItemDto.prototype, "ordType", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkUpdateResultItemDto.prototype, "rcTime", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsInt)(),
+    (0, class_transformer_1.Type)(() => Number),
+    __metadata("design:type", Number)
+], BulkUpdateResultItemDto.prototype, "chaksun1", void 0);
+class BulkUpdateResultDto {
+}
+exports.BulkUpdateResultDto = BulkUpdateResultDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ type: [BulkUpdateResultItemDto] }),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => BulkUpdateResultItemDto),
+    __metadata("design:type", Array)
+], BulkUpdateResultDto.prototype, "updates", void 0);
 //# sourceMappingURL=result.dto.js.map

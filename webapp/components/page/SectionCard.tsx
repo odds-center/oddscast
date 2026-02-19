@@ -26,7 +26,7 @@ export default function SectionCard({
   return (
     <Card as='section' variant={accent ? 'accent' : 'default'} className={className}>
       {title && (
-        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${viewAllHref ? 'mb-4' : ''}`}>
+        <div className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 ${viewAllHref ? 'mb-5' : 'mb-4'}`}>
           <SectionTitle title={title} icon={icon} as='h3' className={viewAllHref ? 'mb-0' : ''} />
           {viewAllHref && (
             <Link

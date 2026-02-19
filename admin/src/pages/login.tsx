@@ -1,40 +1,41 @@
-import { useState } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
+import { useForm } from 'react-hook-form';
 import { authApi } from '@/lib/api/auth';
 import { useAuth } from '@/lib/hooks/useAuth';
+type LoginForm = {
+  loginId: string;
+  password: string;
+};
 
 export default function LoginPage() {
   const router = useRouter();
   const { setAuth } = useAuth();
-  const [loginId, setLoginId] = useState('');
-  const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError('');
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { isSubmitting, errors },
+  } = useForm<LoginForm>({
+    defaultValues: { loginId: '', password: '' },
+  });
 
+  const onSubmit = async (data: LoginForm) => {
     try {
-      const response = await authApi.login({ loginId, password });
-
-      // Zustand 스토어에 인증 정보 저장
+      const response = await authApi.login({ loginId: data.loginId, password: data.password });
       setAuth(response.user, response.accessToken);
-
-      // 쿠키/스토어 반영 후 전체 페이지 로드로 이동 (미들웨어 인식 보장)
       const redirect = (router.query.redirect as string) || '/';
       window.location.href = redirect.startsWith('/') ? redirect : `/${redirect}`;
     } catch (err: unknown) {
-      console.error('Login error:', err);
-      const msg = err && typeof err === 'object' && 'response' in err
-        ? (err as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
-        : undefined;
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? (err as { response?: { data?: { message?: string | string[] } } }).response?.data?.message
+          : undefined;
       const text = Array.isArray(msg) ? msg.join(', ') : msg;
-      setError(text || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.');
-    } finally {
-      setIsLoading(false);
+      setError('root', {
+        message: text || '로그인에 실패했습니다. 아이디와 비밀번호를 확인해주세요.',
+      });
     }
   };
 
@@ -51,7 +52,7 @@ export default function LoginPage() {
             </h2>
             <p className='mt-1 text-center text-sm text-gray-600'>관리자 계정으로 로그인하세요</p>
           </div>
-          <form className='mt-5 space-y-4' onSubmit={handleSubmit}>
+          <form className='mt-5 space-y-4' onSubmit={handleSubmit(onSubmit)}>
             <div className='rounded-md shadow-sm -space-y-px'>
               <div>
                 <label htmlFor='loginId' className='sr-only'>
@@ -59,14 +60,11 @@ export default function LoginPage() {
                 </label>
                 <input
                   id='loginId'
-                  name='loginId'
                   type='text'
                   autoComplete='username'
-                  required
-                  className='appearance-none rounded-none relative block w-full px-3 py-1.5 text-sm border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm'
                   placeholder='아이디'
-                  value={loginId}
-                  onChange={(e) => setLoginId(e.target.value)}
+                  className='appearance-none rounded-none relative block w-full px-3 py-1.5 text-sm border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm'
+                  {...register('loginId', { required: '아이디를 입력하세요.' })}
                 />
               </div>
               <div>
@@ -75,31 +73,56 @@ export default function LoginPage() {
                 </label>
                 <input
                   id='password'
-                  name='password'
                   type='password'
                   autoComplete='current-password'
-                  required
-                  className='appearance-none rounded-none relative block w-full px-3 py-1.5 text-sm border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm'
                   placeholder='비밀번호'
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  className='appearance-none rounded-none relative block w-full px-3 py-1.5 text-sm border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-primary-500 focus:border-primary-500 focus:z-10 sm:text-sm'
+                  {...register('password', { required: '비밀번호를 입력하세요.' })}
                 />
               </div>
             </div>
 
-            {error && (
+            {(errors.root ?? errors.loginId ?? errors.password) && (
               <div className='rounded bg-red-50 p-3'>
-                <p className='text-sm text-red-800'>{error}</p>
+                <p className='text-sm text-red-800'>
+                  {errors.root?.message ?? errors.loginId?.message ?? errors.password?.message}
+                </p>
               </div>
             )}
 
             <div>
               <button
                 type='submit'
-                disabled={isLoading}
-                className='group relative w-full flex justify-center py-1.5 px-4 border text-sm border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed'
+                disabled={isSubmitting}
+                className='group relative w-full flex justify-center items-center gap-2 py-1.5 px-4 border text-sm border-transparent font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed'
               >
-                {isLoading ? '로그인 중...' : '로그인'}
+                {isSubmitting ? (
+                  <>
+                    <svg
+                      className='animate-spin h-4 w-4 text-white'
+                      xmlns='http://www.w3.org/2000/svg'
+                      fill='none'
+                      viewBox='0 0 24 24'
+                    >
+                      <circle
+                        className='opacity-25'
+                        cx='12'
+                        cy='12'
+                        r='10'
+                        stroke='currentColor'
+                        strokeWidth='4'
+                      />
+                      <path
+                        className='opacity-75'
+                        fill='currentColor'
+                        d='M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z'
+                      />
+                    </svg>
+                    로그인 중...
+                  </>
+                ) : (
+                  '로그인'
+                )}
               </button>
             </div>
           </form>

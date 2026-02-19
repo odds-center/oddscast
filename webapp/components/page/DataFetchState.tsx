@@ -36,8 +36,8 @@ export default function DataFetchState({
 }: DataFetchStateProps) {
   if (isLoading) {
     return (
-      <div className='py-16'>
-        <LoadingSpinner size={28} label={loadingLabel} />
+      <div className='py-20 flex flex-col items-center justify-center'>
+        <LoadingSpinner size={32} label={loadingLabel} />
       </div>
     );
   }

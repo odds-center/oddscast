@@ -252,6 +252,53 @@ export class SubscriptionsService {
     });
   }
 
+  async createPlan(data: {
+    planName: string;
+    displayName: string;
+    description?: string;
+    originalPrice: number;
+    vat: number;
+    totalPrice: number;
+    baseTickets: number;
+    bonusTickets: number;
+    totalTickets: number;
+    isActive?: boolean;
+    sortOrder?: number;
+  }) {
+    const existing = await this.prisma.subscriptionPlan.findUnique({
+      where: { planName: data.planName },
+    });
+    if (existing) {
+      throw new BadRequestException(
+        `플랜 코드 '${data.planName}'가 이미 존재합니다.`,
+      );
+    }
+    return this.prisma.subscriptionPlan.create({
+      data: {
+        ...data,
+        isActive: data.isActive ?? true,
+        sortOrder: data.sortOrder ?? 0,
+      },
+    });
+  }
+
+  async deletePlan(id: number) {
+    const plan = await this.prisma.subscriptionPlan.findUnique({
+      where: { id },
+    });
+    if (!plan) throw new NotFoundException('플랜을 찾을 수 없습니다.');
+    const subscriptionCount = await this.prisma.subscription.count({
+      where: { planId: id },
+    });
+    if (subscriptionCount > 0) {
+      return this.prisma.subscriptionPlan.update({
+        where: { id },
+        data: { isActive: false },
+      });
+    }
+    return this.prisma.subscriptionPlan.delete({ where: { id } });
+  }
+
   private async resolvePlan(planId?: string | number) {
     if (planId != null && planId !== '') {
       const plan = await this.prisma.subscriptionPlan.findUnique({

@@ -15,6 +15,7 @@ const kra_controller_1 = require("./kra.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
 const config_1 = require("@nestjs/config");
 const cache_module_1 = require("../cache/cache.module");
+const config_module_1 = require("../config/config.module");
 let KraModule = class KraModule {
 };
 exports.KraModule = KraModule;
@@ -26,6 +27,7 @@ exports.KraModule = KraModule = __decorate([
             prisma_module_1.PrismaModule,
             config_1.ConfigModule,
             cache_module_1.CacheModule,
+            config_module_1.GlobalConfigModule,
         ],
         controllers: [kra_controller_1.KraController],
         providers: [kra_service_1.KraService],

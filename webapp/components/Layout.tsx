@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
 
       {/* 푸터 — fixed, 하단 네비 바로 아래 고정. 항상 보임 */}
       <footer className='site-footer-fixed'>
-        <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:gap-x-4 text-text-tertiary text-[11px] sm:text-xs px-2 sm:px-4'>
+        <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 sm:gap-x-4 text-text-tertiary text-[12px] sm:text-xs px-2 sm:px-4'>
           <span className='font-medium text-foreground/80'>© GOLDEN RACE</span>
           <Link href={routes.legal.terms} className='hover:text-primary transition-colors'>
             이용약관

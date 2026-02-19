@@ -85,7 +85,7 @@ body {
   background-color: var(--background);
   font-family: var(--font-sans);
   font-size: 1rem;
-  line-height: 1.65;
+  line-height: 1.7;
   margin: 0;
   min-height: 100vh;
   min-height: 100dvh;
@@ -94,6 +94,7 @@ body {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
   touch-action: manipulation;
+  letter-spacing: 0.01em;
 }
 
 /* 모바일/태블릿: 가로 스크롤 방지, 뷰포트 고정 (lg 1024px 미만) */
@@ -222,7 +223,6 @@ h1, h2, h3 {
 .data-table td,
 .data-table a,
 .data-table span {
-  font-size: 14px !important;
   text-align: left;
   white-space: nowrap;
 }
@@ -231,10 +231,11 @@ h1, h2, h3 {
   border-bottom: 1px solid var(--border-gold);
 }
 .data-table thead th {
-  padding: 0.5rem 0.5rem !important;
+  padding: 0.625rem 0.75rem !important;
   font-weight: 600;
   color: var(--text-secondary);
   letter-spacing: 0.02em;
+  font-size: 14px !important;
 }
 .data-table tbody tr {
   border-bottom: 1px solid var(--border);
@@ -247,8 +248,9 @@ h1, h2, h3 {
   border-bottom: none;
 }
 .data-table tbody td {
-  padding: 0.5rem 0.5rem !important;
+  padding: 0.625rem 0.75rem !important;
   vertical-align: middle;
+  font-size: 16px !important;
 }
 @media (max-width: 768px) {
   .data-table tbody tr {
@@ -423,8 +425,8 @@ h1, h2, h3 {
 .data-table-kra .data-table thead th {
   color: var(--foreground);
   font-weight: 600;
-  font-size: 13px !important;
-  padding: 0.5rem 0.625rem !important;
+  font-size: 14px !important;
+  padding: 0.625rem 0.75rem !important;
   border-right: 1px solid var(--border);
 }
 .data-table-kra .data-table thead th:last-child {
@@ -440,8 +442,8 @@ h1, h2, h3 {
   background: var(--primary-muted);
 }
 .data-table-kra .data-table tbody td {
-  padding: 0.5rem 0.625rem !important;
-  font-size: 14px !important;
+  padding: 0.625rem 0.75rem !important;
+  font-size: 16px !important;
   border-right: 1px solid rgba(0, 0, 0, 0.05);
 }
 .data-table-kra .data-table tbody td:last-child {
@@ -465,7 +467,7 @@ h1, h2, h3 {
 }
 @media (min-width: 768px) {
   .card {
-    padding: 1.375rem 1.5rem;
+    padding: 1.5rem 1.75rem;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04), 0 0 1px rgba(201, 162, 39, 0.06);
   }
 }
@@ -481,7 +483,7 @@ h1, h2, h3 {
 
 /* 카드 좌측 금색 악센트 — 더 굵게 */
 .card-accent {
-  border-left: 5px solid var(--primary);
+  border-left: 4px solid var(--primary);
 }
 
 /* ============================================
@@ -519,7 +521,7 @@ h1, h2, h3 {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
   padding: 0.2rem 0.45rem;
-  font-size: 13px !important;
+  font-size: 14px !important;
   font-weight: 500;
 }
 
@@ -602,7 +604,7 @@ h1, h2, h3 {
    ============================================ */
 .input-base {
   padding: 0 0.9375rem;
-  min-height: 42px;
+  min-height: 44px;
   border-radius: var(--radius-lg);
   font-size: 0.9375rem;
   font-family: var(--font-sans);

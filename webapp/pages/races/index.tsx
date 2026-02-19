@@ -162,7 +162,7 @@ export default function RacesListPage() {
           getRowKey={(race) => race.id}
           getRowHref={(race) => routes.races.detail(race.id)}
           rowClassName={() => 'group'}
-          className='data-table-kra text-[14px]'
+          className='data-table-kra'
         />
         <Pagination
           page={page}

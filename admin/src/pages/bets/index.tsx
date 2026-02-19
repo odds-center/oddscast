@@ -41,7 +41,7 @@ export default function BetsPage() {
     },
     {
       key: 'betType',
-      header: '마권 타입',
+      header: '유형',
     },
     {
       key: 'betAmount',
@@ -122,13 +122,13 @@ export default function BetsPage() {
   return (
     <>
       <Head>
-        <title>마권 관리 | GoldenRace Admin</title>
+        <title>결제 내역 | GoldenRace Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>
           <PageHeader
-            title='마권 관리'
-            description='모든 마권 기록을 조회하고 관리할 수 있습니다.'
+            title='결제 내역'
+            description='결제·예측권 구매 기록을 조회할 수 있습니다.'
           />
 
           <Card>
@@ -146,7 +146,7 @@ export default function BetsPage() {
               data={data?.data || []}
               columns={columns}
               isLoading={isLoading}
-              emptyMessage='마권 기록이 없습니다.'
+              emptyMessage='결제 기록이 없습니다.'
             />
 
             {data && data.meta && (

@@ -10,8 +10,8 @@ export declare class FavoritesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -36,8 +36,8 @@ export declare class FavoritesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -51,8 +51,8 @@ export declare class FavoritesController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -65,8 +65,8 @@ export declare class FavoritesController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -79,8 +79,8 @@ export declare class FavoritesController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -93,8 +93,8 @@ export declare class FavoritesController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -112,8 +112,8 @@ export declare class FavoritesController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            tags: string[];
             userId: number;
+            tags: string[];
             targetId: string;
             targetName: string;
             targetData: import("@prisma/client/runtime/client").JsonValue | null;
@@ -131,8 +131,8 @@ export declare class FavoritesController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        tags: string[];
         userId: number;
+        tags: string[];
         targetId: string;
         targetName: string;
         targetData: import("@prisma/client/runtime/client").JsonValue | null;

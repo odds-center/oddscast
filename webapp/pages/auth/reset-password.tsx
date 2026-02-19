@@ -22,7 +22,7 @@ export default function ResetPasswordPage() {
   const {
     register,
     handleSubmit,
-    watch,
+    getValues,
     setError,
     formState: { errors, isSubmitting },
   } = useForm<ResetPasswordForm>();
@@ -37,8 +37,6 @@ export default function ResetPasswordPage() {
       setError('root', { message: getErrorMessage(err) });
     },
   });
-
-  const newPassword = watch('newPassword', '');
 
   const onSubmit = (data: ResetPasswordForm) => {
     if (data.newPassword !== data.confirmPassword) {
@@ -80,7 +78,7 @@ export default function ResetPasswordPage() {
             type='password'
             {...register('confirmPassword', {
               required: '비밀번호를 다시 입력하세요.',
-              validate: (v) => v === newPassword || '비밀번호가 일치하지 않습니다.',
+              validate: (v) => v === getValues('newPassword') || '비밀번호가 일치하지 않습니다.',
             })}
             error={errors.confirmPassword?.message}
           />

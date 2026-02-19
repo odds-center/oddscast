@@ -34,13 +34,13 @@ export default function ResultCard({ meetName, rcNo, rcDate, top3, raceId, id }:
       href={routes.races.detail(linkId)}
       className='block group touch-manipulation'
     >
-      <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[5px] border-l-primary h-full'>
+      <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-primary h-full'>
         {/* 경주 정보 */}
         <div className='flex items-center gap-3 min-w-0'>
           <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-primary/10 border border-primary/25 shrink-0'>
             <Icon name='Trophy' size={16} className='text-primary/90 mb-0.5' strokeWidth={2} />
             <span className='font-display font-bold text-sm text-primary'>{rcNo}경</span>
-            <span className='text-text-tertiary text-[11px] mt-0.5 truncate max-w-full'>{meetName}</span>
+            <span className='text-text-tertiary text-[12px] mt-0.5 truncate max-w-full'>{meetName}</span>
           </div>
           <div className='flex-1 min-w-0'>
             <span className='text-text-secondary text-sm'>{formatRcDate(rcDate)}</span>

@@ -96,6 +96,8 @@ goldenrace/
 6. **응답 포맷:** `ResponseInterceptor`가 `{ data, status, message? }` 형태로 래핑합니다.
 7. **사행성 제거:** 베팅/배팅 기능 없음. AI 분석 콘텐츠 제공 서비스입니다.
 8. **폼(Form):** 모든 폼은 `react-hook-form`을 사용합니다. (useForm, register, handleSubmit 등)
+9. **유틸리티:** `es-toolkit` 사용 (isString, pick, omit, chunk, debounce 등). lodash 대체.
+10. **상태 관리:** `Zustand` 사용. Redux/Redux Toolkit 사용 금지.
 
 ---
 

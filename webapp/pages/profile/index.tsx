@@ -82,23 +82,23 @@ export default function Profile() {
           error={null}
           loadingLabel='정보를 불러오는 중...'
         >
-          <div className='space-y-4'>
+          <div className='space-y-6'>
             <SectionCard title='예측권' icon='Ticket'>
-              <p className='text-2xl font-bold text-primary'>
+              <p className='text-3xl sm:text-[2rem] font-bold text-primary tracking-tight'>
                 {ticketBalance?.availableTickets ?? 0}장
               </p>
-              <p className='text-text-secondary text-xs mt-1'>
+              <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
                 AI 예측을 보려면 예측권이 필요합니다. 포인트로 구매하거나 구독으로 받을 수 있습니다.
               </p>
             </SectionCard>
 
             {subscription?.isActive && (
               <SectionCard title='구독' icon='Crown' accent>
-                <p className='msg-success font-medium'>
+                <p className='msg-success font-medium text-[16px]'>
                   {subscription.planId} · 월 {subscription.monthlyTickets}장
                 </p>
                 {subscription.daysUntilRenewal != null && (
-                  <p className='text-text-secondary text-xs mt-1'>
+                  <p className='text-text-secondary text-sm mt-1'>
                     {subscription.daysUntilRenewal}일 후 갱신
                   </p>
                 )}
@@ -106,17 +106,17 @@ export default function Profile() {
             )}
 
             <SectionCard title='포인트' icon='Gem'>
-              <p className='text-2xl font-bold text-primary'>{points.toLocaleString()}pt</p>
-              <p className='text-text-secondary text-xs mt-1'>
-                경주 적중 시 포인트를 받을 수 있습니다. 포인트로 예측권을 구매할 수 있습니다.
+              <p className='text-3xl sm:text-[2rem] font-bold text-primary tracking-tight'>{points.toLocaleString()}pt</p>
+              <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
+                프로모션, 이벤트, 구독 등으로 포인트를 받을 수 있습니다. 포인트로 예측권을 구매할 수 있습니다.
               </p>
             </SectionCard>
 
             <SectionCard title='포인트로 예측권 구매' icon='CreditCard'>
-          <p className='text-text-secondary text-sm mb-2'>
+          <p className='text-text-secondary text-sm sm:text-[16px] mb-3 leading-relaxed'>
             1장 = {perTicket.toLocaleString()}pt (현금 구매와 별도 가격)
           </p>
-          <div className='flex flex-wrap items-center gap-2'>
+          <div className='flex flex-wrap items-center gap-3'>
             <Dropdown<number>
               options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: `${n}장` }))}
               value={purchaseQty}
@@ -130,7 +130,7 @@ export default function Profile() {
             <button
               onClick={handlePurchase}
               disabled={!canPurchase || purchaseMutation.isPending}
-              className='btn-primary px-4 py-2 disabled:opacity-50 flex items-center gap-2'
+              className='btn-primary px-5 py-2.5 disabled:opacity-50 flex items-center gap-2 min-h-[44px]'
             >
               {purchaseMutation.isPending ? (
                 <>

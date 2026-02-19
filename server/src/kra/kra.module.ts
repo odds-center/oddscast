@@ -6,6 +6,7 @@ import { KraController } from './kra.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
+import { GlobalConfigModule } from '../config/config.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { CacheModule } from '../cache/cache.module';
     PrismaModule,
     ConfigModule,
     CacheModule,
+    GlobalConfigModule,
   ],
   controllers: [KraController],
   providers: [KraService],

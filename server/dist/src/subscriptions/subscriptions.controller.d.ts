@@ -43,8 +43,8 @@ export declare class SubscriptionsController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.SubscriptionStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.SubscriptionStatus;
             planId: number;
             price: number;
             billingKey: string | null;
@@ -79,8 +79,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -111,8 +111,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -143,8 +143,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -175,8 +175,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -207,8 +207,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;
@@ -239,8 +239,8 @@ export declare class SubscriptionsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.SubscriptionStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.SubscriptionStatus;
         planId: number;
         price: number;
         billingKey: string | null;

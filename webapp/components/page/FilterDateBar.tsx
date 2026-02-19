@@ -55,7 +55,7 @@ export default function FilterDateBar({
           <div className='flex items-center gap-1.5'>
             <label
               htmlFor={dateId}
-              className='text-text-secondary text-xs font-medium shrink-0'
+              className='text-text-secondary text-sm font-medium shrink-0'
             >
               {dateLabel}
             </label>

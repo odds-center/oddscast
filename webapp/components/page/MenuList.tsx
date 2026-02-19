@@ -9,7 +9,7 @@ interface MenuItemProps {
 }
 
 const menuItemClass =
-  'link-primary flex items-center gap-3 py-4 px-4 rounded-lg hover:bg-primary/10 active:bg-primary/15 transition-colors min-h-[52px] touch-manipulation font-medium';
+  'flex items-center gap-4 py-4 px-5 rounded-xl text-foreground hover:bg-primary/10 active:bg-primary/15 transition-colors min-h-[56px] touch-manipulation font-medium text-[16px] hover:text-primary';
 
 export function MenuItem({ href, icon, label }: MenuItemProps) {
   return (

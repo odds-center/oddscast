@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChangePasswordDto = exports.UpdateProfileDto = exports.GoogleAuthDto = exports.AdminLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
+exports.ResendVerificationDto = exports.VerifyEmailDto = exports.ResetPasswordDto = exports.ForgotPasswordDto = exports.ChangePasswordDto = exports.UpdateProfileDto = exports.GoogleAuthDto = exports.AdminLoginDto = exports.LoginDto = exports.RegisterDto = void 0;
 const class_validator_1 = require("class-validator");
 const swagger_1 = require("@nestjs/swagger");
 class RegisterDto {
@@ -107,4 +107,42 @@ __decorate([
     (0, class_validator_1.MinLength)(6),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "newPassword", void 0);
+class ForgotPasswordDto {
+}
+exports.ForgotPasswordDto = ForgotPasswordDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'user@example.com' }),
+    (0, class_validator_1.IsEmail)({}, { message: '올바른 이메일 형식이 아닙니다' }),
+    __metadata("design:type", String)
+], ForgotPasswordDto.prototype, "email", void 0);
+class ResetPasswordDto {
+}
+exports.ResetPasswordDto = ResetPasswordDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'forgot-password에서 발급받은 토큰' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "token", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'newPassword123' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MinLength)(6, { message: '비밀번호는 6자 이상이어야 합니다' }),
+    __metadata("design:type", String)
+], ResetPasswordDto.prototype, "newPassword", void 0);
+class VerifyEmailDto {
+}
+exports.VerifyEmailDto = VerifyEmailDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: '인증 메일의 토큰' }),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], VerifyEmailDto.prototype, "token", void 0);
+class ResendVerificationDto {
+}
+exports.ResendVerificationDto = ResendVerificationDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'user@example.com' }),
+    (0, class_validator_1.IsEmail)({}, { message: '올바른 이메일 형식이 아닙니다' }),
+    __metadata("design:type", String)
+], ResendVerificationDto.prototype, "email", void 0);
 //# sourceMappingURL=auth.dto.js.map

@@ -28,6 +28,10 @@ export declare class AdminController {
     syncDetails(date?: string): Promise<{
         message: string;
     }>;
+    getKraStatus(): Promise<{
+        baseUrlInUse: string;
+        serviceKeyConfigured: boolean;
+    }>;
     getKraSyncLogs(endpoint?: string, rcDate?: string, limit?: number): Promise<{
         logs: {
             id: number;
@@ -136,10 +140,10 @@ export declare class AdminController {
         granted: number;
         tickets: {
             id: number;
-            status: import("@prisma/client").$Enums.TicketStatus;
-            raceId: number | null;
             userId: number;
             expiresAt: Date;
+            status: import("@prisma/client").$Enums.TicketStatus;
+            raceId: number | null;
             subscriptionId: number | null;
             predictionId: number | null;
             usedAt: Date | null;
@@ -193,8 +197,8 @@ export declare class AdminController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -257,8 +261,8 @@ export declare class AdminController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
         userId: number;
+        raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
         betName: string;
         betDescription: string | null;
@@ -301,6 +305,34 @@ export declare class AdminController {
         totalTickets: number;
         sortOrder: number;
     }[]>;
+    createSubscriptionPlan(body: {
+        planName: string;
+        displayName: string;
+        description?: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        isActive?: boolean;
+        sortOrder?: number;
+    }): Promise<{
+        description: string | null;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        planName: string;
+        displayName: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        sortOrder: number;
+    }>;
     getSubscriptionPlan(id: number): Promise<{
         description: string | null;
         id: number;
@@ -317,7 +349,23 @@ export declare class AdminController {
         totalTickets: number;
         sortOrder: number;
     } | null>;
-    updateSubscriptionPlan(id: number, body: any): Promise<{
+    updateSubscriptionPlan(id: number, body: Record<string, unknown>): Promise<{
+        description: string | null;
+        id: number;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        planName: string;
+        displayName: string;
+        originalPrice: number;
+        vat: number;
+        totalPrice: number;
+        baseTickets: number;
+        bonusTickets: number;
+        totalTickets: number;
+        sortOrder: number;
+    }>;
+    deleteSubscriptionPlan(id: number): Promise<{
         description: string | null;
         id: number;
         isActive: boolean;
@@ -413,6 +461,12 @@ export declare class AdminController {
         margin: number;
         activeSubscribers: number;
         avgRevenuePerUser: number;
+        subscriptionByPlan: {
+            planName: string;
+            count: number;
+            revenue: number;
+        }[];
+        singlePurchaseCount: number;
         rows: {
             period: string;
             revenue: number;

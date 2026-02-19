@@ -42,8 +42,8 @@ export declare class PointsController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.PointStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.PointStatus;
             amount: number;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionType: import("@prisma/client").$Enums.PointTransactionType;
@@ -77,8 +77,8 @@ export declare class PointsController {
             id: number;
             createdAt: Date;
             updatedAt: Date;
-            status: import("@prisma/client").$Enums.PointStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.PointStatus;
             amount: number;
             metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionType: import("@prisma/client").$Enums.PointTransactionType;
@@ -94,8 +94,8 @@ export declare class PointsController {
         id: number;
         createdAt: Date;
         updatedAt: Date;
-        status: import("@prisma/client").$Enums.PointStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.PointStatus;
         amount: number;
         metadata: import("@prisma/client/runtime/client").JsonValue | null;
         transactionType: import("@prisma/client").$Enums.PointTransactionType;

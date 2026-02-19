@@ -36,7 +36,7 @@ export default function RequireLogin({
 
   return (
     <div className={`space-y-3 ${className}`.trim()}>
-      <p className='text-text-secondary text-sm'>
+      <p className='text-text-secondary text-[16px] leading-relaxed'>
         <Link href={routes.auth.login} className='link-primary'>
           {linkText}
         </Link>

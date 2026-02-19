@@ -76,3 +76,36 @@ export class ChangePasswordDto {
   @MinLength(6)
   newPassword: string;
 }
+
+/** 비밀번호 찾기 요청 */
+export class ForgotPasswordDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail({}, { message: '올바른 이메일 형식이 아닙니다' })
+  email: string;
+}
+
+/** 비밀번호 재설정 요청 */
+export class ResetPasswordDto {
+  @ApiProperty({ description: 'forgot-password에서 발급받은 토큰' })
+  @IsString()
+  token: string;
+
+  @ApiProperty({ example: 'newPassword123' })
+  @IsString()
+  @MinLength(6, { message: '비밀번호는 6자 이상이어야 합니다' })
+  newPassword: string;
+}
+
+/** 이메일 인증 요청 */
+export class VerifyEmailDto {
+  @ApiProperty({ description: '인증 메일의 토큰' })
+  @IsString()
+  token: string;
+}
+
+/** 인증 메일 재발송 요청 */
+export class ResendVerificationDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail({}, { message: '올바른 이메일 형식이 아닙니다' })
+  email: string;
+}

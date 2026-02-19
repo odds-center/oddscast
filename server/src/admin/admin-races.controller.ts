@@ -1,8 +1,10 @@
 import {
   Controller,
   Get,
+  Patch,
   Param,
   Query,
+  Body,
   UseGuards,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -12,6 +14,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { RacesService } from '../races/races.service';
+import { UpdateRaceDto } from '../races/dto/race.dto';
 
 /**
  * Admin 전용 Races API — /api/admin/races/*
@@ -27,7 +30,7 @@ export class AdminRacesController {
 
   @Get()
   @ApiOperation({ summary: '[Admin] 경주 목록 조회' })
-  findAll(@Query() filters: any) {
+  findAll(@Query() filters: Record<string, unknown>) {
     return this.racesService.findAll(filters);
   }
 
@@ -35,5 +38,14 @@ export class AdminRacesController {
   @ApiOperation({ summary: '[Admin] 경주 상세 조회' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.findOne(id);
+  }
+
+  @Patch(':id')
+  @ApiOperation({ summary: '[Admin] 경주 수정' })
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRaceDto,
+  ) {
+    return this.racesService.update(id, dto);
   }
 }

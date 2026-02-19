@@ -8,8 +8,8 @@ export declare class PaymentsController {
         billing: {
             id: number;
             createdAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.PaymentStatus;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -22,8 +22,8 @@ export declare class PaymentsController {
         billing: {
             id: number;
             createdAt: Date;
-            status: import("@prisma/client").$Enums.PaymentStatus;
             userId: number;
+            status: import("@prisma/client").$Enums.PaymentStatus;
             amount: number;
             pgTransactionId: string | null;
             billingDate: Date;
@@ -34,8 +34,8 @@ export declare class PaymentsController {
     getHistory(user: JwtPayload): Promise<{
         id: number;
         createdAt: Date;
-        status: import("@prisma/client").$Enums.PaymentStatus;
         userId: number;
+        status: import("@prisma/client").$Enums.PaymentStatus;
         amount: number;
         pgTransactionId: string | null;
         billingDate: Date;

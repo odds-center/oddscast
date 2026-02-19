@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import PageLoading from '@/components/common/PageLoading';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { useAuth } from '@/lib/hooks/useAuth';
@@ -168,7 +169,7 @@ export default function SettingsPage() {
 
           <Card title='시스템 설정'>
             {isLoading ? (
-              <div className='py-4'>로딩 중...</div>
+              <PageLoading label='설정을 불러오는 중...' padding='md' />
             ) : (
               <form
                 onSubmit={handleSubmit((d) => updateMutation.mutate(d))}

@@ -17,6 +17,10 @@ import {
   GoogleAuthDto,
   UpdateProfileDto,
   ChangePasswordDto,
+  ForgotPasswordDto,
+  ResetPasswordDto,
+  VerifyEmailDto,
+  ResendVerificationDto,
 } from './dto/auth.dto';
 import {
   CurrentUser,
@@ -119,26 +123,26 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: '비밀번호 찾기' })
-  forgotPassword(@Body() _body: { email: string }) {
-    return { message: '비밀번호 재설정 이메일이 발송되었습니다.' };
+  forgotPassword(@Body() dto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(dto.email);
   }
 
   @Post('reset-password')
   @ApiOperation({ summary: '비밀번호 재설정' })
-  resetPassword(@Body() _body: { token: string; newPassword: string }) {
-    return { message: '비밀번호가 재설정되었습니다.' };
+  resetPassword(@Body() dto: ResetPasswordDto) {
+    return this.authService.resetPassword(dto.token, dto.newPassword);
   }
 
   @Post('verify-email')
   @ApiOperation({ summary: '이메일 인증' })
-  verifyEmail(@Body() _body: { token: string }) {
-    return { message: '이메일이 인증되었습니다.' };
+  verifyEmail(@Body() dto: VerifyEmailDto) {
+    return this.authService.verifyEmail(dto.token);
   }
 
   @Post('resend-verification')
   @ApiOperation({ summary: '인증 메일 재발송' })
-  resendVerification(@Body() _body: { email: string }) {
-    return { message: '인증 메일이 재발송되었습니다.' };
+  resendVerification(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerification(dto.email);
   }
 
   @Delete('account')

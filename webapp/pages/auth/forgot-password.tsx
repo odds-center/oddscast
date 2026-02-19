@@ -17,19 +17,21 @@ type ForgotPasswordForm = {
 
 export default function ForgotPasswordPage() {
   const [sent, setSent] = useState(false);
+  const [submittedEmail, setSubmittedEmail] = useState('');
 
-  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<ForgotPasswordForm>();
+  const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<ForgotPasswordForm>();
 
   const mutation = useMutation({
     mutationFn: (em: string) => AuthApi.forgotPassword(em),
-    onSuccess: () => setSent(true),
+    onSuccess: (_, email) => {
+      setSent(true);
+      setSubmittedEmail(email);
+    },
   });
 
   const onSubmit = (data: ForgotPasswordForm) => {
     mutation.mutate(data.email);
   };
-
-  const email = watch('email', '');
 
   return (
     <Layout title='GOLDEN RACE'>
@@ -40,7 +42,7 @@ export default function ForgotPasswordPage() {
               이메일을 확인해주세요.
             </p>
             <p className='text-text-secondary text-sm'>
-              {email}로 비밀번호 재설정 링크를 발송했습니다. 링크를 클릭하여 새 비밀번호를 설정하세요.
+              {submittedEmail}로 비밀번호 재설정 링크를 발송했습니다. 링크를 클릭하여 새 비밀번호를 설정하세요.
             </p>
             <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 mt-4'>
               <Icon name='LogIn' size={18} />

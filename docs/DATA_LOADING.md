@@ -1,5 +1,21 @@
 # 데이터 적재 가이드
 
+## 경마 시행일 데이터 출처 (공공데이터)
+
+**경마 시행일/일정 데이터는 공공데이터로 제공됩니다.**
+
+| 출처 | API/데이터셋 | 용도 |
+|------|--------------|------|
+| [공공데이터포털 – 한국마사회 경주계획표](https://www.data.go.kr/data/15056499/openapi.do) | **API72_2** `racePlan_2` | 서울·부산경남·제주 시행 예정 경주계획 (년·월·일 조회) |
+| [공공데이터포털 – 한국마사회 대상경주 연간계획](https://www.data.go.kr/data/15059482/openapi.do) | 연간계획 API | 연간 시행계획 (연도 단위 조회 시 활용 가능) |
+| [공공데이터포털 – 한국마사회 AI학습용 경주계획](https://www.data.go.kr/data/15143802/openapi.do) | AI학습용 경주계획 | 경마장·경주일자·경주번호 등 상세 |
+
+- **활용 방법**: [공공데이터포털](https://www.data.go.kr/) 로그인 → "한국마사회" 검색 → 해당 API 활용신청 → ServiceKey 발급 후 `server/.env`의 `KRA_SERVICE_KEY`에 설정.
+- **본 프로젝트**: 시행일 화면(`/races/schedule`)은 위 **API72_2 경주계획표**를 Admin/Cron으로 동기화해 DB에 적재한 `Race` 데이터를 집계해 표시합니다. 즉, 공공데이터 → 서버 DB → 달력 UI 순입니다.
+- **영천** 등 추가 경마장 코드는 KRA 공개 범위에 따라 API72_2 파라미터(`meet`) 또는 별도 연간계획 API 명세를 확인하면 됩니다.
+
+---
+
 ## 출전마가 보이지 않을 때
 
 웹앱 경주 상세(`/races/[id]`)에서 **출전마 정보가 없습니다. KRA 출전표 적재 후 표시됩니다**가 뜨면:
@@ -27,6 +43,7 @@
 | API | 설명 |
 |-----|------|
 | `POST /api/admin/kra/sync/schedule` | 미래 스케줄 전체 적재 (오늘~1년 내 금·토·일, 경주계획표+출전표) |
+| `POST /api/admin/kra/sync/schedule?year=YYYY` | 해당 연도 전체(1~12월) 경주계획표만 적재 (예: 2026년 시행일 달력용, API72_2 월별 12회 호출) |
 | `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 해당 날짜 적재 (경주계획표→출전표) |
 | `POST /api/admin/kra/sync/results` | 과거 1년 결과 적재 (금·토·일) |
 | `POST /api/admin/kra/sync/results?date=YYYYMMDD` | 해당 날짜 경주 결과만 적재 |

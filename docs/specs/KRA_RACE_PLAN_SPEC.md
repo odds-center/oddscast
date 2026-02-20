@@ -24,7 +24,8 @@
 
 요청 파라미터로 시행경마장구분(meet), 경주년도(rc_year), 경주년월(rc_month), 경주일자(rc_date)를 이용하여 자료를 조회할 수 있습니다.
 
-> **참고**: 경주년도·경주년월·경주일자 등을 모두 누락한 경우에는 경주일자 기준 **최근 한 달간**의 정보가 표출됩니다.
+> **참고**: 경주년도·경주년월·경주일자 등을 모두 누락한 경우에는 경주일자 기준 **최근 한 달간**의 정보가 표출됩니다.  
+> **연도 전체 조회**: 명세상 `rc_year`만 넣었을 때 연도 전체가 한 번에 반환되는지는 미정. **확실한 방법**은 `rc_year` + `rc_month`(YYYYMM)로 **1~12월 각각 호출**하는 것. (예: 2026년 전체 → rc_year=2026, rc_month=202601 … 202612, meet 생략 시 해당 월 전 경마장 데이터 한 번에 조회.)
 
 | 항목명 (Key)   | 항목명 (국문)     | 필수 여부 | 타입   | 샘플 데이터 | 설명                           |
 | :------------- | :---------------- | :-------: | :----- | :---------- | :----------------------------- |
@@ -118,9 +119,10 @@ http://apis.data.go.kr/B551015/API72_2/racePlan_2?serviceKey=[인증키]&meet=1&
 
 ### 사용처
 
-- `server/src/kra/kra.service.ts` — `fetchRacePlanSchedule(date)`
+- `server/src/kra/kra.service.ts` — `fetchRacePlanSchedule(date)` (일자별), `fetchRacePlanScheduleByYearMonth(year, month)` (연·월별), `fetchRacePlanScheduleForYear(year)` (연도 전체, 월별 12회 호출)
 - `syncUpcomingSchedules()` — 오늘~1년 내 금·토·일 전체 Race 적재
 - `syncScheduleForDate(date)` — Admin 지정 날짜 적재
+- **Admin** `POST /api/admin/kra/sync/schedule?year=2026` — 해당 연도(1~12월) 경주계획표만 적재 (시행일 달력용)
 - Cron `syncFutureRacePlans` — 매주 월 03:00
 - Cron `syncWeeklySchedule` — 수·목 18:00 (주말 선적재)
 

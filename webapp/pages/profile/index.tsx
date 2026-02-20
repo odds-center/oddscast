@@ -5,10 +5,12 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import MenuList from '@/components/page/MenuList';
 import DataFetchState from '@/components/page/DataFetchState';
+import LegalFooter from '@/components/page/LegalFooter';
 import RequireLogin from '@/components/page/RequireLogin';
 import Dropdown from '@/components/ui/Dropdown';
 import { Tooltip } from '@/components/ui';
 import PointApi from '@/lib/api/pointApi';
+import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
@@ -17,10 +19,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const _user = useAuthStore((s) => s.user);
-  void _user; // store 구독 유지
+  const storeUser = useAuthStore((s) => s.user);
   const [purchaseQty, setPurchaseQty] = useState(1);
   const queryClient = useQueryClient();
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => AuthApi.getCurrentUser(),
+    enabled: isLoggedIn,
+  });
+  const displayName =
+    (currentUser ?? storeUser) && typeof (currentUser ?? storeUser) === 'object'
+      ? ((currentUser ?? storeUser) as { nickname?: string; name?: string }).nickname ||
+        ((currentUser ?? storeUser) as { nickname?: string; name?: string }).name ||
+        '회원'
+      : '회원';
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['points', 'balance'],
@@ -61,8 +74,11 @@ export default function Profile() {
   if (!isLoggedIn) {
     return (
       <Layout title='GOLDEN RACE'>
-        <CompactPageTitle title='내 정보' backHref={routes.home} />
-        <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
+        <div>
+          <CompactPageTitle title='내 정보' backHref={routes.home} />
+          <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
+          <LegalFooter />
+        </div>
       </Layout>
     );
   }
@@ -74,8 +90,10 @@ export default function Profile() {
   const isLoading =
     balanceLoading || ticketPriceLoading || ticketBalanceLoading || subscriptionLoading;
 
+  const ticketsCount = ticketBalance?.availableTickets ?? 0;
+
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='내 정보 | GOLDEN RACE'>
       <div>
         <CompactPageTitle title='내 정보' backHref={routes.home} />
         <DataFetchState
@@ -84,13 +102,37 @@ export default function Profile() {
           loadingLabel='정보를 불러오는 중...'
         >
           <div className='space-y-6'>
-            <SectionCard title='예측권' icon='Ticket' description='경주별 AI 분석을 열람할 때 1장씩 사용됩니다'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-stone-800 tracking-tight'>
-                {ticketBalance?.availableTickets ?? 0}장
-              </p>
+            {/* 인사 + 요약 */}
+            <div className='rounded-xl bg-white border border-stone-200 p-4'>
+              <p className='text-stone-600 text-sm'>안녕하세요</p>
+              <p className='text-lg font-semibold text-foreground mt-0.5'>{displayName}님</p>
+              <div className='flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-100'>
+                <div>
+                  <p className='text-stone-500 text-xs'>예측권</p>
+                  <p className='text-xl font-bold text-stone-800'>{ticketsCount}장</p>
+                </div>
+                <div>
+                  <p className='text-stone-500 text-xs'>포인트</p>
+                  <p className='text-xl font-bold text-stone-800'>{points.toLocaleString()}pt</p>
+                </div>
+                <div>
+                  <p className='text-stone-500 text-xs'>구독</p>
+                  <p className='text-base font-semibold'>
+                    {subscription?.isActive ? (
+                      <span className='text-primary'>{subscription.planId}</span>
+                    ) : (
+                      <span className='text-stone-400'>비활성</span>
+                    )}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <SectionCard title='예측권' icon='Ticket' description='경주별 AI 분석 열람 시 1장 사용'>
+              <p className='text-2xl font-bold text-stone-800 tracking-tight'>{ticketsCount}장</p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
-                AI가 분석한 마별 점수, 7개 승식 추천 조합을 확인하려면 예측권이 필요합니다.
-                <Tooltip content='포인트로 구매하거나, 구독 플랜을 이용하면 매달 자동 지급됩니다' inline> 받는 방법</Tooltip>
+                AI 마별 점수·승식 추천을 보려면 예측권이 필요합니다.
+                <Tooltip content='포인트 구매 또는 구독 시 매달 자동 지급' inline> 받는 방법</Tooltip>
               </p>
             </SectionCard>
 
@@ -107,68 +149,71 @@ export default function Profile() {
               </SectionCard>
             )}
 
-            <SectionCard title='포인트' icon='Gem' description='예측권 구매에 사용하는 앱 내 재화'>
-              <p className='text-3xl sm:text-[2rem] font-bold text-stone-800 tracking-tight'>{points.toLocaleString()}pt</p>
+            <SectionCard title='포인트' icon='Gem' description='예측권 구매 등에 사용'>
+              <p className='text-2xl font-bold text-stone-800 tracking-tight'>{points.toLocaleString()}pt</p>
               <p className='text-text-secondary text-sm mt-2 leading-relaxed'>
-                프로모션, 이벤트, 구독 등으로 포인트를 받을 수 있습니다.
-                <Tooltip content='예측권 1장 = 포인트로 구매 가능. 구독 플랜에 따라 보너스 포인트도 지급됩니다' inline> 사용 방법</Tooltip>
+                이벤트·구독 등으로 적립됩니다.
+                <Tooltip content='예측권 구매, 구독 시 보너스 지급' inline> 사용</Tooltip>
               </p>
             </SectionCard>
 
             <SectionCard title='포인트로 예측권 구매' icon='CreditCard'>
-          <p className='text-text-secondary text-sm sm:text-[16px] mb-3 leading-relaxed'>
-            1장 = {perTicket.toLocaleString()}pt (현금 구매와 별도 가격)
-          </p>
-          <div className='flex flex-wrap items-center gap-3'>
-            <Dropdown<number>
-              options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: `${n}장` }))}
-              value={purchaseQty}
-              onChange={setPurchaseQty}
-              placeholder='수량 선택'
-              className='w-[120px] shrink-0'
-            />
-            <span className='text-text-secondary text-sm'>
-              = {(perTicket * purchaseQty).toLocaleString()}pt
-            </span>
-            <button
-              onClick={handlePurchase}
-              disabled={!canPurchase || purchaseMutation.isPending}
-              className='btn-primary px-4 py-2 disabled:opacity-50 flex items-center gap-2'
-            >
-              {purchaseMutation.isPending ? (
-                <>
-                  <Icon name='Loader2' size={16} className='animate-spin' />
-                  처리 중...
-                </>
-              ) : (
-                '구매'
+              <p className='text-text-secondary text-sm sm:text-[16px] mb-3 leading-relaxed'>
+                1장 = {perTicket.toLocaleString()}pt
+              </p>
+              <div className='flex flex-wrap items-center gap-3'>
+                <Dropdown<number>
+                  options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: `${n}장` }))}
+                  value={purchaseQty}
+                  onChange={setPurchaseQty}
+                  placeholder='수량 선택'
+                  className='w-[120px] shrink-0'
+                />
+                <span className='text-text-secondary text-sm'>
+                  = {(perTicket * purchaseQty).toLocaleString()}pt
+                </span>
+                <button
+                  onClick={handlePurchase}
+                  disabled={!canPurchase || purchaseMutation.isPending}
+                  className='btn-primary px-4 py-2 disabled:opacity-50 flex items-center gap-2'
+                >
+                  {purchaseMutation.isPending ? (
+                    <>
+                      <Icon name='Loader2' size={16} className='animate-spin' />
+                      처리 중...
+                    </>
+                  ) : (
+                    '구매'
+                  )}
+                </button>
+              </div>
+              {!canPurchase && points > 0 && (
+                <p className='msg-warning mt-2'>
+                  포인트 부족 (필요 {(perTicket * purchaseQty).toLocaleString()}pt, 보유 {points.toLocaleString()}pt)
+                </p>
               )}
-            </button>
-          </div>
-          {!canPurchase && points > 0 && (
-            <p className='msg-warning mt-2'>
-              포인트가 부족합니다 (필요: {(perTicket * purchaseQty).toLocaleString()}pt, 보유: {points.toLocaleString()}pt)
-            </p>
-          )}
-          {purchaseMutation.isSuccess && (
-            <p className='msg-success mt-2'>
-              예측권 {purchaseMutation.data?.tickets?.length ?? 0}장 구매 완료!
-            </p>
-          )}
+              {purchaseMutation.isSuccess && (
+                <p className='msg-success mt-2'>
+                  예측권 {purchaseMutation.data?.tickets?.length ?? 0}장 구매 완료
+                </p>
+              )}
             </SectionCard>
 
             <MenuList
               title='메뉴'
               items={[
                 { href: routes.profile.edit, icon: 'User', label: '프로필 수정' },
-                { href: routes.ranking, icon: 'Medal', label: '랭킹' },
                 { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독 플랜' },
                 { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
                 { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
+                { href: routes.mypage.matrixTicketPurchase, icon: 'CreditCard', label: '종합예측권 구매' },
+                { href: routes.ranking, icon: 'Medal', label: '랭킹' },
                 { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />
+
+            <LegalFooter />
           </div>
         </DataFetchState>
       </div>

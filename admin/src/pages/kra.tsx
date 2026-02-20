@@ -84,14 +84,26 @@ export default function KraPage() {
   });
   const [meetFilter, setMeetFilter] = useState('');
   const [logEndpointFilter, setLogEndpointFilter] = useState('');
+  const [scheduleYear, setScheduleYear] = useState(() => new Date().getFullYear());
 
   const syncScheduleMutation = useMutation({
-    mutationFn: (date?: string) =>
-      adminKraApi.syncSchedule(date ? toYyyyMmDd(date) : undefined),
+    mutationFn: (params?: { date?: string; year?: number }) =>
+      adminKraApi.syncSchedule(
+        params?.year != null
+          ? { year: params.year }
+          : params?.date
+            ? { date: toYyyyMmDd(params.date) }
+            : undefined,
+      ),
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       const msg = (res as { message?: string })?.message;
-      toast.success(msg ?? '출전표 동기화 완료 (경주 + 출전마 정보)');
+      const data = res as { races?: number; monthsProcessed?: number };
+      if (data?.monthsProcessed != null) {
+        toast.success(msg ?? `${data.races ?? 0}건 경주계획표 적재 완료 (${data.monthsProcessed}개월)`);
+      } else {
+        toast.success(msg ?? '출전표 동기화 완료 (경주 + 출전마 정보)');
+      }
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
@@ -298,7 +310,7 @@ export default function KraPage() {
               <div className='flex flex-wrap items-center gap-3'>
                 <Button
                   variant='primary'
-                  onClick={() => syncScheduleMutation.mutate(syncDate)}
+                  onClick={() => syncScheduleMutation.mutate({ date: syncDate })}
                   disabled={isAnyPending}
                   isLoading={syncScheduleMutation.isPending}
                 >
@@ -322,6 +334,30 @@ export default function KraPage() {
                 </Button>
                 <span className='text-sm text-gray-500'>
                   오늘부터 1년 내 금·토·일 경주 전체 적재 (소요시간: 수분)
+                </span>
+              </div>
+              <hr className='border-gray-200' />
+              <div className='flex flex-wrap items-center gap-3'>
+                <label className='text-sm text-gray-600'>연도</label>
+                <input
+                  type='number'
+                  min={2020}
+                  max={2030}
+                  value={scheduleYear}
+                  onChange={(e) => setScheduleYear(parseInt(e.target.value, 10) || new Date().getFullYear())}
+                  className='w-20 px-2 py-1.5 border border-gray-300 rounded text-sm'
+                />
+                <Button
+                  variant='secondary'
+                  onClick={() => syncScheduleMutation.mutate({ year: scheduleYear })}
+                  disabled={isAnyPending}
+                  isLoading={syncScheduleMutation.isPending}
+                >
+                  <AdminIcon icon={Calendar} className='w-4 h-4 mr-1.5 inline' />
+                  연도별 경주계획표 적재
+                </Button>
+                <span className='text-sm text-gray-500'>
+                  해당 연도 1~12월 시행일만 적재 (웹앱 시행일 달력용, 출전표 미포함)
                 </span>
               </div>
             </div>

@@ -21,6 +21,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
 import { trackCTA } from '@/lib/analytics';
+import type { GetServerSideProps } from 'next';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
+import { serverGet } from '@/lib/api/serverFetch';
 
 type TabId = 'matrix' | 'commentary';
 
@@ -327,3 +330,25 @@ export default function PredictionMatrixPage() {
     </Layout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const query = context.query as Record<string, string | undefined>;
+  const dateFilter = query?.date ?? 'today';
+  const meetFilter = query?.meet ?? '';
+  const apiDate = getDateParam(dateFilter);
+  const apiDateStr = apiDate ?? new Date().toISOString().slice(0, 10);
+
+  const queryClient = new QueryClient();
+  try {
+    const params: Record<string, string> = {};
+    if (apiDateStr) params.date = apiDateStr;
+    if (meetFilter) params.meet = meetFilter;
+    await queryClient.prefetchQuery({
+      queryKey: ['predictions', 'matrix', dateFilter, meetFilter],
+      queryFn: () => serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix', { params }),
+    });
+  } catch {
+    // SSR 실패 시 클라이언트에서 fetch
+  }
+  return { props: { dehydratedState: dehydrate(queryClient) } };
+};

@@ -440,9 +440,20 @@ export class AdminKraApi {
     }
   }
 
-  static async syncSchedule(date?: string): Promise<any> {
+  /**
+   * 경주계획표+출전표 동기화.
+   * year 지정 시 해당 연도 전체(1~12월) 경주계획표만 적재(시행일 달력용).
+   * date 지정 시 해당일 경주계획표→출전표. 둘 다 미지정 시 오늘~1년 내 금·토·일 전체.
+   * @param params - { date?: string, year?: number } 또는 레거시로 date 문자열만 전달 가능
+   */
+  static async syncSchedule(params?: { date?: string; year?: number } | string): Promise<any> {
     try {
-      const url = date ? `/kra/sync/schedule?date=${date}` : '/kra/sync/schedule';
+      const search = new URLSearchParams();
+      const year = typeof params === 'object' && params?.year != null && !Number.isNaN(params.year) ? params.year : undefined;
+      const date = typeof params === 'string' ? params : (typeof params === 'object' && params?.date ? params.date : undefined);
+      if (year != null) search.set('year', String(year));
+      else if (date) search.set('date', date);
+      const url = search.toString() ? `/kra/sync/schedule?${search.toString()}` : '/kra/sync/schedule';
       const response = await axiosInstance.post(url, {}, { timeout: 600_000 });
       return handleApiResponse(response);
     } catch (error) {

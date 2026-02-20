@@ -19,7 +19,7 @@ export default function RankingPreviewSection() {
     queryFn: () => RankingApi.getRankings({ limit: 5 }),
   });
 
-  const items = data ?? [];
+  const items = Array.isArray(data) ? data : ((data as { data?: unknown[] })?.data ?? []);
 
   return (
     <HomeSection

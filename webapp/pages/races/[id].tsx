@@ -1,6 +1,9 @@
 import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { GetServerSideProps } from 'next';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
+import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import { Card } from '@/components/ui';
@@ -862,3 +865,19 @@ function PredictionLockedView({
     </div>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const id = context.params?.id as string | undefined;
+  const queryClient = new QueryClient();
+  if (id) {
+    try {
+      await queryClient.prefetchQuery({
+        queryKey: ['race', id],
+        queryFn: () => serverGet<unknown>(`/races/${id}`),
+      });
+    } catch {
+      // SSR 실패 시 클라이언트에서 fetch
+    }
+  }
+  return { props: { dehydratedState: dehydrate(queryClient) } };
+};

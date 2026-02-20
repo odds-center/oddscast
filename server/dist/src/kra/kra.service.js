@@ -547,6 +547,93 @@ let KraService = KraService_1 = class KraService {
         }
         return { races: totalRaces };
     }
+    async fetchRacePlanScheduleByYearMonth(year, month) {
+        if (!this.ensureServiceKey()) {
+            return { races: 0 };
+        }
+        const rcYear = String(year);
+        const rcMonth = `${year}${String(month).padStart(2, '0')}`;
+        const baseUrl = await this.resolveBaseUrl();
+        const url = `${baseUrl}/API72_2/racePlan_2`;
+        let totalRaces = 0;
+        const numOfRows = 500;
+        let pageNo = 1;
+        for (;;) {
+            try {
+                const params = {
+                    serviceKey: decodeURIComponent(this.serviceKey),
+                    rc_year: rcYear,
+                    rc_month: rcMonth,
+                    numOfRows,
+                    pageNo,
+                    _type: 'json',
+                };
+                const response = await (0, rxjs_1.firstValueFrom)(this.httpService.get(url, { params }));
+                let items = [];
+                const body = response.data?.response?.body;
+                const bodyItems = body?.items;
+                if (bodyItems) {
+                    if (Array.isArray(bodyItems)) {
+                        items = bodyItems;
+                    }
+                    else if (bodyItems.item) {
+                        const raw = bodyItems.item;
+                        items = Array.isArray(raw) ? raw : [raw];
+                    }
+                }
+                for (const item of items) {
+                    const v = (key) => {
+                        const x = item[key] ?? item[key.replace(/([A-Z])/g, '_$1').toLowerCase()];
+                        return x != null ? String(x) : null;
+                    };
+                    const rcNo = v('rcNo') || v('rc_no') || '';
+                    const rcDateRaw = v('rcDate') ?? v('rc_date');
+                    if (!rcNo || !rcDateRaw)
+                        continue;
+                    const rcDate = this.normalizeToYyyyMmDd(rcDateRaw);
+                    const meetRaw = v('meet') ?? '';
+                    const meetName = (0, constants_1.toKraMeetName)(meetRaw) || '서울';
+                    const rcName = (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
+                    const rcDist = v('rcDist') ?? v('rc_dist');
+                    const rcDay = v('rcDay') ?? v('rc_day');
+                    const rank = v('rank') ?? v('rcGrade') ?? v('rc_grade');
+                    const prizeRaw = v('rcPrize') ?? v('rc_prize') ?? v('chaksun1') ?? v('chaksun_1') ?? '0';
+                    const prize = parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
+                    const stTime = v('rcStartTime') ?? v('rc_start_time') ?? v('stTime') ?? v('st_time');
+                    await this.prisma.race.upsert({
+                        where: { meet_rcDate_rcNo: { meet: meetName, rcDate, rcNo } },
+                        update: { rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, stTime: stTime ?? undefined },
+                        create: { meet: meetName, rcDate, rcNo, rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, meetName, stTime: stTime ?? undefined },
+                    });
+                    totalRaces++;
+                }
+                const totalCount = body?.totalCount != null ? Number(String(body.totalCount)) : 0;
+                if (items.length < numOfRows ||
+                    (totalCount > 0 && totalRaces >= totalCount)) {
+                    break;
+                }
+                pageNo++;
+                await this.delay(200);
+            }
+            catch (err) {
+                this.logger.warn(`[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} 실패`, err);
+                break;
+            }
+        }
+        return { races: totalRaces };
+    }
+    async fetchRacePlanScheduleForYear(year) {
+        if (!this.ensureServiceKey()) {
+            return { races: 0, monthsProcessed: 0 };
+        }
+        let totalRaces = 0;
+        for (let month = 1; month <= 12; month++) {
+            const result = await this.fetchRacePlanScheduleByYearMonth(year, month);
+            totalRaces += result.races;
+            await this.delay(300);
+        }
+        return { races: totalRaces, monthsProcessed: 12 };
+    }
     async syncUpcomingSchedules() {
         if (!this.ensureServiceKey()) {
             return {

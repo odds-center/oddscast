@@ -48,6 +48,9 @@ let RacesController = class RacesController {
         const dateTo = year && month ? `${year}${String(month).padStart(2, '0')}31` : undefined;
         return this.racesService.getSchedule({ dateFrom, dateTo });
     }
+    getScheduleDates(dateFrom, dateTo, meet) {
+        return this.racesService.getScheduleDates({ dateFrom, dateTo, meet });
+    }
     getStatistics(meet, date, month, year) {
         return this.racesService.getStatistics({ meet, date, month, year });
     }
@@ -142,6 +145,16 @@ __decorate([
     __metadata("design:paramtypes", [Number, Number]),
     __metadata("design:returntype", void 0)
 ], RacesController.prototype, "getCalendar", null);
+__decorate([
+    (0, common_1.Get)('schedule-dates'),
+    (0, swagger_1.ApiOperation)({ summary: '경마 시행일 목록 (날짜별·경마장별 경주 수)' }),
+    __param(0, (0, common_1.Query)('dateFrom')),
+    __param(1, (0, common_1.Query)('dateTo')),
+    __param(2, (0, common_1.Query)('meet')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String]),
+    __metadata("design:returntype", void 0)
+], RacesController.prototype, "getScheduleDates", null);
 __decorate([
     (0, common_1.Get)('statistics'),
     (0, swagger_1.ApiOperation)({ summary: '경주 통계' }),

@@ -120,6 +120,7 @@ ChangePasswordDto { oldPassword, newPassword }
 | `GET`    | `/races/today`            | 오늘 경주 목록   | 🔓   |                                                                        |
 | `GET`    | `/races/by-date/:date`    | 날짜별 경기 목록 | 🔓   | date: YYYYMMDD 또는 YYYY-MM-DD                                          |
 | `GET`    | `/races/schedule`         | 경주 일정 조회   | 🔓   | dateFrom, dateTo, meet                                                 |
+| `GET`    | `/races/schedule-dates`  | 경마 시행일 목록 | 🔓   | dateFrom, dateTo, meet — 날짜별·경마장별 경주 수 (KRA 동기화 DB 기준)   |
 | `GET`    | `/races/calendar`         | 경주 달력        | 🔓   | year, month                                                            |
 | `GET`    | `/races/search`           | 경주 검색        | 🔓   | q, meet, grade, distance, status, page, limit                          |
 | `GET`    | `/races/statistics`       | 경주 통계        | 🔓   | meet, date, month, year                                                |
@@ -509,7 +510,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | Method | Route                         | 설명                    | Auth        |
 | ------ | ----------------------------- | ----------------------- | ----------- |
 | `GET`  | `/admin/kra/sync-logs`       | KRA 동기화 로그 조회 (endpoint, rcDate, limit) | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/schedule`   | KRA 경주계획표(API72_2)+출전표 동기화. date 미지정: 1년 내 금·토·일 전체 | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/schedule`   | KRA 경주계획표+출전표. year=YYYY: 해당 연도 전체(월별 12회). date=YYYYMMDD: 해당일. 미지정: 1년 내 금·토·일 | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/results`    | KRA 경주 결과 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/details`    | KRA 상세/훈련정보 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/jockeys`    | KRA 기수 통산전적 동기화 (meet?: 1\|2\|3) | 🔐 Admin    |

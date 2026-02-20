@@ -7,6 +7,9 @@ import DataFetchState from '@/components/page/DataFetchState';
 import RankingApi from '@/lib/api/rankingApi';
 import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
+import type { GetServerSideProps } from 'next';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
+import { serverGet } from '@/lib/api/serverFetch';
 
 export default function Ranking() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -61,3 +64,19 @@ export default function Ranking() {
     </Layout>
   );
 }
+
+export const getServerSideProps: GetServerSideProps = async () => {
+  const queryClient = new QueryClient();
+  try {
+    await queryClient.prefetchQuery({
+      queryKey: ['rankings'],
+      queryFn: async () => {
+        const res = await serverGet<{ data?: unknown[] } | unknown[]>('/rankings', { params: { limit: 20 } });
+        return Array.isArray(res) ? res : (res?.data ?? []);
+      },
+    });
+  } catch {
+    // SSR 실패 시 클라이언트에서 fetch
+  }
+  return { props: { dehydratedState: dehydrate(queryClient) } };
+};

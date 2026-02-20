@@ -12,34 +12,34 @@ export declare class PredictionsService {
         predictions: ({
             race: {
                 id: number;
-                status: import("@prisma/client").$Enums.RaceStatus;
                 createdAt: Date;
                 updatedAt: Date;
                 rcName: string | null;
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
-                rcDay: string | null;
                 rcNo: string;
-                stTime: string | null;
                 rcDist: string | null;
                 rank: string | null;
                 rcCondition: string | null;
                 rcPrize: number | null;
                 weather: string | null;
                 track: string | null;
+                status: import("@prisma/client").$Enums.RaceStatus;
+                rcDay: string | null;
+                stTime: string | null;
             };
         } & {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             raceId: number;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
             previewApproved: boolean;
             accuracy: number | null;
-            status: import("@prisma/client").$Enums.PredictionStatus;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         total: number;
         page: number;
@@ -49,18 +49,18 @@ export declare class PredictionsService {
         race: {
             entries: {
                 id: number;
-                raceId: number;
                 hrNo: string;
                 hrName: string;
-                hrNameEn: string | null;
-                jkNo: string | null;
                 jkName: string;
-                jkNameEn: string | null;
-                trNo: string | null;
                 trName: string | null;
-                owNo: string | null;
                 owName: string | null;
                 wgBudam: number | null;
+                raceId: number;
+                hrNameEn: string | null;
+                jkNo: string | null;
+                jkNameEn: string | null;
+                trNo: string | null;
+                owNo: string | null;
                 rating: number | null;
                 chulNo: string | null;
                 dusu: number | null;
@@ -83,78 +83,78 @@ export declare class PredictionsService {
             }[];
         } & {
             id: number;
-            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
-            rcDay: string | null;
             rcNo: string;
-            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
             track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     create(dto: CreatePredictionDto): Promise<{
         race: {
             id: number;
-            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
-            rcDay: string | null;
             rcNo: string;
-            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
             track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     updateStatus(id: number, dto: UpdatePredictionStatusDto): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     getDashboard(): Promise<{
         total: number;
@@ -217,34 +217,34 @@ export declare class PredictionsService {
     }>;
     getAccuracyHistory(filters: AccuracyHistoryFilterDto): Promise<{
         id: number;
+        createdAt: Date;
         raceId: number;
         accuracy: number | null;
-        createdAt: Date;
     }[]>;
     getPreview(raceId: number): Promise<{
         id: number;
+        createdAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         scores: Prisma.JsonValue;
         analysis: string | null;
         preview: string | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
     } | null>;
     getByRace(raceId: number): Promise<({
         race: {
             entries: {
                 id: number;
-                raceId: number;
                 hrNo: string;
                 hrName: string;
-                hrNameEn: string | null;
-                jkNo: string | null;
                 jkName: string;
-                jkNameEn: string | null;
-                trNo: string | null;
                 trName: string | null;
-                owNo: string | null;
                 owName: string | null;
                 wgBudam: number | null;
+                raceId: number;
+                hrNameEn: string | null;
+                jkNo: string | null;
+                jkNameEn: string | null;
+                trNo: string | null;
+                owNo: string | null;
                 rating: number | null;
                 chulNo: string | null;
                 dusu: number | null;
@@ -267,51 +267,51 @@ export declare class PredictionsService {
             }[];
         } & {
             id: number;
-            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
-            rcDay: string | null;
             rcNo: string;
-            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
             track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }) | null>;
     getByRaceHistory(raceId: number): Promise<({
         race: {
             entries: {
                 id: number;
-                raceId: number;
                 hrNo: string;
                 hrName: string;
-                hrNameEn: string | null;
-                jkNo: string | null;
                 jkName: string;
-                jkNameEn: string | null;
-                trNo: string | null;
                 trName: string | null;
-                owNo: string | null;
                 owName: string | null;
                 wgBudam: number | null;
+                raceId: number;
+                hrNameEn: string | null;
+                jkNo: string | null;
+                jkNameEn: string | null;
+                trNo: string | null;
+                owNo: string | null;
                 rating: number | null;
                 chulNo: string | null;
                 dusu: number | null;
@@ -334,34 +334,34 @@ export declare class PredictionsService {
             }[];
         } & {
             id: number;
-            status: import("@prisma/client").$Enums.RaceStatus;
             createdAt: Date;
             updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
             rcDate: string;
-            rcDay: string | null;
             rcNo: string;
-            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
             rcPrize: number | null;
             weather: string | null;
             track: string | null;
+            status: import("@prisma/client").$Enums.RaceStatus;
+            rcDay: string | null;
+            stTime: string | null;
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getMatrix(date?: string, meet?: string): Promise<{
         raceMatrix: {
@@ -410,15 +410,15 @@ export declare class PredictionsService {
     }[]>;
     generatePrediction(raceId: number): Promise<{
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         raceId: number;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;
         previewApproved: boolean;
         accuracy: number | null;
-        status: import("@prisma/client").$Enums.PredictionStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     private fallbackHorseScoresFromEntries;
     private runPythonScript;

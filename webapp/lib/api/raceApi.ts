@@ -10,6 +10,12 @@ import type {
 import { RaceFilters } from '@/lib/types/race';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
+export interface ScheduleDateItem {
+  date: string;
+  meetCounts: Record<string, number>;
+  totalRaces: number;
+}
+
 export default class RaceApi {
   private static instance: RaceApi;
   private baseUrl = '/races';
@@ -208,6 +214,27 @@ export default class RaceApi {
         `/races/calendar?${params.toString()}`,
       );
       return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** 경마 시행일 목록 — 날짜별·경마장별 경주 수 (KRA 동기화 DB 기준) */
+  static async getScheduleDates(filters: {
+    dateFrom?: string;
+    dateTo?: string;
+    meet?: string;
+  }): Promise<ScheduleDateItem[]> {
+    try {
+      const params = new URLSearchParams();
+      if (filters.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters.dateTo) params.append('dateTo', filters.dateTo);
+      if (filters.meet) params.append('meet', filters.meet);
+      const response = await axiosInstance.get<ApiResponseDto<ScheduleDateItem[]>>(
+        `/races/schedule-dates?${params.toString()}`,
+      );
+      const data = handleApiResponse(response);
+      return Array.isArray(data) ? data : [];
     } catch (error) {
       throw handleApiError(error);
     }

@@ -85,8 +85,9 @@ export default function ProfileEditPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='프로필 수정 | GOLDEN RACE'>
         <div className='max-w-md mx-auto'>
+          <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
           <RequireLogin suffix='프로필을 수정할 수 있습니다.' />
         </div>
       </Layout>
@@ -94,9 +95,12 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='프로필 수정 | GOLDEN RACE'>
       <div className='max-w-md mx-auto'>
         <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
+        <p className='text-text-tertiary text-sm mb-4 px-1'>
+          이름·닉네임과 비밀번호를 변경할 수 있습니다.
+        </p>
         <TabBar
           options={[
             { value: 'profile', label: '기본 정보' },

@@ -83,6 +83,16 @@ export class RacesController {
     return this.racesService.getSchedule({ dateFrom, dateTo });
   }
 
+  @Get('schedule-dates')
+  @ApiOperation({ summary: '경마 시행일 목록 (날짜별·경마장별 경주 수)' })
+  getScheduleDates(
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+    @Query('meet') meet?: string,
+  ) {
+    return this.racesService.getScheduleDates({ dateFrom, dateTo, meet });
+  }
+
   @Get('statistics')
   @ApiOperation({ summary: '경주 통계' })
   getStatistics(

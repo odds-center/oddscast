@@ -12,6 +12,9 @@ import type { RaceResult } from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate } from '@/lib/utils/format';
 import { useQuery } from '@tanstack/react-query';
+import type { GetServerSideProps } from 'next';
+import { QueryClient, dehydrate } from '@tanstack/react-query';
+import { serverGet } from '@/lib/api/serverFetch';
 
 interface TableResult {
   ord: string;
@@ -36,16 +39,7 @@ export default function Results() {
   const router = useRouter();
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
-  const dateFilter =
-    qDate === 'today'
-      ? 'today'
-      : qDate === 'yesterday'
-        ? 'yesterday'
-        : qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))
-          ? qDate.includes('-')
-            ? qDate
-            : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`
-          : '';
+  const dateFilter = parseDateFilter(qDate);
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
 
   const updateQuery = (updates: Record<string, string | number | undefined>) => {
@@ -262,3 +256,45 @@ export default function Results() {
     </Layout>
   );
 }
+
+function parseDateFilter(qDate: string | undefined): string {
+  if (qDate === 'today' || qDate === 'yesterday') return qDate;
+  if (qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))) {
+    return qDate.includes('-') ? qDate : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`;
+  }
+  return '';
+}
+
+function dateToParam(dateFilter: string): string | undefined {
+  if (dateFilter === 'today') return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  if (dateFilter === 'yesterday') {
+    const d = new Date();
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().slice(0, 10).replace(/-/g, '');
+  }
+  if (dateFilter) return dateFilter.replace(/-/g, '');
+  return undefined;
+}
+
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const query = context.query as Record<string, string | undefined>;
+  const qDate = query?.date;
+  const qMeet = query?.meet || '';
+  const dateFilter = parseDateFilter(qDate);
+  const page = Math.max(1, parseInt(String(query?.page ?? 1), 10) || 1);
+  const date = dateToParam(dateFilter);
+
+  const queryClient = new QueryClient();
+  try {
+    const params: Record<string, string | number> = { limit: 250, page };
+    if (date) params.date = date;
+    if (qMeet) params.meet = qMeet;
+    await queryClient.prefetchQuery({
+      queryKey: ['results', page, dateFilter, qMeet],
+      queryFn: () => serverGet<{ results?: unknown[]; total?: number; totalPages?: number }>('/results', { params }),
+    });
+  } catch {
+    // SSR 실패 시 클라이언트에서 fetch
+  }
+  return { props: { dehydratedState: dehydrate(queryClient) } };
+};

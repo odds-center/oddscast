@@ -140,6 +140,37 @@ let RacesService = class RacesService {
         });
         return (0, kra_serializer_1.serializeRaces)(races);
     }
+    async getScheduleDates(filters) {
+        const where = {};
+        if (filters.dateFrom && filters.dateTo) {
+            const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
+            const to = filters.dateTo.replace(/-/g, '').slice(0, 8);
+            where.rcDate = { gte: from, lte: to };
+        }
+        if (filters.meet)
+            where.meet = (0, constants_1.toKraMeetName)(filters.meet);
+        const rows = await this.prisma.race.groupBy({
+            by: ['rcDate', 'meet'],
+            where,
+            _count: { id: true },
+            orderBy: { rcDate: 'asc' },
+        });
+        const byDate = new Map();
+        for (const r of rows) {
+            const meetName = r.meet === '서울' ? '서울' : r.meet === '제주' ? '제주' : r.meet === '부산경남' ? '부산경남' : r.meet;
+            if (!byDate.has(r.rcDate))
+                byDate.set(r.rcDate, {});
+            const counts = byDate.get(r.rcDate);
+            counts[meetName] = (counts[meetName] ?? 0) + r._count.id;
+        }
+        return Array.from(byDate.entries())
+            .map(([date, meetCounts]) => ({
+            date,
+            meetCounts,
+            totalRaces: Object.values(meetCounts).reduce((a, b) => a + b, 0),
+        }))
+            .sort((a, b) => a.date.localeCompare(b.date));
+    }
     async getTodayRaces() {
         const today = (0, dayjs_1.default)().format('YYYYMMDD');
         return this.getRacesByDate(today);

@@ -45,6 +45,10 @@ import {
   Plus,
   Minus,
   ShoppingCart,
+  PanelLeft,
+  PanelBottom,
+  GripVertical,
+  Grip,
 } from 'lucide-react';
 
 /** 경주 아이콘 — 깃발(Flag) 사용 (경주 시작 신호) */
@@ -94,6 +98,10 @@ export const Icons = {
   Plus,
   Minus,
   ShoppingCart,
+  PanelLeft,
+  PanelBottom,
+  GripVertical,
+  Grip,
 } as const;
 
 export type IconName = keyof typeof Icons;

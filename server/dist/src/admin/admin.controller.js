@@ -39,8 +39,12 @@ let AdminController = AdminController_1 = class AdminController {
         this.singlePurchasesService = singlePurchasesService;
         this.predictionTicketsService = predictionTicketsService;
     }
-    async syncSchedule(date) {
+    async syncSchedule(date, year) {
         const norm = (s) => s.replace(/-/g, '').slice(0, 8);
+        const yearNum = year ? parseInt(year, 10) : 0;
+        if (!Number.isNaN(yearNum) && yearNum >= 2000 && yearNum <= 2100) {
+            return this.kraService.fetchRacePlanScheduleForYear(yearNum);
+        }
         if (date && norm(date)) {
             return this.kraService.syncScheduleForDate(norm(date));
         }
@@ -512,11 +516,12 @@ __decorate([
     (0, common_1.Post)('kra/sync/schedule'),
     (0, swagger_1.ApiOperation)({
         summary: '[Admin] KRA 경주 계획/출전표 동기화',
-        description: 'date 미지정 시 오늘~1년 내 미래 경주일(금·토·일) 전체 적재(경주계획표+출전표). date 지정 시 해당 날짜만 경주계획표→출전표 순으로 적재.',
+        description: 'year 지정 시 해당 연도 전체(1~12월) 경주계획표만 적재(API72_2 월별 12회). date 지정 시 해당 날짜만 경주계획표→출전표 순. 둘 다 미지정 시 오늘~1년 내 금·토·일 전체(경주계획표+출전표).',
     }),
     __param(0, (0, common_1.Query)('date')),
+    __param(1, (0, common_1.Query)('year')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "syncSchedule", null);
 __decorate([

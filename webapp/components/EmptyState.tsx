@@ -17,10 +17,10 @@ export default function EmptyState({
 }: EmptyStateProps) {
   return (
     <div
-      className={`flex flex-col items-center justify-center p-12 lg:p-20 text-center rounded-xl border border-border bg-card ${className}`}
+      className={`flex flex-col items-center justify-center p-8 lg:p-12 text-center rounded-xl border border-border bg-card ${className}`}
     >
-      <div className='mb-6 p-5 rounded-xl bg-stone-50 border border-stone-200'>
-        <Icon name={icon} size={48} className='text-stone-400' strokeWidth={2} />
+      <div className='mb-4 p-3 rounded-lg bg-stone-50 border border-stone-200'>
+        <Icon name={icon} size={28} className='text-stone-400' strokeWidth={2} />
       </div>
       <p className='font-display text-foreground font-bold text-xl sm:text-2xl leading-snug'>{title}</p>
       {description && <p className='text-text-secondary text-[16px] sm:text-base mt-3 max-w-md leading-relaxed'>{description}</p>}

@@ -62,6 +62,13 @@ export declare class KraService {
     fetchRacePlanSchedule(date: string): Promise<{
         races: number;
     }>;
+    fetchRacePlanScheduleByYearMonth(year: number, month: number): Promise<{
+        races: number;
+    }>;
+    fetchRacePlanScheduleForYear(year: number): Promise<{
+        races: number;
+        monthsProcessed: number;
+    }>;
     syncUpcomingSchedules(): Promise<{
         message: string;
         races: number;

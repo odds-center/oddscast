@@ -37,6 +37,7 @@ export const routes = {
   races: {
     index: '/',
     list: '/races',
+    schedule: '/races/schedule',
     detail: (id: string) => `/races/${id}`,
   },
 

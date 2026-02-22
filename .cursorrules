@@ -12,6 +12,9 @@
 ### 📋 서비스 명세 (기능 개발 시 우선 참조)
 - `docs/SERVICE_SPECIFICATION.md` — 서비스 개요, 제공 기능 총괄, 기능별 상세, 사용자 플로우, 구현 체크리스트
 
+### 🗺️ 기능 로드맵 (새 기능 기획 시 반드시 참조)
+- `docs/FEATURE_ROADMAP.md` — 단기/중기/장기 기능 계획, 우선순위 매트릭스, UX 개선 백로그, 비기능 우선순위
+
 ### 🏗️ 아키텍처 문서 (작업 전 반드시 읽기)
 - `docs/architecture/ARCHITECTURE.md` — 시스템 아키텍처, 데이터 흐름, 인증 플로우, 응답 포맷
 - `docs/architecture/DATABASE_SCHEMA.md` — Prisma 12개 모델, ERD, 필드 설명, Enum 목록
@@ -36,7 +39,7 @@
 
 | 작업 유형 | 반드시 읽어야 할 문서 |
 |-----------|----------------------|
-| **새 기능 기획/추가** | `SERVICE_SPECIFICATION.md` + `BUSINESS_LOGIC.md` |
+| **새 기능 기획/추가** | `FEATURE_ROADMAP.md` + `SERVICE_SPECIFICATION.md` + `BUSINESS_LOGIC.md` |
 | **서버 API 추가/수정** | `API_SPECIFICATION.md` + `ARCHITECTURE.md` |
 | **DB 스키마 변경** | `DATABASE_SCHEMA.md` + `BUSINESS_LOGIC.md` |
 | **모바일 API 호출 추가** | `API_SPECIFICATION.md` + `PROJECT_STRUCTURE.md` |

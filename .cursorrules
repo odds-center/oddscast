@@ -15,6 +15,9 @@
 ### 🗺️ 기능 로드맵 (새 기능 기획 시 반드시 참조)
 - `docs/FEATURE_ROADMAP.md` — 단기/중기/장기 기능 계획, 우선순위 매트릭스, UX 개선 백로그, 비기능 우선순위
 
+### 🚀 서버 배포 계획 (인프라·배포 작업 시 참조)
+- `docs/SERVER_DEPLOYMENT_PLAN.md` — AWS EC2 + PM2 + Nginx 배포 전략, 비용, CI/CD, 보안, 모니터링
+
 ### 🏗️ 아키텍처 문서 (작업 전 반드시 읽기)
 - `docs/architecture/ARCHITECTURE.md` — 시스템 아키텍처, 데이터 흐름, 인증 플로우, 응답 포맷
 - `docs/architecture/DATABASE_SCHEMA.md` — Prisma 12개 모델, ERD, 필드 설명, Enum 목록

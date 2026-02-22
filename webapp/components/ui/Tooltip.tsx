@@ -14,6 +14,8 @@ interface TooltipProps {
   position?: 'top' | 'bottom' | 'left' | 'right';
   /** Inline wrapping (set to true when applied to th, span, etc.) */
   inline?: boolean;
+  /** When true, do not render the default "?" trigger icon (use when child is already an icon) */
+  hideTriggerIcon?: boolean;
 }
 
 export default function Tooltip({
@@ -21,6 +23,7 @@ export default function Tooltip({
   children,
   position = 'top',
   inline = false,
+  hideTriggerIcon = false,
 }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
   const triggerRef = useRef<HTMLElement | null>(null);
@@ -67,12 +70,14 @@ export default function Tooltip({
         onBlur={() => setIsVisible(false)}
       >
         {children}
-        <span className='cursor-help inline-flex items-center ml-0.5 text-text-tertiary opacity-60 group-hover/tooltip:opacity-100 transition-opacity'>
-          <svg width='13' height='13' viewBox='0 0 16 16' fill='none' className='shrink-0'>
-            <circle cx='8' cy='8' r='7' stroke='currentColor' strokeWidth='1.5' />
-            <text x='8' y='12' textAnchor='middle' fill='currentColor' fontSize='10' fontWeight='600'>?</text>
-          </svg>
-        </span>
+        {!hideTriggerIcon && (
+          <span className='cursor-help inline-flex items-center ml-0.5 text-text-tertiary opacity-60 group-hover/tooltip:opacity-100 transition-opacity'>
+            <svg width='13' height='13' viewBox='0 0 16 16' fill='none' className='shrink-0'>
+              <circle cx='8' cy='8' r='7' stroke='currentColor' strokeWidth='1.5' />
+              <text x='8' y='12' textAnchor='middle' fill='currentColor' fontSize='10' fontWeight='600'>?</text>
+            </svg>
+          </span>
+        )}
       </Tag>
       {typeof document !== 'undefined' &&
         isVisible &&

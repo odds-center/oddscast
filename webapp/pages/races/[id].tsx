@@ -598,7 +598,7 @@ export default function RaceDetailPage() {
                               >
                                 <span className='inline-flex items-center gap-0.5'>
                                   {ordTypeLabel}
-                                  <Tooltip content={remarkTooltip} inline>
+                                  <Tooltip content={remarkTooltip} inline hideTriggerIcon>
                                     <span className='cursor-help inline-flex opacity-80 hover:opacity-100'>
                                       <Icon name='AlertCircle' size={12} />
                                     </span>

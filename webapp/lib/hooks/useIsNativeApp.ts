@@ -3,10 +3,10 @@
 import { useState, useEffect } from 'react';
 
 /**
- * Mobile WebView 내에서 로드되었는지 여부
- * 푸시 알림 토글은 native 앱에서만 노출
+ * Whether loaded inside Mobile WebView
+ * Push notification toggle is only shown in native app
  *
- * Mobile WebView가 injectedJavaScriptBeforeContentLoaded로 window.__IS_NATIVE_APP__=true 주입
+ * Mobile WebView injects window.__IS_NATIVE_APP__=true via injectedJavaScriptBeforeContentLoaded
  */
 declare global {
   interface Window {

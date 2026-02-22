@@ -17,7 +17,7 @@ export default function RefundPage() {
             본 정책은 Golden Race(이하 &quot;회사&quot;)가 제공하는 유료 서비스의 결제 및 환불에 관한 사항을 규정합니다. 「전자상거래 등에서의 소비자보호에 관한 법률」, 「콘텐츠산업 진흥법」 등을 준수합니다.
           </p>
 
-          {/* 1. 결제 정책 */}
+          {/* 1. Payment Policy */}
           <section>
             <h2 className='text-base font-semibold mb-2'>1. 결제 정책</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>1.1 구독 서비스</h3>
@@ -40,7 +40,7 @@ export default function RefundPage() {
             </p>
           </section>
 
-          {/* 2. 환불 정책 */}
+          {/* 2. Refund Policy */}
           <section>
             <h2 className='text-base font-semibold mb-2'>2. 환불 정책</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>2.1 구독 서비스 환불</h3>
@@ -90,7 +90,7 @@ export default function RefundPage() {
             </ol>
           </section>
 
-          {/* 3. 이용자 보호 */}
+          {/* 3. User Protection */}
           <section>
             <h2 className='text-base font-semibold mb-2'>3. 이용자 보호 (전자상거래법)</h2>
             <p className='text-text-secondary mb-2'>
@@ -103,7 +103,7 @@ export default function RefundPage() {
             </ul>
           </section>
 
-          {/* 4. 문의 */}
+          {/* 4. Contact */}
           <section>
             <h2 className='text-base font-semibold mb-2'>4. 문의처</h2>
             <ul className='list-disc list-inside text-text-secondary space-y-1'>

@@ -17,7 +17,7 @@ export default function PrivacyPage() {
             Golden Race(이하 &quot;회사&quot;)는 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하고 있습니다.
           </p>
 
-          {/* 제1조 총칙 */}
+          {/* Article 1: General Provisions */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제1조 (총칙)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제2조 개인정보 처리자 */}
+          {/* Article 2: Personal Information Processor */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제2조 (개인정보의 처리 책임자)</h2>
             <p className='text-text-secondary mb-2'>
@@ -40,7 +40,7 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 제3조 수집하는 개인정보 */}
+          {/* Article 3: Personal Information Collected */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제3조 (수집하는 개인정보의 항목 및 수집 방법)</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>1. 수집 항목</h3>
@@ -96,7 +96,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* 제4조 이용 목적 */}
+          {/* Article 4: Purpose of Use */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제4조 (개인정보의 처리 목적)</h2>
             <p className='text-text-secondary mb-2'>회사는 수집한 개인정보를 다음의 목적으로만 이용합니다.</p>
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* 제5조 보유 기간 */}
+          {/* Article 5: Retention Period */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제5조 (개인정보의 보유 및 이용 기간)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -126,7 +126,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제6조 제3자 제공 */}
+          {/* Article 6: Third-Party Disclosure */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제6조 (개인정보의 제3자 제공)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제7조 처리 위탁 */}
+          {/* Article 7: Processing Entrustment */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제7조 (개인정보 처리의 위탁)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -153,7 +153,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제8조 정보주체의 권리 */}
+          {/* Article 8: Rights of Data Subjects */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제8조 (정보주체의 권리·의무 및 행사 방법)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제9조 안전성 확보 조치 */}
+          {/* Article 9: Security Measures */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제9조 (개인정보의 안전성 확보 조치)</h2>
             <p className='text-text-secondary mb-2'>회사는 「개인정보 보호법」 제29조에 따라 다음과 같은 안전성 확보 조치를 하고 있습니다.</p>
@@ -177,7 +177,7 @@ export default function PrivacyPage() {
             </ul>
           </section>
 
-          {/* 제10조 파기 */}
+          {/* Article 10: Destruction */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제10조 (개인정보의 파기 절차 및 방법)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -188,7 +188,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제11조 쿠키 등 */}
+          {/* Article 11: Cookies, etc. */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제11조 (쿠키의 설치·운영 및 거부)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -198,7 +198,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 제12조 아동 */}
+          {/* Article 12: Children Under 14 */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제12조 (만 14세 미만 아동의 개인정보)</h2>
             <p className='text-text-secondary'>
@@ -206,7 +206,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* 제13조 방문 기록 */}
+          {/* Article 13: Access Logs */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제13조 (접속 로그 및 방문 기록)</h2>
             <p className='text-text-secondary'>
@@ -214,7 +214,7 @@ export default function PrivacyPage() {
             </p>
           </section>
 
-          {/* 제14조 정책 변경 */}
+          {/* Article 14: Policy Changes */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제14조 (개인정보처리방침의 변경)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -224,7 +224,7 @@ export default function PrivacyPage() {
             </ol>
           </section>
 
-          {/* 연락처 */}
+          {/* Contact */}
           <section>
             <h2 className='text-base font-semibold mb-2'>개인정보 관련 문의</h2>
             <p className='text-text-secondary'>

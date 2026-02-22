@@ -44,7 +44,7 @@ export default function MatrixTicketPurchasePage() {
         <RequireLogin />
       ) : (
         <div className='space-y-4 pb-8'>
-          {/* 상품 안내 */}
+          {/* Product information */}
           <SectionCard accent>
             <div className='flex items-start gap-3'>
               <div className='w-10 h-10 rounded bg-[rgba(146,112,42,0.1)] flex items-center justify-center shrink-0'>
@@ -74,7 +74,7 @@ export default function MatrixTicketPurchasePage() {
             </div>
           </SectionCard>
 
-          {/* 보유 현황 */}
+          {/* Current holdings */}
           <SectionCard title='보유 현황' icon='Ticket'>
             {balanceLoading ? (
               <p className='text-stone-400 text-sm'>로딩 중...</p>
@@ -93,7 +93,7 @@ export default function MatrixTicketPurchasePage() {
             )}
           </SectionCard>
 
-          {/* 구매 수량 선택 */}
+          {/* Purchase quantity selection */}
           <SectionCard title='구매 수량' icon='ShoppingCart'>
             <div className='flex items-center gap-3'>
               <button
@@ -122,7 +122,7 @@ export default function MatrixTicketPurchasePage() {
             </div>
           </SectionCard>
 
-          {/* 구매 버튼 */}
+          {/* Purchase button */}
           <button
             type='button'
             onClick={() => purchaseMutation.mutate(count)}
@@ -135,7 +135,7 @@ export default function MatrixTicketPurchasePage() {
               : `종합 예측권 ${count}장 구매 — ${totalPrice.toLocaleString()}원`}
           </button>
 
-          {/* 성공 메시지 */}
+          {/* Success message */}
           {purchaseSuccess && (
             <div className='msg-success text-sm flex items-center gap-2'>
               <Icon name='CheckCircle' size={16} />
@@ -143,14 +143,14 @@ export default function MatrixTicketPurchasePage() {
             </div>
           )}
 
-          {/* 에러 메시지 */}
+          {/* Error message */}
           {purchaseMutation.error && (
             <div className='msg-error text-sm'>
               {getErrorMessage(purchaseMutation.error)}
             </div>
           )}
 
-          {/* 안내사항 */}
+          {/* Notice */}
           <div className='bg-stone-50 rounded p-3 text-xs text-stone-500 space-y-1'>
             <p className='font-medium text-stone-600'>이용 안내</p>
             <p>• 종합 예측권 1장으로 해당 날짜의 전체 경주 AI 예상표를 열람할 수 있습니다.</p>
@@ -159,7 +159,7 @@ export default function MatrixTicketPurchasePage() {
             <p>• 구독 플랜(스탠다드 이상)에는 종합 예측권이 포함되어 있습니다.</p>
           </div>
 
-          {/* 종합 예상표로 이동 */}
+          {/* Go to matrix */}
           <Link
             href={routes.predictions.matrix}
             className='block text-center text-sm text-[#92702A] hover:underline'

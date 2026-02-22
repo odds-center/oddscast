@@ -18,8 +18,8 @@ interface DataFetchStateProps {
 }
 
 /**
- * 로딩 / 에러 / 빈 상태 / 콘텐츠 패턴 통합
- * 리스트 페이지에서 반복되는 패턴을 하나의 컴포넌트로 처리
+ * Unified loading / error / empty state / content pattern
+ * Handles repetitive patterns in list pages as a single component
  */
 export default function DataFetchState({
   isLoading,

@@ -2,7 +2,7 @@ import { axiosInstance, handleApiResponse, handleApiError } from '@/lib/api/axio
 import { ApiResponse } from '@/lib/types/api';
 
 /**
- * 구독 결제 요청 (서버 API 스펙)
+ * Subscription payment request (server API spec)
  * POST /payments/subscribe
  */
 export interface ProcessSubscriptionRequest {
@@ -11,21 +11,21 @@ export interface ProcessSubscriptionRequest {
 }
 
 /**
- * 구독 시작 요청 (Toss 연동 시 사용 - 카드 정보)
+ * Subscription start request (used for Toss integration - card info)
  */
 export interface SubscribeRequest {
   planId: string;
   cardNumber: string;
   cardExpirationYear: string; // YY
   cardExpirationMonth: string; // MM
-  cardPassword: string; // 앞 2자리
+  cardPassword: string; // First 2 digits
   customerBirthday: string; // YYMMDD
   customerName: string;
   customerEmail: string;
 }
 
 /**
- * 구독 결제 응답
+ * Subscription payment response
  */
 export interface SubscribeResponse {
   subscriptionId: string;
@@ -35,7 +35,7 @@ export interface SubscribeResponse {
 }
 
 /**
- * 개별 구매 요청 (결제 완료 후)
+ * Individual purchase request (after payment completion)
  */
 export interface PurchaseTicketsRequest {
   ticketCount: number;
@@ -45,7 +45,7 @@ export interface PurchaseTicketsRequest {
 }
 
 /**
- * 개별 구매 응답
+ * Individual purchase response
  */
 export interface PurchaseTicketsResponse {
   ticketsIssued: number;
@@ -53,7 +53,7 @@ export interface PurchaseTicketsResponse {
 }
 
 /**
- * 결제 이력
+ * Payment history
  */
 export interface BillingHistory {
   id: string;
@@ -66,12 +66,12 @@ export interface BillingHistory {
 }
 
 /**
- * 결제 API
+ * Payment API
  */
 export default class PaymentsApi {
   /**
-   * 구독 결제 처리 (플랜 결제)
-   * POST /payments/subscribe — 서버 스펙: { planId, paymentMethod }
+   * Process subscription payment (plan payment)
+   * POST /payments/subscribe — Server spec: { planId, paymentMethod }
    */
   static async processSubscription(
     data: ProcessSubscriptionRequest,
@@ -85,7 +85,7 @@ export default class PaymentsApi {
   }
 
   /**
-   * 구독 시작 (Toss 빌링키 발급 + 첫 결제 - 추후 연동)
+   * Start subscription (Toss billing key issuance + first payment - future integration)
    * POST /api/payments/subscribe
    */
   static async subscribe(data: SubscribeRequest): Promise<SubscribeResponse> {
@@ -98,8 +98,8 @@ export default class PaymentsApi {
   }
 
   /**
-   * 개별 예측권 구매 (모바일에서 결제 완료 후)
-   * POST /payments/purchase (baseURL에 /api 포함)
+   * Purchase individual prediction tickets (after payment completion on mobile)
+   * POST /payments/purchase (baseURL includes /api)
    */
   static async purchaseTickets(data: PurchaseTicketsRequest): Promise<PurchaseTicketsResponse> {
     const response = await axiosInstance.post<ApiResponse<PurchaseTicketsResponse>>(
@@ -110,8 +110,8 @@ export default class PaymentsApi {
   }
 
   /**
-   * 결제 내역 조회
-   * GET /payments/history (baseURL에 /api 포함)
+   * Get payment history
+   * GET /payments/history (baseURL includes /api)
    */
   static async getHistory(): Promise<BillingHistory[]> {
     const response = await axiosInstance.get<ApiResponse<BillingHistory[]>>('/payments/history');

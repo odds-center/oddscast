@@ -1,5 +1,5 @@
 /**
- * 경주 헤더
+ * Race header
  */
 import Icon from '@/components/icons';
 import { formatRcDate, formatNumber } from '@/lib/utils/format';

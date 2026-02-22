@@ -1,6 +1,6 @@
 /**
- * 적중 내역 배너 — 용산종합지 스타일
- * 상단 롤링/공지 배너
+ * Hit record banner — Yongsan comprehensive style
+ * Top rolling/announcement banner
  */
 import type { HitRecordDto } from '@/lib/api/predictionMatrixApi';
 import Icon from '@/components/icons';

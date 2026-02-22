@@ -16,7 +16,7 @@ export default class AuthApi {
     return AuthApi.instance;
   }
 
-  // 정적 메서드들
+  // Static methods
   static async login(credentials: LoginRequest): Promise<AuthResponse> {
     try {
       const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
@@ -155,7 +155,7 @@ export default class AuthApi {
     }
   }
 
-  // 인스턴스 메서드들 (기존 호환성 유지)
+  // Instance methods (maintain backward compatibility)
   async loginInstance(credentials: LoginRequest): Promise<AuthResponse> {
     return AuthApi.login(credentials);
   }
@@ -207,6 +207,6 @@ export default class AuthApi {
   }
 }
 
-// 싱글톤 인스턴스 export (기존 호환성 유지)
-// 싱글톤 인스턴스 export (기존 호환성 유지)
+// Singleton instance export (maintain backward compatibility)
+// Singleton instance export (maintain backward compatibility)
 // export const authApi = AuthApi.getInstance();

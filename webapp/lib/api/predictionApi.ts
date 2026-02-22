@@ -5,11 +5,11 @@ import type {
 } from '../types/predictions';
 
 /**
- * AI 예측 API
+ * AI prediction API
  */
 export default class PredictionsApi {
   /**
-   * 경주별 예측 기록 목록
+   * Get prediction history by race ID
    * GET /api/predictions/race/:raceId/history
    */
   static async getHistoryByRaceId(
@@ -24,7 +24,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 경주별 예측 조회 (이미 예측권 사용한 경기는 ticket 없이 재조회 가능)
+   * Get prediction by race ID (can re-fetch races where prediction ticket was already used, without ticket)
    * GET /api/predictions/race/:raceId
    */
   static async getByRaceId(raceId: string): Promise<PredictionResultDto> {
@@ -36,7 +36,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 예측 미리보기 (예측권 없어도 가능)
+   * Get prediction preview (no ticket required)
    * GET /predictions/race/:raceId/preview
    */
   static async getPreview(raceId: string): Promise<PredictionPreview> {
@@ -48,7 +48,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 예측 ID로 조회
+   * Get prediction by ID
    * GET /predictions/:id
    */
   static async getById(id: string): Promise<PredictionResultDto> {
@@ -58,7 +58,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 모든 예측 조회
+   * Get all predictions
    * GET /predictions?limit=50&offset=0
    */
   static async getAll(limit = 50, offset = 0): Promise<PredictionResultDto[]> {
@@ -74,7 +74,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 평균 정확도 조회
+   * Get average accuracy
    * GET /predictions/stats/accuracy
    */
   static async getAverageAccuracy(): Promise<{ averageAccuracy: number }> {
@@ -84,7 +84,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * AI 분석 대시보드
+   * Get AI analysis dashboard
    * GET /predictions/analytics/dashboard
    */
   static async getAnalyticsDashboard(): Promise<Record<string, unknown>> {
@@ -94,7 +94,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 일일 통계 계산
+   * Calculate daily statistics
    * POST /predictions/analytics/daily-stats
    */
   static async calculateDailyStats(date?: string): Promise<Record<string, unknown>> {
@@ -106,7 +106,7 @@ export default class PredictionsApi {
   }
 
   /**
-   * 실패 원인 분석
+   * Analyze failure causes
    * GET /predictions/analytics/failures
    */
   static async analyzeFailures(startDate?: string, endDate?: string): Promise<Record<string, unknown>> {
@@ -117,7 +117,7 @@ export default class PredictionsApi {
     return ((d as { data?: Record<string, unknown> })?.data ?? d) as Record<string, unknown>;
   }
   /**
-   * 예측 목록 (Prediction 페이지용)
+   * Get prediction list (for Prediction page)
    * GET /predictions → { predictions, total, page, totalPages }
    */
   static async getPredictions(limit = 20): Promise<PredictionResultDto[]> {

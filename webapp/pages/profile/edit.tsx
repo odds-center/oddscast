@@ -46,8 +46,8 @@ export default function ProfileEditPage() {
       const uExt = u as { name?: string; nickname?: string; avatar?: string };
       profileForm.reset({ name: uExt.name ?? '', nickname: uExt.nickname ?? '' });
     }
-    // profileForm.reset는 currentUser/user 변경 시에만 호출
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- profileForm은 의도적으로 제외
+    // profileForm.reset is only called when currentUser/user changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- profileForm is intentionally excluded
   }, [currentUser, user]);
 
   const profileMutation = useMutation({

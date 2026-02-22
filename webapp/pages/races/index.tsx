@@ -1,5 +1,5 @@
 /**
- * 전체 경주 목록 — 필터(날짜·상태·지역) + 테이블 + 페이지네이션
+ * All races list — filters (date, status, region) + table + pagination
  */
 import { useMemo } from 'react';
 import { useRouter } from 'next/router';
@@ -238,7 +238,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       queryFn: () => serverGet<{ races?: unknown[]; totalPages?: number }>('/races', { params }),
     });
   } catch {
-    // SSR 실패 시 클라이언트에서 fetch
+    // Fetch on client if SSR fails
   }
   return { props: { dehydratedState: dehydrate(queryClient) } };
 };

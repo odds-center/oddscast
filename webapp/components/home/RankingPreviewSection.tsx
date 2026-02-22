@@ -1,5 +1,5 @@
 /**
- * 랭킹 프리뷰 섹션 — TOP 5
+ * Ranking preview section — TOP 5
  */
 import { useQuery } from '@tanstack/react-query';
 import RankingApi from '@/lib/api/rankingApi';

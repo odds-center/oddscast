@@ -14,11 +14,11 @@ interface NativeMessage {
 
 declare global {
   interface Window {
-    /** react-native-webview가 WebView 로드 시 주입 (postMessage용) */
+    /** Injected by react-native-webview when WebView loads (for postMessage) */
     ReactNativeWebView?: {
       postMessage: (message: string) => void;
     };
-    /** mobile/app/webview.tsx의 injectedJavaScriptBeforeContentLoaded로 주입 */
+    /** Injected by mobile/app/webview.tsx's injectedJavaScriptBeforeContentLoaded */
     __IS_NATIVE_APP__?: boolean;
     onNativeMessage?: (message: NativeMessage) => void;
   }
@@ -32,12 +32,12 @@ class NativeBridge {
     if (typeof window !== 'undefined') {
       const handler = this.handleMessage.bind(this);
       window.onNativeMessage = handler;
-      // postMessage로 전달되는 Native 메시지도 수신 (Mobile injectJavaScript 호환)
+      // Also receive Native messages via postMessage (compatible with Mobile injectJavaScript)
       window.addEventListener('message', (e: MessageEvent) => {
         try {
           if (typeof e.data === 'string') {
             const data = JSON.parse(e.data) as NativeMessage;
-            // Native Bridge 형식만 처리 (LOGIN_SUCCESS 등 - GSI 등 다른 postMessage 제외)
+            // Only process Native Bridge format (LOGIN_SUCCESS, etc. - exclude other postMessages like GSI)
             if (data?.type && /^(LOGIN_|AUTH_READY|ECHO|NAVIGATION)/.test(data.type)) {
               handler(data);
             }
@@ -56,18 +56,18 @@ class NativeBridge {
     return NativeBridge.instance;
   }
 
-  /** WebView 내부인지 여부 — __IS_NATIVE_APP__(mobile 주입) 또는 ReactNativeWebView로 판단 */
+  /** Whether running inside WebView — determined by __IS_NATIVE_APP__ (injected by mobile) or ReactNativeWebView */
   public isNativeApp(): boolean {
     if (typeof window === 'undefined') return false;
     return !!(window.__IS_NATIVE_APP__ ?? window.ReactNativeWebView);
   }
 
-  /** Native로 메시지 전송 가능 여부 (ReactNativeWebView 필수) */
+  /** Whether messages can be sent to Native (ReactNativeWebView required) */
   public canSendToNative(): boolean {
     return typeof window !== 'undefined' && !!window.ReactNativeWebView;
   }
 
-  /** Native 앱으로 메시지 전송 */
+  /** Send message to Native app */
   public send(type: NativeMessageType, payload?: unknown) {
     if (this.canSendToNative()) {
       window.ReactNativeWebView!.postMessage(JSON.stringify({ type, payload }));

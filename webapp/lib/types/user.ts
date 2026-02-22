@@ -1,4 +1,4 @@
-// 사용자 관련 타입 정의
+// User-related type definitions
 export interface User {
   id: string;
   email: string;
@@ -8,7 +8,7 @@ export interface User {
   providerId?: string;
   isActive: boolean;
   isVerified: boolean;
-  lastLogin?: Date; // 직접 만든 스키마 - Date
+  lastLogin?: Date; // Custom schema - Date
   refreshToken?: string;
   role: string;
   preferences?: {
@@ -23,7 +23,7 @@ export interface User {
     };
   };
 
-  // 마권 통계
+  // Bet statistics
   totalBets: number;
   wonBets: number;
   lostBets: number;
@@ -32,27 +32,27 @@ export interface User {
   totalLosses: number;
   roi: number;
 
-  // 계정 정보 (직접 만든 스키마)
-  createdAt: Date; // Date 타입
-  updatedAt: Date; // Date 타입
+  // Account information (custom schema)
+  createdAt: Date; // Date type
+  updatedAt: Date; // Date type
 
-  // 가상 컬럼
+  // Virtual columns
   bettingLevel?: string;
   status?: string;
   profileBio?: string;
   achievements?: {
-    firstBet?: Date; // 직접 만든 스키마 - Date
-    firstWin?: Date; // 직접 만든 스키마 - Date
-    tenBets?: Date; // 직접 만든 스키마 - Date
-    hundredBets?: Date; // 직접 만든 스키마 - Date
-    perfectBet?: Date; // 직접 만든 스키마 - Date
+    firstBet?: Date; // Custom schema - Date
+    firstWin?: Date; // Custom schema - Date
+    tenBets?: Date; // Custom schema - Date
+    hundredBets?: Date; // Custom schema - Date
+    perfectBet?: Date; // Custom schema - Date
     streakWins?: number;
     totalEarnings?: number;
     level?: number;
     experience?: number;
   };
 
-  // 소셜 계정 정보
+  // Social account information
   socialAccounts?: {
     google?: {
       id: string;
@@ -74,13 +74,13 @@ export interface User {
     };
   };
 
-  // 보안 설정
+  // Security settings
   twoFactorEnabled?: boolean;
-  lastPasswordChange?: Date; // 직접 만든 스키마 - Date
+  lastPasswordChange?: Date; // Custom schema - Date
   failedLoginAttempts?: number;
-  accountLockedUntil?: Date; // 직접 만든 스키마 - Date
+  accountLockedUntil?: Date; // Custom schema - Date
 
-  // 알림 설정
+  // Notification settings
   notificationSettings?: {
     email: boolean;
     push: boolean;
@@ -90,14 +90,14 @@ export interface User {
     news: boolean;
   };
 
-  // 언어 및 지역 설정
+  // Language and region settings
   locale?: string;
   timezone?: string;
   currency?: string;
 
-  // 프로필 정보
+  // Profile information
   phoneNumber?: string;
-  dateOfBirth?: Date; // 직접 만든 스키마 - Date
+  dateOfBirth?: Date; // Custom schema - Date
   gender?: 'male' | 'female' | 'other' | 'prefer_not_to_say';
   address?: {
     country?: string;
@@ -108,7 +108,7 @@ export interface User {
     addressLine2?: string;
   };
 
-  // 계정 상태
+  // Account status
   accountStatus?: 'active' | 'suspended' | 'banned' | 'pending_verification';
   verificationStatus?: {
     email: boolean;
@@ -117,17 +117,17 @@ export interface User {
     address: boolean;
   };
 
-  // 마지막 활동 (직접 만든 스키마)
-  lastActivity?: Date; // Date 타입
-  lastBetTime?: Date; // Date 타입
-  lastLoginTime?: Date; // Date 타입
+  // Last activity (custom schema)
+  lastActivity?: Date; // Date type
+  lastBetTime?: Date; // Date type
+  lastLoginTime?: Date; // Date type
 
-  // 통계 정보
+  // Statistics information
   totalDeposits?: number;
   totalWithdrawals?: number;
   accountBalance?: number;
   loyaltyPoints?: number;
-  memberSince?: Date; // 직접 만든 스키마 - Date
+  memberSince?: Date; // Custom schema - Date
   vipLevel?: number;
 }
 
@@ -191,14 +191,14 @@ export interface UserAchievement {
   isUnlocked: boolean;
 }
 
-// API 요청/응답을 위한 추가 타입들
+// Additional types for API requests/responses
 export interface UserFilters {
   isActive?: boolean;
   isVerified?: boolean;
   role?: string;
   status?: string;
-  dateFrom?: Date; // 필터용 - Date
-  dateTo?: Date; // 필터용 - Date
+  dateFrom?: Date; // For filtering - Date
+  dateTo?: Date; // For filtering - Date
   page?: number;
   limit?: number;
 }
@@ -246,7 +246,7 @@ export interface UserActivity {
     betAmount?: number;
     [key: string]: unknown;
   };
-  createdAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
 }
 
 export interface UserNotification {
@@ -262,8 +262,8 @@ export interface UserNotification {
     promotionId?: string;
     [key: string]: unknown;
   };
-  createdAt: Date; // 직접 만든 스키마 - Date
-  readAt?: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
+  readAt?: Date; // Custom schema - Date
 }
 
 export interface UserPreferences {
@@ -288,6 +288,6 @@ export interface UserPreferences {
     maxBetAmount: number;
   };
   favoriteMeets: string[];
-  createdAt: Date; // 직접 만든 스키마 - Date
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
+  updatedAt: Date; // Custom schema - Date
 }

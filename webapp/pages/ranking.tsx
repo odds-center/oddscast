@@ -76,7 +76,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
       },
     });
   } catch {
-    // SSR 실패 시 클라이언트에서 fetch
+    // Fetch on client if SSR fails
   }
   return { props: { dehydratedState: dehydrate(queryClient) } };
 };

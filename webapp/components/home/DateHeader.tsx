@@ -1,5 +1,5 @@
 /**
- * 홈 히어로 배너 — KRA 스타일 다크 배너
+ * Home hero banner — KRA style dark banner
  */
 import Icon from '@/components/icons';
 import Link from 'next/link';
@@ -52,17 +52,17 @@ export default function DateHeader() {
           {isRaceDay && (
             <Link
               href={`${routes.races.list}?date=today`}
-              className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-[#92702A] text-white text-xs font-semibold hover:bg-[#7A5D1F] transition-colors whitespace-nowrap'
+              className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#92702A] text-white text-sm font-semibold hover:bg-[#7A5D1F] active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
             >
-              <Icon name='Flag' size={13} />
+              <Icon name='Flag' size={15} />
               오늘의 경주
             </Link>
           )}
           <Link
             href={routes.predictions.matrix}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white/10 text-stone-300 text-xs font-medium hover:bg-white/15 transition-colors whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/10 text-stone-300 text-sm font-medium hover:bg-white/15 active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
           >
-            <Icon name='BarChart2' size={13} />
+            <Icon name='BarChart2' size={15} />
             종합 예상
           </Link>
         </div>

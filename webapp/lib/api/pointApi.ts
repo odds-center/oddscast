@@ -34,7 +34,7 @@ export default class PointApi {
     return PointApi.instance;
   }
 
-  // 정적 메서드들
+  // Static methods
   static async getMyBalance(): Promise<{
     userId: string;
     currentPoints: number;
@@ -50,7 +50,7 @@ export default class PointApi {
     }
   }
 
-  /** 내 포인트 거래 내역 (로그인 사용자용) */
+  /** My point transaction history (for logged-in users) */
   static async getMyTransactions(filters?: {
     page?: number;
     limit?: number;
@@ -353,7 +353,7 @@ export default class PointApi {
     }
   }
 
-  // 인스턴스 메서드들 (기존 호환성 유지)
+  // Instance methods (maintain backward compatibility)
   async getUserPointBalanceInstance(userId: string): Promise<UserPointBalance> {
     return PointApi.getUserPointBalance(userId);
   }
@@ -457,6 +457,6 @@ export default class PointApi {
   }
 }
 
-// 싱글톤 인스턴스 export (기존 호환성 유지)
-// 싱글톤 인스턴스 export (기존 호환성 유지)
+// Singleton instance export (maintain backward compatibility)
+// Singleton instance export (maintain backward compatibility)
 // export const pointApi = PointApi.getInstance();

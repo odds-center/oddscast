@@ -1,6 +1,6 @@
 /**
- * 서버 전용 API fetch — getServerSideProps 등 Node 환경에서 사용
- * 브라우저의 axiosInstance(localStorage 등)를 쓰지 않음
+ * Server-only API fetch — for use in Node environments like getServerSideProps
+ * Does not use browser's axiosInstance (localStorage, etc.)
  */
 
 const getBaseUrl = () =>
@@ -19,7 +19,7 @@ function buildUrl(path: string, params?: Record<string, string | number | undefi
   return q ? `${url}?${q}` : url;
 }
 
-/** 응답이 { data } 래핑이면 data 반환, 아니면 body 그대로 */
+/** If response is wrapped in { data }, return data; otherwise return body as-is */
 function unwrap<T>(body: { data?: T } | T): T {
   if (body && typeof body === 'object' && 'data' in body) return (body as { data: T }).data;
   return body as T;
@@ -27,12 +27,12 @@ function unwrap<T>(body: { data?: T } | T): T {
 
 export interface ServerFetchOptions {
   params?: Record<string, string | number | undefined>;
-  /** 쿠키 전달 (인증 필요 시 context.req.headers.cookie) */
+  /** Pass cookies (use context.req.headers.cookie when authentication is required) */
   cookie?: string;
 }
 
 /**
- * GET 요청 — SSR에서 공개 API 호출용
+ * GET request — for calling public APIs in SSR
  */
 export async function serverGet<T>(
   path: string,

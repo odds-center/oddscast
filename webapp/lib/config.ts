@@ -1,4 +1,4 @@
-/** 내가 고른 말(Picks) — 서비스에서 제외. true로 설정 시 UI 노출 */
+/** Picks (My Selected Horses) — Excluded from service. Set to true to show UI */
 export const PICKS_ENABLED = false;
 
 export const CONFIG = {
@@ -15,7 +15,7 @@ export const CONFIG = {
     baseURL: process.env.NEXT_PUBLIC_WEBAPP_URL || 'http://localhost:3000',
   },
   google: {
-    // Web Client ID (GSI, Server idToken 검증에 동일 값 사용)
+    // Web Client ID (GSI, same value used for Server idToken verification)
     clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
   },
   analytics: {

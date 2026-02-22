@@ -1,7 +1,7 @@
 /**
- * 공용 테이블 컴포넌트
- * data-table-wrapper + data-table 스타일, columns 정의로 일관된 테이블 렌더링
- * getRowHref 제공 시 행 전체 클릭으로 이동
+ * Shared table component
+ * data-table-wrapper + data-table styles, consistent table rendering via column definitions
+ * When getRowHref is provided, entire row is clickable for navigation
  */
 import { useRouter } from 'next/router';
 import type { ReactNode, MouseEvent } from 'react';
@@ -21,7 +21,7 @@ export interface DataTableProps<T> {
   columns: DataTableColumn<T>[];
   data: T[];
   getRowKey: (row: T, index: number) => string | number;
-  /** 행 클릭 시 이동할 href (있으면 행 전체 클릭 가능) */
+  /** href to navigate to when row is clicked (if provided, entire row becomes clickable) */
   getRowHref?: (row: T, index: number) => string | undefined;
   compact?: boolean;
   emptyMessage?: string;

@@ -147,12 +147,19 @@ goldenrace/
 - 상수: UPPER_SNAKE
 - CSS 클래스: 케밥 케이스 (`btn-primary`, `data-table`)
 
+### 주석 · 커밋
+
+- **모든 주석은 영어로 작성.** 한글 주석 금지.
+- **커밋 메시지는 영어로.** 형식: `type: short description`
+
 ### 스타일
 
-- 테이블: `data-table`, `data-table-wrapper`, 셀 내 `LinkBadge`
+- 테이블: `data-table`, `data-table-wrapper`, 셀 내 `LinkBadge`. 모바일: `overflow-x: auto` 좌우 스크롤
 - 탭바: `TabBar` (variant: filled|subtle, size: sm|md)
 - 뒤로가기: `BackLink`
-- 버튼: `btn-primary`, `btn-secondary`
+- 버튼: `btn-primary`, `btn-secondary`. 모바일 min-height 44px, active 피드백 필수
+- 카드: `border-radius: 10px`. 모바일 패딩 `0.875rem`
+- 터치: `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`
 
 ### 페이지네이션 · 목록→상세→뒤로가기
 
@@ -160,14 +167,21 @@ goldenrace/
 - **URL 동기화**: 목록→상세→뒤로가기 시 이전 페이지 복귀 — `page`를 `router.query`로 관리
 - 적용: `/races`, `/results`, `/mypage/picks`. 변경 시 `router.replace`로 query 갱신
 
-### 하단 네비게이션
+### 앱 바 (App Bar)
 
-- **5개 고정**: 홈 / 경주 / 종합 / 결과 / 내 정보. 랭킹·알림·구독·설정은 내 정보 → 메뉴에서 진입
+- **`FloatingAppBar`**: `Layout.tsx`에 정의, `_app.tsx`에서 렌더 (페이지 전환 리마운트 방지)
+- **5개 고정**: 홈 / 경주 / 종합 / 결과 / 정보. 랭킹·알림·구독·설정은 정보 → 메뉴에서 진입
+- **모바일** (< 768px): 하단 완전 고정, `safe-area-inset-bottom`, 드래그 없음
+- **데스크톱** (≥ 768px): 플로팅 바 — 드래그, 스냅, 가로/세로 전환
+
+### 푸터
+
+- Layout에서 제거됨 → `LegalFooter` 컴포넌트로 정보 페이지에만 표시
 
 ### 컴포넌트 구조
 
 - **page/**: PageHeader, SectionCard, DataFetchState, FormInput, BackLink, FilterDateBar,
-  FilterChips, Pagination
+  FilterChips, Pagination, LegalFooter
 - **ui/**: Card, Badge, TabBar, LinkBadge, StatusBadge, RankBadge, Toggle, Dropdown, SectionTitle
 
 ---

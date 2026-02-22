@@ -30,7 +30,7 @@ export default class UserApi {
     return UserApi.instance;
   }
 
-  // 정적 메서드들
+  // Static methods
   static async getUsers(filters?: UserFilters): Promise<UserListResponse> {
     try {
       const queryString = qs.stringify(filters, {
@@ -234,7 +234,7 @@ export default class UserApi {
     }
   }
 
-  // 인스턴스 메서드들 (기존 호환성 유지)
+  // Instance methods (maintain backward compatibility)
   async getUsersInstance(filters?: UserFilters): Promise<UserListResponse> {
     return UserApi.getUsers(filters);
   }
@@ -312,6 +312,6 @@ export default class UserApi {
   }
 }
 
-// 싱글톤 인스턴스 export (기존 호환성 유지)
-// 싱글톤 인스턴스 export (기존 호환성 유지)
+// Singleton instance export (maintain backward compatibility)
+// Singleton instance export (maintain backward compatibility)
 // export const userApi = UserApi.getInstance();

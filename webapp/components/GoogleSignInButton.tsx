@@ -42,7 +42,7 @@ interface GoogleSignInButtonProps {
   onError?: (error: string) => void;
   theme?: 'outline' | 'filled_blue' | 'filled_black';
   size?: 'large' | 'medium' | 'small';
-  /** signin_with(기본) | signup_with(회원가입) | continue_with(계속하기) */
+  /** signin_with (default) | signup_with (sign up) | continue_with (continue) */
   text?: GoogleButtonText;
 }
 
@@ -64,7 +64,7 @@ export default function GoogleSignInButton({
     onErrorRef.current = onError;
   }, [onSuccess, onError]);
 
-  // Mobile WebView: Native 구글 로그인 사용 (GSI는 WebView에서 제한 있음)
+  // Mobile WebView: Use native Google login (GSI has limitations in WebView)
   useEffect(() => {
     if (!nativeBridge.isNativeApp()) return;
     const unsubSuccess = nativeBridge.subscribe('LOGIN_SUCCESS', (payload: unknown) => {
@@ -86,7 +86,7 @@ export default function GoogleSignInButton({
     nativeBridge.send('LOGIN_GOOGLE');
   };
 
-  // 웹: Google GSI 버튼 (항상 등록하여 hooks 순서 유지)
+  // Web: Google GSI button (always register to maintain hook order)
   useEffect(() => {
     const clientId = CONFIG.google.clientId;
     if (!clientId || !scriptLoaded || !window.google?.accounts?.id || !containerRef.current) return;
@@ -116,7 +116,7 @@ export default function GoogleSignInButton({
     }
   }, [scriptLoaded, onSuccess, onError, theme, size, text]);
 
-  // WebView(Native 앱) 내부일 때: Native Google Sign-In 버튼
+  // When inside WebView (Native app): Native Google Sign-In button
   if (nativeBridge.isNativeApp()) {
     return (
       <button

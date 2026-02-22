@@ -14,7 +14,7 @@ import type {
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 import qs from 'qs';
 
-// 베팅 API 클래스
+// Betting API class
 export default class BetApi {
   private static instance: BetApi;
   private baseUrl = '/bets';
@@ -28,7 +28,7 @@ export default class BetApi {
     return BetApi.instance;
   }
 
-  // 정적 메서드들 - 인스턴스 생성 없이 직접 사용 가능
+  // Static methods - can be used directly without instance creation
   static async createBet(betData: CreateBetRequest): Promise<Bet> {
     try {
       const response = await axiosInstance.post<ApiResponse<Bet>>('/bets', betData);
@@ -243,7 +243,7 @@ export default class BetApi {
     }
   }
 
-  // 인스턴스 메서드들 (기존 호환성 유지)
+  // Instance methods (maintain backward compatibility)
   async createBetInstance(betData: CreateBetRequest): Promise<Bet> {
     return BetApi.createBet(betData);
   }
@@ -330,6 +330,6 @@ export default class BetApi {
   }
 }
 
-// 싱글톤 인스턴스 export (기존 호환성 유지)
-// 싱글톤 인스턴스 export (기존 호환성 유지)
+// Singleton instance export (maintain backward compatibility)
+// Singleton instance export (maintain backward compatibility)
 // export const betApi = BetApi.getInstance();

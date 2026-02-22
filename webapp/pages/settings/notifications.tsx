@@ -27,7 +27,7 @@ const SETTINGS: Array<{
   label: string;
   description: string;
   defaultChecked: boolean;
-  /** 'mobile' = native 앱에서만 노출 (푸시), 'all' = 공통 */
+  /** 'mobile' = only shown in native app (push), 'all' = common */
   showOn: PlatformFilter;
 }> = [
   { key: 'pushEnabled', label: '푸시 알림', description: '앱 내 알림을 푸시로 받습니다.', defaultChecked: true, showOn: 'mobile' },
@@ -62,7 +62,7 @@ export default function NotificationSettingsPage() {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
     },
     onError: () => {
-      // handleApiError throws; mutation.error에 메시지 저장됨 → 아래에서 표시
+      // handleApiError throws; message stored in mutation.error → displayed below
     },
   });
 

@@ -1,7 +1,7 @@
 /**
- * 구독 결제 페이지
- * 플로우: 플랜 선택 → 구독 신청(PENDING) → 결제 처리 → 구독 활성화
- * docs/architecture/BUSINESS_LOGIC.md 3.2 구독 결제 흐름
+ * Subscription checkout page
+ * Flow: plan selection → subscription request (PENDING) → payment processing → subscription activation
+ * docs/architecture/BUSINESS_LOGIC.md 3.2 Subscription payment flow
  */
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -32,7 +32,7 @@ export default function SubscriptionCheckoutPage() {
   const [plan, setPlan] = useState<SubscriptionPlan | null>(null);
   const [errorMsg, setErrorMsg] = useState<string>('');
 
-  // 플랜 로드
+  // Load plan
   useEffect(() => {
     if (!planId || typeof planId !== 'string') {
       setStep('error');
@@ -66,7 +66,7 @@ export default function SubscriptionCheckoutPage() {
     setErrorMsg('');
 
     try {
-      // 1. 구독 신청 (PENDING)
+      // 1. Subscribe (PENDING)
       const sub = await SubscriptionApi.subscribe({ planId: String(plan.id) });
       const subscriptionId = (sub as { id?: string | number })?.id;
       const subId =
@@ -75,13 +75,13 @@ export default function SubscriptionCheckoutPage() {
           : subscriptionId ?? '';
       if (!subId) throw new Error('구독 정보를 받지 못했습니다.');
 
-      // 2. 결제 처리
+      // 2. Process payment
       await PaymentsApi.processSubscription({
         planId: String(plan.id),
         paymentMethod: 'CARD',
       });
 
-      // 3. 구독 활성화
+      // 3. Activate subscription
       await SubscriptionApi.activate(subId, 'billing-key-from-pg');
 
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });

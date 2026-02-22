@@ -1,6 +1,6 @@
 /**
- * 경마 시행일 — 연간 달력 (12개월 한눈에). 경마장별 색상·범례 + 세부계획 요약
- * UI 참고: KRA 경마시행 세부계획·연간 캘린더
+ * Race schedule dates — Annual calendar (12 months at a glance). Racecourse colors/legend + detailed plan summary
+ * UI reference: KRA race schedule detailed plan and annual calendar
  */
 import { useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
@@ -16,10 +16,10 @@ import { routes } from '@/lib/routes';
 import { useQuery } from '@tanstack/react-query';
 import Icon from '@/components/icons';
 
-/** 달력 한 셀 */
+/** Calendar cell */
 type CalendarCell = { type: 'current'; day: number } | { type: 'other'; day: number };
 
-/** 경마장 표기·정렬 순서 (캘린더 색상 매핑과 범례 일치) */
+/** Racecourse notation and sort order (matches calendar color mapping and legend) */
 const MEET_ORDER = ['서울', '부산경남', '영천', '제주'] as const;
 const MEET_LABEL: Record<string, string> = {
   서울: '서울',
@@ -28,7 +28,7 @@ const MEET_LABEL: Record<string, string> = {
   영천: '영천',
 };
 
-/** 단일 경마장 Tailwind 배경 (경주일 셀용) */
+/** Single racecourse Tailwind background (for race day cells) */
 const MEET_BG: Record<string, string> = {
   서울: 'bg-sky-200',
   부산경남: 'bg-amber-200',
@@ -36,14 +36,14 @@ const MEET_BG: Record<string, string> = {
   제주: 'bg-red-200',
 };
 
-/** meetCounts에서 경주 있는 경마장만 정렬된 키 배열 */
+/** Sorted array of keys for racecourses with races from meetCounts */
 function getMeetKeys(meetCounts: Record<string, number>): string[] {
   return MEET_ORDER.filter((k) => (meetCounts[k] ?? 0) > 0);
 }
 
 /**
- * 경주일 셀 배경: 단일 경마장=단색, 2개 이상=줄무늬(그라데이션).
- * 반환: { className } 또는 { style } (줄무늬 시 인라인 스타일)
+ * Race day cell background: single racecourse=solid color, 2 or more=striped (gradient).
+ * Returns: { className } or { style } (inline style for stripes)
  */
 function getRaceDayStyle(meetCounts: Record<string, number>): { className?: string; style?: React.CSSProperties } {
   const keys = getMeetKeys(meetCounts);
@@ -52,7 +52,7 @@ function getRaceDayStyle(meetCounts: Record<string, number>): { className?: stri
     const c = MEET_BG[keys[0]];
     return c ? { className: c } : {};
   }
-  // 2개 이상: 좌→우 줄무늬 (Tailwind arbitrary gradient)
+  // 2 or more: left→right stripes (Tailwind arbitrary gradient)
   const colors: string[] = [];
   if (keys.includes('서울')) colors.push('#7dd3fc');
   if (keys.includes('부산경남')) colors.push('#fde047');
@@ -121,7 +121,7 @@ function formatMeetLabels(meetCounts: Record<string, number>): string {
     .join(' · ');
 }
 
-/** YYYYMMDD → "M.D(요일)" */
+/** YYYYMMDD → "M.D(day of week)" */
 function formatDateShort(rcDate: string): string {
   if (rcDate.length < 8) return rcDate;
   const m = parseInt(rcDate.slice(4, 6), 10);
@@ -134,7 +134,7 @@ function formatDateShort(rcDate: string): string {
 const WEEKDAY_LABELS = ['일', '월', '화', '수', '목', '금', '토'];
 const MONTH_LABELS = ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
 
-/** 범례 한 항목 */
+/** Legend item */
 function LegendItem({
   label,
   className,
@@ -182,7 +182,7 @@ export default function RaceSchedulePage() {
     return map;
   }, [scheduleDates]);
 
-  /** 시행 기간(첫날·마지막날), 경마장별 시행일 수 */
+  /** Execution period (first day, last day), number of execution days by racecourse */
   const { dateRangeText, meetDayCounts } = useMemo(() => {
     if (!scheduleDates || scheduleDates.length === 0) {
       return { dateRangeText: `${year}.1.1 ~ ${year}.12.31`, meetDayCounts: {} as Record<string, number> };
@@ -212,11 +212,11 @@ export default function RaceSchedulePage() {
       <CompactPageTitle title='경마 시행일' backHref={routes.home} />
       <p className='text-text-tertiary text-xs mb-3 px-1'>
         경주가 있는 날을 누르면 해당 일자의 경주 목록으로 이동합니다. 시행일은 공공데이터포털
-        <a href='https://www.data.go.kr/data/15056499/openapi.do' target='_blank' rel='noopener noreferrer' className='text-primary underline ml-1'>한국마사회 경주계획표</a>
+        <a href='https://www.data.go.kr/data/15056499/openapi.do' target='_blank' rel='noopener noreferrer' className='text-primary underline ml-1'>한국마사회 경주계획표        </a>
         API에서 가져옵니다.
       </p>
 
-      {/* 연도 선택 */}
+      {/* Year selection */}
       <div className='flex items-center gap-2 mb-4'>
         <button
           type='button'
@@ -237,7 +237,7 @@ export default function RaceSchedulePage() {
         </button>
       </div>
 
-      {/* 세부계획 요약 정보 */}
+      {/* Detailed plan summary information */}
       <div className='border border-stone-200 rounded-xl bg-stone-50/80 p-4 mb-4'>
         <h3 className='text-sm font-semibold text-stone-800 mb-2'>경마 시행 세부계획</h3>
         <div className='grid gap-3 text-xs'>
@@ -271,7 +271,7 @@ export default function RaceSchedulePage() {
         </div>
       </div>
 
-      {/* 범례: 경마장별 색상 (캘린더와 동일) */}
+      {/* Legend: Racecourse colors (same as calendar) */}
       <div className='flex flex-wrap items-center gap-x-4 gap-y-2 mb-3 text-xs'>
         <LegendItem label='서울' className={MEET_BG['서울']} />
         <LegendItem label='부경' className={MEET_BG['부산경남']} />

@@ -4,19 +4,19 @@ import Icon from '../icons';
 import { routes } from '@/lib/routes';
 
 interface RequireLoginProps {
-  /** 링크 텍스트 (기본: 로그인) */
+  /** Link text (default: login) */
   linkText?: string;
-  /** suffix — 기본: 확인할 수 있습니다 */
+  /** Suffix — default: can be viewed */
   suffix?: string;
-  /** action — 버튼 등 추가 CTA (action 있으면 우선 사용) */
+  /** Action — additional CTA like button (takes priority if provided) */
   action?: ReactNode;
-  /** 로그인 버튼 노출 여부 (기본 true, action 없을 때만 적용) */
+  /** Whether to show login button (default true, only applies when action is not provided) */
   showLoginButton?: boolean;
   className?: string;
 }
 
 /**
- * 로그인 필요 시 표시할 메시지
+ * Message to display when login is required
  */
 export default function RequireLogin({
   linkText = '로그인',

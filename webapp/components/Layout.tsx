@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
-import { useRouter } from 'next/router';
 import Icon, { type IconName } from './icons';
 import { routes } from '@/lib/routes';
 
@@ -34,7 +33,7 @@ function readStoredOrientation(): 'horizontal' | 'vertical' {
   return o === 'vertical' || o === 'horizontal' ? o : 'horizontal';
 }
 
-/** env(safe-area-inset-bottom) 값을 px 숫자로 반환 (측정용) */
+/** Returns env(safe-area-inset-bottom) as a pixel number */
 function getSafeAreaBottomPx(): number {
   if (typeof document === 'undefined') return 0;
   const el = document.createElement('div');
@@ -47,7 +46,7 @@ function getSafeAreaBottomPx(): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** 클라이언트에서만 마운트되어, 초기 위치를 localStorage에서 읽어 깜빡임 없이 표시. 모바일에서는 하단 고정·드래그 비활성 */
+/** Client-only mount. Reads initial position from localStorage to avoid flicker. Fixed bottom bar on mobile, no drag. */
 function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: boolean }) {
   const [navPosition, setNavPosition] = useState<NavPosition>(readStoredPosition);
   const [navOrientation, setNavOrientation] = useState<'horizontal' | 'vertical'>(
@@ -86,7 +85,7 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
     });
   };
 
-  /** 모서리/가장자리 근처면 자석처럼 스냅된 위치 반환 (하단은 safe area 반영) */
+  /** Snap to nearest corner/edge if close enough (bottom accounts for safe area) */
   const snapToEdges = useCallback(
     (left: number, bottom: number, barW: number, barH: number): NavPosition => {
       const vw = typeof window !== 'undefined' ? window.innerWidth : 1024;
@@ -192,7 +191,7 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
     { href: routes.profile.index, icon: 'User', label: '정보' },
   ];
 
-  /* ── 모바일: 화면 하단에 완전 고정, 드래그·토글 없음 ── */
+  /* ── Mobile: fixed at screen bottom, no drag/toggle ── */
   if (isMobile) {
     return (
       <nav
@@ -228,7 +227,7 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
     );
   }
 
-  /* ── 데스크톱: 플로팅 앱 바 (드래그·토글) ── */
+  /* ── Desktop: floating app bar (drag/toggle) ── */
   return (
     <nav aria-label='메뉴' className='pointer-events-none fixed inset-0 z-10'>
       <div
@@ -310,27 +309,7 @@ interface LayoutProps {
   title?: string;
 }
 
-const MOBILE_BREAKPOINT = 768;
-
 const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
-  const router = useRouter();
-  const pathname = router.pathname;
-  const [clientMounted, setClientMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    queueMicrotask(() => setClientMounted(true));
-  }, []);
-
-  useEffect(() => {
-    if (!clientMounted) return;
-    const check = () =>
-      setIsMobile(typeof window !== 'undefined' && window.innerWidth < MOBILE_BREAKPOINT);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
-  }, [clientMounted]);
-
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
       <Head>
@@ -349,10 +328,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
           {children}
         </div>
       </main>
-
-      {clientMounted && <FloatingAppBar pathname={pathname} isMobile={isMobile} />}
     </div>
   );
 };
 
+export { FloatingAppBar };
 export default Layout;

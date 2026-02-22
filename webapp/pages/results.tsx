@@ -124,12 +124,12 @@ export default function Results() {
 
   const totalPages = data?.totalPages ?? 1;
 
-  /** 1·2·3위 셀: 가로형 (마명·기수·기록 한 줄) */
+  /** 1st·2nd·3rd place cells: horizontal layout (horse name, jockey, record in one line) */
   function renderRankCell(race: GroupedRace, ord: '1' | '2' | '3') {
     const r = race.results.find((x) => x.ord === ord);
     if (!r) return <span className='text-text-tertiary'>-</span>;
     const no = r.chulNo ?? (r.hrNo && r.hrNo.length <= 2 ? r.hrNo : '-');
-    // 기록: 1위=rcTime, 2·3위=diffUnit(착차)
+    // Record: 1st place=rcTime, 2nd·3rd place=diffUnit (difference)
     const record = ord === '1' && r.rcTime ? r.rcTime : r.diffUnit;
     return (
       <span className='inline-flex items-center gap-1.5 flex-wrap text-sm'>
@@ -190,7 +190,7 @@ export default function Results() {
         emptyDescription='해당 조건에 맞는 경주 결과가 없습니다.'
         loadingLabel='결과를 불러오는 중...'
       >
-        {/* 모바일: 컴팩트 카드 */}
+        {/* Mobile: compact card */}
         <div className='block lg:hidden space-y-2'>
           {groupedRaces.map((row) => (
             <Link key={row.raceId} href={routes.resultsDetail(row.raceId)} className='block rounded-md border border-stone-200 bg-white p-2.5 hover:bg-stone-50 transition-colors'>
@@ -219,7 +219,7 @@ export default function Results() {
           ))}
         </div>
 
-        {/* 데스크톱: 테이블 */}
+        {/* Desktop: table */}
         <div className='hidden lg:block overflow-x-auto'>
           <DataTable
             compact
@@ -294,7 +294,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
       queryFn: () => serverGet<{ results?: unknown[]; total?: number; totalPages?: number }>('/results', { params }),
     });
   } catch {
-    // SSR 실패 시 클라이언트에서 fetch
+    // Fetch on client if SSR fails
   }
   return { props: { dehydratedState: dehydrate(queryClient) } };
 };

@@ -1,11 +1,11 @@
 /**
- * 필터 바 — 날짜(DatePicker) + 상태 + 지역 필터 통합
- * 경마 정보 사이트 스타일의 컴팩트 필터 영역
+ * Filter bar — integrated date (DatePicker) + status + location filters
+ * Compact filter area in horse racing information site style
  */
 import FilterChips from './FilterChips';
 import DatePicker from '@/components/ui/DatePicker';
 
-/** 지역(경마장) 필터 옵션: 서울, 제주, 부산 */
+/** Location (racecourse) filter options: Seoul, Jeju, Busan */
 export const MEET_FILTER_OPTIONS = [
   { value: '', label: '전체' },
   { value: '서울', label: '서울' },
@@ -13,7 +13,7 @@ export const MEET_FILTER_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
-/** 경주 상태 필터 옵션 */
+/** Race status filter options */
 export const STATUS_FILTER_OPTIONS = [
   { value: '', label: '전체' },
   { value: 'SCHEDULED', label: '예정' },

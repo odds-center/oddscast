@@ -1,7 +1,7 @@
 import type { ApiResponseDto } from '@goldenrace/shared';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
-// 경마 결과 관련 타입 정의
+// Horse racing result type definitions
 export interface RaceResult {
   id: string;
   raceId: string;
@@ -105,7 +105,7 @@ export interface ResultStatistics {
   }[];
 }
 
-// 경마 결과 API 클래스
+// Horse racing result API class
 export default class ResultApi {
   private static instance: ResultApi;
   private static baseUrl = '/results';
@@ -119,7 +119,7 @@ export default class ResultApi {
     return ResultApi.instance;
   }
 
-  // 경주 결과 목록 조회
+  // Get race result list
   static async getResults(filters?: ResultFilters): Promise<{
     results: RaceResult[];
     total: number;
@@ -159,7 +159,7 @@ export default class ResultApi {
     }
   }
 
-  // 개별 경주 결과 조회
+  // Get individual race result
   static async getResult(resultId: string): Promise<RaceResultDetail> {
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceResultDetail>>(
@@ -171,7 +171,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주별 결과 목록
+  // Get results by race
   static async getRaceResults(raceId: string): Promise<RaceResult[]> {
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceResult[]>>(
@@ -183,7 +183,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 생성
+  // Create race result
   static async createResult(
     resultData: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>,
   ): Promise<RaceResult> {
@@ -198,7 +198,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 업데이트
+  // Update race result
   static async updateResult(
     resultId: string,
     updateData: Partial<Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>>,
@@ -214,7 +214,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 삭제
+  // Delete race result
   static async deleteResult(resultId: string): Promise<{ message: string }> {
     try {
       const response = await axiosInstance.delete<ApiResponseDto<{ message: string }>>(
@@ -226,7 +226,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 통계
+  // Get race result statistics
   static async getResultStatistics(filters?: {
     meet?: string;
     date?: string;
@@ -254,7 +254,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 검색
+  // Search race results
   static async searchResults(
     query: string,
     filters?: Omit<ResultFilters, 'raceId'>,
@@ -289,7 +289,7 @@ export default class ResultApi {
     }
   }
 
-  // 경주 결과 내보내기
+  // Export race results
   static async exportResults(
     filters?: ResultFilters,
     format: 'csv' | 'excel' = 'csv',
@@ -314,7 +314,7 @@ export default class ResultApi {
   }
 
   /**
-   * 경주 결과 일괄 생성 (서버: POST /results/bulk)
+   * Create race results in bulk (server: POST /results/bulk)
    */
   static async createBulkResults(
     results: Omit<RaceResult, 'id' | 'createdAt' | 'updatedAt'>[],
@@ -330,9 +330,9 @@ export default class ResultApi {
     }
   }
 
-  // 서버에 bulk-update, validate 엔드포인트 없음 — Admin에서 필요 시 추가 예정
+  // Server does not have bulk-update, validate endpoints — to be added in Admin if needed
 }
 
-// 싱글톤 인스턴스 export
-// 싱글톤 인스턴스 export
+// Singleton instance export
+// Singleton instance export
 // export const resultApi = ResultApi.getInstance();

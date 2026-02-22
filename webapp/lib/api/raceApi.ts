@@ -29,9 +29,9 @@ export default class RaceApi {
     return RaceApi.instance;
   }
 
-  // 정적 메서드들
+  // Static methods
   /**
-   * 오늘 경주 목록 (서버: GET /races/today)
+   * Get today's race list (server: GET /races/today)
    */
   static async getTodayRaces(): Promise<RaceDto[]> {
     try {
@@ -219,7 +219,7 @@ export default class RaceApi {
     }
   }
 
-  /** 경마 시행일 목록 — 날짜별·경마장별 경주 수 (KRA 동기화 DB 기준) */
+  /** Race schedule dates list — race counts by date and meet (based on KRA-synced DB) */
   static async getScheduleDates(filters: {
     dateFrom?: string;
     dateTo?: string;
@@ -264,7 +264,7 @@ export default class RaceApi {
     }
   }
 
-  // 인스턴스 메서드들 (기존 호환성 유지)
+  // Instance methods (maintain backward compatibility)
   async getRacesInstance(filters?: RaceFilters): Promise<RaceListResponseDto> {
     return RaceApi.getRaces(filters);
   }
@@ -335,6 +335,5 @@ export default class RaceApi {
   }
 }
 
-// 싱글톤 인스턴스 export (기존 호환성 유지)
-// 싱글톤 인스턴스 export (기존 호환성 유지)
+// Singleton instance export (maintain backward compatibility)
 // export const raceApi = RaceApi.getInstance();

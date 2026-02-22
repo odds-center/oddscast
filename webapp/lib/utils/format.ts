@@ -1,14 +1,14 @@
 /**
- * 표시용 포맷 유틸 — 날짜·시간·숫자 공용
- * 모든 시간 표시는 ko-KR 로케일 기준 (오전/오후)
+ * Format utilities for display — shared for dates, times, numbers
+ * All time displays use ko-KR locale (AM/PM)
  */
 
 const LOCALE = 'ko-KR';
 const TZ = 'Asia/Seoul';
 
-// ─── 날짜 ───
+// ─── Date ───
 
-/** rcDate(YYYYMMDD)가 오늘 이전이면 true — 날짜 지난 경주는 종료로 간주 */
+/** Returns true if rcDate(YYYYMMDD) is before today — past race dates are considered finished */
 export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
@@ -20,7 +20,7 @@ export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   return norm < `${y}${m}${d}`;
 }
 
-/** YYYYMMDD 또는 YYYY-MM-DD → "2025.02.15" */
+/** YYYYMMDD or YYYY-MM-DD → "2025.02.15" */
 export function formatRcDate(rcDate: string | undefined): string {
   if (!rcDate) return '-';
   const norm = rcDate.replace(/-/g, '');
@@ -28,7 +28,7 @@ export function formatRcDate(rcDate: string | undefined): string {
   return `${norm.slice(0, 4)}.${norm.slice(4, 6)}.${norm.slice(6, 8)}`;
 }
 
-/** YYYYMMDD → "2월 15일" */
+/** YYYYMMDD → "February 15" (month and day in Korean) */
 export function formatRcDateShort(rcDate: string | undefined): string {
   if (!rcDate || rcDate.length < 8) return rcDate ?? '-';
   const m = parseInt(rcDate.slice(4, 6), 10);
@@ -36,9 +36,9 @@ export function formatRcDateShort(rcDate: string | undefined): string {
   return `${m}월 ${d}일`;
 }
 
-// ─── 시간 ───
+// ─── Time ───
 
-/** ISO 또는 Date → "오후 3:05" (ko-KR 오전/오후) */
+/** ISO or Date → "3:05 PM" (ko-KR AM/PM format) */
 export function formatTime(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {
@@ -53,7 +53,7 @@ export function formatTime(date: string | Date | null | undefined): string {
   }
 }
 
-/** ISO 또는 Date → "2025. 2. 15. 오후 3:05" */
+/** ISO or Date → "2025. 2. 15. 3:05 PM" (ko-KR format) */
 export function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {
@@ -68,7 +68,7 @@ export function formatDateTime(date: string | Date | null | undefined): string {
   }
 }
 
-/** ISO 또는 Date → "2025. 2. 15." */
+/** ISO or Date → "2025. 2. 15." */
 export function formatDateOnly(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {
@@ -84,21 +84,21 @@ export function formatDateOnly(date: string | Date | null | undefined): string {
   }
 }
 
-// ─── 숫자 ───
+// ─── Numbers ───
 
-/** 숫자 → "1,234" (ko-KR 천단위 콤마) */
+/** Number → "1,234" (ko-KR thousand separator) */
 export function formatNumber(n: number | null | undefined): string {
   if (n == null) return '-';
   return n.toLocaleString(LOCALE);
 }
 
-/** 숫자 → "1,234원" */
+/** Number → "1,234원" (Korean won) */
 export function formatWon(n: number | null | undefined): string {
   if (n == null) return '-';
   return `${n.toLocaleString(LOCALE)}원`;
 }
 
-/** 숫자 → "1,234pt" */
+/** Number → "1,234pt" */
 export function formatPoint(n: number | null | undefined): string {
   if (n == null) return '-';
   return `${n.toLocaleString(LOCALE)}pt`;

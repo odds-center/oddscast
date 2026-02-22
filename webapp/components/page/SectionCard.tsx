@@ -22,21 +22,21 @@ export default function SectionCard({
   return (
     <Card as='section' variant={accent ? 'accent' : 'default'} className={className}>
       {title && (
-        <div className='flex items-center justify-between gap-2 mb-2'>
-          <div className='flex items-center gap-1.5 min-w-0'>
+        <div className='mb-3'>
+          <div className='flex items-center justify-between gap-2'>
             <SectionTitle title={title} icon={icon} badge={badge} as='h3' className='mb-0 pb-0' />
-            {description && (
-              <span className='text-stone-400 text-xs hidden sm:inline whitespace-nowrap'>— {description}</span>
+            {viewAllHref && (
+              <Link
+                href={viewAllHref}
+                className='inline-flex items-center gap-0.5 text-xs font-medium text-stone-400 hover:text-[#92702A] active:text-[#92702A] transition-colors shrink-0 whitespace-nowrap touch-manipulation py-1'
+              >
+                {viewAllLabel}
+                <Icon name='ChevronRight' size={13} />
+              </Link>
             )}
           </div>
-          {viewAllHref && (
-            <Link
-              href={viewAllHref}
-              className='inline-flex items-center gap-0.5 text-xs font-medium text-stone-400 hover:text-[#92702A] transition-colors shrink-0 whitespace-nowrap'
-            >
-              {viewAllLabel}
-              <Icon name='ChevronRight' size={13} />
-            </Link>
+          {description && (
+            <p className='text-stone-400 text-xs mt-1 leading-relaxed'>{description}</p>
           )}
         </div>
       )}

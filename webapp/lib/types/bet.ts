@@ -1,29 +1,29 @@
-// 마권 관련 타입 정의
+// Bet-related type definitions
 export enum BetType {
-  WIN = 'WIN', // 단승식
-  PLACE = 'PLACE', // 복승식
-  QUINELLA = 'QUINELLA', // 연승식
-  QUINELLA_PLACE = 'QUINELLA_PLACE', // 복연승식
-  EXACTA = 'EXACTA', // 쌍승식
-  TRIFECTA = 'TRIFECTA', // 삼복승식
-  TRIPLE = 'TRIPLE', // 삼쌍승식
+  WIN = 'WIN', // Win bet
+  PLACE = 'PLACE', // Place bet
+  QUINELLA = 'QUINELLA', // Quinella bet
+  QUINELLA_PLACE = 'QUINELLA_PLACE', // Quinella Place bet
+  EXACTA = 'EXACTA', // Exacta bet
+  TRIFECTA = 'TRIFECTA', // Trifecta bet
+  TRIPLE = 'TRIPLE', // Triple bet
 }
 
 export enum BetStatus {
-  PENDING = 'PENDING', // 대기중
-  CONFIRMED = 'CONFIRMED', // 확정
-  CANCELLED = 'CANCELLED', // 취소
-  COMPLETED = 'COMPLETED', // 완료
-  WON = 'WON', // 당첨
-  LOST = 'LOST', // 미당첨
+  PENDING = 'PENDING', // Pending
+  CONFIRMED = 'CONFIRMED', // Confirmed
+  CANCELLED = 'CANCELLED', // Cancelled
+  COMPLETED = 'COMPLETED', // Completed
+  WON = 'WON', // Won
+  LOST = 'LOST', // Lost
 }
 
 export enum BetResult {
-  PENDING = 'PENDING', // 대기중
-  WIN = 'WIN', // 당첨
-  LOSE = 'LOSE', // 미당첨
-  PARTIAL_WIN = 'PARTIAL_WIN', // 부분당첨
-  VOID = 'VOID', // 무효
+  PENDING = 'PENDING', // Pending
+  WIN = 'WIN', // Win
+  LOSE = 'LOSE', // Lose
+  PARTIAL_WIN = 'PARTIAL_WIN', // Partial win
+  VOID = 'VOID', // Void
 }
 
 export interface Bet {
@@ -43,9 +43,9 @@ export interface Bet {
   };
   betStatus: BetStatus;
   betResult: BetResult;
-  betTime: Date; // 직접 만든 스키마 - Date
-  raceTime?: Date; // 직접 만든 스키마 - Date
-  resultTime?: Date; // 직접 만든 스키마 - Date
+  betTime: Date; // Custom schema - Date
+  raceTime?: Date; // Custom schema - Date
+  resultTime?: Date; // Custom schema - Date
   raceResult?: {
     winner: string;
     second: string;
@@ -68,8 +68,8 @@ export interface Bet {
   dataSource: string;
   ipAddress?: string;
   userAgent?: string;
-  createdAt: Date; // 직접 만든 스키마 - Date
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
+  updatedAt: Date; // Custom schema - Date
   roi?: number;
   riskLevel?: string;
   isFavorite?: boolean;
@@ -168,7 +168,7 @@ export interface BetHistory {
   totalPages: number;
 }
 
-// 승식 정보
+// Bet type information
 export interface BetTypeInfo {
   value: BetType;
   label: string;
@@ -178,7 +178,7 @@ export interface BetTypeInfo {
   example: string;
 }
 
-// 마권 상수
+// Bet constants
 export const BET_CONSTANTS = {
   MIN_BET_AMOUNT: 100,
   MAX_BET_AMOUNT: 100000,
@@ -188,7 +188,7 @@ export const BET_CONSTANTS = {
   MAX_BET_AMOUNT_PER_RACE: 1000000,
 } as const;
 
-// 승식 정보 배열
+// Bet type information array
 export const BET_TYPES: BetTypeInfo[] = [
   {
     value: BetType.WIN,

@@ -74,28 +74,28 @@ export default function Home() {
 
   return (
     <Layout title='GOLDEN RACE'>
-      {/* 히어로 배너 */}
+      {/* Hero banner */}
       <DateHeader />
 
-      {/* 로그인 + 퀵스탯 바 */}
-      <div className='flex items-center justify-between gap-3 mt-3 mb-3'>
+      {/* Login + Quick stats bar */}
+      <div className='flex items-center justify-between gap-3 mt-4 mb-4'>
         <HomeQuickStats />
         {!isLoggedIn && (
           <div className='flex items-center gap-2 shrink-0'>
             <button
               onClick={handleGoogleLogin}
-              className='btn-primary flex items-center gap-1 px-3 py-1.5 text-xs'
+              className='btn-primary flex items-center gap-2 px-4 py-2.5 text-sm'
             >
-              <Icon name='LogIn' size={14} />
+              <Icon name='LogIn' size={16} />
               {isNative ? 'Google 로그인' : '로그인'}
             </button>
-            {loginError && <p className='msg-error text-xs'>{loginError}</p>}
+            {loginError && <p className='msg-error text-xs mt-1'>{loginError}</p>}
           </div>
         )}
       </div>
 
-      {/* 경주 메뉴 바 — KRA 스타일 */}
-      <div className='flex items-center gap-1 mb-3 overflow-x-auto'>
+      {/* Race menu bar — KRA style */}
+      <div className='flex items-center gap-2 mb-4 overflow-x-auto pb-0.5 -mx-1 px-1'>
         {[
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주' },
           { href: routes.races.schedule, icon: 'Calendar' as const, label: '시행일' },
@@ -106,31 +106,31 @@ export default function Home() {
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white border border-stone-200 text-stone-600 text-xs font-medium hover:border-[#92702A] hover:text-[#92702A] transition-colors whitespace-nowrap'
+            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-stone-200 text-stone-600 text-sm font-medium hover:border-[#92702A] hover:text-[#92702A] active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
           >
-            <Icon name={item.icon} size={13} />
+            <Icon name={item.icon} size={15} />
             {item.label}
           </Link>
         ))}
       </div>
 
-      {/* 메인 콘텐츠 */}
-      <div className='grid lg:grid-cols-2 gap-3 mb-3'>
+      {/* Main content */}
+      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
-      <div className='grid lg:grid-cols-2 gap-3 mb-3'>
+      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
         <RecentResultsSection />
         <PredictionMatrixPreviewSection />
       </div>
 
-      <div className='grid lg:grid-cols-2 gap-3 mb-3'>
+      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
         <RacePredictionsPreviewSection />
         <RankingPreviewSection />
       </div>
 
-      <div className='mb-3'>
+      <div className='mb-4'>
         <AllRacesSection />
       </div>
     </Layout>
@@ -218,9 +218,9 @@ export const getServerSideProps: GetServerSideProps = async () => {
           return Array.isArray(res) ? res : (res?.data ?? []);
         },
       }),
-    ]);
+      ]);
   } catch {
-    // SSR 실패 시 클라이언트에서 다시 fetch
+    // If SSR fails, fetch on client
   }
 
   return {

@@ -200,7 +200,7 @@ webapp/
 │       ├── point-transactions.tsx    # 포인트 거래 내역
 │       └── notifications.tsx
 ├── components/
-│   ├── Layout.tsx                    # 반응형 헤더/푸터/모바일 하단 네비
+│   ├── Layout.tsx                    # 레이아웃 + FloatingAppBar (앱 바, _app.tsx에서 렌더)
 │   ├── RaceCard.tsx                  # 반응형
 │   ├── LoadingSpinner.tsx
 │   ├── EmptyState.tsx
@@ -217,7 +217,8 @@ webapp/
 │   │   ├── FilterChips.tsx          # 필터 칩
 │   │   ├── Pagination.tsx            # 여러 페이지 이동 (1 … 2 3 4 … 5)
 │   │   ├── BackLink.tsx              # 뒤로가기 링크 (ChevronLeft 아이콘)
-│   │   └── PageContent.tsx           # 페이지 콘텐츠 래퍼
+│   │   ├── PageContent.tsx           # 페이지 콘텐츠 래퍼
+│   │   └── LegalFooter.tsx           # 이용약관·개인정보·환불정책 푸터 (정보 페이지용)
 │   └── ui/                           # 범용 UI 컴포넌트
 │       ├── Card.tsx
 │       ├── DataTable.tsx             # 공용 테이블 (columns 기반)
@@ -245,7 +246,7 @@ webapp/
 │   └── bridge.ts                     # Native ↔ WebView
 <｜tool▁call▁end｜><｜tool▁call▁begin｜>
 └── styles/
-    └── globals.css                   # 라이트 테마(#fafafa, #c9a227), max-width 1200px, 스크롤바 6px
+    └── globals.css                   # 다크 골드 테마, 테이블 스크롤, 모바일 터치, 앱 바 스타일
 ```
 
 ## Mobile (`mobile/`)

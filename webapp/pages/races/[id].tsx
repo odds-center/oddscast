@@ -28,7 +28,7 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatTime, formatNumber } from '@/lib/utils/format';
 
-/** 1분 쿨다운 카운트다운 훅 */
+/** 1-minute cooldown countdown hook */
 function useCooldown(lastUsedAt: string | null | undefined) {
   const [remaining, setRemaining] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -292,7 +292,7 @@ export default function RaceDetailPage() {
   const isRaceCompleted = raceStatus === 'COMPLETED';
   const hasResults = (raceResults?.length ?? 0) > 0;
 
-  // 결과 데이터에서 출전마 목록 추출 (entries가 비어있을 때 fallback)
+  // Extract entry list from results data (fallback when entries is empty)
   const entriesFromResults = hasResults
     ? raceResults!.map((res) => ({
         hrNo: res.hrNo,
@@ -320,7 +320,7 @@ export default function RaceDetailPage() {
         className='block'
       />
 
-      {/* ── 경주 헤더 ── */}
+      {/* ── Race header ── */}
       <RaceHeaderCard
         meetName={r.meetName}
         rcDay={(r as { rcDay?: string }).rcDay}
@@ -335,7 +335,7 @@ export default function RaceDetailPage() {
         track={(r as { track?: string }).track}
       />
 
-      {/* ── 경주 결과 ── */}
+      {/* ── Race results ── */}
       {hasResults && (
         <section className='space-y-2'>
           <div className='flex items-center gap-1.5'>
@@ -343,7 +343,7 @@ export default function RaceDetailPage() {
             <span className='text-sm font-bold text-foreground'>경주 결과</span>
           </div>
 
-          {/* 전체 순위 — 테이블형 */}
+          {/* Full rankings — table format */}
           <div className='rounded-md border border-stone-200 overflow-hidden'>
             <table className='w-full text-sm'>
               <thead>
@@ -383,7 +383,7 @@ export default function RaceDetailPage() {
             </table>
           </div>
 
-          {/* 배당 */}
+          {/* Dividends */}
           {(dividends?.length ?? 0) > 0 && (
             <div className='rounded-md border border-stone-200 overflow-hidden'>
               <div className='bg-stone-50 border-b border-stone-200 px-2 py-1.5'>
@@ -409,7 +409,7 @@ export default function RaceDetailPage() {
         </section>
       )}
 
-      {/* ── AI 예측 ── */}
+      {/* ── AI prediction ── */}
       <section>
         {displayPrediction ? (
           <PredictionFullView
@@ -434,7 +434,7 @@ export default function RaceDetailPage() {
         )}
       </section>
 
-      {/* ── 출전마 ── */}
+      {/* ── Entries ── */}
       {showEntriesSection && (
         <section>
           <div className='flex items-center gap-1.5 mb-2'>
@@ -476,7 +476,7 @@ export default function RaceDetailPage() {
         </section>
       )}
 
-      {/* ── 기수·말 통합 분석 ── */}
+      {/* ── Jockey·horse integrated analysis ── */}
       <section>
         <div className='flex items-center gap-1.5 mb-2'>
           <Icon name='BarChart2' size={15} className='text-text-secondary' />
@@ -527,7 +527,7 @@ export default function RaceDetailPage() {
 
         </div>
 
-        {/* 데스크톱 사이드바 */}
+        {/* Desktop sidebar */}
         {showPickPanel && (
           <aside className='hidden lg:block w-80 shrink-0'>
             <div className='lg:sticky lg:top-24 rounded-2xl border border-border bg-card p-4'>
@@ -549,7 +549,7 @@ export default function RaceDetailPage() {
           </aside>
         )}
 
-        {/* 모바일 Drawer */}
+        {/* Mobile Drawer */}
         {showPickPanel && (
           <>
             <button
@@ -613,7 +613,7 @@ export default function RaceDetailPage() {
   );
 }
 
-// ─── 예측 전체 보기 (예측권 사용 후) ───
+// ─── Full prediction view (after using ticket) ───
 
 interface TicketMutationLike {
   mutate: (vars: { raceId: string; regenerate?: boolean }) => void;
@@ -643,7 +643,7 @@ function PredictionFullView({
 
   return (
     <div className='space-y-4'>
-      {/* 헤더: 예측 기록 + 다시 예측 */}
+      {/* Header: prediction history + regenerate */}
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center gap-1.5'>
           <Icon name='Target' size={15} className='text-stone-500' />
@@ -682,7 +682,7 @@ function PredictionFullView({
         )}
       </div>
 
-      {/* 예측 기록 탭 (2건 이상) */}
+      {/* Prediction history tabs (2 or more) */}
       {list.length > 1 && (
         <div className='flex gap-1.5 overflow-x-auto pb-1'>
           {list.map((p, i) => {
@@ -717,7 +717,7 @@ function PredictionFullView({
 
       {prediction?.scores?.horseScores?.length ? (
         <>
-          {/* 3가지 추천식 */}
+          {/* 3 types of recommended bets */}
           {(prediction.scores?.betTypePredictions || prediction.scores?.horseScores?.length) && entries.length > 0 && (
             <BetTypePredictionsSection
               betTypePredictions={prediction.scores.betTypePredictions}
@@ -726,7 +726,7 @@ function PredictionFullView({
             />
           )}
 
-          {/* 말별 순위 */}
+          {/* Horse rankings */}
           <div>
             <p className='text-xs text-text-secondary font-semibold mb-1.5'>
               AI 추천 순위 <span className='text-text-tertiary font-normal'>(참고용)</span>
@@ -766,7 +766,7 @@ function PredictionFullView({
             </div>
           </div>
 
-          {/* AI 분석 */}
+          {/* AI analysis */}
           {prediction.analysis && (
             <div>
               <p className='text-xs text-text-secondary font-semibold mb-1.5'>AI 상세 분석</p>
@@ -787,7 +787,7 @@ function PredictionFullView({
   );
 }
 
-// ─── 예측 잠금 (예측권 미사용) ───
+// ─── Prediction locked (ticket not used) ───
 
 interface PredictionLockedViewProps {
   predictionPreview?: { preview?: string } | null;
@@ -876,7 +876,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
         queryFn: () => serverGet<unknown>(`/races/${id}`),
       });
     } catch {
-      // SSR 실패 시 클라이언트에서 fetch
+      // Fetch on client if SSR fails
     }
   }
   return { props: { dehydratedState: dehydrate(queryClient) } };

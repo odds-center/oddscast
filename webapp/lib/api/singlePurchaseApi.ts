@@ -2,7 +2,7 @@ import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
 /**
- * 예측권 구매 요청
+ * Prediction ticket purchase request
  */
 export interface PurchaseTicketRequest {
   quantity?: number;
@@ -11,7 +11,7 @@ export interface PurchaseTicketRequest {
 }
 
 /**
- * 구매 결과
+ * Purchase result
  */
 export interface PurchaseResult {
   purchaseId: string;
@@ -23,11 +23,11 @@ export interface PurchaseResult {
 }
 
 /**
- * 개별 구매 API
+ * Individual purchase API
  */
 export default class SinglePurchasesApi {
   /**
-   * 예측권 구매
+   * Purchase prediction tickets
    */
   static async purchase(data: PurchaseTicketRequest): Promise<PurchaseResult> {
     try {
@@ -42,7 +42,7 @@ export default class SinglePurchasesApi {
   }
 
   /**
-   * 가격 계산 (할인 적용)
+   * Calculate price (discount applied)
    */
   static async calculatePrice(quantity: number): Promise<{ quantity: number; totalPrice: number }> {
     try {
@@ -58,7 +58,7 @@ export default class SinglePurchasesApi {
   }
 
   /**
-   * 구매 내역 조회
+   * Get purchase history
    */
   static async getHistory(limit = 50, offset = 0) {
     try {
@@ -72,7 +72,7 @@ export default class SinglePurchasesApi {
   }
 
   /**
-   * 총 구매액 조회
+   * Get total purchase amount
    */
   static async getTotalSpent(): Promise<{ totalSpent: number }> {
     try {

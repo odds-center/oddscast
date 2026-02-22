@@ -1,4 +1,4 @@
-// 경주 결과 관련 타입 정의
+// Race result-related type definitions
 export interface RaceResultDetail {
   id: string;
   raceId: string;
@@ -14,7 +14,7 @@ export interface RaceResultDetail {
   rcDay?: string;
   rcWeekday?: string;
   weather?: string;
-  track?: string; // KRA: 주로상태
+  track?: string; // KRA: track condition
   finishTime?: string;
   margin?: string;
   odds?: number;
@@ -23,7 +23,7 @@ export interface RaceResultDetail {
 
 export interface CreateRaceResultRequest {
   raceId: string;
-  ord: string; // KRA: 순위
+  ord: string; // KRA: rank
   hrNo: string;
   hrName: string;
   jkName: string;
@@ -53,8 +53,8 @@ export interface RaceResultFilters {
   jkName?: string;
   trName?: string;
   ord?: string;
-  dateFrom?: Date; // 필터용 - Date
-  dateTo?: Date; // 필터용 - Date
+  dateFrom?: Date; // For filtering - Date
+  dateTo?: Date; // For filtering - Date
   page?: number;
   limit?: number;
 }
@@ -142,7 +142,7 @@ export interface RaceResultAnalysis {
 
 export interface RaceResultExport {
   raceId: string;
-  rcName: string; // KRA: 경주명
+  rcName: string; // KRA: race name
   raceDate: string;
   results: RaceResultDetail[];
   summary: {

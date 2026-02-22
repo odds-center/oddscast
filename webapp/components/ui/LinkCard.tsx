@@ -6,7 +6,7 @@ interface LinkCardProps {
   href: string;
   children: ReactNode;
   className?: string;
-  /** ChevronRight 표시 — 기본 true */
+  /** Show ChevronRight — default true */
   showChevron?: boolean;
 }
 

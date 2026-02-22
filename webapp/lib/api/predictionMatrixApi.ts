@@ -1,5 +1,5 @@
 /**
- * 용산종합지 스타일 - 종합 예상 매트릭스 API
+ * Yongsan comprehensive style — comprehensive prediction matrix API
  * GET /api/predictions/matrix, /api/predictions/commentary, /api/predictions/hit-record
  */
 
@@ -7,7 +7,7 @@ import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
 import RaceApi from './raceApi';
 import PredictionApi from './predictionApi';
 
-/** 경주별 예상 매트릭스 행 */
+/** Prediction matrix row per race */
 export interface MatrixRowDto {
   raceId: string;
   meet: string;
@@ -24,13 +24,13 @@ export interface MatrixRowDto {
   consensusLabel?: string;
 }
 
-/** 매트릭스 응답 */
+/** Matrix response */
 export interface MatrixResponseDto {
   raceMatrix: MatrixRowDto[];
   experts: { id: string; name: string }[];
 }
 
-/** 전문가 코멘트 */
+/** Expert commentary */
 export interface CommentaryDto {
   id: string;
   expertId: string;
@@ -44,13 +44,13 @@ export interface CommentaryDto {
   keywords?: string[];
 }
 
-/** 코멘트 응답 */
+/** Commentary response */
 export interface CommentaryResponseDto {
   comments: CommentaryDto[];
   total: number;
 }
 
-/** 적중 내역 */
+/** Hit records */
 export interface HitRecordDto {
   id: string;
   hitDate: string;
@@ -60,8 +60,8 @@ export interface HitRecordDto {
 
 export default class PredictionMatrixApi {
   /**
-   * 종합 예상 매트릭스 조회
-   * date: YYYY-MM-DD, meet: 서울|제주|부산경남
+   * Get comprehensive prediction matrix
+   * date: YYYY-MM-DD, meet: Seoul|Jeju|BusanGyeongnam
    */
   static async getMatrix(date?: string, meet?: string): Promise<MatrixResponseDto> {
     try {
@@ -76,7 +76,7 @@ export default class PredictionMatrixApi {
   }
 
   /**
-   * API 미구현 시 races + preview로 클라이언트에서 매트릭스 구축
+   * Build matrix on client side using races + preview when API is not implemented
    */
   private static async buildMatrixFromRaces(
     date?: string,
@@ -142,7 +142,7 @@ export default class PredictionMatrixApi {
   }
 
   /**
-   * 전문가 코멘트 피드
+   * Expert commentary feed
    */
   static async getCommentary(
     date?: string,
@@ -162,7 +162,7 @@ export default class PredictionMatrixApi {
   }
 
   /**
-   * 적중 내역 (배너용)
+   * Hit records (for banner)
    */
   static async getHitRecords(limit = 5): Promise<HitRecordDto[]> {
     try {

@@ -74,7 +74,7 @@ const store = create<AuthState>((set) => ({
   },
 }));
 
-// 401 시 로그아웃 구독 (앱 로드 시 1회)
+// Subscribe to logout on 401 (once on app load)
 if (typeof window !== 'undefined') {
   onUnauthorized(() => store.getState().logout());
 }

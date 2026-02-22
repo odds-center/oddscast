@@ -1,6 +1,6 @@
 /**
- * 출전마 선택 패널 — Sidebar(데스크톱) / Drawer(모바일) 콘텐츠
- * 승식 선택, 선택 내역, 출전마 리스트, 저장/삭제
+ * Horse selection panel — Sidebar (desktop) / Drawer (mobile) content
+ * Bet type selection, selection history, horse list, save/delete
  */
 import Icon from './icons';
 import { SectionTitle } from './ui';
@@ -73,7 +73,7 @@ export default function HorsePickPanel({
 
   return (
     <div className='flex flex-col h-full'>
-      {/* 승식 선택 — compact 스크롤 */}
+      {/* Bet type selection — compact scroll */}
       <div className='shrink-0'>
         <SectionTitle title='승식' icon='ClipboardList' as='h4' />
         <div
@@ -104,7 +104,7 @@ export default function HorsePickPanel({
         <p className='text-text-tertiary text-xs mt-1'>{PICK_TYPE_DESCRIPTIONS[pickType]}</p>
       </div>
 
-      {/* 선택 내역 — 항상 눈에 띄게 */}
+      {/* Selection history — always visible */}
       <div className='shrink-0 mt-4 p-3 rounded-xl bg-stone-50 border border-stone-200'>
         <h4 className='text-foreground text-sm font-semibold mb-2 flex items-center gap-1.5'>
           <Icon name='CheckCircle' size={16} />
@@ -142,7 +142,7 @@ export default function HorsePickPanel({
         )}
       </div>
 
-      {/* 출전마 리스트 — 스크롤 영역 */}
+      {/* Horse list — scrollable area */}
       <div className='flex-1 min-h-0 mt-4'>
         <h4 className='text-foreground text-sm font-semibold mb-2'>출전마</h4>
         <div className='space-y-1.5 overflow-y-auto max-h-[40vh] lg:max-h-[300px] pr-1'>
@@ -180,7 +180,7 @@ export default function HorsePickPanel({
         </div>
       </div>
 
-      {/* 저장/삭제 */}
+      {/* Save/Delete */}
       <div className='shrink-0 mt-4 flex gap-2'>
         {canSave && (
           <button

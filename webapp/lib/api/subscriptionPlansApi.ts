@@ -1,20 +1,20 @@
 import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
 
 /**
- * 구독 플랜 인터페이스 (DB 스키마 기준)
+ * Subscription plan interface (based on DB schema)
  */
 export interface SubscriptionPlan {
   id: string;
   planName: string; // LIGHT, STANDARD, PREMIUM
-  displayName: string; // 라이트, 스탠다드, 프리미엄
+  displayName: string; // Light, Standard, Premium
   description: string;
-  originalPrice: number; // VAT 전 가격
-  vat: number; // 부가세
-  totalPrice: number; // 최종 가격 (VAT 포함)
-  baseTickets: number; // 기본 예측권
-  bonusTickets: number; // 보너스 예측권
-  totalTickets: number; // 총 예측권
-  matrixTickets: number; // 종합 예측권 수 (5,000원당 1장)
+  originalPrice: number; // Price before VAT
+  vat: number; // VAT
+  totalPrice: number; // Final price (VAT included)
+  baseTickets: number; // Base prediction tickets
+  bonusTickets: number; // Bonus prediction tickets
+  totalTickets: number; // Total prediction tickets
+  matrixTickets: number; // Number of comprehensive prediction tickets (1 per 5,000 KRW)
   isActive: boolean;
   sortOrder: number;
   createdAt: string;
@@ -22,11 +22,11 @@ export interface SubscriptionPlan {
 }
 
 /**
- * 구독 플랜 목록 조회 (인증 불필요)
+ * Get subscription plan list (authentication not required)
  */
 export default class SubscriptionPlansApi {
   /**
-   * 구독 플랜 목록 조회 (인증 불필요)
+   * Get subscription plan list (authentication not required)
    */
   static async getSubscriptionPlans(): Promise<SubscriptionPlan[]> {
     const response = await axiosInstance.get('/subscriptions/plans');

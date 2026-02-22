@@ -1,6 +1,6 @@
 /**
- * DatePicker — react-day-picker 기반 공용 날짜 선택기
- * 한국어 로케일, 경마 스타일 컴팩트 디자인
+ * DatePicker — shared date picker based on react-day-picker
+ * Korean locale, horse racing style compact design
  */
 import { useState, useRef, useEffect } from 'react';
 import { DayPicker } from 'react-day-picker';

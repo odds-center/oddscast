@@ -101,23 +101,23 @@ export default function Profile() {
           error={null}
           loadingLabel='정보를 불러오는 중...'
         >
-          <div className='space-y-6'>
-            {/* 인사 + 요약 */}
-            <div className='rounded-xl bg-white border border-stone-200 p-4'>
-              <p className='text-stone-600 text-sm'>안녕하세요</p>
-              <p className='text-lg font-semibold text-foreground mt-0.5'>{displayName}님</p>
-              <div className='flex flex-wrap gap-4 mt-4 pt-4 border-t border-stone-100'>
-                <div>
-                  <p className='text-stone-500 text-xs'>예측권</p>
+          <div className='space-y-5'>
+            {/* Greeting + Summary */}
+            <div className='rounded-xl bg-white border border-stone-200 p-5'>
+              <p className='text-stone-500 text-sm'>안녕하세요</p>
+              <p className='text-lg font-bold text-foreground mt-1'>{displayName}님</p>
+              <div className='grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-stone-100'>
+                <div className='text-center'>
+                  <p className='text-stone-400 text-xs mb-1'>예측권</p>
                   <p className='text-xl font-bold text-stone-800'>{ticketsCount}장</p>
                 </div>
-                <div>
-                  <p className='text-stone-500 text-xs'>포인트</p>
+                <div className='text-center'>
+                  <p className='text-stone-400 text-xs mb-1'>포인트</p>
                   <p className='text-xl font-bold text-stone-800'>{points.toLocaleString()}pt</p>
                 </div>
-                <div>
-                  <p className='text-stone-500 text-xs'>구독</p>
-                  <p className='text-base font-semibold'>
+                <div className='text-center'>
+                  <p className='text-stone-400 text-xs mb-1'>구독</p>
+                  <p className='text-base font-semibold mt-0.5'>
                     {subscription?.isActive ? (
                       <span className='text-primary'>{subscription.planId}</span>
                     ) : (
@@ -158,24 +158,26 @@ export default function Profile() {
             </SectionCard>
 
             <SectionCard title='포인트로 예측권 구매' icon='CreditCard'>
-              <p className='text-text-secondary text-sm sm:text-[16px] mb-3 leading-relaxed'>
-                1장 = {perTicket.toLocaleString()}pt
+              <p className='text-text-secondary text-sm mb-3 leading-relaxed'>
+                1장 = <span className='font-semibold text-stone-700'>{perTicket.toLocaleString()}pt</span>
               </p>
-              <div className='flex flex-wrap items-center gap-3'>
-                <Dropdown<number>
-                  options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: `${n}장` }))}
-                  value={purchaseQty}
-                  onChange={setPurchaseQty}
-                  placeholder='수량 선택'
-                  className='w-[120px] shrink-0'
-                />
-                <span className='text-text-secondary text-sm'>
-                  = {(perTicket * purchaseQty).toLocaleString()}pt
-                </span>
+              <div className='flex flex-col sm:flex-row sm:items-center gap-3'>
+                <div className='flex items-center gap-3'>
+                  <Dropdown<number>
+                    options={[1, 2, 3, 5, 10].map((n) => ({ value: n, label: `${n}장` }))}
+                    value={purchaseQty}
+                    onChange={setPurchaseQty}
+                    placeholder='수량 선택'
+                    className='w-[120px] shrink-0'
+                  />
+                  <span className='text-text-secondary text-sm font-medium'>
+                    = {(perTicket * purchaseQty).toLocaleString()}pt
+                  </span>
+                </div>
                 <button
                   onClick={handlePurchase}
                   disabled={!canPurchase || purchaseMutation.isPending}
-                  className='btn-primary px-4 py-2 disabled:opacity-50 flex items-center gap-2'
+                  className='btn-primary w-full sm:w-auto disabled:opacity-50 flex items-center justify-center gap-2'
                 >
                   {purchaseMutation.isPending ? (
                     <>
@@ -183,17 +185,17 @@ export default function Profile() {
                       처리 중...
                     </>
                   ) : (
-                    '구매'
+                    '구매하기'
                   )}
                 </button>
               </div>
               {!canPurchase && points > 0 && (
-                <p className='msg-warning mt-2'>
+                <p className='msg-warning mt-3'>
                   포인트 부족 (필요 {(perTicket * purchaseQty).toLocaleString()}pt, 보유 {points.toLocaleString()}pt)
                 </p>
               )}
               {purchaseMutation.isSuccess && (
-                <p className='msg-success mt-2'>
+                <p className='msg-success mt-3'>
                   예측권 {purchaseMutation.data?.tickets?.length ?? 0}장 구매 완료
                 </p>
               )}

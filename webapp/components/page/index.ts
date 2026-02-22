@@ -1,5 +1,5 @@
 /**
- * 페이지 레이아웃/공통 컴포넌트
+ * Page layout / shared components
  */
 export { default as BackLink } from './BackLink';
 export { default as CompactPageTitle } from './CompactPageTitle';

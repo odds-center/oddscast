@@ -10,7 +10,7 @@ export const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
-// Request Interceptor — JWT 항상 헤더에 포함
+// Request Interceptor — JWT always included in header
 axiosInstance.interceptors.request.use(
   (config) => {
     if (typeof window !== 'undefined') {
@@ -24,7 +24,7 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response Interceptor — 401 시 로그아웃 이벤트 (authStore에서 수신)
+// Response Interceptor — 401 logout event (received in authStore)
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   (error) => {

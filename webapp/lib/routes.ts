@@ -1,6 +1,6 @@
 /**
- * 라우트 경로 중앙 관리
- * 하드코딩 대신 여기서 import하여 사용
+ * Centralized route path management
+ * Import from here instead of hardcoding
  */
 
 export const routes = {
@@ -41,7 +41,7 @@ export const routes = {
     detail: (id: string) => `/races/${id}`,
   },
 
-  /** 용산종합지 스타일 - 종합 예상표 */
+  /** Yongsan Comprehensive Style - Comprehensive prediction table */
   predictions: {
     matrix: '/predictions/matrix',
   },

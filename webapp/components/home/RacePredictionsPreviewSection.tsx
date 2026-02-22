@@ -1,5 +1,5 @@
 /**
- * 경주 예상지 미리보기 섹션 — 경주별 1위 예상 마번
+ * Race predictions preview section — 1st place predicted horse number per race
  */
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';

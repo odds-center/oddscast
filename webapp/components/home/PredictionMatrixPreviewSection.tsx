@@ -1,5 +1,5 @@
 /**
- * 종합 예상지 미리보기 — 다크 헤더 스타일
+ * Prediction matrix preview section — dark header style
  */
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';

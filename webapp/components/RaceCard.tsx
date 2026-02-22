@@ -13,8 +13,8 @@ interface RaceCardProps {
     rcNo?: string;
     rcDist?: string;
     rank?: string;
-    stTime?: string; // KRA: 출발시각
-    rcStartTime?: string; // mock/legacy 호환
+    stTime?: string; // KRA: start time
+    rcStartTime?: string; // mock/legacy compatibility
     status?: string;
     raceStatus?: string;
     entries?: Array<{ chulNo?: string; hrName?: string }>;

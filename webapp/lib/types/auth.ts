@@ -1,5 +1,5 @@
 /**
- * 인증 타입 — @goldenrace/shared 기반 + webapp 확장
+ * Authentication type — based on @goldenrace/shared + webapp extension
  */
 export type {
   LoginRequest,
@@ -10,7 +10,7 @@ export type {
   ChangePasswordRequest,
 } from '@goldenrace/shared';
 
-/** webapp AuthResponse (login/register 응답) */
+/** webapp AuthResponse (login/register response) */
 export interface AuthResponse {
   user: import('./user').User;
   accessToken: string;

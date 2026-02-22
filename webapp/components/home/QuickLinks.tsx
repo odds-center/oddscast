@@ -1,5 +1,5 @@
 /**
- * 퀵 링크 그리드 — 홈 메인 네비게이션
+ * Quick links grid — home main navigation
  */
 import Link from 'next/link';
 import Icon, { type IconName } from '../icons';

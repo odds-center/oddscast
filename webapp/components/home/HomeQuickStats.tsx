@@ -1,5 +1,5 @@
 /**
- * 홈 퀵 스탯 — 경주 정보 바
+ * Home quick stats — race information bar
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';

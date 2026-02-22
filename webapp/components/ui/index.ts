@@ -1,5 +1,5 @@
 /**
- * 공통 UI 컴포넌트 — 재사용 최대화
+ * Shared UI components — maximize reusability
  */
 export { default as Badge } from './Badge';
 export { default as LinkBadge } from './LinkBadge';

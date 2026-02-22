@@ -1,5 +1,5 @@
 /**
- * 포인트 타입 — @goldenrace/shared 기반
+ * Point type — based on @goldenrace/shared
  */
 import {
   PointTransactionType,
@@ -9,7 +9,7 @@ import {
 export { PointTransactionType, PointStatus } from '@goldenrace/shared';
 export type { UserPointBalance, PointTransaction, TicketPrice } from '@goldenrace/shared';
 
-/** UserPoints = PointTransaction (레거시 호환) */
+/** UserPoints = PointTransaction (legacy compatibility) */
 export type UserPoints = import('@goldenrace/shared').PointTransaction;
 
 export interface CreatePointTransactionRequest {
@@ -18,15 +18,15 @@ export interface CreatePointTransactionRequest {
   amount: number;
   description: string;
   metadata?: UserPoints['metadata'];
-  expiresAt?: Date; // 직접 만든 스키마 - Date
+  expiresAt?: Date; // Custom schema - Date
 }
 
 export interface PointTransactionFilters {
   userId?: string;
   type?: PointTransactionType;
   status?: PointStatus;
-  dateFrom?: Date; // 필터용 - Date
-  dateTo?: Date; // 필터용 - Date
+  dateFrom?: Date; // For filtering - Date
+  dateTo?: Date; // For filtering - Date
   minAmount?: number;
   maxAmount?: number;
   page?: number;
@@ -57,7 +57,7 @@ export interface PointStatistics {
   recentTransactions: UserPoints[];
   expiringPoints: {
     amount: number;
-    expiresAt: Date; // 직접 만든 스키마 - Date
+    expiresAt: Date; // Custom schema - Date
     daysUntilExpiry: number;
   }[];
 }
@@ -86,7 +86,7 @@ export interface PointTransferResponse {
   fee: number;
   netAmount: number;
   status: 'COMPLETED' | 'PENDING' | 'FAILED';
-  createdAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
 }
 
 export interface PointPromotion {
@@ -103,22 +103,22 @@ export interface PointPromotion {
     validUsers?: string[];
     [key: string]: unknown;
   };
-  startDate: Date; // 직접 만든 스키마 - Date
-  endDate: Date; // 직접 만든 스키마 - Date
+  startDate: Date; // Custom schema - Date
+  endDate: Date; // Custom schema - Date
   maxUses?: number;
   currentUses: number;
   isActive: boolean;
-  createdAt: Date; // 직접 만든 스키마 - Date
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
+  updatedAt: Date; // Custom schema - Date
 }
 
 export interface PointExpiryNotification {
   userId: string;
   expiringPoints: number;
-  expiryDate: Date; // 직접 만든 스키마 - Date
+  expiryDate: Date; // Custom schema - Date
   daysUntilExpiry: number;
   notificationSent: boolean;
-  lastNotificationSent?: Date; // 직접 만든 스키마 - Date
+  lastNotificationSent?: Date; // Custom schema - Date
 }
 
 export interface PointAuditLog {
@@ -140,7 +140,7 @@ export interface PointAuditLog {
   };
   ipAddress?: string;
   userAgent?: string;
-  createdAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
 }
 
 export interface PointSettings {
@@ -150,13 +150,13 @@ export interface PointSettings {
   description: string;
   isEditable: boolean;
   category: 'GENERAL' | 'TRANSACTIONS' | 'PROMOTIONS' | 'EXPIRY' | 'TRANSFERS';
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  updatedAt: Date; // Custom schema - Date
 }
 
 export interface PointReport {
   period: {
-    startDate: Date; // 직접 만든 스키마 - Date
-    endDate: Date; // 직접 만든 스키마 - Date
+    startDate: Date; // Custom schema - Date
+    endDate: Date; // Custom schema - Date
   };
   summary: {
     totalTransactions: number;
@@ -168,7 +168,7 @@ export interface PointReport {
   };
   breakdown: {
     byDay: {
-      date: Date; // 직접 만든 스키마 - Date
+      date: Date; // Custom schema - Date
       transactions: number;
       pointsEarned: number;
       pointsSpent: number;
@@ -189,12 +189,12 @@ export interface PointReport {
   };
 }
 
-// API 요청/응답을 위한 추가 타입들
+// Additional types for API requests/responses
 export interface CreatePointRequest {
   amount: number;
   description: string;
   type?: PointTransactionType;
-  expiresAt?: Date; // 직접 만든 스키마 - Date
+  expiresAt?: Date; // Custom schema - Date
   metadata?: UserPoints['metadata'];
 }
 
@@ -202,12 +202,12 @@ export interface UpdatePointRequest {
   amount?: number;
   description?: string;
   status?: PointStatus;
-  expiresAt?: Date; // 직접 만든 스키마 - Date
+  expiresAt?: Date; // Custom schema - Date
   metadata?: UserPoints['metadata'];
 }
 
 export interface PointListResponse {
-  transactions: UserPoints[]; // 서버의 실제 응답 구조
+  transactions: UserPoints[]; // Actual response structure from server
   total: number;
   page: number;
   totalPages: number;
@@ -217,8 +217,8 @@ export interface PointSearchFilters {
   query?: string;
   type?: PointTransactionType;
   status?: PointStatus;
-  dateFrom?: Date; // 필터용 - Date
-  dateTo?: Date; // 필터용 - Date
+  dateFrom?: Date; // For filtering - Date
+  dateTo?: Date; // For filtering - Date
   minAmount?: number;
   maxAmount?: number;
   page?: number;
@@ -230,7 +230,7 @@ export interface PointBalanceResponse {
   recentTransactions: UserPoints[];
   expiringPoints: {
     amount: number;
-    expiresAt: Date; // 직접 만든 스키마 - Date
+    expiresAt: Date; // Custom schema - Date
     daysUntilExpiry: number;
   }[];
 }

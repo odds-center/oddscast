@@ -1,5 +1,5 @@
 /**
- * 금주의 경주 섹션
+ * This week's races section
  */
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';

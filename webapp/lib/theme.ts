@@ -1,35 +1,35 @@
 /**
- * GOLDEN RACE 통일 테마 — 금색 & 검정색
- * Tailwind CSS 변수와 일치시키기 위한 참조용 상수
+ * GOLDEN RACE unified theme — Gold & Black
+ * Reference constants to match Tailwind CSS variables
  */
 export const theme = {
   colors: {
-    // 메인: 금색/검정
+    // Main: Gold/Black
     gold: {
       50: '#fff9e6',
       100: '#ffecb3',
       200: '#ffdf80',
       300: '#ffd24d',
       400: '#ffc519',
-      500: '#ffd700', // primary (메인 금색)
+      500: '#ffd700', // primary (main gold)
       600: '#e6c200',
       700: '#ccac00',
-      800: '#b3860b', // primary-dark (다크 골드)
+      800: '#b3860b', // primary-dark (dark gold)
       900: '#996600',
     },
     black: {
       50: '#2a2a2a',
       100: '#1f1f1f',
-      200: '#1a1a1a', // secondary
+      200: '#1a1a1a', // secondary (black)
       300: '#141414',
       400: '#0f0f0f',
-      500: '#0c0c0c', // background
+      500: '#0c0c0c', // background (black)
       600: '#080808',
       700: '#050505',
       800: '#020202',
       900: '#000000',
     },
-    // 시맨틱
+    // Semantic colors
     primary: '#ffd700',
     'primary-dark': '#b3860b',
     background: '#0c0c0c',
@@ -45,7 +45,7 @@ export const theme = {
     error: '#ef4444',
   },
   spacing: {
-    nav: '4rem', // 64px mobile
+    nav: '4rem', // 64px (mobile)
     'nav-desktop': '4rem',
     content: '1rem',
     'content-md': '1.5rem',

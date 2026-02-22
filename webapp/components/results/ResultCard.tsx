@@ -39,7 +39,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
       className='block group touch-manipulation'
     >
       <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-slate-400 h-full'>
-        {/* 경주 정보 */}
+        {/* Race information */}
         <div className='flex items-center gap-3 min-w-0'>
           <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-stone-100 border border-stone-200 shrink-0'>
             <Icon name='Trophy' size={16} className='text-stone-500 mb-0.5' strokeWidth={2} />
@@ -57,7 +57,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
           </div>
         </div>
 
-        {/* 1·2·3등 */}
+        {/* 1st, 2nd, 3rd place */}
         <div className='flex-1 min-w-0 overflow-x-auto'>
           {top3.length > 0 ? (
             <table className='data-table data-table-compact w-full min-w-[200px]'>

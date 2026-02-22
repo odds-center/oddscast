@@ -10,10 +10,25 @@ import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/authStore';
 import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
+import { FloatingAppBar } from '@/components/Layout';
+
+const MOBILE_BREAKPOINT = 768;
 
 export default function App({ Component, pageProps }: AppProps<{ dehydratedState?: DehydratedState }>) {
   const router = useRouter();
+  const pathname = router.pathname;
   const { dehydratedState, ...restPageProps } = pageProps;
+
+  const [clientMounted, setClientMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
+    check();
+    window.addEventListener('resize', check);
+    queueMicrotask(() => setClientMounted(true));
+    return () => window.removeEventListener('resize', check);
+  }, []);
 
   useEffect(() => {
     if (!CONFIG.analytics.gaMeasurementId) return;
@@ -41,7 +56,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     hydrate();
   }, [hydrate]);
 
-  // 네이티브 앱: 로그인 시 푸시 토큰 등록을 위해 JWT 전달
+  // Native app: send JWT for push token registration on login
   useEffect(() => {
     if (bridge.isNativeApp() && token) {
       bridge.send('AUTH_READY', { token });
@@ -71,6 +86,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           <Component {...restPageProps} />
         </HydrationBoundary>
       </QueryClientProvider>
+      {clientMounted && <FloatingAppBar pathname={pathname} isMobile={isMobile} />}
     </>
   );
 }

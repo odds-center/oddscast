@@ -6,8 +6,8 @@ import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 
 /**
- * 내가 고른 말 (Picks) — SERVICE_SPEC에 따라 서비스에서 제외됨.
- * 메뉴 미노출, 직접 URL 접근 시 준비 중 안내.
+ * My picks (Picks) — Excluded from service according to SERVICE_SPEC.
+ * Not shown in menu, shows "preparing" message on direct URL access.
  */
 export default function PicksPage() {
   return (

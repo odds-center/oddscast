@@ -1,12 +1,12 @@
 /**
- * 출전마 테이블 — 풍부한 정보 + 세련된 UI
- * No(게이트), 마명, 기수/조교사, 마령·산지, 부담중량, 마체중, 레이팅, 통산, 최근등수
+ * Horse entry table — rich information + refined UI
+ * No (gate), horse name, jockey/trainer, age/origin, weight carried, horse weight, rating, career record, recent ranks
  */
 import { getGateBgColor } from './RaceHeaderCard';
 import Icon from '@/components/icons';
 import { Tooltip } from '@/components/ui';
 
-/** 렌더링에 필요한 출전마 필드 */
+/** Horse entry fields required for rendering */
 export interface HorseEntryRow {
   id?: string | number;
   hrNo: string;
@@ -27,7 +27,7 @@ export interface HorseEntryRow {
   budam?: string;
 }
 
-/** horseWeight "502(-2)" → { base: 502, delta: -2 } (마체중 kg, 전 대비 증감) */
+/** horseWeight "502(-2)" → { base: 502, delta: -2 } (horse weight in kg, change from previous) */
 function parseHorseWeight(hw?: string): { base?: number; delta?: number } {
   if (!hw || typeof hw !== 'string') return {};
   const m = hw.match(/^(\d+)(\(([+-]?\d+)\))?$/);
@@ -37,7 +37,7 @@ function parseHorseWeight(hw?: string): { base?: number; delta?: number } {
   return { base, delta };
 }
 
-/** 마령·산지 포맷: prd(산지)+age(연령)+sex(성별) → 한4수, 미3암 */
+/** Age/origin format: prd (origin) + age + sex → Kr4M, US3F (example: Korean 4-year-old male, US 3-year-old female) */
 function formatAgeSexOrigin(prd?: string, age?: number, sex?: string): string {
   const parts: string[] = [];
   const prdMap: Record<string, string> = { 한국: '한', 미국: '미', 일본: '일', 아일랜드: '아', 영국: '영' };
@@ -47,7 +47,7 @@ function formatAgeSexOrigin(prd?: string, age?: number, sex?: string): string {
   return parts.length ? parts.join('') : '-';
 }
 
-/** 통산 포맷: rcCntT, ord1CntT → "20전 3승" */
+/** Career record format: rcCntT, ord1CntT → "20R 3W" (20 races, 3 wins) */
 function formatRecord(rcCntT?: number, ord1CntT?: number): string {
   if (rcCntT == null && ord1CntT == null) return '-';
   const total = rcCntT ?? 0;
@@ -70,7 +70,7 @@ export interface HorseEntryTableProps {
 export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: HorseEntryTableProps) {
   return (
     <div className='space-y-2 sm:space-y-0'>
-      {/* 모바일: 카드형 */}
+      {/* Mobile: card layout */}
       <div className='block sm:hidden space-y-2'>
         {entries.map((e) => {
           const gateNo = parseInt(e.chulNo ?? '0', 10) || 0;
@@ -145,7 +145,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
         })}
       </div>
 
-      {/* 데스크톱: 테이블형 */}
+      {/* Desktop: table layout */}
       <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
         <table className='data-table data-table-compact w-full'>
           <thead>

@@ -14,7 +14,7 @@ export default class ConfigApi {
   static async getShowGoogleLogin(): Promise<boolean> {
     const config = await this.getConfig();
     const val = config.show_google_login;
-    if (val === undefined || val === null || val === '') return true; // 설정 없으면 표시
+    if (val === undefined || val === null || val === '') return true; // Show if not configured
     if (val === 'false' || val === '0' || val === 'no') return false;
     return val === 'true' || val === '1' || val === 'yes';
   }

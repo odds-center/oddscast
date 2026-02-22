@@ -1,6 +1,6 @@
 /**
- * 세그먼트 스타일 탭바 공용 컴포넌트
- * profile/edit, races/[id], predictions/matrix 등에서 일관된 compact 스타일
+ * Shared segment-style tab bar component
+ * Consistent compact style used in profile/edit, races/[id], predictions/matrix, etc.
  */
 export interface TabOption<T extends string = string> {
   value: T;

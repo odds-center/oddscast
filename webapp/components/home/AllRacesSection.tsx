@@ -1,5 +1,5 @@
 /**
- * 전체 경주 미리보기 섹션 — KRA 발매경주표 스타일 테이블
+ * All races preview section — KRA race schedule style table
  */
 import Link from 'next/link';
 import { useState, useEffect } from 'react';

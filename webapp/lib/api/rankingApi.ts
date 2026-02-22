@@ -25,7 +25,7 @@ export interface MyRankingResponse {
 
 export default class RankingApi {
   /**
-   * 랭킹 목록 조회
+   * Get ranking list
    */
   static async getRankings(params: {
     type?: string;
@@ -47,7 +47,7 @@ export default class RankingApi {
   }
 
   /**
-   * 내 랭킹 조회 (로그인 필요)
+   * Get my ranking (login required)
    */
   static async getMyRanking(
     type: 'overall' | 'weekly' | 'monthly' = 'overall',

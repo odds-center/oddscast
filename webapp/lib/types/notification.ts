@@ -1,20 +1,20 @@
-// 알림 관련 타입 정의
+// Notification-related type definitions
 export enum NotificationType {
   INFO = 'INFO',
   WARNING = 'WARNING',
   ERROR = 'ERROR',
   SUCCESS = 'SUCCESS',
-  BET_RESULT = 'BET_RESULT', // 베팅 결과
-  RACE_UPDATE = 'RACE_UPDATE', // 경주 업데이트
-  POINT_EXPIRY = 'POINT_EXPIRY', // 포인트 만료
-  RACE_START = 'RACE_START', // 경주 시작
-  RACE_RESULT = 'RACE_RESULT', // 경주 결과
-  SYSTEM = 'SYSTEM', // 시스템 알림
-  PROMOTION = 'PROMOTION', // 프로모션
-  ACHIEVEMENT = 'ACHIEVEMENT', // 업적 달성
-  SECURITY = 'SECURITY', // 보안 알림
-  MAINTENANCE = 'MAINTENANCE', // 점검 알림
-  NEWS = 'NEWS', // 뉴스
+  BET_RESULT = 'BET_RESULT', // Bet result
+  RACE_UPDATE = 'RACE_UPDATE', // Race update
+  POINT_EXPIRY = 'POINT_EXPIRY', // Point expiry
+  RACE_START = 'RACE_START', // Race start
+  RACE_RESULT = 'RACE_RESULT', // Race result
+  SYSTEM = 'SYSTEM', // System notification
+  PROMOTION = 'PROMOTION', // Promotion
+  ACHIEVEMENT = 'ACHIEVEMENT', // Achievement
+  SECURITY = 'SECURITY', // Security notification
+  MAINTENANCE = 'MAINTENANCE', // Maintenance notification
+  NEWS = 'NEWS', // News
 }
 
 export enum NotificationPriority {
@@ -60,12 +60,12 @@ export interface Notification {
     [key: string]: unknown;
   };
   isRead: boolean;
-  readAt?: Date; // 직접 만든 스키마 - Date
-  expiresAt?: Date; // 직접 만든 스키마 - Date
-  scheduledAt?: Date; // 직접 만든 스키마 - Date
-  sentAt?: Date; // 직접 만든 스키마 - Date
-  createdAt: Date; // 직접 만든 스키마 - Date
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  readAt?: Date; // Custom schema - Date
+  expiresAt?: Date; // Custom schema - Date
+  scheduledAt?: Date; // Custom schema - Date
+  sentAt?: Date; // Custom schema - Date
+  createdAt: Date; // Custom schema - Date
+  updatedAt: Date; // Custom schema - Date
 }
 
 export interface CreateNotificationRequest {
@@ -75,8 +75,8 @@ export interface CreateNotificationRequest {
   priority?: NotificationPriority;
   category?: NotificationCategory;
   metadata?: Notification['metadata'];
-  scheduledAt?: Date; // 직접 만든 스키마 - Date
-  expiresAt?: Date; // 직접 만든 스키마 - Date
+  scheduledAt?: Date; // Custom schema - Date
+  expiresAt?: Date; // Custom schema - Date
 }
 
 export interface UpdateNotificationRequest {
@@ -93,8 +93,8 @@ export interface NotificationFilters {
   priority?: NotificationPriority;
   category?: NotificationCategory;
   isRead?: boolean;
-  dateFrom?: Date; // 필터용 - Date
-  dateTo?: Date; // 필터용 - Date
+  dateFrom?: Date; // For filtering - Date
+  dateTo?: Date; // For filtering - Date
   page?: number;
   limit?: number;
 }
@@ -166,7 +166,7 @@ export interface UpdateNotificationTemplateRequest {
   isActive?: boolean;
 }
 
-/** 서버 API와 동일한 알림 설정 타입 */
+/** Notification settings type identical to server API */
 export interface NotificationPreferences {
   id?: string;
   userId?: string;
@@ -180,7 +180,7 @@ export interface NotificationPreferences {
   updatedAt?: string;
 }
 
-/** 알림 설정 업데이트 요청 (부분 업데이트) */
+/** Notification settings update request (partial update) */
 export interface NotificationPreferencesUpdate {
   pushEnabled?: boolean;
   raceEnabled?: boolean;

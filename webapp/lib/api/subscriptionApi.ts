@@ -2,7 +2,7 @@ import { ApiResponse } from '@/lib/types/api';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
 /**
- * 구독 상태
+ * Subscription status
  */
 export interface SubscriptionStatus {
   id: string;
@@ -20,7 +20,7 @@ export interface SubscriptionStatus {
 }
 
 /**
- * 구독 이력 항목
+ * Subscription history item
  */
 export interface SubscriptionHistoryItem {
   id: string;
@@ -30,18 +30,18 @@ export interface SubscriptionHistoryItem {
 }
 
 /**
- * 구독 생성 요청
+ * Subscription creation request
  */
 export interface CreateSubscriptionRequest {
   planId: string; // SubscriptionPlan.id (UUID)
 }
 
 /**
- * 구독 API
+ * Subscription API
  */
 export default class SubscriptionsApi {
   /**
-   * 구독 신청 (PENDING 생성)
+   * Subscribe (creates PENDING status)
    * @returns subscription { id, planId, status, ... }
    */
   static async subscribe(data: CreateSubscriptionRequest) {
@@ -54,7 +54,7 @@ export default class SubscriptionsApi {
   }
 
   /**
-   * 구독 활성화 (결제 완료 후)
+   * Activate subscription (after payment completion)
    */
   static async activate(subscriptionId: string, billingKey: string) {
     try {
@@ -69,7 +69,7 @@ export default class SubscriptionsApi {
   }
 
   /**
-   * 구독 취소
+   * Cancel subscription
    */
   static async cancel(reason?: string) {
     try {
@@ -83,7 +83,7 @@ export default class SubscriptionsApi {
   }
 
   /**
-   * 구독 상태 조회
+   * Get subscription status
    */
   static async getStatus(): Promise<SubscriptionStatus | null> {
     try {
@@ -96,7 +96,7 @@ export default class SubscriptionsApi {
   }
 
   /**
-   * 구독 내역 조회 (페이지네이션)
+   * Get subscription history (paginated)
    * @returns { subscriptions, total, page, totalPages }
    */
   static async getHistory(

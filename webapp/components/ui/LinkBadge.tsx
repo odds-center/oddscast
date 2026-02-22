@@ -1,5 +1,5 @@
 /**
- * 테이블/리스트 내 링크
+ * Link within table/list
  */
 import Link from 'next/link';
 import Icon from '../icons';

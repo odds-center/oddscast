@@ -4,7 +4,7 @@ interface PageHeaderProps {
   icon: IconName;
   title: string;
   description?: string;
-  /** 추가 제목/부제 (예: 사용자명) */
+  /** Additional title/subtitle (e.g., username) */
   subtitle?: React.ReactNode;
   children?: React.ReactNode;
 }

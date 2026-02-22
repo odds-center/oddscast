@@ -23,7 +23,7 @@ export interface JockeyAnalysis {
 }
 
 /**
- * 경주별 기수·말 통합 분석 (마칠기삼)
+ * Race-specific jockey and horse integrated analysis
  * GET /api/analysis/race/:raceId/jockey
  */
 export default class AnalysisApi {

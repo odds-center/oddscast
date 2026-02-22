@@ -1,6 +1,6 @@
 /**
- * 종합 예상 매트릭스 — 용산종합지 스타일
- * 다크 헤더, 게이트 색상 번호, 경주 정보 포함
+ * Comprehensive prediction matrix — Yongsan comprehensive style
+ * Dark header, gate color numbers, race information included
  */
 import Link from 'next/link';
 import type { MatrixResponseDto, MatrixRowDto } from '@/lib/api/predictionMatrixApi';
@@ -95,7 +95,7 @@ export default function PredictionMatrixTable({
 
   return (
     <div className='relative'>
-      {/* 테이블 헤더 라벨 */}
+      {/* Table header label */}
       <div className='flex items-center justify-between bg-[#292524] text-stone-200 px-3 py-2 rounded-t text-xs font-semibold'>
         <div className='flex items-center gap-2'>
           <Icon name='BarChart2' size={14} className='text-[#d4a942]' />
@@ -106,7 +106,7 @@ export default function PredictionMatrixTable({
         <span className='text-[#d4a942] font-normal'>AI GOLDEN RACE</span>
       </div>
 
-      {/* 메인 테이블 */}
+      {/* Main table */}
       <div className='overflow-x-auto border border-t-0 border-stone-200 rounded-b bg-white'>
         <table className='w-full min-w-[420px] border-collapse'>
           <thead>
@@ -162,7 +162,7 @@ export default function PredictionMatrixTable({
         )}
       </div>
 
-      {/* 잠금 오버레이 */}
+      {/* Lock overlay */}
       {locked && hiddenCount > 0 && (
         <div className='relative mt-[-1px] border border-stone-200 rounded-b bg-gradient-to-b from-white to-stone-50 py-8 text-center'>
           <div className='absolute inset-x-0 top-0 h-8 bg-gradient-to-b from-white/80 to-transparent pointer-events-none' />

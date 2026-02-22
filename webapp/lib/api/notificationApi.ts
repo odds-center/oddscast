@@ -12,7 +12,7 @@ import qs from 'qs';
 export default class NotificationApi {
   private static baseUrl = '/notifications';
 
-  // 알림 목록 조회
+  // Get notification list
   static async getNotifications(filters?: NotificationFilters): Promise<{
     notifications: Notification[];
     total: number;
@@ -40,7 +40,7 @@ export default class NotificationApi {
     }
   }
 
-  // 개별 알림 조회
+  // Get individual notification
   static async getNotification(notificationId: string): Promise<Notification> {
     try {
       const response = await axiosInstance.get<ApiResponse<Notification>>(
@@ -52,7 +52,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 생성
+  // Create notification
   static async createNotification(
     notificationData: CreateNotificationRequest,
   ): Promise<Notification> {
@@ -67,7 +67,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 업데이트
+  // Update notification
   static async updateNotification(
     notificationId: string,
     updateData: UpdateNotificationRequest,
@@ -83,7 +83,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 읽음 처리
+  // Mark notification as read
   static async markAsRead(notificationId: string): Promise<Notification> {
     try {
       const response = await axiosInstance.patch<ApiResponse<Notification>>(
@@ -95,7 +95,7 @@ export default class NotificationApi {
     }
   }
 
-  // 모든 알림 읽음 처리
+  // Mark all notifications as read
   static async markAllAsRead(): Promise<{ updatedCount: number }> {
     try {
       const response = await axiosInstance.patch<ApiResponse<{ updatedCount: number }>>(
@@ -107,7 +107,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 삭제
+  // Delete notification
   static async deleteNotification(notificationId: string): Promise<{ message: string }> {
     try {
       const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
@@ -119,7 +119,7 @@ export default class NotificationApi {
     }
   }
 
-  // 읽지 않은 알림 개수 조회
+  // Get unread notification count
   static async getUnreadCount(): Promise<{ count: number }> {
     try {
       const response = await axiosInstance.get<ApiResponse<{ count: number }>>(
@@ -131,7 +131,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 설정 조회
+  // Get notification preferences
   static async getNotificationPreferences(): Promise<NotificationPreferences> {
     try {
       const response = await axiosInstance.get<ApiResponse<NotificationPreferences>>(
@@ -143,7 +143,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 설정 업데이트
+  // Update notification preferences
   static async updateNotificationPreferences(
     preferences: Partial<NotificationPreferences>,
   ): Promise<NotificationPreferences> {
@@ -158,7 +158,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 구독 (Push 알림용)
+  // Subscribe to push notifications
   static async subscribeToPushNotifications(
     deviceToken: string,
     platform?: string,
@@ -174,7 +174,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 구독 해제
+  // Unsubscribe from push notifications
   static async unsubscribeFromPushNotifications(deviceToken: string): Promise<{ message: string }> {
     try {
       const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
@@ -187,7 +187,7 @@ export default class NotificationApi {
     }
   }
 
-  // 알림 템플릿 조회 (관리자용)
+  // Get notification templates (admin only)
   static async getNotificationTemplates(): Promise<
     {
       id: string;
@@ -209,7 +209,7 @@ export default class NotificationApi {
     }
   }
 
-  // 대량 알림 발송 (관리자용)
+  // Send bulk notifications (admin only)
   static async sendBulkNotifications(
     templateId: string,
     recipients: string[],

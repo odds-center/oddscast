@@ -1,5 +1,5 @@
 /**
- * 오늘의 경주 섹션 — KRA 발매경주표 스타일
+ * Today's races section — KRA race schedule style
  */
 import { useQuery } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';

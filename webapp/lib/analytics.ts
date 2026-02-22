@@ -1,6 +1,6 @@
 /**
- * Google Analytics 4 (GA4) 클라이언트 측 추적
- * CTA 클릭, 페이지뷰, 전환 이벤트 수집
+ * Google Analytics 4 (GA4) client-side tracking
+ * Collects CTA clicks, page views, conversion events
  */
 
 declare global {
@@ -22,7 +22,7 @@ export const GA_ENABLED = !!(
   process.env.NODE_ENV === 'production'
 );
 
-/** 페이지뷰 트래킹 (SPA 라우트 변경 시) */
+/** Page view tracking (on SPA route change) */
 export function trackPageView(path: string, title?: string) {
   if (!GA_ENABLED || !window.gtag) return;
   window.gtag('event', 'page_view', {
@@ -31,7 +31,7 @@ export function trackPageView(path: string, title?: string) {
   });
 }
 
-/** CTA 및 커스텀 이벤트 */
+/** CTA and custom events */
 export function trackEvent(
   eventName: string,
   params?: {
@@ -45,31 +45,31 @@ export function trackEvent(
   window.gtag('event', eventName, params);
 }
 
-/** 사전 정의된 CTA 이벤트 이름 */
+/** Predefined CTA event names */
 export const GA_EVENTS = {
-  /** 예측권 사용 클릭 */
+  /** Prediction ticket use click */
   PREDICTION_TICKET_USE: 'prediction_ticket_use',
-  /** 다시 예측하기 클릭 */
+  /** Regenerate prediction click */
   PREDICTION_REGENERATE: 'prediction_regenerate',
-  /** 로그인 시도 */
+  /** Login attempt */
   LOGIN_CLICK: 'login_click',
-  /** 구글 로그인 클릭 */
+  /** Google login click */
   GOOGLE_LOGIN_CLICK: 'google_login_click',
-  /** 출전마 선택 저장 */
+  /** Save selected horse */
   PICK_SAVE: 'pick_save',
-  /** 경주 상세 진입 */
+  /** Race detail view */
   RACE_DETAIL_VIEW: 'race_detail_view',
-  /** 즐겨찾기 추가 */
+  /** Add favorite */
   FAVORITE_ADD: 'favorite_add',
-  /** 구독 결제 시도 */
+  /** Subscription checkout attempt */
   SUBSCRIPTION_CHECKOUT: 'subscription_checkout',
-  /** 단건 결제 시도 */
+  /** Single purchase attempt */
   SINGLE_PURCHASE: 'single_purchase',
-  /** 종합 예측권 사용 */
+  /** Matrix ticket use */
   MATRIX_TICKET_USE: 'matrix_ticket_use',
 } as const;
 
-/** CTA 트래킹 헬퍼 */
+/** CTA tracking helper */
 export function trackCTA(
   action: keyof typeof GA_EVENTS,
   label?: string,

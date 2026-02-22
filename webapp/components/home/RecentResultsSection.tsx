@@ -1,5 +1,5 @@
 /**
- * 최근 결과 섹션 — 1·2·3위 그룹화 compact 표시
+ * Recent results section — grouped 1st·2nd·3rd place compact display
  */
 import { useQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';

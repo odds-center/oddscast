@@ -1,7 +1,7 @@
 /**
- * 승식별 AI 예측 섹션
- * compact(기본): 핵심 3가지 추천식 카드 (단승, 연승, 삼쌍)
- * full: 7개 승식 전체 테이블
+ * AI prediction section by bet type
+ * compact (default): 3 core recommended bet cards (single, quinella, triple)
+ * full: complete table of 7 bet types
  */
 import { ArrowRight, Circle } from 'lucide-react';
 import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC, PICK_TYPE_DESCRIPTIONS } from '@/lib/api/picksApi';
@@ -206,7 +206,7 @@ export default function BetTypePredictionsSection({
     );
   }
 
-  // 핵심 3가지 추천식 카드
+  // Core 3 recommended bet cards
   const top3Items = TOP_3_BET_TYPES.map((key) => {
     const pred = merged[key];
     const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
@@ -215,7 +215,7 @@ export default function BetTypePredictionsSection({
     return { key, label: PICK_TYPE_POOL_NAMES[key] ?? key, desc: PICK_TYPE_COMBO_DESC[key] ?? '', nodesList, reason, colors };
   });
 
-  // 나머지 4개 승식 (접기 가능)
+  // Remaining 4 bet types (collapsible)
   const restKeys = BET_TYPE_ORDER.filter((k) => !TOP_3_BET_TYPES.includes(k));
   const restItems = restKeys.map((key) => {
     const pred = merged[key];
@@ -227,7 +227,7 @@ export default function BetTypePredictionsSection({
     <div className='space-y-3'>
       <p className='text-text-secondary text-sm font-semibold'>AI 추천 승식</p>
 
-      {/* 핵심 3가지 카드 */}
+      {/* Core 3 cards */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2.5'>
         {top3Items.map((item) => (
           <div
@@ -260,7 +260,7 @@ export default function BetTypePredictionsSection({
         ))}
       </div>
 
-      {/* 나머지 승식 — 아코디언 없이 바로 표시 */}
+      {/* Remaining bet types — displayed directly without accordion */}
       <div className='overflow-x-auto rounded-lg border border-border'>
         <table className='data-table data-table-compact w-full min-w-[300px]'>
           <thead>

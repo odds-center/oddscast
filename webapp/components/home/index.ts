@@ -1,5 +1,5 @@
 /**
- * 홈 페이지 전용 섹션 컴포넌트
+ * Home page section components
  */
 export { default as DateHeader } from './DateHeader';
 export { default as HomeQuickStats } from './HomeQuickStats';

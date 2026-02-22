@@ -1,6 +1,6 @@
 /**
- * GOLDEN RACE 통일 아이콘 — Lucide React
- * 경마/프리미엄 테마에 어울리는 시맨틱 아이콘
+ * GOLDEN RACE unified icons — Lucide React
+ * Semantic icons suitable for horse racing/premium theme
  */
 import {
   Trophy,
@@ -27,10 +27,10 @@ import {
   Settings,
   CheckCircle,
   CreditCard,
-  Flag,      // 경주/레이스
-  Sparkles,  // AI 예측
-  Crown,     // 구독/프리미엄
-  Gem,       // 포인트/고급
+  Flag,      // Race
+  Sparkles,  // AI prediction
+  Crown,     // Subscription/premium
+  Gem,       // Points/premium
   TrendingUp,
   Medal,
   Award,
@@ -51,7 +51,7 @@ import {
   Grip,
 } from 'lucide-react';
 
-/** 경주 아이콘 — 깃발(Flag) 사용 (경주 시작 신호) */
+/** Race icon — uses Flag (race start signal) */
 export const Horse = Flag;
 
 export const Icons = {

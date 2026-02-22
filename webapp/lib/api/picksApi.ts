@@ -11,7 +11,7 @@ export const PICK_TYPE_LABELS: Record<string, string> = {
   TRIPLE: '삼쌍승식',
 };
 
-/** 사용자가 쉽게 이해할 수 있는 승식 설명 */
+/** Bet type descriptions that users can easily understand */
 export const PICK_TYPE_DESCRIPTIONS: Record<string, string> = {
   SINGLE: '1마리 골라서 1등 맞추기',
   PLACE: '1마리 골라서 1·2·3등 중 하나 맞추기',
@@ -32,7 +32,7 @@ export const PICK_TYPE_HORSE_COUNTS: Record<string, number> = {
   TRIPLE: 3,
 };
 
-/** 승식 → 배당 pool명 (한국어) */
+/** Bet type → dividend pool name (Korean) */
 export const PICK_TYPE_POOL_NAMES: Record<string, string> = {
   SINGLE: '단승식',
   PLACE: '복승식',
@@ -43,7 +43,7 @@ export const PICK_TYPE_POOL_NAMES: Record<string, string> = {
   TRIPLE: '삼쌍승식',
 };
 
-/** 승식별 선택/조합 설명 (UI 표시용, HORSE_RACING_TERMINOLOGY) */
+/** Selection/combination description per bet type (for UI display, HORSE_RACING_TERMINOLOGY) */
 export const PICK_TYPE_COMBO_DESC: Record<string, string> = {
   SINGLE: '1마리 1등',
   PLACE: '1마리 1~3등',
@@ -54,7 +54,7 @@ export const PICK_TYPE_COMBO_DESC: Record<string, string> = {
   TRIPLE: '3마리 1→2→3등 (순서 유관)',
 };
 
-/** 선택 조합에 맞는 배당 찾기 */
+/** Find dividend matching selected combination */
 export function findDividendForPick(
   dividends: { pool?: string; poolName?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number }[] | undefined,
   pickType: string,
@@ -80,7 +80,7 @@ export function findDividendForPick(
 }
 
 export interface CreatePickDto {
-  raceId: number; // 서버: number (ParseIntPipe)
+  raceId: number; // Server: number (ParseIntPipe)
   pickType: string;
   hrNos: string[];
   hrNames?: string[];

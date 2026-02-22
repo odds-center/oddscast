@@ -70,37 +70,63 @@ import BackLink from '@/components/page/BackLink';
 
 <PageHeader icon='Horse' title='실시간 경마' description='설명' />
 <SectionCard title='예측권' accent>...</SectionCard>
-<MenuList items={[{ href: '/profile', icon: 'User', label: '내 정보' }]} />
+<MenuList items={[{ href: '/profile', icon: 'User', label: '정보' }]} />
 <FilterChips options={[{ value: '', label: '전체' }]} value={val} onChange={setVal} />
 <FormInput label='이메일' {...register('email')} error={errors.email?.message} />
 <Pagination page={1} totalPages={5} onPageChange={(p) => setPage(p)} />
-<BackLink href='/profile' label='내 정보로' />
+<BackLink href='/profile' label='정보로' />
 ```
 
 ---
 
 ## 4. 모바일 레이아웃 & CSS
 
+### 앱 바 (App Bar)
+
+- **`FloatingAppBar`**: `Layout.tsx`에 정의, `_app.tsx`에서 렌더 (한 번만 마운트 → 페이지 전환 깜빡임 방지)
+- 5개 메뉴: 홈 / 경주 / 종합 / 결과 / 정보
+- **모바일** (< 768px): 화면 하단 완전 고정, `safe-area-inset-bottom` 반영, `justify-between` 배치, 드래그 없음
+- **데스크톱** (≥ 768px): 플로팅 바 — 드래그 이동, 모서리 스냅, 가로/세로 전환, 위치 `localStorage` 저장
+
 ### Safe Area (노치/라운드 대응)
 
 - **헤더**: `pt-[env(safe-area-inset-top)]`
 - **콘텐츠**: `pl/pr [max(1rem, env(safe-area-inset-*))]`
-- **하단 네비**: `pb-[env(safe-area-inset-bottom)]`
+- **앱 바 (모바일)**: `padding-bottom: max(0.25rem, env(safe-area-inset-bottom))`
 - **메타**: `viewport-fit=cover`, `theme-color`, `apple-mobile-web-app-*`
 
 ### 터치 UX
 
-- **터치 타겟**: 버튼/링크 최소 44×44px
-- **touch-manipulation**: `touch-action: manipulation`, 탭 하이라이트 제거
-- **input**: `font-size: 16px` (iOS 줌 방지)
-- **nav-item-mobile**: 56px 높이, 5개 메뉴 균등 배치 (홈/경주/종합/결과/내 정보)
+- **터치 타겟**: 버튼/링크 최소 44×44px, 카드 클릭 영역 확보
+- **touch-manipulation**: `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent`
+- **active 피드백**: `transform: scale(0.97); opacity: 0.92` (버튼), `background: #fafaf9` (카드)
+- **input**: `font-size: 16px`, `min-height: 44px` (iOS 줌 방지)
 
 ### 모바일 전용 CSS (`globals.css`)
 
-- `overflow-x: hidden` — 가로 스크롤 방지
 - `.touch-manipulation` — 더블탭 줌 지연 제거
-- `.nav-item-mobile` — 하단 네비 스타일
-- `@media (max-width: 767px)` — 카드 패딩, 버튼 크기 조정
+- `.nav-mobile-bar-fixed` — 모바일 하단 고정 앱 바
+- `.nav-mobile-item` — 앱 바 메뉴 아이템 (아이콘 22px + 라벨)
+- **버튼**: `min-height: 44px`, `border-radius: 10px`, `active` 피드백
+- **카드**: `border-radius: 10px`, 모바일 패딩 `0.875rem`
+- `@media (max-width: 768px)` — 카드 패딩, 버튼 크기, 섹션 간격 조정
+
+### 테이블 모바일 스크롤
+
+- `.data-table-wrapper`: `overflow-x: auto` + `-webkit-overflow-scrolling: touch`
+- `.data-table`: `min-width: max-content` → 컬럼이 잘리지 않고, 넘치면 좌우 터치 스크롤
+- 커스텀 table도 부모 div에 `overflow-x-auto` 필수
+
+### 모바일 레이아웃 패턴
+
+- 좁은 가로 배치 → `flex-col sm:flex-row` 패턴 사용
+- 주요 행동 버튼 → 모바일에서 `w-full` 풀너비
+- SectionCard description → 모바일에서도 항상 표시
+
+### 푸터
+
+- **Layout에서 제거됨** (앱 바와 겹침 문제)
+- `LegalFooter` 컴포넌트: 이용약관·개인정보처리방침·환불정책 → 정보 페이지에만 배치
 
 ---
 

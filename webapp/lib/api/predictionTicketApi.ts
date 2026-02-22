@@ -3,7 +3,7 @@ import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axio
 import type { PredictionResultDto } from '@/lib/types/predictions';
 
 /**
- * 예측권 타입
+ * Prediction ticket type
  */
 export interface PredictionTicket {
   id: string;
@@ -18,8 +18,8 @@ export interface PredictionTicket {
 }
 
 /**
- * 예측권 잔액
- * 서버 필드: available, used, expired, total
+ * Prediction ticket balance
+ * Server fields: available, used, expired, total
  */
 export interface TicketBalance {
   userId?: string;
@@ -34,7 +34,7 @@ export interface TicketBalance {
 }
 
 /**
- * 예측권 사용 결과
+ * Prediction ticket usage result
  */
 export interface UseTicketResult {
   prediction: PredictionResultDto;
@@ -46,12 +46,12 @@ export interface UseTicketResult {
 }
 
 /**
- * 예측권 API
+ * Prediction ticket API
  */
 export default class PredictionTicketsApi {
   /**
-   * 예측권 사용 (AI 예측 요청)
-   * @param regenerate - true면 기존 예측 무시하고 새로 AI 예측 생성 (다시 예측)
+   * Use prediction ticket (request AI prediction)
+   * @param regenerate - if true, ignore existing prediction and generate new AI prediction (re-predict)
    */
   static async redeem(
     raceId: string,
@@ -70,8 +70,8 @@ export default class PredictionTicketsApi {
   }
 
   /**
-   * 예측권 잔액 조회
-   * 서버 필드(available,used,expired,total)를 availableTickets 등으로 정규화
+   * Get prediction ticket balance
+   * Normalize server fields (available, used, expired, total) to availableTickets, etc.
    */
   static async getBalance(): Promise<TicketBalance> {
     try {
@@ -89,12 +89,12 @@ export default class PredictionTicketsApi {
   }
 
   /**
-   * 사용 내역 조회
-   * 서버 응답: { tickets, total, page, totalPages }
+   * Get usage history
+   * Server response: { tickets, total, page, totalPages }
    */
   static async getHistory(
     limit = 50,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- API 시그니처 호환
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- API signature compatibility
     _offset = 0,
     page = 1,
   ): Promise<{ tickets: PredictionTicket[]; total: number; page: number; totalPages: number }> {
@@ -119,7 +119,7 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** 종합 예측권 접근 권한 확인 */
+  /** Check comprehensive prediction ticket access permission */
   static async checkMatrixAccess(date: string): Promise<{ hasAccess: boolean; expiresAt?: string }> {
     try {
       const response = await axiosInstance.get('/prediction-tickets/matrix/access', { params: { date } });
@@ -129,7 +129,7 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** 종합 예측권 사용 */
+  /** Use comprehensive prediction ticket */
   static async useMatrixTicket(date: string): Promise<{ ticket: PredictionTicket; alreadyUsed: boolean }> {
     try {
       const response = await axiosInstance.post('/prediction-tickets/matrix/use', { date });
@@ -139,7 +139,7 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** 종합 예측권 잔액 */
+  /** Comprehensive prediction ticket balance */
   static async getMatrixBalance(): Promise<{ available: number; used: number; total: number }> {
     try {
       const response = await axiosInstance.get('/prediction-tickets/matrix/balance');
@@ -150,7 +150,7 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** 종합 예측권 개별 구매 */
+  /** Purchase individual comprehensive prediction tickets */
   static async purchaseMatrixTickets(count: number = 1): Promise<{
     purchased: number;
     totalPrice: number;
@@ -165,7 +165,7 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** 종합 예측권 가격 조회 */
+  /** Get comprehensive prediction ticket price */
   static async getMatrixPrice(): Promise<{ pricePerTicket: number; currency: string; maxPerPurchase: number }> {
     try {
       const response = await axiosInstance.get('/prediction-tickets/matrix/price');
@@ -176,7 +176,7 @@ export default class PredictionTicketsApi {
   }
 
   /**
-   * 예측권 상세 조회
+   * Get prediction ticket details
    */
   static async getById(id: string): Promise<PredictionTicket> {
     try {

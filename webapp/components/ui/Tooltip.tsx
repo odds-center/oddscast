@@ -1,17 +1,17 @@
 /**
- * Tooltip — CSS 기반 경량 툴팁
- * 별도 라이브러리 없이 hover/focus 시 설명 표시
+ * Tooltip — lightweight CSS-based tooltip
+ * Displays description on hover/focus without external library
  */
 import { type ReactNode } from 'react';
 
 interface TooltipProps {
-  /** 툴팁에 표시될 설명 텍스트 */
+  /** Description text to display in tooltip */
   content: string;
-  /** 감싸는 자식 요소 */
+  /** Child element to wrap */
   children: ReactNode;
-  /** 툴팁 위치 */
+  /** Tooltip position */
   position?: 'top' | 'bottom' | 'left' | 'right';
-  /** 인라인 래핑 (th, span 등에 적용 시 true) */
+  /** Inline wrapping (set to true when applied to th, span, etc.) */
   inline?: boolean;
 }
 

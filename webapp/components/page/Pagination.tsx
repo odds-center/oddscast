@@ -1,6 +1,6 @@
 /**
- * 페이지네이션 — < 1 ... 2 3 4 ... 5 > 형식
- * 여러 페이지로 직접 이동 가능
+ * Pagination — < 1 ... 2 3 4 ... 5 > format
+ * Can navigate directly to multiple pages
  */
 interface PaginationProps {
   page: number;
@@ -53,7 +53,7 @@ export default function Pagination({
         onClick={() => onPageChange(Math.max(1, page - 1))}
         disabled={page <= 1}
         className={btnClass}
-        aria-label='이전 페이지'
+        aria-label='Previous page'
       >
         ‹
       </button>
@@ -68,7 +68,7 @@ export default function Pagination({
             key={p}
             onClick={() => onPageChange(p)}
             className={`${pageBtnClass} ${p === page ? activeClass : inactiveClass}`}
-            aria-label={`${p}페이지`}
+            aria-label={`Page ${p}`}
             aria-current={p === page ? 'page' : undefined}
           >
             {p}
@@ -80,7 +80,7 @@ export default function Pagination({
         onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         disabled={page >= totalPages}
         className={btnClass}
-        aria-label='다음 페이지'
+        aria-label='Next page'
       >
         ›
       </button>

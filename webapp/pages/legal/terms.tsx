@@ -17,7 +17,7 @@ export default function TermsPage() {
             본 약관은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」, 「콘텐츠산업 진흥법」 등 관련 법령을 준수합니다.
           </p>
 
-          {/* 제1조 목적 */}
+          {/* Article 1: Purpose */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제1조 (목적)</h2>
             <p className='text-text-secondary'>
@@ -25,7 +25,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 제2조 정의 */}
+          {/* Article 2: Definitions */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제2조 (정의)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -39,7 +39,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제3조 서비스의 성격 */}
+          {/* Article 3: Nature of Service */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제3조 (서비스의 성격)</h2>
             <p className='text-text-secondary mb-2'>
@@ -52,7 +52,7 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 제4조 약관의 효력 및 변경 */}
+          {/* Article 4: Effectiveness and Amendment of Terms */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제4조 (약관의 효력 및 변경)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -62,7 +62,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제5조 이용계약 */}
+          {/* Article 5: User Agreement */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제5조 (이용계약의 성립)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -72,7 +72,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제5조의2 이용자의 의무 */}
+          {/* Article 5-2: User Obligations */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제5조의2 (이용자의 의무)</h2>
             <p className='text-text-secondary mb-2'>이용자는 다음 행위를 하여서는 아니 됩니다.</p>
@@ -85,7 +85,7 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 제6조 서비스 이용 */}
+          {/* Article 6: Service Usage */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제6조 (서비스 이용)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -95,7 +95,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제7조 결제 및 요금 */}
+          {/* Article 7: Payment and Fees */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제7조 (결제 및 요금)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -106,7 +106,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제8조 환불 정책 (상세) */}
+          {/* Article 8: Refund Policy (Detailed) */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제8조 (환불 정책)</h2>
             <p className='text-text-secondary mb-2'>
@@ -122,7 +122,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제9조 해지 및 이용 제한 */}
+          {/* Article 9: Termination and Usage Restrictions */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제9조 (해지 및 이용 제한)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -132,7 +132,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제10조 예측 정보의 한계 및 면책 */}
+          {/* Article 10: Limitations and Disclaimer of Prediction Information */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제10조 (예측 정보의 한계 및 면책)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -144,7 +144,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제11조 저작권 및 지식재산권 */}
+          {/* Article 11: Copyright and Intellectual Property Rights */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제11조 (저작권 및 지식재산권)</h2>
             <p className='text-text-secondary'>
@@ -152,7 +152,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 제12조 개인정보 보호 */}
+          {/* Article 12: Privacy Protection */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제12조 (개인정보 보호)</h2>
             <p className='text-text-secondary'>
@@ -164,7 +164,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 제12조의2 회사 정보 및 연락처 */}
+          {/* Article 12-2: Company Information and Contact */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제12조의2 (회사 정보 및 연락처)</h2>
             <p className='text-text-secondary mb-2'>
@@ -181,7 +181,7 @@ export default function TermsPage() {
             </ul>
           </section>
 
-          {/* 제12조의3 통지 및 공지 */}
+          {/* Article 12-3: Notices and Announcements */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제12조의3 (통지 및 공지)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -191,7 +191,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제13조 분쟁 해결 */}
+          {/* Article 13: Dispute Resolution */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제13조 (분쟁 해결 및 관할)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
@@ -200,7 +200,7 @@ export default function TermsPage() {
             </ol>
           </section>
 
-          {/* 제14조 준거법 */}
+          {/* Article 14: Governing Law */}
           <section>
             <h2 className='text-base font-semibold mb-2'>제14조 (준거법)</h2>
             <p className='text-text-secondary'>
@@ -208,7 +208,7 @@ export default function TermsPage() {
             </p>
           </section>
 
-          {/* 부칙 */}
+          {/* Supplementary Provisions */}
           <section>
             <h2 className='text-base font-semibold mb-2'>부칙</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>

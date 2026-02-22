@@ -1,5 +1,5 @@
 /**
- * API 타입 — @goldenrace/shared와 동기화
+ * API type — synchronized with @goldenrace/shared
  * @see @goldenrace/shared
  */
 export type {
@@ -9,10 +9,10 @@ export type {
   ErrorCode,
 } from '@goldenrace/shared';
 
-// 공통 타입들 (다른 파일에서 재정의되지 않는 것들)
-// BetStatistics는 bet.ts에서 정의됨
+// Common types (not redefined in other files)
+// BetStatistics is defined in bet.ts
 
-// 다른 타입 파일들에서 export하는 타입들을 re-export
+// Re-export types exported from other type files
 export type { AuthResponse, LoginRequest, RegisterRequest } from './auth';
 export type {
   Bet,

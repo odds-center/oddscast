@@ -1,5 +1,5 @@
 /**
- * 예상 기호 — ◎(우수) ○(양호) △(복병) ※(주의) ★(인기)
+ * Prediction symbol — ◎(excellent) ○(good) △(dark horse) ※(caution) ★(popular)
  */
 export type PredictionSymbolType = 'BEST' | 'GOOD' | 'DARK' | 'CAUTION' | 'POPULAR';
 
@@ -28,7 +28,7 @@ export default function PredictionSymbol({ type, size = 'md', showLabel = false 
   );
 }
 
-/** AI 점수 → 기호 매핑 */
+/** AI score → symbol mapping */
 export function scoreToSymbol(rank: number): PredictionSymbolType {
   if (rank === 1) return 'BEST';
   if (rank === 2) return 'GOOD';

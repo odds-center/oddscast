@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 
-/** 이용약관·개인정보처리방침·환불정책 등 푸터 (정보 페이지 등에서 사용) */
+/** Legal footer: Terms, Privacy, Refund policy (used on profile page) */
 export default function LegalFooter() {
   return (
     <footer className='mt-8 pt-6 border-t border-stone-200'>

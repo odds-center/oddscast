@@ -1,5 +1,5 @@
 /**
- * AI 예측 horseScores 항목 (경주 상세 표시용)
+ * AI prediction horseScores item (for race detail display)
  */
 export interface PredictionHorseScore {
   hrNo?: string;
@@ -8,15 +8,15 @@ export interface PredictionHorseScore {
   score?: number;
   reason?: string;
   chulNo?: string;
-  /** 강점 요약 */
+  /** Strengths summary */
   strengths?: string[];
-  /** 약점 요약 */
+  /** Weaknesses summary */
   weaknesses?: string[];
-  /** AI 확신도: high/medium/low */
+  /** AI confidence level: high/medium/low */
   confidence?: 'high' | 'medium' | 'low';
 }
 
-/** 승식별 AI 예측 — 각 승식마다 별도 추천 */
+/** AI prediction by bet type — separate recommendation for each bet type */
 export interface BetTypePredictionSingle {
   hrNo: string;
   reason?: string;
@@ -41,7 +41,7 @@ export interface BetTypePredictionTripleExact {
   reason?: string;
 }
 
-/** 2마리/3마리 승식 — 3개 조합 예시 (연승·쌍승·복연승·삼복승·삼쌍승) */
+/** 2-horse/3-horse bet types — 3 combination examples (quinella, exacta, quinella place, trifecta, triple) */
 export interface BetTypePredictionPairMulti {
   combinations: BetTypePredictionPair[];
   reason?: string;
@@ -62,20 +62,20 @@ export interface BetTypePredictionTripleExactMulti {
 export interface BetTypePredictions {
   SINGLE?: BetTypePredictionSingle;
   PLACE?: BetTypePredictionSingle;
-  /** 연승식: 3개 조합 (서로 다름) */
+  /** Quinella: 3 combinations (different from each other) */
   QUINELLA?: BetTypePredictionPair | BetTypePredictionPairMulti;
-  /** 쌍승식: 3개 조합 */
+  /** Exacta: 3 combinations */
   EXACTA?: BetTypePredictionExacta | BetTypePredictionExactaMulti;
-  /** 복연승식: 3개 조합 */
+  /** Quinella Place: 3 combinations */
   QUINELLA_PLACE?: BetTypePredictionPair | BetTypePredictionPairMulti;
-  /** 삼복승식: 3개 조합 */
+  /** Trifecta: 3 combinations */
   TRIFECTA?: BetTypePredictionTriple | BetTypePredictionTripleMulti;
-  /** 삼쌍승식: 3개 조합 */
+  /** Triple: 3 combinations */
   TRIPLE?: BetTypePredictionTripleExact | BetTypePredictionTripleExactMulti;
 }
 
 /**
- * AI 예측 scores 객체 (경주 상세 표시용)
+ * AI prediction scores object (for race detail display)
  */
 export interface PredictionScoresDto {
   horseScores?: PredictionHorseScore[];
@@ -83,7 +83,7 @@ export interface PredictionScoresDto {
 }
 
 /**
- * AI 예측 상세 (경주 상세 표시용)
+ * AI prediction detail (for race detail display)
  */
 export interface PredictionDetailDto {
   scores?: PredictionScoresDto;
@@ -92,14 +92,14 @@ export interface PredictionDetailDto {
 }
 
 /**
- * AI 예측 결과 DTO
- * (일부 API는 scores를 포함한 확장 형태로 반환)
+ * AI prediction result DTO
+ * (some APIs return extended form including scores)
  */
 export interface PredictionResultDto {
   id: string;
   raceId: string;
   predictedFirst: number;
-  /** 경주 상세 표시용 scores (선택, 예측권 사용 응답 등에서 제공) */
+  /** scores for race detail display (optional, provided in prediction ticket usage response, etc.) */
   scores?: PredictionScoresDto;
   predictedSecond: number;
   predictedThird: number;
@@ -119,23 +119,23 @@ export interface PredictionResultDto {
   updatedAt?: Date;
   verifiedAt?: Date;
 
-  // 예측권 사용 정보 (선택적)
+  // Prediction ticket usage information (optional)
   ticketUsed?: boolean;
   ticketId?: string;
 }
 
 /**
- * 예측 상태 DTO
+ * Prediction status DTO
  */
 export interface PredictionStatusDto {
   status: 'pending' | 'processing' | 'completed' | 'failed';
   message: string;
   raceId: string;
-  estimatedTime?: number; // 예상 소요 시간 (초)
+  estimatedTime?: number; // Estimated time required (seconds)
 }
 
 /**
- * 예측 미리보기 (블러 처리용, GET /predictions/race/:raceId/preview 응답)
+ * Prediction preview (for blur processing, GET /predictions/race/:raceId/preview response)
  */
 export interface PredictionPreview {
   raceId?: string;
@@ -144,14 +144,14 @@ export interface PredictionPreview {
   requiresTicket?: boolean;
   message?: string;
   status?: 'pending' | 'completed' | 'failed';
-  /** DB 저장 예측의 요약 텍스트 (previewApproved 시) */
+  /** Summary text of DB-stored prediction (when previewApproved) */
   preview?: string;
   analysis?: string;
   scores?: PredictionScoresDto;
 }
 
 /**
- * 예측 생성 요청 DTO
+ * Create prediction request DTO
  */
 export interface CreatePredictionDto {
   raceId: string;
@@ -161,7 +161,7 @@ export interface CreatePredictionDto {
 }
 
 /**
- * 일일 예측 통계
+ * Daily prediction statistics
  */
 export interface DailyPredictionStats {
   date: string;
@@ -183,7 +183,7 @@ export interface DailyPredictionStats {
 }
 
 /**
- * 모델 성과
+ * Model performance
  */
 export interface ModelPerformance {
   modelVersion: string;
@@ -201,7 +201,7 @@ export interface ModelPerformance {
 }
 
 /**
- * 분석 대시보드
+ * Analytics dashboard
  */
 export interface AnalyticsDashboard {
   overall: {

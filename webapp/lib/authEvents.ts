@@ -1,6 +1,6 @@
 /**
- * 인증 이벤트 (axios ↔ authStore 간 순환 참조 방지)
- * 401 발생 시 여기서 emit, authStore에서 subscribe
+ * Authentication events (prevents circular reference between axios ↔ authStore)
+ * Emit here on 401, subscribe in authStore
  */
 type Listener = () => void;
 const listeners: Listener[] = [];

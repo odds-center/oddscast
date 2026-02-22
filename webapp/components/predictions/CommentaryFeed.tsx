@@ -1,6 +1,6 @@
 /**
- * 전문가 코멘트 피드 — 용산종합지 스타일
- * 말풍선/카드 형태, 키워드 강조, 게이트 배지
+ * Expert commentary feed — Yongsan comprehensive style
+ * Speech bubble/card format, keyword highlighting, gate badge
  */
 import Link from 'next/link';
 import type { CommentaryDto } from '@/lib/api/predictionMatrixApi';

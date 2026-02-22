@@ -1,29 +1,29 @@
-// 경마 관련 타입 — @goldenrace/shared DTO re-export
+// Horse racing-related types — @goldenrace/shared DTO re-export
 export type { RaceDto, RaceDetailDto, RaceEntryDto, RaceResultDto, DividendDto, RaceListResponseDto } from '@goldenrace/shared';
 
-/** @deprecated RaceDto 사용 권장 */
+/** @deprecated Use RaceDto instead */
 export interface Race {
   id: string;
   meet: string;
   meetName: string;
-  rcDate: string; // KRA API 응답 - string
+  rcDate: string; // KRA API response - string
   rcNo: string;
   rcName: string;
   rcDist: string;
-  rank: string; // KRA: 등급조건 (rcGrade)
+  rank: string; // KRA: grade condition (rcGrade)
   rcCondition: string;
   rcPrize: number;
   rcRatingMin?: string;
   rcRatingMax?: string;
   rcAgeCondition?: string;
   rcSexCondition?: string;
-  stTime?: string; // KRA: 출발시각
-  rcStartTime?: string; // mock/legacy 호환
-  rcEndTime?: string; // KRA API 응답 - string
+  stTime?: string; // KRA: start time
+  rcStartTime?: string; // mock/legacy compatibility
+  rcEndTime?: string; // KRA API response - string
   rcDay?: string;
   rcWeekday?: string;
   weather?: string;
-  track?: string; // KRA: 주로상태
+  track?: string; // KRA: track condition
   rcPrize2?: number;
   rcPrize3?: number;
   rcPrize4?: number;
@@ -35,8 +35,8 @@ export interface Race {
   apiVersion: string;
   dataSource: string;
   createdBy?: string;
-  createdAt: Date; // 직접 만든 스키마 - Date
-  updatedAt: Date; // 직접 만든 스키마 - Date
+  createdAt: Date; // Custom schema - Date
+  updatedAt: Date; // Custom schema - Date
   totalPrize?: number;
   totalEntries?: number;
   raceStatus: string;
@@ -66,7 +66,7 @@ export interface EntryDetail {
   hrWeight?: string;
   hrRating?: string;
   totalStarts?: number;
-  ord1CntT?: number; // KRA: 통산1위횟수 (totalWins)
+  ord1CntT?: number; // KRA: total wins (totalWins)
   totalPlaces?: number;
   totalWinRate?: number;
   totalPlaceRate?: number;
@@ -83,7 +83,7 @@ export interface EntryDetail {
 export interface RaceResult {
   id: string;
   raceId: string;
-  ord: string; // KRA: 순위
+  ord: string; // KRA: rank
   hrNo: string;
   hrName: string;
   jkName: string;
@@ -140,7 +140,7 @@ export interface RacePlansFilters {
   limit?: number;
 }
 
-// API 요청/응답을 위한 추가 타입들
+// Additional types for API requests/responses
 export interface CreateRaceRequest {
   meet: string;
   meetName: string;
@@ -148,26 +148,26 @@ export interface CreateRaceRequest {
   rcNo: string;
   rcName: string;
   rcDist: string;
-  rank: string; // KRA: 등급조건 (rcGrade)
+  rank: string; // KRA: grade condition (rcGrade)
   rcCondition: string;
   rcPrize: number;
   rcStartTime?: string;
   rcEndTime?: string;
   weather?: string;
-  track?: string; // KRA: 주로상태
+  track?: string; // KRA: track condition
 }
 
 export interface UpdateRaceRequest {
   meetName?: string;
   rcName?: string;
   rcDist?: string;
-  rank?: string; // KRA: 등급조건 (기존 rcGrade)
+  rank?: string; // KRA: grade condition (existing rcGrade)
   rcCondition?: string;
   rcPrize?: number;
   rcStartTime?: string;
   rcEndTime?: string;
   weather?: string;
-  track?: string; // KRA: 주로상태
+  track?: string; // KRA: track condition
   raceStatus?: string;
 }
 
@@ -239,7 +239,7 @@ export interface RaceSchedule {
     rcNo: string;
     rcName: string;
     rcDist: string;
-    rank: string; // KRA: 등급조건 (rcGrade)
+    rank: string; // KRA: grade condition (rcGrade)
     rcStartTime: string;
     totalEntries: number;
     raceStatus: string;

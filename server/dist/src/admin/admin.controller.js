@@ -28,8 +28,10 @@ const subscriptions_service_1 = require("../subscriptions/subscriptions.service"
 const notifications_service_1 = require("../notifications/notifications.service");
 const single_purchases_service_1 = require("../single-purchases/single-purchases.service");
 const prediction_tickets_service_1 = require("../prediction-tickets/prediction-tickets.service");
+const activity_logs_service_1 = require("../activity-logs/activity-logs.service");
+const admin_activity_interceptor_1 = require("../activity-logs/admin-activity.interceptor");
 let AdminController = AdminController_1 = class AdminController {
-    constructor(kraService, usersService, configService, prisma, subscriptionsService, notificationsService, singlePurchasesService, predictionTicketsService) {
+    constructor(kraService, usersService, configService, prisma, subscriptionsService, notificationsService, singlePurchasesService, predictionTicketsService, activityLogsService) {
         this.kraService = kraService;
         this.usersService = usersService;
         this.configService = configService;
@@ -38,6 +40,7 @@ let AdminController = AdminController_1 = class AdminController {
         this.notificationsService = notificationsService;
         this.singlePurchasesService = singlePurchasesService;
         this.predictionTicketsService = predictionTicketsService;
+        this.activityLogsService = activityLogsService;
     }
     async syncSchedule(date, year) {
         const norm = (s) => s.replace(/-/g, '').slice(0, 8);
@@ -499,6 +502,29 @@ let AdminController = AdminController_1 = class AdminController {
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([date, count]) => ({ date, count }));
     }
+    async getAdminActivityLogs(page, limit, action, adminUserId, dateFrom, dateTo) {
+        return this.activityLogsService.getAdminLogs({
+            page,
+            limit,
+            action,
+            adminUserId: adminUserId ? parseInt(adminUserId, 10) : undefined,
+            dateFrom,
+            dateTo,
+        });
+    }
+    async getUserActivityLogs(page, limit, event, userId, dateFrom, dateTo) {
+        return this.activityLogsService.getUserLogs({
+            page,
+            limit,
+            event,
+            userId: userId ? parseInt(userId, 10) : undefined,
+            dateFrom,
+            dateTo,
+        });
+    }
+    async getUserActivitySummary(userId) {
+        return this.activityLogsService.getUserActivitySummary(userId);
+    }
 };
 exports.AdminController = AdminController;
 AdminController.MODEL_COST = {
@@ -816,10 +842,45 @@ __decorate([
     __metadata("design:paramtypes", [Number]),
     __metadata("design:returntype", Promise)
 ], AdminController.prototype, "getTicketUsageTrend", null);
+__decorate([
+    (0, common_1.Get)('activity-logs/admin'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] Admin activity audit log' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('action')),
+    __param(3, (0, common_1.Query)('adminUserId')),
+    __param(4, (0, common_1.Query)('dateFrom')),
+    __param(5, (0, common_1.Query)('dateTo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getAdminActivityLogs", null);
+__decorate([
+    (0, common_1.Get)('activity-logs/users'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] User activity log' }),
+    __param(0, (0, common_1.Query)('page')),
+    __param(1, (0, common_1.Query)('limit')),
+    __param(2, (0, common_1.Query)('event')),
+    __param(3, (0, common_1.Query)('userId')),
+    __param(4, (0, common_1.Query)('dateFrom')),
+    __param(5, (0, common_1.Query)('dateTo')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number, Number, String, String, String, String]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getUserActivityLogs", null);
+__decorate([
+    (0, common_1.Get)('activity-logs/users/:userId/summary'),
+    (0, swagger_1.ApiOperation)({ summary: '[Admin] User activity summary' }),
+    __param(0, (0, common_1.Param)('userId', common_1.ParseIntPipe)),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Number]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "getUserActivitySummary", null);
 exports.AdminController = AdminController = AdminController_1 = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, common_1.Controller)('admin'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, common_1.UseInterceptors)(admin_activity_interceptor_1.AdminActivityInterceptor),
     (0, roles_decorator_1.Roles)(client_1.UserRole.ADMIN),
     (0, swagger_1.ApiBearerAuth)(),
     __metadata("design:paramtypes", [kra_service_1.KraService,
@@ -829,6 +890,7 @@ exports.AdminController = AdminController = AdminController_1 = __decorate([
         subscriptions_service_1.SubscriptionsService,
         notifications_service_1.NotificationsService,
         single_purchases_service_1.SinglePurchasesService,
-        prediction_tickets_service_1.PredictionTicketsService])
+        prediction_tickets_service_1.PredictionTicketsService,
+        activity_logs_service_1.ActivityLogsService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

@@ -6,6 +6,7 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SinglePurchasesService } from '../single-purchases/single-purchases.service';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 export declare class AdminController {
     private readonly kraService;
     private readonly usersService;
@@ -15,7 +16,8 @@ export declare class AdminController {
     private readonly notificationsService;
     private readonly singlePurchasesService;
     private readonly predictionTicketsService;
-    constructor(kraService: KraService, usersService: UsersService, configService: GlobalConfigService, prisma: PrismaService, subscriptionsService: SubscriptionsService, notificationsService: NotificationsService, singlePurchasesService: SinglePurchasesService, predictionTicketsService: PredictionTicketsService);
+    private readonly activityLogsService;
+    constructor(kraService: KraService, usersService: UsersService, configService: GlobalConfigService, prisma: PrismaService, subscriptionsService: SubscriptionsService, notificationsService: NotificationsService, singlePurchasesService: SinglePurchasesService, predictionTicketsService: PredictionTicketsService, activityLogsService: ActivityLogsService);
     syncSchedule(date?: string, year?: string): Promise<{
         races: number;
         monthsProcessed: number;
@@ -495,4 +497,27 @@ export declare class AdminController {
         date: string;
         count: number;
     }[]>;
+    getAdminActivityLogs(page?: number, limit?: number, action?: string, adminUserId?: string, dateFrom?: string, dateTo?: string): Promise<{
+        data: any;
+        meta: {
+            total: any;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    getUserActivityLogs(page?: number, limit?: number, event?: string, userId?: string, dateFrom?: string, dateTo?: string): Promise<{
+        data: any;
+        meta: {
+            total: any;
+            page: number;
+            limit: number;
+            totalPages: number;
+        };
+    }>;
+    getUserActivitySummary(userId: number): Promise<{
+        totalEvents: any;
+        recentEvents: any;
+        topEvents: any;
+    }>;
 }

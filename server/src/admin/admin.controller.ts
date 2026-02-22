@@ -4,6 +4,7 @@ import {
   Post,
   Query,
   UseGuards,
+  UseInterceptors,
   Param,
   Body,
   Patch,
@@ -23,11 +24,14 @@ import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SinglePurchasesService } from '../single-purchases/single-purchases.service';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
+import { ActivityLogsService } from '../activity-logs/activity-logs.service';
+import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { UpdateUserDto } from '../users/dto/user.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
+@UseInterceptors(AdminActivityInterceptor)
 @Roles(UserRole.ADMIN)
 @ApiBearerAuth()
 export class AdminController {
@@ -40,6 +44,7 @@ export class AdminController {
     private readonly notificationsService: NotificationsService,
     private readonly singlePurchasesService: SinglePurchasesService,
     private readonly predictionTicketsService: PredictionTicketsService,
+    private readonly activityLogsService: ActivityLogsService,
   ) {}
 
   // --- KRA Data Sync Endpoints ---
@@ -754,5 +759,53 @@ export class AdminController {
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
+  }
+
+  // --- Activity Logs ---
+
+  @Get('activity-logs/admin')
+  @ApiOperation({ summary: '[Admin] Admin activity audit log' })
+  async getAdminActivityLogs(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('action') action?: string,
+    @Query('adminUserId') adminUserId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.activityLogsService.getAdminLogs({
+      page,
+      limit,
+      action,
+      adminUserId: adminUserId ? parseInt(adminUserId, 10) : undefined,
+      dateFrom,
+      dateTo,
+    });
+  }
+
+  @Get('activity-logs/users')
+  @ApiOperation({ summary: '[Admin] User activity log' })
+  async getUserActivityLogs(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('event') event?: string,
+    @Query('userId') userId?: string,
+    @Query('dateFrom') dateFrom?: string,
+    @Query('dateTo') dateTo?: string,
+  ) {
+    return this.activityLogsService.getUserLogs({
+      page,
+      limit,
+      event,
+      userId: userId ? parseInt(userId, 10) : undefined,
+      dateFrom,
+      dateTo,
+    });
+  }
+
+  @Get('activity-logs/users/:userId/summary')
+  @ApiOperation({ summary: '[Admin] User activity summary' })
+  async getUserActivitySummary(@Param('userId', ParseIntPipe) userId: number) {
+    return this.activityLogsService.getUserActivitySummary(userId);
   }
 }

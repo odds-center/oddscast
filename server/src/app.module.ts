@@ -29,6 +29,7 @@ import { AdminModule } from './admin/admin.module';
 import { GlobalConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { CacheModule } from './cache/cache.module';
+import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { CacheModule } from './cache/cache.module';
     KraModule,
     AdminModule,
     GlobalConfigModule,
+    ActivityLogsModule,
   ],
   providers: [
     {

@@ -12,6 +12,7 @@ import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { FloatingAppBar } from '@/components/Layout';
 import NetworkStatusBanner from '@/components/ui/NetworkStatusBanner';
+import { trackActivity, ACTIVITY_EVENTS } from '@/lib/api/activityApi';
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -37,6 +38,14 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     router.events.on('routeChangeComplete', handleRouteChange);
     trackPageView(router.asPath);
     return () => router.events.off('routeChangeComplete', handleRouteChange);
+  }, [router.asPath, router.events]);
+
+  // Server-side activity tracking (page views)
+  useEffect(() => {
+    trackActivity(ACTIVITY_EVENTS.PAGE_VIEW, { page: router.asPath });
+    const handleRoute = (url: string) => trackActivity(ACTIVITY_EVENTS.PAGE_VIEW, { page: url });
+    router.events.on('routeChangeComplete', handleRoute);
+    return () => router.events.off('routeChangeComplete', handleRoute);
   }, [router.asPath, router.events]);
 
   // Sync onlineManager with browser navigator.onLine

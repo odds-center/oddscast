@@ -33,6 +33,7 @@ const admin_module_1 = require("./admin/admin.module");
 const config_module_1 = require("./config/config.module");
 const health_module_1 = require("./health/health.module");
 const cache_module_1 = require("./cache/cache.module");
+const activity_logs_module_1 = require("./activity-logs/activity-logs.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -62,6 +63,7 @@ exports.AppModule = AppModule = __decorate([
             kra_module_1.KraModule,
             admin_module_1.AdminModule,
             config_module_1.GlobalConfigModule,
+            activity_logs_module_1.ActivityLogsModule,
         ],
         providers: [
             {

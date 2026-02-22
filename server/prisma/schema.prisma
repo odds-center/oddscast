@@ -834,6 +834,47 @@ model KraSyncLog {
 }
 
 // ============================================
+// Admin Activity Log — audit trail for admin actions
+// ============================================
+model AdminActivityLog {
+  id          Int      @id @default(autoincrement())
+  adminUserId Int?
+  adminEmail  String?
+  action      String   // e.g. SYNC_SCHEDULE, UPDATE_USER, GRANT_TICKETS
+  target      String?  // e.g. "user:42", "race:20260215"
+  details     Json?    // request body, params, or result summary
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([adminUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("admin_activity_logs")
+}
+
+// ============================================
+// User Activity Log — user behavior tracking for analytics
+// ============================================
+model UserActivityLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  sessionId String?
+  event     String   // e.g. PAGE_VIEW, RACE_CLICK, PREDICTION_VIEW
+  page      String?  // e.g. /races/123
+  target    String?  // e.g. "race:123", "prediction:456"
+  metadata  Json?    // extra context (scroll depth, referrer, etc.)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([event])
+  @@index([createdAt])
+  @@map("user_activity_logs")
+}
+
+// ============================================
 // 글로벌 설정 (Key-Value, NoSQL 스타일)
 // seed: show_google_login, single_purchase_config(500원/장→550원 VAT포함)
 // ============================================

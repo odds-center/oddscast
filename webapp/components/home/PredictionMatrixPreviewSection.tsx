@@ -57,7 +57,7 @@ export default function PredictionMatrixPreviewSection() {
             <thead>
               <tr className='bg-[#292524] text-stone-300'>
                 <th className='text-left py-1.5 px-2.5 text-[11px] font-semibold whitespace-nowrap'>경주</th>
-                <th className='text-center py-1.5 px-2 text-[11px] font-semibold text-[#d4a942] whitespace-nowrap'>AI 종합</th>
+                <th className='text-center py-1.5 px-2 text-[11px] font-semibold text-primary whitespace-nowrap'>AI 종합</th>
               </tr>
             </thead>
             <tbody>
@@ -66,7 +66,7 @@ export default function PredictionMatrixPreviewSection() {
                   <td className='py-1.5 px-2.5'>
                     <Link
                       href={routes.races.detail(row.raceId)}
-                      className='font-medium text-foreground hover:text-[#92702A] hover:underline text-sm whitespace-nowrap'
+                      className='font-medium text-foreground hover:text-primary hover:underline text-sm whitespace-nowrap'
                     >
                       {row.meetName ?? row.meet} {row.rcNo}R
                       {row.stTime && (

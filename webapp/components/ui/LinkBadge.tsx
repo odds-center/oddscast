@@ -17,7 +17,7 @@ export default function LinkBadge({ href, children, icon, iconSize = 12, classNa
   return (
     <Link
       href={href}
-      className={`inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-[#92702A] hover:underline transition-colors whitespace-nowrap ${className}`.trim()}
+      className={`inline-flex items-center gap-1 text-sm font-semibold text-foreground hover:text-primary hover:underline transition-colors whitespace-nowrap ${className}`.trim()}
     >
       {icon && <Icon name={icon} size={iconSize} strokeWidth={2} className='text-stone-400' />}
       {children}

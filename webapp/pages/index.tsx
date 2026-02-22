@@ -106,7 +106,7 @@ export default function Home() {
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-stone-200 text-stone-600 text-sm font-medium hover:border-[#92702A] hover:text-[#92702A] active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
+            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-stone-200 text-stone-600 text-sm font-medium hover:border-primary hover:text-primary active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
           >
             <Icon name={item.icon} size={15} />
             {item.label}

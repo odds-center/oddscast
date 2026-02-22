@@ -8,7 +8,7 @@ import { RankBadge } from '@/components/ui';
 import { routes } from '@/lib/routes';
 
 const RANK_COLORS: Record<number, string> = {
-  1: 'text-[#92702A]',
+  1: 'text-primary',
   2: 'text-stone-600',
   3: 'text-stone-400',
 };

@@ -4,8 +4,8 @@
 export type PredictionSymbolType = 'BEST' | 'GOOD' | 'DARK' | 'CAUTION' | 'POPULAR';
 
 const SYMBOL_MAP: Record<PredictionSymbolType, { char: string; label: string; className: string }> = {
-  BEST: { char: '◎', label: '우수', className: 'bg-[#92702A] text-white' },
-  GOOD: { char: '○', label: '양호', className: 'bg-[#7A5D1F] text-white' },
+  BEST: { char: '◎', label: '우수', className: 'bg-primary text-white' },
+  GOOD: { char: '○', label: '양호', className: 'bg-primary-dark text-white' },
   DARK: { char: '△', label: '복병', className: 'bg-stone-500 text-white' },
   CAUTION: { char: '※', label: '주의', className: 'bg-stone-400 text-white' },
   POPULAR: { char: '★', label: '인기', className: 'bg-stone-700 text-white' },

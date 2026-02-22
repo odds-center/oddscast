@@ -159,7 +159,7 @@ export default function PredictionMatrixPage() {
                   <h2 className='text-base font-bold text-white'>{formatDisplayDate(dateFilter)}</h2>
                   <div className='flex items-center gap-3 mt-1.5 text-xs text-stone-400'>
                     <span className='inline-flex items-center gap-1'>
-                      <Icon name='Flag' size={12} className='text-[#d4a942]' />
+                      <Icon name='Flag' size={12} className='text-primary' />
                       {raceCount}경주
                     </span>
                     {Object.entries(meetGroups).map(([meet, cnt]) => (
@@ -170,7 +170,7 @@ export default function PredictionMatrixPage() {
                 {/* Matrix ticket status */}
                 <div className='text-right shrink-0'>
                   {hasAccess ? (
-                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#92702A] text-white text-xs font-semibold'>
+                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-white text-xs font-semibold'>
                       <Icon name='Unlock' size={12} />
                       열람 중
                     </span>
@@ -201,7 +201,7 @@ export default function PredictionMatrixPage() {
                   <h2 className='text-base font-bold text-white'>{formatDisplayDate(dateFilter)}</h2>
                   <div className='flex items-center gap-3 mt-1.5 text-xs text-stone-400'>
                     <span className='inline-flex items-center gap-1'>
-                      <Icon name='Flag' size={12} className='text-[#d4a942]' />
+                      <Icon name='Flag' size={12} className='text-primary' />
                       {raceCount}경주
                     </span>
                     {Object.entries(meetGroups).map(([meet, cnt]) => (
@@ -212,7 +212,7 @@ export default function PredictionMatrixPage() {
                 {/* Matrix ticket status */}
                 <div className='text-right shrink-0'>
                   {hasAccess ? (
-                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-[#92702A] text-white text-xs font-semibold'>
+                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-white text-xs font-semibold'>
                       <Icon name='Unlock' size={12} />
                       열람 중
                     </span>
@@ -300,9 +300,9 @@ export default function PredictionMatrixPage() {
 
                   {/* Matrix ticket purchase/use CTA */}
                   {!hasAccess && (
-                    <div className='rounded border border-[rgba(146,112,42,0.2)] bg-[rgba(146,112,42,0.04)] p-4'>
+                    <div className='rounded border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.04)] p-4'>
                       <div className='flex items-start gap-3'>
-                        <div className='w-9 h-9 rounded bg-[#92702A] flex items-center justify-center shrink-0'>
+                        <div className='w-9 h-9 rounded bg-primary flex items-center justify-center shrink-0'>
                           <Icon name='BarChart2' size={18} className='text-white' />
                         </div>
                         <div className='flex-1 min-w-0'>

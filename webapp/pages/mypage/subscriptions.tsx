@@ -127,7 +127,7 @@ export default function SubscriptionsPage() {
                     <p className='text-text-tertiary text-xs mt-1'>
                       예측권 {plan.totalTickets ?? plan.baseTickets}장/월
                       {plan.matrixTickets > 0 && (
-                        <span className='ml-1 text-[#92702A] font-medium'>
+                        <span className='ml-1 text-primary font-medium'>
                           + 종합 {plan.matrixTickets}장
                         </span>
                       )}

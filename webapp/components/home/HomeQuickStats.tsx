@@ -57,7 +57,7 @@ export default function HomeQuickStats() {
       {todayCount > 0 ? (
         <Link
           href={`${routes.races.list}?date=today`}
-          className='inline-flex items-center gap-1.5 font-semibold text-[#92702A] hover:underline whitespace-nowrap'
+          className='inline-flex items-center gap-1.5 font-semibold text-primary hover:underline whitespace-nowrap'
         >
           <Icon name='Flag' size={13} />
           오늘 {todayCount}경

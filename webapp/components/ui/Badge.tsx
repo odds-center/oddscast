@@ -8,7 +8,7 @@ interface BadgeProps {
 }
 
 const variantClass = {
-  primary: 'bg-[rgba(146,112,42,0.07)] text-[#92702A] border-[rgba(146,112,42,0.18)]',
+  primary: 'bg-[rgba(22,163,74,0.07)] text-[#16a34a] border-[rgba(22,163,74,0.18)]',
   muted: 'bg-stone-50 text-stone-500 border-stone-200',
   success: 'bg-green-50 text-green-700 border-green-200',
   warning: 'bg-amber-50 text-amber-700 border-amber-200',

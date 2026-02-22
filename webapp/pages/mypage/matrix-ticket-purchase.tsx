@@ -47,8 +47,8 @@ export default function MatrixTicketPurchasePage() {
           {/* Product information */}
           <SectionCard accent>
             <div className='flex items-start gap-3'>
-              <div className='w-10 h-10 rounded bg-[rgba(146,112,42,0.1)] flex items-center justify-center shrink-0'>
-                <Icon name='BarChart2' size={20} className='text-[#92702A]' />
+              <div className='w-10 h-10 rounded bg-[rgba(22,163,74,0.1)] flex items-center justify-center shrink-0'>
+                <Icon name='BarChart2' size={20} className='text-primary' />
               </div>
               <div>
                 <h3 className='text-foreground font-bold text-base'>종합 예측권</h3>
@@ -162,7 +162,7 @@ export default function MatrixTicketPurchasePage() {
           {/* Go to matrix */}
           <Link
             href={routes.predictions.matrix}
-            className='block text-center text-sm text-[#92702A] hover:underline'
+            className='block text-center text-sm text-primary hover:underline'
           >
             종합 예상표 바로가기 →
           </Link>

@@ -42,7 +42,7 @@ export default function DateHeader() {
             {isRaceDay ? (
               'AI 분석으로 경주를 예측해보세요'
             ) : nextRaceDay ? (
-              <>다음 경주일: <span className='text-[#d4a942]'>{nextRaceDay}</span></>
+              <>다음 경주일: <span className='text-primary'>{nextRaceDay}</span></>
             ) : (
               '경마 정보·분석 서비스'
             )}
@@ -52,7 +52,7 @@ export default function DateHeader() {
           {isRaceDay && (
             <Link
               href={`${routes.races.list}?date=today`}
-              className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#92702A] text-white text-sm font-semibold hover:bg-[#7A5D1F] active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
+              className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
             >
               <Icon name='Flag' size={15} />
               오늘의 경주

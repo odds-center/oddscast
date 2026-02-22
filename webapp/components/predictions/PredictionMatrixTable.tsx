@@ -98,12 +98,12 @@ export default function PredictionMatrixTable({
       {/* Table header label */}
       <div className='flex items-center justify-between bg-[#292524] text-stone-200 px-3 py-2 rounded-t text-xs font-semibold'>
         <div className='flex items-center gap-2'>
-          <Icon name='BarChart2' size={14} className='text-[#d4a942]' />
+          <Icon name='BarChart2' size={14} className='text-primary' />
           <span>종합 예상표</span>
           <span className='text-stone-500'>|</span>
           <span className='text-stone-400 font-normal'>{raceMatrix.length}경주</span>
         </div>
-        <span className='text-[#d4a942] font-normal'>AI OddsCast</span>
+        <span className='text-primary font-normal'>AI OddsCast</span>
       </div>
 
       {/* Main table */}
@@ -119,7 +119,7 @@ export default function PredictionMatrixTable({
                   {ex.name}
                 </th>
               ))}
-              <th className='text-center py-2 px-2 min-w-[72px] text-[11px] font-bold text-[#d4a942] whitespace-nowrap'>
+              <th className='text-center py-2 px-2 min-w-[72px] text-[11px] font-bold text-primary whitespace-nowrap'>
                 {aiExpert?.name ?? 'AI 종합'}
               </th>
             </tr>
@@ -138,7 +138,7 @@ export default function PredictionMatrixTable({
                     <PredictionCell val={row.predictions[ex.id] ?? '-'} horseNames={row.horseNames} />
                   </td>
                 ))}
-                <td className='text-center py-1.5 px-2 bg-[rgba(146,112,42,0.04)] whitespace-nowrap'>
+                <td className='text-center py-1.5 px-2 bg-[rgba(22,163,74,0.04)] whitespace-nowrap'>
                   <div className='flex items-center justify-center gap-1'>
                     <PredictionCell
                       val={
@@ -149,7 +149,7 @@ export default function PredictionMatrixTable({
                       horseNames={row.horseNames}
                     />
                     {row.consensusLabel && (
-                      <span className='text-[#92702A] text-[10px] font-semibold'>({row.consensusLabel})</span>
+                      <span className='text-primary text-[10px] font-semibold'>({row.consensusLabel})</span>
                     )}
                   </div>
                 </td>

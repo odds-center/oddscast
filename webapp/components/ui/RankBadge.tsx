@@ -4,7 +4,7 @@ interface RankBadgeProps {
 }
 
 const RANK_STYLES: Record<string, string> = {
-  '1': 'bg-[#92702A] text-white border-[#7A5D1F]',
+  '1': 'bg-primary text-white border-primary-dark',
   '2': 'bg-stone-200 text-stone-700 border-stone-300',
   '3': 'bg-stone-100 text-stone-500 border-stone-200',
 };

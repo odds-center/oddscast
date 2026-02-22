@@ -9,10 +9,10 @@ interface StatusBadgeProps {
 const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   SCHEDULED: { label: '예정', cls: 'bg-white text-stone-600 border-stone-300' },
   scheduled: { label: '예정', cls: 'bg-white text-stone-600 border-stone-300' },
-  IN_PROGRESS: { label: '진행', cls: 'bg-[#92702A] text-white border-[#92702A]' },
-  in_progress: { label: '진행', cls: 'bg-[#92702A] text-white border-[#92702A]' },
-  RUNNING: { label: '진행', cls: 'bg-[#92702A] text-white border-[#92702A]' },
-  running: { label: '진행', cls: 'bg-[#92702A] text-white border-[#92702A]' },
+  IN_PROGRESS: { label: '진행', cls: 'bg-primary text-white border-primary' },
+  in_progress: { label: '진행', cls: 'bg-primary text-white border-primary' },
+  RUNNING: { label: '진행', cls: 'bg-primary text-white border-primary' },
+  running: { label: '진행', cls: 'bg-primary text-white border-primary' },
   COMPLETED: { label: '종료', cls: 'bg-stone-100 text-stone-500 border-stone-200' },
   completed: { label: '종료', cls: 'bg-stone-100 text-stone-500 border-stone-200' },
 };

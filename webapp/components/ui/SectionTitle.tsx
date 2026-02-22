@@ -18,10 +18,10 @@ const sizeClass = {
 export default function SectionTitle({ title, icon, as: Tag = 'h3', className = '', noIcon = false, badge }: SectionTitleProps) {
   return (
     <Tag className={`text-foreground font-bold flex items-center gap-1 ${sizeClass[Tag]} ${className}`.trim()}>
-      {!noIcon && icon && <Icon name={icon} size={14} className='text-[#92702A] shrink-0' strokeWidth={2} />}
+      {!noIcon && icon && <Icon name={icon} size={14} className='text-primary shrink-0' strokeWidth={2} />}
       {title}
       {badge != null && badge !== '' && (
-        <span className='text-xs font-medium text-[#92702A] ml-0.5'>{badge}</span>
+        <span className='text-xs font-medium text-primary ml-0.5'>{badge}</span>
       )}
     </Tag>
   );

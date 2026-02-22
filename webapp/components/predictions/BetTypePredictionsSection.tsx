@@ -149,7 +149,7 @@ function getFirstHrNo(pred: BetTypePredictions[keyof BetTypePredictions]): strin
 }
 
 const BET_COLORS: Record<string, { bg: string; border: string; badge: string }> = {
-  SINGLE: { bg: 'bg-[rgba(146,112,42,0.04)]', border: 'border-[rgba(146,112,42,0.15)]', badge: 'bg-[#92702A] text-white' },
+  SINGLE: { bg: 'bg-[rgba(22,163,74,0.04)]', border: 'border-[rgba(22,163,74,0.15)]', badge: 'bg-[#16a34a] text-white' },
   QUINELLA: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-700 text-white' },
   TRIPLE: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-500 text-white' },
 };
@@ -195,8 +195,8 @@ export default function BetTypePredictionsSection({
     const name = hrNo ? toHorseName(hrNo, entries) : '';
     return (
       <div className='py-2'>
-        <div className='flex items-center gap-3 p-3 rounded border border-[rgba(146,112,42,0.15)] bg-[rgba(146,112,42,0.04)]'>
-          <span className='text-sm font-semibold px-2 py-0.5 rounded bg-[#92702A] text-white'>단승</span>
+        <div className='flex items-center gap-3 p-3 rounded border border-[rgba(22,163,74,0.15)] bg-[rgba(22,163,74,0.04)]'>
+          <span className='text-sm font-semibold px-2 py-0.5 rounded bg-[#16a34a] text-white'>단승</span>
           {nodesList[0] && (
             <span className='font-bold text-foreground text-base'>{nodesList[0].numbers[0]}번</span>
           )}

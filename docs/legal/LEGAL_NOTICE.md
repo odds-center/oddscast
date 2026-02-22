@@ -2,7 +2,7 @@
 
 ## ⚠️ 중요 안내
 
-본 애플리케이션 **Golden Race**는 **AI 기반 경마 예측 정보 제공 서비스**입니다.
+본 애플리케이션 **OddsCast**는 **AI 기반 경마 예측 정보 제공 서비스**입니다.
 
 ### 서비스 성격
 
@@ -198,17 +198,17 @@
 
 ### 서비스 관련 문의
 
-- 이메일: support@goldenrace.com
+- 이메일: support@oddscast.com
 - 고객센터: 1588-XXXX
 
 ### 법적 문의
 
-- 이메일: legal@goldenrace.com
-- 관리자: admin@goldenrace.com
+- 이메일: legal@oddscast.com
+- 관리자: admin@oddscast.com
 
 ### 구독 및 결제 문의
 
-- 이메일: billing@goldenrace.com
+- 이메일: billing@oddscast.com
 
 ---
 

@@ -1,5 +1,5 @@
 /**
- * GOLDEN RACE unified theme — Gold & Black
+ * OddsCast unified theme — Gold & Black
  * Reference constants to match Tailwind CSS variables
  */
 export const theme = {

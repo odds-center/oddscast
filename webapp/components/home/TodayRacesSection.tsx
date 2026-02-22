@@ -9,7 +9,7 @@ import { routes } from '@/lib/routes';
 import { StatusBadge, LinkBadge } from '@/components/ui';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import type { RaceDto } from '@/lib/types/race';
-import type { RaceDetailDto } from '@goldenrace/shared';
+import type { RaceDetailDto } from '@oddscast/shared';
 
 export default function TodayRacesSection() {
   const { data, isLoading } = useQuery({

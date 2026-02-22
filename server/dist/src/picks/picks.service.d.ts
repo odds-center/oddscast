@@ -13,7 +13,9 @@ export declare class PicksService {
             meet: string;
             meetName: string | null;
             rcDate: string;
+            rcDay: string | null;
             rcNo: string;
+            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
@@ -21,14 +23,12 @@ export declare class PicksService {
             weather: string | null;
             track: string | null;
             status: import("@prisma/client").$Enums.RaceStatus;
-            rcDay: string | null;
-            stTime: string | null;
         };
     } & {
         id: number;
-        createdAt: Date;
         userId: number;
         raceId: number;
+        createdAt: Date;
         pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];
@@ -44,7 +44,9 @@ export declare class PicksService {
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
+                rcDay: string | null;
                 rcNo: string;
+                stTime: string | null;
                 rcDist: string | null;
                 rank: string | null;
                 rcCondition: string | null;
@@ -52,14 +54,12 @@ export declare class PicksService {
                 weather: string | null;
                 track: string | null;
                 status: import("@prisma/client").$Enums.RaceStatus;
-                rcDay: string | null;
-                stTime: string | null;
             };
         } & {
             id: number;
-            createdAt: Date;
             userId: number;
             raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -78,7 +78,9 @@ export declare class PicksService {
             meet: string;
             meetName: string | null;
             rcDate: string;
+            rcDay: string | null;
             rcNo: string;
+            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
@@ -86,14 +88,12 @@ export declare class PicksService {
             weather: string | null;
             track: string | null;
             status: import("@prisma/client").$Enums.RaceStatus;
-            rcDay: string | null;
-            stTime: string | null;
         };
     } & {
         id: number;
-        createdAt: Date;
         userId: number;
         raceId: number;
+        createdAt: Date;
         pickType: import("@prisma/client").$Enums.PickType;
         hrNos: string[];
         hrNames: string[];

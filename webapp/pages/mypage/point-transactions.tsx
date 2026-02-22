@@ -43,7 +43,7 @@ export default function PointTransactionsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
         <RequireLogin />
       </Layout>
@@ -51,7 +51,7 @@ export default function PointTransactionsPage() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}

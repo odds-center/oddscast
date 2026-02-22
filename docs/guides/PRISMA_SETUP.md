@@ -1,4 +1,4 @@
-# Prisma 설정 가이드 (Golden Race Server)
+# Prisma 설정 가이드 (OddsCast Server)
 
 > Prisma 7 + PostgreSQL 기반의 NestJS 서버 데이터베이스 설정
 

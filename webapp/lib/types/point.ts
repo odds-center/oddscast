@@ -1,16 +1,16 @@
 /**
- * Point type — based on @goldenrace/shared
+ * Point type — based on @oddscast/shared
  */
 import {
   PointTransactionType,
   PointStatus,
   type UserPointBalance,
-} from '@goldenrace/shared';
-export { PointTransactionType, PointStatus } from '@goldenrace/shared';
-export type { UserPointBalance, PointTransaction, TicketPrice } from '@goldenrace/shared';
+} from '@oddscast/shared';
+export { PointTransactionType, PointStatus } from '@oddscast/shared';
+export type { UserPointBalance, PointTransaction, TicketPrice } from '@oddscast/shared';
 
 /** UserPoints = PointTransaction (legacy compatibility) */
-export type UserPoints = import('@goldenrace/shared').PointTransaction;
+export type UserPoints = import('@oddscast/shared').PointTransaction;
 
 export interface CreatePointTransactionRequest {
   userId: string;

@@ -37,7 +37,7 @@ export default function MatrixTicketPurchasePage() {
   const totalPrice = count * PRICE_PER_TICKET;
 
   return (
-    <Layout title='종합 예측권 구매 — GOLDEN RACE'>
+    <Layout title='종합 예측권 구매 — OddsCast'>
       <CompactPageTitle title='종합 예측권 구매' backHref={routes.predictions.matrix} />
 
       {!isLoggedIn ? (

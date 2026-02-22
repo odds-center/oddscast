@@ -20,7 +20,7 @@ import {
   RACE_INCLUDE_ENTRIES_ACTIVE,
   RACE_INCLUDE_FULL,
 } from '../common/prisma-includes';
-import { toKraMeetForDb } from '@goldenrace/shared';
+import { toKraMeetForDb } from '@oddscast/shared';
 
 @Injectable()
 export class RacesService {

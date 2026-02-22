@@ -6,7 +6,7 @@ import { routes } from '@/lib/routes';
 
 export default function TermsPage() {
   return (
-    <Layout title='서비스 이용 약관 | GOLDEN RACE'>
+    <Layout title='서비스 이용 약관 | OddsCast'>
       <div className='max-w-2xl mx-auto pb-12'>
         <CompactPageTitle title='서비스 이용 약관' backHref={routes.home} />
         <div className='card space-y-6 text-sm text-foreground leading-relaxed'>
@@ -21,7 +21,7 @@ export default function TermsPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>제1조 (목적)</h2>
             <p className='text-text-secondary'>
-              본 약관은 Golden Race(이하 &quot;회사&quot;)가 제공하는 AI 기반 경마 예측 정보 서비스(이하 &quot;서비스&quot;)의 이용조건 및 절차, 회사와 이용자 간의 권리·의무, 기타 필요한 사항을 규정함을 목적으로 합니다. 이용자는 본 약관에 동의한 후 서비스를 이용할 수 있으며, 약관에 동의하지 않을 경우 서비스 이용이 제한됩니다.
+              본 약관은 OddsCast(이하 &quot;회사&quot;)가 제공하는 AI 기반 경마 예측 정보 서비스(이하 &quot;서비스&quot;)의 이용조건 및 절차, 회사와 이용자 간의 권리·의무, 기타 필요한 사항을 규정함을 목적으로 합니다. 이용자는 본 약관에 동의한 후 서비스를 이용할 수 있으며, 약관에 동의하지 않을 경우 서비스 이용이 제한됩니다.
             </p>
           </section>
 
@@ -117,7 +117,7 @@ export default function TermsPage() {
               <li><strong>구독 서비스 (7일 초과 후):</strong> 당해 결제月度 내 미사용 예측권에 해당하는 금액만 환불합니다. 사용한 예측권은 환불 대상에서 제외됩니다. 월 구독료에서 (사용한 예측권 수 ÷ 해당 월 제공 예측권 수) × 월 구독료를 공제한 잔액을 환불합니다.</li>
               <li><strong>예측권 개별 구매:</strong> 구매 후 사용하지 않은 예측권에 한해 구매일로부터 7일 이내 전액 환불이 가능합니다. 이미 사용한 예측권은 환불되지 않습니다. 여러 장 구매 시 미사용 장 수만큼만 환불됩니다.</li>
               <li><strong>환불 불가 사유:</strong> 다음의 경우 환불하지 않습니다. (1) 구독 또는 개별 구매 후 7일이 경과한 경우 중 사용한 예측권에 해당하는 금액, (2) 이용자의 귀책사유(약관 위반, 부정 이용 등)로 서비스 이용이 제한된 경우, (3) 관계 법령상 환불이 금지된 경우, (4) 이용자가 콘텐츠의 전부 또는 상당 부분을 이미 이용한 경우.</li>
-              <li><strong>환불 절차:</strong> 환불 요청은 고객센터(support@goldenrace.com) 또는 앱 내 문의를 통해 접수합니다. 접수 후 영업일 5일 이내 환불 처리를 완료하며, 카드사·PG사 사정에 따라 실제 환불 crediting은 7~14영업일 소요될 수 있습니다. 환불 시 결제 수단(신용카드 등)으로 환불하며, 원 결제 수단이 불가한 경우 회사가 지정한 방법으로 환불합니다.</li>
+              <li><strong>환불 절차:</strong> 환불 요청은 고객센터(support@oddscast.com) 또는 앱 내 문의를 통해 접수합니다. 접수 후 영업일 5일 이내 환불 처리를 완료하며, 카드사·PG사 사정에 따라 실제 환불 crediting은 7~14영업일 소요될 수 있습니다. 환불 시 결제 수단(신용카드 등)으로 환불하며, 원 결제 수단이 불가한 경우 회사가 지정한 방법으로 환불합니다.</li>
               <li><strong>부분 이용 시 공제:</strong> 디지털 콘텐츠의 특성상 이용한 부분에 대한 환불은 하지 않으며, 미이용 부분에 한해 환불합니다. 이용 여부는 서버 로그(예측 상세 열람 이력)를 기준으로 판단합니다.</li>
             </ol>
           </section>
@@ -171,13 +171,13 @@ export default function TermsPage() {
               「전자상거래 등에서의 소비자보호에 관한 법률」 제6조에 따라 회사 정보를 다음과 같이 공지합니다.
             </p>
             <ul className='list-disc list-inside text-text-secondary space-y-1'>
-              <li>상호: Golden Race (주식회사 골든레이스)</li>
+              <li>상호: OddsCast (주식회사 오즈캐스트)</li>
               <li>대표자: (대표자명)</li>
               <li>사업자등록번호: (사업자등록번호)</li>
               <li>통신판매업 신고번호: (신고번호)</li>
               <li>주소: (회사 주소)</li>
-              <li>고객센터: support@goldenrace.com</li>
-              <li>결제·환불 문의: billing@goldenrace.com</li>
+              <li>고객센터: support@oddscast.com</li>
+              <li>결제·환불 문의: billing@oddscast.com</li>
             </ul>
           </section>
 
@@ -218,7 +218,7 @@ export default function TermsPage() {
           </section>
 
           <p className='text-text-tertiary text-xs pt-4 border-t border-border'>
-            본 약관에 대한 문의: support@goldenrace.com | 법적 분쟁 시 관할: 회사 본사 소재지 관할 법원
+            본 약관에 대한 문의: support@oddscast.com | 법적 분쟁 시 관할: 회사 본사 소재지 관할 법원
           </p>
         </div>
         <BackLink href={routes.home} label='홈으로' />

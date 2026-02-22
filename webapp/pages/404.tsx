@@ -5,7 +5,7 @@ import { routes } from '@/lib/routes';
 
 export default function NotFoundPage() {
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='flex flex-col items-center justify-center min-h-[50vh] text-center px-4'>
         <Icon name='AlertCircle' size={64} className='text-text-tertiary mb-4' />
         <h1 className='text-xl md:text-2xl font-bold text-foreground mb-2'>

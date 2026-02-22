@@ -1,4 +1,4 @@
-# Golden Race WebApp 가이드
+# OddsCast WebApp 가이드
 
 > Next.js — Desktop/Mobile 반응형 웹앱 (port 3000)
 

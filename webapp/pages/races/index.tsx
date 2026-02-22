@@ -90,7 +90,7 @@ export default function RacesListPage() {
   }, [data?.races, qStatus]);
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='전체 경주' backHref={routes.home} />
       <FilterDateBar
         filterOptions={[

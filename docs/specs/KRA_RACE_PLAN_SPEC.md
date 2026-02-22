@@ -115,7 +115,7 @@ http://apis.data.go.kr/B551015/API72_2/racePlan_2?serviceKey=[인증키]&meet=1&
 
 ---
 
-## 6. 서버 연동 (Golden Race)
+## 6. 서버 연동 (OddsCast)
 
 ### 사용처
 

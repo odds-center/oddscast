@@ -345,7 +345,7 @@ onDateChange={(v) => { setDateFilter(v); setPage(1); }}
 ## 페이지 레이아웃
 
 ```tsx
-<Layout title="페이지명 — GOLDEN RACE">
+<Layout title="페이지명 — OddsCast">
   <PageHeader icon="IconName" title="제목" description="설명" />
   <FilterDateBar {...} />  {/* 필요 시 */}
   <DataFetchState isLoading={...} error={...} isEmpty={...}>

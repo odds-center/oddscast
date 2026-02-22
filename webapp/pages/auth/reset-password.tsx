@@ -48,7 +48,7 @@ export default function ResetPasswordPage() {
 
   if (!token && typeof window !== 'undefined' && router.isReady) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div className='max-w-sm md:max-w-md mx-auto'>
           <p className='text-text-secondary text-sm mb-4'>비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.</p>
           <Link href={routes.auth.forgotPassword} className='btn-primary inline-flex items-center gap-2'>
@@ -61,7 +61,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='max-w-sm md:max-w-md mx-auto'>
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <FormInput

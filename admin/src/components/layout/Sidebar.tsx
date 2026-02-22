@@ -42,7 +42,7 @@ export default function Sidebar() {
     <div className='hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-52 lg:flex-col'>
       <div className='flex grow flex-col gap-y-4 overflow-y-auto bg-white border-r border-gray-200 px-4'>
         <div className='flex h-12 shrink-0 items-center'>
-          <h1 className='text-base font-bold text-primary-600'>GoldenRace Admin</h1>
+          <h1 className='text-base font-bold text-primary-600'>OddsCast Admin</h1>
         </div>
         <nav className='flex flex-1 flex-col'>
           <ul role='list' className='flex flex-1 flex-col gap-y-4'>

@@ -1,6 +1,6 @@
 # 🚀 Server Deployment Plan
 
-> **Golden Race production deployment strategy — AWS EC2 + PM2 + Nginx**
+> **OddsCast production deployment strategy — AWS EC2 + PM2 + Nginx**
 >
 > This document defines the complete server infrastructure plan including
 > architecture, deployment flow, cost estimates, and step-by-step guides.
@@ -124,7 +124,7 @@
 
 ```bash
 # 1. Connect to EC2
-ssh -i goldenrace-key.pem ec2-user@your-ec2-ip
+ssh -i oddscast-key.pem ec2-user@your-ec2-ip
 
 # 2. System update
 sudo yum update -y   # Amazon Linux
@@ -192,7 +192,7 @@ Create `ecosystem.config.js` at project root:
 module.exports = {
   apps: [
     {
-      name: 'goldenrace-server',
+      name: 'oddscast-server',
       cwd: './server',
       script: 'dist/main.js',
       instances: 2,             // Cluster mode (2 instances for zero-downtime)
@@ -215,7 +215,7 @@ module.exports = {
       watch: false,
     },
     {
-      name: 'goldenrace-webapp',
+      name: 'oddscast-webapp',
       cwd: './webapp',
       script: 'node_modules/.bin/next',
       args: 'start -p 3000',
@@ -233,7 +233,7 @@ module.exports = {
       watch: false,
     },
     {
-      name: 'goldenrace-admin',
+      name: 'oddscast-admin',
       cwd: './admin',
       script: 'node_modules/.bin/next',
       args: 'start -p 3002',
@@ -261,7 +261,7 @@ module.exports = {
 pm2 start ecosystem.config.js
 
 # Zero-downtime reload (graceful restart, one instance at a time)
-pm2 reload goldenrace-server
+pm2 reload oddscast-server
 
 # View status
 pm2 status
@@ -277,14 +277,14 @@ pm2 save
 pm2 restart all
 
 # Stop
-pm2 stop goldenrace-server
+pm2 stop oddscast-server
 pm2 delete all
 ```
 
 ### 4.5 Nginx Configuration
 
 ```nginx
-# /etc/nginx/conf.d/goldenrace.conf
+# /etc/nginx/conf.d/oddscast.conf
 
 # Rate limiting
 limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
@@ -308,11 +308,11 @@ upstream admin_server {
 server {
     listen 80;
     listen 443 ssl http2;
-    server_name goldenrace.kr www.goldenrace.kr;
+    server_name oddscast.kr www.oddscast.kr;
 
     # SSL (Let's Encrypt)
-    ssl_certificate /etc/letsencrypt/live/goldenrace.kr/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/goldenrace.kr/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/oddscast.kr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/oddscast.kr/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
 
     # Redirect HTTP to HTTPS
@@ -390,10 +390,10 @@ server {
 server {
     listen 80;
     listen 443 ssl http2;
-    server_name admin.goldenrace.kr;
+    server_name admin.oddscast.kr;
 
-    ssl_certificate /etc/letsencrypt/live/goldenrace.kr/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/goldenrace.kr/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/oddscast.kr/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/oddscast.kr/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
 
     if ($scheme = http) {
@@ -421,7 +421,7 @@ sudo yum install -y certbot python3-certbot-nginx
 # or (Ubuntu): sudo apt install -y certbot python3-certbot-nginx
 
 # Issue certificate
-sudo certbot --nginx -d goldenrace.kr -d www.goldenrace.kr -d admin.goldenrace.kr
+sudo certbot --nginx -d oddscast.kr -d www.oddscast.kr -d admin.oddscast.kr
 
 # Auto-renewal (cron)
 sudo certbot renew --dry-run
@@ -440,7 +440,7 @@ Create `deploy.sh` at project root:
 #!/bin/bash
 set -e
 
-echo "=== Golden Race Deploy ==="
+echo "=== OddsCast Deploy ==="
 cd /home/ec2-user/goldenrace
 
 # Pull latest code
@@ -515,9 +515,9 @@ Deploy:
 
 Post-deploy:
   □ pm2 status — all apps "online"
-  □ curl https://goldenrace.kr/health — 200 OK
+  □ curl https://oddscast.kr/health — 200 OK
   □ Check pm2 logs for errors
-  □ Verify cron jobs running (pm2 logs goldenrace-server | grep "cron")
+  □ Verify cron jobs running (pm2 logs oddscast-server | grep "cron")
   □ Test key user flows (login, race list, prediction)
 ```
 
@@ -622,8 +622,8 @@ RDS Automated:
   - Point-in-time recovery (up to 5 minutes)
 
 Manual Backup (weekly → S3):
-  pg_dump -h rds-endpoint -U postgres -d goldenrace | gzip > backup_$(date +%Y%m%d).sql.gz
-  aws s3 cp backup_*.sql.gz s3://goldenrace-backups/db/
+  pg_dump -h rds-endpoint -U postgres -d oddscast | gzip > backup_$(date +%Y%m%d).sql.gz
+  aws s3 cp backup_*.sql.gz s3://oddscast-backups/db/
 ```
 
 ### 8.2 Server Backups
@@ -689,7 +689,7 @@ SQS for async job processing (KRA sync, predictions)
 ### 10.1 Domain Registration
 
 ```
-Register: goldenrace.kr (or .com)
+Register: oddscast.kr (or .com)
 Registrar: AWS Route 53 / Gabia / hosting.kr
 ```
 
@@ -697,11 +697,11 @@ Registrar: AWS Route 53 / Gabia / hosting.kr
 
 | Type | Name | Value | TTL |
 |------|------|-------|-----|
-| A | goldenrace.kr | EC2 Elastic IP | 300 |
+| A | oddscast.kr | EC2 Elastic IP | 300 |
 | A | www | EC2 Elastic IP | 300 |
 | A | admin | EC2 Elastic IP | 300 |
 | A | api | EC2 Elastic IP (if separate subdomain) | 300 |
-| MX | goldenrace.kr | AWS SES (if email needed) | 3600 |
+| MX | oddscast.kr | AWS SES (if email needed) | 3600 |
 
 ### 10.3 Elastic IP
 
@@ -720,7 +720,7 @@ aws ec2 associate-address --instance-id i-xxx --allocation-id eipalloc-xxx
 
 ```bash
 # Database (RDS endpoint)
-DATABASE_URL="postgresql://goldenrace:STRONG_PASSWORD@goldenrace-db.xxxx.ap-northeast-2.rds.amazonaws.com:5432/goldenrace?schema=public"
+DATABASE_URL="postgresql://oddscast:STRONG_PASSWORD@oddscast-db.xxxx.ap-northeast-2.rds.amazonaws.com:5432/oddscast?schema=public"
 
 # Server
 PORT=3001
@@ -737,7 +737,7 @@ GEMINI_API_KEY=your-production-gemini-key
 KRA_SERVICE_KEY=your-encoded-kra-service-key
 
 # Redis (when added)
-# REDIS_URL=redis://goldenrace-cache.xxxx.cache.amazonaws.com:6379
+# REDIS_URL=redis://oddscast-cache.xxxx.cache.amazonaws.com:6379
 
 # Push
 # EXPO_ACCESS_TOKEN=your-expo-access-token
@@ -746,7 +746,7 @@ KRA_SERVICE_KEY=your-encoded-kra-service-key
 ### 11.2 Production .env (webapp)
 
 ```bash
-NEXT_PUBLIC_API_BASE_URL=https://goldenrace.kr/api
+NEXT_PUBLIC_API_BASE_URL=https://oddscast.kr/api
 NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-production-google-client-id
 NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX
 ```
@@ -791,9 +791,9 @@ DNS:
   □ SSL cert covers all subdomains
 
 Verification:
-  □ https://goldenrace.kr — webapp loads
-  □ https://goldenrace.kr/api/health — 200 OK
-  □ https://admin.goldenrace.kr — admin loads
+  □ https://oddscast.kr — webapp loads
+  □ https://oddscast.kr/api/health — 200 OK
+  □ https://admin.oddscast.kr — admin loads
   □ Login/register works
   □ Race list loads (KRA data synced)
   □ Cron jobs running (check PM2 logs)

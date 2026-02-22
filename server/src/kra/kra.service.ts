@@ -13,7 +13,7 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 import { KRA_MEETS, meetToCode, toKraMeetName } from './constants';
 import { parseOrd } from './ord-parser';
-import type { KraApiItem, KraSyncAllOutput } from '@goldenrace/shared';
+import type { KraApiItem, KraSyncAllOutput } from '@oddscast/shared';
 
 const DEFAULT_KRA_BASE_URL = 'http://apis.data.go.kr/B551015';
 

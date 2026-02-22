@@ -5,17 +5,17 @@
 ### 1. MySQL 접속
 
 ```bash
-mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace
+mysql -u oddscast_user -p -h localhost -P 3307 oddscast
 ```
 
 ### 2. 마이그레이션 실행
 
 ```bash
 # AI 캐싱 테이블 (신규)
-mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace < migrations/create-ai-caching-tables.sql
+mysql -u oddscast_user -p -h localhost -P 3307 oddscast < migrations/create-ai-caching-tables.sql
 
 # Device Token (기존)
-mysql -u goldenrace_user -p -h localhost -P 3307 goldenrace < migrations/add-device-token-to-users.sql
+mysql -u oddscast_user -p -h localhost -P 3307 oddscast < migrations/add-device-token-to-users.sql
 ```
 
 ## 마이그레이션 목록

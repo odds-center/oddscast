@@ -194,7 +194,7 @@ export default function KraPage() {
   return (
     <>
       <Head>
-        <title>KRA 데이터 관리 | GoldenRace Admin</title>
+        <title>KRA 데이터 관리 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-6'>

@@ -6,7 +6,7 @@
  * (결과 데이터 미수신 시에도 종료로 간주)
  */
 import dayjs from 'dayjs';
-import { meetToEnum, meetToLabel } from '@goldenrace/shared';
+import { meetToEnum, meetToLabel } from '@oddscast/shared';
 
 type RaceLike = {
   meet?: string | null;

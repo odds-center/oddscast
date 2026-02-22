@@ -127,7 +127,7 @@ export default function SubscriptionPlansPage() {
     return (
       <>
         <Head>
-          <title>구독 플랜 관리 | GoldenRace Admin</title>
+          <title>구독 플랜 관리 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='구독 플랜을 불러오는 중...' />
@@ -139,7 +139,7 @@ export default function SubscriptionPlansPage() {
   return (
     <>
       <Head>
-        <title>구독 플랜 관리 | GoldenRace Admin</title>
+        <title>구독 플랜 관리 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

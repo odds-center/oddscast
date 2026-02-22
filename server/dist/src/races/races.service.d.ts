@@ -13,22 +13,22 @@ export declare class RacesService {
                 raceId: number;
                 hrNo: string;
                 hrName: string;
-                hrNameEn: string | null;
+                chulNo: string | null;
+                age: number | null;
+                sex: string | null;
                 jkNo: string | null;
                 jkName: string;
-                jkNameEn: string | null;
-                trNo: string | null;
                 trName: string | null;
-                owNo: string | null;
                 owName: string | null;
                 wgBudam: number | null;
-                rating: number | null;
-                chulNo: string | null;
-                dusu: number | null;
-                sex: string | null;
-                age: number | null;
-                prd: string | null;
                 chaksun1: number | null;
+                hrNameEn: string | null;
+                jkNameEn: string | null;
+                trNo: string | null;
+                owNo: string | null;
+                rating: number | null;
+                dusu: number | null;
+                prd: string | null;
                 chaksunT: bigint | null;
                 rcCntT: number | null;
                 ord1CntT: number | null;
@@ -44,39 +44,39 @@ export declare class RacesService {
             }[];
             results: {
                 id: number;
-                weather: string | null;
-                track: string | null;
+                raceId: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceId: number;
+                weather: string | null;
+                track: string | null;
+                ord: string | null;
+                ordInt: number | null;
+                ordType: string | null;
                 hrNo: string;
                 hrName: string;
+                chulNo: string | null;
+                age: string | null;
+                sex: string | null;
                 jkNo: string | null;
                 jkName: string | null;
                 trName: string | null;
                 owName: string | null;
                 wgBudam: number | null;
-                chulNo: string | null;
-                sex: string | null;
-                age: string | null;
-                chaksun1: number | null;
-                ord: string | null;
-                ordInt: number | null;
-                ordType: string | null;
                 wgHr: string | null;
                 hrTool: string | null;
                 rcTime: string | null;
                 diffUnit: string | null;
                 winOdds: number | null;
                 plcOdds: number | null;
+                chaksun1: number | null;
                 sectionalTimes: Prisma.JsonValue | null;
             }[];
             predictions: {
                 id: number;
-                status: import("@prisma/client").$Enums.PredictionStatus;
+                raceId: number;
                 createdAt: Date;
                 updatedAt: Date;
-                raceId: number;
+                status: import("@prisma/client").$Enums.PredictionStatus;
                 scores: Prisma.JsonValue | null;
                 analysis: string | null;
                 preview: string | null;
@@ -85,10 +85,8 @@ export declare class RacesService {
             }[];
             bets: {
                 id: number;
-                createdAt: Date;
-                updatedAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
                 betType: import("@prisma/client").$Enums.BetType;
                 betName: string;
                 betDescription: string | null;
@@ -110,6 +108,8 @@ export declare class RacesService {
                 dataSource: string | null;
                 ipAddress: string | null;
                 userAgent: string | null;
+                createdAt: Date;
+                updatedAt: Date;
                 roi: number | null;
                 riskLevel: string | null;
                 isFavorite: boolean;
@@ -117,9 +117,9 @@ export declare class RacesService {
             }[];
             picks: {
                 id: number;
-                createdAt: Date;
-                raceId: number;
                 userId: number;
+                raceId: number;
+                createdAt: Date;
                 pickType: import("@prisma/client").$Enums.PickType;
                 hrNos: string[];
                 hrNames: string[];
@@ -127,12 +127,12 @@ export declare class RacesService {
             }[];
             betSlips: {
                 id: number;
-                status: import("@prisma/client").$Enums.BetSlipStatus;
+                userId: number;
+                raceId: number;
                 createdAt: Date;
                 updatedAt: Date;
+                status: import("@prisma/client").$Enums.BetSlipStatus;
                 bets: Prisma.JsonValue;
-                raceId: number;
-                userId: number;
                 totalAmount: number;
             }[];
             _count: {
@@ -145,6 +145,8 @@ export declare class RacesService {
             };
         } & {
             id: number;
+            createdAt: Date;
+            updatedAt: Date;
             rcName: string | null;
             meet: string;
             meetName: string | null;
@@ -159,8 +161,6 @@ export declare class RacesService {
             weather: string | null;
             track: string | null;
             status: import("@prisma/client").$Enums.RaceStatus;
-            createdAt: Date;
-            updatedAt: Date;
         })[];
         total: number;
         page: number;
@@ -172,22 +172,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -203,39 +203,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -244,10 +244,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -269,6 +267,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -276,9 +276,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -286,12 +286,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -304,6 +304,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -318,8 +320,6 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     private _findOneRaw;
     create(dto: CreateRaceDto): Promise<{
@@ -328,22 +328,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -359,39 +359,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -400,10 +400,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -425,6 +423,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -432,9 +432,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -442,12 +442,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -460,6 +460,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -474,8 +476,6 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     update(id: number, dto: UpdateRaceDto): Promise<{
         entries: {
@@ -483,22 +483,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -514,39 +514,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -555,10 +555,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -580,6 +578,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -587,9 +587,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -597,12 +597,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -615,6 +615,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -629,8 +631,6 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     }>;
     remove(id: number): Promise<{
         message: string;
@@ -645,22 +645,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -676,39 +676,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -717,10 +717,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -742,6 +740,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -749,9 +749,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -759,12 +759,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -777,6 +777,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -791,8 +793,6 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getScheduleDates(filters: {
         dateFrom?: string;
@@ -809,22 +809,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -840,39 +840,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -881,10 +881,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -906,6 +904,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -913,9 +913,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -923,12 +923,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -941,6 +941,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -955,8 +957,6 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getRacesByDate(date: string): Promise<({
         entries: {
@@ -964,22 +964,22 @@ export declare class RacesService {
             raceId: number;
             hrNo: string;
             hrName: string;
-            hrNameEn: string | null;
+            chulNo: string | null;
+            age: number | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string;
-            jkNameEn: string | null;
-            trNo: string | null;
             trName: string | null;
-            owNo: string | null;
             owName: string | null;
             wgBudam: number | null;
-            rating: number | null;
-            chulNo: string | null;
-            dusu: number | null;
-            sex: string | null;
-            age: number | null;
-            prd: string | null;
             chaksun1: number | null;
+            hrNameEn: string | null;
+            jkNameEn: string | null;
+            trNo: string | null;
+            owNo: string | null;
+            rating: number | null;
+            dusu: number | null;
+            prd: string | null;
             chaksunT: bigint | null;
             rcCntT: number | null;
             ord1CntT: number | null;
@@ -995,39 +995,39 @@ export declare class RacesService {
         }[];
         results: {
             id: number;
-            weather: string | null;
-            track: string | null;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            weather: string | null;
+            track: string | null;
+            ord: string | null;
+            ordInt: number | null;
+            ordType: string | null;
             hrNo: string;
             hrName: string;
+            chulNo: string | null;
+            age: string | null;
+            sex: string | null;
             jkNo: string | null;
             jkName: string | null;
             trName: string | null;
             owName: string | null;
             wgBudam: number | null;
-            chulNo: string | null;
-            sex: string | null;
-            age: string | null;
-            chaksun1: number | null;
-            ord: string | null;
-            ordInt: number | null;
-            ordType: string | null;
             wgHr: string | null;
             hrTool: string | null;
             rcTime: string | null;
             diffUnit: string | null;
             winOdds: number | null;
             plcOdds: number | null;
+            chaksun1: number | null;
             sectionalTimes: Prisma.JsonValue | null;
         }[];
         predictions: {
             id: number;
-            status: import("@prisma/client").$Enums.PredictionStatus;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
-            raceId: number;
+            status: import("@prisma/client").$Enums.PredictionStatus;
             scores: Prisma.JsonValue | null;
             analysis: string | null;
             preview: string | null;
@@ -1036,10 +1036,8 @@ export declare class RacesService {
         }[];
         bets: {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
             betName: string;
             betDescription: string | null;
@@ -1061,6 +1059,8 @@ export declare class RacesService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -1068,9 +1068,9 @@ export declare class RacesService {
         }[];
         picks: {
             id: number;
-            createdAt: Date;
-            raceId: number;
             userId: number;
+            raceId: number;
+            createdAt: Date;
             pickType: import("@prisma/client").$Enums.PickType;
             hrNos: string[];
             hrNames: string[];
@@ -1078,12 +1078,12 @@ export declare class RacesService {
         }[];
         betSlips: {
             id: number;
-            status: import("@prisma/client").$Enums.BetSlipStatus;
+            userId: number;
+            raceId: number;
             createdAt: Date;
             updatedAt: Date;
+            status: import("@prisma/client").$Enums.BetSlipStatus;
             bets: Prisma.JsonValue;
-            raceId: number;
-            userId: number;
             totalAmount: number;
         }[];
         _count: {
@@ -1096,6 +1096,8 @@ export declare class RacesService {
         };
     } & {
         id: number;
+        createdAt: Date;
+        updatedAt: Date;
         rcName: string | null;
         meet: string;
         meetName: string | null;
@@ -1110,19 +1112,17 @@ export declare class RacesService {
         weather: string | null;
         track: string | null;
         status: import("@prisma/client").$Enums.RaceStatus;
-        createdAt: Date;
-        updatedAt: Date;
     })[]>;
     getRaceResult(raceId: number): Promise<{
         id: number;
+        ord: string | null;
+        ordType: string | null;
         hrNo: string;
         hrName: string;
+        chulNo: string | null;
         jkName: string | null;
         trName: string | null;
         wgBudam: number | null;
-        chulNo: string | null;
-        ord: string | null;
-        ordType: string | null;
         wgHr: string | null;
         rcTime: string | null;
         diffUnit: string | null;
@@ -1134,22 +1134,22 @@ export declare class RacesService {
         raceId: number;
         hrNo: string;
         hrName: string;
-        hrNameEn: string | null;
+        chulNo: string | null;
+        age: number | null;
+        sex: string | null;
         jkNo: string | null;
         jkName: string;
-        jkNameEn: string | null;
-        trNo: string | null;
         trName: string | null;
-        owNo: string | null;
         owName: string | null;
         wgBudam: number | null;
-        rating: number | null;
-        chulNo: string | null;
-        dusu: number | null;
-        sex: string | null;
-        age: number | null;
-        prd: string | null;
         chaksun1: number | null;
+        hrNameEn: string | null;
+        jkNameEn: string | null;
+        trNo: string | null;
+        owNo: string | null;
+        rating: number | null;
+        dusu: number | null;
+        prd: string | null;
         chaksunT: bigint | null;
         rcCntT: number | null;
         ord1CntT: number | null;
@@ -1168,10 +1168,10 @@ export declare class RacesService {
     }>;
     getAnalysis(raceId: number): Promise<{
         id: number;
-        status: import("@prisma/client").$Enums.PredictionStatus;
+        raceId: number;
         createdAt: Date;
         updatedAt: Date;
-        raceId: number;
+        status: import("@prisma/client").$Enums.PredictionStatus;
         scores: Prisma.JsonValue | null;
         analysis: string | null;
         preview: string | null;

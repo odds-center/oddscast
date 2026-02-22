@@ -1,4 +1,4 @@
-# 🗺️ GOLDEN RACE Feature Roadmap
+# 🗺️ OddsCast Feature Roadmap
 
 > **AI-based horse racing prediction information service — feature plan & roadmap.**
 >

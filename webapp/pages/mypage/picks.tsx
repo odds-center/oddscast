@@ -11,7 +11,7 @@ import Icon from '@/components/icons';
  */
 export default function PicksPage() {
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='내가 고른 말' backHref={routes.profile.index} />
       <SectionCard className='mt-4'>
         <div className='text-center py-8'>

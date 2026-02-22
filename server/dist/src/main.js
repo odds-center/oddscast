@@ -22,7 +22,7 @@ async function bootstrap() {
         transformOptions: { enableImplicitConversion: true },
     }));
     const config = new swagger_1.DocumentBuilder()
-        .setTitle('Golden Race API')
+        .setTitle('OddsCast API')
         .setDescription('AI 경마 승부예측 서비스 API')
         .setVersion('1.0')
         .addBearerAuth()
@@ -31,7 +31,7 @@ async function bootstrap() {
     swagger_1.SwaggerModule.setup('docs', app, document);
     const port = process.env.PORT || 3001;
     await app.listen(port);
-    console.log(`🏇 Golden Race server running on http://localhost:${port}`);
+    console.log(`🏇 OddsCast server running on http://localhost:${port}`);
     console.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }
 bootstrap();

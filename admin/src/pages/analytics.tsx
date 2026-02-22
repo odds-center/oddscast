@@ -50,7 +50,7 @@ export default function AnalyticsPage() {
     return (
       <>
         <Head>
-          <title>AI 분석 | GoldenRace Admin</title>
+          <title>AI 분석 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='데이터를 불러오는 중...' />
@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
   return (
     <>
       <Head>
-        <title>AI 분석 | GoldenRace Admin</title>
+        <title>AI 분석 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

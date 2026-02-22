@@ -24,7 +24,7 @@
 
 ```bash
 curl http://localhost:3001/health
-# {"status":"ok","timestamp":"...","service":"Golden Race API","version":"1.0.0"}
+# {"status":"ok","timestamp":"...","service":"OddsCast API","version":"1.0.0"}
 ```
 
 - nginx가 `/health`를 백엔드 `/health`로 프록시

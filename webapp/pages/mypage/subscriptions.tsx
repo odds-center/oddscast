@@ -42,7 +42,7 @@ export default function SubscriptionsPage() {
   });
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='구독 플랜' backHref={routes.profile.index} />
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm mb-6'>

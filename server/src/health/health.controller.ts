@@ -8,7 +8,7 @@ export class HealthController {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      service: 'Golden Race API',
+      service: 'OddsCast API',
       version: '1.0.0',
     };
   }
@@ -18,7 +18,7 @@ export class HealthController {
     return {
       status: 'ok',
       timestamp: new Date().toISOString(),
-      service: 'Golden Race API',
+      service: 'OddsCast API',
       version: '1.0.0',
       environment: process.env.NODE_ENV || 'development',
       uptime: process.uptime(),

@@ -1,5 +1,5 @@
 {
-  "name": "@goldenrace/shared",
+  "name": "@oddscast/shared",
   "version": "1.0.0",
   "private": true,
   "description": "공통 타입 정의 (webapp, mobile, admin, server)",

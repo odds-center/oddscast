@@ -1,5 +1,5 @@
 {
-  "name": "goldenrace-admin",
+  "name": "oddscast-admin",
   "version": "1.0.0",
   "private": true,
   "packageManager": "pnpm@9.15.0",
@@ -13,7 +13,7 @@
     "reinstall": "pnpm clean && pnpm install"
   },
   "dependencies": {
-    "@goldenrace/shared": "file:../shared",
+    "@oddscast/shared": "file:../shared",
     "@hookform/resolvers": "^3.9.0",
     "@tanstack/react-query": "^5.90.2",
     "axios": "^1.12.2",

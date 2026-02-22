@@ -96,7 +96,7 @@ export default function RaceDetailPage() {
     return (
       <>
         <Head>
-          <title>경주 상세 | GoldenRace Admin</title>
+          <title>경주 상세 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='경주 정보를 불러오는 중...' />
@@ -121,7 +121,7 @@ export default function RaceDetailPage() {
   return (
     <>
       <Head>
-        <title>{race.rcName || race.rcNo || '경주'} | GoldenRace Admin</title>
+        <title>{race.rcName || race.rcNo || '경주'} | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

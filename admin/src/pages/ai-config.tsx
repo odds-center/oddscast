@@ -189,7 +189,7 @@ export default function AIConfigPage() {
     return (
       <>
         <Head>
-          <title>AI 설정 | GoldenRace Admin</title>
+          <title>AI 설정 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='AI 설정을 불러오는 중...' />
@@ -201,7 +201,7 @@ export default function AIConfigPage() {
   return (
     <>
       <Head>
-        <title>AI 설정 | GoldenRace Admin</title>
+        <title>AI 설정 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

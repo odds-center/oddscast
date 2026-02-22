@@ -85,7 +85,7 @@
 
 ### 6. PredictionMatrixTable 리디자인 — 용산종합지 스타일
 
-- **다크 헤더 라벨**: `#292524` 배경 + 경주 수 + "AI GOLDEN RACE"
+- **다크 헤더 라벨**: `#292524` 배경 + 경주 수 + "AI OddsCast"
 - **다크 컬럼 헤더**: `#1c1917` 배경 + AI 종합 컬럼 골드 하이라이트
 - **경주 정보 셀**: 경주번호 + 경마장 + 출발시간 + 거리 + 등급 + 출전두수 모두 표시
 - **게이트 색상 번호 배지**: KRA 게이트 색상 반영
@@ -635,13 +635,13 @@ cd server && npx prisma migrate dev --name add-matrix-ticket-type
 
 ---
 
-## 2026-02-13 (금) — @goldenrace/shared 공용 타입 패키지
+## 2026-02-13 (금) — @oddscast/shared 공용 타입 패키지
 
 ### 1. shared 패키지 구성
 
-- **package.json**: `@goldenrace/shared`, `file:../shared` 로컬 참조
+- **package.json**: `@oddscast/shared`, `file:../shared` 로컬 참조
 - **types/**: api, auth, user, race, result, bet, favorite, point, prediction, prediction-ticket, subscription, notification
-- **webapp, mobile, admin, server** package.json에 `@goldenrace/shared` 의존성 추가
+- **webapp, mobile, admin, server** package.json에 `@oddscast/shared` 의존성 추가
 
 ### 2. 타입 파일
 
@@ -848,7 +848,7 @@ cd server && npx prisma migrate dev --name add-matrix-ticket-type
 - **환경 변수**: `NEXT_PUBLIC_USE_MOCK=true` 시 DB 없이 하드코딩 mock 데이터 사용
 - **mock 데이터**: `webapp/lib/mocks/data.ts` — races, results, predictions, rankings, points, tickets, subscriptions, notifications, user, config
 - **적용 API**: RaceApi, ResultApi, PredictionApi, RankingApi, PicksApi, FavoriteApi, NotificationApi, PointApi, PredictionTicketApi, SubscriptionApi, SubscriptionPlansApi, ConfigApi, AuthApi
-- **데모 로그인**: `demo@goldenrace.com` / `demo123`
+- **데모 로그인**: `demo@oddscast.com` / `demo123`
 - **Config**: `webapp/lib/config.ts` — `CONFIG.useMock` 플래그
 
 ### 2. Form — react-hook-form 통일

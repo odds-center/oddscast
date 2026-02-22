@@ -135,7 +135,7 @@ export default function NotificationsPage() {
   return (
     <>
       <Head>
-        <title>알림 관리 | GoldenRace Admin</title>
+        <title>알림 관리 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

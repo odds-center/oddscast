@@ -72,7 +72,7 @@ export default function NotificationSettingsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         <RequireLogin suffix='설정할 수 있습니다' />
         <BackLink href={routes.settings} label='설정으로' />
@@ -81,7 +81,7 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='space-y-6'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         {isLoading ? (

@@ -85,7 +85,7 @@ export default function ProfileEditPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='프로필 수정 | GOLDEN RACE'>
+      <Layout title='프로필 수정 | OddsCast'>
         <div className='max-w-md mx-auto'>
           <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
           <RequireLogin suffix='프로필을 수정할 수 있습니다.' />
@@ -95,7 +95,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <Layout title='프로필 수정 | GOLDEN RACE'>
+    <Layout title='프로필 수정 | OddsCast'>
       <div className='max-w-md mx-auto'>
         <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
         <p className='text-text-tertiary text-sm mb-4 px-1'>

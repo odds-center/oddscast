@@ -73,7 +73,7 @@ export default function Home() {
   };
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       {/* Hero banner */}
       <DateHeader />
 

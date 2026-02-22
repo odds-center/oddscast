@@ -6,7 +6,7 @@ import type {
   RaceListResponseDto,
   RaceResultDto,
   DividendDto,
-} from '@goldenrace/shared';
+} from '@oddscast/shared';
 import { RaceFilters } from '@/lib/types/race';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 

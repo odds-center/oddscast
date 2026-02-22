@@ -1,4 +1,4 @@
-# Legacy Golden Race Server (server_legacy_nestjs)
+# Legacy OddsCast Server (server_legacy_nestjs)
 
 > **참고용.** 현재 메인 서버는 `server/` (Prisma + PostgreSQL)입니다.
 

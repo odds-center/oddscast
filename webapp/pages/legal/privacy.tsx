@@ -6,7 +6,7 @@ import { routes } from '@/lib/routes';
 
 export default function PrivacyPage() {
   return (
-    <Layout title='개인정보 처리방침 | GOLDEN RACE'>
+    <Layout title='개인정보 처리방침 | OddsCast'>
       <div className='max-w-2xl mx-auto pb-12'>
         <CompactPageTitle title='개인정보 처리방침' backHref={routes.home} />
         <div className='card space-y-6 text-sm text-foreground leading-relaxed'>
@@ -14,7 +14,7 @@ export default function PrivacyPage() {
             시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
           </p>
           <p className='text-text-secondary text-xs'>
-            Golden Race(이하 &quot;회사&quot;)는 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하고 있습니다.
+            OddsCast(이하 &quot;회사&quot;)는 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하고 있습니다.
           </p>
 
           {/* Article 1: General Provisions */}
@@ -34,8 +34,8 @@ export default function PrivacyPage() {
               회사는 개인정보 처리에 관한 업무를 총괄하는 책임자를 두어 개인정보 처리와 관련한 이용자의 불만 처리 및 피해 구제 등을 위하여 아래와 같이 개인정보 보호 책임자를 지정하고 있습니다.
             </p>
             <ul className='list-disc list-inside text-text-secondary space-y-1'>
-              <li>개인정보 보호 책임자: (담당자명) / privacy@goldenrace.com</li>
-              <li>개인정보 보호 담당부서: (부서명) / support@goldenrace.com</li>
+              <li>개인정보 보호 책임자: (담당자명) / privacy@oddscast.com</li>
+              <li>개인정보 보호 담당부서: (부서명) / support@oddscast.com</li>
               <li>이용자는 서비스 이용 과정에서 발생한 개인정보 관련 문의·불만·피해구제에 대해 위 담당자에게 연락할 수 있습니다.</li>
             </ul>
           </section>
@@ -158,7 +158,7 @@ export default function PrivacyPage() {
             <h2 className='text-base font-semibold mb-2'>제8조 (정보주체의 권리·의무 및 행사 방법)</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
               <li>이용자는 「개인정보 보호법」 제35조에 따라 다음의 권리를 행사할 수 있습니다: (1) 개인정보 열람 요청, (2) 오류 등이 있을 경우 정정 요청, (3) 삭제 요청, (4) 처리 정지 요청.</li>
-              <li>위 권리 행사는 privacy@goldenrace.com 또는 support@goldenrace.com으로 서면·전자우편 등으로 요청할 수 있으며, 회사는 10일 이내 조치하고 결과를 통지합니다.</li>
+              <li>위 권리 행사는 privacy@oddscast.com 또는 support@oddscast.com으로 서면·전자우편 등으로 요청할 수 있으며, 회사는 10일 이내 조치하고 결과를 통지합니다.</li>
               <li>법정대리인이나 위임을 받은 자 등 대리인을 통해서도 권리 행사가 가능하며, 이 경우 위임장 등을 제출하여야 합니다.</li>
               <li>개인정보의 정정 또는 삭제를 요청한 경우 해당 정보를 다른 법률에 따라 사용하는 등 정당한 사유가 없는 한 정정·삭제합니다.</li>
               <li>다만, 「개인정보 보호법」 제35조 제4항에 따라 삭제 요청이 제한되는 경우(법령에서 보존 의무, 타인의 권리 침해 우려 등) 해당 사유를 이용자에게 알립니다.</li>
@@ -228,7 +228,7 @@ export default function PrivacyPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>개인정보 관련 문의</h2>
             <p className='text-text-secondary'>
-              본 방침에 관한 문의사항이 있으시면 개인정보 보호 담당자에게 연락해 주시기 바랍니다. 또한 「개인정보 보호법」 제35조에 따른 개인정보 열람·정정·삭제·처리정지 요구는 privacy@goldenrace.com으로 접수하시면 됩니다. 개인정보 침해에 대한 신고나 상담이 필요하신 경우에는 개인정보침해신고센터(국번없이 118), 개인정보분쟁조정위원회(1833-6972), 대검찰청 사이버수사과(국번없이 1301), 경찰청 사이버안전국(국번없이 182) 등으로 문의하실 수 있습니다.
+              본 방침에 관한 문의사항이 있으시면 개인정보 보호 담당자에게 연락해 주시기 바랍니다. 또한 「개인정보 보호법」 제35조에 따른 개인정보 열람·정정·삭제·처리정지 요구는 privacy@oddscast.com으로 접수하시면 됩니다. 개인정보 침해에 대한 신고나 상담이 필요하신 경우에는 개인정보침해신고센터(국번없이 118), 개인정보분쟁조정위원회(1833-6972), 대검찰청 사이버수사과(국번없이 1301), 경찰청 사이버안전국(국번없이 182) 등으로 문의하실 수 있습니다.
             </p>
           </section>
 

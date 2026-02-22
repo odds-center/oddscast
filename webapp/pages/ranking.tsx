@@ -24,7 +24,7 @@ export default function Ranking() {
   });
 
   return (
-    <Layout title='예측 랭킹 | GOLDEN RACE'>
+    <Layout title='예측 랭킹 | OddsCast'>
       <CompactPageTitle title='예측 랭킹' backHref={routes.home} />
       <p className='text-text-tertiary text-xs mb-4 px-1'>
         <Tooltip content='AI 예측과 실제 경주 결과를 비교하여 적중 횟수가 많은 사용자 순서로 표시합니다' inline>

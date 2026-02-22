@@ -23,7 +23,7 @@ const dayjs_1 = __importDefault(require("dayjs"));
 const constants_1 = require("../kra/constants");
 const kra_serializer_1 = require("../common/serializers/kra.serializer");
 const prisma_includes_1 = require("../common/prisma-includes");
-const shared_1 = require("@goldenrace/shared");
+const shared_1 = require("@oddscast/shared");
 let RacesService = class RacesService {
     constructor(prisma, cache) {
         this.prisma = prisma;

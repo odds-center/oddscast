@@ -37,7 +37,7 @@ export default function RevenuePage() {
     return (
       <>
         <Head>
-          <title>수익 대시보드 | GoldenRace Admin</title>
+          <title>수익 대시보드 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='수익 데이터를 불러오는 중...' />
@@ -49,7 +49,7 @@ export default function RevenuePage() {
   return (
     <>
       <Head>
-        <title>수익 대시보드 | GoldenRace Admin</title>
+        <title>수익 대시보드 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

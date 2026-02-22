@@ -122,7 +122,7 @@ export default function BetsPage() {
   return (
     <>
       <Head>
-        <title>결제 내역 | GoldenRace Admin</title>
+        <title>결제 내역 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

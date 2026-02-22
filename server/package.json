@@ -19,7 +19,7 @@
     "db:reset": "prisma db push --force-reset --accept-data-loss && prisma db execute --file prisma/seed.sql",
     "db:add-stTime": "prisma db execute --file prisma/add-stTime-column.sql",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "predev": "pnpm --filter @goldenrace/shared build",
+    "predev": "pnpm --filter @oddscast/shared build",
     "dev": "PORT=3001 nest start --watch",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -33,7 +33,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
-    "@goldenrace/shared": "file:../shared",
+    "@oddscast/shared": "file:../shared",
     "@google/generative-ai": "^0.24.1",
     "@keyv/redis": "^5.1.6",
     "@nestjs/axios": "^4.0.1",

@@ -61,7 +61,7 @@ export default function TicketHistoryPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
         <RequireLogin />
       </Layout>
@@ -69,7 +69,7 @@ export default function TicketHistoryPage() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}

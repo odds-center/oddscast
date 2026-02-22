@@ -4,8 +4,8 @@ import Link from 'next/link';
 import Icon, { type IconName } from './icons';
 import { routes } from '@/lib/routes';
 
-const NAV_POSITION_STORAGE_KEY = 'goldenrace_nav_bar_position';
-const NAV_ORIENTATION_STORAGE_KEY = 'goldenrace_nav_orientation';
+const NAV_POSITION_STORAGE_KEY = 'oddscast_nav_bar_position';
+const NAV_ORIENTATION_STORAGE_KEY = 'oddscast_nav_orientation';
 const SNAP_THRESHOLD = 32;
 const SNAP_INSET = 8;
 const DEFAULT_BOTTOM = 80;
@@ -309,7 +309,7 @@ interface LayoutProps {
   title?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'GOLDEN RACE' }) => {
+const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast' }) => {
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
       <Head>

@@ -134,7 +134,7 @@ export default function PredictionMatrixPage() {
   }, [matrixData]);
 
   return (
-    <Layout title='종합 예상 — GOLDEN RACE'>
+    <Layout title='종합 예상 — OddsCast'>
       <CompactPageTitle title='일일 종합 가이드' backHref={routes.home} />
 
       {!isLoggedIn ? (

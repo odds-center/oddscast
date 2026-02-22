@@ -1,4 +1,4 @@
-import type { ApiResponseDto } from '@goldenrace/shared';
+import type { ApiResponseDto } from '@oddscast/shared';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
 // Horse racing result type definitions

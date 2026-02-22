@@ -1,4 +1,4 @@
-# Golden Race 프로젝트 AI 규칙
+# OddsCast 프로젝트 AI 규칙
 
 > `.cursorrules`와 동기화. Cursor AI 에이전트가 참조하는 프로젝트 규칙 문서.
 

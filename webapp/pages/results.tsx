@@ -146,7 +146,7 @@ export default function Results() {
   }
 
   return (
-    <Layout title='경주 결과 | GOLDEN RACE'>
+    <Layout title='경주 결과 | OddsCast'>
       <CompactPageTitle title='경주 결과' />
       <FilterDateBar
         filterOptions={[

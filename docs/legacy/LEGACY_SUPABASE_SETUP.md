@@ -395,4 +395,4 @@ source server/setup-env.sh
 
 ## 🎊 완료!
 
-이제 Golden Race가 PostgreSQL로 실행됩니다! 🚀
+이제 OddsCast가 PostgreSQL로 실행됩니다! 🚀

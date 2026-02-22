@@ -10,7 +10,7 @@ export default function MypageIndex() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <CompactPageTitle title='마이페이지' backHref={routes.profile.index} />
         <RequireLogin suffix='내 정보, 알림 등을 확인할 수 있습니다.' />
       </Layout>
@@ -18,7 +18,7 @@ export default function MypageIndex() {
   }
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='마이페이지' backHref={routes.profile.index} />
       <MenuList
         items={[

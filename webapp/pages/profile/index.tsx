@@ -73,7 +73,7 @@ export default function Profile() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div>
           <CompactPageTitle title='내 정보' backHref={routes.home} />
           <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
@@ -93,7 +93,7 @@ export default function Profile() {
   const ticketsCount = ticketBalance?.availableTickets ?? 0;
 
   return (
-    <Layout title='내 정보 | GOLDEN RACE'>
+    <Layout title='내 정보 | OddsCast'>
       <div>
         <CompactPageTitle title='내 정보' backHref={routes.home} />
         <DataFetchState

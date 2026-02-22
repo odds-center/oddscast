@@ -94,7 +94,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div className='max-w-md mx-auto'>
           <p className='text-text-secondary mb-6'>
             <Link href={routes.auth.login} className='link-primary'>
@@ -110,7 +110,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'loading') {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div className='flex justify-center py-12'>
           <LoadingSpinner size={28} label='구독 플랜 준비 중...' />
         </div>
@@ -120,7 +120,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'error') {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div className='max-w-md mx-auto'>
           <EmptyState icon='AlertCircle' title='오류' description={errorMsg} />
           <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block text-center' />
@@ -131,7 +131,7 @@ export default function SubscriptionCheckoutPage() {
 
   if (step === 'success') {
     return (
-      <Layout title='GOLDEN RACE'>
+      <Layout title='OddsCast'>
         <div className='max-w-md mx-auto text-center'>
           <div className='card border-stone-200 mb-6'>
             <Icon name='CheckCircle' size={48} className='text-success mx-auto mb-3' />
@@ -155,7 +155,7 @@ export default function SubscriptionCheckoutPage() {
   if (!plan) return null;
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='max-w-md mx-auto'>
         <CompactPageTitle title='구독 결제' backHref={routes.mypage.subscriptions} />
         <SectionCard className='mb-6'>

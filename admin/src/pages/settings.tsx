@@ -70,7 +70,7 @@ export default function SettingsPage() {
   return (
     <>
       <Head>
-        <title>설정 | GoldenRace Admin</title>
+        <title>설정 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

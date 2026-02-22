@@ -91,7 +91,7 @@ export default function SubscriptionsPage() {
   return (
     <>
       <Head>
-        <title>구독 관리 | GoldenRace Admin</title>
+        <title>구독 관리 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

@@ -1,5 +1,5 @@
 /**
- * Authentication type — based on @goldenrace/shared + webapp extension
+ * Authentication type — based on @oddscast/shared + webapp extension
  */
 export type {
   LoginRequest,
@@ -8,7 +8,7 @@ export type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   ChangePasswordRequest,
-} from '@goldenrace/shared';
+} from '@oddscast/shared';
 
 /** webapp AuthResponse (login/register response) */
 export interface AuthResponse {

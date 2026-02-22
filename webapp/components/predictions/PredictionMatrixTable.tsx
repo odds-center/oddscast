@@ -103,7 +103,7 @@ export default function PredictionMatrixTable({
           <span className='text-stone-500'>|</span>
           <span className='text-stone-400 font-normal'>{raceMatrix.length}경주</span>
         </div>
-        <span className='text-[#d4a942] font-normal'>AI GOLDEN RACE</span>
+        <span className='text-[#d4a942] font-normal'>AI OddsCast</span>
       </div>
 
       {/* Main table */}

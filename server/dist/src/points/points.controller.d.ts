@@ -5,13 +5,13 @@ export declare class PointsController {
     private pointsService;
     constructor(pointsService: PointsService);
     getPromotions(filters: any): Promise<{
-        type: import("@prisma/client").$Enums.PromotionType;
-        description: string;
-        name: string;
         id: number;
-        isActive: boolean;
         createdAt: Date;
         updatedAt: Date;
+        name: string;
+        isActive: boolean;
+        description: string;
+        type: import("@prisma/client").$Enums.PromotionType;
         points: number;
         conditions: import("@prisma/client/runtime/client").JsonValue | null;
         startDate: Date;
@@ -38,16 +38,16 @@ export declare class PointsController {
     }>;
     getMyTransactions(user: JwtPayload, page?: number, limit?: number, type?: string): Promise<{
         transactions: {
-            description: string;
             id: number;
+            userId: number;
             createdAt: Date;
             updatedAt: Date;
-            userId: number;
             status: import("@prisma/client").$Enums.PointStatus;
-            amount: number;
-            metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionType: import("@prisma/client").$Enums.PointTransactionType;
+            amount: number;
             balanceAfter: number;
+            description: string;
+            metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionTime: Date;
         }[];
         total: number;
@@ -73,16 +73,16 @@ export declare class PointsController {
     }>;
     getTransactions(userId: number, filters: any): Promise<{
         transactions: {
-            description: string;
             id: number;
+            userId: number;
             createdAt: Date;
             updatedAt: Date;
-            userId: number;
             status: import("@prisma/client").$Enums.PointStatus;
-            amount: number;
-            metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionType: import("@prisma/client").$Enums.PointTransactionType;
+            amount: number;
             balanceAfter: number;
+            description: string;
+            metadata: import("@prisma/client/runtime/client").JsonValue | null;
             transactionTime: Date;
         }[];
         total: number;
@@ -90,16 +90,16 @@ export declare class PointsController {
         totalPages: number;
     }>;
     createTransaction(userId: number, dto: CreatePointTransactionDto): Promise<{
-        description: string;
         id: number;
+        userId: number;
         createdAt: Date;
         updatedAt: Date;
-        userId: number;
         status: import("@prisma/client").$Enums.PointStatus;
-        amount: number;
-        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         transactionType: import("@prisma/client").$Enums.PointTransactionType;
+        amount: number;
         balanceAfter: number;
+        description: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
         transactionTime: Date;
     }>;
     applyPromotion(userId: number, promotionId: number): Promise<{

@@ -1,5 +1,5 @@
 -- ============================================
--- GOLDEN RACE 초기 데이터 (기본 상태)
+-- OddsCast 초기 데이터 (기본 상태)
 -- 마이그레이션 없음. schema가 default state.
 -- 실행: npm run db:init (prisma db push + seed.sql)
 -- ============================================

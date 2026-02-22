@@ -1,4 +1,4 @@
-# Golden Race Mobile 가이드
+# OddsCast Mobile 가이드
 
 > React Native (Expo) — WebView 기반 경마 예측 앱
 

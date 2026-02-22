@@ -36,7 +36,7 @@ export default function DateHeader() {
             {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDay})
           </p>
           <h1 className='text-base sm:text-lg font-bold text-white mb-1'>
-            {isRaceDay ? '오늘 경주가 진행됩니다' : 'GOLDEN RACE'}
+            {isRaceDay ? '오늘 경주가 진행됩니다' : 'OddsCast'}
           </h1>
           <p className='text-stone-400 text-xs'>
             {isRaceDay ? (

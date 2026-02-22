@@ -1,5 +1,5 @@
-// Horse racing-related types — @goldenrace/shared DTO re-export
-export type { RaceDto, RaceDetailDto, RaceEntryDto, RaceResultDto, DividendDto, RaceListResponseDto } from '@goldenrace/shared';
+// Horse racing-related types — @oddscast/shared DTO re-export
+export type { RaceDto, RaceDetailDto, RaceEntryDto, RaceResultDto, DividendDto, RaceListResponseDto } from '@oddscast/shared';
 
 /** @deprecated Use RaceDto instead */
 export interface Race {

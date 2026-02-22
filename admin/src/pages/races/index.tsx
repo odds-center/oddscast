@@ -200,7 +200,7 @@ export default function RacesPage() {
   return (
     <>
       <Head>
-        <title>경주 관리 | GoldenRace Admin</title>
+        <title>경주 관리 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

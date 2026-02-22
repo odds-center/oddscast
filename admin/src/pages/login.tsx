@@ -42,13 +42,13 @@ export default function LoginPage() {
   return (
     <>
       <Head>
-        <title>로그인 | GoldenRace Admin</title>
+        <title>로그인 | OddsCast Admin</title>
       </Head>
       <div className='min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-5'>
         <div className='max-w-sm w-full space-y-5'>
           <div>
             <h2 className='mt-4 text-center text-xl font-bold text-gray-900'>
-              GoldenRace Admin
+              OddsCast Admin
             </h2>
             <p className='mt-1 text-center text-sm text-gray-600'>관리자 계정으로 로그인하세요</p>
           </div>

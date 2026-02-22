@@ -85,13 +85,13 @@ export default function DashboardPage() {
   return (
     <>
       <Head>
-        <title>대시보드 | GoldenRace Admin</title>
+        <title>대시보드 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-6'>
           <PageHeader
             title='대시보드'
-            description='GoldenRace 관리자 대시보드. 주요 지표를 한눈에 확인하세요.'
+            description='OddsCast 관리자 대시보드. 주요 지표를 한눈에 확인하세요.'
           />
 
           {/* 통계 카드 */}

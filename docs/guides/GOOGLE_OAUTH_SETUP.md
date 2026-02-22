@@ -31,7 +31,7 @@
 
 1. **APIs & Services** → **Credentials** → **Create Credentials** → **OAuth client ID**
 2. **Application type**: **Web application**
-3. **Name**: `Golden Race Web` (또는 원하는 이름)
+3. **Name**: `OddsCast Web` (또는 원하는 이름)
 4. **Authorized JavaScript origins**:
    - 개발: `http://localhost:3000`, `http://127.0.0.1:3000`
    - 프로덕션: `https://your-domain.com`

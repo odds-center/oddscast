@@ -310,7 +310,7 @@ export default function RaceDetailPage() {
   ).sort((a, b) => new Date(b.usedAt ?? 0).getTime() - new Date(a.usedAt ?? 0).getTime())[0];
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         <div className='flex-1 min-w-0 w-full space-y-4'>
 

@@ -6,8 +6,6 @@ export declare class BetsService {
     constructor(prisma: PrismaService);
     create(userId: number, dto: CreateBetDto): Promise<{
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         userId: number;
         raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
@@ -31,6 +29,8 @@ export declare class BetsService {
         dataSource: string | null;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
@@ -46,7 +46,9 @@ export declare class BetsService {
                 meet: string;
                 meetName: string | null;
                 rcDate: string;
+                rcDay: string | null;
                 rcNo: string;
+                stTime: string | null;
                 rcDist: string | null;
                 rank: string | null;
                 rcCondition: string | null;
@@ -54,13 +56,9 @@ export declare class BetsService {
                 weather: string | null;
                 track: string | null;
                 status: import("@prisma/client").$Enums.RaceStatus;
-                rcDay: string | null;
-                stTime: string | null;
             };
         } & {
             id: number;
-            createdAt: Date;
-            updatedAt: Date;
             userId: number;
             raceId: number;
             betType: import("@prisma/client").$Enums.BetType;
@@ -84,6 +82,8 @@ export declare class BetsService {
             dataSource: string | null;
             ipAddress: string | null;
             userAgent: string | null;
+            createdAt: Date;
+            updatedAt: Date;
             roi: number | null;
             riskLevel: string | null;
             isFavorite: boolean;
@@ -102,7 +102,9 @@ export declare class BetsService {
             meet: string;
             meetName: string | null;
             rcDate: string;
+            rcDay: string | null;
             rcNo: string;
+            stTime: string | null;
             rcDist: string | null;
             rank: string | null;
             rcCondition: string | null;
@@ -110,13 +112,9 @@ export declare class BetsService {
             weather: string | null;
             track: string | null;
             status: import("@prisma/client").$Enums.RaceStatus;
-            rcDay: string | null;
-            stTime: string | null;
         };
     } & {
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         userId: number;
         raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
@@ -140,6 +138,8 @@ export declare class BetsService {
         dataSource: string | null;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
@@ -147,8 +147,6 @@ export declare class BetsService {
     }>;
     update(id: number, dto: UpdateBetDto): Promise<{
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         userId: number;
         raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
@@ -172,6 +170,8 @@ export declare class BetsService {
         dataSource: string | null;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
@@ -179,8 +179,6 @@ export declare class BetsService {
     }>;
     cancel(id: number): Promise<{
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         userId: number;
         raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
@@ -204,6 +202,8 @@ export declare class BetsService {
         dataSource: string | null;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
@@ -211,8 +211,6 @@ export declare class BetsService {
     }>;
     processResult(id: number, result: BetResult, actualWin?: number): Promise<{
         id: number;
-        createdAt: Date;
-        updatedAt: Date;
         userId: number;
         raceId: number;
         betType: import("@prisma/client").$Enums.BetType;
@@ -236,6 +234,8 @@ export declare class BetsService {
         dataSource: string | null;
         ipAddress: string | null;
         userAgent: string | null;
+        createdAt: Date;
+        updatedAt: Date;
         roi: number | null;
         riskLevel: string | null;
         isFavorite: boolean;
@@ -243,12 +243,12 @@ export declare class BetsService {
     }>;
     createSlip(userId: number, dto: CreateBetSlipDto): Promise<{
         id: number;
+        userId: number;
+        raceId: number;
         createdAt: Date;
         updatedAt: Date;
-        bets: import("@prisma/client/runtime/client").JsonValue;
-        userId: number;
         status: import("@prisma/client").$Enums.BetSlipStatus;
-        raceId: number;
+        bets: import("@prisma/client/runtime/client").JsonValue;
         totalAmount: number;
     }>;
     getStatistics(userId: number): Promise<{

@@ -85,7 +85,7 @@ export default function SinglePurchaseConfigPage() {
     return (
       <>
         <Head>
-          <title>개별 구매 설정 | GoldenRace Admin</title>
+          <title>개별 구매 설정 | OddsCast Admin</title>
         </Head>
         <Layout>
           <PageLoading label='설정을 불러오는 중...' />
@@ -97,7 +97,7 @@ export default function SinglePurchaseConfigPage() {
   return (
     <>
       <Head>
-        <title>개별 구매 설정 | GoldenRace Admin</title>
+        <title>개별 구매 설정 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

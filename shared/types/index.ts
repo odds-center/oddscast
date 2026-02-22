@@ -1,5 +1,5 @@
 /**
- * @goldenrace/shared — 공통 타입 정의
+ * @oddscast/shared — 공통 타입 정의
  * webapp, mobile, admin, server 공용
  */
 

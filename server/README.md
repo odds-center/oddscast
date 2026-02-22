@@ -1,4 +1,4 @@
-# Golden Race Server
+# OddsCast Server
 
 NestJS 기반 경마 예측 API 서버 (PostgreSQL, Prisma, Python/Gemini)
 

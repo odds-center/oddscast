@@ -5,35 +5,35 @@
 @source "../pages/**/*.tsx";
 
 /* ============================================
-   GOLDEN RACE — Horse racing information and analysis site
-   Referencing KRA, dark gold tone + neutral gray
+   OddsCast — AI horse racing prediction & forecast service
+   Deep indigo + electric cyan accent on clean neutral base
    ============================================ */
 @theme {
-  --color-background: #f5f5f4;
+  --color-background: #f8fafc;
   --color-background-elevated: #ffffff;
-  --color-foreground: #1c1917;
-  --color-primary: #92702A;
-  --color-primary-dark: #7A5D1F;
-  --color-primary-muted: rgba(146, 112, 42, 0.07);
-  --color-primary-glow: rgba(146, 112, 42, 0.10);
+  --color-foreground: #0f172a;
+  --color-primary: #3730a3;
+  --color-primary-dark: #312e81;
+  --color-primary-muted: rgba(55, 48, 163, 0.06);
+  --color-primary-glow: rgba(55, 48, 163, 0.10);
   --color-primary-foreground: #ffffff;
-  --color-secondary: #f5f5f4;
+  --color-secondary: #f1f5f9;
   --color-card: #ffffff;
-  --color-card-hover: #fafaf9;
-  --color-border: #e7e5e4;
-  --color-border-gold: rgba(146, 112, 42, 0.18);
-  --color-border-focus: #a8a29e;
-  --color-link: #78716c;
-  --color-link-hover: #44403c;
-  --color-text-secondary: #57534e;
-  --color-text-tertiary: #a8a29e;
+  --color-card-hover: #f8fafc;
+  --color-border: #e2e8f0;
+  --color-border-gold: rgba(55, 48, 163, 0.15);
+  --color-border-focus: #94a3b8;
+  --color-link: #64748b;
+  --color-link-hover: #334155;
+  --color-text-secondary: #475569;
+  --color-text-tertiary: #94a3b8;
   --color-success: #15803d;
   --color-warning: #a16207;
   --color-error: #b91c1c;
-  --color-accent: #92702A;
-  --color-rank-1: #92702A;
-  --color-rank-2: #78716c;
-  --color-rank-3: #a8a29e;
+  --color-accent: #0891b2;
+  --color-rank-1: #3730a3;
+  --color-rank-2: #64748b;
+  --color-rank-3: #94a3b8;
   --font-display: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --font-sans: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   --text-xs: 0.75rem;
@@ -51,28 +51,28 @@
 }
 
 :root {
-  --background: #f5f5f4;
+  --background: #f8fafc;
   --background-elevated: #ffffff;
-  --foreground: #1c1917;
-  --primary: #92702A;
-  --primary-dark: #7A5D1F;
-  --primary-muted: rgba(146, 112, 42, 0.07);
-  --primary-glow: rgba(146, 112, 42, 0.10);
-  --secondary: #f5f5f4;
+  --foreground: #0f172a;
+  --primary: #3730a3;
+  --primary-dark: #312e81;
+  --primary-muted: rgba(55, 48, 163, 0.06);
+  --primary-glow: rgba(55, 48, 163, 0.10);
+  --secondary: #f1f5f9;
   --card-bg: #ffffff;
-  --card-hover: #fafaf9;
-  --border: #e7e5e4;
-  --border-gold: rgba(146, 112, 42, 0.18);
-  --border-focus: #a8a29e;
-  --link: #78716c;
-  --link-hover: #44403c;
-  --text-secondary: #57534e;
-  --text-tertiary: #a8a29e;
+  --card-hover: #f8fafc;
+  --border: #e2e8f0;
+  --border-gold: rgba(55, 48, 163, 0.15);
+  --border-focus: #94a3b8;
+  --link: #64748b;
+  --link-hover: #334155;
+  --text-secondary: #475569;
+  --text-tertiary: #94a3b8;
   --text-on-primary: #ffffff;
   --success: #15803d;
   --warning: #a16207;
   --error: #b91c1c;
-  --accent: #92702A;
+  --accent: #0891b2;
 }
 
 html { font-size: 16px; }

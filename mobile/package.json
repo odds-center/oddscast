@@ -14,7 +14,7 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
-    "@goldenrace/shared": "file:../shared",
+    "@oddscast/shared": "file:../shared",
     "@react-native-google-signin/google-signin": "^15.0.0",
     "@react-navigation/native": "^7.1.6",
     "expo": "~53.0.23",

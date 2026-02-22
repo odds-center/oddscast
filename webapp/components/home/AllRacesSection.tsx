@@ -13,7 +13,7 @@ import { routes } from '@/lib/routes';
 import DataFetchState from '@/components/page/DataFetchState';
 import { StatusBadge } from '@/components/ui';
 import type { RaceDto } from '@/lib/types/race';
-import type { RaceDetailDto } from '@goldenrace/shared';
+import type { RaceDetailDto } from '@oddscast/shared';
 
 const PREVIEW_LIMIT = 10;
 

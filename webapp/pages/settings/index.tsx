@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <CompactPageTitle title='설정' backHref={routes.profile.index} />
         {isLoggedIn ? (
           <MenuList

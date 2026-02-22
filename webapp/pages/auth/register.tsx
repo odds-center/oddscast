@@ -68,7 +68,7 @@ export default function Register() {
   };
 
   return (
-    <Layout title='GOLDEN RACE'>
+    <Layout title='OddsCast'>
       <div className='max-w-sm md:max-w-md mx-auto'>
         {showGoogleLogin && (
           <>

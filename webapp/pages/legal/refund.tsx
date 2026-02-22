@@ -6,7 +6,7 @@ import { routes } from '@/lib/routes';
 
 export default function RefundPage() {
   return (
-    <Layout title='환불 및 결제 정책 | GOLDEN RACE'>
+    <Layout title='환불 및 결제 정책 | OddsCast'>
       <div className='max-w-2xl mx-auto pb-12'>
         <CompactPageTitle title='환불 및 결제 정책' backHref={routes.home} />
         <div className='card space-y-6 text-sm text-foreground leading-relaxed'>
@@ -14,7 +14,7 @@ export default function RefundPage() {
             시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
           </p>
           <p className='text-text-secondary'>
-            본 정책은 Golden Race(이하 &quot;회사&quot;)가 제공하는 유료 서비스의 결제 및 환불에 관한 사항을 규정합니다. 「전자상거래 등에서의 소비자보호에 관한 법률」, 「콘텐츠산업 진흥법」 등을 준수합니다.
+            본 정책은 OddsCast(이하 &quot;회사&quot;)가 제공하는 유료 서비스의 결제 및 환불에 관한 사항을 규정합니다. 「전자상거래 등에서의 소비자보호에 관한 법률」, 「콘텐츠산업 진흥법」 등을 준수합니다.
           </p>
 
           {/* 1. Payment Policy */}
@@ -83,7 +83,7 @@ export default function RefundPage() {
 
             <h3 className='text-sm font-medium mt-3 mb-1'>2.4 환불 절차</h3>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
-              <li>환불 요청: support@goldenrace.com 또는 앱 내 고객문의로 접수합니다.</li>
+              <li>환불 요청: support@oddscast.com 또는 앱 내 고객문의로 접수합니다.</li>
               <li>필요 시 본인 확인 및 거래 확인을 위해 추가 정보를 요청할 수 있습니다.</li>
               <li>접수 후 영업일 5일 이내 환불 처리. PG사·카드사 사정에 따라 실제 환불 crediting은 7~14영업일 소요될 수 있습니다.</li>
               <li>원 결제 수단(신용카드 등)으로 환불합니다. 해당 수단이 불가한 경우 회사가 지정한 방법으로 환불합니다.</li>
@@ -107,8 +107,8 @@ export default function RefundPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>4. 문의처</h2>
             <ul className='list-disc list-inside text-text-secondary space-y-1'>
-              <li>결제·환불 문의: billing@goldenrace.com</li>
-              <li>고객센터: support@goldenrace.com</li>
+              <li>결제·환불 문의: billing@oddscast.com</li>
+              <li>고객센터: support@oddscast.com</li>
             </ul>
             <p className='text-text-secondary mt-2'>
               상세한 이용약관은 <Link href={routes.legal.terms} className='text-primary underline'>서비스 이용 약관</Link>을 참고하세요.

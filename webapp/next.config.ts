@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ['@goldenrace/shared'],
+  transpilePackages: ['@oddscast/shared'],
 };
 
 export default nextConfig;

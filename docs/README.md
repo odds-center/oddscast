@@ -1,4 +1,4 @@
-# Golden Race Documentation
+# OddsCast Documentation
 
 ## 📂 Active Documentation
 

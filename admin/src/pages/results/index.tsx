@@ -503,7 +503,7 @@ export default function ResultsPage() {
   return (
     <>
       <Head>
-        <title>경기 결과 | GoldenRace Admin</title>
+        <title>경기 결과 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

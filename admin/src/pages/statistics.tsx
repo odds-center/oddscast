@@ -28,7 +28,7 @@ export default function StatisticsPage() {
   return (
     <>
       <Head>
-        <title>통계 | GoldenRace Admin</title>
+        <title>통계 | OddsCast Admin</title>
       </Head>
       <Layout>
         <div className='space-y-4'>

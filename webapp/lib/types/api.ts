@@ -1,13 +1,13 @@
 /**
- * API type — synchronized with @goldenrace/shared
- * @see @goldenrace/shared
+ * API type — synchronized with @oddscast/shared
+ * @see @oddscast/shared
  */
 export type {
   ApiResponse,
   PaginatedResponse,
   ApiError,
   ErrorCode,
-} from '@goldenrace/shared';
+} from '@oddscast/shared';
 
 // Common types (not redefined in other files)
 // BetStatistics is defined in bet.ts

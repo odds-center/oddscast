@@ -1,4 +1,4 @@
-# Golden Race Admin 가이드
+# OddsCast Admin 가이드
 
 > 관리자 대시보드 (Next.js, port 3002)
 

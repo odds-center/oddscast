@@ -1,5 +1,5 @@
 /**
- * GOLDEN RACE unified icons — Lucide React
+ * OddsCast unified icons — Lucide React
  * Semantic icons suitable for horse racing/premium theme
  */
 import {

@@ -208,7 +208,7 @@ export default function RaceSchedulePage() {
   }, [year]);
 
   return (
-    <Layout title='경마 시행일 | GOLDEN RACE'>
+    <Layout title='경마 시행일 | OddsCast'>
       <CompactPageTitle title='경마 시행일' backHref={routes.home} />
       <p className='text-text-tertiary text-xs mb-3 px-1'>
         경주가 있는 날을 누르면 해당 일자의 경주 목록으로 이동합니다. 한국마사회 경주계획표 기준으로 시행일이 표시됩니다.

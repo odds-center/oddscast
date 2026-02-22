@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Query,
+  Res,
   UseGuards,
   UseInterceptors,
   Param,
@@ -11,11 +12,12 @@ import {
   Delete,
   ParseIntPipe,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '@prisma/client';
+import { UserRole, BetStatus } from '@prisma/client';
 import { KraService } from '../kra/kra.service';
 import { UsersService } from '../users/users.service';
 import { GlobalConfigService } from '../config/config.service';
@@ -47,6 +49,11 @@ export class AdminController {
     private readonly activityLogsService: ActivityLogsService,
   ) {}
 
+  /** Write SSE event (progress or done). */
+  private writeSse(res: Response, data: Record<string, unknown>): void {
+    res.write(`data: ${JSON.stringify(data)}\n\n`);
+  }
+
   // --- KRA Data Sync Endpoints ---
 
   @Post('kra/sync/schedule')
@@ -74,18 +81,165 @@ export class AdminController {
   @ApiOperation({
     summary: '[Admin] KRA 경주 결과 동기화',
     description:
-      'date 미지정 시 오늘 기준 과거 1년(금·토·일 경주일만) 적재. date 지정 시 해당 날짜만 적재.',
+      'date 미지정 시 오늘 기준 과거 1년(금·토·일 경주일만) 적재. date 지정 시 해당 날짜만 적재. 경주 레코드가 없으면 결과 API 응답으로 생성 후 결과·출전마 적재(createRaceIfMissing=true). 단일 날짜 적재 시 결과 적재 후 같은 날짜로 출전표(entry sheet)를 자동 보강하여 출전마 상세 정보를 DB에 채웁니다.',
   })
   async syncResults(@Query('date') date?: string) {
     const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
     const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
     if (date && norm(date)) {
-      return this.kraService.fetchRaceResults(norm(date));
+      const d = norm(date);
+      const resultRes = await this.kraService.fetchRaceResults(d, true);
+      // Backfill 출전마(entry) from KRA entry sheet so DB has full entry info (기수·조교사·레이팅·통산 등)
+      try {
+        const entryRes = await this.kraService.syncEntrySheet(d);
+        return {
+          message: `${resultRes.message} 출전표 보강: ${entryRes.races ?? 0}경주, ${entryRes.entries ?? 0}건 출전마`,
+          totalResults: resultRes.totalResults,
+          entries: entryRes.entries,
+          races: entryRes.races,
+        };
+      } catch (e) {
+        // Entry sheet may be unavailable for some dates; return results summary anyway
+        return {
+          ...resultRes,
+          entrySheetWarning: (e as Error)?.message ?? '출전표 보강 실패(해당일 데이터 없을 수 있음)',
+        };
+      }
     }
     const oneYearAgo = new Date();
     oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
     const dateFrom = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, '');
     return this.kraService.syncHistoricalBackfill(dateFrom, today);
+  }
+
+  @Post('kra/sync/results-stream')
+  @ApiOperation({ summary: '[Admin] KRA 경주 결과 동기화 (진행률 스트리밍)' })
+  async syncResultsStream(
+    @Query('date') date: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
+    const d = date && norm(date) ? norm(date) : null;
+    if (!d) {
+      res.status(400).json({ message: 'date (YYYYMMDD or YYYY-MM-DD) required' });
+      return;
+    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const onProgress = (percent: number, message: string) => {
+      this.writeSse(res, { percent, message });
+    };
+    try {
+      onProgress(0, '경주 결과 수집 시작…');
+      const resultRes = await this.kraService.fetchRaceResults(d, true, { onProgress });
+      onProgress(50, '출전표 보강 중…');
+      let entryRes: { races?: number; entries?: number } = {};
+      try {
+        entryRes = await this.kraService.syncEntrySheet(d, { onProgress });
+      } catch (e) {
+        this.writeSse(res, { percent: 100, message: '출전표 보강 건너뜀', warning: (e as Error)?.message });
+      }
+      this.writeSse(res, {
+        done: true,
+        result: {
+          message: `완료: ${resultRes.totalResults ?? 0}건 결과, ${entryRes.entries ?? 0}건 출전마`,
+          totalResults: resultRes.totalResults,
+          entries: entryRes.entries,
+          races: entryRes.races,
+        },
+      });
+    } catch (e) {
+      this.writeSse(res, { done: true, error: (e as Error)?.message });
+    } finally {
+      res.end();
+    }
+  }
+
+  @Post('kra/sync/schedule-stream')
+  @ApiOperation({ summary: '[Admin] KRA 출전표 동기화 (진행률 스트리밍)' })
+  async syncScheduleStream(
+    @Query('date') date: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
+    const d = date && norm(date) ? norm(date) : null;
+    if (!d) {
+      res.status(400).json({ message: 'date required' });
+      return;
+    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const onProgress = (percent: number, message: string) => {
+      this.writeSse(res, { percent, message });
+    };
+    try {
+      const result = await this.kraService.syncScheduleForDate(d, { onProgress });
+      this.writeSse(res, { done: true, result });
+    } catch (e) {
+      this.writeSse(res, { done: true, error: (e as Error)?.message });
+    } finally {
+      res.end();
+    }
+  }
+
+  @Post('kra/sync/all-stream')
+  @ApiOperation({ summary: '[Admin] KRA 전체 적재 (진행률 스트리밍)' })
+  async syncAllStream(
+    @Query('date') date: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const d =
+      date?.replace(/-/g, '').slice(0, 8) ||
+      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const onProgress = (percent: number, message: string) => {
+      this.writeSse(res, { percent, message });
+    };
+    try {
+      const result = await this.kraService.syncAll(d, { onProgress });
+      this.writeSse(res, { done: true, result });
+    } catch (e) {
+      this.writeSse(res, { done: true, error: (e as Error)?.message });
+    } finally {
+      res.end();
+    }
+  }
+
+  @Post('kra/sync/historical-stream')
+  @ApiOperation({ summary: '[Admin] 과거 경마 기록 적재 (진행률 스트리밍)' })
+  async syncHistoricalStream(
+    @Query('dateFrom') dateFrom: string,
+    @Query('dateTo') dateTo: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    if (!dateFrom || !dateTo) {
+      res.status(400).json({ message: 'dateFrom, dateTo required' });
+      return;
+    }
+    const from = dateFrom.replace(/-/g, '').slice(0, 8);
+    const to = dateTo.replace(/-/g, '').slice(0, 8);
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const onProgress = (percent: number, message: string) => {
+      this.writeSse(res, { percent, message });
+    };
+    try {
+      const result = await this.kraService.syncHistoricalBackfill(from, to, { onProgress });
+      this.writeSse(res, { done: true, result });
+    } catch (e) {
+      this.writeSse(res, { done: true, error: (e as Error)?.message });
+    } finally {
+      res.end();
+    }
   }
 
   @Post('kra/sync/details')
@@ -406,6 +560,25 @@ export class AdminController {
     });
   }
 
+  @Patch('bets/:id/status')
+  @ApiOperation({ summary: '[Admin] 마권 상태 변경' })
+  async updateBetStatus(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: { status: string },
+  ) {
+    const valid = Object.values(BetStatus);
+    const status = valid.includes(body?.status as BetStatus) ? (body.status as BetStatus) : BetStatus.PENDING;
+    const bet = await this.prisma.bet.update({
+      where: { id },
+      data: { betStatus: status },
+      include: {
+        race: true,
+        user: { select: { id: true, email: true, name: true } },
+      },
+    });
+    return bet;
+  }
+
   // --- Subscription Plans (Admin) ---
 
   @Get('subscriptions/plans')
@@ -489,6 +662,12 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] 개별 구매 설정 수정' })
   async updateSinglePurchaseConfig(@Body() body: any) {
     return this.singlePurchasesService.updateConfig(body);
+  }
+
+  @Get('single-purchase/calculate-price')
+  @ApiOperation({ summary: '[Admin] 개별 구매 가격 계산 (미리보기)' })
+  async calculateSinglePurchasePrice(@Query('quantity') quantity?: number) {
+    return this.singlePurchasesService.calculatePrice(Number(quantity) || 1);
   }
 
   // --- Statistics / Dashboard ---
@@ -727,6 +906,67 @@ export class AdminController {
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
+  }
+
+  @Get('prediction-tickets/usage')
+  @ApiOperation({ summary: '[Admin] 예측권 사용 내역 (유저별, 경주·예측 내용 포함)' })
+  async getPredictionTicketUsage(
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+    @Query('userId') userId?: string,
+  ) {
+    const pageNum = Math.max(1, Number(page) || 1);
+    const limitNum = Math.min(100, Math.max(1, Number(limit) || 20));
+    const where: { status: 'USED'; userId?: number } = { status: 'USED' };
+    if (userId) where.userId = parseInt(userId, 10);
+
+    const [tickets, total] = await Promise.all([
+      this.prisma.predictionTicket.findMany({
+        where,
+        include: {
+          user: { select: { id: true, email: true, name: true, nickname: true } },
+          prediction: { select: { id: true, analysis: true, status: true, accuracy: true, scores: true } },
+          subscription: { select: { id: true } },
+        },
+        orderBy: { usedAt: 'desc' },
+        skip: (pageNum - 1) * limitNum,
+        take: limitNum,
+      }),
+      this.prisma.predictionTicket.count({ where }),
+    ]);
+
+    const raceIds = [...new Set(tickets.map((t) => t.raceId).filter(Boolean))] as number[];
+    const races =
+      raceIds.length > 0
+        ? await this.prisma.race.findMany({
+            where: { id: { in: raceIds } },
+            select: { id: true, rcNo: true, meet: true, meetName: true, rcDate: true, rcName: true },
+          })
+        : [];
+    const raceMap = new Map(races.map((r) => [r.id, r]));
+
+    const items = tickets.map((t) => {
+      const race = t.raceId ? raceMap.get(t.raceId) : null;
+      return {
+        id: t.id,
+        userId: t.userId,
+        user: t.user,
+        raceId: t.raceId,
+        race: race ?? null,
+        predictionId: t.predictionId,
+        prediction: t.prediction,
+        type: t.type,
+        usedAt: t.usedAt,
+        matrixDate: t.matrixDate,
+      };
+    });
+
+    return {
+      items,
+      total,
+      page: pageNum,
+      totalPages: Math.ceil(total / limitNum),
+    };
   }
 
   @Get('statistics/ticket-usage-trend')

@@ -36,6 +36,14 @@ export class ActivityLogsService {
 
   // --- Admin Activity ---
 
+  private activityLogErrorMessage(err: unknown): string {
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes('does not exist')) {
+      return 'Activity log table missing. Run: cd server && pnpm prisma db push';
+    }
+    return msg;
+  }
+
   async logAdminActivity(params: AdminLogParams): Promise<void> {
     try {
       await this.prisma.adminActivityLog.create({
@@ -50,10 +58,7 @@ export class ActivityLogsService {
         },
       });
     } catch (err) {
-      this.logger.warn(
-        `Failed to log admin activity: ${params.action}`,
-        err instanceof Error ? err.message : String(err),
-      );
+      this.logger.warn(`Failed to log admin activity: ${params.action} — ${this.activityLogErrorMessage(err)}`);
     }
   }
 
@@ -111,10 +116,7 @@ export class ActivityLogsService {
         },
       });
     } catch (err) {
-      this.logger.warn(
-        `Failed to log user activity: ${params.event}`,
-        err instanceof Error ? err.message : String(err),
-      );
+      this.logger.warn(`Failed to log user activity: ${params.event} — ${this.activityLogErrorMessage(err)}`);
     }
   }
 
@@ -133,10 +135,7 @@ export class ActivityLogsService {
         })),
       });
     } catch (err) {
-      this.logger.warn(
-        `Failed to bulk log user activities`,
-        err instanceof Error ? err.message : String(err),
-      );
+      this.logger.warn(`Failed to bulk log user activities — ${this.activityLogErrorMessage(err)}`);
     }
   }
 

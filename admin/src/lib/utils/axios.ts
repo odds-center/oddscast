@@ -51,6 +51,7 @@ export const createApiClient = (baseURL?: string): AxiosInstance => {
           console.log('🚫 401 Unauthorized - Redirecting to login');
           localStorage.removeItem('accessToken');
           localStorage.removeItem('admin_token');
+          document.cookie = 'accessToken=; path=/; max-age=0';
           window.location.href = '/login';
         }
       }

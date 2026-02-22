@@ -16,6 +16,8 @@ interface TableProps<T> {
   emptyMessage?: string;
   /** 행 고유 키 (없으면 index 사용) */
   getRowKey?: (item: T, index: number) => string | number;
+  /** 행 클릭 시 호출 (버튼/링크는 내부에서 stopPropagation 권장) */
+  onRowClick?: (item: T, index: number) => void;
 }
 
 export default function Table<T extends object>({
@@ -24,6 +26,7 @@ export default function Table<T extends object>({
   isLoading = false,
   emptyMessage = '데이터가 없습니다.',
   getRowKey,
+  onRowClick,
 }: TableProps<T>) {
   if (isLoading) {
     return (
@@ -61,7 +64,12 @@ export default function Table<T extends object>({
         </thead>
         <tbody className='bg-white divide-y divide-gray-200'>
           {data.map((item, index) => (
-            <tr key={getRowKey ? getRowKey(item, index) : index} className='hover:bg-gray-50'>
+            <tr
+              key={getRowKey ? getRowKey(item, index) : index}
+              className={cn('hover:bg-gray-50', onRowClick && 'cursor-pointer')}
+              onClick={onRowClick ? () => onRowClick(item, index) : undefined}
+              role={onRowClick ? 'button' : undefined}
+            >
               {columns.map((column) => (
                 <td
                   key={column.key}

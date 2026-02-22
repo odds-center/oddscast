@@ -18,6 +18,8 @@ const ORD_TYPE_MAP: Array<{ patterns: string[]; type: OrdType }> = [
 /**
  * ord 문자열을 파싱하여 ordInt, ordType 반환
  * @param ordRaw KRA API ord 값 (숫자 또는 낙마/실격/기권 등)
+ * - 정상: 1~14 등
+ * - 비정상: 낙마/실격/기권 문자열, 또는 90 이상 숫자(실격·미착 등 KRA 특수 코드)
  */
 export function parseOrd(ordRaw: string | number | null | undefined): {
   ordInt: number | undefined;
@@ -26,17 +28,22 @@ export function parseOrd(ordRaw: string | number | null | undefined): {
   const s = ordRaw != null ? String(ordRaw).trim() : '';
   if (!s) return { ordInt: undefined, ordType: null };
 
-  // 숫자만 (정상 착순)
-  if (/^\d+$/.test(s)) {
-    return { ordInt: parseInt(s, 10), ordType: null };
-  }
-
-  // 비숫자 → ordType 매핑
+  // 비숫자 → ordType 매핑 (낙마, 실격, 기권 등)
   const lower = s.toLowerCase();
   for (const { patterns, type } of ORD_TYPE_MAP) {
     if (patterns.some((p) => lower.includes(p))) {
       return { ordInt: undefined, ordType: type };
     }
+  }
+
+  // 숫자만
+  if (/^\d+$/.test(s)) {
+    const n = parseInt(s, 10);
+    // 90 이상은 KRA 실격·미착 등 비정상 코드로 간주 (정상 순위는 보통 1~20 이내)
+    if (n >= 90) {
+      return { ordInt: undefined, ordType: 'DQ' };
+    }
+    return { ordInt: n, ordType: null };
   }
 
   // 매핑되지 않은 비숫자 (기타) → 후순위 처리용 DQ로 분류

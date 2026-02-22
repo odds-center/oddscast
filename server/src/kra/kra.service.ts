@@ -17,6 +17,10 @@ import type { KraApiItem, KraSyncAllOutput } from '@oddscast/shared';
 
 const DEFAULT_KRA_BASE_URL = 'http://apis.data.go.kr/B551015';
 
+export interface KraSyncProgressOptions {
+  onProgress?: (percent: number, message: string) => void;
+}
+
 @Injectable()
 export class KraService {
   private readonly logger = new Logger(KraService.name);
@@ -128,7 +132,7 @@ export class KraService {
     this.logger.log('Running Real-time Result Sync');
     const today = this.getTodayDateString();
 
-    await this.fetchRaceResults(today);
+    await this.fetchRaceResults(today, true);
     await this.syncAnalysisData(today);
   }
 
@@ -145,7 +149,7 @@ export class KraService {
     if (day !== 0 && day !== 5 && day !== 6) return;
     const dateStr = this.formatYyyyMmDd(yesterday);
     this.logger.log(`Running Previous Day Result Sync: ${dateStr}`);
-    await this.fetchRaceResults(dateStr);
+    await this.fetchRaceResults(dateStr, true);
   }
 
   /**
@@ -273,7 +277,7 @@ export class KraService {
    * Syncs Entry Sheet (Race Schedule + Entries) for a specific date.
    * Uses KRA API: /API26_2/entrySheet_2
    */
-  async syncEntrySheet(date: string) {
+  async syncEntrySheet(date: string, opts?: KraSyncProgressOptions) {
     if (!this.ensureServiceKey()) {
       return {
         message: 'KRA_SERVICE_KEY not configured. Add API key to .env.',
@@ -288,9 +292,15 @@ export class KraService {
 
     let totalRaces = 0;
     let totalEntries = 0;
+    const totalMeets = KRA_MEETS.length;
 
-    for (const meet of KRA_MEETS) {
+    for (let meetIndex = 0; meetIndex < KRA_MEETS.length; meetIndex++) {
+      const meet = KRA_MEETS[meetIndex];
       const start = Date.now();
+      opts?.onProgress?.(
+        Math.round(((meetIndex + 0.5) / totalMeets) * 100),
+        `출전표 동기화: ${meet.name} (${meetIndex + 1}/${totalMeets})`,
+      );
       try {
         const url = `${baseUrl}/API26_2/entrySheet_2`;
         const params = {
@@ -396,6 +406,7 @@ export class KraService {
       }
     }
 
+    opts?.onProgress?.(100, '완료');
     return {
       message: `Synced ${totalRaces} races and ${totalEntries} entries for ${normalizedDate}`,
       races: totalRaces,
@@ -536,7 +547,10 @@ export class KraService {
    * Loads schedule for a specific date (race plan schedule → entry sheet)
    * Used in Admin sync/schedule when date is specified.
    */
-  async syncScheduleForDate(date: string): Promise<{
+  async syncScheduleForDate(
+    date: string,
+    opts?: KraSyncProgressOptions,
+  ): Promise<{
     message: string;
     races: number;
     entries: number;
@@ -549,20 +563,26 @@ export class KraService {
       };
     }
     const d = this.normalizeToYyyyMmDd(date);
+    opts?.onProgress?.(10, '경주계획표 조회 중…');
     const planRes = await this.fetchRacePlanSchedule(d);
-    const entryRes = await this.syncEntrySheet(d);
-      return {
-        message: `Schedule load complete: ${planRes.races} races (plan), ${entryRes.entries} entries`,
-        races: Math.max(planRes.races ?? 0, entryRes.races ?? 0),
-        entries: entryRes.entries ?? 0,
-      };
+    opts?.onProgress?.(50, '출전표 동기화 중…');
+    const entryRes = await this.syncEntrySheet(d, opts);
+    opts?.onProgress?.(100, '완료');
+    return {
+      message: `Schedule load complete: ${planRes.races} races (plan), ${entryRes.entries} entries`,
+      races: Math.max(planRes.races ?? 0, entryRes.races ?? 0),
+      entries: entryRes.entries ?? 0,
+    };
   }
 
   /**
    * Full sync for a specific date (entry sheet → results → details → jockeys)
    * Used when syncing race day/scheduled date
    */
-  async syncAll(date: string): Promise<{
+  async syncAll(
+    date: string,
+    opts?: KraSyncProgressOptions,
+  ): Promise<{
     message: string;
     entrySheet?: { races: number; entries: number };
     results?: { totalResults: number };
@@ -580,20 +600,27 @@ export class KraService {
     };
 
     try {
+      opts?.onProgress?.(5, '경주계획표 조회 중…');
       await this.fetchRacePlanSchedule(d);
-      const entryRes = await this.syncEntrySheet(d);
+      opts?.onProgress?.(25, '출전표 동기화 중…');
+      const entryRes = await this.syncEntrySheet(d, opts);
       out.entrySheet = { races: entryRes.races, entries: entryRes.entries };
       await this.delay(300);
 
-      const resultRes = await this.fetchRaceResults(d);
+      // createRaceIfMissing: true — 결과 API에만 있는 경주도 Race 생성 후 결과·출전마 보강 기록
+      opts?.onProgress?.(50, '경주 결과 수집 중…');
+      const resultRes = await this.fetchRaceResults(d, true, opts);
       out.results = { totalResults: resultRes.totalResults ?? 0 };
       await this.delay(300);
 
+      opts?.onProgress?.(75, '상세정보(훈련·장구) 동기화 중…');
       const detailRes = await this.syncAnalysisData(d);
       out.details = detailRes.message;
 
+      opts?.onProgress?.(95, '기수 통산전적 동기화 중…');
       const jockeyRes = await this.fetchJockeyTotalResults();
       out.jockeys = jockeyRes.message;
+      opts?.onProgress?.(100, '완료');
       out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results`;
     } catch (err) {
       this.logger.error('[syncAll] Failed', err);
@@ -608,7 +635,11 @@ export class KraService {
    * then jockey totals at the end. Ensures data consistency between
    * race plans and results.
    */
-  async syncHistoricalBackfill(dateFrom: string, dateTo: string) {
+  async syncHistoricalBackfill(
+    dateFrom: string,
+    dateTo: string,
+    opts?: KraSyncProgressOptions,
+  ) {
     if (!this.ensureServiceKey()) return;
     this.logger.log(
       `Starting historical backfill (race days only) from ${dateFrom} to ${dateTo}`,
@@ -617,8 +648,12 @@ export class KraService {
     const end = this.normalizeToYyyyMmDd(dateTo);
     const dates = this.getRaceDateRange(start, end);
     const summary = { processed: 0, failed: [] as string[], totalResults: 0, totalRaces: 0 };
+    const totalDates = dates.length;
 
-    for (const date of dates) {
+    for (let i = 0; i < dates.length; i++) {
+      const date = dates[i];
+      const pct = totalDates > 0 ? Math.round(((i + 0.5) / totalDates) * 95) : 0;
+      opts?.onProgress?.(pct, `과거 데이터: ${date} (${i + 1}/${totalDates})`);
       try {
         // 1) Race plan (API72_2) — create Race records first
         const planRes = await this.fetchRacePlanSchedule(date);
@@ -646,11 +681,13 @@ export class KraService {
       }
     }
 
+    opts?.onProgress?.(97, '기수 통산전적 동기화 중…');
     try {
       await this.fetchJockeyTotalResults();
     } catch (e) {
       this.logger.warn('Jockey sync after historical failed', e);
     }
+    opts?.onProgress?.(100, '완료');
 
     return {
       message: `Historical backfill complete: ${summary.processed} days, ${summary.totalRaces} races, ${summary.totalResults} results`,
@@ -925,6 +962,7 @@ export class KraService {
   async fetchRaceResults(
     date: string,
     createRaceIfMissing = false,
+    opts?: KraSyncProgressOptions,
   ): Promise<{ message: string; totalResults?: number }> {
     if (!this.ensureServiceKey()) {
       return { message: 'KRA_SERVICE_KEY not configured.', totalResults: 0 };
@@ -935,8 +973,14 @@ export class KraService {
 
     let totalResults = 0;
     const failed500Meets: string[] = [];
+    const totalMeets = KRA_MEETS.length;
 
-    for (const meet of KRA_MEETS) {
+    for (let meetIndex = 0; meetIndex < KRA_MEETS.length; meetIndex++) {
+      const meet = KRA_MEETS[meetIndex];
+      opts?.onProgress?.(
+        Math.round(((meetIndex + 0.5) / totalMeets) * 100),
+        `경주 결과 수집: ${meet.name} (${meetIndex + 1}/${totalMeets})`,
+      );
       const start = Date.now();
       try {
         const normalizedDate = this.normalizeToYyyyMmDd(date);

@@ -159,6 +159,38 @@ export default class ResultApi {
     }
   }
 
+  /** Same race list as GET /races (paginated by race). Use for results page to align with races page. */
+  static async getResultsGroupedByRace(filters: ResultFilters): Promise<{
+    raceGroups: Array<{
+      race: { id: string; meet?: string; meetName?: string; rcDate: string; rcNo?: string; rcDist?: string };
+      results: RaceResult[];
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    const params = new URLSearchParams();
+    params.set('groupByRace', 'true');
+    if (filters?.meet) params.append('meet', filters.meet);
+    if (filters?.date) params.append('date', filters.date ?? '');
+    if (filters?.page) params.append('page', String(filters.page ?? 1));
+    if (filters?.limit) params.append('limit', String(filters.limit ?? 20));
+
+    const response = await axiosInstance.get<
+      ApiResponseDto<{
+        raceGroups: Array<{
+          race: { id: string; meet?: string; meetName?: string; rcDate: string; rcNo?: string; rcDist?: string };
+          results: RaceResult[];
+        }>;
+        total: number;
+        page: number;
+        totalPages: number;
+      }>
+    >(`${ResultApi.baseUrl}?${params.toString()}`);
+
+    return handleApiResponse(response);
+  }
+
   // Get individual race result
   static async getResult(resultId: string): Promise<RaceResultDetail> {
     try {

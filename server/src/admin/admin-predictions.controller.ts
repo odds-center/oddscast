@@ -51,6 +51,12 @@ export class AdminPredictionsController {
     return this.predictionsService.getCostStats();
   }
 
+  @Get('race/:raceId')
+  @ApiOperation({ summary: '[Admin] 경주별 예측 정보 조회' })
+  getByRace(@Param('raceId', ParseIntPipe) raceId: number) {
+    return this.predictionsService.getByRace(raceId);
+  }
+
   @Post('generate/:raceId')
   @ApiOperation({ summary: '[Admin] 해당 경주 AI 예측 수동 생성' })
   generateForRace(@Param('raceId', ParseIntPipe) raceId: number) {

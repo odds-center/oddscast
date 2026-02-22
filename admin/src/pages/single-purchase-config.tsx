@@ -45,12 +45,13 @@ export default function SinglePurchaseConfigPage() {
     queryFn: () => adminSinglePurchaseApi.getConfig(),
   });
 
-  // 데이터 로드 시 폼에 설정
+  // 데이터 로드 시 폼에 설정 (reset은 RHF에서 안정 참조이지만 deps에 넣으면 일부 환경에서 무한 렌더 유발 가능해 제외)
   useEffect(() => {
     if (data) {
       reset(data);
     }
-  }, [data, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data]);
 
   // watch로 실시간 값 추적
   const watchedOriginalPrice = watch('originalPrice');

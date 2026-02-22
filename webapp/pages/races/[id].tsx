@@ -6,7 +6,8 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import { Card } from '@/components/ui';
+import { Badge, Card } from '@/components/ui';
+import Tooltip from '@/components/ui/Tooltip';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RaceHeaderCard from '@/components/race/RaceHeaderCard';
@@ -26,7 +27,36 @@ import { routes } from '@/lib/routes';
 import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatTime, formatNumber } from '@/lib/utils/format';
+import { formatTime, formatNumber, isPastRaceDate } from '@/lib/utils/format';
+
+/** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
+function formatOrdTypeLabel(ordType: string | null | undefined): string {
+  if (!ordType || ordType === 'NORMAL') return '';
+  const map: Record<string, string> = { FALL: '낙마', DQ: '실격', WITHDRAWN: '기권' };
+  return map[ordType] ?? '';
+}
+
+/** Format race time in seconds as M:SS.s (e.g. 75.9 → "1:15.9", 300 → "5:00.0") */
+function formatRaceTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+  return `${m}:${s.toFixed(1).padStart(3, '0')}`;
+}
+
+function getFirstPlaceTimeSec(
+  results: Array<{ ord?: unknown; ordType?: string | null; rcTime?: string | null }>
+): number | null {
+  const first = results.find(
+    (r) =>
+      parseInt(String(r.ord ?? ''), 10) === 1 &&
+      !r.ordType &&
+      r.rcTime != null &&
+      r.rcTime !== ''
+  );
+  if (!first?.rcTime) return null;
+  const val = parseFloat(String(first.rcTime));
+  return Number.isFinite(val) ? val : null;
+}
 
 /** Convert KRA diffUnit text (e.g. "1¼", "목", "머리") to decimal number string */
 function formatDiffUnit(diff: string): string {
@@ -100,9 +130,12 @@ export default function RaceDetailPage() {
     enabled: !!id,
   });
 
+  const raceStatus =
+    (race as { status?: string; raceStatus?: string })?.status ??
+    (race as { status?: string; raceStatus?: string })?.raceStatus;
+  const rcDate = (race as { rcDate?: string })?.rcDate;
   const isRaceCompleted =
-    ((race as { status?: string; raceStatus?: string })?.status ??
-      (race as { status?: string; raceStatus?: string })?.raceStatus) === 'COMPLETED';
+    raceStatus === 'COMPLETED' || (!!rcDate && isPastRaceDate(rcDate));
 
   const { data: myPick } = useQuery({
     queryKey: ['picks', 'race', id],
@@ -342,6 +375,22 @@ export default function RaceDetailPage() {
       equipment?: string;
       budam?: string;
     }>;
+    /** Results embedded in GET /races/:id (RACE_INCLUDE_FULL); use as fallback when GET /races/:id/results is empty */
+    results?: Array<{
+      id?: number;
+      ord?: string | number;
+      ordType?: string | null;
+      chulNo?: string;
+      hrNo?: string;
+      hrName?: string;
+      jkName?: string;
+      trName?: string;
+      rcTime?: string | null;
+      diffUnit?: string | null;
+      winOdds?: number;
+      plcOdds?: number;
+      [k: string]: unknown;
+    }>;
   };
   const entries = (r.entries ?? r.entryDetails ?? []) as Array<{
     id?: string;
@@ -364,15 +413,36 @@ export default function RaceDetailPage() {
     budam?: string;
   }>;
 
-  const hasResults = (raceResults?.length ?? 0) > 0;
+  // Prefer dedicated GET /races/:id/results; fallback to results embedded in GET /races/:id (RACE_INCLUDE_FULL)
+  const resultsEmbedded = (r.results ?? []) as Array<{
+    ord?: string | number;
+    chulNo?: string;
+    hrNo?: string;
+    hrName?: string;
+    jkName?: string;
+    diffUnit?: string | null;
+    rcTime?: string | null;
+    ordType?: string | null;
+    winOdds?: number;
+    plcOdds?: number;
+    [k: string]: unknown;
+  }>;
+  const effectiveResults =
+    (raceResults?.length ?? 0) > 0
+      ? (raceResults ?? [])
+      : Array.isArray(resultsEmbedded) && resultsEmbedded.length > 0
+        ? resultsEmbedded
+        : [];
+  const hasResults = effectiveResults.length > 0;
+  const firstPlaceTimeSec = getFirstPlaceTimeSec(effectiveResults);
 
   // Extract entry list from results data (fallback when entries is empty)
   const entriesFromResults = hasResults
-    ? raceResults!.map((res) => ({
-        hrNo: res.hrNo,
-        hrName: res.hrName,
-        jkName: res.jkName,
-        chulNo: res.chulNo,
+    ? effectiveResults.map((res) => ({
+        hrNo: res.hrNo ?? '',
+        hrName: res.hrName ?? '',
+        jkName: res.jkName ?? '',
+        chulNo: res.chulNo ?? '',
       }))
     : [];
   const displayEntries = entries.length > 0 ? entries : entriesFromResults;
@@ -403,77 +473,140 @@ export default function RaceDetailPage() {
             rcDist={r.rcDist}
             rank={(r as { rank?: string }).rank}
             rcCondition={(r as { rcCondition?: string }).rcCondition}
+            budam={(r as { budam?: string }).budam ?? (entries[0] as { budam?: string } | undefined)?.budam}
             rcPrize={(r as { rcPrize?: number }).rcPrize}
             weather={(r as { weather?: string }).weather}
             track={(r as { track?: string }).track}
           />
 
-          {/* ── Race results (always show when race is completed; empty state if not synced yet) ── */}
+          {/* ── Race results (same section/table style as 출전마) ── */}
           {(isRaceCompleted || hasResults) && (
-            <section className='space-y-2'>
-              <div className='flex items-center gap-1.5'>
-                <Icon name='Trophy' size={15} className='text-stone-500' />
+            <section>
+              <div className='flex items-center gap-1.5 mb-2'>
+                <Icon name='Trophy' size={15} className='text-text-secondary' />
                 <span className='text-sm font-bold text-foreground'>경주 결과</span>
+                {hasResults && effectiveResults.length > 0 && (
+                  <span className='text-xs text-text-tertiary'>{effectiveResults.length}두</span>
+                )}
               </div>
 
               {!hasResults ? (
-                <div className='rounded-md border border-stone-200 bg-stone-50/50 px-4 py-6 text-center text-sm text-text-secondary'>
+                <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-sm text-text-secondary'>
                   결과를 불러오는 중이거나 아직 반영되지 않았습니다. 잠시 후 새로고침 해 주세요.
                 </div>
               ) : (
               <>
-              {/* Full rankings — table format */}
-              <div className='rounded-md border border-stone-200 overflow-hidden'>
-                <table className='w-full text-sm'>
+              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+                <table className='data-table data-table-compact w-full min-w-[280px]'>
                   <thead>
-                    <tr className='bg-stone-50 border-b border-stone-200 text-xs text-text-secondary'>
-                      <th className='py-1.5 px-2 w-10 text-center font-semibold'>순위</th>
-                      <th className='py-1.5 px-2 w-10 text-center font-semibold'>번호</th>
-                      <th className='py-1.5 px-2 text-left font-semibold'>마명</th>
-                      <th className='py-1.5 px-2 text-left font-semibold'>기수</th>
-                      <th className='py-1.5 px-2 text-right font-semibold'>기록</th>
+                    <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                      <th className='cell-center w-10 py-3 font-semibold'>순위</th>
+                      <th className='cell-center w-10 py-3 font-semibold'>번호</th>
+                      <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+                      <th className='text-left py-3 font-semibold'>기수</th>
+                      <th className='cell-right py-3 font-semibold'>
+                        <Tooltip
+                          content='각 말의 완주 시간(분:초). 2등 이하는 1등과의 초 차이를 +/−로 표시.'
+                          inline
+                        >
+                          <span>기록</span>
+                        </Tooltip>
+                      </th>
+                      <th className='cell-center py-3 w-16 font-semibold'>
+                        <Tooltip
+                          content='낙마·실격·기권 등 비정상 결과를 표시합니다.'
+                          inline
+                        >
+                          <span>비고</span>
+                        </Tooltip>
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
-                    {raceResults?.map((res, i) => {
-                      const row = res as {
-                        ordType?: string | null;
-                        diffUnit?: string;
-                        winOdds?: number;
-                      };
-                      const ord = String(res.ord ?? i + 1);
-                      const ordN = parseInt(ord, 10);
-                      const no = res.chulNo ?? (res.hrNo && res.hrNo.length <= 2 ? res.hrNo : '-');
-                      const suffix =
-                        row.ordType === 'FALL' ? ' (낙마)' : row.ordType === 'DQ' ? ' (실격)' : '';
-                      const rankCls =
-                        ordN === 1
-                          ? 'text-foreground font-bold'
-                          : ordN === 2
-                            ? 'text-stone-600 font-bold'
-                            : ordN === 3
-                              ? 'text-stone-500 font-bold'
-                              : 'text-text-tertiary';
-                      const record =
-                        ordN === 1 && res.rcTime ? res.rcTime : formatDiffUnit(row.diffUnit ?? '');
+                    {effectiveResults.map((res, i) => {
+                        const row = res as {
+                          ordType?: string | null;
+                          diffUnit?: string;
+                          winOdds?: number;
+                        };
+                        const ordStr = String(res.ord ?? i + 1);
+                        const ordN = parseInt(ordStr, 10);
+                        const isAbnormalOrd = !row.ordType && ordN >= 90;
+                        const displayOrdType = row.ordType ?? (isAbnormalOrd ? 'DQ' : null);
+                        const ordTypeLabel = formatOrdTypeLabel(displayOrdType);
+                        const no = res.chulNo ?? (res.hrNo && res.hrNo.length <= 2 ? res.hrNo : '-');
+                        const rankCls =
+                          !displayOrdType && ordN === 1
+                            ? 'text-foreground font-bold'
+                            : !displayOrdType && ordN === 2
+                              ? 'text-stone-600 font-bold'
+                              : !displayOrdType && ordN === 3
+                                ? 'text-stone-500 font-bold'
+                                : 'text-text-tertiary';
+                        const rcTimeSec =
+                          res.rcTime != null && res.rcTime !== ''
+                            ? parseFloat(String(res.rcTime))
+                            : NaN;
+                        const hasTime = Number.isFinite(rcTimeSec);
+                        const record =
+                          hasTime && !displayOrdType
+                            ? ordN === 1
+                              ? formatRaceTime(rcTimeSec)
+                              : firstPlaceTimeSec != null
+                                ? `${formatRaceTime(rcTimeSec)} (${rcTimeSec >= firstPlaceTimeSec ? '+' : ''}${(rcTimeSec - firstPlaceTimeSec).toFixed(1)}초)`
+                                : formatRaceTime(rcTimeSec)
+                            : formatDiffUnit(row.diffUnit ?? '') || '-';
+                        const rawOrd = String(res.ord ?? '').trim();
+                        const hasReason = rawOrd && !/^\d{1,2}$/.test(rawOrd);
+                        const remarkTooltip = hasReason
+                          ? rawOrd
+                          : displayOrdType === 'DQ'
+                            ? '실격 처리 (KRA 기준)'
+                            : displayOrdType === 'FALL'
+                              ? '낙마'
+                              : '기권';
                       return (
                         <tr
-                          key={res.id ?? i}
+                          key={typeof res.id !== 'undefined' ? String(res.id) : `result-${i}`}
                           className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
                         >
-                          <td className={`py-1.5 px-2 text-center ${rankCls}`}>{ord}</td>
-                          <td className='py-1.5 px-2 text-center font-semibold text-stone-700'>
-                            {no}
+                          <td className={`cell-center py-2.5 ${rankCls}`}>
+                            {displayOrdType ? '-' : ordStr}
                           </td>
-                          <td className='py-1.5 px-2 font-medium text-foreground'>
-                            {res.hrName}
-                            {suffix}
-                          </td>
-                          <td className='py-1.5 px-2 text-text-secondary'>{res.jkName ?? ''}</td>
-                          <td className='py-1.5 px-2 text-right text-text-tertiary font-mono text-xs'>
+                          <td className='cell-center py-2.5 font-semibold text-stone-700'>{no}</td>
+                          <td className='py-2.5 font-medium text-foreground'>{res.hrName}</td>
+                          <td className='py-2.5 text-text-secondary'>{res.jkName ?? ''}</td>
+                          <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs'>
                             {record}
-                            {row.winOdds != null && ordN === 1 && (
-                              <span className='ml-1 text-stone-600'>{row.winOdds}배</span>
+                            {row.winOdds != null && ordN === 1 && !displayOrdType && (
+                              <Tooltip content='단승식 배당률 (1등 적중 시 배당)' inline>
+                                <span className='ml-1 text-stone-600 cursor-help'>{row.winOdds}배</span>
+                              </Tooltip>
+                            )}
+                          </td>
+                          <td className='cell-center py-2.5'>
+                            {ordTypeLabel ? (
+                              <Badge
+                                variant={
+                                  displayOrdType === 'FALL'
+                                    ? 'warning'
+                                    : displayOrdType === 'DQ'
+                                      ? 'error'
+                                      : 'muted'
+                                }
+                                size='sm'
+                              >
+                                <span className='inline-flex items-center gap-0.5'>
+                                  {ordTypeLabel}
+                                  <Tooltip content={remarkTooltip} inline>
+                                    <span className='cursor-help inline-flex opacity-80 hover:opacity-100'>
+                                      <Icon name='AlertCircle' size={12} />
+                                    </span>
+                                  </Tooltip>
+                                </span>
+                              </Badge>
+                            ) : (
+                              <span className='text-text-tertiary'>-</span>
                             )}
                           </td>
                         </tr>
@@ -485,8 +618,8 @@ export default function RaceDetailPage() {
 
               {/* Dividends */}
               {(dividends?.length ?? 0) > 0 && (
-                <div className='rounded-md border border-stone-200 overflow-hidden'>
-                  <div className='bg-stone-50 border-b border-stone-200 px-2 py-1.5'>
+                <div className='rounded-xl border border-border overflow-hidden mt-2'>
+                  <div className='bg-stone-50 border-b border-border px-2 py-2'>
                     <span className='text-xs font-semibold text-text-secondary'>배당</span>
                   </div>
                   <div className='grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-slate-100'>
@@ -563,7 +696,7 @@ export default function RaceDetailPage() {
             )}
           </section>
 
-          {/* ── Entries ── */}
+          {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
             <section>
               <div className='flex items-center gap-1.5 mb-2'>
@@ -578,24 +711,27 @@ export default function RaceDetailPage() {
                   isSelected={isHorseSelected}
                 />
               ) : displayEntries.length > 0 ? (
-                <div className='space-y-1'>
-                  {displayEntries.map((e, i) => {
-                    const no = e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
-                    return (
-                      <div
-                        key={e.hrNo ?? i}
-                        className='flex items-center gap-3 px-3 py-2 text-sm rounded-lg bg-stone-50/60'
-                      >
-                        {no && (
-                          <span className='font-bold text-stone-600 w-7 text-center'>{no}번</span>
-                        )}
-                        <span className='text-foreground font-medium flex-1 truncate'>
-                          {e.hrName}
-                        </span>
-                        {e.jkName && <span className='text-text-secondary'>{e.jkName}</span>}
-                      </div>
-                    );
-                  })}
+                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+                  <table className='data-table data-table-compact w-full min-w-[200px]'>
+                    <thead>
+                      <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                        <th className='cell-center w-12 py-2.5 font-semibold'>번호</th>
+                        <th className='text-left py-2.5 font-semibold'>마명</th>
+                        <th className='text-left py-2.5 font-semibold'>기수</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {displayEntries.map((e, i) => (
+                        <tr key={e.hrNo ?? i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
+                          <td className='cell-center py-2.5 font-semibold text-stone-700'>
+                            {e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '-')}
+                          </td>
+                          <td className='py-2.5 font-medium text-foreground'>{e.hrName}</td>
+                          <td className='py-2.5 text-text-secondary'>{e.jkName ?? '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               ) : (
                 <div className='rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center'>

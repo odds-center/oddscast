@@ -59,7 +59,8 @@ export default function SettingsPage() {
         kra_base_url_override: systemConfig.kra_base_url_override || '',
       });
     }
-  }, [systemConfig, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [systemConfig]);
 
   const handleLogout = async () => {
     await authApi.logout();

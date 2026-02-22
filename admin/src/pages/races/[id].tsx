@@ -20,6 +20,41 @@ type EditRaceForm = {
   track?: string;
 };
 
+interface RaceEntryRow {
+  id?: number;
+  hrNo?: string;
+  hrName?: string;
+  jkName?: string;
+  chulNo?: string;
+  wgBudam?: number;
+  horseWeight?: string;
+  trName?: string;
+  rating?: number;
+  sex?: string;
+  age?: number;
+  prd?: string;
+  rcCntT?: number;
+  ord1CntT?: number;
+  equipment?: string;
+  budam?: string;
+  owName?: string;
+  isScratched?: boolean;
+}
+
+interface RaceResultRow {
+  id?: number;
+  ord?: string;
+  ordType?: string;
+  chulNo?: string;
+  hrNo?: string;
+  hrName?: string;
+  jkName?: string;
+  rcTime?: string;
+  diffUnit?: string;
+  winOdds?: number;
+  plcOdds?: number;
+}
+
 interface RaceDetail {
   id: number;
   rcNo?: string;
@@ -34,6 +69,8 @@ interface RaceDetail {
   weather?: string;
   track?: string;
   status?: string;
+  entries?: RaceEntryRow[];
+  results?: RaceResultRow[];
 }
 
 export default function RaceDetailPage() {
@@ -48,7 +85,22 @@ export default function RaceDetailPage() {
     enabled: !!id,
   });
 
+  const { data: predictionData } = useQuery({
+    queryKey: ['admin', 'prediction', 'race', id],
+    queryFn: () => AdminAIApi.getPredictionByRace(id as string),
+    enabled: !!id,
+  });
+
   const race = raceData as RaceDetail | null | undefined;
+  const prediction = predictionData as {
+    id?: number;
+    analysis?: string | null;
+    preview?: string | null;
+    status?: string;
+    accuracy?: number | null;
+    scores?: unknown;
+    horseScores?: Array<{ horseNo?: string; score?: number; rank?: number }>;
+  } | null | undefined;
 
   const { register, handleSubmit, reset } = useForm<EditRaceForm>();
 
@@ -63,7 +115,8 @@ export default function RaceDetailPage() {
         track: race.track ?? '',
       });
     }
-  }, [race, showEditModal, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [race, showEditModal]);
 
   const updateMutation = useMutation({
     mutationFn: (data: EditRaceForm) =>
@@ -208,17 +261,165 @@ export default function RaceDetailPage() {
             </Card>
 
             <Card
-              title='출전마 데이터'
-              description='웹앱에서 출전마가 보이지 않으면 KRA 출전표를 수동 동기화하세요.'
+              title='예측 정보'
+              description='해당 경주에 대한 AI 예측 (완료된 예측만 표시)'
               className='lg:col-span-2'
             >
-              <Link
-                href={`/kra?date=${(race.rcDate || '').replace(/-/g, '').slice(0, 8)}`}
-                className='inline-flex items-center gap-2 px-3 py-2 bg-amber-50 text-amber-800 rounded-md hover:bg-amber-100 text-sm font-medium'
-              >
-                출전표 수동 동기화 →
-              </Link>
+              {prediction ? (
+                <div className='space-y-3'>
+                  <div className='flex flex-wrap gap-2'>
+                    <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800'>
+                      상태: {prediction.status ?? '-'}
+                    </span>
+                    {prediction.accuracy != null && (
+                      <span className='inline-flex items-center px-2.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800'>
+                        정확도: {prediction.accuracy}%
+                      </span>
+                    )}
+                  </div>
+                  {prediction.preview && (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-700 mb-1'>요약</label>
+                      <div className='text-gray-900 whitespace-pre-wrap text-sm'>{prediction.preview}</div>
+                    </div>
+                  )}
+                  {prediction.analysis && (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-700 mb-1'>분석</label>
+                      <div className='text-gray-900 whitespace-pre-wrap text-sm rounded border border-gray-200 p-3 bg-gray-50 max-h-64 overflow-y-auto'>
+                        {prediction.analysis}
+                      </div>
+                    </div>
+                  )}
+                  {prediction.horseScores && Array.isArray(prediction.horseScores) && prediction.horseScores.length > 0 && (
+                    <div>
+                      <label className='block text-sm font-medium text-gray-700 mb-1'>말별 점수</label>
+                      <div className='overflow-x-auto'>
+                        <table className='w-full min-w-[280px] text-sm border-collapse'>
+                          <thead>
+                            <tr className='border-b border-gray-200 bg-gray-50 text-left'>
+                              <th className='py-2 px-2 font-semibold text-gray-700'>마번</th>
+                              <th className='py-2 px-2 font-semibold text-gray-700'>점수</th>
+                              <th className='py-2 px-2 font-semibold text-gray-700'>순위</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {prediction.horseScores
+                              .slice()
+                              .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+                              .map((h, i) => (
+                                <tr key={i} className='border-b border-gray-100'>
+                                  <td className='py-1.5 px-2'>{h.horseNo ?? '-'}</td>
+                                  <td className='py-1.5 px-2'>{h.score != null ? h.score : '-'}</td>
+                                  <td className='py-1.5 px-2'>{h.rank != null ? h.rank : '-'}</td>
+                                </tr>
+                              ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className='text-sm text-gray-500'>이 경주에 대한 완료된 예측이 없습니다. 수동 적재로 생성할 수 있습니다.</div>
+              )}
             </Card>
+
+            <Card
+              title='출전마'
+              description='KRA 출전표(API26_2)로 적재된 출전마 정보. 비어 있으면 출전표 수동 동기화를 실행하세요.'
+              className='lg:col-span-2'
+            >
+              {race.entries && race.entries.length > 0 ? (
+                <div className='overflow-x-auto'>
+                  <table className='w-full min-w-[640px] text-sm border-collapse'>
+                    <thead>
+                      <tr className='border-b border-gray-200 bg-gray-50 text-left'>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>출주번호</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>마번</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>마명</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>기수</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>조교사</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>부담중량</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>레이팅</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>성별</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>연령</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>통산출주</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>1위</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>부담</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {race.entries.map((e, i) => (
+                        <tr key={e.id ?? i} className='border-b border-gray-100 hover:bg-gray-50/50'>
+                          <td className='py-1.5 px-2'>{e.chulNo ?? '-'}</td>
+                          <td className='py-1.5 px-2 font-medium'>{e.hrNo ?? '-'}</td>
+                          <td className='py-1.5 px-2'>{e.hrName ?? '-'}</td>
+                          <td className='py-1.5 px-2 text-gray-600'>{e.jkName ?? '-'}</td>
+                          <td className='py-1.5 px-2 text-gray-600'>{e.trName ?? '-'}</td>
+                          <td className='py-1.5 px-2'>{e.wgBudam != null ? `${e.wgBudam}` : '-'}</td>
+                          <td className='py-1.5 px-2'>{e.rating != null ? String(e.rating) : '-'}</td>
+                          <td className='py-1.5 px-2'>{e.sex ?? '-'}</td>
+                          <td className='py-1.5 px-2'>{e.age != null ? String(e.age) : '-'}</td>
+                          <td className='py-1.5 px-2'>{e.rcCntT != null ? String(e.rcCntT) : '-'}</td>
+                          <td className='py-1.5 px-2'>{e.ord1CntT != null ? String(e.ord1CntT) : '-'}</td>
+                          <td className='py-1.5 px-2'>{e.budam ?? '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className='mt-2 text-xs text-gray-500'>{race.entries.length}건 출전마 (DB 적재분)</p>
+                </div>
+              ) : (
+                <div className='rounded-md bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800'>
+                  <p className='font-medium'>출전마 데이터가 없습니다.</p>
+                  <p className='mt-1 text-amber-700'>해당 경주일에 KRA 출전표를 동기화하면 DB에 적재됩니다.</p>
+                  <Link
+                    href={`/kra?date=${(race.rcDate || '').replace(/-/g, '').slice(0, 8)}`}
+                    className='inline-flex items-center gap-2 mt-3 px-3 py-2 bg-amber-100 text-amber-900 rounded-md hover:bg-amber-200 text-sm font-medium'
+                  >
+                    출전표 수동 동기화 →
+                  </Link>
+                </div>
+              )}
+            </Card>
+
+            {race.results && race.results.length > 0 && (
+              <Card title='경주 결과' description='KRA 결과(API4_3) 적재분' className='lg:col-span-2'>
+                <div className='overflow-x-auto'>
+                  <table className='w-full min-w-[520px] text-sm border-collapse'>
+                    <thead>
+                      <tr className='border-b border-gray-200 bg-gray-50 text-left'>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>순위</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>출주번호</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>마명</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>기수</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>기록</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>단승</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>복승</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {race.results
+                        .slice()
+                        .sort((a, b) => (parseInt(String(a.ord), 10) || 99) - (parseInt(String(b.ord), 10) || 99))
+                        .map((r, i) => (
+                          <tr key={r.id ?? i} className='border-b border-gray-100 hover:bg-gray-50/50'>
+                            <td className='py-1.5 px-2 font-medium'>{r.ord ?? '-'}</td>
+                            <td className='py-1.5 px-2'>{r.chulNo ?? r.hrNo ?? '-'}</td>
+                            <td className='py-1.5 px-2'>{r.hrName ?? '-'}</td>
+                            <td className='py-1.5 px-2 text-gray-600'>{r.jkName ?? '-'}</td>
+                            <td className='py-1.5 px-2'>{r.rcTime ?? r.diffUnit ?? '-'}</td>
+                            <td className='py-1.5 px-2'>{r.winOdds != null ? `${r.winOdds}배` : '-'}</td>
+                            <td className='py-1.5 px-2'>{r.plcOdds != null ? `${r.plcOdds}배` : '-'}</td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                  <p className='mt-2 text-xs text-gray-500'>{race.results.length}건 결과 (DB 적재분)</p>
+                </div>
+              </Card>
+            )}
 
             <Card
               title='수동 적재'

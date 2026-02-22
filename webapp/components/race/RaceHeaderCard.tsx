@@ -1,8 +1,18 @@
 /**
- * Race header
+ * Race header — key info as badges with tooltips for jargon
  */
+import type { ReactNode } from 'react';
 import Icon from '@/components/icons';
+import Badge from '@/components/ui/Badge';
+import Tooltip from '@/components/ui/Tooltip';
 import { formatRcDate, formatNumber } from '@/lib/utils/format';
+import {
+  getRankTerm,
+  getRcConditionTerm,
+  getBudamTerm,
+  getWeatherTerm,
+  getTrackTerm,
+} from '@/lib/utils/raceTerms';
 
 const GATE_COLORS: Record<number, string> = {
   1: '#ffffff', 2: '#facc15', 3: '#ef4444', 4: '#171717', 5: '#3b82f6',
@@ -19,14 +29,50 @@ export interface RaceHeaderProps {
   rcDist?: string;
   rank?: string;
   rcCondition?: string;
+  /** 부담구분 (별정A, 마령 등) — 툴팁으로 설명 */
+  budam?: string;
   rcPrize?: number;
   weather?: string;
   track?: string;
 }
 
+function InfoBadge({
+  tooltip,
+  children,
+}: {
+  label: string;
+  tooltip: string;
+  children?: ReactNode;
+}) {
+  return (
+    <Tooltip content={tooltip} inline>
+      <Badge variant='muted' size='sm'>
+        {children ?? label}
+      </Badge>
+    </Tooltip>
+  );
+}
+
 export default function RaceHeaderCard({
-  meetName, rcDay, rcNo, rcDate, stTime, rcDist, rank, rcCondition, rcPrize, weather, track,
+  meetName,
+  rcDay,
+  rcNo,
+  rcDate,
+  stTime,
+  rcDist,
+  rank,
+  rcCondition,
+  budam,
+  rcPrize,
+  weather,
+  track,
 }: RaceHeaderProps) {
+  const rankTerm = getRankTerm(rank);
+  const rcConditionTerm = getRcConditionTerm(rcCondition);
+  const budamTerm = getBudamTerm(budam);
+  const weatherTerm = getWeatherTerm(weather);
+  const trackTerm = getTrackTerm(track);
+
   return (
     <div className='rounded border border-stone-200 bg-white overflow-hidden'>
       <div className='flex items-center justify-between px-3 py-2 bg-stone-50 border-b border-stone-200'>
@@ -34,9 +80,7 @@ export default function RaceHeaderCard({
           <span className='font-bold text-foreground text-sm whitespace-nowrap'>
             {rcDay ? `${rcDay} ` : ''}{meetName ?? '-'}
           </span>
-          <span className='text-xs px-1.5 py-px rounded bg-stone-200 text-stone-700 font-medium whitespace-nowrap'>
-            {rcNo ?? '-'}R
-          </span>
+          <Badge variant='muted' size='sm'>{rcNo ?? '-'}R</Badge>
         </div>
         {stTime && (
           <span className='flex items-center gap-1 text-sm font-semibold text-stone-600 whitespace-nowrap'>
@@ -45,21 +89,42 @@ export default function RaceHeaderCard({
           </span>
         )}
       </div>
-      <div className='px-3 py-1.5 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs text-stone-500'>
+      <div className='px-3 py-2 flex flex-wrap items-center gap-1.5'>
         {rcDate && (
-          <span className='inline-flex items-center gap-1 whitespace-nowrap'>
+          <span className='inline-flex items-center gap-1 text-xs text-stone-500 whitespace-nowrap'>
             <Icon name='Calendar' size={11} className='text-stone-400' />
             {formatRcDate(rcDate)}
           </span>
         )}
-        {rcDist && <span className='font-medium whitespace-nowrap'>{rcDist}m</span>}
+        {rcDist && <Badge variant='muted' size='sm'>{rcDist}m</Badge>}
         {rcPrize != null && rcPrize > 0 && (
-          <span className='font-medium whitespace-nowrap'>1착 {formatNumber(rcPrize)}만원</span>
+          <Badge variant='muted' size='sm'>1착 {formatNumber(rcPrize)}만원</Badge>
         )}
-        {rank && <span className='whitespace-nowrap'>{rank}</span>}
-        {rcCondition && <span className='whitespace-nowrap'>{rcCondition}</span>}
-        {weather && <span className='whitespace-nowrap'>날씨 {weather}</span>}
-        {track && <span className='whitespace-nowrap'>주로 {track}</span>}
+        {rankTerm && (
+          <InfoBadge label={rankTerm.label} tooltip={rankTerm.tooltip}>
+            {rankTerm.label}
+          </InfoBadge>
+        )}
+        {rcConditionTerm && (
+          <InfoBadge label={rcConditionTerm.label} tooltip={rcConditionTerm.tooltip}>
+            {rcConditionTerm.label}
+          </InfoBadge>
+        )}
+        {budamTerm && (
+          <InfoBadge label={budamTerm.label} tooltip={budamTerm.tooltip}>
+            {budamTerm.label}
+          </InfoBadge>
+        )}
+        {weatherTerm && (
+          <InfoBadge label={weatherTerm.label} tooltip={weatherTerm.tooltip}>
+            날씨 {weatherTerm.label}
+          </InfoBadge>
+        )}
+        {trackTerm && (
+          <InfoBadge label={trackTerm.label} tooltip={trackTerm.tooltip}>
+            주로 {trackTerm.label}
+          </InfoBadge>
+        )}
       </div>
     </div>
   );

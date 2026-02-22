@@ -8,6 +8,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
+import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminKraApi } from '@/lib/api/admin';
 import { formatYyyyMmDd } from '@/lib/utils';
 import {
@@ -85,6 +86,7 @@ export default function KraPage() {
   const [meetFilter, setMeetFilter] = useState('');
   const [logEndpointFilter, setLogEndpointFilter] = useState('');
   const [scheduleYear, setScheduleYear] = useState(() => new Date().getFullYear());
+  const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
   const syncScheduleMutation = useMutation({
     mutationFn: (params?: { date?: string; year?: number }) =>
@@ -109,14 +111,21 @@ export default function KraPage() {
   });
 
   const syncResultsMutation = useMutation({
-    mutationFn: (date?: string) =>
-      adminKraApi.syncResults(date ? toYyyyMmDd(date) : undefined),
+    mutationFn: async (date?: string) => {
+      const d = date ? toYyyyMmDd(date) : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const out = await adminKraApi.syncResultsWithProgress(d, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
-      const msg = (res as { message?: string })?.message;
-      toast.success(msg ?? '경주 결과 동기화 완료');
+      const msg = (res as { message?: string })?.message ?? '경주 결과 동기화 완료';
+      toast.success(msg);
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onSettled: () => setSyncProgress(null),
   });
 
   const syncDetailsMutation = useMutation({
@@ -138,12 +147,19 @@ export default function KraPage() {
   });
 
   const syncAllMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncAll(toYyyyMmDd(date)),
+    mutationFn: async (date: string) => {
+      const out = await adminKraApi.syncAllWithProgress(toYyyyMmDd(date), {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success((res as { message?: string })?.message ?? '전체 적재 완료');
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onSettled: () => setSyncProgress(null),
   });
 
   const seedSampleMutation = useMutation({
@@ -157,13 +173,19 @@ export default function KraPage() {
   });
 
   const syncHistoricalMutation = useMutation({
-    mutationFn: ({ from, to }: { from: string; to: string }) =>
-      adminKraApi.syncHistorical(toYyyyMmDd(from), toYyyyMmDd(to)),
+    mutationFn: async ({ from, to }: { from: string; to: string }) => {
+      const out = await adminKraApi.syncHistoricalWithProgress(toYyyyMmDd(from), toYyyyMmDd(to), {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
       toast.success(`과거 데이터 적재 완료: ${(res as { processed?: number })?.processed ?? 0}일`);
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onSettled: () => setSyncProgress(null),
   });
 
   const { data: kraStatus } = useQuery({
@@ -477,6 +499,11 @@ export default function KraPage() {
                   <AdminIcon icon={RefreshCw} className='w-4 h-4 mr-1.5 inline' />
                   {syncDate} 전체 적재
                 </Button>
+                {syncProgress && (
+                  <div className='min-w-[200px] flex-1 max-w-md'>
+                    <SyncProgressBar percent={syncProgress.percent} message={syncProgress.message} />
+                  </div>
+                )}
               </div>
             </div>
           </Card>

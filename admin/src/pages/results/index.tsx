@@ -1,11 +1,14 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useForm } from 'react-hook-form';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import Table from '@/components/common/Table';
+import SyncProgressBar from '@/components/common/SyncProgressBar';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
@@ -65,7 +68,8 @@ function EditResultModal({
       rcTime: result.rcTime || '',
       chaksun1: String(result.chaksun1 ?? result.rcPrize ?? ''),
     });
-  }, [result, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result]);
 
   const onSubmit = (data: EditResultForm) => {
     onSave({
@@ -339,7 +343,8 @@ function groupResultsByRace(raw: RaceResult[]): GroupedRace[] {
   return list;
 }
 
-const GROUPS_PER_PAGE = 20;
+/** Same page size as 경주 관리 so both pages show the same race list */
+const RACES_PER_PAGE = 20;
 
 const MEET_OPTIONS = [
   { value: '', label: '전체' },
@@ -349,6 +354,7 @@ const MEET_OPTIONS = [
 ] as const;
 
 export default function ResultsPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [dateFilter, setDateFilter] = useState('');
@@ -357,6 +363,7 @@ export default function ResultsPage() {
   const [selectedGroup, setSelectedGroup] = useState<GroupedRace | null>(null);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
   const toDate = (d: Date) =>
     `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -364,12 +371,20 @@ export default function ResultsPage() {
   const dateFrom = toDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
 
   const syncResultsMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncResults(date),
-    onSuccess: () => {
+    mutationFn: async (date: string) => {
+      const out = await adminKraApi.syncResultsWithProgress(date, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-results'] });
-      toast.success('경기 결과 KRA 동기화 완료');
+      const msg = (res as { message?: string })?.message ?? '경기 결과 KRA 동기화 완료';
+      toast.success(msg);
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onSettled: () => setSyncProgress(null),
   });
 
   const { data: racesData } = useQuery({
@@ -379,27 +394,40 @@ export default function ResultsPage() {
   });
   const raceOptions: RaceOption[] = (racesData?.data ?? []) as RaceOption[];
 
+  // Same API shape as 경주 관리: groupByRace + same page/limit/date/meet so race list is identical
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-results', dateFilter, meetFilter],
+    queryKey: ['admin-results', page, dateFilter, meetFilter],
     queryFn: async () => {
-      const res = await adminResultsApi.getAll({
-        page: 1,
-        limit: 250,
-        ...(dateFilter && { date: dateFilter.replace(/-/g, '') }),
+      const res = await adminResultsApi.getAllGroupedByRace({
+        page,
+        limit: RACES_PER_PAGE,
+        ...(dateFilter && { date: dateFilter.replace(/-/g, '').slice(0, 8) }),
         ...(meetFilter && { meet: meetFilter }),
       });
-      const normalized = (res.data || []).map(normalizeResult);
-      return { data: normalized };
+      const groups: GroupedRace[] = (res.data || []).map((g) => ({
+        raceId: g.race.id,
+        meetName: g.race.meetName ?? g.race.meet ?? '-',
+        rcNo: g.race.rcNo ?? '-',
+        rcDate: g.race.rcDate ?? '',
+        rcDist: g.race.rcDist ?? '',
+        results: (g.results || []).map((r) =>
+          normalizeResult({
+            ...r,
+            race: g.race,
+            raceId: g.race.id,
+          } as Record<string, unknown>)
+        ),
+      }));
+      return {
+        data: groups,
+        meta: res.meta,
+      };
     },
   });
 
-  const groupedRaces = useMemo(() => groupResultsByRace(data?.data || []), [data?.data]);
-  const totalGroupPages = Math.ceil(groupedRaces.length / GROUPS_PER_PAGE) || 1;
-  const paginatedGroups = useMemo(
-    () =>
-      groupedRaces.slice((page - 1) * GROUPS_PER_PAGE, page * GROUPS_PER_PAGE),
-    [groupedRaces, page]
-  );
+  const groupedRaces = data?.data ?? [];
+  const totalGroupPages = data?.meta?.totalPages ?? 1;
+  const paginatedGroups = groupedRaces;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => adminResultsApi.delete(id),
@@ -493,9 +521,11 @@ export default function ResultsPage() {
       header: '작업',
       className: 'w-24',
       render: (group: GroupedRace) => (
-        <Button size='sm' variant='ghost' onClick={() => setSelectedGroup(group)}>
-          관리
-        </Button>
+        <div className='flex items-center gap-1' onClick={(e) => e.stopPropagation()}>
+          <Button size='sm' variant='ghost' onClick={() => setSelectedGroup(group)}>
+            관리
+          </Button>
+        </div>
       ),
     },
   ];
@@ -516,7 +546,12 @@ export default function ResultsPage() {
 
           <Card>
             <div className='relative'>
-              {syncResultsMutation.isPending && (
+              {syncProgress && (
+                <div className='mb-4'>
+                  <SyncProgressBar percent={syncProgress.percent} message={syncProgress.message} />
+                </div>
+              )}
+              {syncResultsMutation.isPending && !syncProgress && (
                 <div className='absolute inset-0 z-10 flex flex-col items-center justify-center rounded-lg bg-white/80 backdrop-blur-sm'>
                   <LoadingSpinner size='lg' label='경기 결과 적재 중... (수 분 소요될 수 있습니다)' />
                 </div>
@@ -526,13 +561,9 @@ export default function ResultsPage() {
                   <label className='mb-1 block text-xs font-medium text-gray-500'>날짜</label>
                   <input
                     type='date'
-                    value={
-                      dateFilter && dateFilter.length >= 8
-                        ? `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
-                        : ''
-                    }
+                    value={dateFilter}
                     onChange={(e) => {
-                      setDateFilter(e.target.value.replace(/-/g, ''));
+                      setDateFilter(e.target.value);
                       setPage(1);
                     }}
                     className='h-9 min-w-[140px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
@@ -573,7 +604,9 @@ export default function ResultsPage() {
                   variant='primary'
                   size='md'
                   onClick={() =>
-                    syncResultsMutation.mutate(dateFilter || toDate(new Date()))
+                    syncResultsMutation.mutate(
+                      dateFilter ? dateFilter.replace(/-/g, '').slice(0, 8) : toDate(new Date())
+                    )
                   }
                   disabled={syncResultsMutation.isPending}
                   isLoading={syncResultsMutation.isPending}
@@ -592,6 +625,7 @@ export default function ResultsPage() {
               isLoading={isLoading}
               emptyMessage='경기 결과가 없습니다.'
               getRowKey={(group) => group.raceId}
+              onRowClick={(group) => router.push(`/races/${group.raceId}`)}
             />
 
             {totalGroupPages > 1 && (
@@ -647,14 +681,19 @@ export default function ResultsPage() {
                 <h2 className='text-xl font-bold'>
                   {selectedGroup.meetName} {selectedGroup.rcNo}경 · 결과 관리
                 </h2>
-                <button
-                  onClick={() => setSelectedGroup(null)}
-                  className='text-gray-400 hover:text-gray-600'
-                >
-                  <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
-                    <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
-                  </svg>
-                </button>
+                <div className='flex items-center gap-2'>
+                  <Link href={`/races/${selectedGroup.raceId}`}>
+                    <Button size='sm' variant='secondary'>경주 상세</Button>
+                  </Link>
+                  <button
+                    onClick={() => setSelectedGroup(null)}
+                    className='text-gray-400 hover:text-gray-600'
+                  >
+                    <svg className='w-6 h-6' fill='none' stroke='currentColor' viewBox='0 0 24 24'>
+                      <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M6 18L18 6M6 6l12 12' />
+                    </svg>
+                  </button>
+                </div>
               </div>
               <div className='space-y-3'>
                 {selectedGroup.results.map((result) => (

@@ -31,6 +31,7 @@ export const config = {
     '/races/:path*',
     '/results/:path*',
     '/bets/:path*',
+    '/kra',
     '/statistics/:path*',
     '/subscriptions/:path*',
     '/subscription-plans/:path*',

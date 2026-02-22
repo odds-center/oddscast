@@ -112,6 +112,11 @@ export class ResultFilterDto {
   @IsInt()
   @Type(() => Number)
   limit?: number;
+
+  /** When true, paginate by race (same race list as GET /races) and return raceGroups */
+  @ApiPropertyOptional()
+  @IsOptional()
+  groupByRace?: boolean;
 }
 
 export class ResultStatisticsFilterDto {

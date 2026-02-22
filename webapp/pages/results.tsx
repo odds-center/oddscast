@@ -50,8 +50,10 @@ export default function Results() {
     router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
   };
 
+  const RESULTS_PER_PAGE = 20;
+
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['results', page, dateFilter, qMeet],
+    queryKey: ['results', 'grouped', page, dateFilter, qMeet],
     queryFn: () => {
       let date: string | undefined;
       if (dateFilter === 'today') {
@@ -63,8 +65,8 @@ export default function Results() {
       } else if (dateFilter) {
         date = dateFilter.replace(/-/g, '');
       }
-      return ResultApi.getResults({
-        limit: 250,
+      return ResultApi.getResultsGroupedByRace({
+        limit: RESULTS_PER_PAGE,
         page,
         ...(date && { date }),
         ...(qMeet && { meet: qMeet }),
@@ -72,55 +74,25 @@ export default function Results() {
     },
   });
 
-  const groupedRaces = useMemo(() => {
-    const rawResults: RaceResult[] = data?.results ?? [];
-    const byRace = new Map<
-      string,
-      { meetName: string; rcNo: string; rcDate: string; rcDist?: string; results: TableResult[] }
-    >();
-
-    for (const r of rawResults) {
-      const rWithRace = r as RaceResult & {
-        race?: { meetName?: string; rcNo?: string; rcDate?: string; rcDist?: string; id?: string };
-        meetName?: string;
-        rcNo?: string;
-        rcDate?: string;
-        rcDist?: string;
-      };
-      const raceId = String(rWithRace.raceId ?? rWithRace.race?.id ?? rWithRace.id ?? '');
-      const meetName = rWithRace.race?.meetName ?? rWithRace.meetName ?? '-';
-      const rcNo = rWithRace.race?.rcNo ?? rWithRace.rcNo ?? '-';
-      const rcDate = rWithRace.race?.rcDate ?? rWithRace.rcDate ?? '';
-      const rcDist = rWithRace.race?.rcDist ?? rWithRace.rcDist;
-
-      if (!byRace.has(raceId)) {
-        byRace.set(raceId, { meetName, rcNo, rcDate, rcDist, results: [] });
-      }
-      const rr = r as RaceResult;
-      byRace.get(raceId)!.results.push({
+  const groupedRaces = useMemo((): GroupedRace[] => {
+    const groups = data?.raceGroups ?? [];
+    return groups.map((g) => ({
+      raceId: g.race.id,
+      meetName: g.race.meetName ?? '-',
+      rcNo: g.race.rcNo ?? '-',
+      rcDate: g.race.rcDate ?? '',
+      rcDist: g.race.rcDist,
+      results: (g.results ?? []).map((r) => ({
         ord: r.ord ?? '99',
         chulNo: r.chulNo,
         hrNo: r.hrNo,
         hrName: r.hrName,
         jkName: r.jkName,
-        rcTime: rr.rcTime,
-        diffUnit: rr.diffUnit,
-      });
-    }
-
-    const list: GroupedRace[] = [];
-    for (const [raceId, { meetName, rcNo, rcDate, rcDist, results }] of byRace.entries()) {
-      results.sort((a, b) => (parseInt(a.ord, 10) || 99) - (parseInt(b.ord, 10) || 99));
-      list.push({ raceId, meetName, rcNo, rcDate, rcDist, results });
-    }
-
-    list.sort((a, b) => {
-      const dateCmp = (a.rcDate || '').localeCompare(b.rcDate || '');
-      if (dateCmp !== 0) return -dateCmp;
-      return (a.rcNo || '').localeCompare(b.rcNo || '');
-    });
-    return list;
-  }, [data?.results]);
+        rcTime: r.rcTime,
+        diffUnit: r.diffUnit,
+      })),
+    }));
+  }, [data?.raceGroups]);
 
   const totalPages = data?.totalPages ?? 1;
 
@@ -286,12 +258,13 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 
   const queryClient = new QueryClient();
   try {
-    const params: Record<string, string | number> = { limit: 250, page };
+    const params: Record<string, string | number> = { groupByRace: 'true', limit: 20, page };
     if (date) params.date = date;
     if (qMeet) params.meet = qMeet;
     await queryClient.prefetchQuery({
-      queryKey: ['results', page, dateFilter, qMeet],
-      queryFn: () => serverGet<{ results?: unknown[]; total?: number; totalPages?: number }>('/results', { params }),
+      queryKey: ['results', 'grouped', page, dateFilter, qMeet],
+      queryFn: () =>
+        serverGet<{ raceGroups?: unknown[]; total?: number; totalPages?: number }>('/results', { params }),
     });
   } catch {
     // Fetch on client if SSR fails

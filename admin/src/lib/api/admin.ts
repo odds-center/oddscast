@@ -214,7 +214,7 @@ export class AdminSubscriptionsApi {
     }
   }
 
-  // 사용자 구독 관리
+  // 사용자 구독 관리 — 서버에 해당 라우트 없음 (404). 필요 시 서버에 추가.
   static async getUserSubscriptions(params?: {
     page?: number;
     limit?: number;
@@ -288,10 +288,11 @@ export class AdminSinglePurchaseApi {
     }
   }
 
+  /** Server: GET /api/admin/single-purchase/calculate-price */
   static async calculatePrice(quantity: number): Promise<{ totalPrice: number }> {
     try {
       const response = await axiosInstance.get<{ totalPrice: number }>(
-        '/single-purchases/calculate-price',
+        '/single-purchase/calculate-price',
         { params: { quantity } }
       );
       return handleApiResponse(response);
@@ -365,10 +366,54 @@ export class AdminAIApi {
     }
   }
 
+  /** 경주별 예측 정보 조회 (Admin 전용) */
+  static async getPredictionByRace(raceId: string | number): Promise<unknown> {
+    try {
+      const response = await axiosInstance.get(`/predictions/race/${raceId}`);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
   /** 해당 경주에 대해 AI 예측 수동 생성 (Admin 전용) */
   static async generatePrediction(raceId: string | number): Promise<unknown> {
     try {
       const response = await axiosInstance.post(`/predictions/generate/${raceId}`, {}, { timeout: 120_000 });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+}
+
+/**
+ * Admin 예측권 사용 내역 API
+ */
+export class AdminPredictionTicketsApi {
+  static async getUsage(params?: {
+    page?: number;
+    limit?: number;
+    userId?: string;
+  }): Promise<{
+    items: Array<{
+      id: number;
+      userId: number;
+      user: { id: number; email: string; name: string; nickname?: string };
+      raceId: number | null;
+      race: { id: number; rcNo: string; meet: string; meetName?: string; rcDate: string; rcName?: string } | null;
+      predictionId: number | null;
+      prediction: { id: number; analysis: string | null; status: string; accuracy?: number; scores?: unknown } | null;
+      type: string;
+      usedAt: Date | null;
+      matrixDate: string | null;
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    try {
+      const response = await axiosInstance.get('/prediction-tickets/usage', { params });
       return handleApiResponse(response);
     } catch (error) {
       throw handleApiError(error);
@@ -479,6 +524,138 @@ export class AdminKraApi {
     } catch (error) {
       throw handleApiError(error);
     }
+  }
+
+  /**
+   * 경주 결과 + 출전표 보강 적재 (진행률 스트리밍).
+   * date 필수 (YYYYMMDD or YYYY-MM-DD).
+   */
+  static async syncResultsWithProgress(
+    date: string,
+    callbacks: {
+      onProgress?: (percent: number, message: string) => void;
+    },
+  ): Promise<{ result?: unknown; error?: string }> {
+    const base = (axiosInstance.defaults.baseURL ?? '').replace(/\/$/, '');
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('accessToken') || localStorage.getItem('admin_token')
+        : '';
+    const d = date.replace(/-/g, '').slice(0, 8);
+    const url = `${base}/kra/sync/results-stream?date=${encodeURIComponent(d)}`;
+    const headers: Record<string, string> = { Accept: 'text/event-stream' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, { method: 'POST', headers });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No response body');
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { result?: unknown; error?: string } = {};
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        const dataMatch = line.match(/^data:\s*(.+)$/m);
+        if (!dataMatch) continue;
+        try {
+          const data = JSON.parse(dataMatch[1].trim()) as Record<string, unknown>;
+          if (typeof data.percent === 'number' && data.message != null) {
+            callbacks.onProgress?.(data.percent, String(data.message));
+          }
+          if (data.done === true) {
+            result = { result: data.result, error: data.error as string | undefined };
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+    return result;
+  }
+
+  /** 출전표 동기화 (진행률 스트리밍). date 필수. */
+  static async syncScheduleWithProgress(
+    date: string,
+    callbacks: { onProgress?: (percent: number, message: string) => void },
+  ): Promise<{ result?: unknown; error?: string }> {
+    return AdminKraApi.runStreamSync(
+      `/kra/sync/schedule-stream?date=${encodeURIComponent(date.replace(/-/g, '').slice(0, 8))}`,
+      callbacks,
+    );
+  }
+
+  /** 전체 적재 (진행률 스트리밍). */
+  static async syncAllWithProgress(
+    date: string,
+    callbacks: { onProgress?: (percent: number, message: string) => void },
+  ): Promise<{ result?: unknown; error?: string }> {
+    const d = date.replace(/-/g, '').slice(0, 8);
+    return AdminKraApi.runStreamSync(`/kra/sync/all-stream?date=${d}`, callbacks);
+  }
+
+  /** 과거 데이터 적재 (진행률 스트리밍). */
+  static async syncHistoricalWithProgress(
+    dateFrom: string,
+    dateTo: string,
+    callbacks: { onProgress?: (percent: number, message: string) => void },
+  ): Promise<{ result?: unknown; error?: string }> {
+    const from = dateFrom.replace(/-/g, '').slice(0, 8);
+    const to = dateTo.replace(/-/g, '').slice(0, 8);
+    return AdminKraApi.runStreamSync(
+      `/kra/sync/historical-stream?dateFrom=${from}&dateTo=${to}`,
+      callbacks,
+    );
+  }
+
+  private static async runStreamSync(
+    path: string,
+    callbacks: { onProgress?: (percent: number, message: string) => void },
+  ): Promise<{ result?: unknown; error?: string }> {
+    const base = (axiosInstance.defaults.baseURL ?? '').replace(/\/$/, '');
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('accessToken') || localStorage.getItem('admin_token')
+        : '';
+    const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
+    const headers: Record<string, string> = { Accept: 'text/event-stream' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const res = await fetch(url, { method: 'POST', headers });
+    if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No response body');
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let result: { result?: unknown; error?: string } = {};
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n\n');
+      buffer = lines.pop() ?? '';
+      for (const line of lines) {
+        const dataMatch = line.match(/^data:\s*(.+)$/m);
+        if (!dataMatch) continue;
+        try {
+          const data = JSON.parse(dataMatch[1].trim()) as Record<string, unknown>;
+          if (typeof data.percent === 'number' && data.message != null) {
+            callbacks.onProgress?.(data.percent, String(data.message));
+          }
+          if (data.done === true) {
+            result = { result: data.result, error: data.error as string | undefined };
+          }
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    return result;
   }
 
   static async syncDetails(date: string): Promise<any> {
@@ -633,10 +810,64 @@ export class AdminRacesApi {
   }
 }
 
+/** Race-grouped item from GET /results?groupByRace=true (same race set as GET /races) */
+export interface RaceGroupDto {
+  race: { id: string; meet?: string; meetName?: string; rcDate?: string; rcNo?: string; rcDist?: string };
+  results: Array<{
+    id?: number;
+    raceId?: number;
+    ord?: string;
+    chulNo?: string;
+    hrNo?: string;
+    hrName?: string;
+    jkName?: string;
+    rcTime?: string;
+    diffUnit?: string;
+    [k: string]: unknown;
+  }>;
+}
+
 /**
  * Results API — Server /api/results 사용
  */
 export class AdminResultsApi {
+  /**
+   * Race-centric list: same filters and pagination as GET /races (경주 관리와 동일한 경기 목록).
+   * Use this for admin 경기 결과 so it matches 경주 관리.
+   */
+  static async getAllGroupedByRace(params?: {
+    page?: number;
+    limit?: number;
+    date?: string;
+    meet?: string;
+  }): Promise<{
+    data: RaceGroupDto[];
+    meta: { total: number; totalPages: number; page: number };
+  }> {
+    try {
+      const response = await axiosInstance.get('/results', {
+        params: { ...params, groupByRace: true },
+      });
+      const payload = handleApiResponse(response) as {
+        raceGroups?: RaceGroupDto[];
+        total?: number;
+        totalPages?: number;
+        page?: number;
+      };
+      const raceGroups = Array.isArray(payload?.raceGroups) ? payload.raceGroups : [];
+      return {
+        data: raceGroups,
+        meta: {
+          total: payload?.total ?? 0,
+          totalPages: payload?.totalPages ?? 1,
+          page: payload?.page ?? 1,
+        },
+      };
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
   static async getAll(params?: {
     page?: number;
     limit?: number;
@@ -817,6 +1048,7 @@ export const adminBetsApi = AdminBetsApi;
 export const adminSubscriptionsApi = AdminSubscriptionsApi;
 export const adminSinglePurchaseApi = AdminSinglePurchaseApi;
 export const adminAIApi = AdminAIApi;
+export const adminPredictionTicketsApi = AdminPredictionTicketsApi;
 export const adminSystemConfigApi = AdminSystemConfigApi;
 export const adminAIConfigApi = AdminAIConfigApi;
 export const adminKraApi = AdminKraApi;

@@ -23,6 +23,13 @@ export class ResultsService {
   ) {}
 
   async findAll(filters: ResultFilterDto) {
+    const groupByRace =
+      filters.groupByRace === true ||
+      String(filters.groupByRace).toLowerCase() === 'true';
+    if (groupByRace) {
+      return this.findAllGroupedByRace(filters);
+    }
+
     const { page = 1, limit = 20, date, meet } = filters;
     const where: Prisma.RaceResultWhereInput = {};
     if (date || meet) {
@@ -58,6 +65,92 @@ export class ResultsService {
 
     return {
       results: serializeRaceResults(results),
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Race-centric list: same race set as GET /races (same filters, order, pagination by race).
+   * Returns raceGroups so results page and races page show the same 경기 items.
+   */
+  async findAllGroupedByRace(filters: ResultFilterDto) {
+    const page = Math.max(1, Number(filters.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
+    const { date, meet } = filters;
+    const raceWhere: Prisma.RaceWhereInput = {};
+    if (date) {
+      raceWhere.rcDate = String(date).replace(/-/g, '').slice(0, 8);
+    }
+    if (meet) {
+      raceWhere.meet = toKraMeetName(meet);
+    }
+
+    const [races, total] = await Promise.all([
+      this.prisma.race.findMany({
+        where: raceWhere,
+        select: {
+          id: true,
+          meet: true,
+          meetName: true,
+          rcDate: true,
+          rcNo: true,
+          rcDist: true,
+        },
+        orderBy: [{ rcDate: 'desc' }, { rcNo: 'asc' }],
+        skip: (page - 1) * limit,
+        take: limit,
+      }),
+      this.prisma.race.count({ where: raceWhere }),
+    ]);
+
+    const raceIds = races.map((r) => r.id);
+    const results =
+      raceIds.length === 0
+        ? []
+        : await this.prisma.raceResult.findMany({
+            where: { raceId: { in: raceIds } },
+            select: {
+              id: true,
+              raceId: true,
+              ord: true,
+              chulNo: true,
+              hrNo: true,
+              hrName: true,
+              jkName: true,
+              rcTime: true,
+              diffUnit: true,
+              ordInt: true,
+            },
+            orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+          });
+
+    const resultsByRaceId = new Map<number, typeof results>();
+    for (const r of results) {
+      if (!resultsByRaceId.has(r.raceId)) resultsByRaceId.set(r.raceId, []);
+      resultsByRaceId.get(r.raceId)!.push(r);
+    }
+
+    const raceGroups = races.map((race) => ({
+      race: {
+        id: String(race.id),
+        meet: race.meet,
+        meetName: race.meetName,
+        rcDate: race.rcDate,
+        rcNo: race.rcNo,
+        rcDist: race.rcDist,
+      },
+      results: serializeRaceResults(
+        (resultsByRaceId.get(race.id) ?? []).map((res) => ({
+          ...res,
+          race,
+        })),
+      ),
+    }));
+
+    return {
+      raceGroups,
       total,
       page,
       totalPages: Math.ceil(total / limit),

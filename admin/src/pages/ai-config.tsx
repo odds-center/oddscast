@@ -152,7 +152,8 @@ export default function AIConfigPage() {
         systemPromptTemplate: configData.systemPromptTemplate || '',
       });
     }
-  }, [configData, reset]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [configData]);
 
   // watch
   const watchedPrimaryModel = watch('primaryModel');

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
@@ -8,8 +9,8 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import Modal from '@/components/common/Modal';
 import PageHeader from '@/components/common/PageHeader';
+import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminRacesApi, adminKraApi } from '@/lib/api/admin';
 import { formatDate, isPastRaceDate } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ interface RaceData {
   rcDist: string;
   rank?: string;
   status?: string;
+  entries?: unknown[];
 }
 
 const MEET_OPTIONS = [
@@ -33,23 +35,31 @@ const MEET_OPTIONS = [
 ] as const;
 
 export default function RacesPage() {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [meetFilter, setMeetFilter] = useState('');
   const [dateFilter, setDateFilter] = useState('');
-  const [selectedRace, setSelectedRace] = useState<RaceData | null>(null);
   const [syncDate, setSyncDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   });
+  const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
   const syncScheduleMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncSchedule(date),
+    mutationFn: async (date: string) => {
+      const out = await adminKraApi.syncScheduleWithProgress(date, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('출전표 동기화 완료');
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
+    onSettled: () => setSyncProgress(null),
   });
 
   const seedSampleMutation = useMutation({
@@ -63,12 +73,20 @@ export default function RacesPage() {
   });
 
   const syncResultsMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncResults(date),
-    onSuccess: () => {
+    mutationFn: async (date: string) => {
+      const out = await adminKraApi.syncResultsWithProgress(date, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
+    onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      toast.success('경주 결과 동기화 완료');
+      const msg = (res as { result?: { message?: string } })?.result?.message ?? '경주 결과 동기화 완료';
+      toast.success(msg);
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
+    onSettled: () => setSyncProgress(null),
   });
 
   const syncDetailsMutation = useMutation({
@@ -81,12 +99,20 @@ export default function RacesPage() {
   });
 
   const syncAllMutation = useMutation({
-    mutationFn: (date: string) => adminKraApi.syncAll(date),
+    mutationFn: async (date: string) => {
+      const out = await adminKraApi.syncAllWithProgress(date, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      toast.success((res as { message?: string })?.message ?? '전체 적재 완료');
+      const msg = (res as { message?: string })?.message ?? '전체 적재 완료';
+      toast.success(msg);
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '전체 적재 실패'),
+    onSettled: () => setSyncProgress(null),
   });
 
   const [histFrom, setHistFrom] = useState('20230101');
@@ -95,14 +121,20 @@ export default function RacesPage() {
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
   });
   const syncHistoricalMutation = useMutation({
-    mutationFn: ({ from, to }: { from: string; to: string }) =>
-      adminKraApi.syncHistorical(from, to),
+    mutationFn: async ({ from, to }: { from: string; to: string }) => {
+      const out = await adminKraApi.syncHistoricalWithProgress(from, to, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       const r = res as { processed?: number; totalResults?: number };
       toast.success(`과거 데이터 적재 완료: ${r?.processed ?? 0}일, ${r?.totalResults ?? 0}건 결과`);
     },
     onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '과거 데이터 적재 실패'),
+    onSettled: () => setSyncProgress(null),
   });
 
   const { data, isLoading } = useQuery({
@@ -154,6 +186,15 @@ export default function RacesPage() {
       render: (race: RaceData) => `${race.rcDist}m`,
     },
     {
+      key: 'entries',
+      header: '출전마',
+      className: 'w-20 text-center',
+      render: (race: RaceData) => {
+        const n = Array.isArray(race.entries) ? race.entries.length : 0;
+        return n > 0 ? <span className='text-gray-700'>{n}마</span> : <span className='text-gray-400'>-</span>;
+      },
+    },
+    {
       key: 'status',
       header: '상태',
         render: (race: RaceData) => {
@@ -184,17 +225,6 @@ export default function RacesPage() {
           </span>
         );
       },
-    },
-    {
-      key: 'actions',
-      header: '작업',
-      render: (race: RaceData) => (
-        <div className='flex gap-2'>
-          <Button size='sm' variant='ghost' onClick={() => setSelectedRace(race)}>
-            상세
-          </Button>
-        </div>
-      ),
     },
   ];
 
@@ -295,19 +325,26 @@ export default function RacesPage() {
                 >
                   상세정보
                 </Button>
-                <Button
-                  variant='primary'
-                  onClick={() =>
-                    syncAllMutation.mutate(
-                      syncDate ||
-                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
-                    )
-                  }
-                  disabled={syncAllMutation.isPending}
-                  isLoading={syncAllMutation.isPending}
-                >
-                  전체 적재
-                </Button>
+                <div className='flex flex-wrap items-center gap-3'>
+                  <Button
+                    variant='primary'
+                    onClick={() =>
+                      syncAllMutation.mutate(
+                        syncDate ||
+                          `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                      )
+                    }
+                    disabled={syncAllMutation.isPending}
+                    isLoading={syncAllMutation.isPending}
+                  >
+                    전체 적재
+                  </Button>
+                  {syncProgress && (
+                    <div className='min-w-[200px] flex-1 max-w-md'>
+                      <SyncProgressBar percent={syncProgress.percent} message={syncProgress.message} />
+                    </div>
+                  )}
+                </div>
               </div>
               <div className='flex flex-wrap items-center gap-4 text-sm text-gray-500'>
                 <span>
@@ -329,6 +366,7 @@ export default function RacesPage() {
               columns={columns}
               isLoading={isLoading}
               emptyMessage='경주가 없습니다.'
+              onRowClick={(race) => router.push(`/races/${race.id}`)}
             />
 
             {data && (
@@ -340,66 +378,6 @@ export default function RacesPage() {
             )}
           </Card>
         </div>
-
-        {/* 경주 상세 모달 */}
-        {selectedRace && (
-          <Modal
-            open
-            onClose={() => setSelectedRace(null)}
-            title='경주 상세 정보'
-          >
-              <div className='space-y-4'>
-                <div className='grid grid-cols-2 gap-4'>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>
-                      경주 번호
-                    </label>
-                    <div className='text-gray-900 text-lg font-semibold'>{selectedRace.rcNo}R</div>
-                  </div>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>경주장</label>
-                    <div className='text-gray-900'>{selectedRace.meet}</div>
-                  </div>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>경주일</label>
-                    <div className='text-gray-900'>
-                      {selectedRace.rcDate?.length === 8
-                        ? `${selectedRace.rcDate.slice(0, 4)}-${selectedRace.rcDate.slice(
-                            4,
-                            6
-                          )}-${selectedRace.rcDate.slice(6, 8)}`
-                        : selectedRace.rcDate}
-                    </div>
-                  </div>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>시간</label>
-                    <div className='text-gray-900'>{selectedRace.rcTime || '-'}</div>
-                  </div>
-                  <div>
-                    <label className='block text-sm font-medium text-gray-700 mb-1'>거리</label>
-                    <div className='text-gray-900'>{selectedRace.rcDist}m</div>
-                  </div>
-                  {selectedRace.rank && (
-                    <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>등급</label>
-                      <div className='text-gray-900'>{selectedRace.rank}</div>
-                    </div>
-                  )}
-                </div>
-
-                <div className='border-t pt-4'>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>경주명</label>
-                  <div className='text-gray-900 text-lg font-semibold'>{selectedRace.rcName}</div>
-                </div>
-
-                <div className='border-t pt-4 flex gap-2'>
-                  <Button variant='ghost' className='flex-1' onClick={() => setSelectedRace(null)}>
-                    닫기
-                  </Button>
-                </div>
-              </div>
-          </Modal>
-        )}
       </Layout>
     </>
   );

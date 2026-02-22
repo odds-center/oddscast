@@ -1,11 +1,15 @@
 /**
  * Home hero banner — KRA style dark banner
+ * Copy varies by today's race count and next race day.
  */
 import Icon from '@/components/icons';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
+import { getDateHeaderMessage, getNextRaceDayLabel } from '@/lib/utils/dateHeaderMessages';
 
-const RACE_DAYS = [5, 6, 0];
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
 
 export default function DateHeader() {
   const now = new Date();
@@ -14,19 +18,14 @@ export default function DateHeader() {
   const day = now.getDate();
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const weekDay = weekDays[now.getDay()];
-  const isRaceDay = RACE_DAYS.includes(now.getDay());
 
-  const nextRaceDay = (() => {
-    if (isRaceDay) return null;
-    const d = new Date(now);
-    for (let i = 1; i <= 7; i++) {
-      d.setDate(now.getDate() + i);
-      if (RACE_DAYS.includes(d.getDay())) {
-        return `${weekDays[d.getDay()]}요일 (${d.getMonth() + 1}/${d.getDate()})`;
-      }
-    }
-    return null;
-  })();
+  const { data: todayData } = useQuery({
+    queryKey: ['races', 'today', 'stats'],
+    queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
+  });
+  const todayCount = todayData?.total ?? (todayData?.races?.length ?? 0);
+  const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, now);
+  const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel);
 
   return (
     <div className='home-hero'>
@@ -36,20 +35,14 @@ export default function DateHeader() {
             {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDay})
           </p>
           <h1 className='text-base sm:text-lg font-bold text-white mb-1'>
-            {isRaceDay ? '오늘 경주가 진행됩니다' : 'OddsCast'}
+            {msg.title}
           </h1>
           <p className='text-stone-400 text-xs'>
-            {isRaceDay ? (
-              'AI 분석으로 경주를 예측해보세요'
-            ) : nextRaceDay ? (
-              <>다음 경주일: <span className='text-primary'>{nextRaceDay}</span></>
-            ) : (
-              '경마 정보·분석 서비스'
-            )}
+            {msg.subtitle}
           </p>
         </div>
         <div className='flex items-center gap-2 shrink-0'>
-          {isRaceDay && (
+          {msg.showTodayLink && (
             <Link
               href={`${routes.races.list}?date=today`}
               className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'

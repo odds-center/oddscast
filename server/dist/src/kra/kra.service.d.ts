@@ -17,6 +17,7 @@ export declare class KraService {
         baseUrlInUse: string;
         serviceKeyConfigured: boolean;
     }>;
+    syncDailyUpcomingRacePlans(): Promise<void>;
     syncFutureRacePlans(): Promise<void>;
     syncWeeklySchedule(): Promise<void>;
     syncRaceDayMorning(): Promise<void>;

@@ -182,6 +182,7 @@ export declare class AdminController {
     getBets(page?: number, limit?: number, userId?: string, raceId?: string, status?: string): Promise<{
         data: ({
             race: {
+                rcNo: string;
                 id: number;
                 meet: string;
                 rcDate: string;
@@ -191,7 +192,6 @@ export declare class AdminController {
                 rcName: string | null;
                 meetName: string | null;
                 rcDay: string | null;
-                rcNo: string;
                 stTime: string | null;
                 rcDist: string | null;
                 rank: string | null;
@@ -246,6 +246,7 @@ export declare class AdminController {
             email: string;
         };
         race: {
+            rcNo: string;
             id: number;
             meet: string;
             rcDate: string;
@@ -255,7 +256,6 @@ export declare class AdminController {
             rcName: string | null;
             meetName: string | null;
             rcDay: string | null;
-            rcNo: string;
             stTime: string | null;
             rcDist: string | null;
             rank: string | null;

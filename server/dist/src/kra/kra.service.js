@@ -87,10 +87,27 @@ let KraService = KraService_1 = class KraService {
             serviceKeyConfigured: this.ensureServiceKey(),
         };
     }
+    async syncDailyUpcomingRacePlans() {
+        if (!this.ensureServiceKey())
+            return;
+        this.logger.log('Running Daily Upcoming Race Plans Sync (next 7 days)');
+        const today = this.formatYyyyMmDd((0, dayjs_1.default)());
+        const nextWeek = this.formatYyyyMmDd((0, dayjs_1.default)().add(7, 'day'));
+        const dates = this.getRaceDateRange(today, nextWeek);
+        for (const d of dates) {
+            try {
+                await this.fetchRacePlanSchedule(d);
+                await this.delay(200);
+            }
+            catch (err) {
+                this.logger.warn(`[syncDailyUpcomingRacePlans] ${d} failed`, err);
+            }
+        }
+    }
     async syncFutureRacePlans() {
         if (!this.ensureServiceKey())
             return;
-        this.logger.log('Running Future Race Plans Sync (API72_2)');
+        this.logger.log('Running Future Race Plans Sync (next 3 months)');
         await this.syncUpcomingSchedules();
     }
     async syncWeeklySchedule() {
@@ -156,7 +173,7 @@ let KraService = KraService_1 = class KraService {
     }
     ensureServiceKey() {
         if (!this.serviceKey?.trim()) {
-            this.logger.warn('[KraSync] KRA_SERVICE_KEY가 비어있어 KRA API 호출을 스킵합니다. .env에 인코딩된 API 키를 설정하세요.');
+            this.logger.warn('[KraSync] KRA_SERVICE_KEY is empty, skipping KRA API calls. Set encoded API key in .env.');
             return false;
         }
         return true;
@@ -181,7 +198,7 @@ let KraService = KraService_1 = class KraService {
     async syncEntrySheet(date) {
         if (!this.ensureServiceKey()) {
             return {
-                message: 'KRA_SERVICE_KEY 미설정. .env에 API 키를 추가하세요.',
+                message: 'KRA_SERVICE_KEY not configured. Add API key to .env.',
                 races: 0,
                 entries: 0,
             };
@@ -392,7 +409,7 @@ let KraService = KraService_1 = class KraService {
     async syncScheduleForDate(date) {
         if (!this.ensureServiceKey()) {
             return {
-                message: 'KRA_SERVICE_KEY 미설정.',
+                message: 'KRA_SERVICE_KEY not configured.',
                 races: 0,
                 entries: 0,
             };
@@ -401,14 +418,14 @@ let KraService = KraService_1 = class KraService {
         const planRes = await this.fetchRacePlanSchedule(d);
         const entryRes = await this.syncEntrySheet(d);
         return {
-            message: `스케줄 적재 완료: ${planRes.races}경주(계획표), ${entryRes.entries}출마`,
+            message: `Schedule load complete: ${planRes.races} races (plan), ${entryRes.entries} entries`,
             races: Math.max(planRes.races ?? 0, entryRes.races ?? 0),
             entries: entryRes.entries ?? 0,
         };
     }
     async syncAll(date) {
         if (!this.ensureServiceKey()) {
-            return { message: 'KRA_SERVICE_KEY 미설정.' };
+            return { message: 'KRA_SERVICE_KEY not configured.' };
         }
         const d = this.normalizeToYyyyMmDd(date);
         this.logger.log(`[syncAll] Starting full sync for ${d}`);
@@ -427,7 +444,7 @@ let KraService = KraService_1 = class KraService {
             out.details = detailRes.message;
             const jockeyRes = await this.fetchJockeyTotalResults();
             out.jockeys = jockeyRes.message;
-            out.message = `전체 적재 완료: ${out.entrySheet?.races ?? 0}경주, ${out.entrySheet?.entries ?? 0}출마, ${out.results?.totalResults ?? 0}결과`;
+            out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results`;
         }
         catch (err) {
             this.logger.error('[syncAll] Failed', err);
@@ -466,7 +483,7 @@ let KraService = KraService_1 = class KraService {
             this.logger.warn('Jockey sync after historical failed', e);
         }
         return {
-            message: `과거 데이터 적재 완료`,
+            message: `Historical data load complete`,
             processed: summary.processed,
             failed: summary.failed,
             totalResults: summary.totalResults,
@@ -542,7 +559,7 @@ let KraService = KraService_1 = class KraService {
                 await this.delay(200);
             }
             catch (err) {
-                this.logger.warn(`[fetchRacePlanSchedule] ${meet.name} ${d} 실패`, err);
+                this.logger.warn(`[fetchRacePlanSchedule] ${meet.name} ${d} failed`, err);
             }
         }
         return { races: totalRaces };
@@ -616,7 +633,7 @@ let KraService = KraService_1 = class KraService {
                 await this.delay(200);
             }
             catch (err) {
-                this.logger.warn(`[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} 실패`, err);
+                this.logger.warn(`[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} failed`, err);
                 break;
             }
         }
@@ -637,16 +654,16 @@ let KraService = KraService_1 = class KraService {
     async syncUpcomingSchedules() {
         if (!this.ensureServiceKey()) {
             return {
-                message: 'KRA_SERVICE_KEY 미설정. server/.env에 KRA_SERVICE_KEY를 추가하세요.',
+                message: 'KRA_SERVICE_KEY not configured.',
                 races: 0,
                 entries: 0,
                 datesProcessed: 0,
             };
         }
         const today = this.formatYyyyMmDd((0, dayjs_1.default)());
-        const oneYearLater = this.formatYyyyMmDd((0, dayjs_1.default)().add(1, 'year'));
-        const dates = this.getRaceDateRange(today, oneYearLater);
-        this.logger.log(`[syncUpcomingSchedules] ${dates.length}일(금·토·일) 경주계획표+출전표 적재: ${today} ~ ${oneYearLater}`);
+        const threeMonthsLater = this.formatYyyyMmDd((0, dayjs_1.default)().add(3, 'month'));
+        const dates = this.getRaceDateRange(today, threeMonthsLater);
+        this.logger.log(`[syncUpcomingSchedules] ${dates.length} race days (Fri/Sat/Sun): ${today} ~ ${threeMonthsLater}`);
         let totalRaces = 0;
         let totalEntries = 0;
         for (const d of dates) {
@@ -658,11 +675,11 @@ let KraService = KraService_1 = class KraService {
                 await this.delay(300);
             }
             catch (err) {
-                this.logger.warn(`[syncUpcomingSchedules] ${d} 실패`, err);
+                this.logger.warn(`[syncUpcomingSchedules] ${d} failed`, err);
             }
         }
         return {
-            message: `미래 스케줄 적재 완료: ${dates.length}일, ${totalRaces}경주, ${totalEntries}출마`,
+            message: `Schedule sync complete: ${dates.length} days, ${totalRaces} races, ${totalEntries} entries`,
             races: totalRaces,
             entries: totalEntries,
             datesProcessed: dates.length,
@@ -673,7 +690,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchRaceResults(date, createRaceIfMissing = false) {
         if (!this.ensureServiceKey()) {
-            return { message: 'KRA_SERVICE_KEY 미설정.', totalResults: 0 };
+            return { message: 'KRA_SERVICE_KEY not configured.', totalResults: 0 };
         }
         this.logger.log(`Fetching race results for date: ${date}`);
         const endpoint = 'raceResult';
@@ -949,7 +966,7 @@ let KraService = KraService_1 = class KraService {
             }
         }
         if (failed500Meets.length > 0) {
-            this.logger.warn(`KRA API 500 for ${date} (${failed500Meets.join(', ')}) - 해당 날짜 경주 없을 수 있음`);
+            this.logger.warn(`KRA API 500 for ${date} (${failed500Meets.join(', ')}) - may not have races on that date`);
         }
         const normalizedDate = this.normalizeToYyyyMmDd(date);
         const today = (0, dayjs_1.default)().format('YYYYMMDD');
@@ -962,7 +979,7 @@ let KraService = KraService_1 = class KraService {
                 data: { status: 'COMPLETED' },
             });
             if (updated.count > 0) {
-                this.logger.log(`날짜 지난 경주 ${updated.count}건 COMPLETED 처리 (rcDate=${normalizedDate})`);
+                this.logger.log(`Marked ${updated.count} past-date races as COMPLETED (rcDate=${normalizedDate})`);
                 for (const r of await this.prisma.race.findMany({
                     where: { rcDate: normalizedDate },
                     select: { id: true },
@@ -978,7 +995,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchRaceEntries(meet, date, raceNo) {
         if (!this.ensureServiceKey())
-            return { message: 'KRA_SERVICE_KEY 미설정' };
+            return { message: 'KRA_SERVICE_KEY not configured' };
         const meetCode = this.meetNameToCode(meet);
         const normalizedDate = this.normalizeToYyyyMmDd(date);
         const baseUrl = await this.resolveBaseUrl();
@@ -1063,7 +1080,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchHorseDetails(meet, date, raceNo) {
         if (!this.ensureServiceKey())
-            return { message: 'KRA_SERVICE_KEY 미설정' };
+            return { message: 'KRA_SERVICE_KEY not configured' };
         const baseUrl = await this.resolveBaseUrl();
         const race = await this.prisma.race.findUnique({
             where: {
@@ -1136,7 +1153,7 @@ let KraService = KraService_1 = class KraService {
     }
     async fetchTrainingData(meet, date, raceNo) {
         if (!this.ensureServiceKey())
-            return { message: 'KRA_SERVICE_KEY 미설정' };
+            return { message: 'KRA_SERVICE_KEY not configured' };
         const baseUrl = await this.resolveBaseUrl();
         const race = await this.prisma.race.findUnique({
             where: {
@@ -1508,7 +1525,7 @@ let KraService = KraService_1 = class KraService {
                             data: {
                                 weather: item.weather ?? race.weather,
                                 track: (item.track ?? item.moisture)
-                                    ? `${item.track ?? ''} (함수율 ${item.moisture ?? '-'}%)`
+                                    ? `${item.track ?? ''} (moisture ${item.moisture ?? '-'}%)`
                                     : race.track,
                             },
                         });
@@ -1948,7 +1965,7 @@ let KraService = KraService_1 = class KraService {
     }
     async syncAnalysisData(date) {
         if (!this.ensureServiceKey()) {
-            return { message: 'KRA_SERVICE_KEY 미설정.' };
+            return { message: 'KRA_SERVICE_KEY not configured.' };
         }
         this.logger.log(`Syncing analysis data (Training, Equipment, etc.) for date: ${date}`);
         const normalizedDate = this.normalizeToYyyyMmDd(date);
@@ -2021,7 +2038,7 @@ let KraService = KraService_1 = class KraService {
         for (const meet of MEETS) {
             for (let r = 1; r <= 4; r++) {
                 const rcNo = String(r).padStart(2, '0');
-                const rcName = `${r}장 경주`;
+                const rcName = `Race ${r}`;
                 const rcDist = [1000, 1200, 1400, 1600][r % 4].toString();
                 let race = await this.prisma.race.findFirst({
                     where: { meet: meet.name, rcDate, rcNo },
@@ -2080,6 +2097,12 @@ let KraService = KraService_1 = class KraService {
     }
 };
 exports.KraService = KraService;
+__decorate([
+    (0, schedule_1.Cron)('0 4 * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], KraService.prototype, "syncDailyUpcomingRacePlans", null);
 __decorate([
     (0, schedule_1.Cron)('0 3 * * 1'),
     __metadata("design:type", Function),

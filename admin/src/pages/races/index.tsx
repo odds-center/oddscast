@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
@@ -315,9 +316,9 @@ export default function RacesPage() {
                   <strong> 상세</strong> = 훈련·장구·마체중 |
                   <strong> 전체</strong> = 모두 한 번에
                 </span>
-                <a href='/kra' className='text-indigo-600 hover:underline ml-auto shrink-0'>
+                <Link href='/kra' className='text-indigo-600 hover:underline ml-auto shrink-0'>
                   KRA 관리 페이지로 →
-                </a>
+                </Link>
               </div>
             </div>
           </Card>

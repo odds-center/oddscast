@@ -307,7 +307,7 @@ admin/
 │       ├── races/
 │       ├── users/
 │       └── ...
-└── .env.example                # NEXT_PUBLIC_API_URL
+└── .env                        # NEXT_PUBLIC_* (./scripts/setup-env.sh 로 생성)
 ```
 
 ---

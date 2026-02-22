@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 interface AdminLogParams {
@@ -43,7 +44,7 @@ export class ActivityLogsService {
           adminEmail: params.adminEmail,
           action: params.action,
           target: params.target,
-          details: params.details ?? undefined,
+          details: (params.details ?? undefined) as Prisma.InputJsonValue | undefined,
           ipAddress: params.ipAddress,
           userAgent: params.userAgent,
         },
@@ -104,7 +105,7 @@ export class ActivityLogsService {
           event: params.event,
           page: params.page,
           target: params.target,
-          metadata: params.metadata ?? undefined,
+          metadata: (params.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
           ipAddress: params.ipAddress,
           userAgent: params.userAgent,
         },
@@ -126,7 +127,7 @@ export class ActivityLogsService {
           event: e.event,
           page: e.page,
           target: e.target,
-          metadata: e.metadata ?? undefined,
+          metadata: (e.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
           ipAddress: e.ipAddress,
           userAgent: e.userAgent,
         })),

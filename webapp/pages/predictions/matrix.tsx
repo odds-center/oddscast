@@ -192,46 +192,6 @@ export default function PredictionMatrixPage() {
 
           {hitRecords && hitRecords.length > 0 && <HitRecordBanner records={hitRecords} />}
 
-          {/* Hero header */}
-          <div className='home-hero mb-3'>
-            <div className='relative z-10'>
-              <div className='flex items-center justify-between gap-4'>
-                <div>
-                  <p className='text-stone-400 text-xs mb-0.5'>일일 경주 종합 가이드</p>
-                  <h2 className='text-base font-bold text-white'>{formatDisplayDate(dateFilter)}</h2>
-                  <div className='flex items-center gap-3 mt-1.5 text-xs text-stone-400'>
-                    <span className='inline-flex items-center gap-1'>
-                      <Icon name='Flag' size={12} className='text-primary' />
-                      {raceCount}경주
-                    </span>
-                    {Object.entries(meetGroups).map(([meet, cnt]) => (
-                      <span key={meet} className='whitespace-nowrap'>{meet} {cnt}경</span>
-                    ))}
-                  </div>
-                </div>
-                {/* Matrix ticket status */}
-                <div className='text-right shrink-0'>
-                  {hasAccess ? (
-                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-white text-xs font-semibold'>
-                      <Icon name='Unlock' size={12} />
-                      열람 중
-                    </span>
-                  ) : (
-                    <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white/10 text-stone-400 text-xs font-medium'>
-                      <Icon name='Lock' size={12} />
-                      잠금
-                    </span>
-                  )}
-                  {!hasAccess && (
-                    <p className='text-[10px] text-stone-500 mt-1'>
-                      예측권 {availableMatrixTickets}장 보유
-                    </p>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
           <FilterDateBar
             filterOptions={[
               { value: 'today', label: '오늘' },

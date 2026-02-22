@@ -28,6 +28,24 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatTime, formatNumber } from '@/lib/utils/format';
 
+/** Convert KRA diffUnit text (e.g. "1¼", "목", "머리") to decimal number string */
+function formatDiffUnit(diff: string): string {
+  if (!diff) return '';
+  const trimmed = diff.trim();
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return trimmed;
+
+  const koreanGaps: Record<string, string> = { 코: '0.05', 머리: '0.2', 목: '0.3', 대: '10+' };
+  if (koreanGaps[trimmed]) return koreanGaps[trimmed];
+
+  const fractions: Record<string, number> = { '¼': 0.25, '½': 0.5, '¾': 0.75 };
+  if (fractions[trimmed] != null) return String(fractions[trimmed]);
+
+  const mixed = trimmed.match(/^(\d+)([¼½¾])$/);
+  if (mixed) return String(parseInt(mixed[1], 10) + (fractions[mixed[2]] ?? 0));
+
+  return trimmed;
+}
+
 /** 1-minute cooldown countdown hook */
 function useCooldown(lastUsedAt: string | null | undefined) {
   const [remaining, setRemaining] = useState(0);
@@ -40,14 +58,22 @@ function useCooldown(lastUsedAt: string | null | undefined) {
   }, [lastUsedAt]);
 
   useEffect(() => {
-    setRemaining(calcRemaining());
-    if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => {
+    const tick = () => {
       const r = calcRemaining();
       setRemaining(r);
-      if (r <= 0 && timerRef.current) clearInterval(timerRef.current);
-    }, 1000);
-    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+      if (r <= 0 && timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(tick, 1000);
+    const timeoutId = setTimeout(tick, 0);
+    return () => {
+      clearTimeout(timeoutId);
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    };
   }, [calcRemaining]);
 
   return remaining;
@@ -74,6 +100,10 @@ export default function RaceDetailPage() {
     enabled: !!id,
   });
 
+  const isRaceCompleted =
+    ((race as { status?: string; raceStatus?: string })?.status ??
+      (race as { status?: string; raceStatus?: string })?.raceStatus) === 'COMPLETED';
+
   const { data: myPick } = useQuery({
     queryKey: ['picks', 'race', id],
     queryFn: () => PicksApi.getByRace(id as string),
@@ -83,30 +113,29 @@ export default function RaceDetailPage() {
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
     queryFn: () => PredictionTicketApi.getBalance(),
-    enabled: !!id && isLoggedIn,
+    enabled: !!id && isLoggedIn && !isRaceCompleted,
   });
 
   const { data: ticketHistory } = useQuery({
     queryKey: ['prediction-tickets', 'history'],
     queryFn: () => PredictionTicketApi.getHistory(100, 0, 1),
-    enabled: !!id && isLoggedIn,
+    enabled: !!id && isLoggedIn && !isRaceCompleted,
   });
 
-  const hasUsedTicketForRace =
-    !!ticketHistory?.tickets?.some(
-      (t) => String(t.raceId) === String(id) && t.status === 'USED',
-    );
+  const hasUsedTicketForRace = !!ticketHistory?.tickets?.some(
+    (t) => String(t.raceId) === String(id) && t.status === 'USED',
+  );
 
   const { data: fullPredictionData } = useQuery({
     queryKey: ['prediction', 'full', id],
     queryFn: () => PredictionApi.getByRaceId(id as string),
-    enabled: !!id && isLoggedIn && !!hasUsedTicketForRace,
+    enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
   });
 
   const { data: predictionHistory } = useQuery({
     queryKey: ['prediction', 'history', id],
     queryFn: () => PredictionApi.getHistoryByRaceId(id as string),
-    enabled: !!id && isLoggedIn && !!hasUsedTicketForRace,
+    enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
   });
 
   const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
@@ -114,10 +143,12 @@ export default function RaceDetailPage() {
   const { data: predictionPreview } = useQuery({
     queryKey: ['prediction', 'preview', id],
     queryFn: () => PredictionApi.getPreview(id as string),
-    enabled: !!id && !hasUsedTicketForRace,
+    enabled: !!id && !isRaceCompleted && !hasUsedTicketForRace,
   });
 
-  const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(null);
+  const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(
+    null,
+  );
 
   const useTicketMutation = useMutation({
     mutationFn: ({ raceId, regenerate }: { raceId: string; regenerate?: boolean }) =>
@@ -138,8 +169,7 @@ export default function RaceDetailPage() {
     (selectedPredictionId != null
       ? list.find((p) => Number((p as unknown as { id?: number }).id) === selectedPredictionId)
       : list[0]);
-  const availableTickets =
-    ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
+  const availableTickets = ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
 
   const { data: raceResults } = useQuery({
     queryKey: ['race', id, 'results'],
@@ -266,30 +296,74 @@ export default function RaceDetailPage() {
   }
 
   const r = race as {
-    rcName?: string; rcNo?: string; meetName?: string; rcDate?: string;
-    rcDist?: string; stTime?: string;
+    rcName?: string;
+    rcNo?: string;
+    meetName?: string;
+    rcDate?: string;
+    rcDist?: string;
+    stTime?: string;
     entries?: Array<{
-      id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
-      wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
-      age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
-      equipment?: string; budam?: string;
+      id?: string;
+      raceId?: number;
+      hrNo: string;
+      hrName: string;
+      jkName?: string;
+      chulNo?: string;
+      wgBudam?: number;
+      horseWeight?: string;
+      trName?: string;
+      rating?: number;
+      sex?: string;
+      age?: number;
+      prd?: string;
+      rcCntT?: number;
+      ord1CntT?: number;
+      recentRanks?: unknown;
+      equipment?: string;
+      budam?: string;
     }>;
     entryDetails?: Array<{
-      id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
-      wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
-      age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
-      equipment?: string; budam?: string;
+      id?: string;
+      raceId?: number;
+      hrNo: string;
+      hrName: string;
+      jkName?: string;
+      chulNo?: string;
+      wgBudam?: number;
+      horseWeight?: string;
+      trName?: string;
+      rating?: number;
+      sex?: string;
+      age?: number;
+      prd?: string;
+      rcCntT?: number;
+      ord1CntT?: number;
+      recentRanks?: unknown;
+      equipment?: string;
+      budam?: string;
     }>;
   };
   const entries = (r.entries ?? r.entryDetails ?? []) as Array<{
-    id?: string; raceId?: number; hrNo: string; hrName: string; jkName?: string; chulNo?: string;
-    wgBudam?: number; horseWeight?: string; trName?: string; rating?: number; sex?: string;
-    age?: number; prd?: string; rcCntT?: number; ord1CntT?: number; recentRanks?: unknown;
-    equipment?: string; budam?: string;
+    id?: string;
+    raceId?: number;
+    hrNo: string;
+    hrName: string;
+    jkName?: string;
+    chulNo?: string;
+    wgBudam?: number;
+    horseWeight?: string;
+    trName?: string;
+    rating?: number;
+    sex?: string;
+    age?: number;
+    prd?: string;
+    rcCntT?: number;
+    ord1CntT?: number;
+    recentRanks?: unknown;
+    equipment?: string;
+    budam?: string;
   }>;
 
-  const raceStatus = (race as { status?: string; raceStatus?: string })?.status ?? (race as { status?: string; raceStatus?: string })?.raceStatus;
-  const isRaceCompleted = raceStatus === 'COMPLETED';
   const hasResults = (raceResults?.length ?? 0) > 0;
 
   // Extract entry list from results data (fallback when entries is empty)
@@ -302,229 +376,323 @@ export default function RaceDetailPage() {
       }))
     : [];
   const displayEntries = entries.length > 0 ? entries : entriesFromResults;
-  const showEntriesSection = displayEntries.length > 0 && !isResultView;
+  const showEntriesSection = displayEntries.length > 0;
   const showPickPanel = !isRaceCompleted && isLoggedIn && CONFIG.picksEnabled && entries.length > 0;
 
-  const lastUsedTicket = ticketHistory?.tickets?.filter(
-    (t) => String(t.raceId) === String(id) && t.status === 'USED',
-  ).sort((a, b) => new Date(b.usedAt ?? 0).getTime() - new Date(a.usedAt ?? 0).getTime())[0];
+  const lastUsedTicket = ticketHistory?.tickets
+    ?.filter((t) => String(t.raceId) === String(id) && t.status === 'USED')
+    .sort((a, b) => new Date(b.usedAt ?? 0).getTime() - new Date(a.usedAt ?? 0).getTime())[0];
 
   return (
     <Layout title='OddsCast'>
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         <div className='flex-1 min-w-0 w-full space-y-4'>
+          <BackLink
+            href={isResultView ? routes.results : routes.home}
+            label={isResultView ? '결과로' : '목록으로'}
+            className='block'
+          />
 
-      <BackLink
-        href={isResultView ? routes.results : routes.home}
-        label={isResultView ? '결과로' : '목록으로'}
-        className='block'
-      />
+          {/* ── Race header ── */}
+          <RaceHeaderCard
+            meetName={r.meetName}
+            rcDay={(r as { rcDay?: string }).rcDay}
+            rcNo={r.rcNo}
+            rcDate={r.rcDate}
+            stTime={r.stTime}
+            rcDist={r.rcDist}
+            rank={(r as { rank?: string }).rank}
+            rcCondition={(r as { rcCondition?: string }).rcCondition}
+            rcPrize={(r as { rcPrize?: number }).rcPrize}
+            weather={(r as { weather?: string }).weather}
+            track={(r as { track?: string }).track}
+          />
 
-      {/* ── Race header ── */}
-      <RaceHeaderCard
-        meetName={r.meetName}
-        rcDay={(r as { rcDay?: string }).rcDay}
-        rcNo={r.rcNo}
-        rcDate={r.rcDate}
-        stTime={r.stTime}
-        rcDist={r.rcDist}
-        rank={(r as { rank?: string }).rank}
-        rcCondition={(r as { rcCondition?: string }).rcCondition}
-        rcPrize={(r as { rcPrize?: number }).rcPrize}
-        weather={(r as { weather?: string }).weather}
-        track={(r as { track?: string }).track}
-      />
+          {/* ── Race results (always show when race is completed; empty state if not synced yet) ── */}
+          {(isRaceCompleted || hasResults) && (
+            <section className='space-y-2'>
+              <div className='flex items-center gap-1.5'>
+                <Icon name='Trophy' size={15} className='text-stone-500' />
+                <span className='text-sm font-bold text-foreground'>경주 결과</span>
+              </div>
 
-      {/* ── Race results ── */}
-      {hasResults && (
-        <section className='space-y-2'>
-          <div className='flex items-center gap-1.5'>
-            <Icon name='Trophy' size={15} className='text-stone-500' />
-            <span className='text-sm font-bold text-foreground'>경주 결과</span>
-          </div>
-
-          {/* Full rankings — table format */}
-          <div className='rounded-md border border-stone-200 overflow-hidden'>
-            <table className='w-full text-sm'>
-              <thead>
-                <tr className='bg-stone-50 border-b border-stone-200 text-xs text-text-secondary'>
-                  <th className='py-1.5 px-2 w-10 text-center font-semibold'>순위</th>
-                  <th className='py-1.5 px-2 w-10 text-center font-semibold'>번호</th>
-                  <th className='py-1.5 px-2 text-left font-semibold'>마명</th>
-                  <th className='py-1.5 px-2 text-left font-semibold'>기수</th>
-                  <th className='py-1.5 px-2 text-right font-semibold'>기록</th>
-                </tr>
-              </thead>
-              <tbody>
-                {raceResults?.map((res, i) => {
-                  const row = res as { ordType?: string | null; diffUnit?: string; winOdds?: number };
-                  const ord = String(res.ord ?? i + 1);
-                  const ordN = parseInt(ord, 10);
-                  const no = res.chulNo ?? (res.hrNo && res.hrNo.length <= 2 ? res.hrNo : '-');
-                  const suffix = row.ordType === 'FALL' ? ' (낙마)' : row.ordType === 'DQ' ? ' (실격)' : '';
-                  const rankCls = ordN === 1 ? 'text-foreground font-bold' : ordN === 2 ? 'text-stone-600 font-bold' : ordN === 3 ? 'text-stone-500 font-bold' : 'text-text-tertiary';
-                  const record = ordN === 1 && res.rcTime ? res.rcTime : row.diffUnit ?? '';
-                  return (
-                    <tr key={res.id ?? i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
-                      <td className={`py-1.5 px-2 text-center ${rankCls}`}>{ord}</td>
-                      <td className='py-1.5 px-2 text-center font-semibold text-stone-700'>{no}</td>
-                      <td className='py-1.5 px-2 font-medium text-foreground'>{res.hrName}{suffix}</td>
-                      <td className='py-1.5 px-2 text-text-secondary'>{res.jkName ?? ''}</td>
-                      <td className='py-1.5 px-2 text-right text-text-tertiary font-mono text-xs'>
-                        {record}
-                        {row.winOdds != null && ordN === 1 && (
-                          <span className='ml-1 text-stone-600'>{row.winOdds}배</span>
-                        )}
-                      </td>
+              {!hasResults ? (
+                <div className='rounded-md border border-stone-200 bg-stone-50/50 px-4 py-6 text-center text-sm text-text-secondary'>
+                  결과를 불러오는 중이거나 아직 반영되지 않았습니다. 잠시 후 새로고침 해 주세요.
+                </div>
+              ) : (
+              <>
+              {/* Full rankings — table format */}
+              <div className='rounded-md border border-stone-200 overflow-hidden'>
+                <table className='w-full text-sm'>
+                  <thead>
+                    <tr className='bg-stone-50 border-b border-stone-200 text-xs text-text-secondary'>
+                      <th className='py-1.5 px-2 w-10 text-center font-semibold'>순위</th>
+                      <th className='py-1.5 px-2 w-10 text-center font-semibold'>번호</th>
+                      <th className='py-1.5 px-2 text-left font-semibold'>마명</th>
+                      <th className='py-1.5 px-2 text-left font-semibold'>기수</th>
+                      <th className='py-1.5 px-2 text-right font-semibold'>기록</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Dividends */}
-          {(dividends?.length ?? 0) > 0 && (
-            <div className='rounded-md border border-stone-200 overflow-hidden'>
-              <div className='bg-stone-50 border-b border-stone-200 px-2 py-1.5'>
-                <span className='text-xs font-semibold text-text-secondary'>배당</span>
+                  </thead>
+                  <tbody>
+                    {raceResults?.map((res, i) => {
+                      const row = res as {
+                        ordType?: string | null;
+                        diffUnit?: string;
+                        winOdds?: number;
+                      };
+                      const ord = String(res.ord ?? i + 1);
+                      const ordN = parseInt(ord, 10);
+                      const no = res.chulNo ?? (res.hrNo && res.hrNo.length <= 2 ? res.hrNo : '-');
+                      const suffix =
+                        row.ordType === 'FALL' ? ' (낙마)' : row.ordType === 'DQ' ? ' (실격)' : '';
+                      const rankCls =
+                        ordN === 1
+                          ? 'text-foreground font-bold'
+                          : ordN === 2
+                            ? 'text-stone-600 font-bold'
+                            : ordN === 3
+                              ? 'text-stone-500 font-bold'
+                              : 'text-text-tertiary';
+                      const record =
+                        ordN === 1 && res.rcTime ? res.rcTime : formatDiffUnit(row.diffUnit ?? '');
+                      return (
+                        <tr
+                          key={res.id ?? i}
+                          className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
+                        >
+                          <td className={`py-1.5 px-2 text-center ${rankCls}`}>{ord}</td>
+                          <td className='py-1.5 px-2 text-center font-semibold text-stone-700'>
+                            {no}
+                          </td>
+                          <td className='py-1.5 px-2 font-medium text-foreground'>
+                            {res.hrName}
+                            {suffix}
+                          </td>
+                          <td className='py-1.5 px-2 text-text-secondary'>{res.jkName ?? ''}</td>
+                          <td className='py-1.5 px-2 text-right text-text-tertiary font-mono text-xs'>
+                            {record}
+                            {row.winOdds != null && ordN === 1 && (
+                              <span className='ml-1 text-stone-600'>{row.winOdds}배</span>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
-              <div className='grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-slate-100'>
-                {dividends?.slice(0, 12).map((d: { id?: string; poolName?: string; pool?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number }, i: number) => {
-                  const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
-                  const label = d.poolName ?? d.pool ?? '배당';
-                  return (
-                    <div key={d.id ?? i} className='px-2.5 py-2'>
-                      <span className='text-text-tertiary text-xs block'>{label}</span>
-                      <span className='text-foreground font-semibold text-sm'>{combo || '-'}</span>
-                      {d.odds != null && (
-                        <span className='text-foreground font-semibold text-xs block'>{formatNumber(d.odds)}원</span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </section>
-      )}
 
-      {/* ── AI prediction ── */}
-      <section>
-        {displayPrediction ? (
-          <PredictionFullView
-            prediction={displayPrediction}
-            list={list}
-            selectedPredictionId={selectedPredictionId}
-            setSelectedPredictionId={setSelectedPredictionId}
-            entries={entries}
-            availableTickets={availableTickets}
-            useTicketMutation={useTicketMutation}
-            raceId={id as string}
-            lastUsedAt={lastUsedTicket?.usedAt ?? null}
-          />
-        ) : (
-          <PredictionLockedView
-            predictionPreview={predictionPreview}
-            isLoggedIn={isLoggedIn}
-            availableTickets={availableTickets}
-            useTicketMutation={useTicketMutation}
-            raceId={id as string}
-          />
-        )}
-      </section>
-
-      {/* ── Entries ── */}
-      {showEntriesSection && (
-        <section>
-          <div className='flex items-center gap-1.5 mb-2'>
-            <Icon name='ClipboardList' size={15} className='text-text-secondary' />
-            <span className='text-sm font-bold text-foreground'>출전마</span>
-            <span className='text-xs text-text-tertiary'>{displayEntries.length}두</span>
-          </div>
-          {entries.length > 0 ? (
-            <HorseEntryTable
-              entries={entries}
-              onSelectHorse={showPickPanel ? handleSelectHorse : undefined}
-              isSelected={isHorseSelected}
-            />
-          ) : displayEntries.length > 0 ? (
-            <div className='space-y-1'>
-              {displayEntries.map((e, i) => {
-                const no = e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
-                return (
-                  <div key={e.hrNo ?? i} className='flex items-center gap-3 px-3 py-2 text-sm rounded-lg bg-stone-50/60'>
-                    {no && <span className='font-bold text-stone-600 w-7 text-center'>{no}번</span>}
-                    <span className='text-foreground font-medium flex-1 truncate'>{e.hrName}</span>
-                    {e.jkName && <span className='text-text-secondary'>{e.jkName}</span>}
+              {/* Dividends */}
+              {(dividends?.length ?? 0) > 0 && (
+                <div className='rounded-md border border-stone-200 overflow-hidden'>
+                  <div className='bg-stone-50 border-b border-stone-200 px-2 py-1.5'>
+                    <span className='text-xs font-semibold text-text-secondary'>배당</span>
                   </div>
-                );
-              })}
+                  <div className='grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-slate-100'>
+                    {dividends
+                      ?.slice(0, 12)
+                      .map(
+                        (
+                          d: {
+                            id?: string;
+                            poolName?: string;
+                            pool?: string;
+                            chulNo?: string;
+                            chulNo2?: string;
+                            chulNo3?: string;
+                            odds?: number;
+                          },
+                          i: number,
+                        ) => {
+                          const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
+                          const label = d.poolName ?? d.pool ?? '배당';
+                          return (
+                            <div key={d.id ?? i} className='px-2.5 py-2'>
+                              <span className='text-text-tertiary text-xs block'>{label}</span>
+                              <span className='text-foreground font-semibold text-sm'>
+                                {combo || '-'}
+                              </span>
+                              {d.odds != null && (
+                                <span className='text-foreground font-semibold text-xs block'>
+                                  {formatNumber(d.odds)}원
+                                </span>
+                              )}
+                            </div>
+                          );
+                        },
+                      )}
+                  </div>
+                </div>
+              )}
+              </>
+              )}
+            </section>
+          )}
+
+          {/* ── AI prediction ── */}
+          <section>
+            {displayPrediction ? (
+              <PredictionFullView
+                prediction={displayPrediction}
+                list={list}
+                selectedPredictionId={selectedPredictionId}
+                setSelectedPredictionId={setSelectedPredictionId}
+                entries={entries}
+                availableTickets={availableTickets}
+                useTicketMutation={useTicketMutation}
+                raceId={id as string}
+                lastUsedAt={lastUsedTicket?.usedAt ?? null}
+                isRaceCompleted={isRaceCompleted}
+              />
+            ) : isRaceCompleted ? (
+              <div className='rounded-md border border-stone-200 bg-stone-50 p-4 text-center'>
+                <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2 mx-auto'>
+                  <Icon name='Target' size={20} className='text-stone-400' />
+                </div>
+                <p className='text-text-secondary text-sm'>이 경주에 대한 AI 예측이 없습니다.</p>
+              </div>
+            ) : (
+              <PredictionLockedView
+                predictionPreview={predictionPreview}
+                isLoggedIn={isLoggedIn}
+                availableTickets={availableTickets}
+                useTicketMutation={useTicketMutation}
+                raceId={id as string}
+              />
+            )}
+          </section>
+
+          {/* ── Entries ── */}
+          {showEntriesSection && (
+            <section>
+              <div className='flex items-center gap-1.5 mb-2'>
+                <Icon name='ClipboardList' size={15} className='text-text-secondary' />
+                <span className='text-sm font-bold text-foreground'>출전마</span>
+                <span className='text-xs text-text-tertiary'>{displayEntries.length}두</span>
+              </div>
+              {entries.length > 0 ? (
+                <HorseEntryTable
+                  entries={entries}
+                  onSelectHorse={showPickPanel ? handleSelectHorse : undefined}
+                  isSelected={isHorseSelected}
+                />
+              ) : displayEntries.length > 0 ? (
+                <div className='space-y-1'>
+                  {displayEntries.map((e, i) => {
+                    const no = e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
+                    return (
+                      <div
+                        key={e.hrNo ?? i}
+                        className='flex items-center gap-3 px-3 py-2 text-sm rounded-lg bg-stone-50/60'
+                      >
+                        {no && (
+                          <span className='font-bold text-stone-600 w-7 text-center'>{no}번</span>
+                        )}
+                        <span className='text-foreground font-medium flex-1 truncate'>
+                          {e.hrName}
+                        </span>
+                        {e.jkName && <span className='text-text-secondary'>{e.jkName}</span>}
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className='rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center'>
+                  <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
+                  <button
+                    type='button'
+                    onClick={() => refetchRace()}
+                    className='btn-secondary mt-3 text-sm px-3 py-1.5'
+                  >
+                    다시 시도
+                  </button>
+                </div>
+              )}
+            </section>
+          )}
+
+          {/* ── Jockey·horse integrated analysis ── */}
+          <section>
+            <div className='flex items-center gap-1.5 mb-2'>
+              <Icon name='BarChart2' size={15} className='text-text-secondary' />
+              <span className='text-sm font-bold text-foreground'>기수·말 통합 분석</span>
             </div>
-          ) : (
-            <div className='rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center'>
-              <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
+            {!showJockeyAnalysis ? (
               <button
                 type='button'
-                onClick={() => refetchRace()}
-                className='btn-secondary mt-3 text-sm px-3 py-1.5'
+                onClick={() => setShowJockeyAnalysis(true)}
+                className='btn-secondary w-full sm:w-auto px-4 py-2 text-sm'
               >
-                다시 시도
+                분석 보기
               </button>
-            </div>
-          )}
-        </section>
-      )}
-
-      {/* ── Jockey·horse integrated analysis ── */}
-      <section>
-        <div className='flex items-center gap-1.5 mb-2'>
-          <Icon name='BarChart2' size={15} className='text-text-secondary' />
-          <span className='text-sm font-bold text-foreground'>기수·말 통합 분석</span>
-        </div>
-        {!showJockeyAnalysis ? (
-          <button type='button' onClick={() => setShowJockeyAnalysis(true)} className='btn-secondary w-full sm:w-auto px-4 py-2 text-sm'>
-            분석 보기
-          </button>
-        ) : jockeyLoading ? (
-          <Card className='py-6'><LoadingSpinner size={22} label='분석 중...' /></Card>
-        ) : jockeyError ? (
-          <Card className='py-4'>
-            <p className='text-text-secondary text-sm'>분석 정보를 확인할 수 없습니다.</p>
-            <button type='button' onClick={() => refetchJockey()} className='btn-secondary mt-2 text-sm px-3 py-1.5'>다시 시도</button>
-          </Card>
-        ) : jockeyAnalysis?.entriesWithScores?.length ? (
-          <Card className='space-y-2'>
-            {jockeyAnalysis.weightRatio && (
-              <p className='text-text-secondary text-sm'>
-                말 {Math.round(jockeyAnalysis.weightRatio.horse * 100)}% · 기수 {Math.round(jockeyAnalysis.weightRatio.jockey * 100)}%
-              </p>
-            )}
-            <div className='space-y-1'>
-              {jockeyAnalysis.entriesWithScores.slice(0, 10).map((e: { hrNo: string; hrName: string; jkName?: string; chulNo?: string; combinedScore?: number }) => {
-                const no = e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
-                return (
-                  <div key={e.hrNo} className='flex items-center justify-between py-1.5 border-b border-border last:border-0 text-sm'>
-                    <span className='text-foreground font-medium'>{no ? `${no}번 ` : ''}{e.hrName} <span className='text-text-secondary font-normal'>({e.jkName})</span></span>
-                    <span className='text-stone-700 font-bold text-base'>{Math.round(e.combinedScore ?? 0)}</span>
+            ) : jockeyLoading ? (
+              <Card className='py-6'>
+                <LoadingSpinner size={22} label='분석 중...' />
+              </Card>
+            ) : jockeyError ? (
+              <Card className='py-4'>
+                <p className='text-text-secondary text-sm'>분석 정보를 확인할 수 없습니다.</p>
+                <button
+                  type='button'
+                  onClick={() => refetchJockey()}
+                  className='btn-secondary mt-2 text-sm px-3 py-1.5'
+                >
+                  다시 시도
+                </button>
+              </Card>
+            ) : jockeyAnalysis?.entriesWithScores?.length ? (
+              <Card className='space-y-2'>
+                {jockeyAnalysis.weightRatio && (
+                  <p className='text-text-secondary text-sm'>
+                    말 {Math.round(jockeyAnalysis.weightRatio.horse * 100)}% · 기수{' '}
+                    {Math.round(jockeyAnalysis.weightRatio.jockey * 100)}%
+                  </p>
+                )}
+                <div className='space-y-1'>
+                  {jockeyAnalysis.entriesWithScores
+                    .slice(0, 10)
+                    .map(
+                      (e: {
+                        hrNo: string;
+                        hrName: string;
+                        jkName?: string;
+                        chulNo?: string;
+                        combinedScore?: number;
+                      }) => {
+                        const no = e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
+                        return (
+                          <div
+                            key={e.hrNo}
+                            className='flex items-center justify-between py-1.5 border-b border-border last:border-0 text-sm'
+                          >
+                            <span className='text-foreground font-medium'>
+                              {no ? `${no}번 ` : ''}
+                              {e.hrName}{' '}
+                              <span className='text-text-secondary font-normal'>({e.jkName})</span>
+                            </span>
+                            <span className='text-stone-700 font-bold text-base'>
+                              {Math.round(e.combinedScore ?? 0)}
+                            </span>
+                          </div>
+                        );
+                      },
+                    )}
+                </div>
+                {jockeyAnalysis.topPickByJockey && (
+                  <div className='pt-2 border-t border-border'>
+                    <p className='text-text-secondary text-xs mb-0.5'>기수 점수 1위</p>
+                    <p className='text-stone-700 font-bold text-sm'>
+                      {jockeyAnalysis.topPickByJockey.hrName} ·{' '}
+                      {jockeyAnalysis.topPickByJockey.jkName}
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-            {jockeyAnalysis.topPickByJockey && (
-              <div className='pt-2 border-t border-border'>
-                <p className='text-text-secondary text-xs mb-0.5'>기수 점수 1위</p>
-                <p className='text-stone-700 font-bold text-sm'>
-                  {jockeyAnalysis.topPickByJockey.hrName} · {jockeyAnalysis.topPickByJockey.jkName}
-                </p>
-              </div>
+                )}
+              </Card>
+            ) : (
+              <p className='text-text-secondary text-sm'>분석 결과가 없습니다.</p>
             )}
-          </Card>
-        ) : (
-          <p className='text-text-secondary text-sm'>분석 결과가 없습니다.</p>
-        )}
-      </section>
-
+          </section>
         </div>
 
         {/* Desktop sidebar */}
@@ -632,11 +800,20 @@ interface PredictionFullViewProps {
   useTicketMutation: TicketMutationLike;
   raceId: string;
   lastUsedAt: string | null;
+  isRaceCompleted?: boolean;
 }
 
 function PredictionFullView({
-  prediction, list, selectedPredictionId, setSelectedPredictionId,
-  entries, availableTickets, useTicketMutation, raceId, lastUsedAt,
+  prediction,
+  list,
+  selectedPredictionId,
+  setSelectedPredictionId,
+  entries,
+  availableTickets,
+  useTicketMutation,
+  raceId,
+  lastUsedAt,
+  isRaceCompleted,
 }: PredictionFullViewProps) {
   const cooldownRemaining = useCooldown(lastUsedAt);
   const isCoolingDown = cooldownRemaining > 0;
@@ -648,11 +825,9 @@ function PredictionFullView({
         <div className='flex items-center gap-1.5'>
           <Icon name='Target' size={15} className='text-stone-500' />
           <span className='text-sm font-bold text-foreground'>AI 예측</span>
-          {list.length > 1 && (
-            <span className='text-text-tertiary text-xs'>({list.length}건)</span>
-          )}
+          {list.length > 1 && <span className='text-text-tertiary text-xs'>({list.length}건)</span>}
         </div>
-        {availableTickets > 0 && (
+        {!isRaceCompleted && availableTickets > 0 && (
           <button
             type='button'
             onClick={() => {
@@ -687,12 +862,15 @@ function PredictionFullView({
         <div className='flex gap-1.5 overflow-x-auto pb-1'>
           {list.map((p, i) => {
             const pid = Number((p as unknown as { id?: number }).id ?? i);
-            const isActive = pid === (selectedPredictionId ?? Number((list[0] as unknown as { id?: number })?.id));
+            const isActive =
+              pid === (selectedPredictionId ?? Number((list[0] as unknown as { id?: number })?.id));
             const createdAt = (p as unknown as { createdAt?: string }).createdAt;
             let timeStr = '';
             try {
               if (createdAt) timeStr = formatTime(createdAt);
-            } catch { /* */ }
+            } catch {
+              /* */
+            }
             return (
               <button
                 key={pid}
@@ -718,13 +896,14 @@ function PredictionFullView({
       {prediction?.scores?.horseScores?.length ? (
         <>
           {/* 3 types of recommended bets */}
-          {(prediction.scores?.betTypePredictions || prediction.scores?.horseScores?.length) && entries.length > 0 && (
-            <BetTypePredictionsSection
-              betTypePredictions={prediction.scores.betTypePredictions}
-              horseScores={prediction.scores.horseScores}
-              entries={entries}
-            />
-          )}
+          {(prediction.scores?.betTypePredictions || prediction.scores?.horseScores?.length) &&
+            entries.length > 0 && (
+              <BetTypePredictionsSection
+                betTypePredictions={prediction.scores.betTypePredictions}
+                horseScores={prediction.scores.horseScores}
+                entries={entries}
+              />
+            )}
 
           {/* Horse rankings */}
           <div>
@@ -744,16 +923,31 @@ function PredictionFullView({
                 <tbody>
                   {prediction.scores!.horseScores!.map((h, i) => {
                     const no = h.chulNo ?? (h.hrNo && String(h.hrNo).length <= 2 ? h.hrNo : '');
-                    const rankCls = i === 0 ? 'text-foreground font-bold' : i === 1 ? 'text-stone-600 font-bold' : i === 2 ? 'text-stone-500 font-bold' : 'text-text-tertiary';
+                    const rankCls =
+                      i === 0
+                        ? 'text-foreground font-bold'
+                        : i === 1
+                          ? 'text-stone-600 font-bold'
+                          : i === 2
+                            ? 'text-stone-500 font-bold'
+                            : 'text-text-tertiary';
                     return (
                       <tr key={i} className='border-b border-stone-100 last:border-0'>
                         <td className='py-1.5 px-2 text-center'>
                           <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
                         </td>
-                        <td className='py-1.5 px-2 text-center font-semibold text-stone-600'>{no}</td>
+                        <td className='py-1.5 px-2 text-center font-semibold text-stone-600'>
+                          {no}
+                        </td>
                         <td className='py-1.5 px-2'>
-                          <span className='font-medium text-foreground'>{h.hrName ?? h.horseName ?? '-'}</span>
-                          {h.reason && <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>{h.reason}</p>}
+                          <span className='font-medium text-foreground'>
+                            {h.hrName ?? h.horseName ?? '-'}
+                          </span>
+                          {h.reason && (
+                            <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>
+                              {h.reason}
+                            </p>
+                          )}
                         </td>
                         <td className={`py-1.5 px-2 text-right font-bold ${rankCls}`}>
                           {h.score != null ? Math.round(h.score) : '-'}
@@ -798,14 +992,22 @@ interface PredictionLockedViewProps {
 }
 
 function PredictionLockedView({
-  predictionPreview, isLoggedIn, availableTickets, useTicketMutation, raceId,
+  predictionPreview,
+  isLoggedIn,
+  availableTickets,
+  useTicketMutation,
+  raceId,
 }: PredictionLockedViewProps) {
   return (
     <div className='relative overflow-hidden rounded-md border border-stone-200 bg-stone-50'>
       <div className='absolute inset-0 p-3 opacity-15' aria-hidden>
         <div className='space-y-2'>
           {[1, 2, 3].map((i) => (
-            <div key={i} className='h-4 bg-stone-200 rounded w-full' style={{ maxWidth: `${90 - i * 8}%` }} />
+            <div
+              key={i}
+              className='h-4 bg-stone-200 rounded w-full'
+              style={{ maxWidth: `${90 - i * 8}%` }}
+            />
           ))}
         </div>
       </div>
@@ -816,7 +1018,9 @@ function PredictionLockedView({
         </div>
         {predictionPreview?.preview && (
           <div className='mb-3 p-2.5 rounded-md bg-white border border-border max-w-md'>
-            <p className='text-foreground text-sm leading-relaxed line-clamp-2'>{predictionPreview.preview}</p>
+            <p className='text-foreground text-sm leading-relaxed line-clamp-2'>
+              {predictionPreview.preview}
+            </p>
           </div>
         )}
         <p className='text-foreground font-bold text-sm mb-0.5'>AI 예측 분석</p>
@@ -852,12 +1056,16 @@ function PredictionLockedView({
         {isLoggedIn && availableTickets === 0 && (
           <p className='text-text-secondary text-sm'>
             예측권이 없습니다.{' '}
-            <Link href={routes.profile.index} className='text-primary hover:underline font-medium'>충전하기</Link>
+            <Link href={routes.profile.index} className='text-primary hover:underline font-medium'>
+              충전하기
+            </Link>
           </p>
         )}
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm'>
-            <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>로그인</Link>
+            <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>
+              로그인
+            </Link>
             후 예측권으로 AI 분석을 확인하세요.
           </p>
         )}

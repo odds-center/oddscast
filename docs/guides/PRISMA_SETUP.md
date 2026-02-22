@@ -55,7 +55,7 @@ DATABASE_URL="postgresql://user:password@pooler-host:6543/database"
 
 ## 3. .env 설정
 
-`server/.env` 파일 (`.env.example` 복사 후 값 설정):
+`server/.env` 파일 (루트에서 `./scripts/setup-env.sh` 실행으로 생성 또는 직접 작성):
 
 ```env
 # PostgreSQL — Prisma Accelerate 또는 Direct URL
@@ -133,8 +133,7 @@ export default defineConfig({
 
 ```
 server/
-├── .env                 # 환경 변수 (DATABASE_URL 필수)
-├── .env.example         # 예시 템플릿
+├── .env                 # 환경 변수 (./scripts/setup-env.sh 로 생성)
 ├── prisma.config.ts    # Prisma CLI 설정
 ├── prisma/
 │   ├── schema.prisma   # 모델 정의
@@ -167,7 +166,7 @@ server/
 ### DATABASE_URL is not defined
 
 - `.env` 파일이 `server/` 디렉토리에 있는지 확인
-- `cp .env.example .env` 후 값 설정
+- 루트에서 `./scripts/setup-env.sh` 실행 후 값 확인
 
 ### EADDRINUSE: address already in use :::3000
 

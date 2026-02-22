@@ -5,9 +5,9 @@ Next.js 반응형 웹앱 (port 3000)
 ## 빠른 시작
 
 ```bash
-npm install
-cp .env.example .env   # 또는 .env.local
-npm run dev
+pnpm install
+# 루트에서 env 생성: ./scripts/setup-env.sh (webapp/.env 생성)
+pnpm run dev
 ```
 
 **상세 가이드:** [docs/guides/WEBAPP_DEVELOPMENT.md](../docs/guides/WEBAPP_DEVELOPMENT.md)

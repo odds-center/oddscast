@@ -9,7 +9,7 @@ import Layout from '@/components/layout/Layout';
 import Card from '@/components/common/Card';
 import PageLoading from '@/components/common/PageLoading';
 import Button from '@/components/common/Button';
-import { adminRacesApi } from '@/lib/api/admin';
+import { adminRacesApi, adminKraApi, AdminAIApi } from '@/lib/api/admin';
 
 type EditRaceForm = {
   rcName?: string;
@@ -83,6 +83,28 @@ export default function RaceDetailPage() {
     onError: (err: unknown) => {
       const msg = err instanceof Error ? err.message : '수정에 실패했습니다';
       toast.error(msg);
+    },
+  });
+
+  const syncResultsMutation = useMutation({
+    mutationFn: (date: string) => adminKraApi.syncResults(date),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['race', id] });
+      toast.success('경기 결과 적재 요청이 완료되었습니다.');
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : '경기 결과 적재 실패');
+    },
+  });
+
+  const generatePredictionMutation = useMutation({
+    mutationFn: (raceId: number) => AdminAIApi.generatePrediction(raceId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['race', id] });
+      toast.success('AI 예측 생성이 완료되었습니다.');
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : '예측 생성 실패');
     },
   });
 
@@ -196,6 +218,38 @@ export default function RaceDetailPage() {
               >
                 출전표 수동 동기화 →
               </Link>
+            </Card>
+
+            <Card
+              title='수동 적재'
+              description='이 경주에 대해 경기 결과 또는 AI 예측을 수동으로 적재합니다.'
+              className='lg:col-span-2'
+            >
+              <div className='flex flex-wrap gap-3'>
+                <Button
+                  variant='secondary'
+                  onClick={() =>
+                    syncResultsMutation.mutate(
+                      (race.rcDate || '').replace(/-/g, '').slice(0, 8) || undefined
+                    )
+                  }
+                  disabled={syncResultsMutation.isPending || !race.rcDate}
+                  isLoading={syncResultsMutation.isPending}
+                >
+                  {syncResultsMutation.isPending ? '적재 중...' : '경기 결과 적재'}
+                </Button>
+                <Button
+                  variant='secondary'
+                  onClick={() => generatePredictionMutation.mutate(race.id)}
+                  disabled={generatePredictionMutation.isPending}
+                  isLoading={generatePredictionMutation.isPending}
+                >
+                  {generatePredictionMutation.isPending ? '생성 중...' : '예측 결과 적재'}
+                </Button>
+              </div>
+              <p className='mt-2 text-xs text-gray-500'>
+                경기 결과 적재: 선택일(경주일) KRA 결과 동기화. 예측 결과 적재: 해당 경주 AI 예측 생성 (수 분 소요 가능).
+              </p>
             </Card>
           </div>
 

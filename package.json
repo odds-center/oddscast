@@ -10,11 +10,11 @@
     "setup-env:interactive": "node scripts/setup-env.mjs --interactive",
     "dev:server": "pnpm --filter server dev",
     "dev:webapp": "pnpm --filter webapp dev",
-    "dev:admin": "pnpm --filter goldenrace-admin dev",
+    "dev:admin": "pnpm --filter oddscast-admin dev",
     "build": "pnpm run build:server && pnpm run build:webapp && pnpm run build:admin",
     "build:server": "pnpm --filter server build",
     "build:webapp": "pnpm --filter webapp build",
-    "build:admin": "pnpm --filter goldenrace-admin build"
+    "build:admin": "pnpm --filter oddscast-admin build"
   },
   "description": "Golden Race monorepo — pnpm 워크스페이스"
 }

@@ -364,6 +364,16 @@ export class AdminAIApi {
       throw handleApiError(error);
     }
   }
+
+  /** 해당 경주에 대해 AI 예측 수동 생성 (Admin 전용) */
+  static async generatePrediction(raceId: string | number): Promise<unknown> {
+    try {
+      const response = await axiosInstance.post(`/predictions/generate/${raceId}`, {}, { timeout: 120_000 });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 }
 
 /**

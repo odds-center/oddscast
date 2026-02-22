@@ -1,16 +1,10 @@
 #!/usr/bin/env bash
 # ============================================
-# Golden Race — env 파일 설정 스크립트
+# OddsCast — env 파일 설정 스크립트
 # ============================================
 # 사용법:
-#   ./scripts/setup-env.sh           — .env 없을 때만 example → .env 복사
-#   ./scripts/setup-env.sh --force  — 기존 .env 무시하고 example 기준으로 복사
-#   ./scripts/setup-env.sh --generate — JWT_SECRET 자동 생성 후 server/.env 반영
-#   ./scripts/setup-env.sh --interactive — 대화형으로 주요 값 입력 (Node 스크립트 호출)
-#
-# 대화형/생성 기능은 Node 스크립트 사용:
-#   node scripts/setup-env.mjs --interactive
-#   node scripts/setup-env.mjs --generate
+#   ./scripts/setup-env.sh          — .env 파일 생성 (이미 있으면 skip)
+#   ./scripts/setup-env.sh --force  — 기존 .env 덮어쓰기
 # ============================================
 
 set -e
@@ -18,60 +12,116 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_ROOT"
 
 FORCE=false
-GENERATE=false
-INTERACTIVE=false
 for arg in "$@"; do
   case "$arg" in
     --force|-f) FORCE=true ;;
-    --generate|-g) GENERATE=true ;;
-    --interactive|-i) INTERACTIVE=true ;;
   esac
 done
 
-# 대화형은 Node 스크립트로 위임
-if [[ "$INTERACTIVE" == "true" ]]; then
-  exec node "$REPO_ROOT/scripts/setup-env.mjs" --interactive
-fi
-
-copy_if_missing() {
-  local src="$1"
-  local dst="$2"
-  if [[ ! -f "$src" ]]; then
-    echo "[skip] $src 없음"
-    return
-  fi
+write_env() {
+  local dst="$1"
+  local content="$2"
   if [[ -f "$dst" && "$FORCE" != "true" ]]; then
     echo "[skip] 이미 존재: $dst"
     return
   fi
-  cp "$src" "$dst"
-  echo "[ok] $src → $dst"
+  echo "$content" > "$dst"
+  echo "[ok] 생성: $dst"
 }
 
-echo "=== Golden Race env 설정 ==="
+echo "=== OddsCast env 설정 ==="
 
-copy_if_missing "server/.env.example" "server/.env"
-copy_if_missing "webapp/.env.example" "webapp/.env.local"
-copy_if_missing "admin/.env.example" "admin/.env.local"
-copy_if_missing "mobile/.env.example" "mobile/.env"
+# --- server/.env ---
+write_env "server/.env" '# ============================================
+# OddsCast Server 환경 변수
+# ============================================
 
-if [[ "$GENERATE" == "true" ]]; then
-  if [[ -f "server/.env" ]]; then
+# PostgreSQL 연결 문자열 (Prisma)
+DATABASE_URL="prisma+postgres://accelerate.prisma-data.net/?api_key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqd3RfaWQiOjEsInNlY3VyZV9rZXkiOiJza19wS0FUQzVJdWJUbHBsTExVUGIzNGEiLCJhcGlfa2V5IjoiMDFLSEFLMTMxQjVFU1ZZNjdZMDEwVEc4UDIiLCJ0ZW5hbnRfaWQiOiI5MDVhNTVhOWFjOTlmMmVlZTg1YWVkNmFhMmU1MWVhNmViYTlhNDk0YTBhNzNiMjkxMzM1NjE1ZWUxMDkxODE4IiwiaW50ZXJuYWxfc2VjcmV0IjoiODM4MjY1ZGEtZGU4Yi00MmVjLWE3Y2QtNmFjYmFiZWYzMTEzIn0.zn9cWVQU-f911hHILdC72v6NJ7B7B-ux3AKkZVQxkZE"
+
+# 서버 포트
+PORT=3001
+
+# Google OAuth (구글 로그인)
+GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+
+# Google Gemini API (AI 예측)
+GEMINI_API_KEY=AIzaSyC69L87vbMM4wTkSsE41smOGsWvrSglYU0
+
+# JWT 시크릿 (토큰 서명용)
+JWT_SECRET=your-jwt-secret-at-least-32-chars
+
+# Redis (캐시 — 선택, 미설정 시 인메모리 캐시 사용)
+# REDIS_URL=redis://localhost:6379
+
+# KRA 공공데이터 API (경마 출전표, 결과 등) — 인코딩된 키 사용
+KRA_SERVICE_KEY=yyRDa%2FaXc9SsDdY67IqkdXJmZgZXOzsKqnf%2BR%2FSZjR6iAxYLzKiq%2BgXTmdUj%2FFe%2BFtEsMXnMYrLaiX6PZ%2FemsQ%3D%3D'
+
+# --- webapp/.env ---
+write_env "webapp/.env" '# ============================================
+# OddsCast WebApp 환경 변수
+# ============================================
+
+# NestJS API 서버 URL (base만, /api는 코드에서 붙음)
+NEXT_PUBLIC_API_URL=http://localhost:3001/api
+
+# WebApp URL (모바일 WebView에서 사용)
+NEXT_PUBLIC_WEBAPP_URL=http://localhost:3000
+
+# Google OAuth Web Client ID (구글 로그인, Server와 동일한 Web Client ID)
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+
+# Google Analytics (선택)
+# NEXT_PUBLIC_GA_MEASUREMENT_ID=G-XXXXXXXXXX'
+
+# --- admin/.env ---
+write_env "admin/.env" '# ============================================
+# OddsCast Admin 환경 변수
+# ============================================
+
+# Admin 전용 API Base URL (NestJS /api/admin prefix)
+NEXT_PUBLIC_ADMIN_API_URL=http://localhost:3001/api/admin
+
+# rewrite용 (next.config.js) - 미설정 시 localhost:3001/api 사용
+# NEXT_PUBLIC_API_URL=http://localhost:3001/api
+
+# API 타임아웃 ms (선택, 기본 30000)
+# NEXT_PUBLIC_ADMIN_API_TIMEOUT=30000'
+
+# --- mobile/.env ---
+write_env "mobile/.env" '# ============================================
+# OddsCast Mobile (Expo) 환경 변수
+# ============================================
+
+# Google OAuth — Web Client ID (GSI / 서버 idToken 검증용)
+EXPO_PUBLIC_WEB_CLIENT_ID=your-google-web-client-id.apps.googleusercontent.com
+
+# Google OAuth — iOS Client ID (Expo/Google Sign-In)
+EXPO_PUBLIC_IOS_CLIENT_ID=your-google-ios-client-id.apps.googleusercontent.com
+
+# Google OAuth — Android Client ID
+EXPO_PUBLIC_ANDROID_CLIENT_ID=your-google-android-client-id.apps.googleusercontent.com
+
+# API 서버 (푸시 등록 등) — prod 배포 시 설정
+# EXPO_PUBLIC_API_URL=https://your-api-domain.com/api
+
+# WebApp URL (prod WebView 로드) — 미설정 시 기본값 사용
+# EXPO_PUBLIC_WEBAPP_URL=https://oddscast-webapp.vercel.app'
+
+# JWT_SECRET 자동 생성 (placeholder 남아있으면)
+if [[ -f "server/.env" ]]; then
+  if grep -q "^JWT_SECRET=your-jwt-secret" "server/.env"; then
     SECRET=$(openssl rand -base64 32 2>/dev/null || head -c 32 /dev/urandom | base64)
-    if command -v sed &>/dev/null; then
-      if grep -q "^JWT_SECRET=" "server/.env"; then
-        sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=\"$SECRET\"|" "server/.env"
-      else
-        echo "JWT_SECRET=\"$SECRET\"" >> "server/.env"
-      fi
-      echo "[ok] server/.env JWT_SECRET 생성: ${SECRET:0:8}..."
-    else
-      echo "[warn] sed 없음. node scripts/setup-env.mjs --generate 사용하세요."
-    fi
-  else
-    echo "[warn] server/.env 없음. 먼저 복사 후 --generate 실행하세요."
+    sed -i.bak "s|^JWT_SECRET=.*|JWT_SECRET=\"$SECRET\"|" "server/.env"
+    rm -f "server/.env.bak"
+    echo "[ok] server/.env JWT_SECRET 자동 생성"
   fi
 fi
 
+# prisma generate
+if [[ -f "server/prisma/schema.prisma" ]]; then
+  echo "=== Prisma Client 생성 ==="
+  (cd server && pnpm prisma generate 2>/dev/null) && echo "[ok] Prisma Client 생성 완료" || echo "[warn] Prisma generate 실패 — pnpm install 먼저 실행하세요"
+fi
+
 echo "=== 완료 ==="
-echo "각 디렉터리의 .env / .env.local 파일을 열어 실제 값(DATABASE_URL, API 키 등)으로 수정하세요."

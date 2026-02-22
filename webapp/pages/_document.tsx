@@ -4,6 +4,8 @@ export default function Document() {
   return (
     <Html lang='ko' className='overflow-x-hidden'>
       <Head>
+        <link rel='icon' type='image/png' href='/oddscast-logo.png' />
+        <link rel='apple-touch-icon' href='/oddscast-logo.png' />
         <link rel='preconnect' href='https://fonts.googleapis.com' />
         <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
         <link

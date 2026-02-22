@@ -51,7 +51,7 @@ admin/
 
 ```bash
 pnpm install
-cp .env.example .env.local
+# 루트에서 env 생성: ./scripts/setup-env.sh (admin/.env 생성)
 pnpm dev
 # → http://localhost:3002
 ```

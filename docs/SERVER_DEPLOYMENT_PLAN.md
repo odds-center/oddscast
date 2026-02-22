@@ -171,9 +171,8 @@ cd shared && pnpm build && cd ..
 
 # Server setup
 cd server
-cp .env.example .env
-# Edit .env with production values:
-# DATABASE_URL, JWT_SECRET, GEMINI_API_KEY, KRA_SERVICE_KEY, etc.
+# Create .env (run from repo root: ./scripts/setup-env.sh, or copy from secure store)
+# Set production values: DATABASE_URL, JWT_SECRET, GEMINI_API_KEY, KRA_SERVICE_KEY, etc.
 
 # Generate Prisma client + build
 pnpm build

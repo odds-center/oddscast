@@ -70,4 +70,60 @@ export class PredictionsScheduler {
     }
     this.logger.log(`[Cron] Done: ${ok} ok, ${fail} fail`);
   }
+
+  /**
+   * Generate predictions for COMPLETED races that have results but no COMPLETED prediction.
+   * Run after results sync (e.g. 18:30) so users can see AI analysis on race detail without a ticket.
+   */
+  @Cron('30 18 * * 5,6,0') // Fri, Sat, Sun at 18:30 KST
+  async generatePredictionsForCompletedRaces() {
+    const raw = await this.configService.get('ai_config');
+    const config = raw ? JSON.parse(raw) : {};
+    if (config.enableBatchPrediction === false) {
+      this.logger.log(
+        '[Cron] Batch prediction disabled, skipping completed-races batch',
+      );
+      return;
+    }
+    const today = dayjs();
+    const dates: string[] = [];
+    for (let i = 0; i < 7; i++) {
+      dates.push(today.subtract(i, 'day').format('YYYYMMDD'));
+    }
+    const races = await this.prisma.race.findMany({
+      where: {
+        rcDate: { in: dates },
+        status: 'COMPLETED',
+        results: { some: {} },
+        NOT: {
+          predictions: { some: { status: 'COMPLETED' } },
+        },
+      },
+      select: { id: true, rcNo: true, meet: true, rcDate: true },
+    });
+    if (!races.length) {
+      this.logger.log('[Cron] No completed races missing predictions');
+      return;
+    }
+    this.logger.log(
+      `[Cron] Generate predictions for ${races.length} completed race(s)`,
+    );
+    let ok = 0;
+    let fail = 0;
+    for (const race of races) {
+      try {
+        await this.predictionsService.generatePrediction(race.id);
+        ok++;
+        this.logger.log(
+          `[Cron] Completed-race prediction: ${race.meet} R${race.rcNo} (${race.rcDate})`,
+        );
+      } catch (err) {
+        fail++;
+        this.logger.error(
+          `[Cron] Failed ${race.meet} R${race.rcNo}: ${(err as Error).message}`,
+        );
+      }
+    }
+    this.logger.log(`[Cron] Completed-race batch: ${ok} ok, ${fail} fail`);
+  }
 }

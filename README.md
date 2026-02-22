@@ -44,15 +44,15 @@ goldenrace/
 # 루트에서 의존성 설치
 pnpm install
 
-# Prisma Client 생성 (server 빌드 시 자동 포함)
-cd server && npx prisma generate && cd ..
+# env 파일 생성 (server, webapp, admin, mobile 각 .env) + Prisma Client 생성
+./scripts/setup-env.sh
+# 덮어쓰기: ./scripts/setup-env.sh --force
 ```
 
 ### 1. Server (NestJS)
 
 ```bash
 cd server
-cp .env.example .env  # DATABASE_URL, PORT=3001, KRA_SERVICE_KEY 등 설정
 pnpm run db:init     # 스키마 반영 + seed.sql 초기 데이터
 pnpm run dev
 # → http://localhost:3001

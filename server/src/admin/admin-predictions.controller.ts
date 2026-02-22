@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -49,5 +49,11 @@ export class AdminPredictionsController {
   @ApiOperation({ summary: '[Admin] AI 호출 비용' })
   getCost() {
     return this.predictionsService.getCostStats();
+  }
+
+  @Post('generate/:raceId')
+  @ApiOperation({ summary: '[Admin] 해당 경주 AI 예측 수동 생성' })
+  generateForRace(@Param('raceId', ParseIntPipe) raceId: number) {
+    return this.predictionsService.generatePrediction(raceId);
   }
 }

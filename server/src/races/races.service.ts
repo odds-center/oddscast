@@ -235,7 +235,6 @@ export class RacesService {
       },
       orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
     });
-    if (!results.length) throw new NotFoundException('결과를 찾을 수 없습니다');
     return results;
   }
 

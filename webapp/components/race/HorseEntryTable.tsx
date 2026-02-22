@@ -149,29 +149,29 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
       <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
         <table className='data-table data-table-compact w-full'>
           <thead>
-            <tr className='bg-stone-50 border-b border-border'>
-              <th className='cell-center w-10 py-3'>No</th>
-              <th className='text-left py-3 min-w-[90px]'>마명</th>
-              <th className='text-left py-3'>기수/조교사</th>
-              <th className='cell-center py-3 w-16'>
+            <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+              <th className='cell-center w-10 py-3 font-semibold'>번호</th>
+              <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+              <th className='text-left py-3 font-semibold'>기수/조교사</th>
+              <th className='cell-center py-3 w-16 font-semibold'>
                 <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
               </th>
-              <th className='cell-center py-3 w-16'>
+              <th className='cell-center py-3 w-16 font-semibold'>
                 <Tooltip content='기수 포함 경주 시 짊어지는 무게 (kg)' inline>부담</Tooltip>
               </th>
-              <th className='cell-center py-3 w-16'>
+              <th className='cell-center py-3 w-16 font-semibold'>
                 <Tooltip content='경주 당일 말의 체중. 괄호 안은 전 대비 증감' inline>마체중</Tooltip>
               </th>
-              <th className='cell-center py-3 w-14'>
+              <th className='cell-center py-3 w-14 font-semibold'>
                 <Tooltip content='KRA 능력 지표. 높을수록 경쟁력 우수' inline>레이팅</Tooltip>
               </th>
-              <th className='cell-center py-3 w-20'>
+              <th className='cell-center py-3 w-20 font-semibold'>
                 <Tooltip content='통산 출전 횟수와 1위 횟수' inline>통산</Tooltip>
               </th>
-              <th className='cell-center py-3 w-24'>
+              <th className='cell-center py-3 w-24 font-semibold'>
                 <Tooltip content='최근 5경기 착순 (1위=1, 미입상=0)' inline>최근</Tooltip>
               </th>
-              <th className='text-left py-3 w-16 hidden md:table-cell'>
+              <th className='text-left py-3 w-16 hidden md:table-cell font-semibold'>
                 <Tooltip content='경주 시 말에 장착하는 보조 장비 (차안대, 혀묶개 등)' inline>장구</Tooltip>
               </th>
             </tr>

@@ -6,7 +6,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import { Badge, Card } from '@/components/ui';
+import { Badge } from '@/components/ui';
 import Tooltip from '@/components/ui/Tooltip';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -503,7 +503,7 @@ export default function RaceDetailPage() {
                       <th className='cell-center w-10 py-3 font-semibold'>순위</th>
                       <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                       <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-                      <th className='text-left py-3 font-semibold'>기수</th>
+                      <th className='text-left py-3 w-20 font-semibold'>기수</th>
                       <th className='cell-right py-3 font-semibold'>
                         <Tooltip
                           content='각 말의 완주 시간(분:초). 2등 이하는 1등과의 초 차이를 +/−로 표시.'
@@ -715,9 +715,9 @@ export default function RaceDetailPage() {
                   <table className='data-table data-table-compact w-full min-w-[200px]'>
                     <thead>
                       <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                        <th className='cell-center w-12 py-2.5 font-semibold'>번호</th>
-                        <th className='text-left py-2.5 font-semibold'>마명</th>
-                        <th className='text-left py-2.5 font-semibold'>기수</th>
+                        <th className='cell-center w-10 py-3 font-semibold'>번호</th>
+                        <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+                        <th className='text-left py-3 w-20 font-semibold'>기수</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -748,15 +748,15 @@ export default function RaceDetailPage() {
             </section>
           )}
 
-          {/* ── Jockey·horse integrated analysis (same section/table style as AI 예측) ── */}
+          {/* ── Jockey·horse integrated analysis (same section/table style as 경주 결과·출전마) ── */}
           <section>
-            <div className='flex items-center gap-1.5 mb-1'>
+            <div className='flex items-center gap-1.5 mb-2'>
               <Icon name='BarChart2' size={15} className='text-text-secondary' />
               <span className='text-sm font-bold text-foreground'>기수·말 통합 분석</span>
+              {jockeyAnalysis?.entriesWithScores?.length != null && jockeyAnalysis.entriesWithScores.length > 0 && (
+                <span className='text-xs text-text-tertiary'>{jockeyAnalysis.entriesWithScores.length}두</span>
+              )}
             </div>
-            <p className='text-text-secondary text-xs mb-3'>
-              말 성적·기수 성적을 반영한 통합 점수 <span className='text-text-tertiary'>(참고용)</span>
-            </p>
             {!showJockeyAnalysis ? (
               <button
                 type='button'
@@ -766,11 +766,13 @@ export default function RaceDetailPage() {
                 분석 보기
               </button>
             ) : jockeyLoading ? (
-              <Card className='py-6'>
-                <LoadingSpinner size={22} label='분석 중...' />
-              </Card>
+              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
+                <div className='py-6 flex justify-center'>
+                  <LoadingSpinner size={22} label='분석 중...' />
+                </div>
+              </div>
             ) : jockeyError ? (
-              <Card className='py-4'>
+              <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center'>
                 <p className='text-text-secondary text-sm'>분석 정보를 확인할 수 없습니다.</p>
                 <button
                   type='button'
@@ -779,115 +781,110 @@ export default function RaceDetailPage() {
                 >
                   다시 시도
                 </button>
-              </Card>
+              </div>
             ) : jockeyAnalysis?.entriesWithScores?.length ? (
               <div className='space-y-3'>
                 {jockeyAnalysis.weightRatio && (
                   <p className='text-text-tertiary text-xs'>
                     반영 비율: 말 {Math.round(jockeyAnalysis.weightRatio.horse * 100)}% · 기수{' '}
-                    {Math.round(jockeyAnalysis.weightRatio.jockey * 100)}%
+                    {Math.round(jockeyAnalysis.weightRatio.jockey * 100)}% (참고용)
                   </p>
                 )}
-                <div>
-                  <p className='text-xs text-text-secondary font-semibold mb-1.5'>
-                    통합 순위 <span className='text-text-tertiary font-normal'>(말·기수 점수 반영)</span>
-                  </p>
-                  <div className='rounded-md border border-stone-200 overflow-hidden'>
-                    <table className='w-full text-sm'>
-                      <thead>
-                        <tr className='bg-stone-50 border-b border-stone-200 text-xs text-text-secondary'>
-                          <th className='py-1.5 px-2 w-8 text-center'>순위</th>
-                          <th className='py-1.5 px-2 w-10 text-center'>번호</th>
-                          <th className='py-1.5 px-2 text-left'>마명</th>
-                          <th className='py-1.5 px-2 text-left'>기수</th>
-                          <th className='py-1.5 px-2 text-right w-12'>말점수</th>
-                          <th className='py-1.5 px-2 text-right w-12'>기수점수</th>
-                          <th className='py-1.5 px-2 text-right w-12'>통합</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {jockeyAnalysis.entriesWithScores
-                          .slice(0, 14)
-                          .map(
-                            (
-                              e: {
-                                hrNo: string;
-                                hrName: string;
-                                jkName?: string;
-                                chulNo?: string;
-                                horseScore?: number;
-                                jockeyScore?: number;
-                                combinedScore?: number;
-                              },
-                              i
-                            ) => {
-                              const no =
-                                e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
-                              const rankCls =
-                                i === 0
-                                  ? 'text-foreground font-bold'
-                                  : i === 1
-                                    ? 'text-stone-600 font-bold'
-                                    : i === 2
-                                      ? 'text-stone-500 font-bold'
-                                      : 'text-text-tertiary';
-                              return (
-                                <tr
-                                  key={e.hrNo}
-                                  className='border-b border-stone-100 last:border-0'
-                                >
-                                  <td className='py-1.5 px-2 text-center'>
-                                    <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                                  </td>
-                                  <td className='py-1.5 px-2 text-center font-semibold text-stone-600'>
-                                    {no || '-'}
-                                  </td>
-                                  <td className='py-1.5 px-2 font-medium text-foreground'>
-                                    {e.hrName ?? '-'}
-                                  </td>
-                                  <td className='py-1.5 px-2 text-text-secondary'>
-                                    {e.jkName ?? '-'}
-                                  </td>
-                                  <td className='py-1.5 px-2 text-right text-text-tertiary tabular-nums'>
-                                    {e.horseScore != null ? Math.round(e.horseScore) : '-'}
-                                  </td>
-                                  <td className='py-1.5 px-2 text-right text-text-tertiary tabular-nums'>
-                                    {e.jockeyScore != null ? Math.round(e.jockeyScore) : '-'}
-                                  </td>
-                                  <td className={`py-1.5 px-2 text-right font-bold tabular-nums ${rankCls}`}>
-                                    {e.combinedScore != null ? Math.round(e.combinedScore) : '-'}
-                                  </td>
-                                </tr>
-                              );
+                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+                  <table className='data-table data-table-compact w-full min-w-[320px]'>
+                    <thead>
+                      <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                        <th className='cell-center w-10 py-3 font-semibold'>순위</th>
+                        <th className='cell-center w-10 py-3 font-semibold'>번호</th>
+                        <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+                        <th className='text-left py-3 w-20 font-semibold'>기수</th>
+                        <th className='cell-right py-3 w-14 font-semibold'>말점수</th>
+                        <th className='cell-right py-3 w-14 font-semibold'>기수점수</th>
+                        <th className='cell-right py-3 w-14 font-semibold'>통합</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {jockeyAnalysis.entriesWithScores
+                        .slice(0, 14)
+                        .map(
+                          (
+                            e: {
+                              hrNo: string;
+                              hrName: string;
+                              jkName?: string;
+                              chulNo?: string;
+                              horseScore?: number;
+                              jockeyScore?: number;
+                              combinedScore?: number;
                             },
-                          )}
-                      </tbody>
-                    </table>
-                  </div>
+                            i
+                          ) => {
+                            const no =
+                              e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
+                            const rankCls =
+                              i === 0
+                                ? 'text-foreground font-bold'
+                                : i === 1
+                                  ? 'text-stone-600 font-bold'
+                                  : i === 2
+                                    ? 'text-stone-500 font-bold'
+                                    : 'text-text-tertiary';
+                            return (
+                              <tr
+                                key={e.hrNo}
+                                className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
+                              >
+                                <td className='cell-center py-2.5'>
+                                  <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
+                                </td>
+                                <td className='cell-center py-2.5 font-semibold text-stone-700'>
+                                  {no || '-'}
+                                </td>
+                                <td className='py-2.5 font-medium text-foreground'>
+                                  {e.hrName ?? '-'}
+                                </td>
+                                <td className='py-2.5 text-text-secondary'>
+                                  {e.jkName ?? '-'}
+                                </td>
+                                <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs tabular-nums'>
+                                  {e.horseScore != null ? Math.round(e.horseScore) : '-'}
+                                </td>
+                                <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs tabular-nums'>
+                                  {e.jockeyScore != null ? Math.round(e.jockeyScore) : '-'}
+                                </td>
+                                <td className={`cell-right py-2.5 font-bold font-mono text-xs tabular-nums ${rankCls}`}>
+                                  {e.combinedScore != null ? Math.round(e.combinedScore) : '-'}
+                                </td>
+                              </tr>
+                            );
+                          },
+                        )}
+                    </tbody>
+                  </table>
                 </div>
                 {jockeyAnalysis.topPickByJockey && (
-                  <div>
-                    <p className='text-xs text-text-secondary font-semibold mb-1.5'>
+                  <div className='p-3 rounded-xl border border-border bg-stone-50/50'>
+                    <p className='text-xs text-text-secondary font-semibold mb-1'>
                       기수 점수 1위 추천
                     </p>
-                    <div className='p-3 rounded-md bg-stone-50 border border-stone-200'>
-                      <p className='text-foreground font-medium text-sm'>
-                        {jockeyAnalysis.topPickByJockey.hrName}{' '}
-                        <span className='text-text-secondary font-normal'>
-                          · {jockeyAnalysis.topPickByJockey.jkName}
-                        </span>
+                    <p className='text-foreground font-medium text-sm'>
+                      {jockeyAnalysis.topPickByJockey.hrName}{' '}
+                      <span className='text-text-secondary font-normal'>
+                        · {jockeyAnalysis.topPickByJockey.jkName}
+                      </span>
+                    </p>
+                    {jockeyAnalysis.topPickByJockey.jockeyScore != null && (
+                      <p className='text-text-tertiary text-xs mt-0.5'>
+                        기수 점수 {Math.round(jockeyAnalysis.topPickByJockey.jockeyScore)}
                       </p>
-                      {jockeyAnalysis.topPickByJockey.jockeyScore != null && (
-                        <p className='text-text-tertiary text-xs mt-0.5'>
-                          기수 점수 {Math.round(jockeyAnalysis.topPickByJockey.jockeyScore)}
-                        </p>
-                      )}
-                    </div>
+                    )}
                   </div>
                 )}
               </div>
             ) : (
-              <p className='text-text-secondary text-sm'>분석 결과가 없습니다.</p>
+              <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center'>
+                <p className='text-text-secondary text-sm'>분석 결과가 없습니다.</p>
+              </div>
             )}
           </section>
         </div>

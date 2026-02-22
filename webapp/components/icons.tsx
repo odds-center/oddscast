@@ -49,6 +49,8 @@ import {
   PanelBottom,
   GripVertical,
   Grip,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -102,6 +104,8 @@ export const Icons = {
   PanelBottom,
   GripVertical,
   Grip,
+  Wifi,
+  WifiOff,
 } as const;
 
 export type IconName = keyof typeof Icons;

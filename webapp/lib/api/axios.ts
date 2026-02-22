@@ -1,6 +1,32 @@
-import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 import CONFIG from '../config';
 import { emitUnauthorized } from '@/lib/authEvents';
+
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 1000;
+
+interface RetryableConfig extends InternalAxiosRequestConfig {
+  __retryCount?: number;
+}
+
+function isNetworkError(error: AxiosError): boolean {
+  return (
+    !error.response &&
+    (error.code === 'ERR_NETWORK' ||
+      error.code === 'ECONNABORTED' ||
+      error.message === 'Network Error' ||
+      error.message.includes('timeout'))
+  );
+}
+
+function isRetryableServerError(error: AxiosError): boolean {
+  const status = error.response?.status;
+  return status === 502 || status === 503 || status === 504;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
 export const axiosInstance: AxiosInstance = axios.create({
   baseURL: CONFIG.api.server.baseURL,
@@ -24,13 +50,28 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response Interceptor — 401 logout event (received in authStore)
+// Response Interceptor — auto-retry on network/server errors + 401 logout
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
-  (error) => {
+  async (error: AxiosError) => {
+    const config = error.config as RetryableConfig | undefined;
+    if (!config) return Promise.reject(error);
+
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       emitUnauthorized();
+      return Promise.reject(error);
     }
+
+    const shouldRetry = isNetworkError(error) || isRetryableServerError(error);
+    const retryCount = config.__retryCount ?? 0;
+
+    if (shouldRetry && retryCount < MAX_RETRIES) {
+      config.__retryCount = retryCount + 1;
+      const backoff = RETRY_BASE_DELAY_MS * Math.pow(2, retryCount);
+      await delay(backoff);
+      return axiosInstance(config);
+    }
+
     return Promise.reject(error);
   },
 );

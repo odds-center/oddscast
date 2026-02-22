@@ -1,7 +1,7 @@
 import type { AppProps } from 'next/app';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
-import { QueryClient, QueryClientProvider, HydrationBoundary } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, HydrationBoundary, onlineManager } from '@tanstack/react-query';
 import type { DehydratedState } from '@tanstack/react-query';
 import 'pretendard/dist/web/static/pretendard.css';
 import '@/styles/globals.css';
@@ -11,6 +11,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { FloatingAppBar } from '@/components/Layout';
+import NetworkStatusBanner from '@/components/ui/NetworkStatusBanner';
 
 const MOBILE_BREAKPOINT = 768;
 
@@ -38,13 +39,33 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     return () => router.events.off('routeChangeComplete', handleRouteChange);
   }, [router.asPath, router.events]);
 
+  // Sync onlineManager with browser navigator.onLine
+  useEffect(() => {
+    const setOnline = () => onlineManager.setOnline(true);
+    const setOffline = () => onlineManager.setOnline(false);
+    window.addEventListener('online', setOnline);
+    window.addEventListener('offline', setOffline);
+    return () => {
+      window.removeEventListener('online', setOnline);
+      window.removeEventListener('offline', setOffline);
+    };
+  }, []);
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
         defaultOptions: {
           queries: {
             refetchOnWindowFocus: false,
-            retry: 1,
+            refetchOnReconnect: true,
+            retry: (failureCount, error) => {
+              const axiosErr = error as { code?: string; response?: { status?: number } };
+              const isNetwork = !axiosErr.response || axiosErr.code === 'ERR_NETWORK';
+              const isServerDown = [502, 503, 504].includes(axiosErr.response?.status ?? 0);
+              if (isNetwork || isServerDown) return failureCount < 5;
+              return failureCount < 1;
+            },
+            retryDelay: (attempt) => Math.min(1000 * Math.pow(2, attempt), 30000),
           },
         },
       }),
@@ -86,6 +107,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           <Component {...restPageProps} />
         </HydrationBoundary>
       </QueryClientProvider>
+      {clientMounted && <NetworkStatusBanner />}
       {clientMounted && <FloatingAppBar pathname={pathname} isMobile={isMobile} />}
     </>
   );

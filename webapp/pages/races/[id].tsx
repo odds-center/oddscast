@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui';
 import Tooltip from '@/components/ui/Tooltip';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import RaceHeaderCard from '@/components/race/RaceHeaderCard';
+import RaceHeaderCard, { getGateBgColor } from '@/components/race/RaceHeaderCard';
 import HorseEntryTable from '@/components/race/HorseEntryTable';
 import PredictionSymbol, { scoreToSymbol } from '@/components/race/PredictionSymbol';
 import RaceApi from '@/lib/api/raceApi';
@@ -216,7 +216,6 @@ export default function RaceDetailPage() {
     enabled: !!id,
   });
 
-  const [showJockeyAnalysis, setShowJockeyAnalysis] = useState(false);
   const {
     data: jockeyAnalysis,
     isLoading: jockeyLoading,
@@ -225,7 +224,7 @@ export default function RaceDetailPage() {
   } = useQuery({
     queryKey: ['analysis', 'jockey', id],
     queryFn: () => AnalysisApi.getJockeyAnalysis(id as string),
-    enabled: !!id && showJockeyAnalysis,
+    enabled: !!id,
     retry: false,
   });
 
@@ -565,6 +564,9 @@ export default function RaceDetailPage() {
                             : displayOrdType === 'FALL'
                               ? '낙마'
                               : '기권';
+                        const gateNo = parseInt(String(res.chulNo ?? '0'), 10) || 0;
+                        const gateBg = getGateBgColor(gateNo);
+                        const gateLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(gateBg);
                       return (
                         <tr
                           key={typeof res.id !== 'undefined' ? String(res.id) : `result-${i}`}
@@ -573,9 +575,20 @@ export default function RaceDetailPage() {
                           <td className={`cell-center py-2.5 ${rankCls}`}>
                             {displayOrdType ? '-' : ordStr}
                           </td>
-                          <td className='cell-center py-2.5 font-semibold text-stone-700'>{no}</td>
-                          <td className='py-2.5 font-medium text-foreground'>{res.hrName}</td>
-                          <td className='py-2.5 text-text-secondary'>{res.jkName ?? ''}</td>
+                          <td className='cell-center py-2.5'>
+                            <span
+                              className='inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0 whitespace-nowrap'
+                              style={{
+                                backgroundColor: gateBg,
+                                color: gateLight ? '#171717' : '#fff',
+                                border: gateLight ? '1px solid #e5e7eb' : 'none',
+                              }}
+                            >
+                              {no}
+                            </span>
+                          </td>
+                          <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>{res.hrName}</td>
+                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>{res.jkName ?? ''}</td>
                           <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs'>
                             {record}
                             {row.winOdds != null && ordN === 1 && !displayOrdType && (
@@ -757,15 +770,7 @@ export default function RaceDetailPage() {
                 <span className='text-xs text-text-tertiary'>{jockeyAnalysis.entriesWithScores.length}두</span>
               )}
             </div>
-            {!showJockeyAnalysis ? (
-              <button
-                type='button'
-                onClick={() => setShowJockeyAnalysis(true)}
-                className='btn-secondary w-full sm:w-auto px-4 py-2 text-sm'
-              >
-                분석 보기
-              </button>
-            ) : jockeyLoading ? (
+            {jockeyLoading ? (
               <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
                 <div className='py-6 flex justify-center'>
                   <LoadingSpinner size={22} label='분석 중...' />
@@ -819,8 +824,12 @@ export default function RaceDetailPage() {
                             },
                             i
                           ) => {
+                            const entryChulNo = displayEntries.find((x) => x.hrNo === e.hrNo)?.chulNo;
                             const no =
-                              e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '');
+                              (entryChulNo ?? e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '')) || '-';
+                            const gateNo = parseInt(String(no === '-' ? '0' : no), 10) || 0;
+                            const gateBg = getGateBgColor(gateNo);
+                            const gateLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(gateBg);
                             const rankCls =
                               i === 0
                                 ? 'text-foreground font-bold'
@@ -837,13 +846,22 @@ export default function RaceDetailPage() {
                                 <td className='cell-center py-2.5'>
                                   <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
                                 </td>
-                                <td className='cell-center py-2.5 font-semibold text-stone-700'>
-                                  {no || '-'}
+                                <td className='cell-center py-2.5'>
+                                  <span
+                                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0 whitespace-nowrap'
+                                    style={{
+                                      backgroundColor: gateBg,
+                                      color: gateLight ? '#171717' : '#fff',
+                                      border: gateLight ? '1px solid #e5e7eb' : 'none',
+                                    }}
+                                  >
+                                    {no}
+                                  </span>
                                 </td>
-                                <td className='py-2.5 font-medium text-foreground'>
+                                <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
                                   {e.hrName ?? '-'}
                                 </td>
-                                <td className='py-2.5 text-text-secondary'>
+                                <td className='py-2.5 text-text-secondary whitespace-nowrap'>
                                   {e.jkName ?? '-'}
                                 </td>
                                 <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs tabular-nums'>

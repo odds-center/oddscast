@@ -47,15 +47,17 @@ export default function DatePicker({
         type='button'
         id={id}
         onClick={() => setOpen(!open)}
-        className='inline-flex items-center gap-1.5 px-2.5 py-1.5 h-8 rounded-md text-sm border border-border bg-white text-foreground hover:border-stone-300 hover:bg-stone-50 transition-colors min-w-[120px]'
+        aria-expanded={open}
+        aria-haspopup='dialog'
+        className='inline-flex items-center gap-2 pl-3 pr-3 py-2 h-9 rounded-lg text-sm border border-stone-200 bg-white text-foreground hover:border-stone-300 hover:bg-stone-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-1 transition-[border-color,background-color,box-shadow] min-w-[128px] touch-manipulation'
       >
-        <Icon name='Calendar' size={14} className='text-text-tertiary shrink-0' />
+        <Icon name='Calendar' size={15} className='text-text-tertiary shrink-0' />
         <span className={displayText ? 'text-foreground' : 'text-text-tertiary'}>
           {displayText || placeholder}
         </span>
       </button>
       {open && (
-        <div className='absolute top-full mt-1 left-0 z-50 bg-white rounded-lg border border-border shadow-lg p-2'>
+        <div className='absolute top-full mt-1.5 left-0 z-50 bg-white rounded-xl border border-stone-200 shadow-md shadow-stone-200/50 p-3'>
           <DayPicker
             mode='single'
             locale={ko}
@@ -82,7 +84,7 @@ export default function DatePicker({
             <button
               type='button'
               onClick={() => { onChange(''); setOpen(false); }}
-              className='w-full text-center text-xs text-text-secondary hover:text-foreground py-1 mt-1 border-t border-border'
+              className='w-full text-center text-xs text-text-secondary hover:text-foreground py-2 mt-2 pt-2 border-t border-stone-100 rounded-b-lg transition-colors'
             >
               날짜 초기화
             </button>

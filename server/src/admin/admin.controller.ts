@@ -303,7 +303,7 @@ export class AdminController {
     return this.getSystemConfig();
   }
 
-  /** 경주당 비용 (원) - Admin ai-config와 동일 */
+  /** Cost per race (KRW) — same as Admin ai-config */
   private static readonly MODEL_COST: Record<string, number> = {
     'gemini-2.5-flash': 5,
     'gemini-2.0-flash-exp': 5,
@@ -354,7 +354,7 @@ export class AdminController {
     };
   }
 
-  // --- Bets (Admin 전체 조회) ---
+  // --- Bets (Admin full list) ---
 
   @Get('bets')
   @ApiOperation({ summary: '[Admin] 마권 목록 조회' })
@@ -536,7 +536,7 @@ export class AdminController {
     const totalBets = {
       count: totalBetsAgg._count,
       amount: totalBetsAgg._sum?.betAmount ?? 0,
-      winAmount: 0, // actualWin sum 계산 필요
+      winAmount: 0, // actualWin sum calculation needed
     };
 
     const winAmountAgg = await this.prisma.bet.aggregate({
@@ -572,7 +572,7 @@ export class AdminController {
     const singlePurchaseCount = singleAgg._count?.id ?? 0;
 
     const totalRevenue = monthlyRevenue + singleRevenue;
-    const monthlyCost = 0; // AI/인프라 비용은 추후 연동
+    const monthlyCost = 0; // AI/infra costs to be integrated later
     const monthlyProfit = totalRevenue - monthlyCost;
     const margin = totalRevenue > 0 ? (monthlyProfit / totalRevenue) * 100 : 0;
 

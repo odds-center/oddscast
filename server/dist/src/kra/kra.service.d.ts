@@ -23,6 +23,7 @@ export declare class KraService {
     syncRaceDayMorning(): Promise<void>;
     syncRealtimeResults(): Promise<void>;
     syncPreviousDayResults(): Promise<void>;
+    syncOrphanedRaceResults(): Promise<void>;
     private formatYyyyMmDd;
     private normalizeToYyyyMmDd;
     private getTodayDateString;
@@ -58,6 +59,7 @@ export declare class KraService {
         processed: number;
         failed: string[];
         totalResults: number;
+        totalRaces: number;
     } | undefined>;
     private getRaceDateRange;
     fetchRacePlanSchedule(date: string): Promise<{

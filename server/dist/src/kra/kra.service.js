@@ -148,6 +148,39 @@ let KraService = KraService_1 = class KraService {
         this.logger.log(`Running Previous Day Result Sync: ${dateStr}`);
         await this.fetchRaceResults(dateStr);
     }
+    async syncOrphanedRaceResults() {
+        if (!this.ensureServiceKey())
+            return;
+        this.logger.log('Running orphaned race results check (last 14 days)');
+        const today = (0, dayjs_1.default)();
+        const twoWeeksAgo = today.subtract(14, 'day');
+        const todayStr = this.formatYyyyMmDd(today);
+        const fromStr = this.formatYyyyMmDd(twoWeeksAgo);
+        const orphanedRaces = await this.prisma.race.findMany({
+            where: {
+                rcDate: { gte: fromStr, lt: todayStr },
+                status: 'COMPLETED',
+                results: { none: {} },
+            },
+            select: { id: true, rcDate: true, meet: true, rcNo: true },
+            orderBy: { rcDate: 'asc' },
+        });
+        if (orphanedRaces.length === 0) {
+            this.logger.log('No orphaned races found — data is consistent');
+            return;
+        }
+        const dates = [...new Set(orphanedRaces.map((r) => r.rcDate))];
+        this.logger.log(`Found ${orphanedRaces.length} races without results across ${dates.length} dates. Backfilling...`);
+        for (const date of dates) {
+            try {
+                await this.fetchRaceResults(date, true);
+                await this.delay(500);
+            }
+            catch (err) {
+                this.logger.warn(`[syncOrphanedRaceResults] Failed for ${date}`, err);
+            }
+        }
+    }
     formatYyyyMmDd(d) {
         return d.format('YYYYMMDD');
     }
@@ -459,9 +492,14 @@ let KraService = KraService_1 = class KraService {
         const start = this.normalizeToYyyyMmDd(dateFrom);
         const end = this.normalizeToYyyyMmDd(dateTo);
         const dates = this.getRaceDateRange(start, end);
-        const summary = { processed: 0, failed: [], totalResults: 0 };
+        const summary = { processed: 0, failed: [], totalResults: 0, totalRaces: 0 };
         for (const date of dates) {
             try {
+                const planRes = await this.fetchRacePlanSchedule(date);
+                summary.totalRaces += planRes.races ?? 0;
+                await this.delay(200);
+                await this.syncEntrySheet(date);
+                await this.delay(200);
                 const result = await this.fetchRaceResults(date, true);
                 summary.processed++;
                 summary.totalResults +=
@@ -469,7 +507,7 @@ let KraService = KraService_1 = class KraService {
                         ? result.totalResults
                         : 0;
                 await this.fetchTrackInfo(date);
-                await this.delay(500);
+                await this.delay(300);
             }
             catch (err) {
                 summary.failed.push(date);
@@ -483,10 +521,11 @@ let KraService = KraService_1 = class KraService {
             this.logger.warn('Jockey sync after historical failed', e);
         }
         return {
-            message: `Historical data load complete`,
+            message: `Historical backfill complete: ${summary.processed} days, ${summary.totalRaces} races, ${summary.totalResults} results`,
             processed: summary.processed,
             failed: summary.failed,
             totalResults: summary.totalResults,
+            totalRaces: summary.totalRaces,
         };
     }
     getRaceDateRange(from, to) {
@@ -2133,6 +2172,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", Promise)
 ], KraService.prototype, "syncPreviousDayResults", null);
+__decorate([
+    (0, schedule_1.Cron)('0 30 5 * * *'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], KraService.prototype, "syncOrphanedRaceResults", null);
 exports.KraService = KraService = KraService_1 = __decorate([
     (0, common_1.Injectable)(),
     __param(4, (0, common_1.Inject)(cache_manager_1.CACHE_MANAGER)),

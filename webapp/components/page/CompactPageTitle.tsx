@@ -19,18 +19,18 @@ export default function CompactPageTitle({
 }: CompactPageTitleProps) {
   return (
     <div
-      className={`flex flex-row items-center gap-1 sm:gap-3 mb-4 sm:mb-5 max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-background/98 max-md:backdrop-blur-sm max-md:border-b max-md:border-border max-md:-mt-[max(1.25rem,env(safe-area-inset-top))] max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:pb-3 max-md:mb-4 ${className}`.trim()}
+      className={`flex flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-5 max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-background/98 max-md:backdrop-blur-sm max-md:border-b max-md:border-border/60 max-md:-mt-[max(1.25rem,env(safe-area-inset-top))] max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:pb-3 max-md:mb-4 ${className}`.trim()}
     >
       {backHref && (
         <Link
           href={backHref}
-          className='flex items-center justify-center w-11 h-11 -ml-1 shrink-0 text-foreground touch-manipulation rounded-xl hover:bg-stone-100 active:bg-stone-200 transition-colors'
-          aria-label='뒤로'
+          className='group flex items-center justify-center w-9 h-9 -ml-0.5 shrink-0 text-stone-500 touch-manipulation rounded-full bg-stone-100/80 hover:bg-stone-200/80 active:bg-stone-200 active:scale-95 transition-all'
+          aria-label='Back'
         >
-          <Icon name='ChevronLeft' size={22} />
+          <Icon name='ChevronLeft' size={18} strokeWidth={2.5} className='group-hover:text-foreground transition-colors' />
         </Link>
       )}
-      <h2 className='text-[17px] sm:text-lg font-bold text-foreground flex-1 min-w-0'>
+      <h2 className='text-[17px] sm:text-lg font-bold text-foreground flex-1 min-w-0 truncate'>
         {title}
       </h2>
     </div>

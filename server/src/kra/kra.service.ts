@@ -148,6 +148,52 @@ export class KraService {
     await this.fetchRaceResults(dateStr);
   }
 
+  /**
+   * 5. Data consistency check (daily 05:30)
+   * Finds past races that have plans but no results (orphaned),
+   * and attempts to backfill their results from KRA API.
+   * Scans the last 14 days to catch any missed results.
+   */
+  @Cron('0 30 5 * * *') // Daily 05:30
+  async syncOrphanedRaceResults() {
+    if (!this.ensureServiceKey()) return;
+    this.logger.log('Running orphaned race results check (last 14 days)');
+
+    const today = dayjs();
+    const twoWeeksAgo = today.subtract(14, 'day');
+    const todayStr = this.formatYyyyMmDd(today);
+    const fromStr = this.formatYyyyMmDd(twoWeeksAgo);
+
+    const orphanedRaces = await this.prisma.race.findMany({
+      where: {
+        rcDate: { gte: fromStr, lt: todayStr },
+        status: 'COMPLETED',
+        results: { none: {} },
+      },
+      select: { id: true, rcDate: true, meet: true, rcNo: true },
+      orderBy: { rcDate: 'asc' },
+    });
+
+    if (orphanedRaces.length === 0) {
+      this.logger.log('No orphaned races found — data is consistent');
+      return;
+    }
+
+    const dates = [...new Set(orphanedRaces.map((r) => r.rcDate))];
+    this.logger.log(
+      `Found ${orphanedRaces.length} races without results across ${dates.length} dates. Backfilling...`,
+    );
+
+    for (const date of dates) {
+      try {
+        await this.fetchRaceResults(date, true);
+        await this.delay(500);
+      } catch (err) {
+        this.logger.warn(`[syncOrphanedRaceResults] Failed for ${date}`, err);
+      }
+    }
+  }
+
   // --- Helper Methods ---
 
   /** Format as YYYYMMDD (local date) */
@@ -557,8 +603,10 @@ export class KraService {
   }
 
   /**
-   * Loads historical horse racing records for a specific period into DB (backup when KRA API is missing)
-   * Race results + track info + jockey totals
+   * Full historical backfill for a date range (Fri/Sat/Sun only).
+   * Runs: race plan → entry sheet → results → track info per date,
+   * then jockey totals at the end. Ensures data consistency between
+   * race plans and results.
    */
   async syncHistoricalBackfill(dateFrom: string, dateTo: string) {
     if (!this.ensureServiceKey()) return;
@@ -568,18 +616,30 @@ export class KraService {
     const start = this.normalizeToYyyyMmDd(dateFrom);
     const end = this.normalizeToYyyyMmDd(dateTo);
     const dates = this.getRaceDateRange(start, end);
-    const summary = { processed: 0, failed: [] as string[], totalResults: 0 };
+    const summary = { processed: 0, failed: [] as string[], totalResults: 0, totalRaces: 0 };
 
     for (const date of dates) {
       try {
+        // 1) Race plan (API72_2) — create Race records first
+        const planRes = await this.fetchRacePlanSchedule(date);
+        summary.totalRaces += planRes.races ?? 0;
+        await this.delay(200);
+
+        // 2) Entry sheet (API26_2) — add horse/jockey entries
+        await this.syncEntrySheet(date);
+        await this.delay(200);
+
+        // 3) Results (API4_3) — fetch results, create if missing
         const result = await this.fetchRaceResults(date, true);
         summary.processed++;
         summary.totalResults +=
           typeof result === 'object' && result && 'totalResults' in result
             ? (result as { totalResults: number }).totalResults
             : 0;
+
+        // 4) Track info
         await this.fetchTrackInfo(date);
-        await this.delay(500);
+        await this.delay(300);
       } catch (err) {
         summary.failed.push(date);
         this.logger.warn(`Historical backfill failed for ${date}`, err);
@@ -593,10 +653,11 @@ export class KraService {
     }
 
     return {
-      message: `Historical data load complete`,
+      message: `Historical backfill complete: ${summary.processed} days, ${summary.totalRaces} races, ${summary.totalResults} results`,
       processed: summary.processed,
       failed: summary.failed,
       totalResults: summary.totalResults,
+      totalRaces: summary.totalRaces,
     };
   }
 

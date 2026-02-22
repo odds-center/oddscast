@@ -79,7 +79,7 @@ export default function TicketHistoryPage() {
         emptyIcon='Ticket'
         emptyTitle={statusFilter === 'all' ? '예측권 이력이 없습니다' : '해당 상태의 이력이 없습니다'}
         emptyDescription={statusFilter === 'all' ? '예측권을 구매하거나 구독하면 이력이 표시됩니다.' : '다른 필터를 선택해 보세요.'}
-        loadingLabel='이력을 불러오는 중...'
+        loadingLabel='이용 내역 준비 중...'
       >
         <div>
           <TabBar<StatusFilter>

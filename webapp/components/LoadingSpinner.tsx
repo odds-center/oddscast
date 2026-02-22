@@ -9,7 +9,7 @@ interface LoadingSpinnerProps {
 export default function LoadingSpinner({
   size = 24,
   className = '',
-  label = '로딩 중...',
+  label = '준비 중...',
 }: LoadingSpinnerProps) {
   return (
     <div className={`flex flex-col items-center justify-center gap-3 text-text-secondary ${className}`}>

@@ -211,9 +211,7 @@ export default function RaceSchedulePage() {
     <Layout title='경마 시행일 | GOLDEN RACE'>
       <CompactPageTitle title='경마 시행일' backHref={routes.home} />
       <p className='text-text-tertiary text-xs mb-3 px-1'>
-        경주가 있는 날을 누르면 해당 일자의 경주 목록으로 이동합니다. 시행일은 공공데이터포털
-        <a href='https://www.data.go.kr/data/15056499/openapi.do' target='_blank' rel='noopener noreferrer' className='text-primary underline ml-1'>한국마사회 경주계획표        </a>
-        API에서 가져옵니다.
+        경주가 있는 날을 누르면 해당 일자의 경주 목록으로 이동합니다. 한국마사회 경주계획표 기준으로 시행일이 표시됩니다.
       </p>
 
       {/* Year selection */}
@@ -266,7 +264,7 @@ export default function RaceSchedulePage() {
             </div>
           )}
           <div className='text-stone-500 pt-1 border-t border-stone-200'>
-            위 시행 기간·경마장별 일수는 동기화된 경주계획표 데이터 기준입니다. 해당 연도가 비어 있으면 관리자에서 연도별 적재를 실행해 주세요.
+            위 시행 기간·경마장별 일수는 한국마사회 경주계획표 기준입니다.
           </div>
         </div>
       </div>
@@ -296,11 +294,11 @@ export default function RaceSchedulePage() {
         error={error as Error | null}
         onRetry={() => refetch()}
         isEmpty={false}
-        loadingLabel='시행일을 불러오는 중...'
+        loadingLabel='시행일 준비 중...'
       >
         {scheduleDates !== undefined && scheduleDates.length === 0 && (
           <div className='mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-sm text-amber-900'>
-            이 연도의 시행일 데이터가 아직 없습니다. 경주가 있는 날은 공공데이터 「한국마사회 경주계획표」 API에서 가져옵니다. 관리자 패널 [KRA 데이터]에서 <strong>연도별 경주계획표 적재</strong>(예: 2026년)를 실행하면 달력에 표시됩니다.
+            {year}년 경마 시행일이 아직 등록되지 않았습니다. 곧 업데이트될 예정이니 잠시 후 다시 확인해 주세요.
           </div>
         )}
         <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4'>

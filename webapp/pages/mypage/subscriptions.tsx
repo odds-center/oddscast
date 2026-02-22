@@ -100,12 +100,12 @@ export default function SubscriptionsPage() {
 
         {isLoading ? (
           <div className='py-16'>
-            <LoadingSpinner size={24} label='구독 플랜을 불러오는 중...' />
+            <LoadingSpinner size={24} label='구독 플랜 준비 중...' />
           </div>
         ) : plansError ? (
           <EmptyState
             icon='AlertCircle'
-            title='플랜을 불러오지 못했습니다'
+            title='구독 플랜을 확인할 수 없습니다'
             description={(plansError as Error)?.message}
             action={
               <button onClick={() => refetchPlans()} className='btn-secondary px-3 py-1.5 text-sm'>

@@ -27,11 +27,11 @@ export default function DataFetchState({
   onRetry,
   isEmpty = false,
   emptyIcon = 'ClipboardList',
-  emptyTitle = '데이터가 없습니다',
+  emptyTitle = '표시할 내용이 없습니다',
   emptyDescription,
   emptyAction,
-  loadingLabel = '불러오는 중...',
-  errorTitle = '데이터를 불러오지 못했습니다',
+  loadingLabel = '준비 중...',
+  errorTitle = '일시적인 오류가 발생했습니다',
   children,
 }: DataFetchStateProps) {
   if (isLoading) {

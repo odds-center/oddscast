@@ -284,10 +284,10 @@ export default function PredictionMatrixPage() {
               onRetry={() => refetch()}
               isEmpty={!matrixData?.raceMatrix?.length}
               emptyIcon='BarChart2'
-              emptyTitle='예상 데이터가 없습니다'
+              emptyTitle='예상 정보가 없습니다'
               emptyDescription='다른 날짜를 선택해보세요.'
-              loadingLabel='예상표를 불러오는 중...'
-              errorTitle='데이터를 불러오지 못했습니다'
+              loadingLabel='예상표 준비 중...'
+              errorTitle='일시적인 오류가 발생했습니다'
             >
               {matrixData && (
                 <div className='space-y-3'>
@@ -358,7 +358,7 @@ export default function PredictionMatrixPage() {
               emptyIcon='Sparkles'
               emptyTitle='코멘트가 없습니다'
               emptyDescription='해당 날짜에 AI 예측 코멘트가 없습니다.'
-              loadingLabel='코멘트를 불러오는 중...'
+              loadingLabel='코멘트 준비 중...'
             >
               {commentaryData?.comments && commentaryData.comments.length > 0 ? (
                 <CommentaryFeed comments={commentaryData.comments} />

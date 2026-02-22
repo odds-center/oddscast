@@ -77,7 +77,7 @@ export default function MatrixTicketPurchasePage() {
           {/* Current holdings */}
           <SectionCard title='보유 현황' icon='Ticket'>
             {balanceLoading ? (
-              <p className='text-stone-400 text-sm'>로딩 중...</p>
+              <p className='text-stone-400 text-sm'>준비 중...</p>
             ) : (
               <div className='flex items-center gap-4'>
                 <div>

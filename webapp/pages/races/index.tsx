@@ -127,8 +127,8 @@ export default function RacesListPage() {
         emptyIcon='Flag'
         emptyTitle='경주가 없습니다'
         emptyDescription='다른 날짜나 조건을 선택해보세요.'
-        loadingLabel='경주 정보를 불러오는 중...'
-        errorTitle='경주 정보를 불러오지 못했습니다'
+        loadingLabel='경주 정보 준비 중...'
+        errorTitle='경주 정보를 확인할 수 없습니다'
       >
         <DataTable
           columns={[

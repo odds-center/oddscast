@@ -86,7 +86,7 @@ export default function NotificationSettingsPage() {
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         {isLoading ? (
         <div className='py-16'>
-          <LoadingSpinner size={28} label='설정을 불러오는 중...' />
+          <LoadingSpinner size={28} label='설정 준비 중...' />
         </div>
       ) : (
         <SectionCard title='알림 유형' icon='Bell' className='mb-6'>

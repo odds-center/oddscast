@@ -158,7 +158,7 @@ export default function PredictionMatrixTable({
           </tbody>
         </table>
         {raceMatrix.length === 0 && (
-          <p className='text-stone-400 text-sm text-center py-8'>예상 데이터가 없습니다</p>
+          <p className='text-stone-400 text-sm text-center py-8'>예상 정보가 없습니다</p>
         )}
       </div>
 

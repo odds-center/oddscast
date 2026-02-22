@@ -84,7 +84,7 @@ export default function NotificationsPage() {
             emptyIcon='Bell'
             emptyTitle='알림이 없습니다'
             emptyDescription='경주 결과, 포인트 알림 등이 여기에 표시됩니다.'
-            loadingLabel='알림을 불러오는 중...'
+            loadingLabel='알림 준비 중...'
           >
             <div className='space-y-3'>
               {notifications.map((n: Notification) => {

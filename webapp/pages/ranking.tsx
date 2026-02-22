@@ -47,9 +47,9 @@ export default function Ranking() {
         onRetry={() => refetch()}
         isEmpty={!data?.length}
         emptyIcon='Medal'
-        emptyTitle='랭킹 데이터가 없습니다'
+        emptyTitle='랭킹 정보가 없습니다'
         emptyDescription='예측 적중 기록이 쌓이면 랭킹이 표시됩니다.'
-        loadingLabel='랭킹을 불러오는 중...'
+        loadingLabel='랭킹 준비 중...'
       >
         <DataTable
           columns={[

@@ -99,7 +99,7 @@ export default function Profile() {
         <DataFetchState
           isLoading={isLoading}
           error={null}
-          loadingLabel='정보를 불러오는 중...'
+          loadingLabel='정보 준비 중...'
         >
           <div className='space-y-5'>
             {/* Greeting + Summary */}

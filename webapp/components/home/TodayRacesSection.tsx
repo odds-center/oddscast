@@ -32,7 +32,7 @@ export default function TodayRacesSection() {
     >
       {isLoading ? (
         <div className='py-6'>
-          <LoadingSpinner size={24} label='로딩 중...' />
+          <LoadingSpinner size={24} label='준비 중...' />
         </div>
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>

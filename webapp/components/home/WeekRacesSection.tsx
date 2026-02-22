@@ -46,7 +46,7 @@ export default function WeekRacesSection() {
       badge={races.length > 0 ? `${races.length}경` : undefined}
     >
       {isLoading ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>로딩 중...</div>
+        <div className='py-4 text-center text-text-secondary text-sm'>준비 중...</div>
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
       ) : (

@@ -260,7 +260,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
       {entries.length === 0 && (
         <div className='rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center'>
           <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
-          <p className='text-text-tertiary text-xs mt-1'>KRA 출전표 적재 후 표시됩니다.</p>
+          <p className='text-text-tertiary text-xs mt-1'>출전마 정보가 아직 등록되지 않았습니다.</p>
         </div>
       )}
     </div>

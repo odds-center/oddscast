@@ -186,9 +186,9 @@ export default function Results() {
         onRetry={() => refetch()}
         isEmpty={!groupedRaces.length}
         emptyIcon='TrendingUp'
-        emptyTitle='결과 데이터가 없습니다'
+        emptyTitle='경주 결과가 없습니다'
         emptyDescription='해당 조건에 맞는 경주 결과가 없습니다.'
-        loadingLabel='결과를 불러오는 중...'
+        loadingLabel='결과 준비 중...'
       >
         {/* Mobile: compact card */}
         <div className='block lg:hidden space-y-2'>

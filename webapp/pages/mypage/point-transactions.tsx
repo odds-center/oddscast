@@ -61,7 +61,7 @@ export default function PointTransactionsPage() {
         emptyIcon='Gem'
         emptyTitle='거래 내역이 없습니다'
         emptyDescription='경주 적중 보상이나 예측권 구매 시 내역이 표시됩니다.'
-        loadingLabel='거래 내역을 불러오는 중...'
+        loadingLabel='거래 내역 준비 중...'
       >
         <DataTable
           columns={[

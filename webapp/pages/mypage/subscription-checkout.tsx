@@ -55,7 +55,7 @@ export default function SubscriptionCheckoutPage() {
         setStep('plan');
       } catch {
         setStep('error');
-        setErrorMsg('플랜 정보를 불러오지 못했습니다.');
+        setErrorMsg('구독 플랜을 확인할 수 없습니다.');
       }
     })();
   }, [planId]);
@@ -112,7 +112,7 @@ export default function SubscriptionCheckoutPage() {
     return (
       <Layout title='GOLDEN RACE'>
         <div className='flex justify-center py-12'>
-          <LoadingSpinner size={28} label='플랜 정보를 불러오는 중...' />
+          <LoadingSpinner size={28} label='구독 플랜 준비 중...' />
         </div>
       </Layout>
     );

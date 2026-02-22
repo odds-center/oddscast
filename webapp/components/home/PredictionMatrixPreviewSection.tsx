@@ -48,9 +48,9 @@ export default function PredictionMatrixPreviewSection() {
       badge={rows.length > 0 ? `${rows.length}경` : undefined}
     >
       {isLoading ? (
-        <div className='py-6 text-center text-stone-400 text-sm'>예상표를 불러오는 중...</div>
+        <div className='py-6 text-center text-stone-400 text-sm'>예상표 준비 중...</div>
       ) : rows.length === 0 ? (
-        <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 데이터가 없습니다.</div>
+        <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 정보가 없습니다.</div>
       ) : (
         <div className='overflow-x-auto rounded border border-stone-200'>
           <table className='w-full min-w-[280px] border-collapse'>

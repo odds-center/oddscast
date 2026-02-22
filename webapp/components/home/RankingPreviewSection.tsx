@@ -30,9 +30,9 @@ export default function RankingPreviewSection() {
       accent
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>랭킹을 불러오는 중...</div>
+        <div className='py-8 text-center text-text-secondary text-sm'>랭킹 준비 중...</div>
       ) : items.length === 0 ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>랭킹 데이터가 없습니다.</div>
+        <div className='py-8 text-center text-text-secondary text-sm'>랭킹 정보가 없습니다.</div>
       ) : (
         <ul className='divide-y divide-border'>
           {items.map((item, idx) => {

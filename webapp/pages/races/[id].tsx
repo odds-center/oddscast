@@ -248,7 +248,7 @@ export default function RaceDetailPage() {
     return (
       <Layout>
         <div className='flex justify-center items-center h-[40vh] md:h-[50vh]'>
-          <LoadingSpinner size={28} label='경주 정보를 불러오는 중...' />
+          <LoadingSpinner size={28} label='경주 정보 준비 중...' />
         </div>
       </Layout>
     );
@@ -469,7 +469,7 @@ export default function RaceDetailPage() {
                 onClick={() => refetchRace()}
                 className='btn-secondary mt-3 text-sm px-3 py-1.5'
               >
-                다시 불러오기
+                다시 시도
               </button>
             </div>
           )}
@@ -490,7 +490,7 @@ export default function RaceDetailPage() {
           <Card className='py-6'><LoadingSpinner size={22} label='분석 중...' /></Card>
         ) : jockeyError ? (
           <Card className='py-4'>
-            <p className='text-text-secondary text-sm'>분석 데이터를 불러올 수 없습니다.</p>
+            <p className='text-text-secondary text-sm'>분석 정보를 확인할 수 없습니다.</p>
             <button type='button' onClick={() => refetchJockey()} className='btn-secondary mt-2 text-sm px-3 py-1.5'>다시 시도</button>
           </Card>
         ) : jockeyAnalysis?.entriesWithScores?.length ? (

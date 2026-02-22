@@ -87,7 +87,7 @@ export default function RecentResultsSection() {
       badge={grouped.length > 0 ? `${grouped.length}경기` : undefined}
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>결과를 불러오는 중...</div>
+        <div className='py-8 text-center text-text-secondary text-sm'>결과 준비 중...</div>
       ) : grouped.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>최근 결과가 없습니다.</div>
       ) : (

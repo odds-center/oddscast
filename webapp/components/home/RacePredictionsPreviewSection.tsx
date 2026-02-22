@@ -45,7 +45,7 @@ export default function RacePredictionsPreviewSection() {
       accent
     >
       {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>예상 데이터를 불러오는 중...</div>
+        <div className='py-8 text-center text-text-secondary text-sm'>예상 정보 준비 중...</div>
       ) : rows.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>예상 가능한 경주가 없습니다.</div>
       ) : (

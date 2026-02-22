@@ -1,0 +1,60 @@
+/* Mobile breakpoint overrides */
+@media (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  .overflow-y-auto,
+  .overflow-auto,
+  .data-table-wrapper,
+  [style*='overflow'] {
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .data-table {
+    min-width: max-content;
+  }
+  .card {
+    padding: 0.875rem;
+  }
+  .page-header {
+    margin-bottom: 0.75rem;
+  }
+  .section-gap {
+    margin-top: 0.75rem;
+  }
+  .home-hero {
+    padding: 1rem;
+  }
+  .btn-primary,
+  .btn-secondary {
+    min-height: 44px;
+    padding: 0 1rem;
+    font-size: 0.9375rem;
+    border-radius: 10px;
+  }
+  .input-base {
+    min-height: 44px;
+  }
+  .dropdown-option {
+    min-height: 44px;
+  }
+}
+@media (hover: none) {
+  .btn-primary:active {
+    opacity: 0.9;
+  }
+  .btn-secondary:active {
+    opacity: 0.88;
+  }
+  .card-hover:active {
+    background: #fafaf9;
+  }
+  a {
+    -webkit-tap-highlight-color: transparent;
+  }
+}

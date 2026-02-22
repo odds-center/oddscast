@@ -37,6 +37,7 @@ export interface RaceHeaderProps {
 }
 
 function InfoBadge({
+  label,
   tooltip,
   children,
 }: {

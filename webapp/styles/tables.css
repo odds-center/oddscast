@@ -1,0 +1,106 @@
+/* Tables */
+.data-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: white;
+}
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: max-content;
+}
+.data-table th,
+.data-table td {
+  text-align: left;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+.data-table a,
+.data-table span,
+.data-table p {
+  white-space: nowrap;
+}
+.data-table thead tr {
+  background: #fafaf9;
+  border-bottom: 1px solid #d6d3d1;
+}
+.data-table thead th {
+  padding: 0.4375rem 0.625rem;
+  font-weight: 600;
+  color: #78716c;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+.data-table tbody tr {
+  border-bottom: 1px solid #f5f5f4;
+}
+.data-table tbody tr:hover {
+  background: #fafaf9;
+}
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+.data-table tbody td {
+  padding: 0.4375rem 0.625rem;
+  font-size: 13px;
+  white-space: nowrap;
+}
+@media (max-width: 768px) {
+  .data-table tbody td {
+    padding: 0.375rem 0.5rem;
+  }
+}
+.data-table th.cell-center,
+.data-table td.cell-center {
+  text-align: center;
+}
+.data-table th.cell-right,
+.data-table td.cell-right {
+  text-align: right;
+}
+.data-table-compact thead th {
+  padding: 0.25rem 0.5rem;
+}
+.data-table-compact tbody td {
+  padding: 0.25rem 0.5rem;
+}
+
+/* KRA grid-style table */
+.data-table-kra .data-table thead tr {
+  background: #292524;
+  border-bottom: none;
+}
+.data-table-kra .data-table thead th {
+  color: #d6d3d1;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 0.4375rem 0.625rem;
+  border-right: 1px solid #44403c;
+  white-space: nowrap;
+}
+.data-table-kra .data-table thead th:last-child {
+  border-right: none;
+}
+.data-table-kra .data-table tbody tr {
+  border-bottom: 1px solid #f5f5f4;
+}
+.data-table-kra .data-table tbody tr:nth-child(even) {
+  background: #fafaf9;
+}
+.data-table-kra .data-table tbody tr:hover {
+  background: #f5f5f0;
+}
+.data-table-kra .data-table tbody td {
+  padding: 0.4375rem 0.625rem;
+  font-size: 13px;
+  border-right: 1px solid #f5f5f4;
+  white-space: nowrap;
+}
+.data-table-kra .data-table tbody td:last-child {
+  border-right: none;
+}

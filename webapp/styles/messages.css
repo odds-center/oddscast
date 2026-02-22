@@ -1,0 +1,16 @@
+/* Messages */
+.msg-error {
+  color: var(--error);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.msg-success {
+  color: var(--success);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}
+.msg-warning {
+  color: var(--warning);
+  font-size: 0.8125rem;
+  font-weight: 500;
+}

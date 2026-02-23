@@ -41,6 +41,7 @@ export class PointsService {
           'EARNED',
           'BONUS',
           'PROMOTION',
+          'REFUNDED',
           'TRANSFER_IN',
           'ADMIN_ADJUSTMENT',
         ].includes(t.transactionType),

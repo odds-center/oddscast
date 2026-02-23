@@ -13,7 +13,7 @@ export default function PicksPage() {
   return (
     <Layout title='OddsCast'>
       <CompactPageTitle title='내가 고른 말' backHref={routes.profile.index} />
-      <SectionCard className='mt-4'>
+      <SectionCard className='mt-4' title='내가 고른 말' icon='Bookmark'>
         <div className='text-center py-8'>
           <Icon name='Bookmark' size={48} className='mx-auto mb-4 text-text-tertiary' />
           <h2 className='text-lg font-semibold text-foreground mb-2'>서비스 준비 중입니다</h2>

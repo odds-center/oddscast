@@ -158,7 +158,7 @@ export default function SubscriptionCheckoutPage() {
     <Layout title='OddsCast'>
       <div className='max-w-md mx-auto'>
         <CompactPageTitle title='구독 결제' backHref={routes.mypage.subscriptions} />
-        <SectionCard className='mb-6'>
+        <SectionCard className='mb-6' title='구독 플랜' icon='Crown'>
           <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
           <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
           <p className='text-stone-800 font-bold mt-2'>{plan.totalPrice?.toLocaleString()}원/월</p>

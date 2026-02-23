@@ -44,24 +44,26 @@ export default function RefundPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>2. 환불 정책</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>2.1 구독 서비스 환불</h3>
-            <table className='w-full text-xs border-collapse border border-border my-2'>
-              <thead>
-                <tr className='bg-muted/50'>
-                  <th className='border border-border p-2 text-left'>기간</th>
-                  <th className='border border-border p-2 text-left'>환불 기준</th>
-                </tr>
-              </thead>
-              <tbody className='text-text-secondary'>
-                <tr>
-                  <td className='border border-border p-2'>최초 결제 후 7일 이내</td>
-                  <td className='border border-border p-2'>전액 환불. 다만, 이미 사용한 예측권에 상응하는 금액은 공제할 수 있음</td>
-                </tr>
-                <tr>
-                  <td className='border border-border p-2'>7일 초과 후</td>
-                  <td className='border border-border p-2'>당해 월 내 미사용 예측권에 해당하는 금액만 환불. 사용한 예측권은 환불 제외</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm my-2'>
+              <table className='data-table w-full text-xs'>
+                <thead>
+                  <tr className='bg-stone-50 border-b border-border text-text-secondary'>
+                    <th className='p-3 font-semibold text-left'>기간</th>
+                    <th className='p-3 font-semibold text-left'>환불 기준</th>
+                  </tr>
+                </thead>
+                <tbody className='text-text-secondary'>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>최초 결제 후 7일 이내</td>
+                    <td className='p-3'>전액 환불. 다만, 이미 사용한 예측권에 상응하는 금액은 공제할 수 있음</td>
+                  </tr>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>7일 초과 후</td>
+                    <td className='p-3'>당해 월 내 미사용 예측권에 해당하는 금액만 환불. 사용한 예측권은 환불 제외</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <p className='text-text-secondary mt-2'>
               환불액 = 월 구독료 × (미사용 예측권 수 ÷ 해당 월 제공 예측권 수)
             </p>

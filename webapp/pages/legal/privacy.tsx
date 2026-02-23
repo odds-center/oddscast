@@ -44,48 +44,50 @@ export default function PrivacyPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>제3조 (수집하는 개인정보의 항목 및 수집 방법)</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>1. 수집 항목</h3>
-            <table className='w-full text-xs border-collapse border border-border my-2'>
-              <thead>
-                <tr className='bg-muted/50'>
-                  <th className='border border-border p-2 text-left'>구분</th>
-                  <th className='border border-border p-2 text-left'>수집 항목</th>
-                  <th className='border border-border p-2 text-left'>수집 시점</th>
-                  <th className='border border-border p-2 text-left'>보유 기간</th>
-                </tr>
-              </thead>
-              <tbody className='text-text-secondary'>
-                <tr>
-                  <td className='border border-border p-2'>필수</td>
-                  <td className='border border-border p-2'>이메일, 비밀번호, 닉네임</td>
-                  <td className='border border-border p-2'>회원가입 시</td>
-                  <td className='border border-border p-2'>탈퇴 시까지 (관계법령 보존의무 있는 경우 해당 기간)</td>
-                </tr>
-                <tr>
-                  <td className='border border-border p-2'>선택</td>
-                  <td className='border border-border p-2'>프로필 이미지</td>
-                  <td className='border border-border p-2'>프로필 수정 시</td>
-                  <td className='border border-border p-2'>탈퇴 시까지</td>
-                </tr>
-                <tr>
-                  <td className='border border-border p-2'>자동</td>
-                  <td className='border border-border p-2'>기기정보, IP주소, 접속 로그, 쿠키</td>
-                  <td className='border border-border p-2'>서비스 이용 시</td>
-                  <td className='border border-border p-2'>서비스 이용 종료 시 또는 법정 보존기간</td>
-                </tr>
-                <tr>
-                  <td className='border border-border p-2'>제3자 로그인</td>
-                  <td className='border border-border p-2'>Google: 이메일, 프로필 이미지</td>
-                  <td className='border border-border p-2'>소셜 로그인 시</td>
-                  <td className='border border-border p-2'>탈퇴 시까지</td>
-                </tr>
-                <tr>
-                  <td className='border border-border p-2'>결제</td>
-                  <td className='border border-border p-2'>결제 정보(카드사, PG사 전달용), 거래내역</td>
-                  <td className='border border-border p-2'>결제 시</td>
-                  <td className='border border-border p-2'>전자상거래법에 따른 5년</td>
-                </tr>
-              </tbody>
-            </table>
+            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm my-2'>
+              <table className='data-table w-full text-xs'>
+                <thead>
+                  <tr className='bg-stone-50 border-b border-border text-text-secondary'>
+                    <th className='p-3 font-semibold text-left'>구분</th>
+                    <th className='p-3 font-semibold text-left'>수집 항목</th>
+                    <th className='p-3 font-semibold text-left'>수집 시점</th>
+                    <th className='p-3 font-semibold text-left'>보유 기간</th>
+                  </tr>
+                </thead>
+                <tbody className='text-text-secondary'>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>필수</td>
+                    <td className='p-3'>이메일, 비밀번호, 닉네임</td>
+                    <td className='p-3'>회원가입 시</td>
+                    <td className='p-3'>탈퇴 시까지 (관계법령 보존의무 있는 경우 해당 기간)</td>
+                  </tr>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>선택</td>
+                    <td className='p-3'>프로필 이미지</td>
+                    <td className='p-3'>프로필 수정 시</td>
+                    <td className='p-3'>탈퇴 시까지</td>
+                  </tr>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>자동</td>
+                    <td className='p-3'>기기정보, IP주소, 접속 로그, 쿠키</td>
+                    <td className='p-3'>서비스 이용 시</td>
+                    <td className='p-3'>서비스 이용 종료 시 또는 법정 보존기간</td>
+                  </tr>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>제3자 로그인</td>
+                    <td className='p-3'>Google: 이메일, 프로필 이미지</td>
+                    <td className='p-3'>소셜 로그인 시</td>
+                    <td className='p-3'>탈퇴 시까지</td>
+                  </tr>
+                  <tr className='border-b border-stone-100 last:border-0'>
+                    <td className='p-3'>결제</td>
+                    <td className='p-3'>결제 정보(카드사, PG사 전달용), 거래내역</td>
+                    <td className='p-3'>결제 시</td>
+                    <td className='p-3'>전자상거래법에 따른 5년</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
             <h3 className='text-sm font-medium mt-3 mb-1'>2. 수집 방법</h3>
             <p className='text-text-secondary'>
               회원가입, 서비스 이용, 고객문의, 이벤트 참여, 제휴사 제공, 자동 수집(접속 로그, 쿠키 등)을 통해 수집합니다.

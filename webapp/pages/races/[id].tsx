@@ -6,7 +6,7 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
-import { Badge } from '@/components/ui';
+import { Badge, SectionTitle } from '@/components/ui';
 import Tooltip from '@/components/ui/Tooltip';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -481,13 +481,12 @@ export default function RaceDetailPage() {
           {/* ── Race results (same section/table style as 출전마) ── */}
           {(isRaceCompleted || hasResults) && (
             <section>
-              <div className='flex items-center gap-1.5 mb-2'>
-                <Icon name='Trophy' size={15} className='text-text-secondary' />
-                <span className='text-sm font-bold text-foreground'>경주 결과</span>
-                {hasResults && effectiveResults.length > 0 && (
-                  <span className='text-xs text-text-tertiary'>{effectiveResults.length}두</span>
-                )}
-              </div>
+              <SectionTitle
+                title='경주 결과'
+                icon='Trophy'
+                badge={hasResults && effectiveResults.length > 0 ? `${effectiveResults.length}두` : undefined}
+                className='mb-2'
+              />
 
               {!hasResults ? (
                 <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-sm text-text-secondary'>
@@ -712,11 +711,12 @@ export default function RaceDetailPage() {
           {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
             <section>
-              <div className='flex items-center gap-1.5 mb-2'>
-                <Icon name='ClipboardList' size={15} className='text-text-secondary' />
-                <span className='text-sm font-bold text-foreground'>출전마</span>
-                <span className='text-xs text-text-tertiary'>{displayEntries.length}두</span>
-              </div>
+              <SectionTitle
+                title='출전마'
+                icon='ClipboardList'
+                badge={displayEntries.length ? `${displayEntries.length}두` : undefined}
+                className='mb-2'
+              />
               {entries.length > 0 ? (
                 <HorseEntryTable
                   entries={entries}
@@ -763,13 +763,12 @@ export default function RaceDetailPage() {
 
           {/* ── Jockey·horse integrated analysis (same section/table style as 경주 결과·출전마) ── */}
           <section>
-            <div className='flex items-center gap-1.5 mb-2'>
-              <Icon name='BarChart2' size={15} className='text-text-secondary' />
-              <span className='text-sm font-bold text-foreground'>기수·말 통합 분석</span>
-              {jockeyAnalysis?.entriesWithScores?.length != null && jockeyAnalysis.entriesWithScores.length > 0 && (
-                <span className='text-xs text-text-tertiary'>{jockeyAnalysis.entriesWithScores.length}두</span>
-              )}
-            </div>
+            <SectionTitle
+              title='기수·말 통합 분석'
+              icon='BarChart2'
+              badge={jockeyAnalysis?.entriesWithScores?.length ? `${jockeyAnalysis.entriesWithScores.length}두` : undefined}
+              className='mb-2'
+            />
             {jockeyLoading ? (
               <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
                 <div className='py-6 flex justify-center'>
@@ -1122,14 +1121,14 @@ function PredictionFullView({
             <p className='text-xs text-text-secondary font-semibold mb-1.5'>
               AI 추천 순위 <span className='text-text-tertiary font-normal'>(참고용)</span>
             </p>
-            <div className='rounded-md border border-stone-200 overflow-hidden'>
-              <table className='w-full text-sm'>
+            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+              <table className='data-table data-table-compact w-full text-sm'>
                 <thead>
-                  <tr className='bg-stone-50 border-b border-stone-200 text-xs text-text-secondary'>
-                    <th className='py-1.5 px-2 w-8 text-center'>순위</th>
-                    <th className='py-1.5 px-2 w-10 text-center'>번호</th>
-                    <th className='py-1.5 px-2 text-left'>마명</th>
-                    <th className='py-1.5 px-2 text-right w-12'>점수</th>
+                  <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                    <th className='cell-center py-3 w-10 font-semibold'>순위</th>
+                    <th className='cell-center py-3 w-10 font-semibold'>번호</th>
+                    <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+                    <th className='cell-right py-3 w-14 font-semibold'>점수</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1144,14 +1143,14 @@ function PredictionFullView({
                             ? 'text-stone-500 font-bold'
                             : 'text-text-tertiary';
                     return (
-                      <tr key={i} className='border-b border-stone-100 last:border-0'>
-                        <td className='py-1.5 px-2 text-center'>
+                      <tr key={i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
+                        <td className='cell-center py-2.5'>
                           <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
                         </td>
-                        <td className='py-1.5 px-2 text-center font-semibold text-stone-600'>
+                        <td className='cell-center py-2.5 font-semibold text-stone-700'>
                           {no}
                         </td>
-                        <td className='py-1.5 px-2'>
+                        <td className='py-2.5'>
                           <span className='font-medium text-foreground'>
                             {h.hrName ?? h.horseName ?? '-'}
                           </span>
@@ -1161,7 +1160,7 @@ function PredictionFullView({
                             </p>
                           )}
                         </td>
-                        <td className={`py-1.5 px-2 text-right font-bold ${rankCls}`}>
+                        <td className={`cell-right py-2.5 font-bold ${rankCls}`}>
                           {h.score != null ? Math.round(h.score) : '-'}
                         </td>
                       </tr>

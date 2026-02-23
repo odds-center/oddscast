@@ -1,5 +1,6 @@
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
+import SectionCard from '@/components/page/SectionCard';
 import MenuList from '@/components/page/MenuList';
 import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -12,6 +13,7 @@ export default function SettingsPage() {
   return (
     <Layout title='OddsCast'>
       <CompactPageTitle title='설정' backHref={routes.profile.index} />
+      <SectionCard title='설정' icon='Settings' className='mb-4'>
         {isLoggedIn ? (
           <MenuList
             items={[
@@ -21,7 +23,6 @@ export default function SettingsPage() {
               { href: routes.legal.privacy, icon: 'AlertCircle', label: '개인정보처리방침' },
               { href: routes.legal.refund, icon: 'CreditCard', label: '환불 및 결제 정책' },
             ]}
-            className='mb-4'
           />
         ) : (
           <>
@@ -36,12 +37,11 @@ export default function SettingsPage() {
                 { href: routes.legal.privacy, icon: 'AlertCircle', label: '개인정보처리방침' },
                 { href: routes.legal.refund, icon: 'CreditCard', label: '환불 및 결제 정책' },
               ]}
-              className='mb-4'
             />
           </>
         )}
-
-        <BackLink href={routes.profile.index} label='프로필로' />
+      </SectionCard>
+      <BackLink href={routes.profile.index} label='프로필로' />
     </Layout>
   );
 }

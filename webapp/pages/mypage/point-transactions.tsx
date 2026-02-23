@@ -7,7 +7,7 @@ import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
 import PointApi from '@/lib/api/pointApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { formatDateTime } from '@/lib/utils/format';
 
@@ -19,6 +19,7 @@ export default function PointTransactionsPage() {
     queryKey: ['points', 'transactions', page],
     queryFn: () => PointApi.getMyTransactions({ page, limit: 20 }),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const transactions = data?.transactions ?? [];
@@ -64,6 +65,7 @@ export default function PointTransactionsPage() {
         loadingLabel='거래 내역 준비 중...'
       >
         <DataTable
+          className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
           columns={[
             { key: 'type', header: '유형', headerClassName: 'min-w-[100px]', cellClassName: 'font-medium', render: (t) => getTypeLabel(t.transactionType) },
             { key: 'desc', header: '설명', cellClassName: 'text-text-secondary', render: (t) => t.description ?? '-' },
@@ -72,6 +74,7 @@ export default function PointTransactionsPage() {
           ]}
           data={transactions}
           getRowKey={(t) => t.id}
+          compact
         />
         <Pagination
           page={page}

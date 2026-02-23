@@ -123,6 +123,12 @@ export class PredictionsController {
     );
   }
 
+  @Get('accuracy-stats')
+  @ApiOperation({ summary: '예측 정확도 대시보드용 통계 (전체/월별/경마장별)' })
+  getAccuracyStatsDashboard() {
+    return this.predictionsService.getAccuracyStats();
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '예측 상세 조회' })
   findOne(@Param('id', ParseIntPipe) id: number) {

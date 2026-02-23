@@ -44,6 +44,7 @@ export const routes = {
   /** Yongsan Comprehensive Style - Comprehensive prediction table */
   predictions: {
     matrix: '/predictions/matrix',
+    accuracy: '/predictions/accuracy',
   },
 
   legal: {

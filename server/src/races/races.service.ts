@@ -162,7 +162,9 @@ export class RacesService {
     dateFrom?: string;
     dateTo?: string;
     meet?: string;
-  }): Promise<{ date: string; meetCounts: Record<string, number>; totalRaces: number }[]> {
+  }): Promise<
+    { date: string; meetCounts: Record<string, number>; totalRaces: number }[]
+  > {
     const where: Prisma.RaceWhereInput = {};
     if (filters.dateFrom && filters.dateTo) {
       const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
@@ -180,7 +182,14 @@ export class RacesService {
 
     const byDate = new Map<string, Record<string, number>>();
     for (const r of rows) {
-      const meetName = r.meet === '서울' ? '서울' : r.meet === '제주' ? '제주' : r.meet === '부산경남' ? '부산경남' : r.meet;
+      const meetName =
+        r.meet === '서울'
+          ? '서울'
+          : r.meet === '제주'
+            ? '제주'
+            : r.meet === '부산경남'
+              ? '부산경남'
+              : r.meet;
       if (!byDate.has(r.rcDate)) byDate.set(r.rcDate, {});
       const counts = byDate.get(r.rcDate)!;
       counts[meetName] = (counts[meetName] ?? 0) + r._count.id;
@@ -236,6 +245,48 @@ export class RacesService {
       orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
     });
     return results;
+  }
+
+  /**
+   * Returns race dividends derived from results (winOdds = 단승식, plcOdds = 연승식 per horse).
+   * Used for "승식별 배당률" display on race detail.
+   */
+  async getDividends(raceId: number) {
+    const results = await this.prisma.raceResult.findMany({
+      where: { raceId },
+      select: {
+        ord: true,
+        ordInt: true,
+        ordType: true,
+        chulNo: true,
+        hrNo: true,
+        winOdds: true,
+        plcOdds: true,
+      },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+    });
+    const list: {
+      poolName: string;
+      chulNo?: string;
+      chulNo2?: string;
+      chulNo3?: string;
+      odds?: number;
+    }[] = [];
+    const normal = results.filter((r) => {
+      const type = r.ordType ?? '';
+      const ordN = r.ordInt ?? (r.ord ? parseInt(String(r.ord), 10) : NaN);
+      return type === 'NORMAL' || (!type && !Number.isNaN(ordN) && ordN < 90);
+    });
+    for (const r of normal) {
+      const chulNo = r.chulNo ?? r.hrNo ?? '';
+      if (chulNo && r.winOdds != null) {
+        list.push({ poolName: '단승식', chulNo, odds: r.winOdds });
+      }
+      if (chulNo && r.plcOdds != null) {
+        list.push({ poolName: '연승식', chulNo, odds: r.plcOdds });
+      }
+    }
+    return list;
   }
 
   async createEntry(raceId: number, dto: CreateRaceEntryDto) {

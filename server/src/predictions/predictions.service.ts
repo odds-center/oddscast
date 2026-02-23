@@ -233,6 +233,77 @@ export class PredictionsService {
   }
 
   /**
+   * Public accuracy stats for /predictions/accuracy dashboard.
+   * Returns overall stats, by-month trend, and by-meet breakdown.
+   */
+  async getAccuracyStats(): Promise<{
+    overall: { totalCount: number; hitCount: number; averageAccuracy: number };
+    byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
+    byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
+  }> {
+    const completed = await this.prisma.prediction.findMany({
+      where: { status: 'COMPLETED', accuracy: { not: null } },
+      select: {
+        accuracy: true,
+        createdAt: true,
+        race: { select: { meet: true } },
+      },
+    });
+
+    const totalCount = completed.length;
+    const hitCount = completed.filter((p) => (p.accuracy ?? 0) > 0).length;
+    const sumAcc = completed.reduce((s, p) => s + (p.accuracy ?? 0), 0);
+    const averageAccuracy =
+      totalCount > 0 ? Math.round((sumAcc / totalCount) * 100) / 100 : 0;
+
+    const byMonthMap = new Map<string, { sum: number; count: number }>();
+    const now = new Date();
+    for (let i = 11; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      byMonthMap.set(key, { sum: 0, count: 0 });
+    }
+    for (const p of completed) {
+      const d = p.createdAt;
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+      const cur = byMonthMap.get(key);
+      if (cur) {
+        cur.count += 1;
+        cur.sum += p.accuracy ?? 0;
+      }
+    }
+    const byMonth = Array.from(byMonthMap.entries())
+      .map(([month, { sum, count }]) => ({
+        month,
+        count,
+        averageAccuracy:
+          count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+      }))
+      .sort((a, b) => a.month.localeCompare(b.month));
+
+    const byMeetMap = new Map<string, { sum: number; count: number }>();
+    for (const p of completed) {
+      const meet = p.race?.meet ?? '기타';
+      const cur = byMeetMap.get(meet) ?? { sum: 0, count: 0 };
+      cur.count += 1;
+      cur.sum += p.accuracy ?? 0;
+      byMeetMap.set(meet, cur);
+    }
+    const byMeet = Array.from(byMeetMap.entries()).map(([meet, { sum, count }]) => ({
+      meet,
+      count,
+      averageAccuracy:
+        count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+    }));
+
+    return {
+      overall: { totalCount, hitCount, averageAccuracy },
+      byMonth,
+      byMeet,
+    };
+  }
+
+  /**
    * 예측 미리보기 — 검수 완료(previewApproved)된 것만 반환.
    * 검수 미통과 시 데이터를 보내지 않음 (사행성 방지).
    * UI 표시용: scores.horseScores, analysis, preview 반환

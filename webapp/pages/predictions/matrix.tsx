@@ -17,7 +17,7 @@ import CommentaryFeed from '@/components/predictions/CommentaryFeed';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import PredictionTicketsApi from '@/lib/api/predictionTicketApi';
 import Icon from '@/components/icons';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
 import { trackCTA } from '@/lib/analytics';
@@ -79,12 +79,14 @@ export default function PredictionMatrixPage() {
     queryKey: ['predictions', 'hit-record'],
     queryFn: () => PredictionMatrixApi.getHitRecords(5),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: matrixData, isLoading, error, refetch } = useQuery({
     queryKey: ['predictions', 'matrix', dateFilter, meetFilter],
     queryFn: () => PredictionMatrixApi.getMatrix(apiDate, meetFilter || undefined),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -96,18 +98,21 @@ export default function PredictionMatrixPage() {
     queryKey: ['predictions', 'commentary', dateFilter, meetFilter],
     queryFn: () => PredictionMatrixApi.getCommentary(apiDate, 20, 0, meetFilter || undefined),
     enabled: isLoggedIn && activeTab === 'commentary',
+    placeholderData: keepPreviousData,
   });
 
   const { data: matrixAccess } = useQuery({
     queryKey: ['predictions', 'matrix-access', apiDateStr],
     queryFn: () => PredictionTicketsApi.checkMatrixAccess(apiDateStr),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: matrixBalance } = useQuery({
     queryKey: ['predictions', 'matrix-balance'],
     queryFn: () => PredictionTicketsApi.getMatrixBalance(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const hasAccess = matrixAccess?.hasAccess ?? false;
@@ -136,6 +141,14 @@ export default function PredictionMatrixPage() {
   return (
     <Layout title='종합 예상 — OddsCast'>
       <CompactPageTitle title='일일 종합 가이드' backHref={routes.home} />
+      <div className='mb-2 flex justify-end'>
+        <Link
+          href={routes.predictions.accuracy}
+          className='text-xs text-text-tertiary hover:text-primary transition-colors'
+        >
+          예측 정확도 통계 →
+        </Link>
+      </div>
 
       {!isLoggedIn ? (
         <div className='rounded border border-stone-200 bg-stone-50 p-6 text-center'>

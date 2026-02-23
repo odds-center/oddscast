@@ -4,6 +4,12 @@ import type {
   PredictionPreview,
 } from '../types/predictions';
 
+export interface AccuracyStatsResponse {
+  overall: { totalCount: number; hitCount: number; averageAccuracy: number };
+  byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
+  byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
+}
+
 /**
  * AI prediction API
  */
@@ -71,6 +77,18 @@ export default class PredictionsApi {
       | { predictions?: PredictionResultDto[] };
     const result = (d as { data?: PredictionResultDto[] })?.data ?? (d as { predictions?: PredictionResultDto[] })?.predictions ?? d;
     return Array.isArray(result) ? result : (result as { predictions?: PredictionResultDto[] })?.predictions ?? [];
+  }
+
+  /**
+   * Get accuracy stats for dashboard (overall, by month, by meet)
+   * GET /predictions/accuracy-stats
+   */
+  static async getAccuracyStats(): Promise<AccuracyStatsResponse> {
+    const response = await axiosInstance.get<{ data?: AccuracyStatsResponse }>(
+      '/predictions/accuracy-stats',
+    );
+    const d = response.data;
+    return (d as { data?: AccuracyStatsResponse })?.data ?? (d as AccuracyStatsResponse);
   }
 
   /**

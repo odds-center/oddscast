@@ -25,6 +25,7 @@ import { BetsModule } from './bets/bets.module';
 import { PicksModule } from './picks/picks.module';
 import { KraModule } from './kra/kra.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import { HorsesModule } from './horses/horses.module';
 import { AdminModule } from './admin/admin.module';
 import { GlobalConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
@@ -44,6 +45,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     ResultsModule,
     PredictionsModule,
     AnalysisModule,
+    HorsesModule,
 
     // P1 — Features
     UsersModule,

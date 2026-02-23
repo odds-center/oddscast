@@ -1,5 +1,5 @@
 import { useRouter } from 'next/router';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
@@ -27,7 +27,7 @@ import { routes } from '@/lib/routes';
 import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatTime, formatNumber, isPastRaceDate } from '@/lib/utils/format';
+import { formatTime, isPastRaceDate } from '@/lib/utils/format';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
 function formatOrdTypeLabel(ordType: string | null | undefined): string {
@@ -128,6 +128,7 @@ export default function RaceDetailPage() {
     queryKey: ['race', id],
     queryFn: () => RaceApi.getRace(id as string),
     enabled: !!id,
+    placeholderData: keepPreviousData,
   });
 
   const raceStatus =
@@ -141,18 +142,21 @@ export default function RaceDetailPage() {
     queryKey: ['picks', 'race', id],
     queryFn: () => PicksApi.getByRace(id as string),
     enabled: !!id && isLoggedIn && CONFIG.picksEnabled,
+    placeholderData: keepPreviousData,
   });
 
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
     queryFn: () => PredictionTicketApi.getBalance(),
     enabled: !!id && isLoggedIn && !isRaceCompleted,
+    placeholderData: keepPreviousData,
   });
 
   const { data: ticketHistory } = useQuery({
     queryKey: ['prediction-tickets', 'history'],
     queryFn: () => PredictionTicketApi.getHistory(100, 0, 1),
     enabled: !!id && isLoggedIn && !isRaceCompleted,
+    placeholderData: keepPreviousData,
   });
 
   const hasUsedTicketForRace = !!ticketHistory?.tickets?.some(
@@ -163,12 +167,14 @@ export default function RaceDetailPage() {
     queryKey: ['prediction', 'full', id],
     queryFn: () => PredictionApi.getByRaceId(id as string),
     enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
+    placeholderData: keepPreviousData,
   });
 
   const { data: predictionHistory } = useQuery({
     queryKey: ['prediction', 'history', id],
     queryFn: () => PredictionApi.getHistoryByRaceId(id as string),
     enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
+    placeholderData: keepPreviousData,
   });
 
   const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
@@ -177,6 +183,7 @@ export default function RaceDetailPage() {
     queryKey: ['prediction', 'preview', id],
     queryFn: () => PredictionApi.getPreview(id as string),
     enabled: !!id && !isRaceCompleted && !hasUsedTicketForRace,
+    placeholderData: keepPreviousData,
   });
 
   const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(
@@ -208,12 +215,14 @@ export default function RaceDetailPage() {
     queryKey: ['race', id, 'results'],
     queryFn: () => RaceApi.getRaceResults(id as string),
     enabled: !!id,
+    placeholderData: keepPreviousData,
   });
 
   const { data: dividends } = useQuery({
     queryKey: ['race', id, 'dividends'],
     queryFn: () => RaceApi.getRaceDividends(id as string),
     enabled: !!id,
+    placeholderData: keepPreviousData,
   });
 
   const {
@@ -226,6 +235,7 @@ export default function RaceDetailPage() {
     queryFn: () => AnalysisApi.getJockeyAnalysis(id as string),
     enabled: !!id,
     retry: false,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {
@@ -603,7 +613,18 @@ export default function RaceDetailPage() {
                               {no}
                             </span>
                           </td>
-                          <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>{res.hrName}</td>
+                          <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
+                            {res.hrNo ? (
+                              <Link
+                                href={routes.horses.detail(res.hrNo)}
+                                className='hover:text-primary hover:underline'
+                              >
+                                {res.hrName}
+                              </Link>
+                            ) : (
+                              res.hrName
+                            )}
+                          </td>
                           <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</td>
                           <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</td>
                           <td className='cell-center py-2.5 text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</td>
@@ -661,45 +682,50 @@ export default function RaceDetailPage() {
                 </table>
               </div>
 
-              {/* Dividends */}
-              {(dividends?.length ?? 0) > 0 && (
-                <div className='rounded-xl border border-border overflow-hidden mt-2'>
-                  <div className='bg-stone-50 border-b border-border px-2 py-2'>
-                    <span className='text-xs font-semibold text-text-secondary'>배당</span>
+              {/* 승식별 배당률 */}
+              {Array.isArray(dividends) && dividends.length > 0 && (
+                <div className='rounded-xl border border-border overflow-hidden mt-4'>
+                  <div className='bg-stone-50 border-b border-border px-3 py-2.5'>
+                    <span className='text-sm font-semibold text-foreground'>승식별 배당률</span>
+                    <p className='text-text-tertiary text-xs mt-0.5'>경주 확정 후 적용된 배당률 (단승식·연승식)</p>
                   </div>
-                  <div className='grid grid-cols-2 sm:grid-cols-3 divide-x divide-y divide-slate-100'>
-                    {dividends
-                      ?.slice(0, 12)
-                      .map(
-                        (
-                          d: {
-                            id?: string;
-                            poolName?: string;
-                            pool?: string;
-                            chulNo?: string;
-                            chulNo2?: string;
-                            chulNo3?: string;
-                            odds?: number;
+                  <div className='overflow-x-auto'>
+                    <table className='data-table data-table-compact w-full text-sm'>
+                      <thead>
+                        <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                          <th className='text-left py-2.5 px-3 font-semibold w-24'>승식</th>
+                          <th className='text-left py-2.5 px-3 font-semibold'>출주번호</th>
+                          <th className='cell-right py-2.5 px-3 font-semibold w-24'>배당률</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {dividends.map(
+                          (
+                            d: {
+                              poolName?: string;
+                              pool?: string;
+                              chulNo?: string;
+                              chulNo2?: string;
+                              chulNo3?: string;
+                              odds?: number;
+                            },
+                            i: number,
+                          ) => {
+                            const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
+                            const label = d.poolName ?? d.pool ?? '배당';
+                            return (
+                              <tr key={i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
+                                <td className='py-2.5 px-3 text-text-secondary whitespace-nowrap'>{label}</td>
+                                <td className='py-2.5 px-3 font-medium text-foreground'>{combo || '-'}</td>
+                                <td className='cell-right py-2.5 px-3 font-semibold'>
+                                  {d.odds != null ? `${d.odds}배` : '-'}
+                                </td>
+                              </tr>
+                            );
                           },
-                          i: number,
-                        ) => {
-                          const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
-                          const label = d.poolName ?? d.pool ?? '배당';
-                          return (
-                            <div key={d.id ?? i} className='px-2.5 py-2'>
-                              <span className='text-text-tertiary text-xs block'>{label}</span>
-                              <span className='text-foreground font-semibold text-sm'>
-                                {combo || '-'}
-                              </span>
-                              {d.odds != null && (
-                                <span className='text-foreground font-semibold text-xs block'>
-                                  {formatNumber(d.odds)}원
-                                </span>
-                              )}
-                            </div>
-                          );
-                        },
-                      )}
+                        )}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -715,6 +741,40 @@ export default function RaceDetailPage() {
                 </a>
                 에서 확인하세요.
               </p>
+
+              {/* 예측 vs 결과 (경주 종료 + 예측 데이터 있을 때만) */}
+              {fullPredictionData?.scores?.horseScores && fullPredictionData.scores.horseScores.length > 0 && (() => {
+                const predTop3 = (fullPredictionData.scores.horseScores as Array<{ hrNo?: string; chulNo?: string; hrName?: string }>).slice(0, 3);
+                const actualTop3 = effectiveResults
+                  .filter((r) => (r.ordType ?? '') === 'NORMAL' && Number(r.ordInt ?? 0) >= 1 && Number(r.ordInt ?? 0) <= 3)
+                  .sort((a, b) => Number(a.ordInt ?? 99) - Number(b.ordInt ?? 99))
+                  .slice(0, 3);
+                const actualHrNos = new Set(actualTop3.map((r) => String(r.hrNo ?? r.chulNo ?? '')));
+                const hitCount = predTop3.filter((p) => actualHrNos.has(String(p.hrNo ?? p.chulNo ?? ''))).length;
+                return (
+                  <div className='mt-4 rounded-xl border border-border bg-stone-50/50 p-4'>
+                    <p className='text-sm font-semibold text-foreground mb-2'>예측 vs 결과</p>
+                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
+                      <div>
+                        <p className='text-xs text-text-tertiary mb-1'>AI 예측 상위 3마</p>
+                        <p className='text-foreground'>
+                          {predTop3.map((p, i) => (p.hrName ?? p.hrNo ?? '-')).join(' · ')}
+                        </p>
+                      </div>
+                      <div>
+                        <p className='text-xs text-text-tertiary mb-1'>실제 1·2·3위</p>
+                        <p className='text-foreground'>
+                          {actualTop3.map((r) => r.hrName ?? r.hrNo ?? '-').join(' · ')}
+                        </p>
+                      </div>
+                    </div>
+                    <p className='mt-2 text-xs font-medium text-foreground'>
+                      적중: <span className={hitCount >= 2 ? 'text-emerald-600' : 'text-stone-600'}>{hitCount}/3</span>
+                      <span className='text-text-tertiary font-normal'> (예측 상위 3마 중 실제 3위 내 입상)</span>
+                    </p>
+                  </div>
+                );
+              })()}
               </>
               )}
             </section>
@@ -767,6 +827,7 @@ export default function RaceDetailPage() {
                   entries={entries}
                   onSelectHorse={showPickPanel ? handleSelectHorse : undefined}
                   isSelected={isHorseSelected}
+                  raceId={typeof id === 'string' ? id : undefined}
                 />
               ) : displayEntries.length > 0 ? (
                 <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>

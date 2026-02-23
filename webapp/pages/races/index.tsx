@@ -13,12 +13,18 @@ import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate, isPastRaceDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 
 const RACES_PER_PAGE = 20;
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const LIVE_REFETCH_MS = 5 * 60 * 1000;
+
+function isRaceDay(d: Date): boolean {
+  return RACE_DAYS.includes(d.getDay());
+}
 
 function parseDateFilter(qDate: string | undefined): string {
   if (qDate === 'today' || qDate === 'yesterday') return qDate;
@@ -55,8 +61,11 @@ export default function RacesListPage() {
     router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
   };
 
+  const isTodayRaceDay = dateFilter === 'today' && isRaceDay(new Date());
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
+    placeholderData: keepPreviousData,
+    refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
     queryFn: () => {
       let date: string | undefined;
       if (dateFilter === 'today') {

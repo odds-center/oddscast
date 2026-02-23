@@ -41,6 +41,10 @@ export const routes = {
     detail: (id: string) => `/races/${id}`,
   },
 
+  horses: {
+    detail: (hrNo: string) => `/horses/${encodeURIComponent(hrNo)}`,
+  },
+
   /** Yongsan Comprehensive Style - Comprehensive prediction table */
   predictions: {
     matrix: '/predictions/matrix',

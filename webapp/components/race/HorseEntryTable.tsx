@@ -2,9 +2,11 @@
  * Horse entry table — rich information + refined UI
  * No (gate), horse name, jockey/trainer, age/origin, weight carried, horse weight, rating, career record, recent ranks
  */
+import Link from 'next/link';
 import { getGateBgColor } from './RaceHeaderCard';
 import Icon from '@/components/icons';
 import { Tooltip } from '@/components/ui';
+import { routes } from '@/lib/routes';
 
 /** Horse entry fields required for rendering */
 export interface HorseEntryRow {
@@ -66,9 +68,19 @@ export interface HorseEntryTableProps {
   entries: HorseEntryRow[];
   onSelectHorse?: (hrNo: string, hrName: string) => void;
   isSelected?: (hrNo: string) => boolean;
+  /** When set, horse profile link includes ?from= so back button returns to this race */
+  raceId?: string | number;
 }
 
-export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: HorseEntryTableProps) {
+function horseProfileHref(hrNo: string, raceId?: string | number): string {
+  const base = routes.horses.detail(hrNo);
+  if (raceId != null) {
+    return `${base}?from=${encodeURIComponent(routes.races.detail(String(raceId)))}`;
+  }
+  return base;
+}
+
+export default function HorseEntryTable({ entries, onSelectHorse, isSelected, raceId }: HorseEntryTableProps) {
   return (
     <div className='space-y-2 sm:space-y-0'>
       {/* Mobile: card layout */}
@@ -108,7 +120,13 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                 </span>
                 <div className='flex-1 min-w-0'>
                   <div className='flex items-center gap-2 flex-wrap'>
-                    <span className='font-semibold text-foreground'>{e.hrName}</span>
+                    <Link
+                      href={horseProfileHref(e.hrNo, raceId)}
+                      onClick={(ev) => ev.stopPropagation()}
+                      className='font-semibold text-foreground hover:text-primary hover:underline'
+                    >
+                      {e.hrName}
+                    </Link>
                     {e.rating != null && (
                       <span className='inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800'>
                         R{e.rating}
@@ -209,7 +227,13 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                     </span>
                   </td>
                   <td className='py-2.5'>
-                    <span className='font-semibold text-foreground'>{e.hrName}</span>
+                    <Link
+                      href={horseProfileHref(e.hrNo, raceId)}
+                      onClick={(ev) => ev.stopPropagation()}
+                      className='font-semibold text-foreground hover:text-primary hover:underline'
+                    >
+                      {e.hrName}
+                    </Link>
                   </td>
                   <td className='py-2.5 text-text-secondary text-sm'>
                     <span>{e.jkName ?? '-'}</span>

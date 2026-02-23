@@ -1,7 +1,8 @@
 /**
  * Today's races section — KRA race schedule style
+ * Auto-refresh every 5 min on race days (Fri/Sat/Sun).
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
@@ -11,9 +12,19 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@oddscast/shared';
 
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const LIVE_REFETCH_MS = 5 * 60 * 1000;
+
+function isRaceDay(d: Date): boolean {
+  return RACE_DAYS.includes(d.getDay());
+}
+
 export default function TodayRacesSection() {
+  const isTodayRaceDay = isRaceDay(new Date());
   const { data, isLoading } = useQuery({
     queryKey: ['races', 'today'],
+    placeholderData: keepPreviousData,
+    refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
     queryFn: async () => {
       const res = await RaceApi.getRaces({ limit: 12, page: 1, date: 'today' });
       return res?.races ?? [];

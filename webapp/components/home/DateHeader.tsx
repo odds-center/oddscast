@@ -4,12 +4,17 @@
  */
 import Icon from '@/components/icons';
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
 import { getDateHeaderMessage, getNextRaceDayLabel } from '@/lib/utils/dateHeaderMessages';
 
 const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const LIVE_REFETCH_MS = 5 * 60 * 1000; // 5 min on race days
+
+function isRaceDay(date: Date): boolean {
+  return RACE_DAYS.includes(date.getDay());
+}
 
 export default function DateHeader() {
   const now = new Date();
@@ -18,10 +23,13 @@ export default function DateHeader() {
   const day = now.getDate();
   const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
   const weekDay = weekDays[now.getDay()];
+  const isTodayRaceDay = isRaceDay(now);
 
   const { data: todayData } = useQuery({
     queryKey: ['races', 'today', 'stats'],
     queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
+    placeholderData: keepPreviousData,
+    refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
   });
   const todayCount = todayData?.total ?? (todayData?.races?.length ?? 0);
   const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, now);

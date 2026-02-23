@@ -494,15 +494,20 @@ export default function RaceDetailPage() {
                 </div>
               ) : (
               <>
-              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
-                <table className='data-table data-table-compact w-full min-w-[280px]'>
+              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                <table className='data-table data-table-compact w-full min-w-[640px]'>
                   <thead>
                     <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
                       <th className='cell-center w-10 py-3 font-semibold'>순위</th>
                       <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                       <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
+                      <th className='cell-center py-3 w-12 font-semibold'>성별</th>
+                      <th className='cell-center py-3 w-12 font-semibold'>연령</th>
+                      <th className='cell-center py-3 w-12 font-semibold'>중량</th>
                       <th className='text-left py-3 w-20 font-semibold'>기수</th>
-                      <th className='cell-right py-3 font-semibold'>
+                      <th className='text-left py-3 w-20 font-semibold'>조교사</th>
+                      <th className='text-left py-3 w-20 font-semibold'>마주</th>
+                      <th className='cell-right py-3 font-semibold min-w-[100px]'>
                         <Tooltip
                           content='각 말의 완주 시간(분:초). 2등 이하는 1등과의 초 차이를 +/−로 표시.'
                           inline
@@ -510,6 +515,10 @@ export default function RaceDetailPage() {
                           <span>기록</span>
                         </Tooltip>
                       </th>
+                      <th className='cell-center py-3 w-16 font-semibold'>마체중</th>
+                      <th className='cell-center py-3 w-12 font-semibold'>단승</th>
+                      <th className='cell-center py-3 w-12 font-semibold'>연승</th>
+                      <th className='text-left py-3 w-24 font-semibold'>장구</th>
                       <th className='cell-center py-3 w-16 font-semibold'>
                         <Tooltip
                           content='낙마·실격·기권 등 비정상 결과를 표시합니다.'
@@ -526,6 +535,14 @@ export default function RaceDetailPage() {
                           ordType?: string | null;
                           diffUnit?: string;
                           winOdds?: number;
+                          plcOdds?: number;
+                          age?: string | null;
+                          sex?: string | null;
+                          trName?: string | null;
+                          owName?: string | null;
+                          wgBudam?: number | null;
+                          wgHr?: string | null;
+                          hrTool?: string | null;
                         };
                         const ordStr = String(res.ord ?? i + 1);
                         const ordN = parseInt(ordStr, 10);
@@ -587,15 +604,31 @@ export default function RaceDetailPage() {
                             </span>
                           </td>
                           <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>{res.hrName}</td>
-                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>{res.jkName ?? ''}</td>
-                          <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs'>
+                          <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</td>
+                          <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</td>
+                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</td>
+                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>{res.jkName ?? '-'}</td>
+                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.trName ?? '-'}</td>
+                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.owName ?? '-'}</td>
+                          <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs whitespace-nowrap'>
                             {record}
-                            {row.winOdds != null && ordN === 1 && !displayOrdType && (
-                              <Tooltip content='단승식 배당률 (1등 적중 시 배당)' inline>
-                                <span className='ml-1 text-stone-600 cursor-help'>{row.winOdds}배</span>
-                              </Tooltip>
-                            )}
                           </td>
+                          <td className='cell-center py-2.5 text-text-secondary text-xs whitespace-nowrap'>{row.wgHr ?? '-'}</td>
+                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>
+                            {row.winOdds != null && !displayOrdType ? (
+                              <Tooltip content='단승식 배당률' inline>
+                                <span className='cursor-help'>{row.winOdds}</span>
+                              </Tooltip>
+                            ) : '-'}
+                          </td>
+                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>
+                            {row.plcOdds != null && !displayOrdType ? (
+                              <Tooltip content='연승식 배당률' inline>
+                                <span className='cursor-help'>{row.plcOdds}</span>
+                              </Tooltip>
+                            ) : '-'}
+                          </td>
+                          <td className='py-2.5 text-text-tertiary text-xs whitespace-nowrap'>{row.hrTool ?? '-'}</td>
                           <td className='cell-center py-2.5'>
                             {ordTypeLabel ? (
                               <Badge
@@ -670,6 +703,18 @@ export default function RaceDetailPage() {
                   </div>
                 </div>
               )}
+              <p className='mt-3 text-text-tertiary text-xs'>
+                제재·심판 리포트·구간별 통과순위 등 상세 성적은{' '}
+                <a
+                  href='https://race.kra.co.kr/raceScore/ScoretableDetailList.do'
+                  target='_blank'
+                  rel='noopener noreferrer'
+                  className='link-primary'
+                >
+                  KRA 경주성적
+                </a>
+                에서 확인하세요.
+              </p>
               </>
               )}
             </section>

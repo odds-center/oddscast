@@ -13,6 +13,7 @@ export interface HorseEntryRow {
   hrName: string;
   jkName?: string;
   trName?: string;
+  owName?: string;
   chulNo?: string;
   wgBudam?: number;
   horseWeight?: string;
@@ -117,6 +118,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                   <div className='flex items-center gap-2 mt-0.5 text-text-secondary text-sm'>
                     {e.jkName && <span>{e.jkName}</span>}
                     {e.trName && <span className='text-text-tertiary'>/ {e.trName}</span>}
+                    {e.owName && <span className='text-text-tertiary'>/ {e.owName}</span>}
                   </div>
                   <div className='flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-text-tertiary'>
                     {ageSex !== '-' && <span>{ageSex}</span>}
@@ -153,6 +155,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
               <th className='cell-center w-10 py-3 font-semibold'>번호</th>
               <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
               <th className='text-left py-3 font-semibold'>기수/조교사</th>
+              <th className='text-left py-3 w-20 font-semibold'>마주</th>
               <th className='cell-center py-3 w-16 font-semibold'>
                 <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
               </th>
@@ -211,6 +214,9 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected }: 
                   <td className='py-2.5 text-text-secondary text-sm'>
                     <span>{e.jkName ?? '-'}</span>
                     {e.trName && <span className='text-text-tertiary'> / {e.trName}</span>}
+                  </td>
+                  <td className='py-2.5 text-text-secondary text-sm'>
+                    {e.owName ?? '-'}
                   </td>
                   <td className='cell-center py-2.5 text-sm text-text-secondary'>
                     {formatAgeSexOrigin(e.prd, e.age ?? undefined, e.sex)}

@@ -4,7 +4,7 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
-import { Badge, Card, TabBar } from '@/components/ui';
+import { Badge, DataTable, TabBar } from '@/components/ui';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery } from '@tanstack/react-query';
@@ -95,35 +95,76 @@ export default function TicketHistoryPage() {
             size='sm'
             className='mb-4'
           />
-          <div className='space-y-2'>
-            {tickets.map((t: PredictionTicket) => (
-              <Card key={t.id} className='p-4' variant={t.status === 'AVAILABLE' ? 'accent' : 'default'}>
-                <div className='flex items-start justify-between gap-3'>
-                  <div className='min-w-0 flex-1'>
-                    <div className='flex items-center gap-2 mb-1.5'>
-                      <Badge variant={getStatusVariant(t.status)} size='md'>
-                        {getStatusLabel(t.status)}
-                      </Badge>
-                      {t.raceId && (
-                        <Link
-                          href={routes.races.detail(t.raceId)}
-                          className='text-stone-700 text-sm font-medium hover:underline'
-                        >
-                          경주 보기 →
-                        </Link>
-                      )}
-                    </div>
-                    <p className='text-text-secondary text-xs'>
-                      발급 {formatDateTime(t.issuedAt)} · 만료 {formatDateTime(t.expiresAt)}
-                    </p>
-                    {t.usedAt && (
-                      <p className='text-text-tertiary text-xs mt-0.5'>사용 {formatDateTime(t.usedAt)}</p>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <DataTable<PredictionTicket>
+              className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
+              columns={[
+                {
+                  key: 'status',
+                  header: '상태',
+                  headerClassName: 'w-24',
+                  align: 'center',
+                  render: (t) => (
+                    <Badge variant={getStatusVariant(t.status)} size='md'>
+                      {getStatusLabel(t.status)}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: 'race',
+                  header: '경주',
+                  headerClassName: 'min-w-[90px]',
+                  render: (t) =>
+                    t.raceId ? (
+                      <Link
+                        href={routes.races.detail(t.raceId)}
+                        className='text-sm font-medium text-primary hover:underline whitespace-nowrap'
+                      >
+                        경주 보기 →
+                      </Link>
+                    ) : (
+                      <span className='text-text-tertiary'>—</span>
+                    ),
+                },
+                {
+                  key: 'issued',
+                  header: '발급',
+                  headerClassName: 'w-32',
+                  render: (t) => (
+                    <span className='whitespace-nowrap text-text-secondary text-sm'>
+                      {formatDateTime(t.issuedAt)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'expires',
+                  header: '만료',
+                  headerClassName: 'w-32',
+                  render: (t) => (
+                    <span className='whitespace-nowrap text-text-secondary text-sm'>
+                      {formatDateTime(t.expiresAt)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'used',
+                  header: '사용',
+                  headerClassName: 'w-32',
+                  render: (t) =>
+                    t.usedAt ? (
+                      <span className='whitespace-nowrap text-text-tertiary text-sm'>
+                        {formatDateTime(t.usedAt)}
+                      </span>
+                    ) : (
+                      <span className='text-text-tertiary'>—</span>
+                    ),
+                },
+              ]}
+              data={tickets}
+              getRowKey={(t) => String(t.id)}
+              getRowHref={(t) => (t.raceId ? routes.races.detail(t.raceId) : undefined)}
+              compact
+              emptyMessage={statusFilter === 'all' ? '예측권 이력이 없습니다.' : '해당 상태의 이력이 없습니다.'}
+            />
         </div>
         <Pagination
           page={page}

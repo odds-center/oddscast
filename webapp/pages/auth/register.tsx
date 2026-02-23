@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
+import BackLink from '@/components/page/BackLink';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
@@ -148,6 +149,7 @@ export default function Register() {
             로그인
           </Link>
         </p>
+        <BackLink href={routes.home} label='홈으로' className='mt-6 block' />
       </div>
     </Layout>
   );

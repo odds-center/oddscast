@@ -5,7 +5,7 @@ import Icon from '@/components/icons';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
-import { Card } from '@/components/ui';
+import { DataTable } from '@/components/ui';
 import NotificationApi from '@/lib/api/notificationApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { formatDateTime } from '@/lib/utils/format';
@@ -86,73 +86,97 @@ export default function NotificationsPage() {
             emptyDescription='경주 결과, 포인트 알림 등이 여기에 표시됩니다.'
             loadingLabel='알림 준비 중...'
           >
-            <div className='space-y-3'>
-              {notifications.map((n: Notification) => {
-                const link = getLink(n);
-                const isUnread = !n.isRead;
-
-                return (
-                  <Card
-                    key={n.id}
-                    variant={isUnread ? 'accent' : 'default'}
-                    className={`py-4 ${isUnread ? 'bg-stone-50' : ''}`}
-                  >
-                      <div className='flex items-start justify-between gap-2'>
-                        <div className='flex-1 min-w-0'>
-                          {link ? (
-                            <Link href={link} className='block'>
-                              <p className='text-foreground font-medium text-sm'>{n.title}</p>
-                              <p className='text-text-secondary text-xs mt-0.5 line-clamp-2'>
-                                {n.message}
-                              </p>
-                              <p className='text-text-tertiary text-xs mt-1'>
-                                {formatDateTime(n.createdAt)}
-                              </p>
-                            </Link>
-                          ) : (
-                            <>
-                              <p className='text-foreground font-medium text-sm'>{n.title}</p>
-                              <p className='text-text-secondary text-xs mt-0.5 line-clamp-2'>
-                                {n.message}
-                              </p>
-                              <p className='text-text-tertiary text-xs mt-1'>
-                                {formatDateTime(n.createdAt)}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        <div className='flex gap-1 shrink-0'>
-                          {!n.isRead && (
-                            <button
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                markReadMutation.mutate(n.id);
-                              }}
-                              className='p-1.5 text-text-tertiary hover:text-stone-700 transition-colors'
-                              aria-label='읽음'
-                            >
-                              <Icon name='Check' size={16} />
-                            </button>
-                          )}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              deleteMutation.mutate(n.id);
-                            }}
-                            disabled={deleteMutation.isPending}
-                            className='p-1.5 text-text-tertiary hover:text-error transition-colors'
-                            aria-label='삭제'
-                          >
-                            <Icon name='Trash2' size={16} />
-                          </button>
-                        </div>
-                      </div>
-                  </Card>
-                );
-              })}
-            </div>
+            <DataTable<Notification>
+              className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
+              columns={[
+                {
+                  key: 'read',
+                  header: '읽음',
+                  headerClassName: 'w-14 cell-center',
+                  align: 'center',
+                  render: (n) =>
+                    n.isRead ? (
+                      <span className='text-text-tertiary text-xs'>읽음</span>
+                    ) : (
+                      <span className='inline-block w-2 h-2 rounded-full bg-primary' aria-hidden />
+                    ),
+                },
+                {
+                  key: 'title',
+                  header: '제목',
+                  headerClassName: 'min-w-[120px]',
+                  render: (n) => {
+                    const link = getLink(n);
+                    const content = (
+                      <>
+                        <span className='font-medium text-foreground text-sm'>{n.title}</span>
+                        <span className='text-text-tertiary text-xs mt-0.5 block line-clamp-1'>
+                          {n.message}
+                        </span>
+                      </>
+                    );
+                    return link ? (
+                      <Link href={link} className='block min-w-0'>
+                        {content}
+                      </Link>
+                    ) : (
+                      <div className='min-w-0'>{content}</div>
+                    );
+                  },
+                },
+                {
+                  key: 'date',
+                  header: '날짜',
+                  headerClassName: 'w-32',
+                  render: (n) => (
+                    <span className='whitespace-nowrap text-text-secondary text-sm'>
+                      {formatDateTime(n.createdAt)}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'actions',
+                  header: '액션',
+                  headerClassName: 'w-20 cell-center',
+                  align: 'center',
+                  render: (n) => (
+                    <div className='flex items-center justify-center gap-0.5'>
+                      {!n.isRead && (
+                        <button
+                          type='button'
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            markReadMutation.mutate(n.id);
+                          }}
+                          className='p-1.5 text-text-tertiary hover:text-stone-700 transition-colors touch-manipulation'
+                          aria-label='읽음으로 표시'
+                        >
+                          <Icon name='Check' size={16} />
+                        </button>
+                      )}
+                      <button
+                        type='button'
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          deleteMutation.mutate(n.id);
+                        }}
+                        disabled={deleteMutation.isPending}
+                        className='p-1.5 text-text-tertiary hover:text-error transition-colors touch-manipulation'
+                        aria-label='삭제'
+                      >
+                        <Icon name='Trash2' size={16} />
+                      </button>
+                    </div>
+                  ),
+                },
+              ]}
+              data={notifications}
+              getRowKey={(n) => n.id}
+              compact
+              emptyMessage='알림이 없습니다.'
+            />
 
             <Pagination
               page={page}

@@ -1,7 +1,7 @@
 /**
  * Ranking preview section — TOP 5
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RankingApi, { type RankingUser } from '@/lib/api/rankingApi';
 import HomeSection from './HomeSection';
 import { RankBadge } from '@/components/ui';
@@ -17,6 +17,7 @@ export default function RankingPreviewSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['rankings', 'preview'],
     queryFn: () => RankingApi.getRankings({ limit: 5 }),
+    placeholderData: keepPreviousData,
   });
 
   const items: RankingUser[] = Array.isArray(data)

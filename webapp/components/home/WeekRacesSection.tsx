@@ -2,7 +2,7 @@
  * This week's races section
  */
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
@@ -24,6 +24,7 @@ function getWeekDates(): string[] {
 export default function WeekRacesSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['races', 'week'],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const res = await RaceApi.getRaces({ limit: 50, page: 1 });
       const races = (res?.races ?? []) as RaceDto[];

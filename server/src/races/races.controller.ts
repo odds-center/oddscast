@@ -153,9 +153,9 @@ export class RacesController {
   }
 
   @Get(':id/dividends')
-  @ApiOperation({ summary: '배당률 조회' })
+  @ApiOperation({ summary: '승식별 배당률 조회 (경주 결과에서 단승식·연승식 배당률 반환)' })
   getDividends(@Param('id', ParseIntPipe) id: number) {
-    return this.racesService.findOne(id);
+    return this.racesService.getDividends(id);
   }
 
   @Get(':id/analysis')

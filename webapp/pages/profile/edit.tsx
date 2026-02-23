@@ -9,7 +9,7 @@ import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 import AuthApi from '@/lib/api/authApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { getErrorMessage } from '@/lib/utils/error';
 
 type ProfileForm = {
@@ -38,6 +38,7 @@ export default function ProfileEditPage() {
     queryKey: ['auth', 'me'],
     queryFn: () => AuthApi.getCurrentUser(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   useEffect(() => {

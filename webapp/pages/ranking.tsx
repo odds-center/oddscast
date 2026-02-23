@@ -5,7 +5,7 @@ import SectionCard from '@/components/page/SectionCard';
 import { DataTable, Tooltip } from '@/components/ui';
 import DataFetchState from '@/components/page/DataFetchState';
 import RankingApi from '@/lib/api/rankingApi';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
@@ -16,11 +16,13 @@ export default function Ranking() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['rankings'],
     queryFn: () => RankingApi.getRankings({ limit: 20 }),
+    placeholderData: keepPreviousData,
   });
   const { data: myRanking } = useQuery({
     queryKey: ['rankings', 'me'],
     queryFn: () => RankingApi.getMyRanking(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   return (

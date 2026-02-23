@@ -10,7 +10,7 @@ import type { SubscriptionPlan } from '@/lib/api/subscriptionPlansApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import type { SubscriptionHistoryItem } from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 
 export default function SubscriptionsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -19,18 +19,21 @@ export default function SubscriptionsPage() {
   const { data: plans, isLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['subscriptions', 'plans'],
     queryFn: () => SubscriptionPlansApi.getSubscriptionPlans(),
+    placeholderData: keepPreviousData,
   });
 
   const { data: status } = useQuery({
     queryKey: ['subscription', 'status'],
     queryFn: () => SubscriptionApi.getStatus(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: history } = useQuery({
     queryKey: ['subscription', 'history'],
     queryFn: () => SubscriptionApi.getHistory(10, 0),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const cancelMutation = useMutation({

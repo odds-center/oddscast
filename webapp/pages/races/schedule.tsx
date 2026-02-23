@@ -13,7 +13,7 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import DataFetchState from '@/components/page/DataFetchState';
 import RaceApi, { type ScheduleDateItem } from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Icon from '@/components/icons';
 
 /** Calendar cell */
@@ -170,6 +170,7 @@ export default function RaceSchedulePage() {
     queryKey: ['races', 'schedule-dates', dateFrom, dateTo],
     queryFn: () => RaceApi.getScheduleDates({ dateFrom, dateTo }),
     enabled: !!dateFrom && !!dateTo,
+    placeholderData: keepPreviousData,
   });
 
   const dateMap = useMemo(() => {

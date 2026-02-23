@@ -1,7 +1,7 @@
 /**
  * Race predictions preview section — 1st place predicted horse number per race
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
@@ -32,6 +32,7 @@ export default function RacePredictionsPreviewSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['predictions', 'races', 'preview'],
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
+    placeholderData: keepPreviousData,
   });
 
   const rows = (data?.raceMatrix ?? []).slice(0, 6) as MatrixRowDto[];

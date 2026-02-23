@@ -1,7 +1,7 @@
 /**
  * Prediction matrix preview section — dark header style
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
@@ -35,6 +35,7 @@ export default function PredictionMatrixPreviewSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['predictions', 'matrix', 'preview'],
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
+    placeholderData: keepPreviousData,
   });
 
   const rows = (data?.raceMatrix ?? []).slice(0, 6);

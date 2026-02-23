@@ -242,7 +242,7 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
             className={
               navOrientation === 'vertical'
                 ? 'flex flex-col items-center gap-0 py-1 border-b border-stone-100'
-                : 'flex items-center justify-between gap-0.5 border-b border-stone-100 mb-0 -mx-0.5 rounded-t-md'
+                : 'flex items-center justify-between gap-0.5 border-r border-stone-100 mb-0 -mx-0.5 px-1 rounded-t-md'
             }
           >
             <button

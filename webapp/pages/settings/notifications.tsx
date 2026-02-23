@@ -9,7 +9,7 @@ import NotificationApi from '@/lib/api/notificationApi';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useIsNativeApp } from '@/lib/hooks/useIsNativeApp';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import type { NotificationPreferences } from '@/lib/types/notification';
 
 type PlatformFilter = 'web' | 'mobile' | 'all';
@@ -53,6 +53,7 @@ export default function NotificationSettingsPage() {
     queryKey: ['notification-preferences'],
     queryFn: () => NotificationApi.getNotificationPreferences(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const updateMutation = useMutation({

@@ -15,7 +15,7 @@ import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -27,6 +27,7 @@ export default function Profile() {
     queryKey: ['auth', 'me'],
     queryFn: () => AuthApi.getCurrentUser(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
   const displayName =
     (currentUser ?? storeUser) && typeof (currentUser ?? storeUser) === 'object'
@@ -39,24 +40,28 @@ export default function Profile() {
     queryKey: ['points', 'balance'],
     queryFn: () => PointApi.getMyBalance(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: ticketPrice, isLoading: ticketPriceLoading } = useQuery({
     queryKey: ['points', 'ticket-price'],
     queryFn: () => PointApi.getTicketPrice(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: ticketBalance, isLoading: ticketBalanceLoading } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
     queryFn: () => PredictionTicketApi.getBalance(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const { data: subscription, isLoading: subscriptionLoading } = useQuery({
     queryKey: ['subscription', 'status'],
     queryFn: () => SubscriptionApi.getStatus(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const purchaseMutation = useMutation({

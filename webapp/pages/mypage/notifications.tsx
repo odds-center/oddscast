@@ -9,7 +9,7 @@ import { DataTable } from '@/components/ui';
 import NotificationApi from '@/lib/api/notificationApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { formatDateTime } from '@/lib/utils/format';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import type { Notification } from '@/lib/types/notification';
@@ -24,6 +24,7 @@ export default function NotificationsPage() {
     queryFn: () =>
       NotificationApi.getNotifications({ page, limit: 20 }),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const markAllMutation = useMutation({

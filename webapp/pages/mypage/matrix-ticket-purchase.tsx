@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
@@ -23,6 +23,7 @@ export default function MatrixTicketPurchasePage() {
     queryKey: ['matrix-ticket-balance'],
     queryFn: () => PredictionTicketsApi.getMatrixBalance(),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const purchaseMutation = useMutation({

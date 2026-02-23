@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
@@ -38,6 +38,7 @@ export default function AllRacesSection() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'all', dateFilter, meetFilter],
+    placeholderData: keepPreviousData,
     queryFn: () => {
       const date =
         dateFilter === 'today'

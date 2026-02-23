@@ -1,7 +1,7 @@
 /**
  * Recent results section — grouped 1st·2nd·3rd place compact display
  */
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import ResultApi from '@/lib/api/resultApi';
@@ -69,6 +69,7 @@ function groupResults(raw: RaceResult[]): GroupedRace[] {
 export default function RecentResultsSection() {
   const { data, isLoading } = useQuery({
     queryKey: ['results', 'recent'],
+    placeholderData: keepPreviousData,
     queryFn: () =>
       ResultApi.getResults({
         limit: 60,

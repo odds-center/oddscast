@@ -11,7 +11,7 @@ import ResultApi from '@/lib/api/resultApi';
 import type { RaceResult } from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate } from '@/lib/utils/format';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
@@ -54,6 +54,7 @@ export default function Results() {
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['results', 'grouped', page, dateFilter, qMeet],
+    placeholderData: keepPreviousData,
     queryFn: () => {
       let date: string | undefined;
       if (dateFilter === 'today') {

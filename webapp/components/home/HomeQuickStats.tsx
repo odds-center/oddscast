@@ -2,7 +2,7 @@
  * Home quick stats — race information bar
  */
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
@@ -31,10 +31,12 @@ export default function HomeQuickStats() {
   const { data: todayData } = useQuery({
     queryKey: ['races', 'today', 'stats'],
     queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
+    placeholderData: keepPreviousData,
   });
 
   const { data: weekData } = useQuery({
     queryKey: ['races', 'week', 'count'],
+    placeholderData: keepPreviousData,
     queryFn: async () => {
       const res = await RaceApi.getRaces({ limit: 150, page: 1 });
       const races = res?.races ?? [];

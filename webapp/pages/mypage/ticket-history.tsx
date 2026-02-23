@@ -7,7 +7,7 @@ import RequireLogin from '@/components/page/RequireLogin';
 import { Badge, DataTable, TabBar } from '@/components/ui';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import { formatDateTime } from '@/lib/utils/format';
@@ -24,6 +24,7 @@ export default function TicketHistoryPage() {
     queryKey: ['prediction-tickets', 'history', page],
     queryFn: () => PredictionTicketApi.getHistory(50, 0, page),
     enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
   });
 
   const allTickets = data?.tickets ?? [];

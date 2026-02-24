@@ -43,10 +43,11 @@ export class AdminLoginDto {
   password: string;
 }
 
-export class GoogleAuthDto {
-  @ApiProperty({ description: 'Google ID Token from client (Web or Mobile)' })
+export class DeleteAccountDto {
+  @ApiProperty({ description: 'Current password to confirm account deletion' })
   @IsString()
-  idToken: string;
+  @MinLength(1, { message: '비밀번호를 입력하세요' })
+  password: string;
 }
 
 export class UpdateProfileDto {

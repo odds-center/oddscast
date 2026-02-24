@@ -20,12 +20,60 @@ export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   return norm < `${y}${m}${d}`;
 }
 
+/** Returns true if rcDate(YYYYMMDD) is today */
+export function isTodayRcDate(rcDate: string | null | undefined): boolean {
+  if (!rcDate || typeof rcDate !== 'string') return false;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return false;
+  const today = new Date();
+  const y = today.getFullYear();
+  const m = String(today.getMonth() + 1).padStart(2, '0');
+  const d = String(today.getDate()).padStart(2, '0');
+  return norm === `${y}${m}${d}`;
+}
+
 /** YYYYMMDD or YYYY-MM-DD → "2025.02.15" */
 export function formatRcDate(rcDate: string | undefined): string {
   if (!rcDate) return '-';
   const norm = rcDate.replace(/-/g, '');
   if (norm.length < 8) return rcDate;
   return `${norm.slice(0, 4)}.${norm.slice(4, 6)}.${norm.slice(6, 8)}`;
+}
+
+/**
+ * Parse KRA stTime ("14:00" or "1400") with rcDate (YYYYMMDD) to Date in local time.
+ * Returns null if invalid.
+ */
+export function parseStTimeToDate(
+  stTime: string | null | undefined,
+  rcDate: string | null | undefined,
+): Date | null {
+  if (!stTime || !rcDate || typeof stTime !== 'string' || typeof rcDate !== 'string') return null;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return null;
+  const timeStr = stTime.trim().replace(':', '');
+  const hour =
+    timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
+  const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
+  if (Number.isNaN(hour) || hour < 0 || hour > 23) return null;
+  const y = parseInt(norm.slice(0, 4), 10);
+  const m = parseInt(norm.slice(4, 6), 10) - 1;
+  const d = parseInt(norm.slice(6, 8), 10);
+  const date = new Date(y, m, d, hour, minute, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+/**
+ * Minutes from now until race start (rcDate + stTime). Negative if already started.
+ * Returns null if rcDate/stTime invalid.
+ */
+export function minutesUntilStart(
+  rcDate: string | null | undefined,
+  stTime: string | null | undefined,
+): number | null {
+  const start = parseStTimeToDate(stTime, rcDate);
+  if (!start) return null;
+  return Math.floor((start.getTime() - Date.now()) / 60_000);
 }
 
 /** YYYYMMDD → "February 15" (month and day in Korean) */

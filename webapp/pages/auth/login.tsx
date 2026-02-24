@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -9,9 +8,7 @@ import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
-import ConfigApi from '@/lib/api/configApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import GoogleSignInButton from '@/components/GoogleSignInButton';
 
 type LoginForm = {
   email: string;
@@ -21,7 +18,6 @@ type LoginForm = {
 export default function Login() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [showGoogleLogin, setShowGoogleLogin] = useState(true);
 
   const {
     register,
@@ -29,12 +25,6 @@ export default function Login() {
     setError,
     formState: { errors, isSubmitting },
   } = useForm<LoginForm>();
-
-  useEffect(() => {
-    ConfigApi.getShowGoogleLogin()
-      .then(setShowGoogleLogin)
-      .catch(() => setShowGoogleLogin(true));
-  }, []);
 
   const onSubmit = async (data: LoginForm) => {
     try {
@@ -48,43 +38,9 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSuccess = async (idToken: string) => {
-    setError('root', { message: '' });
-    try {
-      const res = await AuthApi.googleLogin(idToken);
-      if (res?.accessToken) {
-        setAuth(res.accessToken, res.user);
-        router.push(routes.home);
-      }
-    } catch (err: unknown) {
-      setError('root', { message: getErrorMessage(err) });
-    }
-  };
-
   return (
     <Layout title='OddsCast'>
       <div className='max-w-sm md:max-w-md mx-auto'>
-        {showGoogleLogin && (
-          <>
-            <div className='mb-4'>
-              <GoogleSignInButton
-                onSuccess={handleGoogleSuccess}
-                onError={(msg) => setError('root', { message: msg })}
-                theme='outline'
-                size='large'
-              />
-            </div>
-            <div className='relative my-4'>
-              <div className='absolute inset-0 flex items-center'>
-                <div className='w-full border-t border-border' />
-              </div>
-              <div className='relative flex justify-center text-sm'>
-                <span className='px-2 bg-background text-text-secondary'>또는</span>
-              </div>
-            </div>
-          </>
-        )}
-
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <FormInput
             label='이메일'

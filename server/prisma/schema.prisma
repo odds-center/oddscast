@@ -31,22 +31,46 @@ model User {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  favorites              Favorite[]
-  notifications          Notification[]
-  notificationPreference UserNotificationPreference?
-  pushTokens             PushToken[]
-  predictionTickets      PredictionTicket[]
-  subscriptions          Subscription[]
-  billingHistories       BillingHistory[]
-  singlePurchases        SinglePurchase[]
-  pointTransactions      PointTransaction[]
-  bets                   Bet[]
-  picks                  UserPick[]
-  betSlips               BetSlip[]
-  passwordResetTokens   PasswordResetToken[]
+  favorites               Favorite[]
+  notifications           Notification[]
+  notificationPreference  UserNotificationPreference?
+  pushTokens              PushToken[]
+  predictionTickets       PredictionTicket[]
+  subscriptions           Subscription[]
+  billingHistories        BillingHistory[]
+  singlePurchases         SinglePurchase[]
+  pointTransactions       PointTransaction[]
+  bets                    Bet[]
+  picks                   UserPick[]
+  betSlips                BetSlip[]
+  passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
+  dailyFortunes           UserDailyFortune[]
 
   @@map("users")
+}
+
+// ============================================
+// 오늘의 경마운세 (UserDailyFortune) — 유저별·날짜별 1건
+// ============================================
+model UserDailyFortune {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  date           String // YYYYMMDD
+  messageOverall String // 종합 운세 한 줄
+  messageRace    String // 경주 운세 한 줄
+  messageAdvice  String // 오늘의 조언 한 줄
+  luckyNumbers   Json // [3, 7] 등
+  luckyColor     String
+  luckyColorHex  String?
+  keyword        String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("user_daily_fortunes")
 }
 
 // ============================================
@@ -177,11 +201,11 @@ model RaceEntry {
   budam         String? // KRA: 부담구분 (예: 별정A)
   ratingHistory Json? // KRA API77: 레이팅 추이 [rating2, rating3, rating4]. rating=rating1
   recentRanks   Json? // 최근 등수 배열
-  trainingData Json? // 훈련 내역 (JSON)
-  equipment    String? // 장구 변경 (KRA API24)
-  horseWeight  String? // 마체중 (KRA API25, e.g. "502(-2)")
-  bleedingInfo Json? // 폐출혈 이력
-  isScratched  Boolean @default(false) // KRA API9: 출전취소
+  trainingData  Json? // 훈련 내역 (JSON)
+  equipment     String? // 장구 변경 (KRA API24)
+  horseWeight   String? // 마체중 (KRA API25, e.g. "502(-2)")
+  bleedingInfo  Json? // 폐출혈 이력
+  isScratched   Boolean @default(false) // KRA API9: 출전취소
 
   // API37_1 마필 구간별 경주기록 (S1F, G3F, G1F 최고/최저/평균)
   sectionalStats Json?
@@ -363,7 +387,7 @@ model PredictionTicket {
   type           TicketType   @default(RACE)
   status         TicketStatus @default(AVAILABLE)
   usedAt         DateTime?
-  matrixDate     String?      /// MATRIX 타입 전용: 해당 날짜 (YYYYMMDD)
+  matrixDate     String? /// MATRIX 타입 전용: 해당 날짜 (YYYYMMDD)
   issuedAt       DateTime     @default(now())
   expiresAt      DateTime
 
@@ -421,6 +445,7 @@ model Subscription {
   planId          Int
   price           Int
   status          SubscriptionStatus @default(PENDING)
+  customerKey     String?            // Toss Payments customer key (for billing API)
   billingKey      String?
   nextBillingDate DateTime?
   lastBilledAt    DateTime?
@@ -840,9 +865,9 @@ model AdminActivityLog {
   id          Int      @id @default(autoincrement())
   adminUserId Int?
   adminEmail  String?
-  action      String   // e.g. SYNC_SCHEDULE, UPDATE_USER, GRANT_TICKETS
-  target      String?  // e.g. "user:42", "race:20260215"
-  details     Json?    // request body, params, or result summary
+  action      String // e.g. SYNC_SCHEDULE, UPDATE_USER, GRANT_TICKETS
+  target      String? // e.g. "user:42", "race:20260215"
+  details     Json? // request body, params, or result summary
   ipAddress   String?
   userAgent   String?
   createdAt   DateTime @default(now())
@@ -860,10 +885,10 @@ model UserActivityLog {
   id        Int      @id @default(autoincrement())
   userId    Int?
   sessionId String?
-  event     String   // e.g. PAGE_VIEW, RACE_CLICK, PREDICTION_VIEW
-  page      String?  // e.g. /races/123
-  target    String?  // e.g. "race:123", "prediction:456"
-  metadata  Json?    // extra context (scroll depth, referrer, etc.)
+  event     String // e.g. PAGE_VIEW, RACE_CLICK, PREDICTION_VIEW
+  page      String? // e.g. /races/123
+  target    String? // e.g. "race:123", "prediction:456"
+  metadata  Json? // extra context (scroll depth, referrer, etc.)
   ipAddress String?
   userAgent String?
   createdAt DateTime @default(now())

@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
+import SectionCard from '@/components/page/SectionCard';
 import { TabBar } from '@/components/ui';
 import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
@@ -96,12 +97,14 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <Layout title='프로필 수정 | OddsCast'>
-      <div className='max-w-md mx-auto'>
+    <Layout title='프로필 수정 — OddsCast'>
+      <div className='max-w-md mx-auto space-y-6'>
         <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
-        <p className='text-text-tertiary text-sm mb-4 px-1'>
-          이름·닉네임과 비밀번호를 변경할 수 있습니다.
-        </p>
+        <SectionCard
+          title='프로필'
+          icon='User'
+          description='이름·닉네임과 비밀번호를 변경할 수 있습니다.'
+        >
         <TabBar
           options={[
             { value: 'profile', label: '기본 정보' },
@@ -213,6 +216,7 @@ export default function ProfileEditPage() {
             </button>
           </form>
         )}
+        </SectionCard>
       </div>
     </Layout>
   );

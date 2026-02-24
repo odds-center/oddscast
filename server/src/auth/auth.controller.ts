@@ -14,13 +14,13 @@ import {
   RegisterDto,
   LoginDto,
   AdminLoginDto,
-  GoogleAuthDto,
   UpdateProfileDto,
   ChangePasswordDto,
   ForgotPasswordDto,
   ResetPasswordDto,
   VerifyEmailDto,
   ResendVerificationDto,
+  DeleteAccountDto,
 } from './dto/auth.dto';
 import {
   CurrentUser,
@@ -42,12 +42,6 @@ export class AuthController {
   @ApiOperation({ summary: '로그인 (이메일/비밀번호)' })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
-  }
-
-  @Post('google')
-  @ApiOperation({ summary: '구글 로그인 (idToken → JWT)' })
-  googleLogin(@Body() dto: GoogleAuthDto) {
-    return this.authService.googleLogin(dto.idToken);
   }
 
   @Post('admin/login')
@@ -148,9 +142,12 @@ export class AuthController {
   @Delete('account')
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '계정 삭제' })
-  deleteAccount(@CurrentUser() user: JwtPayload) {
-    return this.authService.deleteAccount(user.sub);
+  @ApiOperation({ summary: '계정 삭제 (비밀번호 확인)' })
+  deleteAccount(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: DeleteAccountDto,
+  ) {
+    return this.authService.deleteAccount(user.sub, dto.password);
   }
 
   @Post('refresh')

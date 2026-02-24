@@ -70,6 +70,25 @@ export interface BillingHistory {
  */
 export default class PaymentsApi {
   /**
+   * After Toss billing auth success redirect: exchange authKey for billingKey, run first payment, activate subscription.
+   * POST /payments/billing-key
+   */
+  static async billingKeyAndConfirm(params: {
+    subscriptionId: string;
+    customerKey: string;
+    authKey: string;
+  }): Promise<{ success: boolean; subscription?: unknown; paymentKey?: string; orderId?: string }> {
+    try {
+      const response = await axiosInstance.post<
+        ApiResponse<{ success: boolean; subscription?: unknown; paymentKey?: string; orderId?: string }>
+      >('/payments/billing-key', params);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /**
    * Process subscription payment (plan payment)
    * POST /payments/subscribe — Server spec: { planId, paymentMethod }
    */

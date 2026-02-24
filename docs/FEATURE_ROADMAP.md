@@ -6,7 +6,7 @@
 > overall product direction. It must be read before any planning/development
 > session via `.cursorrules`.
 >
-> **Last updated**: 2026-02-19
+> **Last updated**: 2026-02-24
 
 ---
 
@@ -40,17 +40,23 @@
 | 11 | Ranking | ✅ Done | `/ranking` |
 | 12 | Notifications | ✅ Done | Push (mobile), in-app |
 | 13 | Profile / settings | ✅ Done | Edit, password, notification prefs |
-| 14 | Auth (Google / email) | ✅ Done | JWT, Google OAuth |
+| 14 | Auth (email/password) | ✅ Done | JWT, 로그인/회원가입/로그아웃/회원탈퇴 |
 | 15 | Legal pages | ✅ Done | Terms, privacy, refund |
 | 16 | KRA data sync (cron) | ✅ Done | Plan, entry, results, backfill |
 | 17 | Data consistency cron | ✅ Done | Orphaned race detection + backfill |
 | 18 | Admin panel | ✅ Done | Users, AI config, sync, stats |
+| 19 | 오늘의 경마운세 (Today's Racing Fortune) | ✅ Done | Home — 로그인 시 4항목 카드, 참고용·오락 목적 |
+| 20 | 구독 PG (토스페이먼츠) | ✅ Done | 빌링키·첫 결제·정기 결제 크론, 결제창 연동 |
+| 21 | 예측 정확도 대시보드 | ✅ Done | `/predictions/accuracy` — 전체/월별/경마장별 |
+| 22 | 마필 프로필 (Horse Performance) | ✅ Done | `/horses/[hrNo]` — 통산·최근 폼·경주 이력 |
+| 23 | 기수·조교사 프로필 (Jockey & Trainer) | ✅ Done | `/jockeys/[jkNo]`, `/trainers/[trName]` — 통산·경마장별·경주 이력 |
+| 24 | Smart Race Alerts (고신뢰도 예측 알림) | ✅ Done | 예측 생성 시 winProb≥70% → predictionEnabled 사용자에게 알림 |
 
 ---
 
 ## 2. Short-term Roadmap (Phase 1 — 1–2 months)
 
-### 2.1 🎯 Prediction Accuracy Dashboard
+### 2.1 🎯 Prediction Accuracy Dashboard — ✅ Implemented
 
 > Users need confidence. Show them how accurate the AI is.
 
@@ -69,7 +75,7 @@
 
 ---
 
-### 2.2 🏇 Race Day Live Mode
+### 2.2 🏇 Race Day Live Mode — ✅ Implemented
 
 > On race days (Fri/Sat/Sun), provide a real-time experience.
 
@@ -88,7 +94,7 @@
 
 ---
 
-### 2.3 📊 Horse Performance Profile
+### 2.3 📊 Horse Performance Profile — ✅ Implemented
 
 > Users want to research individual horses before checking AI predictions.
 
@@ -108,7 +114,7 @@
 
 ---
 
-### 2.4 🏆 Jockey & Trainer Profiles
+### 2.4 🏆 Jockey & Trainer Profiles — ✅ Implemented
 
 > Similar to horse profiles but for jockeys and trainers.
 
@@ -125,21 +131,39 @@
 
 ---
 
-### 2.5 🔔 Smart Race Alerts
+### 2.5 🔔 Smart Race Alerts — ✅ Partially Implemented
 
 > Proactive notifications about interesting races.
 
 | Item | Detail |
 |------|--------|
 | **What** | Automated alerts: "High-confidence prediction ready", "Big race today" |
-| **Trigger** | Cron after prediction generation — check confidence level |
-| **Types** | `HIGH_CONFIDENCE` (accuracy > 70%), `BIG_RACE` (rank A or higher), `FIRST_RACE_SOON` |
+| **Trigger** | Post-prediction hook (generatePrediction) — confidence from top winProb |
+| **Types** | `HIGH_CONFIDENCE` (winProb ≥ 70%) ✅ Done; `BIG_RACE`, `FIRST_RACE_SOON` optional later |
 | **Priority** | ⭐⭐ MEDIUM |
 
-**Implementation plan:**
-- Server: Post-prediction hook checks confidence score
-- If above threshold, creates Notification for subscribed users
-- Respects user notification preferences (raceEnabled, predictionEnabled)
+**Implemented:**
+- Server: After prediction create, if max(winProb) in scores ≥ 70%, `NotificationsService.notifyHighConfidencePrediction()` creates in-app Notification for users with `predictionEnabled: true`.
+- Respects `UserNotificationPreference.predictionEnabled` (default true).
+
+**Optional (future):**
+- `BIG_RACE`: Cron or hook when race.rank is "국1등급" etc. → notify "Big race today".
+- `FIRST_RACE_SOON`: Cron that finds races with stTime in ~1 hour → notify "First race starts soon".
+
+---
+
+### 2.6 🍀 오늘의 경마운세 (Today's Racing Fortune) — ✅ Implemented
+
+> Home 메인에 가벼운 "오늘의 운세" 카드 — 오락·참고용, 사행성 없음.
+
+| Item | Detail |
+|------|--------|
+| **What** | 한 줄 운세, 행운의 번호·색, 키워드 등 (참고용) |
+| **Where** | Home (`/`) — DateHeader 근처 카드/배너 |
+| **Data** | 유저별·날짜별 1건 DB 저장, 4항목(종합·경주·조언·행운 요소) 랜덤 풀 |
+| **Priority** | ⭐⭐ MEDIUM — engagement, 재방문 동기 |
+
+**Spec:** [features/TODAYS_RACING_FORTUNE.md](features/TODAYS_RACING_FORTUNE.md)
 
 ---
 

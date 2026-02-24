@@ -73,7 +73,7 @@ export default function NotificationSettingsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='OddsCast'>
+      <Layout title='알림 설정 — OddsCast'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         <RequireLogin suffix='설정할 수 있습니다' />
         <BackLink href={routes.settings} label='설정으로' />
@@ -82,15 +82,19 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='알림 설정 — OddsCast'>
       <div className='space-y-6'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         {isLoading ? (
-        <div className='py-16'>
-          <LoadingSpinner size={28} label='설정 준비 중...' />
-        </div>
-      ) : (
-        <SectionCard title='알림 유형' icon='Bell' className='mb-6'>
+          <div className='py-16'>
+            <LoadingSpinner size={28} label='설정 준비 중...' />
+          </div>
+        ) : (
+          <SectionCard
+            title='알림 유형'
+            icon='Bell'
+            description='푸시·경주·예측 등 알림을 켜거나 끌 수 있습니다.'
+          >
           {updateMutation.isError && (
             <p className='msg-error mb-4'>
               {(updateMutation.error as Error)?.message || '설정 저장에 실패했습니다.'}
@@ -114,7 +118,7 @@ export default function NotificationSettingsPage() {
               </div>
             ))}
           </div>
-        </SectionCard>
+          </SectionCard>
         )}
 
         <BackLink href={routes.settings} label='설정으로' />

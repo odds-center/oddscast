@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { Prisma } from '@prisma/client';
 import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
 import { meetToCode, toKraMeetName } from '../kra/constants';
@@ -28,6 +29,7 @@ export class PredictionsService {
     private prisma: PrismaService,
     private analysisService: AnalysisService,
     private configService: GlobalConfigService,
+    private notificationsService: NotificationsService,
   ) {}
 
   async findAll(filters: PredictionFilterDto) {
@@ -678,7 +680,7 @@ export class PredictionsService {
         lastWorkingGeminiModel = modelName;
 
         // 새 예측 생성 (이전 예측 기록 유지 — update/delete 없음)
-        return this.prisma.prediction.create({
+        const created = await this.prisma.prediction.create({
           data: {
             raceId,
             scores: scoresToSave as Prisma.InputJsonValue,
@@ -688,6 +690,33 @@ export class PredictionsService {
             previewApproved: true, // 검수 통과 시 preview API 노출 (관리자가 미승인 시 false로 변경 가능)
           },
         });
+
+        // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
+        const horseScores = (scoresToSave as { horseScores?: Array<{ winProb?: number }> })
+          ?.horseScores ?? [];
+        const maxWinProb = horseScores.length
+          ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
+          : 0;
+        const confidencePercent = Math.round(maxWinProb);
+        if (confidencePercent >= 70) {
+          try {
+            await this.notificationsService.notifyHighConfidencePrediction({
+              raceId,
+              predictionId: created.id,
+              meet: (race as { meet?: string }).meet,
+              rcNo: (race as { rcNo?: string }).rcNo,
+              rcDate: (race as { rcDate?: string }).rcDate,
+              confidencePercent,
+            });
+          } catch (alertErr) {
+            console.warn(
+              '[SmartAlert] notifyHighConfidencePrediction failed:',
+              alertErr instanceof Error ? alertErr.message : alertErr,
+            );
+          }
+        }
+
+        return created;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
         const status = (err as { status?: number })?.status;

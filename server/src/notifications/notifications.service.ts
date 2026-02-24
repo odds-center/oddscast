@@ -291,4 +291,52 @@ export class NotificationsService {
       message: `알림 ${created.count}건 저장, 푸시 ${pushSent}건 발송`,
     };
   }
+
+  /**
+   * Smart Race Alert: notify users with predictionEnabled when a high-confidence prediction is ready.
+   * Called from PredictionsService after prediction create.
+   */
+  async notifyHighConfidencePrediction(payload: {
+    raceId: number;
+    predictionId: number;
+    meet?: string;
+    rcNo?: string;
+    rcDate?: string;
+    confidencePercent: number;
+  }): Promise<{ count: number }> {
+    const { raceId, predictionId, meet = '', rcNo = '', rcDate = '', confidencePercent } = payload;
+    const meetLabel = meet || '경주';
+    const raceLabel = rcNo ? `${meetLabel} ${rcNo}R` : meetLabel;
+    const title = '고신뢰도 AI 예측 준비됨';
+    const message = `${raceLabel} — 예측 확률 ${confidencePercent}%. 상세 분석을 확인하세요.`;
+    const data = { raceId, predictionId, type: 'HIGH_CONFIDENCE' } as Prisma.InputJsonValue;
+
+    const users = await this.prisma.user.findMany({
+      where: {
+        isActive: true,
+        OR: [
+          { notificationPreference: null },
+          { notificationPreference: { predictionEnabled: true } },
+        ],
+      },
+      select: { id: true },
+    });
+    const userIds = users.map((u) => u.id);
+    if (userIds.length === 0) return { count: 0 };
+
+    const created = await this.prisma.notification.createMany({
+      data: userIds.map((userId) => ({
+        userId,
+        title,
+        message,
+        type: 'PREDICTION' as NotificationType,
+        category: 'INFO' as NotificationCategory,
+        data,
+      })),
+    });
+    this.logger.log(
+      `[SmartAlert] HIGH_CONFIDENCE: raceId=${raceId} → ${created.count} notifications`,
+    );
+    return { count: created.count };
+  }
 }

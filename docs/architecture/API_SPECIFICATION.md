@@ -49,7 +49,6 @@ Admin은 `/api/admin` prefix로 별도 base URL 사용:
 | -------- | --------------------------- | ------------------- | ---- | ------------------ |
 | `POST`   | `/auth/register`            | 회원가입            | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/login`               | 로그인 (이메일/비밀번호) | 🔓   | auth.controller.ts |
-| `POST`   | `/auth/google`             | 구글 로그인 (idToken → JWT) | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/admin/login`        | 관리자 로그인 (legacy) | 🔓 | auth.controller.ts |
 | `POST`   | `/admin/auth/login`        | 관리자 로그인 (Admin 전용) | 🔓 | admin-auth.controller.ts |
 | `GET`    | `/admin/auth/me`           | 관리자 내 정보       | 🔐   | admin-auth.controller.ts |
@@ -65,7 +64,7 @@ Admin은 `/api/admin` prefix로 별도 base URL 사용:
 | `POST`   | `/auth/verify-email`        | 이메일 인증         | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/resend-verification` | 인증 메일 재발송    | 🔓   | auth.controller.ts |
 | `GET`    | `/auth/check`               | 인증 상태 확인      | 🔐   | auth.controller.ts |
-| `DELETE` | `/auth/account`             | 계정 삭제           | 🔐   | auth.controller.ts |
+| `DELETE` | `/auth/account`             | 계정 삭제 (body: `{ password }`) | 🔐   | auth.controller.ts |
 
 ### 요청/응답 DTO
 
@@ -76,10 +75,6 @@ RegisterDto { email, password, name, nickname } — nickname 필수
 
 // 로그인
 LoginDto { email, password }
-→ { accessToken, user: SanitizedUser }
-
-// 구글 로그인
-GoogleAuthDto { idToken }
 → { accessToken, user: SanitizedUser }
 
 // 프로필 수정
@@ -99,14 +94,8 @@ ChangePasswordDto { oldPassword, newPassword }
 
 | Method   | Route         | 설명                  | Auth | 비고              |
 | -------- | ------------- | --------------------- | ---- | ----------------- |
-| `GET`    | `/config`     | 전체 설정 조회 (key-value) | 🔓   | show_google_login 등 |
+| `GET`    | `/config`     | 전체 설정 조회 (key-value) | 🔓   | |
 | `PUT`    | `/config/:key` | 설정 값 변경          | 🔐 Admin | body: { value: string } |
-
-### 주요 키
-
-| key                | 설명              | 예시 값  |
-| ------------------ | ----------------- | -------- |
-| `show_google_login` | 구글 로그인 버튼 표시 여부 | `true` / `false` |
 
 ---
 
@@ -250,6 +239,28 @@ RaceResultDto[] {
 
 ---
 
+## 4-2. Jockeys (기수) — `/api/jockeys`
+
+> Server: `server/src/jockeys/jockeys.controller.ts` WebApp: `webapp/lib/api/jockeyApi.ts`
+
+| Method | Route                      | 설명                         | Auth |
+| ------ | -------------------------- | ---------------------------- | ---- |
+| `GET`  | `/jockeys/:jkNo/profile`   | 기수 프로필 (통산·경마장별 승률, 최근 폼) | 🔓   |
+| `GET`  | `/jockeys/:jkNo/history`    | 기수 경주 이력 (페이지네이션) | 🔓   | page, limit |
+
+---
+
+## 4-3. Trainers (조교사) — `/api/trainers`
+
+> Server: `server/src/trainers/trainers.controller.ts` WebApp: `webapp/lib/api/trainerApi.ts`
+
+| Method | Route                        | 설명                           | Auth |
+| ------ | ---------------------------- | ------------------------------ | ---- |
+| `GET`  | `/trainers/:trName/profile`  | 조교사 프로필 (통산·경마장별 승률, 최근 폼) | 🔓   |
+| `GET`  | `/trainers/:trName/history`   | 조교사 경주 이력 (페이지네이션) | 🔓   | page, limit |
+
+---
+
 ## 5. Users (사용자) — `/api/users`
 
 > Server: `server/src/users/users.controller.ts` WebApp: `webapp/lib/api/userApi.ts`
@@ -381,9 +392,10 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 
 > Server: `server/src/payments/payments.controller.ts` WebApp: `webapp/lib/api/paymentApi.ts`
 
-| Method | Route                 | 설명      | Auth |
-| ------ | --------------------- | --------- | ---- |
-| `POST` | `/payments/subscribe` | 구독 결제 | 🔐   |
+| Method | Route                 | 설명 | Auth |
+| ------ | --------------------- | ----- | ---- |
+| `POST` | `/payments/billing-key` | 빌링키 발급 + 첫 결제 + 구독 활성화 (body: `subscriptionId`, `customerKey`, `authKey`) | 🔐   |
+| `POST` | `/payments/subscribe` | 구독 결제 (레거시/목업) | 🔐   |
 | `POST` | `/payments/purchase`  | 단건 결제 | 🔐   |
 | `GET`  | `/payments/history`   | 결제 이력 | 🔐   |
 

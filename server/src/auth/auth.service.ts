@@ -5,7 +5,6 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { OAuth2Client } from 'google-auth-library';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
@@ -36,16 +35,11 @@ export interface SanitizedAdminUser {
 
 @Injectable()
 export class AuthService {
-  private googleClient: OAuth2Client;
-
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
-  ) {
-    const clientId = this.config.get('GOOGLE_CLIENT_ID');
-    this.googleClient = new OAuth2Client(clientId);
-  }
+  ) {}
 
   async register(dto: RegisterDto) {
     const existing = await this.prisma.user.findUnique({
@@ -80,63 +74,6 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
-
-    const token = this.generateToken(user.id, user.email, user.role);
-    return { user: this.sanitize(user), ...token };
-  }
-
-  async googleLogin(idToken: string) {
-    const clientId = this.config.get('GOOGLE_CLIENT_ID');
-    if (!clientId) {
-      throw new UnauthorizedException('Google 로그인이 설정되지 않았습니다.');
-    }
-
-    let ticket;
-    try {
-      ticket = await this.googleClient.verifyIdToken({
-        idToken,
-        audience: clientId,
-      });
-    } catch {
-      throw new UnauthorizedException('유효하지 않은 Google 토큰입니다.');
-    }
-
-    const payload = ticket.getPayload();
-    if (!payload?.email) {
-      throw new UnauthorizedException(
-        'Google 프로필에서 이메일을 가져올 수 없습니다.',
-      );
-    }
-
-    const { email, name, picture } = payload;
-    let user = await this.prisma.user.findUnique({ where: { email } });
-
-    if (!user) {
-      // 신규 구글 사용자: 랜덤 비밀번호로 생성 (구글 로그인만 사용)
-      const randomPassword = await bcrypt.hash(
-        `google_${Date.now()}_${Math.random().toString(36)}`,
-        10,
-      );
-      const baseName = name || email.split('@')[0];
-      user = await this.prisma.user.create({
-        data: {
-          email,
-          password: randomPassword,
-          name: baseName,
-          nickname: baseName, // 필수: 구글 이름 또는 이메일 prefix
-          avatar: picture || null,
-          isEmailVerified: true,
-        },
-      });
-    } else {
-      await this.prisma.user.update({
-        where: { id: user.id },
-        data: {
-          lastLoginAt: new Date(),
-          avatar: picture || user.avatar,
-        },
-      });
-    }
 
     const token = this.generateToken(user.id, user.email, user.role);
     return { user: this.sanitize(user), ...token };
@@ -209,7 +146,13 @@ export class AuthService {
     return { message: '비밀번호가 변경되었습니다' };
   }
 
-  async deleteAccount(userId: number) {
+  async deleteAccount(userId: number, password: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new UnauthorizedException();
+    const valid = await bcrypt.compare(password, user.password);
+    if (!valid) {
+      throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
+    }
     await this.prisma.user.update({
       where: { id: userId },
       data: { isActive: false },

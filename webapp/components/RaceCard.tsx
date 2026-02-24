@@ -54,7 +54,7 @@ const RaceCard: React.FC<RaceCardProps> = ({ race }) => {
             </div>
           )}
         </div>
-        <StatusBadge status={status} rcDate={race.rcDate ?? undefined} />
+        <StatusBadge status={status} rcDate={race.rcDate ?? undefined} stTime={race.stTime ?? race.rcStartTime ?? undefined} />
       </div>
     </Link>
   );

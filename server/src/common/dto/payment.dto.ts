@@ -30,6 +30,21 @@ export class PaymentSubscribeDto {
   paymentMethod: string;
 }
 
+/** Toss payment window success: exchange authKey for billingKey and optionally run first payment. */
+export class BillingKeyDto {
+  @ApiProperty({ description: 'Subscription ID (PENDING)' })
+  @IsString()
+  subscriptionId: string;
+
+  @ApiProperty({ description: 'Toss customerKey (from successUrl query)' })
+  @IsString()
+  customerKey: string;
+
+  @ApiProperty({ description: 'Toss authKey (from successUrl query)' })
+  @IsString()
+  authKey: string;
+}
+
 export class PaymentPurchaseDto {
   @ApiProperty()
   @IsInt()

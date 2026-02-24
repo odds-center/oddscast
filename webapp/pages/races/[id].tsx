@@ -628,8 +628,30 @@ export default function RaceDetailPage() {
                           <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</td>
                           <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</td>
                           <td className='cell-center py-2.5 text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</td>
-                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>{res.jkName ?? '-'}</td>
-                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.trName ?? '-'}</td>
+                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>
+                            {(res as { jkNo?: string }).jkNo && res.jkName ? (
+                              <Link
+                                href={routes.jockeys.detail((res as { jkNo: string }).jkNo)}
+                                className='hover:text-primary hover:underline'
+                              >
+                                {res.jkName}
+                              </Link>
+                            ) : (
+                              res.jkName ?? '-'
+                            )}
+                          </td>
+                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>
+                            {row.trName ? (
+                              <Link
+                                href={routes.trainers.detail(row.trName)}
+                                className='hover:text-primary hover:underline'
+                              >
+                                {row.trName}
+                              </Link>
+                            ) : (
+                              '-'
+                            )}
+                          </td>
                           <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.owName ?? '-'}</td>
                           <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs whitespace-nowrap'>
                             {record}

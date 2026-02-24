@@ -233,6 +233,7 @@ export class RacesService {
         chulNo: true,
         hrNo: true,
         hrName: true,
+        jkNo: true,
         jkName: true,
         trName: true,
         wgBudam: true,

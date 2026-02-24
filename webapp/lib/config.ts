@@ -21,6 +21,10 @@ export const CONFIG = {
   analytics: {
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
   },
+  /** Toss Payments (billing window) — client key only; secret is server-side */
+  tossPayments: {
+    clientKey: process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY || '',
+  },
 };
 
 export default CONFIG;

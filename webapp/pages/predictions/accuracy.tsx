@@ -89,6 +89,34 @@ export default function PredictionAccuracyPage() {
                 description='최근 12개월'
                 className='mb-6'
               >
+                {/* Simple trend bar chart: height = averageAccuracy (0–100%) */}
+                <div className='mb-4 rounded-xl border border-border bg-stone-50/50 p-4'>
+                  <p className='text-xs text-text-tertiary font-semibold mb-3'>월별 평균 정확도</p>
+                  <div
+                    className='flex items-end gap-1'
+                    style={{ height: 96 }}
+                    aria-label='월별 정확도 막대 그래프'
+                  >
+                    {byMonth.map((row) => {
+                      const pct = Math.min(100, Math.max(0, row.averageAccuracy));
+                      return (
+                        <div
+                          key={row.month}
+                          className='flex-1 min-w-0 flex flex-col items-center justify-end gap-0.5 h-full'
+                          title={`${formatMonth(row.month)}: ${row.averageAccuracy}% (${row.count}건)`}
+                        >
+                          <div
+                            className='w-full rounded-t bg-primary/80 min-h-[4px] transition-all'
+                            style={{ height: `${(pct / 100) * 80}px` }}
+                          />
+                          <span className='text-[10px] text-text-tertiary truncate w-full text-center shrink-0'>
+                            {row.month.slice(2)}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
                 <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                   <DataTable<{ month: string; count: number; averageAccuracy: number }>
                     columns={[

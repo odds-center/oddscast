@@ -50,18 +50,6 @@ export default class AuthApi {
     }
   }
 
-  static async googleLogin(idToken: string): Promise<AuthResponse> {
-    try {
-      const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
-        '/auth/google',
-        { idToken },
-      );
-      return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
-    }
-  }
-
   static async refreshToken(): Promise<AuthResponse> {
     try {
       const response = await axiosInstance.post<ApiResponse<AuthResponse>>('/auth/refresh');
@@ -148,6 +136,19 @@ export default class AuthApi {
       const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
         '/auth/resend-verification',
         { email },
+      );
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** Delete account (requires password). Server deactivates user. */
+  static async deleteAccount(password: string): Promise<{ message: string }> {
+    try {
+      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
+        '/auth/account',
+        { data: { password } },
       );
       return handleApiResponse(response);
     } catch (error) {

@@ -17,6 +17,8 @@ export interface SubscriptionStatus {
   isActive: boolean;
   monthlyTickets: number;
   daysUntilRenewal: number | null;
+  /** Returned on subscribe(); used for Toss billing auth */
+  customerKey?: string;
 }
 
 /**

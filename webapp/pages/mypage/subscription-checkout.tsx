@@ -1,11 +1,10 @@
 /**
  * Subscription checkout page
- * Flow: plan selection → subscription request (PENDING) → payment processing → subscription activation
- * docs/architecture/BUSINESS_LOGIC.md 3.2 Subscription payment flow
+ * Flow: plan selection → subscribe (PENDING) → Toss billing auth window → redirect to success/fail → billing-key API
+ * @see docs/features/SUBSCRIPTION_PG_TOSSPAYMENTS.md
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
-import { useQueryClient } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -17,15 +16,27 @@ import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import SubscriptionPlansApi from '@/lib/api/subscriptionPlansApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
-import PaymentsApi from '@/lib/api/paymentApi';
+import CONFIG from '@/lib/config';
 import { useAuthStore } from '@/lib/store/authStore';
 import type { SubscriptionPlan } from '@/lib/api/subscriptionPlansApi';
 
+const TOSSPAYMENTS_SCRIPT = 'https://js.tosspayments.com/v1/payment';
+
 type Step = 'loading' | 'plan' | 'paying' | 'success' | 'error';
+
+declare global {
+  interface Window {
+    TossPayments?: (clientKey: string) => {
+      requestBillingAuth: (
+        method: string,
+        options: { customerKey: string; successUrl: string; failUrl: string },
+      ) => Promise<void>;
+    };
+  }
+}
 
 export default function SubscriptionCheckoutPage() {
   const router = useRouter();
-  const queryClient = useQueryClient();
   const { planId } = router.query;
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const [step, setStep] = useState<Step>('loading');
@@ -60,35 +71,58 @@ export default function SubscriptionCheckoutPage() {
     })();
   }, [planId]);
 
+  const loadTossScript = useCallback((): Promise<void> => {
+    if (typeof window === 'undefined') return Promise.reject(new Error('No window'));
+    const existing = document.querySelector(`script[src="${TOSSPAYMENTS_SCRIPT}"]`);
+    if (existing) return Promise.resolve();
+    return new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = TOSSPAYMENTS_SCRIPT;
+      script.async = true;
+      script.onload = () => resolve();
+      script.onerror = () => reject(new Error('토스페이먼츠 스크립트를 불러오지 못했습니다.'));
+      document.body.appendChild(script);
+    });
+  }, []);
+
   const handlePay = async () => {
     if (!plan || !isLoggedIn) return;
+
+    const clientKey = CONFIG.tossPayments?.clientKey ?? '';
+    if (!clientKey) {
+      setStep('error');
+      setErrorMsg('결제가 설정되지 않았습니다. (NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY)');
+      return;
+    }
+
     setStep('paying');
     setErrorMsg('');
 
     try {
-      // 1. Subscribe (PENDING)
       const sub = await SubscriptionApi.subscribe({ planId: String(plan.id) });
-      const subscriptionId = (sub as { id?: string | number })?.id;
-      const subId =
-        typeof subscriptionId === 'number'
-          ? String(subscriptionId)
-          : subscriptionId ?? '';
-      if (!subId) throw new Error('구독 정보를 받지 못했습니다.');
+      const subId = String((sub as { id?: number })?.id ?? '');
+      const customerKey = (sub as { customerKey?: string })?.customerKey ?? '';
+      if (!subId || !customerKey) throw new Error('구독 정보를 받지 못했습니다.');
 
-      // 2. Process payment
-      await PaymentsApi.processSubscription({
-        planId: String(plan.id),
-        paymentMethod: 'CARD',
+      await loadTossScript();
+
+      const TossPayments = window.TossPayments;
+      if (!TossPayments) throw new Error('토스페이먼츠를 불러올 수 없습니다.');
+
+      const origin = typeof window !== 'undefined' ? window.location.origin : '';
+      const successUrl = `${origin}${routes.mypage.subscriptionCheckoutSuccess}?subscriptionId=${encodeURIComponent(subId)}`;
+      const failUrl = `${origin}${routes.mypage.subscriptionCheckoutFail}?subscriptionId=${encodeURIComponent(subId)}`;
+
+      const toss = TossPayments(clientKey);
+      await toss.requestBillingAuth('카드', {
+        customerKey,
+        successUrl,
+        failUrl,
       });
-
-      // 3. Activate subscription
-      await SubscriptionApi.activate(subId, 'billing-key-from-pg');
-
-      queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
-      setStep('success');
+      setStep('plan');
     } catch (err: unknown) {
       setStep('error');
-      setErrorMsg(err instanceof Error ? err.message : '결제 처리에 실패했습니다.');
+      setErrorMsg(err instanceof Error ? err.message : '결제창을 열지 못했습니다.');
     }
   };
 
@@ -124,28 +158,6 @@ export default function SubscriptionCheckoutPage() {
         <div className='max-w-md mx-auto'>
           <EmptyState icon='AlertCircle' title='오류' description={errorMsg} />
           <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block text-center' />
-        </div>
-      </Layout>
-    );
-  }
-
-  if (step === 'success') {
-    return (
-      <Layout title='OddsCast'>
-        <div className='max-w-md mx-auto text-center'>
-          <div className='card border-stone-200 mb-6'>
-            <Icon name='CheckCircle' size={48} className='text-success mx-auto mb-3' />
-            <h2 className='text-lg font-bold text-foreground mb-2'>구독이 완료되었습니다</h2>
-            <p className='text-text-secondary text-sm'>
-              매월 예측권이 자동으로 발급됩니다. AI 예측을 이용해 보세요.
-            </p>
-          </div>
-          <Link href={routes.profile.index} className='btn-primary block'>
-            내 정보로
-          </Link>
-          <Link href={routes.mypage.subscriptions} className='block mt-3 text-stone-700 text-sm hover:underline'>
-            구독 관리
-          </Link>
         </div>
       </Layout>
     );

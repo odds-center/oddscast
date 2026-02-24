@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   SubscribeDto,
@@ -44,11 +45,14 @@ export class SubscriptionsService {
       throw new BadRequestException('선택한 플랜은 현재 제공되지 않습니다.');
     }
 
+    const customerKey = randomUUID();
+
     return this.prisma.subscription.create({
       data: {
         userId,
         planId: plan.id,
         price: plan.totalPrice,
+        customerKey,
         billingKey: dto.billingKey ?? undefined,
         status: 'PENDING',
       },

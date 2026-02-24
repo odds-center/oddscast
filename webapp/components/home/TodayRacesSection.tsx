@@ -88,7 +88,7 @@ export default function TodayRacesSection() {
               headerClassName: 'w-14 cell-center',
               align: 'center',
               render: (row) => (
-                <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} />
+                <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />
               ),
             },
           ]}

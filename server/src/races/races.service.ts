@@ -21,6 +21,7 @@ import {
   RACE_INCLUDE_FULL,
 } from '../common/prisma-includes';
 import { toKraMeetForDb } from '@oddscast/shared';
+import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 
 @Injectable()
 export class RacesService {
@@ -52,16 +53,25 @@ export class RacesService {
       ];
     }
 
-    const [races, total] = await Promise.all([
+    const maxFetch = 5000;
+    const [allRaces, total] = await Promise.all([
       this.prisma.race.findMany({
         where,
         include: RACE_INCLUDE_ENTRIES,
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: [{ rcDate: 'desc' }, { rcNo: 'asc' }],
+        take: maxFetch,
+        orderBy: { rcDate: 'desc' },
       }),
       this.prisma.race.count({ where }),
     ]);
+
+    const sorted = sortRacesByNumericRcNo(allRaces, {
+      getRcDate: (r) => r.rcDate ?? '',
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'desc',
+    });
+    const start = (page - 1) * limit;
+    const races = sorted.slice(start, start + limit);
 
     return {
       races: serializeRaces(races),
@@ -149,9 +159,15 @@ export class RacesService {
     const races = await this.prisma.race.findMany({
       where,
       include: RACE_INCLUDE_ENTRIES,
-      orderBy: [{ rcDate: 'asc' }, { rcNo: 'asc' }],
+      orderBy: { rcDate: 'asc' },
     });
-    return serializeRaces(races);
+    const sorted = sortRacesByNumericRcNo(races, {
+      getRcDate: (r) => r.rcDate ?? '',
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'asc',
+    });
+    return serializeRaces(sorted);
   }
 
   /**
@@ -218,12 +234,35 @@ export class RacesService {
     const races = await this.prisma.race.findMany({
       where: { rcDate },
       include: RACE_INCLUDE_ENTRIES_ACTIVE,
-      orderBy: [{ rcNo: 'asc' }],
     });
-    return serializeRaces(races);
+    const sorted = sortRacesByNumericRcNo(races, {
+      getRcDate: () => rcDate,
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'asc',
+    });
+    return serializeRaces(sorted);
   }
 
+  /**
+   * Returns race results only when the race is completed (status COMPLETED or rcDate in the past).
+   * Avoids exposing results for future/scheduled races that may have stray DB rows.
+   */
   async getRaceResult(raceId: number) {
+    const race = await this.prisma.race.findUnique({
+      where: { id: raceId },
+      select: { status: true, rcDate: true },
+    });
+    if (!race) return [];
+    const status = race.status ?? null;
+    const isPast =
+      race.rcDate &&
+      dayjs(race.rcDate.replace(/-/g, '').slice(0, 8), 'YYYYMMDD').isBefore(
+        dayjs(),
+        'day',
+      );
+    if (status !== 'COMPLETED' && !isPast) return [];
+
     const results = await this.prisma.raceResult.findMany({
       where: { raceId },
       select: {

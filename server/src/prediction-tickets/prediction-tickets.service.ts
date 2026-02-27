@@ -53,9 +53,25 @@ export class PredictionTicketsService {
 
     // 예측이 없거나 regenerate=true 이면 AI로 새 예측 생성 (create만 사용 — 이전 예측 기록 유지)
     if (!prediction || dto.regenerate) {
-      prediction = await this.predictionsService.generatePrediction(
-        Number(dto.raceId),
-      );
+      try {
+        prediction = await this.predictionsService.generatePrediction(
+          Number(dto.raceId),
+        );
+      } catch (err: unknown) {
+        const status = (err as { status?: number })?.status;
+        const msg = err instanceof Error ? err.message : String(err);
+        const isQuota =
+          status === 429 ||
+          msg.includes('429') ||
+          msg.includes('quota') ||
+          msg.includes('Too Many Requests');
+        if (isQuota) {
+          throw new BadRequestException(
+            'AI 예측 생성 한도가 초과되었습니다. 잠시 후 다시 시도해 주세요.',
+          );
+        }
+        throw err;
+      }
     }
 
     const updated = await this.prisma.predictionTicket.update({

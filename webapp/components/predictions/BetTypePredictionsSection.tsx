@@ -215,17 +215,10 @@ export default function BetTypePredictionsSection({
     return { key, label: PICK_TYPE_POOL_NAMES[key] ?? key, desc: PICK_TYPE_COMBO_DESC[key] ?? '', nodesList, reason, colors };
   });
 
-  // Remaining 4 bet types (collapsible)
-  const restKeys = BET_TYPE_ORDER.filter((k) => !TOP_3_BET_TYPES.includes(k));
-  const restItems = restKeys.map((key) => {
-    const pred = merged[key];
-    const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
-    return { key, label: PICK_TYPE_POOL_NAMES[key] ?? key, comboDesc: PICK_TYPE_COMBO_DESC[key] ?? '', nodesList };
-  });
-
   return (
     <div className='space-y-3'>
-      <p className='text-text-secondary text-sm font-semibold'>AI 추천 승식</p>
+      <p className='text-text-secondary text-sm font-semibold'>AI 도출 승식</p>
+      <p className='text-text-tertiary text-xs'>승식별로 AI가 도출한 추천 마번·조합과 도출 근거입니다.</p>
 
       {/* Core 3 cards */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2.5'>
@@ -260,52 +253,63 @@ export default function BetTypePredictionsSection({
         ))}
       </div>
 
-      {/* Remaining bet types — displayed directly without accordion */}
+      {/* All 7 bet types: 승식 | 추천 조합 | 도출 근거 (how the prediction was derived) */}
       <div className='overflow-x-auto rounded-lg border border-border'>
-        <table className='data-table data-table-compact w-full min-w-[300px]'>
+        <table className='data-table data-table-compact w-full min-w-[320px]'>
           <thead>
             <tr>
               <th className='w-24 text-left py-2 text-sm'>승식</th>
               <th className='text-left py-2 text-sm'>추천 조합</th>
+              <th className='text-left py-2 text-sm min-w-[140px]'>도출 근거</th>
             </tr>
           </thead>
           <tbody>
-            {restItems.map((item) => (
-              <tr key={item.key} className='border-t border-border'>
-                <td className='py-2.5 font-medium text-foreground text-sm'>
-                  <Tooltip content={PICK_TYPE_DESCRIPTIONS[item.key] ?? item.comboDesc} inline position='right'>
-                    {item.label}
-                  </Tooltip>
-                </td>
-                <td className='py-2.5'>
-                  {item.nodesList.length > 0 ? (
-                    <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-                      {item.nodesList.map((nodes, ci) => (
-                        <span key={ci} className='inline-flex items-center gap-0.5'>
-                          {nodes.numbers.map((num, i) => (
-                            <span key={i} className='flex items-center gap-0.5'>
-                              <span className='inline-flex items-center justify-center min-w-6 h-6 px-1 rounded bg-stone-100 text-stone-700 font-bold text-sm'>
-                                {num}
+            {BET_TYPE_ORDER.map((key) => {
+              const pred = merged[key];
+              const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
+              const reason = pred ? getReason(pred) : '';
+              const label = PICK_TYPE_POOL_NAMES[key] ?? key;
+              const comboDesc = PICK_TYPE_COMBO_DESC[key] ?? '';
+              return (
+                <tr key={key} className='border-t border-border'>
+                  <td className='py-2.5 font-medium text-foreground text-sm'>
+                    <Tooltip content={PICK_TYPE_DESCRIPTIONS[key] ?? comboDesc} inline position='right'>
+                      {label}
+                    </Tooltip>
+                  </td>
+                  <td className='py-2.5'>
+                    {nodesList.length > 0 ? (
+                      <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
+                        {nodesList.map((nodes, ci) => (
+                          <span key={ci} className='inline-flex items-center gap-0.5'>
+                            {nodes.numbers.map((num, i) => (
+                              <span key={i} className='flex items-center gap-0.5'>
+                                <span className='inline-flex items-center justify-center min-w-6 h-6 px-1 rounded bg-stone-100 text-stone-700 font-bold text-sm'>
+                                  {num}
+                                </span>
+                                {i < nodes.numbers.length - 1 && (
+                                  nodes.ordered
+                                    ? <ArrowRight size={14} className='text-text-tertiary shrink-0' strokeWidth={2.5} />
+                                    : <Circle size={5} className='text-text-tertiary fill-text-tertiary shrink-0' />
+                                )}
                               </span>
-                              {i < nodes.numbers.length - 1 && (
-                                nodes.ordered
-                                  ? <ArrowRight size={14} className='text-text-tertiary shrink-0' strokeWidth={2.5} />
-                                  : <Circle size={5} className='text-text-tertiary fill-text-tertiary shrink-0' />
-                              )}
-                            </span>
-                          ))}
-                          {ci < item.nodesList.length - 1 && (
-                            <span className='text-text-tertiary text-sm ml-1'>|</span>
-                          )}
-                        </span>
-                      ))}
-                    </div>
-                  ) : (
-                    <span className='text-text-secondary text-sm'>—</span>
-                  )}
-                </td>
-              </tr>
-            ))}
+                            ))}
+                            {ci < nodesList.length - 1 && (
+                              <span className='text-text-tertiary text-sm ml-1'>|</span>
+                            )}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className='text-text-secondary text-sm'>—</span>
+                    )}
+                  </td>
+                  <td className='py-2.5 text-text-secondary text-sm'>
+                    {reason ? <span className='line-clamp-2'>{reason}</span> : '—'}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

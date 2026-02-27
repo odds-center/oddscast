@@ -366,7 +366,52 @@ export class AdminAIApi {
     }
   }
 
-  /** 경주별 예측 정보 조회 (Admin 전용) */
+  /** [Admin] 전체 예측 목록 (페이지네이션, 최대 100건/페이지) */
+  static async getPredictionsList(params?: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    raceId?: number;
+  }): Promise<{
+    predictions: Array<{
+      id: number;
+      raceId: number;
+      status: string;
+      accuracy: number | null;
+      createdAt: string;
+      race: {
+        id: number;
+        rcDate: string;
+        rcNo: string;
+        meet: string;
+        meetName: string | null;
+        rcName: string | null;
+        status: string;
+      };
+    }>;
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    try {
+      const response = await axiosInstance.get('/predictions/list', { params });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** [Admin] 경주별 예측 이력 전체 */
+  static async getPredictionHistoryByRace(raceId: number): Promise<unknown[]> {
+    try {
+      const response = await axiosInstance.get(`/predictions/race/${raceId}/history`);
+      return handleApiResponse(response) as unknown[];
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /** 경주별 예측 정보 조회 (Admin 전용, 최신 1건) */
   static async getPredictionByRace(raceId: string | number): Promise<unknown> {
     try {
       const response = await axiosInstance.get(`/predictions/race/${raceId}`);
@@ -384,6 +429,99 @@ export class AdminAIApi {
     } catch (error) {
       throw handleApiError(error);
     }
+  }
+
+  /** [Admin] 미생성 예측 일괄 생성 (기간 내 예측 없는 경주 순차 생성) */
+  static async generateBatch(params?: {
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<{ requested: number; generated: number; failed: number; errors: string[] }> {
+    try {
+      const response = await axiosInstance.post('/predictions/generate-batch', params ?? {}, {
+        timeout: 600_000,
+      });
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /**
+   * [Admin] 미생성 예측 일괄 생성 (SSE 진행률 스트림).
+   * onProgress receives progress events and final { done: true, ...result }.
+   */
+  static async generateBatchStream(
+    params: { dateFrom?: string; dateTo?: string },
+    onProgress: (event: {
+      requested?: number;
+      current?: number;
+      generated?: number;
+      failed?: number;
+      lastRace?: string;
+      retryAfter?: number;
+      done?: boolean;
+      errors?: string[];
+      error?: string;
+    }) => void,
+  ): Promise<{ requested: number; generated: number; failed: number; errors: string[] }> {
+    const base = (axiosInstance.defaults.baseURL ?? '').replace(/\/$/, '');
+    const qs = new URLSearchParams();
+    if (params.dateFrom) qs.set('dateFrom', params.dateFrom);
+    if (params.dateTo) qs.set('dateTo', params.dateTo);
+    const url = `${base}/predictions/generate-batch-stream${qs.toString() ? `?${qs}` : ''}`;
+    const token =
+      typeof window !== 'undefined'
+        ? localStorage.getItem('accessToken') || localStorage.getItem('admin_token')
+        : null;
+    const res = await fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    });
+    if (!res.ok) throw new Error(res.statusText || 'Stream failed');
+    const reader = res.body?.getReader();
+    if (!reader) throw new Error('No body');
+    const dec = new TextDecoder();
+    let buf = '';
+    const result = { requested: 0, generated: 0, failed: 0, errors: [] as string[] };
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const parts = buf.split('\n\n');
+      buf = parts.pop() ?? '';
+      for (const part of parts) {
+        const line = part.split('\n').find((l) => l.startsWith('data: '));
+        if (!line) continue;
+        try {
+          const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+          if (data.done === true) {
+            Object.assign(result, {
+              requested: data.requested ?? result.requested,
+              generated: data.generated ?? result.generated,
+              failed: data.failed ?? result.failed,
+              errors: data.errors ?? result.errors,
+            });
+            onProgress(data as Parameters<typeof onProgress>[0]);
+            return result;
+          }
+          onProgress(data as Parameters<typeof onProgress>[0]);
+        } catch {
+          // skip malformed event
+        }
+      }
+    }
+    if (buf) {
+      const line = buf.split('\n').find((l) => l.startsWith('data: '));
+      if (line) {
+        try {
+          const data = JSON.parse(line.slice(6)) as Record<string, unknown>;
+          if (data.done === true) Object.assign(result, data);
+          onProgress(data as Parameters<typeof onProgress>[0]);
+        } catch {
+          // skip
+        }
+      }
+    }
+    return result;
   }
 }
 

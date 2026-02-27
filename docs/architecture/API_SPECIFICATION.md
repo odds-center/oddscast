@@ -536,6 +536,11 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `PATCH`| `/admin/users/:id/deactivate` | 사용자 비활성화         | 🔐 Admin    |
 | `POST` | `/admin/users/:id/grant-tickets` | 예측권 지급 (관리자 발급) | 🔐 Admin |
 | `DELETE`| `/admin/users/:id`           | 사용자 삭제(비활성화)   | 🔐 Admin    |
+| `GET`  | `/admin/predictions/list`    | 전체 예측 목록 (page, limit 최대 100, status?, raceId?) | 🔐 Admin    |
+| `GET`  | `/admin/predictions/race/:raceId/history` | 경주별 예측 이력 전체   | 🔐 Admin    |
+| `GET`  | `/admin/predictions/race/:raceId` | 경주별 예측 최신 1건   | 🔐 Admin    |
+| `POST` | `/admin/predictions/generate/:raceId` | 해당 경주 AI 예측 수동 생성 | 🔐 Admin    |
+| `POST` | `/admin/predictions/generate-batch` | 미생성 예측 일괄 생성 (body: dateFrom?, dateTo? YYYYMMDD, 기간 내 순차 생성) | 🔐 Admin    |
 | `GET`  | `/admin/ai/config`            | AI 설정 조회 (Gemini)   | 🔐 Admin    |
 | `POST` | `/admin/ai/config`            | AI 설정 저장            | 🔐 Admin    |
 | `GET`  | `/admin/bets`                 | 마권 목록               | 🔐 Admin    |

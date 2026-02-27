@@ -58,10 +58,14 @@ function groupResults(raw: RaceResult[]): GroupedRace[] {
     results.sort((a, b) => (parseInt(a.ord, 10) || 99) - (parseInt(b.ord, 10) || 99));
     list.push({ raceId: id, meetName, rcNo, rcDate, results });
   }
+  const parseRcNo = (s: string) => {
+    const n = parseInt(s, 10);
+    return Number.isNaN(n) ? 0 : n;
+  };
   list.sort((a, b) => {
     const dateCmp = (a.rcDate || '').localeCompare(b.rcDate || '');
     if (dateCmp !== 0) return -dateCmp;
-    return (a.rcNo || '').localeCompare(b.rcNo || '');
+    return parseRcNo(a.rcNo || '') - parseRcNo(b.rcNo || '');
   });
   return list;
 }

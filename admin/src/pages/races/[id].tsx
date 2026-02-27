@@ -41,6 +41,107 @@ interface RaceEntryRow {
   isScratched?: boolean;
 }
 
+/** Prediction scores from API (scores.betTypePredictions) */
+interface AdminBetTypePredictions {
+  SINGLE?: { hrNo?: string; reason?: string };
+  PLACE?: { hrNo?: string; reason?: string };
+  QUINELLA?: { hrNos?: [string, string]; combinations?: Array<{ hrNos: [string, string] }>; reason?: string };
+  EXACTA?: { first?: string; second?: string; combinations?: Array<{ first: string; second: string }>; reason?: string };
+  QUINELLA_PLACE?: { hrNos?: [string, string]; combinations?: Array<{ hrNos: [string, string] }>; reason?: string };
+  TRIFECTA?: { hrNos?: [string, string, string]; combinations?: Array<{ hrNos: [string, string, string] }>; reason?: string };
+  TRIPLE?: { first?: string; second?: string; third?: string; combinations?: Array<{ first: string; second: string; third: string }>; reason?: string };
+}
+
+const BET_TYPE_LABELS: Record<string, string> = {
+  SINGLE: '단승식',
+  PLACE: '복승식',
+  QUINELLA: '연승식',
+  EXACTA: '쌍승식',
+  QUINELLA_PLACE: '복연승식',
+  TRIFECTA: '삼복승식',
+  TRIPLE: '삼쌍승식',
+};
+
+const BET_TYPE_ORDER = ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'] as const;
+
+function toNoAndName(hrNoOrChulNo: string, entries: Array<{ hrNo?: string; hrName?: string; chulNo?: string }>): string {
+  const v = String(hrNoOrChulNo).trim();
+  const e = entries.find(
+    (x) => String(x.hrNo ?? '').trim() === v || String(x.chulNo ?? '').trim() === v,
+  );
+  const no = e?.chulNo ?? (e?.hrNo && e.hrNo.length <= 2 ? e.hrNo : v);
+  const name = e?.hrName ?? '';
+  return name ? `${no}번 ${name}` : `${no}번`;
+}
+
+function BetTypePredictionsTable({
+  betTypePredictions,
+  entries,
+}: {
+  betTypePredictions: AdminBetTypePredictions;
+  entries: Array<{ hrNo?: string; hrName?: string; chulNo?: string }>;
+}) {
+  const rows: { label: string; combo: string; reason: string }[] = [];
+  for (const key of BET_TYPE_ORDER) {
+    const pred = betTypePredictions[key as keyof AdminBetTypePredictions];
+    if (!pred) {
+      rows.push({ label: BET_TYPE_LABELS[key] ?? key, combo: '—', reason: '—' });
+      continue;
+    }
+    const reason = 'reason' in pred && pred.reason ? pred.reason : '—';
+    let combo = '—';
+    if ('hrNo' in pred && pred.hrNo) {
+      combo = toNoAndName(pred.hrNo, entries);
+    } else if ('hrNos' in pred && Array.isArray(pred.hrNos)) {
+      combo = pred.hrNos.map((h) => toNoAndName(h, entries)).join(' · ');
+    } else if ('first' in pred && 'second' in pred) {
+      const arr = [pred.first, pred.second];
+      if ('third' in pred && pred.third) arr.push(pred.third);
+      combo = arr.map((h) => toNoAndName(h ?? '', entries)).join(' → ');
+    } else if ('combinations' in pred && Array.isArray(pred.combinations) && pred.combinations.length > 0) {
+      combo = pred.combinations
+        .slice(0, 3)
+        .map((c) => {
+          if ('hrNos' in c) return c.hrNos.map((h) => toNoAndName(h, entries)).join('·');
+          if ('first' in c && 'second' in c) {
+            const arr: string[] = [c.first ?? '', c.second ?? ''];
+            if ('third' in c && typeof c.third === 'string') arr.push(c.third);
+            return arr.map((h) => toNoAndName(h, entries)).join('→');
+          }
+          return '—';
+        })
+        .join(' | ');
+    }
+    rows.push({ label: BET_TYPE_LABELS[key] ?? key, combo, reason });
+  }
+  return (
+    <div className='mt-4 pt-4 border-t border-gray-200'>
+      <label className='block text-sm font-medium text-gray-700 mb-2'>예측 승식 (AI 도출 결과)</label>
+      <p className='text-xs text-gray-500 mb-2'>승식별로 AI가 도출한 추천 마번·조합과 도출 근거입니다.</p>
+      <div className='overflow-x-auto'>
+        <table className='w-full min-w-[400px] text-sm border-collapse border border-gray-200 rounded-lg'>
+          <thead>
+            <tr className='bg-gray-50 text-left'>
+              <th className='py-2 px-3 font-semibold text-gray-700 border-b border-gray-200 w-24'>승식</th>
+              <th className='py-2 px-3 font-semibold text-gray-700 border-b border-gray-200'>추천 조합</th>
+              <th className='py-2 px-3 font-semibold text-gray-700 border-b border-gray-200 min-w-[180px]'>도출 근거</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} className='border-b border-gray-100 last:border-0'>
+                <td className='py-2 px-3 font-medium text-gray-800'>{r.label}</td>
+                <td className='py-2 px-3 text-gray-700'>{r.combo}</td>
+                <td className='py-2 px-3 text-gray-600 text-xs'>{r.reason}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 interface RaceResultRow {
   id?: number;
   ord?: string;
@@ -91,6 +192,12 @@ export default function RaceDetailPage() {
     enabled: !!id,
   });
 
+  const { data: predictionHistoryData } = useQuery({
+    queryKey: ['admin', 'prediction', 'race', id, 'history'],
+    queryFn: () => AdminAIApi.getPredictionHistoryByRace(Number(id)),
+    enabled: !!id,
+  });
+
   const race = raceData as RaceDetail | null | undefined;
   const prediction = predictionData as {
     id?: number;
@@ -98,7 +205,10 @@ export default function RaceDetailPage() {
     preview?: string | null;
     status?: string;
     accuracy?: number | null;
-    scores?: unknown;
+    scores?: {
+      horseScores?: Array<{ hrNo?: string; chulNo?: string; score?: number; rank?: number; horseNo?: string }>;
+      betTypePredictions?: AdminBetTypePredictions;
+    };
     horseScores?: Array<{ horseNo?: string; score?: number; rank?: number }>;
   } | null | undefined;
 
@@ -291,7 +401,9 @@ export default function RaceDetailPage() {
                       </div>
                     </div>
                   )}
-                  {prediction.horseScores && Array.isArray(prediction.horseScores) && prediction.horseScores.length > 0 && (
+                  {(prediction.scores?.horseScores ?? prediction.horseScores) &&
+                    Array.isArray(prediction.scores?.horseScores ?? prediction.horseScores) &&
+                    (prediction.scores?.horseScores ?? prediction.horseScores)!.length > 0 && (
                     <div>
                       <label className='block text-sm font-medium text-gray-700 mb-1'>말별 점수</label>
                       <div className='overflow-x-auto'>
@@ -304,12 +416,20 @@ export default function RaceDetailPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {prediction.horseScores
+                            {(
+                              (prediction.scores?.horseScores ?? prediction.horseScores) as Array<{
+                                horseNo?: string;
+                                hrNo?: string;
+                                chulNo?: string;
+                                score?: number;
+                                rank?: number;
+                              }>
+                            )
                               .slice()
                               .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
                               .map((h, i) => (
                                 <tr key={i} className='border-b border-gray-100'>
-                                  <td className='py-1.5 px-2'>{h.horseNo ?? '-'}</td>
+                                  <td className='py-1.5 px-2'>{h.horseNo ?? h.chulNo ?? h.hrNo ?? '-'}</td>
                                   <td className='py-1.5 px-2'>{h.score != null ? h.score : '-'}</td>
                                   <td className='py-1.5 px-2'>{h.rank != null ? h.rank : '-'}</td>
                                 </tr>
@@ -319,9 +439,28 @@ export default function RaceDetailPage() {
                       </div>
                     </div>
                   )}
+                  {prediction.scores?.betTypePredictions && race?.entries && race.entries.length > 0 && (
+                    <BetTypePredictionsTable
+                      betTypePredictions={prediction.scores.betTypePredictions}
+                      entries={race.entries as Array<{ hrNo?: string; hrName?: string; chulNo?: string }>}
+                    />
+                  )}
                 </div>
               ) : (
                 <div className='text-sm text-gray-500'>이 경주에 대한 완료된 예측이 없습니다. 수동 적재로 생성할 수 있습니다.</div>
+              )}
+              {Array.isArray(predictionHistoryData) && predictionHistoryData.length > 1 && (
+                <div className='mt-3 pt-3 border-t border-gray-200'>
+                  <p className='text-xs font-medium text-gray-600 mb-1'>이 경주 예측 이력 ({predictionHistoryData.length}건)</p>
+                  <div className='flex flex-wrap gap-2'>
+                    {(predictionHistoryData as { id: number; accuracy?: number; createdAt?: string }[]).map((p) => (
+                      <span key={p.id} className='inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 text-xs'>
+                        예측 #{p.id}
+                        {p.accuracy != null && ` · ${p.accuracy}%`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               )}
             </Card>
 
@@ -429,11 +568,10 @@ export default function RaceDetailPage() {
               <div className='flex flex-wrap gap-3'>
                 <Button
                   variant='secondary'
-                  onClick={() =>
-                    syncResultsMutation.mutate(
-                      (race.rcDate || '').replace(/-/g, '').slice(0, 8) || undefined
-                    )
-                  }
+                  onClick={() => {
+                    const dateStr = (race.rcDate ?? '').replace(/-/g, '').slice(0, 8);
+                    if (dateStr.length === 8) syncResultsMutation.mutate(dateStr);
+                  }}
                   disabled={syncResultsMutation.isPending || !race.rcDate}
                   isLoading={syncResultsMutation.isPending}
                 >

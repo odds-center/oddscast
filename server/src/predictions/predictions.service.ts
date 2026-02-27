@@ -5,6 +5,7 @@ import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { Prisma } from '@prisma/client';
 import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
+import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import { meetToCode, toKraMeetName } from '../kra/constants';
 import {
   CreatePredictionDto,
@@ -344,6 +345,215 @@ export class PredictionsService {
   }
 
   /**
+   * Admin: all predictions list with pagination (limit up to 100).
+   * Order: newest first (createdAt desc); optionally filter by status or raceId.
+   */
+  async findAllForAdmin(filters: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    raceId?: number;
+  }) {
+    const page = Math.max(1, filters.page ?? 1);
+    const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
+    const where: Prisma.PredictionWhereInput = {};
+    if (filters.status)
+      where.status = filters.status as Prisma.EnumPredictionStatusFilter;
+    if (filters.raceId != null) where.raceId = filters.raceId;
+
+    const [predictions, total] = await Promise.all([
+      this.prisma.prediction.findMany({
+        where,
+        include: {
+          race: {
+            select: {
+              id: true,
+              rcDate: true,
+              rcNo: true,
+              meet: true,
+              meetName: true,
+              rcName: true,
+              status: true,
+            },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      this.prisma.prediction.count({ where }),
+    ]);
+
+    return {
+      predictions,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  /**
+   * Admin: generate predictions for races that have no COMPLETED prediction, in order (rcDate, meet, rcNo).
+   * dateFrom/dateTo: YYYYMMDD. Defaults to last 30 days if omitted.
+   */
+  /** Delay between each race in batch to avoid Gemini 429 (free tier ~20/day). Default 35s. */
+  private static readonly DELAY_BETWEEN_RACES_MS = 35_000;
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  /** Extract retry delay (seconds) from Gemini 429 error. */
+  private getRetryDelaySeconds(err: unknown): number {
+    const details = (err as { errorDetails?: Array<{ retryDelay?: string }> })?.errorDetails;
+    if (Array.isArray(details)) {
+      const retry = details.find((d) => d?.retryDelay != null);
+      if (retry?.retryDelay) {
+        const sec = parseFloat(retry.retryDelay.replace('s', ''));
+        if (Number.isFinite(sec)) return Math.ceil(Math.max(sec, 30));
+      }
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    const match = msg.match(/retry in ([\d.]+)s/i);
+    if (match) return Math.ceil(Math.max(parseFloat(match[1]), 30));
+    return 60;
+  }
+
+  async generateBatch(options: {
+    dateFrom?: string;
+    dateTo?: string;
+    delayBetweenRacesMs?: number;
+  }): Promise<{
+    requested: number;
+    generated: number;
+    failed: number;
+    errors: string[];
+  }> {
+    return this.generateBatchWithProgress(options, () => {});
+  }
+
+  /**
+   * Batch with progress callback. Includes past + future races (dateTo can be after today).
+   * Delay between races to avoid 429; on 429 waits retryDelay then retries once.
+   */
+  async generateBatchWithProgress(
+    options: {
+      dateFrom?: string;
+      dateTo?: string;
+      delayBetweenRacesMs?: number;
+    },
+    onProgress: (event: {
+      requested: number;
+      current: number;
+      generated: number;
+      failed: number;
+      lastRace?: string;
+      retryAfter?: number;
+    }) => void,
+  ): Promise<{
+    requested: number;
+    generated: number;
+    failed: number;
+    errors: string[];
+  }> {
+    const now = new Date();
+    const today = now.toISOString().slice(0, 10).replace(/-/g, '');
+    const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, '');
+    const defaultStart = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10)
+      .replace(/-/g, '');
+    const dateFrom = (options.dateFrom ?? defaultStart).replace(/-/g, '').slice(0, 8);
+    const dateTo = (options.dateTo ?? defaultEnd).replace(/-/g, '').slice(0, 8);
+    const delayMs = options.delayBetweenRacesMs ?? PredictionsService.DELAY_BETWEEN_RACES_MS;
+
+    const rawRaces = await this.prisma.race.findMany({
+      where: {
+        rcDate: { gte: dateFrom, lte: dateTo },
+        NOT: {
+          predictions: { some: { status: 'COMPLETED' } },
+        },
+      },
+      select: { id: true, rcDate: true, rcNo: true, meet: true },
+      orderBy: { rcDate: 'asc' },
+    });
+    const races = sortRacesByNumericRcNo(rawRaces, {
+      getRcDate: (r) => r.rcDate ?? '',
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'asc',
+    });
+
+    const errors: string[] = [];
+    let generated = 0;
+    let current = 0;
+
+    for (const race of races) {
+      current++;
+      const raceLabel = `${race.meet} ${race.rcNo}R (${race.rcDate})`;
+      onProgress({
+        requested: races.length,
+        current,
+        generated,
+        failed: errors.length,
+        lastRace: raceLabel,
+      });
+
+      let lastErr: unknown = null;
+      for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+          if (attempt === 1) {
+            const retrySec = this.getRetryDelaySeconds(lastErr);
+            onProgress({
+              requested: races.length,
+              current,
+              generated,
+              failed: errors.length,
+              lastRace: raceLabel,
+              retryAfter: retrySec,
+            });
+            await this.delay(retrySec * 1000);
+          }
+          await this.generatePrediction(race.id);
+          generated++;
+          lastErr = null;
+          break;
+        } catch (err) {
+          lastErr = err;
+          const status = (err as { status?: number })?.status;
+          if (status === 429 && attempt === 0) {
+            continue;
+          }
+          const msg = err instanceof Error ? err.message : String(err);
+          errors.push(`${raceLabel}: ${msg}`);
+          break;
+        }
+      }
+
+      if (current < races.length) {
+        await this.delay(delayMs);
+      }
+    }
+
+    onProgress({
+      requested: races.length,
+      current: races.length,
+      generated,
+      failed: errors.length,
+    });
+
+    return {
+      requested: races.length,
+      generated,
+      failed: errors.length,
+      errors,
+    };
+  }
+
+  /**
    * 종합 예상 매트릭스 (용산종합지 스타일)
    * date: YYYYMMDD 또는 YYYY-MM-DD, meet: 서울|제주|부산경남
    */
@@ -354,7 +564,7 @@ export class PredictionsService {
     const where: Prisma.RaceWhereInput = { rcDate };
     if (meet) where.meet = toKraMeetName(meet);
 
-    const races = await this.prisma.race.findMany({
+    const rawRaces = await this.prisma.race.findMany({
       where,
       select: {
         id: true,
@@ -366,7 +576,13 @@ export class PredictionsService {
         rank: true,
         entries: { select: { hrNo: true, hrName: true } },
       },
-      orderBy: [{ meet: 'asc' }, { rcNo: 'asc' }],
+      orderBy: { meet: 'asc' },
+    });
+    const races = sortRacesByNumericRcNo(rawRaces, {
+      getRcDate: () => rcDate,
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'asc',
     });
 
     const rows: Array<{

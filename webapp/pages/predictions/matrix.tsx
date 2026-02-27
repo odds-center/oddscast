@@ -251,75 +251,67 @@ export default function PredictionMatrixPage() {
           />
 
           {activeTab === 'matrix' && (
-            <DataFetchState
-              isLoading={isLoading}
-              error={error as Error | null}
-              onRetry={() => refetch()}
-              isEmpty={!matrixData?.raceMatrix?.length}
-              emptyIcon='BarChart2'
-              emptyTitle='예상 정보가 없습니다'
-              emptyDescription='다른 날짜를 선택해보세요.'
-              loadingLabel='예상표 준비 중...'
-              errorTitle='일시적인 오류가 발생했습니다'
-            >
-              {matrixData && (
-                <div className='space-y-3'>
-                  <PredictionMatrixTable
-                    data={matrixData}
-                    date={dateFilter}
-                    locked={!hasAccess}
-                    previewCount={3}
-                  />
-
-                  {/* Matrix ticket purchase/use CTA */}
-                  {!hasAccess && (
-                    <div className='rounded border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.04)] p-4'>
-                      <div className='flex items-start gap-3'>
-                        <div className='w-9 h-9 rounded bg-primary flex items-center justify-center shrink-0'>
-                          <Icon name='BarChart2' size={18} className='text-white' />
-                        </div>
-                        <div className='flex-1 min-w-0'>
-                          <h3 className='text-sm font-bold text-foreground mb-0.5'>종합 예측권</h3>
-                          <p className='text-xs text-stone-500 mb-2'>
-                            하루 전체 경주의 AI 예상을 한눈에 — 용산종합지 스타일
-                          </p>
-                          <div className='flex items-center gap-2 text-xs text-stone-400 mb-3'>
-                            <span className='whitespace-nowrap'>1일 1장</span>
-                            <span className='w-px h-3 bg-stone-200' />
-                            <span className='whitespace-nowrap'>1,000원/장</span>
-                            <span className='w-px h-3 bg-stone-200' />
-                            <span className='whitespace-nowrap'>전체 {raceCount}경주 예상</span>
-                          </div>
-                          {availableMatrixTickets > 0 ? (
-                            <button
-                              onClick={() => useMatrixMutation.mutate()}
-                              disabled={useMatrixMutation.isPending}
-                              className='btn-primary text-xs px-4 py-1.5'
-                            >
-                              {useMatrixMutation.isPending
-                                ? '열람 중...'
-                                : `종합 예측권 사용 (보유 ${availableMatrixTickets}장)`}
-                            </button>
-                          ) : (
-                            <Link
-                              href={routes.mypage.subscriptions}
-                              className='btn-primary inline-flex items-center gap-1 text-xs px-4 py-1.5'
-                            >
-                              종합 예측권 구매 — 1,000원
-                            </Link>
-                          )}
-                          {useMatrixMutation.isError && (
-                            <p className='msg-error text-xs mt-1.5'>
-                              {(useMatrixMutation.error as Error)?.message ?? '사용에 실패했습니다'}
-                            </p>
-                          )}
-                        </div>
-                      </div>
+            <>
+              {/* 종합 예측권 사용/구매 CTA — 항상 노출 (잠금 시 테이블 위에 표시) */}
+              {!hasAccess && isLoggedIn && (
+                <div className='rounded border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.04)] p-4 mb-3'>
+                  <div className='flex flex-wrap items-center gap-3'>
+                    <div className='w-9 h-9 rounded bg-primary flex items-center justify-center shrink-0'>
+                      <Icon name='BarChart2' size={18} className='text-white' />
                     </div>
+                    <div className='flex-1 min-w-0'>
+                      <h3 className='text-sm font-bold text-foreground'>종합 예측권으로 열람하기</h3>
+                      <p className='text-xs text-stone-500 mt-0.5'>
+                        하루 전체 경주의 AI 예상을 한눈에 — 1일 1장 · 1,000원/장
+                      </p>
+                    </div>
+                    <div className='flex items-center gap-2 shrink-0'>
+                      {availableMatrixTickets > 0 ? (
+                        <button
+                          onClick={() => useMatrixMutation.mutate()}
+                          disabled={useMatrixMutation.isPending}
+                          className='btn-primary text-sm px-4 py-2'
+                        >
+                          {useMatrixMutation.isPending ? '열람 중...' : `종합 예측권 사용 (${availableMatrixTickets}장)`}
+                        </button>
+                      ) : (
+                        <Link href={routes.mypage.matrixTicketPurchase} className='btn-primary inline-flex items-center gap-1.5 text-sm px-4 py-2'>
+                          <Icon name='CreditCard' size={16} />
+                          종합 예측권 구매
+                        </Link>
+                      )}
+                    </div>
+                  </div>
+                  {useMatrixMutation.isError && (
+                    <p className='msg-error text-xs mt-2'>{(useMatrixMutation.error as Error)?.message ?? '사용에 실패했습니다'}</p>
                   )}
                 </div>
               )}
-            </DataFetchState>
+
+              <DataFetchState
+                isLoading={isLoading}
+                error={error as Error | null}
+                onRetry={() => refetch()}
+                isEmpty={!matrixData?.raceMatrix?.length}
+                emptyIcon='BarChart2'
+                emptyTitle='예상 정보가 없습니다'
+                emptyDescription='다른 날짜를 선택해보세요.'
+                loadingLabel='예상표 준비 중...'
+                errorTitle='일시적인 오류가 발생했습니다'
+              >
+                {matrixData && (
+                  <div className='space-y-3'>
+                    <PredictionMatrixTable
+                      data={matrixData}
+                      date={dateFilter}
+                      locked={!hasAccess}
+                      previewCount={3}
+                    />
+
+                  </div>
+                )}
+              </DataFetchState>
+            </>
           )}
 
           {activeTab === 'commentary' && (

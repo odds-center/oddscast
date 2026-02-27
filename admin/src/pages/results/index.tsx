@@ -335,10 +335,14 @@ function groupResultsByRace(raw: RaceResult[]): GroupedRace[] {
     list.push({ raceId, meetName, rcNo, rcDate, rcDist, results });
   }
 
+  const parseRcNo = (s: string) => {
+    const n = parseInt(s, 10);
+    return Number.isNaN(n) ? 0 : n;
+  };
   list.sort((a, b) => {
     const dateCmp = (a.rcDate || '').localeCompare(b.rcDate || '');
     if (dateCmp !== 0) return -dateCmp;
-    return (a.rcNo || '').localeCompare(b.rcNo || '');
+    return parseRcNo(a.rcNo || '') - parseRcNo(b.rcNo || '');
   });
   return list;
 }

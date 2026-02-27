@@ -148,7 +148,7 @@ export default function RaceDetailPage() {
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
     queryFn: () => PredictionTicketApi.getBalance(),
-    enabled: !!id && isLoggedIn && !isRaceCompleted,
+    enabled: !!id && isLoggedIn,
     placeholderData: keepPreviousData,
   });
 
@@ -488,6 +488,94 @@ export default function RaceDetailPage() {
             track={(r as { track?: string }).track}
           />
 
+          {/* ── AI prediction (above the fold so ticket use CTA is visible) ── */}
+          <section>
+            <SectionTitle
+              title='AI 예측'
+              icon='Target'
+              badge={
+                !isRaceCompleted && isLoggedIn && availableTickets > 0
+                  ? `예측권 ${availableTickets}장`
+                  : displayPrediction
+                    ? '열람 중'
+                    : undefined
+              }
+              className='mb-2'
+            />
+            {displayPrediction ? (
+              <PredictionFullView
+                prediction={displayPrediction}
+                list={list}
+                selectedPredictionId={selectedPredictionId}
+                setSelectedPredictionId={setSelectedPredictionId}
+                entries={entries}
+                availableTickets={availableTickets}
+                useTicketMutation={useTicketMutation}
+                raceId={id as string}
+                lastUsedAt={lastUsedTicket?.usedAt ?? null}
+                isRaceCompleted={isRaceCompleted}
+              />
+            ) : isRaceCompleted ? (
+              <div className='rounded-md border border-stone-200 bg-stone-50 p-4 text-center flex flex-col items-center'>
+                <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2'>
+                  <Icon name='Target' size={20} className='text-stone-400' />
+                </div>
+                <p className='text-text-secondary text-sm mb-3'>이 경주에 대한 AI 예측이 없습니다.</p>
+                <p className='text-text-tertiary text-xs mb-3'>예측권으로 과거 경주 예측을 생성해 볼 수 있습니다.</p>
+                {isLoggedIn && availableTickets > 0 && (
+                  <button
+                    type='button'
+                    onClick={() => {
+                      trackCTA('PREDICTION_TICKET_USE', id as string);
+                      useTicketMutation.mutate({ raceId: id as string });
+                    }}
+                    disabled={useTicketMutation.isPending}
+                    className='btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2'
+                  >
+                    {useTicketMutation.isPending ? (
+                      <>
+                        <Icon name='Loader2' size={18} className='animate-spin' />
+                        AI 분석 생성 중...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name='Target' size={18} />
+                        예측권 1장 사용
+                      </>
+                    )}
+                  </button>
+                )}
+                {isLoggedIn && availableTickets === 0 && (
+                  <p className='text-text-secondary text-sm'>
+                    예측권이 없습니다.{' '}
+                    <Link href={routes.profile.index} className='text-primary hover:underline font-medium'>
+                      충전하기
+                    </Link>
+                  </p>
+                )}
+                {!isLoggedIn && (
+                  <p className='text-text-secondary text-sm'>
+                    <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>
+                      로그인
+                    </Link>
+                    후 예측권으로 AI 분석을 확인하세요.
+                  </p>
+                )}
+                {useTicketMutation.isError && (
+                  <p className='msg-error text-sm mt-2'>{getErrorMessage(useTicketMutation.error)}</p>
+                )}
+              </div>
+            ) : (
+              <PredictionLockedView
+                predictionPreview={predictionPreview}
+                isLoggedIn={isLoggedIn}
+                availableTickets={availableTickets}
+                useTicketMutation={useTicketMutation}
+                raceId={id as string}
+              />
+            )}
+          </section>
+
           {/* ── Race results (same section/table style as 출전마) ── */}
           {(isRaceCompleted || hasResults) && (
             <section>
@@ -704,53 +792,42 @@ export default function RaceDetailPage() {
                 </table>
               </div>
 
-              {/* 승식별 배당률 */}
-              {Array.isArray(dividends) && dividends.length > 0 && (
-                <div className='rounded-xl border border-border overflow-hidden mt-4'>
-                  <div className='bg-stone-50 border-b border-border px-3 py-2.5'>
-                    <span className='text-sm font-semibold text-foreground'>승식별 배당률</span>
-                    <p className='text-text-tertiary text-xs mt-0.5'>경주 확정 후 적용된 배당률 (단승식·연승식)</p>
+              {/* 승식별 배당률 — 승식별로 묶어 조합·배당을 한 줄로 표시 */}
+              {Array.isArray(dividends) && dividends.length > 0 && (() => {
+                type D = { poolName?: string; pool?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number };
+                const byPool = (dividends as D[]).reduce((acc, d) => {
+                  const key = d.poolName ?? d.pool ?? '배당';
+                  if (!acc[key]) acc[key] = [];
+                  const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
+                  if (combo || d.odds != null) acc[key].push({ combo, odds: d.odds });
+                  return acc;
+                }, {} as Record<string, { combo: string; odds?: number }[]>);
+                const poolOrder = ['단승식', '연승식', '쌍승식', '복승식', '삼복승식', '삼쌍승식', '배당'];
+                const ordered = poolOrder.filter((p) => byPool[p]?.length).concat(Object.keys(byPool).filter((k) => !poolOrder.includes(k)));
+                return (
+                  <div className='rounded-xl border border-border overflow-hidden mt-4'>
+                    <div className='bg-stone-50 border-b border-border px-3 py-2.5'>
+                      <span className='text-sm font-semibold text-foreground'>승식별 배당률</span>
+                      <p className='text-text-tertiary text-xs mt-0.5'>경주 확정 후 적용된 배당 (조합·배당)</p>
+                    </div>
+                    <div className='px-3 py-2.5 space-y-2'>
+                      {ordered.map((poolName) => {
+                        const items = byPool[poolName];
+                        if (!items?.length) return null;
+                        const parts = items.map(({ combo, odds }) => (combo && odds != null ? `${combo} ${odds}배` : combo || (odds != null ? `${odds}배` : ''))).filter(Boolean);
+                        return (
+                          <div key={poolName} className='flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm'>
+                            <span className='text-text-secondary font-medium shrink-0 w-16'>{poolName}</span>
+                            <span className='text-foreground'>
+                              {parts.length > 0 ? parts.join(', ') : '-'}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <div className='overflow-x-auto'>
-                    <table className='data-table data-table-compact w-full text-sm'>
-                      <thead>
-                        <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                          <th className='text-left py-2.5 px-3 font-semibold w-24'>승식</th>
-                          <th className='text-left py-2.5 px-3 font-semibold'>출주번호</th>
-                          <th className='cell-right py-2.5 px-3 font-semibold w-24'>배당률</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {dividends.map(
-                          (
-                            d: {
-                              poolName?: string;
-                              pool?: string;
-                              chulNo?: string;
-                              chulNo2?: string;
-                              chulNo3?: string;
-                              odds?: number;
-                            },
-                            i: number,
-                          ) => {
-                            const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
-                            const label = d.poolName ?? d.pool ?? '배당';
-                            return (
-                              <tr key={i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
-                                <td className='py-2.5 px-3 text-text-secondary whitespace-nowrap'>{label}</td>
-                                <td className='py-2.5 px-3 font-medium text-foreground'>{combo || '-'}</td>
-                                <td className='cell-right py-2.5 px-3 font-semibold'>
-                                  {d.odds != null ? `${d.odds}배` : '-'}
-                                </td>
-                              </tr>
-                            );
-                          },
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-              )}
+                );
+              })()}
               <p className='mt-3 text-text-tertiary text-xs'>
                 제재·심판 리포트·구간별 통과순위 등 상세 성적은{' '}
                 <a
@@ -780,7 +857,7 @@ export default function RaceDetailPage() {
                       <div>
                         <p className='text-xs text-text-tertiary mb-1'>AI 예측 상위 3마</p>
                         <p className='text-foreground'>
-                          {predTop3.map((p, i) => (p.hrName ?? p.hrNo ?? '-')).join(' · ')}
+                          {predTop3.map((p) => (p.hrName ?? p.hrNo ?? '-')).join(' · ')}
                         </p>
                       </div>
                       <div>
@@ -801,39 +878,6 @@ export default function RaceDetailPage() {
               )}
             </section>
           )}
-
-          {/* ── AI prediction ── */}
-          <section>
-            {displayPrediction ? (
-              <PredictionFullView
-                prediction={displayPrediction}
-                list={list}
-                selectedPredictionId={selectedPredictionId}
-                setSelectedPredictionId={setSelectedPredictionId}
-                entries={entries}
-                availableTickets={availableTickets}
-                useTicketMutation={useTicketMutation}
-                raceId={id as string}
-                lastUsedAt={lastUsedTicket?.usedAt ?? null}
-                isRaceCompleted={isRaceCompleted}
-              />
-            ) : isRaceCompleted ? (
-              <div className='rounded-md border border-stone-200 bg-stone-50 p-4 text-center'>
-                <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2 mx-auto'>
-                  <Icon name='Target' size={20} className='text-stone-400' />
-                </div>
-                <p className='text-text-secondary text-sm'>이 경주에 대한 AI 예측이 없습니다.</p>
-              </div>
-            ) : (
-              <PredictionLockedView
-                predictionPreview={predictionPreview}
-                isLoggedIn={isLoggedIn}
-                availableTickets={availableTickets}
-                useTicketMutation={useTicketMutation}
-                raceId={id as string}
-              />
-            )}
-          </section>
 
           {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
@@ -1159,12 +1203,10 @@ function PredictionFullView({
 
   return (
     <div className='space-y-4'>
-      {/* Header: prediction history + regenerate */}
+      {/* Toolbar: prediction count + regenerate (section title "AI 예측" is above) */}
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center gap-1.5'>
-          <Icon name='Target' size={15} className='text-stone-500' />
-          <span className='text-sm font-bold text-foreground'>AI 예측</span>
-          {list.length > 1 && <span className='text-text-tertiary text-xs'>({list.length}건)</span>}
+          {list.length > 1 && <span className='text-text-tertiary text-sm'>({list.length}건)</span>}
         </div>
         {!isRaceCompleted && availableTickets > 0 && (
           <button

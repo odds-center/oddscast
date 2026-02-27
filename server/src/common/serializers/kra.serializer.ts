@@ -28,7 +28,8 @@ function isPastDate(rcDate: string | null | undefined): boolean {
 
 /**
  * DB Race → API 응답 (meet을 enum으로 치환)
- * 날짜 지난 경기는 status COMPLETED로 override
+ * 날짜 지난 경기는 status COMPLETED로 override.
+ * 미완료 경주는 results를 노출하지 않음 (실제 결과 없이 결과로 보이는 것 방지).
  */
 export function serializeRace<T extends RaceLike>(race: T | null): T | null {
   if (!race) return null;
@@ -37,7 +38,8 @@ export function serializeRace<T extends RaceLike>(race: T | null): T | null {
   if (isPastDate(race.rcDate) && status !== 'CANCELLED') {
     status = 'COMPLETED';
   }
-  return {
+  const isCompleted = status === 'COMPLETED';
+  const out: T = {
     ...race,
     meet: meetEnum ?? race.meet,
     meetName:
@@ -45,6 +47,10 @@ export function serializeRace<T extends RaceLike>(race: T | null): T | null {
     status,
     raceStatus: status,
   } as T;
+  if (!isCompleted && Array.isArray((out as Record<string, unknown>).results)) {
+    (out as Record<string, unknown>).results = [];
+  }
+  return out;
 }
 
 /**

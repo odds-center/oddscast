@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
 import { serializeRaceResults } from '../common/serializers/kra.serializer';
+import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import {
   CreateResultDto,
   UpdateResultDto,
@@ -79,7 +80,10 @@ export class ResultsService {
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
     const { date, meet } = filters;
-    const raceWhere: Prisma.RaceWhereInput = {};
+    const raceWhere: Prisma.RaceWhereInput = {
+      // Only show races that have at least one result (avoid showing future/scheduled races as "경주 결과")
+      results: { some: {} },
+    };
     if (date) {
       raceWhere.rcDate = String(date).replace(/-/g, '').slice(0, 8);
     }
@@ -87,7 +91,8 @@ export class ResultsService {
       raceWhere.meet = toKraMeetName(meet);
     }
 
-    const [races, total] = await Promise.all([
+    const maxFetch = 5000;
+    const [allRaces, total] = await Promise.all([
       this.prisma.race.findMany({
         where: raceWhere,
         select: {
@@ -98,12 +103,20 @@ export class ResultsService {
           rcNo: true,
           rcDist: true,
         },
-        orderBy: [{ rcDate: 'desc' }, { rcNo: 'asc' }],
-        skip: (page - 1) * limit,
-        take: limit,
+        take: maxFetch,
+        orderBy: { rcDate: 'desc' },
       }),
       this.prisma.race.count({ where: raceWhere }),
     ]);
+
+    const sorted = sortRacesByNumericRcNo(allRaces, {
+      getRcDate: (r) => r.rcDate ?? '',
+      getMeet: (r) => r.meet ?? '',
+      getRcNo: (r) => r.rcNo ?? '',
+      rcDateOrder: 'desc',
+    });
+    const start = (page - 1) * limit;
+    const races = sorted.slice(start, start + limit);
 
     const raceIds = races.map((r) => r.id);
     const results =

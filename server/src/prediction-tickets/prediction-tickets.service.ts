@@ -122,6 +122,63 @@ export class PredictionTicketsService {
     return { tickets, total, page, totalPages: Math.ceil(total / limit) };
   }
 
+  /**
+   * My past predictions — tickets used for race predictions (USED + predictionId), with race and accuracy.
+   */
+  async getMyPredictionsHistory(userId: number, page: number = 1, limit: number = 20) {
+    const [items, total] = await Promise.all([
+      this.prisma.predictionTicket.findMany({
+        where: {
+          userId,
+          status: 'USED',
+          predictionId: { not: null },
+          type: 'RACE',
+        },
+        include: {
+          prediction: {
+            select: { id: true, raceId: true, accuracy: true, status: true },
+            include: { race: true },
+          },
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { usedAt: 'desc' },
+      }),
+      this.prisma.predictionTicket.count({
+        where: {
+          userId,
+          status: 'USED',
+          predictionId: { not: null },
+          type: 'RACE',
+        },
+      }),
+    ]);
+
+    const list = items
+      .filter((t): t is typeof t & { prediction: NonNullable<typeof t.prediction> & { race: NonNullable<NonNullable<typeof t.prediction>['race']> } } => t.prediction?.race != null)
+      .map((t) => ({
+        ticketId: t.id,
+        usedAt: t.usedAt,
+        raceId: t.raceId ?? t.prediction.raceId,
+        predictionId: t.predictionId,
+        accuracy: t.prediction.accuracy ?? null,
+        race: {
+          id: t.prediction.race.id,
+          meet: t.prediction.race.meet,
+          rcDate: t.prediction.race.rcDate,
+          rcNo: t.prediction.race.rcNo,
+          rcName: t.prediction.race.rcName,
+        },
+      }));
+
+    return {
+      list,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   async findOne(id: number) {
     const ticket = await this.prisma.predictionTicket.findUnique({
       where: { id },

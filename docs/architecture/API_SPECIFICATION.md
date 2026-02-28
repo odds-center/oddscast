@@ -413,6 +413,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `POST` | `/prediction-tickets/use`     | 예측권 사용 | 🔐   |
 | `GET`  | `/prediction-tickets/balance` | 잔여 수량   | 🔐   |
 | `GET`  | `/prediction-tickets/history` | 사용 이력   | 🔐   |
+| `GET`  | `/prediction-tickets/my-predictions` | 내가 본 예측 목록 (USED RACE, page, limit) | 🔐   |
 | `GET`  | `/prediction-tickets/:id`     | 상세 조회   | 🔐   |
 
 ### 10.2 종합 예측권 (MATRIX) — 신규

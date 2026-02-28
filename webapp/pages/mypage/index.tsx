@@ -25,6 +25,7 @@ export default function MypageIndex() {
           { href: routes.profile.index, icon: 'User', label: '내 정보 (포인트, 예측권)' },
           { href: routes.profile.edit, icon: 'User', label: '프로필 수정' },
           { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
+          { href: routes.mypage.predictionHistory, icon: 'ClipboardList', label: '내가 본 예측' },
           { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
           { href: routes.mypage.subscriptions, icon: 'Crown', label: '구독 플랜' },
           { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },

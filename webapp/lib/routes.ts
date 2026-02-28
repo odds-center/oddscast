@@ -34,6 +34,7 @@ export const routes = {
     matrixTicketPurchase: '/mypage/matrix-ticket-purchase',
     notifications: '/mypage/notifications',
     ticketHistory: '/mypage/ticket-history',
+    predictionHistory: '/mypage/prediction-history',
     pointTransactions: '/mypage/point-transactions',
   },
 

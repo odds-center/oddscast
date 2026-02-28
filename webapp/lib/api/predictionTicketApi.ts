@@ -34,6 +34,24 @@ export interface TicketBalance {
 }
 
 /**
+ * My past predictions list item (from GET my-predictions)
+ */
+export interface MyPredictionHistoryItem {
+  ticketId: number;
+  usedAt: string | null;
+  raceId: number;
+  predictionId: number | null;
+  accuracy: number | null;
+  race: {
+    id: number;
+    meet: string;
+    rcDate: string;
+    rcNo: string;
+    rcName: string | null;
+  } | null;
+}
+
+/**
  * Prediction ticket usage result
  */
 export interface UseTicketResult {
@@ -83,6 +101,40 @@ export default class PredictionTicketsApi {
         expiredTickets: d?.expired ?? d?.expiredTickets ?? 0,
         totalTickets: d?.total ?? d?.totalTickets ?? 0,
       } as TicketBalance;
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
+
+  /**
+   * My past predictions — list of predictions user viewed with ticket (USED RACE tickets).
+   * Server response: { list, total, page, totalPages }
+   */
+  static async getMyPredictionsHistory(
+    page = 1,
+    limit = 20,
+  ): Promise<{
+    list: MyPredictionHistoryItem[];
+    total: number;
+    page: number;
+    totalPages: number;
+  }> {
+    try {
+      const response = await axiosInstance.get('/prediction-tickets/my-predictions', {
+        params: { page, limit },
+      });
+      const d = handleApiResponse(response) as {
+        list?: MyPredictionHistoryItem[];
+        total?: number;
+        page?: number;
+        totalPages?: number;
+      };
+      return {
+        list: d?.list ?? [],
+        total: d?.total ?? 0,
+        page: d?.page ?? 1,
+        totalPages: d?.totalPages ?? 1,
+      };
     } catch (error) {
       throw handleApiError(error);
     }

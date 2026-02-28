@@ -86,6 +86,16 @@ export class PredictionTicketsController {
     return this.ticketsService.getHistory(user.sub, page, limit);
   }
 
+  @Get('my-predictions')
+  @ApiOperation({ summary: '내가 본 예측 목록 (예측권 사용 이력)' })
+  getMyPredictions(
+    @CurrentUser() user: JwtPayload,
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ) {
+    return this.ticketsService.getMyPredictionsHistory(user.sub, page, limit);
+  }
+
   @Get(':id')
   @ApiOperation({ summary: '예측권 상세 조회' })
   findOne(@Param('id', ParseIntPipe) id: number) {

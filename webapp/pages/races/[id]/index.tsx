@@ -504,6 +504,15 @@ export default function RaceDetailPage() {
               }
               className='mb-2'
             />
+            {displayPrediction?.scores?.horseScores && displayPrediction.scores.horseScores.length > 0 && (
+              <p className='mb-2 text-sm text-text-secondary'>
+                <Link href={routes.races.simulator(id as string)} className='text-primary hover:underline inline-flex items-center gap-1'>
+                  가중치를 조절해 보기
+                  <Icon name='ChevronRight' size={14} />
+                </Link>
+                {' → 커스텀 예측 시뮬레이터'}
+              </p>
+            )}
             {displayPrediction ? (
               <PredictionFullView
                 prediction={displayPrediction}

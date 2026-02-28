@@ -187,7 +187,7 @@
 
 ---
 
-### 3.2 🧮 Custom Prediction Simulator
+### 3.2 🧮 Custom Prediction Simulator — ✅ Implemented
 
 > Let users adjust weights and see how predictions change.
 
@@ -198,12 +198,12 @@
 | **Value** | Engagement tool — users feel like they're part of the analysis |
 | **Priority** | ⭐⭐ MEDIUM |
 
-**Implementation plan:**
-- Client-side only (no server calls — use existing prediction scores)
-- Sliders for 6 weight factors (rating, form, condition, experience, fitness, trainer)
-- Real-time re-ranking as user adjusts weights
-- "Reset to AI default" button
-- Share button: "My custom prediction for Race #5"
+**Implemented:**
+- Page `/races/[id]/simulator` — client-side only, uses prediction preview scores
+- Six sliders: 레이팅, 폼, 컨디션, 경험, 체력, 조교사 (0.5–1.5, default 1)
+- Synthetic factors per horse (sum = AI score); custom score = weighted sum → re-rank
+- "AI 기본값으로" reset button; "결과 공유" copies top-3 text to clipboard
+- Race detail: link "가중치를 조절해 보기 → 커스텀 예측 시뮬레이터" when horseScores exist
 
 ---
 
@@ -334,9 +334,11 @@
 ### 5.1 Onboarding Flow
 - [ ] First-time user tutorial (swipe through key features)
 - [x] "Try a free prediction" — 1 complimentary RACE ticket on signup ✅
-- [ ] Tooltip hints on first visit to prediction matrix page
+- [x] Tooltip hints on first visit to prediction matrix page ✅
 
 **Signup bonus (implemented):** Server grants 1 RACE ticket (30-day expiry) on register; failure to grant is logged but does not block signup.
+
+**Matrix first-visit hint (implemented):** Dismissible banner on `/predictions/matrix` explaining what the page does and that one matrix ticket unlocks the full day; stored in localStorage so it shows only once.
 
 ### 5.2 Personalization
 - [ ] "Your recent races" section on home page

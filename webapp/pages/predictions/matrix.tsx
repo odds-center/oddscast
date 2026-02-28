@@ -2,7 +2,7 @@
  * Daily race comprehensive guide — Yongsan comprehensive style
  * View all daily race AI predictions with matrix ticket (1,000 KRW)
  */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -26,6 +26,8 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 
 type TabId = 'matrix' | 'commentary';
+
+const MATRIX_HINT_STORAGE_KEY = 'oddscast_matrix_hint_seen';
 
 function getDateParam(filter: string): string | undefined {
   if (!filter || filter === 'today') return undefined;
@@ -118,6 +120,24 @@ export default function PredictionMatrixPage() {
   const hasAccess = matrixAccess?.hasAccess ?? false;
   const availableMatrixTickets = matrixBalance?.available ?? 0;
 
+  const [showHint, setShowHint] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      setShowHint(!window.localStorage.getItem(MATRIX_HINT_STORAGE_KEY));
+    } catch {
+      setShowHint(false);
+    }
+  }, []);
+  const dismissHint = useCallback(() => {
+    setShowHint(false);
+    try {
+      window.localStorage.setItem(MATRIX_HINT_STORAGE_KEY, '1');
+    } catch {
+      // ignore
+    }
+  }, []);
+
   const useMatrixMutation = useMutation({
     mutationFn: () => PredictionTicketsApi.useMatrixTicket(apiDateStr),
     onSuccess: () => {
@@ -163,6 +183,20 @@ export default function PredictionMatrixPage() {
         </div>
       ) : (
         <>
+          {showHint && (
+            <div className='mb-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-start justify-between gap-3'>
+              <p className='text-sm text-foreground'>
+                <span className='font-medium text-primary'>종합 예측표</span>에서는 날짜·경마장별로 AI 예측을 한눈에 볼 수 있습니다. 종합 예측권 1장으로 해당 날짜 전체를 열람할 수 있습니다.
+              </p>
+              <button
+                type='button'
+                onClick={dismissHint}
+                className='shrink-0 text-sm font-medium text-primary hover:underline'
+              >
+                확인
+              </button>
+            </div>
+          )}
           {/* Hero header */}
           <div className='home-hero mb-3'>
             <div className='relative z-10'>

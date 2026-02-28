@@ -1,0 +1,22 @@
+/* 5.5 Accessibility: high contrast & font size (40–60 age users) */
+
+/* High contrast: stronger borders, darker text (uses theme variable names) */
+html[data-high-contrast='true'] {
+  --color-border: #1c1917;
+  --color-text-secondary: #1c1917;
+  --color-text-tertiary: #44403c;
+  --color-background: #fafaf9;
+}
+
+/* Font size: scale base (body/html) */
+html[data-font-size='small'] {
+  font-size: 14px;
+}
+
+html[data-font-size='medium'] {
+  font-size: 16px;
+}
+
+html[data-font-size='large'] {
+  font-size: 18px;
+}

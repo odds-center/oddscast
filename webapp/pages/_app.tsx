@@ -8,6 +8,7 @@ import '@/styles/globals.css';
 import bridge from '@/lib/bridge';
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useAccessibilityStore } from '@/lib/store/accessibilityStore';
 import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { FloatingAppBar } from '@/components/Layout';
@@ -41,6 +42,12 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     const id = setTimeout(() => setShowOnboarding(needOnboarding), 0);
     return () => clearTimeout(id);
   }, [clientMounted]);
+
+  // Apply saved accessibility preferences (high contrast, font size)
+  const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
+  useEffect(() => {
+    if (clientMounted) hydrateAccessibility();
+  }, [clientMounted, hydrateAccessibility]);
 
   useEffect(() => {
     if (!CONFIG.analytics.gaMeasurementId) return;

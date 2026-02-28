@@ -5,8 +5,10 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
+import { TabBar, Toggle } from '@/components/ui';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
+import { useAccessibilityStore, type FontSizeLevel } from '@/lib/store/accessibilityStore';
 import AuthApi from '@/lib/api/authApi';
 import Link from 'next/link';
 
@@ -17,6 +19,10 @@ export default function SettingsPage() {
   const router = useRouter();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const logout = useAuthStore((s) => s.logout);
+  const highContrast = useAccessibilityStore((s) => s.highContrast);
+  const setHighContrast = useAccessibilityStore((s) => s.setHighContrast);
+  const fontSize = useAccessibilityStore((s) => s.fontSize);
+  const setFontSize = useAccessibilityStore((s) => s.setFontSize);
 
   const handleLogout = async () => {
     try {
@@ -32,6 +38,32 @@ export default function SettingsPage() {
     <Layout title='설정 — OddsCast'>
       <div className='space-y-6'>
         <CompactPageTitle title='설정' backHref={routes.profile.index} />
+
+        <SectionCard title='보기 설정' icon='Settings' description='고대비·글자 크기 (접근성)'>
+          <div className='space-y-4'>
+            <Toggle
+              checked={highContrast}
+              onChange={setHighContrast}
+              label='고대비 모드'
+              description='테두리와 글자 대비를 높여 가독성을 높입니다.'
+              aria-label='고대비 모드'
+            />
+            <div>
+              <p className='text-sm font-medium text-foreground mb-2'>글자 크기</p>
+              <TabBar<FontSizeLevel>
+                options={[
+                  { value: 'small', label: '작게' },
+                  { value: 'medium', label: '보통' },
+                  { value: 'large', label: '크게' },
+                ]}
+                value={fontSize}
+                onChange={setFontSize}
+                variant='subtle'
+                size='sm'
+              />
+            </div>
+          </div>
+        </SectionCard>
 
         <SectionCard title='설정' icon='Settings' description='알림·약관 등'>
           {isLoggedIn ? (

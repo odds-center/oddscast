@@ -51,6 +51,7 @@
 }
 
 @import './theme.css';
+@import './accessibility.css';
 @import './base.css';
 @import './buttons.css';
 @import './tables.css';

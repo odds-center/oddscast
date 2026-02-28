@@ -376,9 +376,11 @@
 **Lazy matrix (implemented):** PredictionMatrixTable shows first 12 rows when unlocked; Intersection Observer loads 12 more as user scrolls to bottom.
 
 ### 5.5 Accessibility
-- [ ] High contrast mode (for 40–60 age users)
-- [ ] Font size toggle (small / medium / large)
-- [ ] Screen reader compatibility audit
+- [x] High contrast mode (for 40–60 age users) ✅
+- [x] Font size toggle (small / medium / large) ✅
+- [ ] Screen reader compatibility audit (checklist: skip link, landmarks, aria-labels on CTAs, form labels)
+
+**High contrast & font size (implemented):** Settings → "보기 설정". Zustand + localStorage (`oddscast_accessibility`). High contrast: CSS vars for border/text. Font size: html font-size 14/16/18px. Applied via data-high-contrast, data-font-size on documentElement.
 
 ---
 

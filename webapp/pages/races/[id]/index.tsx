@@ -602,6 +602,19 @@ export default function RaceDetailPage() {
                 badge={hasResults && effectiveResults.length > 0 ? `${effectiveResults.length}두` : undefined}
                 className='mb-2'
               />
+              {hasResults && CONFIG.kra?.replayPortalUrl && (
+                <p className='mb-3 text-sm'>
+                  <a
+                    href={CONFIG.kra.replayPortalUrl}
+                    target='_blank'
+                    rel='noopener noreferrer'
+                    className='text-primary font-medium hover:underline inline-flex items-center gap-1'
+                  >
+                    경주 영상 보기 (한국마사회)
+                    <span aria-hidden>↗</span>
+                  </a>
+                </p>
+              )}
 
               {!hasResults ? (
                 <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-sm text-text-secondary'>

@@ -357,8 +357,10 @@
 
 ### 5.3 Content Quality
 - [x] Rich prediction cards with mini charts (bar chart of horse scores) ✅
-- [ ] Race replay links (external KRA video when available)
+- [x] Race replay links (external KRA video when available) ✅
 - [ ] Post-race analysis summary (Gemini-generated after results)
+
+**Race replay (implemented):** When race has results, race detail shows "경주 영상 보기 (한국마사회)" linking to KRA e오늘의경주 portal (CONFIG.kra.replayPortalUrl). Per-race URL not provided by KRA API.
 
 **Mini bar chart (implemented):** `HorseScoresBarChart` on race detail prediction full view — horizontal bars per horse score above the ranking table.
 

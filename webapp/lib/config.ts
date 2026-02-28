@@ -21,6 +21,10 @@ export const CONFIG = {
   analytics: {
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
   },
+  /** KRA official race replay / video portal (external link when race has results) */
+  kra: {
+    replayPortalUrl: 'https://todayrace.kra.co.kr/main.do',
+  },
   /** Toss Payments (billing window) — client key only; secret is server-side */
   tossPayments: {
     clientKey: process.env.NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY || '',

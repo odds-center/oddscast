@@ -11,6 +11,8 @@ export interface User {
   lastLogin?: Date; // Custom schema - Date
   refreshToken?: string;
   role: string;
+  /** Saved meet filter for races list (FEATURE_ROADMAP 5.2): 서울|제주|부산경남 */
+  favoriteMeet?: string | null;
   preferences?: {
     theme?: string;
     language?: string;

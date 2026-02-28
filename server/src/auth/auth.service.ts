@@ -20,6 +20,7 @@ export interface SanitizedUser {
   avatar: string | null;
   role: string;
   isActive: boolean;
+  favoriteMeet: string | null;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -320,6 +321,7 @@ export class AuthService {
     role: string;
     isActive: boolean;
     password: string;
+    favoriteMeet?: string | null;
     createdAt: Date;
     updatedAt: Date;
     [key: string]: unknown;
@@ -332,6 +334,7 @@ export class AuthService {
       avatar: user.avatar,
       role: user.role,
       isActive: user.isActive,
+      favoriteMeet: user.favoriteMeet ?? null,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

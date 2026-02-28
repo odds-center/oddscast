@@ -1,7 +1,8 @@
 /**
  * All races list — filters (date, status, region) + table + pagination
+ * FEATURE_ROADMAP 5.2: favorite meet filter saved per user when logged in
  */
-import { useMemo } from 'react';
+import { useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -10,10 +11,12 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
+import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate, isPastRaceDateTime } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useAuthStore } from '@/lib/store/authStore';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
@@ -47,11 +50,42 @@ function dateToParam(dateFilter: string): string | undefined {
 
 export default function RacesListPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
   const qStatus = (router.query?.status as string) || '';
   const dateFilter = parseDateFilter(qDate);
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
+  const hasAppliedFavoriteMeet = useRef(false);
+
+  const { data: currentUser } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => AuthApi.getCurrentUser(),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
+  const updateProfileMutation = useMutation({
+    mutationFn: (favoriteMeet: string | null) =>
+      AuthApi.updateProfile({ favoriteMeet: favoriteMeet ?? undefined }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoggedIn || hasAppliedFavoriteMeet.current || qMeet) return;
+    const fav = (currentUser as { favoriteMeet?: string | null })?.favoriteMeet;
+    if (fav && ['서울', '제주', '부산경남'].includes(fav)) {
+      hasAppliedFavoriteMeet.current = true;
+      router.replace(
+        { pathname: router.pathname, query: { ...router.query, meet: fav } },
+        undefined,
+        { shallow: true },
+      );
+    }
+  }, [isLoggedIn, currentUser, qMeet, router]);
 
   const updateQuery = (updates: Record<string, string | number | undefined>) => {
     const next = { ...router.query, ...updates };
@@ -126,7 +160,12 @@ export default function RacesListPage() {
         onStatusChange={(v) => updateQuery({ status: v || undefined, page: 1 })}
         showMeetFilter
         meetValue={qMeet}
-        onMeetChange={(v) => updateQuery({ meet: v || undefined, page: 1 })}
+        onMeetChange={(v) => {
+          updateQuery({ meet: v || undefined, page: 1 });
+          if (isLoggedIn) {
+            updateProfileMutation.mutate(v || null);
+          }
+        }}
       />
 
       <DataFetchState

@@ -344,10 +344,12 @@
 
 ### 5.2 Personalization
 - [x] "Your recent races" section on home page ✅
-- [ ] Favorite meet filter saved per user
+- [x] Favorite meet filter saved per user ✅
 - [ ] Prediction history — "My past predictions" page
 
 **Recent races (implemented):** Client-side only. Visiting a race detail pushes race ID to localStorage (max 10). Home shows "최근 본 경주" section with up to 5 races; links to race detail. No server or login required.
+
+**Favorite meet (implemented):** User.favoriteMeet (서울|제주|부산경남); GET /auth/me and PUT /auth/profile. Races list: when logged in, initial meet from favoriteMeet; on meet change, save via updateProfile.
 
 ### 5.3 Content Quality
 - [ ] Rich prediction cards with mini charts (bar chart of horse scores)

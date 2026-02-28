@@ -10,7 +10,7 @@
 
 | 순서 | 항목 | 상태 | 비고 |
 |------|------|------|------|
-| 1 | **Railway 배포** | 미진행 | [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) 참고 — 서버 + (선택) 웹앱, DB는 Railway PostgreSQL 또는 외부 |
+| 1 | **Railway 배포** | 준비됨 | `server/Dockerfile` + `.dockerignore` 추가됨. [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) 참고 — Docker 또는 Nixpacks |
 | 2 | **CD 파이프라인** | CI만 있음 | GitHub Actions에 deploy 단계 추가 (Railway 연동 등) |
 | 3 | **모니터링** | 미진행 | Sentry(에러), Uptime/지연 모니터링 |
 | 4 | **DB 백업** | 미진행 | 프로덕션 PostgreSQL 일일 백업 자동화 |

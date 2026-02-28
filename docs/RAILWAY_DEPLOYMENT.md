@@ -75,14 +75,29 @@ Railway 서비스 → **Variables**에 다음 설정:
 
 ### 4.3 빌드 & 실행
 
+**방법 A — Docker (권장)**  
+저장소 루트에 `server/Dockerfile`과 `.dockerignore`가 있음. Railway에서 Dockerfile로 배포할 때:
+
 | 설정 | 값 |
 |------|-----|
-| **Root directory** | `server` (모노레포인 경우) |
-| **Build** | `pnpm install && pnpm run build` |
-| **Start** | `pnpm start` |
+| **Root directory** | `.` (저장소 루트) |
+| **Dockerfile path** | `server/Dockerfile` |
+| **Build** | (Docker 빌드로 자동) |
+| **Start** | (이미지 내 `CMD` 사용) |
 
-**테스트 기간:** 지금은 마이그레이션 없이 **구동 테스트만** 하면 됨. Start는 `pnpm start`만 두고, 서버가 잘 뜨는지·DB 연결·API 응답만 확인.  
-**이후:** 스키마 적용이 필요해지면 [5. 프로덕션 마이그레이션](#5-프로덕션-마이그레이션)에서 `prisma migrate deploy` 실행하거나 Start에 포함하면 됨.
+- 로컬 테스트: 저장소 루트에서 `docker build -f server/Dockerfile .` 후 `docker run -p 3000:3000 -e DATABASE_URL=... <image>` 로 실행.
+
+**방법 B — Nixpacks / 수동 빌드**  
+Railway가 Dockerfile 없이 빌드하는 경우:
+
+| 설정 | 값 |
+|------|-----|
+| **Root directory** | `server` |
+| **Build** | `pnpm install && pnpm run build` (루트에서 shared 빌드 후 server 빌드 필요 시 상위에서 실행) |
+| **Start** | `pnpm start` 또는 `node dist/main` |
+
+**테스트 기간:** 마이그레이션 없이 **구동 테스트만** 해도 됨. DB 연결·API·`/health` 응답만 확인.  
+**이후:** 스키마 적용이 필요하면 [5. 프로덕션 마이그레이션](#5-프로덕션-마이그레이션)에서 `prisma migrate deploy` 실행하거나 Start 커맨드에 포함하면 됨.
 
 ---
 

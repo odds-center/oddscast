@@ -1,0 +1,23 @@
+# Dependencies and build outputs (reinstalled in image)
+node_modules
+**/node_modules
+**/dist
+.next
+out
+
+# Git and IDE
+.git
+.github
+.cursor
+*.md
+
+# Env and secrets
+.env
+.env.*
+*.local
+
+# Misc
+.DS_Store
+coverage
+*.log
+.pnpm-debug.log

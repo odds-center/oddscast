@@ -207,7 +207,7 @@
 
 ---
 
-### 3.3 📅 Weekly Preview Report
+### 3.3 📅 Weekly Preview Report — ✅ Implemented
 
 > A curated weekly summary of upcoming races and AI insights.
 
@@ -215,14 +215,14 @@
 |------|--------|
 | **What** | Auto-generated weekly content: key races, horses to watch, trends |
 | **Route** | `/weekly-preview` |
-| **Generation** | Cron (Thursday evening) — Gemini generates weekly summary from upcoming race data |
+| **Generation** | Cron Thursday 20:00 KST — Gemini summary for upcoming Fri/Sat/Sun races |
 | **Priority** | ⭐⭐ MEDIUM |
 
-**Implementation plan:**
-- Server: `WeeklyPreview` model or JSON config
-- Cron: Thursday 20:00 — collects upcoming Fri/Sat/Sun races, generates Gemini summary
-- WebApp: Card-based layout — "This Week's Highlights", "Horses to Watch", "Track Conditions"
-- Free for all users (marketing/engagement tool)
+**Implemented:**
+- Server: `WeeklyPreview` model (weekLabel, content Json); GET /api/weekly-preview (latest or ?week=)
+- Cron: Thu 20:00 Asia/Seoul → generate(); fetches races for next Fri–Sun, Gemini 1.5 Flash JSON (highlights, horsesToWatch, trackConditions)
+- WebApp: /weekly-preview card layout — 이번 주 하이라이트, 주목할 말, 트랙·날씨; home menu link "주간프리뷰"
+- Free for all users
 
 ---
 

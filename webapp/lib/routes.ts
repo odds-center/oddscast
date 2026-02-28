@@ -63,6 +63,8 @@ export const routes = {
     accuracy: '/predictions/accuracy',
   },
 
+  weeklyPreview: '/weekly-preview',
+
   legal: {
     terms: '/legal/terms',
     privacy: '/legal/privacy',

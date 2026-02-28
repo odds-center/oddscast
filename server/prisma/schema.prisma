@@ -82,6 +82,20 @@ model ReferralClaim {
 }
 
 // ============================================
+// 주간 프리뷰 (WeeklyPreview) — FEATURE_ROADMAP 3.3
+// Cron Thu 20:00 KST; Gemini summary for Fri–Sun races
+// ============================================
+model WeeklyPreview {
+  id          Int      @id @default(autoincrement())
+  weekLabel   String   @unique // Thursday date YYYY-MM-DD (generation day)
+  content     Json     // { highlights, horsesToWatch[], trackConditions, raceDates[] }
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("weekly_previews")
+}
+
+// ============================================
 // 오늘의 경마운세 (UserDailyFortune) — 유저별·날짜별 1건
 // ============================================
 model UserDailyFortune {

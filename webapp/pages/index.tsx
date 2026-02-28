@@ -71,6 +71,7 @@ export default function Home() {
           { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
           { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상' },
           { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 정확도' },
+          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰' },
           { href: routes.ranking, icon: 'Medal' as const, label: '예측랭킹' },
         ].map((item) => (
           <Link

@@ -8,6 +8,7 @@ export { default as HomeSection } from './HomeSection';
 export { default as TodayRacesSection } from './TodayRacesSection';
 export { default as WeekRacesSection } from './WeekRacesSection';
 export { default as RecentResultsSection } from './RecentResultsSection';
+export { default as RecentRacesSection } from './RecentRacesSection';
 export { default as PredictionMatrixPreviewSection } from './PredictionMatrixPreviewSection';
 export { default as RacePredictionsPreviewSection } from './RacePredictionsPreviewSection';
 export { default as RankingPreviewSection } from './RankingPreviewSection';

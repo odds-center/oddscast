@@ -29,6 +29,7 @@ import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatTime, isPastRaceDateTime } from '@/lib/utils/format';
+import { pushRecentRaceId } from '@/lib/utils/recentRaces';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
 function formatOrdTypeLabel(ordType: string | null | undefined): string {
@@ -260,6 +261,10 @@ export default function RaceDetailPage() {
   useEffect(() => {
     queueMicrotask(() => setSelectedHorses([]));
   }, [pickType]);
+
+  useEffect(() => {
+    if (id && typeof id === 'string') pushRecentRaceId(id);
+  }, [id]);
 
   const pickMutation = useMutation({
     mutationFn: (dto: { raceId: string; pickType: string; hrNos: string[]; hrNames: string[] }) =>

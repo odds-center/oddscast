@@ -9,6 +9,7 @@ import {
   TodayRacesSection,
   WeekRacesSection,
   RecentResultsSection,
+  RecentRacesSection,
   PredictionMatrixPreviewSection,
   RacePredictionsPreviewSection,
   RankingPreviewSection,
@@ -87,6 +88,10 @@ export default function Home() {
       <div className='grid lg:grid-cols-2 gap-4 mb-4'>
         <TodayRacesSection />
         <WeekRacesSection />
+      </div>
+
+      <div className='mb-4'>
+        <RecentRacesSection />
       </div>
 
       {isLoggedIn ? (

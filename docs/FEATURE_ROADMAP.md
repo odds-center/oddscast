@@ -341,9 +341,11 @@
 **Matrix first-visit hint (implemented):** Dismissible banner on `/predictions/matrix` explaining what the page does and that one matrix ticket unlocks the full day; stored in localStorage so it shows only once.
 
 ### 5.2 Personalization
-- [ ] "Your recent races" section on home page
+- [x] "Your recent races" section on home page ✅
 - [ ] Favorite meet filter saved per user
 - [ ] Prediction history — "My past predictions" page
+
+**Recent races (implemented):** Client-side only. Visiting a race detail pushes race ID to localStorage (max 10). Home shows "최근 본 경주" section with up to 5 races; links to race detail. No server or login required.
 
 ### 5.3 Content Quality
 - [ ] Rich prediction cards with mini charts (bar chart of horse scores)

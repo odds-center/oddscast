@@ -404,6 +404,7 @@ model Prediction {
   preview         String?          @db.Text // 무료 미리보기
   previewApproved Boolean          @default(false) // 검수 완료 시에만 preview 반환
   accuracy        Float?
+  postRaceSummary String?          @db.Text // Gemini-generated summary after results (2-3 sentences)
   status          PredictionStatus @default(PENDING)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt

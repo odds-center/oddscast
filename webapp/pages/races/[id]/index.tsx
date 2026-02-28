@@ -1390,6 +1390,18 @@ function PredictionFullView({
               </div>
             </div>
           )}
+
+          {/* Post-race summary (Gemini-generated after results) */}
+          {prediction.postRaceSummary && (
+            <div className='mt-4'>
+              <p className='text-xs text-text-secondary font-semibold mb-1.5'>경주 후 분석</p>
+              <div className='p-3 rounded-md bg-primary-muted border border-border'>
+                <p className='text-foreground text-sm leading-relaxed whitespace-pre-wrap'>
+                  {prediction.postRaceSummary}
+                </p>
+              </div>
+            </div>
+          )}
         </>
       ) : (
         <p className='text-text-secondary text-sm'>

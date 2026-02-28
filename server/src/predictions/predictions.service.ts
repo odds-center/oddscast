@@ -7,6 +7,7 @@ import { Prisma } from '@prisma/client';
 import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import { meetToCode, toKraMeetName } from '../kra/constants';
+import { isEligibleForAccuracy } from '../kra/ord-parser';
 import {
   CreatePredictionDto,
   UpdatePredictionStatusDto,
@@ -233,6 +234,76 @@ export class PredictionsService {
       orderBy: { createdAt: 'desc' },
       take: limit,
     });
+  }
+
+  /**
+   * Generate a short post-race analysis summary (2-3 sentences) via Gemini after results are in.
+   * Called from ResultsService after updatePredictionAccuracy. Failures are logged but not thrown.
+   */
+  async generatePostRaceSummary(raceId: number): Promise<void> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return;
+
+    const prediction = await this.prisma.prediction.findFirst({
+      where: { raceId, status: 'COMPLETED' },
+      orderBy: { createdAt: 'desc' },
+      include: { race: { select: { meet: true, rcDate: true, rcNo: true } } },
+    });
+    if (!prediction?.race) return;
+    const scoresObj = prediction.scores as { horseScores?: unknown[] } | null;
+    if (!scoresObj?.horseScores?.length) return;
+
+    const results = await this.prisma.raceResult.findMany({
+      where: { raceId },
+      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+      select: { ord: true, ordType: true, hrName: true, hrNo: true, rcTime: true },
+    });
+    const topResults = results
+      .filter((r) => isEligibleForAccuracy(r.ordType))
+      .slice(0, 3)
+      .map((r, i) => `${i + 1}위: ${r.hrName ?? r.hrNo ?? '-'}${r.rcTime ? ` (${r.rcTime}초)` : ''}`)
+      .join(', ');
+
+    const scores = prediction.scores as { horseScores?: Array<{ hrName?: string; hrNo?: string; score?: number }> };
+    const predictedTop = (scores.horseScores ?? [])
+      .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+      .slice(0, 3)
+      .map((h, i) => `${i + 1}위: ${h.hrName ?? h.hrNo ?? '-'}`)
+      .join(', ');
+
+    const acc = prediction.accuracy != null ? Math.round(prediction.accuracy) : 0;
+    const { meet, rcDate, rcNo } = prediction.race;
+
+    const prompt = `다음 경주 결과와 AI 예측을 바탕으로 2~3문장의 경주 후 분석 요약을 한국어로 작성해 주세요. 감탄사나 과장 없이 사실 위주로.
+
+경주: ${meet} ${rcDate} ${rcNo}경주
+실제 결과(상위3): ${topResults || '-'}
+AI 예측 순위: ${predictedTop || '-'}
+예측 적중률: ${acc}%
+
+요약:`;
+
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        generationConfig: { temperature: 0.3, maxOutputTokens: 256 },
+      });
+      const result = await model.generateContent(prompt);
+      const text = result.response?.text()?.trim();
+      if (text) {
+        await this.prisma.prediction.update({
+          where: { id: prediction.id },
+          data: { postRaceSummary: text } as Prisma.PredictionUpdateInput,
+        });
+      }
+    } catch (err) {
+      console.warn(
+        `[PredictionsService] Post-race summary failed for race ${raceId}:`,
+        err instanceof Error ? err.message : String(err),
+      );
+    }
   }
 
   /**

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PointsService } from '../points/points.service';
+import { PredictionsService } from '../predictions/predictions.service';
 import { Prisma } from '@prisma/client';
 import { toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
@@ -21,6 +22,7 @@ export class ResultsService {
   constructor(
     private prisma: PrismaService,
     private pointsService: PointsService,
+    private predictionsService: PredictionsService,
   ) {}
 
   async findAll(filters: ResultFilterDto) {
@@ -211,8 +213,17 @@ export class ResultsService {
       });
       await this.pointsService.awardPickPointsForRace(raceId);
       await this.updatePredictionAccuracy(raceId);
+      this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
     }
     return { count: created.count };
+  }
+
+  /**
+   * Called when results are synced for a race (e.g. from KRA sync). Updates accuracy and triggers post-race summary.
+   */
+  async onResultsSyncedForRace(raceId: number): Promise<void> {
+    await this.updatePredictionAccuracy(raceId);
+    this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
   }
 
   /**

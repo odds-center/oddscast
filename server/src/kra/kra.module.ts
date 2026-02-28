@@ -7,6 +7,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
 import { GlobalConfigModule } from '../config/config.module';
+import { ResultsModule } from '../results/results.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { GlobalConfigModule } from '../config/config.module';
     ConfigModule,
     CacheModule,
     GlobalConfigModule,
+    ResultsModule,
   ],
   controllers: [KraController],
   providers: [KraService],

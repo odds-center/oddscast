@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { GlobalConfigService } from '../config/config.service';
+import { ResultsService } from '../results/results.service';
 import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import * as xml2js from 'xml2js';
@@ -31,6 +32,7 @@ export class KraService {
     private configService: ConfigService,
     private globalConfigService: GlobalConfigService,
     private prisma: PrismaService,
+    private resultsService: ResultsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
     dayjs.extend(customParseFormat);
@@ -1262,6 +1264,12 @@ export class KraService {
             data: { status: 'COMPLETED' },
           });
         }
+        // Update prediction accuracy and generate post-race summary
+        await Promise.allSettled(
+          Array.from(racesToUpdate).map((raceId) =>
+            this.resultsService.onResultsSyncedForRace(raceId),
+          ),
+        );
 
         await this.logKraSync(endpoint, {
           meet: meet.code,

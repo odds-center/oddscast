@@ -89,6 +89,8 @@ export interface PredictionDetailDto {
   scores?: PredictionScoresDto;
   analysis?: string;
   preview?: string;
+  /** Gemini-generated post-race summary (2-3 sentences) when results are in */
+  postRaceSummary?: string | null;
 }
 
 /**

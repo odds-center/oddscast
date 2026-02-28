@@ -32,7 +32,7 @@ function HorseBadge({ no, name }: { no: string; name?: string }) {
 }
 
 export default function PredictionMatrixPreviewSection() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['predictions', 'matrix', 'preview'],
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
     placeholderData: keepPreviousData,
@@ -50,6 +50,13 @@ export default function PredictionMatrixPreviewSection() {
     >
       {isLoading ? (
         <div className='py-6 text-center text-stone-400 text-sm'>예상표 준비 중...</div>
+      ) : error ? (
+        <div className='py-6 text-center text-text-secondary text-sm'>
+          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+            다시 시도
+          </button>
+        </div>
       ) : rows.length === 0 ? (
         <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 정보가 없습니다.</div>
       ) : (

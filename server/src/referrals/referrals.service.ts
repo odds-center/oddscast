@@ -82,9 +82,7 @@ export class ReferralsService {
       throw new BadRequestException('본인의 추천 코드는 사용할 수 없습니다.');
     }
     if (referral.usedCount >= referral.maxUses) {
-      throw new BadRequestException(
-        '이 추천 코드는 사용 한도에 도달했습니다.',
-      );
+      throw new BadRequestException('이 추천 코드는 사용 한도에 도달했습니다.');
     }
 
     const alreadyClaimed = await this.prisma.referralClaim.findUnique({

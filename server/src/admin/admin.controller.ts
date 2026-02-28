@@ -102,7 +102,9 @@ export class AdminController {
         // Entry sheet may be unavailable for some dates; return results summary anyway
         return {
           ...resultRes,
-          entrySheetWarning: (e as Error)?.message ?? '출전표 보강 실패(해당일 데이터 없을 수 있음)',
+          entrySheetWarning:
+            (e as Error)?.message ??
+            '출전표 보강 실패(해당일 데이터 없을 수 있음)',
         };
       }
     }
@@ -121,7 +123,9 @@ export class AdminController {
     const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
     const d = date && norm(date) ? norm(date) : null;
     if (!d) {
-      res.status(400).json({ message: 'date (YYYYMMDD or YYYY-MM-DD) required' });
+      res
+        .status(400)
+        .json({ message: 'date (YYYYMMDD or YYYY-MM-DD) required' });
       return;
     }
     res.setHeader('Content-Type', 'text/event-stream');
@@ -133,13 +137,19 @@ export class AdminController {
     };
     try {
       onProgress(0, '경주 결과 수집 시작…');
-      const resultRes = await this.kraService.fetchRaceResults(d, true, { onProgress });
+      const resultRes = await this.kraService.fetchRaceResults(d, true, {
+        onProgress,
+      });
       onProgress(50, '출전표 보강 중…');
       let entryRes: { races?: number; entries?: number } = {};
       try {
         entryRes = await this.kraService.syncEntrySheet(d, { onProgress });
       } catch (e) {
-        this.writeSse(res, { percent: 100, message: '출전표 보강 건너뜀', warning: (e as Error)?.message });
+        this.writeSse(res, {
+          percent: 100,
+          message: '출전표 보강 건너뜀',
+          warning: (e as Error)?.message,
+        });
       }
       this.writeSse(res, {
         done: true,
@@ -177,7 +187,9 @@ export class AdminController {
       this.writeSse(res, { percent, message });
     };
     try {
-      const result = await this.kraService.syncScheduleForDate(d, { onProgress });
+      const result = await this.kraService.syncScheduleForDate(d, {
+        onProgress,
+      });
       this.writeSse(res, { done: true, result });
     } catch (e) {
       this.writeSse(res, { done: true, error: (e as Error)?.message });
@@ -233,7 +245,9 @@ export class AdminController {
       this.writeSse(res, { percent, message });
     };
     try {
-      const result = await this.kraService.syncHistoricalBackfill(from, to, { onProgress });
+      const result = await this.kraService.syncHistoricalBackfill(from, to, {
+        onProgress,
+      });
       this.writeSse(res, { done: true, result });
     } catch (e) {
       this.writeSse(res, { done: true, error: (e as Error)?.message });
@@ -372,7 +386,8 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] 사용자에게 예측권 지급 (RACE/MATRIX)' })
   async grantTickets(
     @Param('id', ParseIntPipe) id: number,
-    @Body() body: { count: number; expiresInDays?: number; type?: 'RACE' | 'MATRIX' },
+    @Body()
+    body: { count: number; expiresInDays?: number; type?: 'RACE' | 'MATRIX' },
   ) {
     const count = Math.min(100, Math.max(1, Number(body.count) || 1));
     const expiresInDays = Math.min(
@@ -380,7 +395,12 @@ export class AdminController {
       Math.max(1, Number(body.expiresInDays) || 30),
     );
     const type = body.type === 'MATRIX' ? 'MATRIX' : 'RACE';
-    return this.predictionTicketsService.grantTickets(id, count, expiresInDays, type);
+    return this.predictionTicketsService.grantTickets(
+      id,
+      count,
+      expiresInDays,
+      type,
+    );
   }
 
   // --- AI Config (Gemini) ---
@@ -567,7 +587,9 @@ export class AdminController {
     @Body() body: { status: string },
   ) {
     const valid = Object.values(BetStatus);
-    const status = valid.includes(body?.status as BetStatus) ? (body.status as BetStatus) : BetStatus.PENDING;
+    const status = valid.includes(body?.status as BetStatus)
+      ? (body.status as BetStatus)
+      : BetStatus.PENDING;
     const bet = await this.prisma.bet.update({
       where: { id },
       data: { betStatus: status },
@@ -909,7 +931,9 @@ export class AdminController {
   }
 
   @Get('prediction-tickets/usage')
-  @ApiOperation({ summary: '[Admin] 예측권 사용 내역 (유저별, 경주·예측 내용 포함)' })
+  @ApiOperation({
+    summary: '[Admin] 예측권 사용 내역 (유저별, 경주·예측 내용 포함)',
+  })
   async getPredictionTicketUsage(
     @Query('page') page?: number,
     @Query('limit') limit?: number,
@@ -924,8 +948,18 @@ export class AdminController {
       this.prisma.predictionTicket.findMany({
         where,
         include: {
-          user: { select: { id: true, email: true, name: true, nickname: true } },
-          prediction: { select: { id: true, analysis: true, status: true, accuracy: true, scores: true } },
+          user: {
+            select: { id: true, email: true, name: true, nickname: true },
+          },
+          prediction: {
+            select: {
+              id: true,
+              analysis: true,
+              status: true,
+              accuracy: true,
+              scores: true,
+            },
+          },
           subscription: { select: { id: true } },
         },
         orderBy: { usedAt: 'desc' },
@@ -935,12 +969,21 @@ export class AdminController {
       this.prisma.predictionTicket.count({ where }),
     ]);
 
-    const raceIds = [...new Set(tickets.map((t) => t.raceId).filter(Boolean))] as number[];
+    const raceIds = [
+      ...new Set(tickets.map((t) => t.raceId).filter(Boolean)),
+    ] as number[];
     const races =
       raceIds.length > 0
         ? await this.prisma.race.findMany({
             where: { id: { in: raceIds } },
-            select: { id: true, rcNo: true, meet: true, meetName: true, rcDate: true, rcName: true },
+            select: {
+              id: true,
+              rcNo: true,
+              meet: true,
+              meetName: true,
+              rcDate: true,
+              rcName: true,
+            },
           })
         : [];
     const raceMap = new Map(races.map((r) => [r.id, r]));

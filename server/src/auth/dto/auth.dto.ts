@@ -66,7 +66,9 @@ export class UpdateProfileDto {
   @IsString()
   avatar?: string;
 
-  @ApiPropertyOptional({ description: 'Saved meet filter: 서울|제주|부산경남 (FEATURE_ROADMAP 5.2)' })
+  @ApiPropertyOptional({
+    description: 'Saved meet filter: 서울|제주|부산경남 (FEATURE_ROADMAP 5.2)',
+  })
   @IsOptional()
   @IsString()
   favoriteMeet?: string | null;

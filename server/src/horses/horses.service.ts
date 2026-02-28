@@ -85,8 +85,10 @@ export class HorsesService {
       const n = r.ordInt ?? 0;
       return n >= 1 && n <= 3;
     }).length;
-    const winRate = totalRaces > 0 ? Math.round((winCount / totalRaces) * 10000) / 100 : 0;
-    const placeRate = totalRaces > 0 ? Math.round((placeCount / totalRaces) * 10000) / 100 : 0;
+    const winRate =
+      totalRaces > 0 ? Math.round((winCount / totalRaces) * 10000) / 100 : 0;
+    const placeRate =
+      totalRaces > 0 ? Math.round((placeCount / totalRaces) * 10000) / 100 : 0;
     const recentForm = normalResults
       .slice(0, 10)
       .map((r) => r.ordInt ?? 0)

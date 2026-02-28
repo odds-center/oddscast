@@ -473,6 +473,8 @@ ORT │  Smart Alerts     │  Custom Simulator │
 | [API_SPECIFICATION.md](architecture/API_SPECIFICATION.md) | API endpoints to extend |
 | [DATABASE_SCHEMA.md](architecture/DATABASE_SCHEMA.md) | Schema changes needed |
 | [UI_PATTERNS.md](features/UI_PATTERNS.md) | Design patterns to follow |
+| [WEBAPP_COMPLETENESS.md](features/WEBAPP_COMPLETENESS.md) | WebApp 완성도 체크리스트 (로딩/에러/빈 상태, 배포 전 점검) |
+| [WEBAPP_PAGES_PLAN.md](features/WEBAPP_PAGES_PLAN.md) | WebApp 전체 페이지 계획표 (페이지별 체크·실행 순서) |
 
 ---
 

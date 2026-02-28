@@ -74,7 +74,9 @@ export class AuthService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (this.config.get('NODE_ENV') !== 'test') {
-        console.warn(`[Auth] Signup bonus ticket grant failed for user ${user.id}: ${msg}`);
+        console.warn(
+          `[Auth] Signup bonus ticket grant failed for user ${user.id}: ${msg}`,
+        );
       }
     }
 

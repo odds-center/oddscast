@@ -9,7 +9,7 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge } from '@/components/ui';
 import JockeyApi from '@/lib/api/jockeyApi';
-import type { JockeyProfile, JockeyHistoryItem } from '@/lib/api/jockeyApi';
+import type { JockeyHistoryItem } from '@/lib/api/jockeyApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useState } from 'react';

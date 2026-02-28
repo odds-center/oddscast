@@ -2,7 +2,7 @@
  * Race schedule dates — Annual calendar (12 months at a glance). Racecourse colors/legend + detailed plan summary
  * UI reference: KRA race schedule detailed plan and annual calendar
  */
-import { useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import type { GetServerSideProps } from 'next';
@@ -160,7 +160,9 @@ export default function RaceSchedulePage() {
     const y = router.query?.year;
     if (y != null) {
       const yi = parseInt(String(y), 10);
-      if (!Number.isNaN(yi) && yi >= 2000 && yi <= 2100) setYear(yi);
+      if (!Number.isNaN(yi) && yi >= 2000 && yi <= 2100) {
+        queueMicrotask(() => setYear(yi));
+      }
     }
   }, [router.query?.year]);
 
@@ -201,12 +203,12 @@ export default function RaceSchedulePage() {
     return { dateRangeText, meetDayCounts };
   }, [scheduleDates, year]);
 
-  const syncUrl = () => {
+  const syncUrl = useCallback(() => {
     router.replace({ pathname: router.pathname, query: { year } }, undefined, { shallow: true });
-  };
+  }, [router, year]);
   useEffect(() => {
     syncUrl();
-  }, [year]);
+  }, [syncUrl]);
 
   return (
     <Layout title='경마 시행일 | OddsCast'>

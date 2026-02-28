@@ -42,7 +42,10 @@ export class PredictionTicketsController {
     @CurrentUser() user: JwtPayload,
     @Query('date') date: string,
   ) {
-    return this.ticketsService.checkMatrixAccess(user.sub, date || new Date().toISOString().slice(0, 10));
+    return this.ticketsService.checkMatrixAccess(
+      user.sub,
+      date || new Date().toISOString().slice(0, 10),
+    );
   }
 
   @Post('matrix/use')
@@ -51,7 +54,10 @@ export class PredictionTicketsController {
     @CurrentUser() user: JwtPayload,
     @Body() body: { date?: string },
   ) {
-    return this.ticketsService.useMatrixTicket(user.sub, body.date || new Date().toISOString().slice(0, 10));
+    return this.ticketsService.useMatrixTicket(
+      user.sub,
+      body.date || new Date().toISOString().slice(0, 10),
+    );
   }
 
   @Get('matrix/balance')

@@ -22,7 +22,7 @@ function getWeekDates(): string[] {
 }
 
 export default function WeekRacesSection() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'week'],
     placeholderData: keepPreviousData,
     queryFn: async () => {
@@ -48,6 +48,13 @@ export default function WeekRacesSection() {
     >
       {isLoading ? (
         <div className='py-4 text-center text-text-secondary text-sm'>준비 중...</div>
+      ) : error ? (
+        <div className='py-4 text-center text-text-secondary text-sm'>
+          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+            다시 시도
+          </button>
+        </div>
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
       ) : (

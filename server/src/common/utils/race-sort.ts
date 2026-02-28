@@ -26,7 +26,12 @@ export function sortRacesByNumericRcNo<T>(
   items: T[],
   options: SortRacesOptions<T>,
 ): T[] {
-  const { getRcDate, getMeet = () => '', getRcNo, rcDateOrder = 'desc' } = options;
+  const {
+    getRcDate,
+    getMeet = () => '',
+    getRcNo,
+    rcDateOrder = 'desc',
+  } = options;
   const dateMult = rcDateOrder === 'desc' ? -1 : 1;
   return [...items].sort((a, b) => {
     const dateA = getRcDate(a);

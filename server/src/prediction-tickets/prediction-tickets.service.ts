@@ -125,7 +125,11 @@ export class PredictionTicketsService {
   /**
    * My past predictions — tickets used for race predictions (USED + predictionId), with race and accuracy.
    */
-  async getMyPredictionsHistory(userId: number, page: number = 1, limit: number = 20) {
+  async getMyPredictionsHistory(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ) {
     const [items, total] = await Promise.all([
       this.prisma.predictionTicket.findMany({
         where: {
@@ -155,7 +159,15 @@ export class PredictionTicketsService {
     ]);
 
     const list = items
-      .filter((t): t is typeof t & { prediction: NonNullable<typeof t.prediction> & { race: NonNullable<NonNullable<typeof t.prediction>['race']> } } => t.prediction?.race != null)
+      .filter(
+        (
+          t,
+        ): t is typeof t & {
+          prediction: NonNullable<typeof t.prediction> & {
+            race: NonNullable<NonNullable<typeof t.prediction>['race']>;
+          };
+        } => t.prediction?.race != null,
+      )
       .map((t) => ({
         ticketId: t.id,
         usedAt: t.usedAt,
@@ -189,7 +201,10 @@ export class PredictionTicketsService {
   }
 
   /** 종합 예측권 — 해당 날짜 접근 권한 확인 */
-  async checkMatrixAccess(userId: number, date: string): Promise<{ hasAccess: boolean; expiresAt?: Date }> {
+  async checkMatrixAccess(
+    userId: number,
+    date: string,
+  ): Promise<{ hasAccess: boolean; expiresAt?: Date }> {
     const normalized = date.replace(/-/g, '').slice(0, 8);
     const ticket = await this.prisma.predictionTicket.findFirst({
       where: {

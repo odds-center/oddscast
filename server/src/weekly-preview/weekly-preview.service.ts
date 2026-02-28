@@ -40,7 +40,10 @@ export class WeeklyPreviewService {
 
   constructor(private prisma: PrismaService) {}
 
-  async getLatest(): Promise<{ weekLabel: string; content: WeeklyPreviewContent } | null> {
+  async getLatest(): Promise<{
+    weekLabel: string;
+    content: WeeklyPreviewContent;
+  } | null> {
     const row = await this.prisma.weeklyPreview.findFirst({
       orderBy: { createdAt: 'desc' },
     });
@@ -51,7 +54,9 @@ export class WeeklyPreviewService {
     };
   }
 
-  async getByWeek(weekLabel: string): Promise<{ weekLabel: string; content: WeeklyPreviewContent } | null> {
+  async getByWeek(
+    weekLabel: string,
+  ): Promise<{ weekLabel: string; content: WeeklyPreviewContent } | null> {
     const row = await this.prisma.weeklyPreview.findUnique({
       where: { weekLabel },
     });
@@ -63,7 +68,9 @@ export class WeeklyPreviewService {
   }
 
   /** Generate preview for the upcoming Fri–Sun; call from cron (Thursday 20:00) or admin. */
-  async generate(opts?: { fromDate?: Date }): Promise<{ weekLabel: string; content: WeeklyPreviewContent }> {
+  async generate(opts?: {
+    fromDate?: Date;
+  }): Promise<{ weekLabel: string; content: WeeklyPreviewContent }> {
     const from = opts?.fromDate ?? new Date();
     const [fri, sat, sun] = getNextFriSatSun(from);
     const weekLabel = getThursdayLabel(from);
@@ -94,7 +101,9 @@ export class WeeklyPreviewService {
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
-      this.logger.warn('GEMINI_API_KEY not set; saving placeholder weekly preview');
+      this.logger.warn(
+        'GEMINI_API_KEY not set; saving placeholder weekly preview',
+      );
       const placeholder: WeeklyPreviewContent = {
         highlights: `${fri}-${sun} 주말 ${races.length}경주 예정. (AI 요약은 Gemini 설정 후 생성됩니다.)`,
         horsesToWatch: [],
@@ -129,9 +138,17 @@ Example: {"highlights":"...", "horsesToWatch":["...","..."], "trackConditions":"
       const parsed = this.parseJsonResponse(text);
       const defaultHighlights = `${fri}~${sun} 주말 ${races.length}경주 예정입니다.`;
       const content: WeeklyPreviewContent = {
-        highlights: typeof parsed?.highlights === 'string' ? parsed.highlights : defaultHighlights,
-        horsesToWatch: Array.isArray(parsed?.horsesToWatch) ? parsed.horsesToWatch : [],
-        trackConditions: typeof parsed?.trackConditions === 'string' ? parsed.trackConditions : '—',
+        highlights:
+          typeof parsed?.highlights === 'string'
+            ? parsed.highlights
+            : defaultHighlights,
+        horsesToWatch: Array.isArray(parsed?.horsesToWatch)
+          ? parsed.horsesToWatch
+          : [],
+        trackConditions:
+          typeof parsed?.trackConditions === 'string'
+            ? parsed.trackConditions
+            : '—',
         raceDates: [fri, sat, sun],
       };
       await this.upsert(weekLabel, content);
@@ -151,7 +168,10 @@ Example: {"highlights":"...", "horsesToWatch":["...","..."], "trackConditions":"
   }
 
   private parseJsonResponse(text: string): Record<string, unknown> | null {
-    const trimmed = text.trim().replace(/^```json\s*/i, '').replace(/\s*```\s*$/, '');
+    const trimmed = text
+      .trim()
+      .replace(/^```json\s*/i, '')
+      .replace(/\s*```\s*$/, '');
     try {
       return JSON.parse(trimmed) as Record<string, unknown>;
     } catch {
@@ -159,7 +179,10 @@ Example: {"highlights":"...", "horsesToWatch":["...","..."], "trackConditions":"
     }
   }
 
-  private async upsert(weekLabel: string, content: WeeklyPreviewContent): Promise<void> {
+  private async upsert(
+    weekLabel: string,
+    content: WeeklyPreviewContent,
+  ): Promise<void> {
     await this.prisma.weeklyPreview.upsert({
       where: { weekLabel },
       create: { weekLabel, content: content as object },

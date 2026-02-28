@@ -256,22 +256,34 @@ export class PredictionsService {
     const results = await this.prisma.raceResult.findMany({
       where: { raceId },
       orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
-      select: { ord: true, ordType: true, hrName: true, hrNo: true, rcTime: true },
+      select: {
+        ord: true,
+        ordType: true,
+        hrName: true,
+        hrNo: true,
+        rcTime: true,
+      },
     });
     const topResults = results
       .filter((r) => isEligibleForAccuracy(r.ordType))
       .slice(0, 3)
-      .map((r, i) => `${i + 1}위: ${r.hrName ?? r.hrNo ?? '-'}${r.rcTime ? ` (${r.rcTime}초)` : ''}`)
+      .map(
+        (r, i) =>
+          `${i + 1}위: ${r.hrName ?? r.hrNo ?? '-'}${r.rcTime ? ` (${r.rcTime}초)` : ''}`,
+      )
       .join(', ');
 
-    const scores = prediction.scores as { horseScores?: Array<{ hrName?: string; hrNo?: string; score?: number }> };
+    const scores = prediction.scores as {
+      horseScores?: Array<{ hrName?: string; hrNo?: string; score?: number }>;
+    };
     const predictedTop = (scores.horseScores ?? [])
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .slice(0, 3)
       .map((h, i) => `${i + 1}위: ${h.hrName ?? h.hrNo ?? '-'}`)
       .join(', ');
 
-    const acc = prediction.accuracy != null ? Math.round(prediction.accuracy) : 0;
+    const acc =
+      prediction.accuracy != null ? Math.round(prediction.accuracy) : 0;
     const { meet, rcDate, rcNo } = prediction.race;
 
     const prompt = `다음 경주 결과와 AI 예측을 바탕으로 2~3문장의 경주 후 분석 요약을 한국어로 작성해 주세요. 감탄사나 과장 없이 사실 위주로.
@@ -350,8 +362,7 @@ AI 예측 순위: ${predictedTop || '-'}
       .map(([month, { sum, count }]) => ({
         month,
         count,
-        averageAccuracy:
-          count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+        averageAccuracy: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
       }))
       .sort((a, b) => a.month.localeCompare(b.month));
 
@@ -363,12 +374,13 @@ AI 예측 순위: ${predictedTop || '-'}
       cur.sum += p.accuracy ?? 0;
       byMeetMap.set(meet, cur);
     }
-    const byMeet = Array.from(byMeetMap.entries()).map(([meet, { sum, count }]) => ({
-      meet,
-      count,
-      averageAccuracy:
-        count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
-    }));
+    const byMeet = Array.from(byMeetMap.entries()).map(
+      ([meet, { sum, count }]) => ({
+        meet,
+        count,
+        averageAccuracy: count > 0 ? Math.round((sum / count) * 100) / 100 : 0,
+      }),
+    );
 
     return {
       overall: { totalCount, hitCount, averageAccuracy },
@@ -476,7 +488,8 @@ AI 예측 순위: ${predictedTop || '-'}
 
   /** Extract retry delay (seconds) from Gemini 429 error. */
   private getRetryDelaySeconds(err: unknown): number {
-    const details = (err as { errorDetails?: Array<{ retryDelay?: string }> })?.errorDetails;
+    const details = (err as { errorDetails?: Array<{ retryDelay?: string }> })
+      ?.errorDetails;
     if (Array.isArray(details)) {
       const retry = details.find((d) => d?.retryDelay != null);
       if (retry?.retryDelay) {
@@ -528,7 +541,6 @@ AI 예측 순위: ${predictedTop || '-'}
     errors: string[];
   }> {
     const now = new Date();
-    const today = now.toISOString().slice(0, 10).replace(/-/g, '');
     const defaultEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
       .toISOString()
       .slice(0, 10)
@@ -537,9 +549,12 @@ AI 예측 순위: ${predictedTop || '-'}
       .toISOString()
       .slice(0, 10)
       .replace(/-/g, '');
-    const dateFrom = (options.dateFrom ?? defaultStart).replace(/-/g, '').slice(0, 8);
+    const dateFrom = (options.dateFrom ?? defaultStart)
+      .replace(/-/g, '')
+      .slice(0, 8);
     const dateTo = (options.dateTo ?? defaultEnd).replace(/-/g, '').slice(0, 8);
-    const delayMs = options.delayBetweenRacesMs ?? PredictionsService.DELAY_BETWEEN_RACES_MS;
+    const delayMs =
+      options.delayBetweenRacesMs ?? PredictionsService.DELAY_BETWEEN_RACES_MS;
 
     const rawRaces = await this.prisma.race.findMany({
       where: {
@@ -679,21 +694,29 @@ AI 예측 순위: ${predictedTop || '-'}
         select: { scores: true },
       });
       const scores =
-        (pred?.scores as { horseScores?: Array<{ hrNo?: string; hrName?: string }> })
-          ?.horseScores ?? [];
+        (
+          pred?.scores as {
+            horseScores?: Array<{ hrNo?: string; hrName?: string }>;
+          }
+        )?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
-      const consensusArr =
-        top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
+      const consensusArr = top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
 
       const horseNames: Record<string, string> = {};
-      const entryList = (race as { entries?: Array<{ hrNo?: string; hrName?: string }> }).entries ?? [];
+      const entryList =
+        (race as { entries?: Array<{ hrNo?: string; hrName?: string }> })
+          .entries ?? [];
       for (const e of entryList) {
         if (e.hrNo && e.hrName) horseNames[e.hrNo] = e.hrName;
       }
       for (const s of scores) {
-        if (s.hrNo && (s as { hrName?: string }).hrName && !horseNames[s.hrNo]) {
+        if (
+          s.hrNo &&
+          (s as { hrName?: string }).hrName &&
+          !horseNames[s.hrNo]
+        ) {
           horseNames[s.hrNo] = (s as { hrName?: string }).hrName!;
         }
       }
@@ -707,7 +730,10 @@ AI 예측 순위: ${predictedTop || '-'}
         rcDist: (race as { rcDist?: string }).rcDist ?? undefined,
         rank: (race as { rank?: string }).rank ?? undefined,
         entryCount: entryList.length > 0 ? entryList.length : undefined,
-        entries: entryList.map((e) => ({ hrNo: e.hrNo ?? '', hrName: e.hrName ?? '' })),
+        entries: entryList.map((e) => ({
+          hrNo: e.hrNo ?? '',
+          hrName: e.hrName ?? '',
+        })),
         predictions: {
           ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
           expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
@@ -890,9 +916,8 @@ AI 예측 순위: ${predictedTop || '-'}
       race as RaceForPython,
     );
     // 3b-2. 낙마 이력 보강 — 말/기수별 과거 낙마 횟수 (fall risk·연쇄 낙마 산출용)
-    const raceWithFallHistory = await this.enrichEntriesWithFallHistory(
-      raceWithRecentRanks,
-    );
+    const raceWithFallHistory =
+      await this.enrichEntriesWithFallHistory(raceWithRecentRanks);
     // 3c. 조교사 승률/복승률 보강 — TrainerResult (API19_1)
     const raceWithTrainer =
       await this.enrichEntriesWithTrainerResults(raceWithFallHistory);
@@ -979,8 +1004,9 @@ AI 예측 순위: ${predictedTop || '-'}
         });
 
         // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
-        const horseScores = (scoresToSave as { horseScores?: Array<{ winProb?: number }> })
-          ?.horseScores ?? [];
+        const horseScores =
+          (scoresToSave as { horseScores?: Array<{ winProb?: number }> })
+            ?.horseScores ?? [];
         const maxWinProb = horseScores.length
           ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
           : 0;
@@ -1064,9 +1090,16 @@ AI 예측 순위: ${predictedTop || '-'}
         let cascadeFallRisk: number | undefined;
         try {
           const parsed = JSON.parse(dataString || '[]');
-          if (parsed && typeof parsed === 'object' && Array.isArray(parsed.scores)) {
+          if (
+            parsed &&
+            typeof parsed === 'object' &&
+            Array.isArray(parsed.scores)
+          ) {
             horseScores = parsed.scores as HorseAnalysisItem[];
-            cascadeFallRisk = typeof parsed.cascadeFallRisk === 'number' ? parsed.cascadeFallRisk : undefined;
+            cascadeFallRisk =
+              typeof parsed.cascadeFallRisk === 'number'
+                ? parsed.cascadeFallRisk
+                : undefined;
           } else if (Array.isArray(parsed) && parsed.length > 0) {
             horseScores = parsed as HorseAnalysisItem[];
           } else {
@@ -1165,8 +1198,10 @@ AI 예측 순위: ${predictedTop || '-'}
     };
     if (entry.equipment) base.equipment = entry.equipment;
     if (entry.bleedingInfo) base.bleedingInfo = entry.bleedingInfo;
-    if (entry.fallHistoryHorse != null) base.fallHistoryHorse = entry.fallHistoryHorse;
-    if (entry.fallHistoryJockey != null) base.fallHistoryJockey = entry.fallHistoryJockey;
+    if (entry.fallHistoryHorse != null)
+      base.fallHistoryHorse = entry.fallHistoryHorse;
+    if (entry.fallHistoryJockey != null)
+      base.fallHistoryJockey = entry.fallHistoryJockey;
     if (trainSummary) base.trainingSummary = trainSummary;
     if (sectionalTag) base.sectionalTag = sectionalTag;
     return base;
@@ -1285,7 +1320,7 @@ AI 예측 순위: ${predictedTop || '-'}
       return {
         ...e,
         fallHistoryHorse: byHorse.get(e.hrNo) ?? 0,
-        fallHistoryJockey: jkNo ? byJockey.get(jkNo) ?? 0 : 0,
+        fallHistoryJockey: jkNo ? (byJockey.get(jkNo) ?? 0) : 0,
       };
     });
 
@@ -1486,7 +1521,8 @@ AI 예측 순위: ${predictedTop || '-'}
     const maxS = Math.max(...scores);
     const exps = scores.map((s) => Math.exp((s - maxS) / T));
     const total = exps.reduce((a, b) => a + b, 0);
-    if (total === 0) return scores.map(() => Math.round((100 / scores.length) * 10) / 10);
+    if (total === 0)
+      return scores.map(() => Math.round((100 / scores.length) * 10) / 10);
     return exps.map((e) => Math.round((e / total) * 1000) / 10);
   }
 
@@ -1552,8 +1588,12 @@ AI 예측 순위: ${predictedTop || '-'}
 
       if (hs.sub) {
         compact.sub = [
-          hs.sub.rat ?? 0, hs.sub.frm ?? 0, hs.sub.cnd ?? 0,
-          hs.sub.exp ?? 0, hs.sub.trn ?? 0, hs.sub.suit ?? 0,
+          hs.sub.rat ?? 0,
+          hs.sub.frm ?? 0,
+          hs.sub.cnd ?? 0,
+          hs.sub.exp ?? 0,
+          hs.sub.trn ?? 0,
+          hs.sub.suit ?? 0,
         ];
       }
       if (entry?.rating != null) compact.r = entry.rating;

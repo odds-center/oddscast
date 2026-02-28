@@ -1,9 +1,29 @@
-# Golden Race — Redis + n8n (선택)
+# OddsCast — 로컬 개발용 (PostgreSQL, Redis, n8n 선택)
 # 사용: docker compose up -d
+# PostgreSQL: localhost:5432, DB=oddscast, 스키마=oddscast → DATABASE_URL=postgresql://oddscast:oddscast@localhost:5432/oddscast?schema=oddscast
 # Redis: localhost:6379 → REDIS_URL=redis://localhost:6379
 # n8n: http://localhost:5678
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: oddscast-postgres
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: oddscast
+      POSTGRES_PASSWORD: oddscast
+      POSTGRES_DB: oddscast
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./server/prisma/scripts/docker-init-oddscast.sql:/docker-entrypoint-initdb.d/01-oddscast-schema.sql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U oddscast -d oddscast']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
   redis:
     image: redis:7-alpine
     container_name: goldenrace-redis
@@ -35,5 +55,6 @@ services:
     restart: unless-stopped
 
 volumes:
+  postgres_data: {}
   redis_data: {}
   n8n_data: {}

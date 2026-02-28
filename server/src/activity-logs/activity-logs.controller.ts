@@ -1,14 +1,6 @@
-import {
-  Controller,
-  Post,
-  Body,
-  Req,
-  UseGuards,
-  HttpCode,
-} from '@nestjs/common';
+import { Controller, Post, Body, Req, HttpCode } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { ActivityLogsService } from './activity-logs.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { Request } from 'express';
 
 interface TrackEventDto {

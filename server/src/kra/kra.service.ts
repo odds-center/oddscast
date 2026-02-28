@@ -41,12 +41,19 @@ export class KraService {
 
   /** Uses GlobalConfig's kra_base_url_override, returns default URL if not set */
   private async resolveBaseUrl(): Promise<string> {
-    const override = await this.globalConfigService.get('kra_base_url_override');
-    return (override?.trim() && override.length > 0) ? override.trim() : DEFAULT_KRA_BASE_URL;
+    const override = await this.globalConfigService.get(
+      'kra_base_url_override',
+    );
+    return override?.trim() && override.length > 0
+      ? override.trim()
+      : DEFAULT_KRA_BASE_URL;
   }
 
   /** For Admin: current KRA configuration status (Base URL, API key presence) */
-  async getKraStatus(): Promise<{ baseUrlInUse: string; serviceKeyConfigured: boolean }> {
+  async getKraStatus(): Promise<{
+    baseUrlInUse: string;
+    serviceKeyConfigured: boolean;
+  }> {
     const baseUrlInUse = await this.resolveBaseUrl();
     return {
       baseUrlInUse,
@@ -268,9 +275,9 @@ export class KraService {
           durationMs: opts.durationMs ?? null,
         },
       });
-      } catch {
-        // Continue sync logic even if KraSyncLog fails
-      }
+    } catch {
+      // Continue sync logic even if KraSyncLog fails
+    }
   }
 
   // --- API Methods ---
@@ -341,7 +348,8 @@ export class KraService {
 
         // Collect all pages even if totalCount is missing: paginate until last page has fewer than numOfRows
         const numOfRows = 1000;
-        const totalCount = body?.totalCount != null ? Number(body.totalCount) : null;
+        const totalCount =
+          body?.totalCount != null ? Number(body.totalCount) : null;
         let pageNo = 2;
         for (;;) {
           const shouldFetchMore =
@@ -649,12 +657,18 @@ export class KraService {
     const start = this.normalizeToYyyyMmDd(dateFrom);
     const end = this.normalizeToYyyyMmDd(dateTo);
     const dates = this.getRaceDateRange(start, end);
-    const summary = { processed: 0, failed: [] as string[], totalResults: 0, totalRaces: 0 };
+    const summary = {
+      processed: 0,
+      failed: [] as string[],
+      totalResults: 0,
+      totalRaces: 0,
+    };
     const totalDates = dates.length;
 
     for (let i = 0; i < dates.length; i++) {
       const date = dates[i];
-      const pct = totalDates > 0 ? Math.round(((i + 0.5) / totalDates) * 95) : 0;
+      const pct =
+        totalDates > 0 ? Math.round(((i + 0.5) / totalDates) * 95) : 0;
       opts?.onProgress?.(pct, `과거 데이터: ${date} (${i + 1}/${totalDates})`);
       try {
         // 1) Race plan (API72_2) — create Race records first
@@ -758,32 +772,68 @@ export class KraService {
 
         for (const item of items) {
           const v = (key: string): string | null => {
-            const x = item[key] ?? (item as Record<string, unknown>)[key.replace(/([A-Z])/g, '_$1').toLowerCase()];
+            const x =
+              item[key] ??
+              (item as Record<string, unknown>)[
+                key.replace(/([A-Z])/g, '_$1').toLowerCase()
+              ];
             return x != null ? String(x) : null;
           };
           const rcNo = v('rcNo') || v('rc_no') || '';
           if (!rcNo) continue;
 
           const meetName = meet.name;
-          const rcName = (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
+          const rcName =
+            (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
           const rcDist = v('rcDist') ?? v('rc_dist');
           const rcDay = v('rcDay') ?? v('rc_day');
           const rank = v('rank') ?? v('rcGrade') ?? v('rc_grade');
-          const prizeRaw = v('rcPrize') ?? v('rc_prize') ?? v('chaksun1') ?? v('chaksun_1') ?? '0';
-          const prize = parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
-          const stTime = v('rcStartTime') ?? v('rc_start_time') ?? v('stTime') ?? v('st_time');
+          const prizeRaw =
+            v('rcPrize') ??
+            v('rc_prize') ??
+            v('chaksun1') ??
+            v('chaksun_1') ??
+            '0';
+          const prize =
+            parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
+          const stTime =
+            v('rcStartTime') ??
+            v('rc_start_time') ??
+            v('stTime') ??
+            v('st_time');
 
           await this.prisma.race.upsert({
             where: { meet_rcDate_rcNo: { meet: meetName, rcDate: d, rcNo } },
-            update: { rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, stTime: stTime ?? undefined },
-            create: { meet: meetName, rcDate: d, rcNo, rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, meetName, stTime: stTime ?? undefined },
+            update: {
+              rcDist: rcDist ?? undefined,
+              rcName,
+              rcDay: rcDay ?? undefined,
+              rank: rank ?? undefined,
+              rcPrize: prize,
+              stTime: stTime ?? undefined,
+            },
+            create: {
+              meet: meetName,
+              rcDate: d,
+              rcNo,
+              rcDist: rcDist ?? undefined,
+              rcName,
+              rcDay: rcDay ?? undefined,
+              rank: rank ?? undefined,
+              rcPrize: prize,
+              meetName,
+              stTime: stTime ?? undefined,
+            },
           });
           totalRaces++;
         }
 
         await this.delay(200);
       } catch (err) {
-        this.logger.warn(`[fetchRacePlanSchedule] ${meet.name} ${d} failed`, err);
+        this.logger.warn(
+          `[fetchRacePlanSchedule] ${meet.name} ${d} failed`,
+          err,
+        );
       }
     }
 
@@ -839,7 +889,11 @@ export class KraService {
 
         for (const item of items) {
           const v = (key: string): string | null => {
-            const x = item[key] ?? (item as Record<string, unknown>)[key.replace(/([A-Z])/g, '_$1').toLowerCase()];
+            const x =
+              item[key] ??
+              (item as Record<string, unknown>)[
+                key.replace(/([A-Z])/g, '_$1').toLowerCase()
+              ];
             return x != null ? String(x) : null;
           };
           const rcNo = v('rcNo') || v('rc_no') || '';
@@ -850,18 +904,47 @@ export class KraService {
           const meetRaw = v('meet') ?? '';
           const meetName = toKraMeetName(meetRaw) || '서울';
 
-          const rcName = (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
+          const rcName =
+            (v('rcName') ?? v('rc_name') ?? '').trim() || `경주 ${rcNo}R`;
           const rcDist = v('rcDist') ?? v('rc_dist');
           const rcDay = v('rcDay') ?? v('rc_day');
           const rank = v('rank') ?? v('rcGrade') ?? v('rc_grade');
-          const prizeRaw = v('rcPrize') ?? v('rc_prize') ?? v('chaksun1') ?? v('chaksun_1') ?? '0';
-          const prize = parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
-          const stTime = v('rcStartTime') ?? v('rc_start_time') ?? v('stTime') ?? v('st_time');
+          const prizeRaw =
+            v('rcPrize') ??
+            v('rc_prize') ??
+            v('chaksun1') ??
+            v('chaksun_1') ??
+            '0';
+          const prize =
+            parseInt(String(prizeRaw).replace(/,/g, ''), 10) || undefined;
+          const stTime =
+            v('rcStartTime') ??
+            v('rc_start_time') ??
+            v('stTime') ??
+            v('st_time');
 
           await this.prisma.race.upsert({
             where: { meet_rcDate_rcNo: { meet: meetName, rcDate, rcNo } },
-            update: { rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, stTime: stTime ?? undefined },
-            create: { meet: meetName, rcDate, rcNo, rcDist: rcDist ?? undefined, rcName, rcDay: rcDay ?? undefined, rank: rank ?? undefined, rcPrize: prize, meetName, stTime: stTime ?? undefined },
+            update: {
+              rcDist: rcDist ?? undefined,
+              rcName,
+              rcDay: rcDay ?? undefined,
+              rank: rank ?? undefined,
+              rcPrize: prize,
+              stTime: stTime ?? undefined,
+            },
+            create: {
+              meet: meetName,
+              rcDate,
+              rcNo,
+              rcDist: rcDist ?? undefined,
+              rcName,
+              rcDay: rcDay ?? undefined,
+              rank: rank ?? undefined,
+              rcPrize: prize,
+              meetName,
+              stTime: stTime ?? undefined,
+            },
           });
           totalRaces++;
         }
@@ -877,7 +960,10 @@ export class KraService {
         pageNo++;
         await this.delay(200);
       } catch (err) {
-        this.logger.warn(`[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} failed`, err);
+        this.logger.warn(
+          `[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} failed`,
+          err,
+        );
         break;
       }
     }
@@ -1343,7 +1429,8 @@ export class KraService {
    * Queries all by meet·date then filters by rcNo
    */
   async fetchRaceEntries(meet: string, date: string, raceNo: string) {
-    if (!this.ensureServiceKey()) return { message: 'KRA_SERVICE_KEY not configured' };
+    if (!this.ensureServiceKey())
+      return { message: 'KRA_SERVICE_KEY not configured' };
 
     const meetCode = this.meetNameToCode(meet);
     const normalizedDate = this.normalizeToYyyyMmDd(date);
@@ -1449,7 +1536,8 @@ export class KraService {
    * Supplements RaceEntry with rcCntT, ord1CntT, rating, etc.
    */
   async fetchHorseDetails(meet: string, date: string, raceNo: string) {
-    if (!this.ensureServiceKey()) return { message: 'KRA_SERVICE_KEY not configured' };
+    if (!this.ensureServiceKey())
+      return { message: 'KRA_SERVICE_KEY not configured' };
 
     const baseUrl = await this.resolveBaseUrl();
     const race = await this.prisma.race.findUnique({
@@ -1540,7 +1628,8 @@ export class KraService {
    * Only queries training data for the last 2 weeks from race day
    */
   async fetchTrainingData(meet: string, date: string, raceNo: string) {
-    if (!this.ensureServiceKey()) return { message: 'KRA_SERVICE_KEY not configured' };
+    if (!this.ensureServiceKey())
+      return { message: 'KRA_SERVICE_KEY not configured' };
 
     const baseUrl = await this.resolveBaseUrl();
     const race = await this.prisma.race.findUnique({
@@ -2183,7 +2272,8 @@ export class KraService {
           error &&
           typeof error === 'object' &&
           'response' in error &&
-          typeof (error as { response?: { status?: number } }).response?.status === 'number'
+          typeof (error as { response?: { status?: number } }).response
+            ?.status === 'number'
             ? (error as { response: { status: number } }).response.status
             : null;
         this.logger.warn(
@@ -2393,7 +2483,11 @@ export class KraService {
           if (entry) {
             const raw = item.wgHr ?? item.wg_hr ?? null;
             const horseWeight =
-              raw == null ? null : typeof raw === 'number' ? String(raw) : String(raw);
+              raw == null
+                ? null
+                : typeof raw === 'number'
+                  ? String(raw)
+                  : String(raw);
             await this.prisma.raceEntry.update({
               where: { id: entry.id },
               data: { horseWeight },

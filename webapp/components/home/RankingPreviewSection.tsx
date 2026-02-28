@@ -14,7 +14,7 @@ const RANK_COLORS: Record<number, string> = {
 };
 
 export default function RankingPreviewSection() {
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['rankings', 'preview'],
     queryFn: () => RankingApi.getRankings({ limit: 5 }),
     placeholderData: keepPreviousData,
@@ -36,6 +36,13 @@ export default function RankingPreviewSection() {
     >
       {isLoading ? (
         <div className='py-8 text-center text-text-secondary text-sm'>랭킹 준비 중...</div>
+      ) : error ? (
+        <div className='py-6 text-center text-text-secondary text-sm'>
+          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+            다시 시도
+          </button>
+        </div>
       ) : items.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>랭킹 정보가 없습니다.</div>
       ) : (

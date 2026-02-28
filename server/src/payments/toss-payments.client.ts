@@ -49,14 +49,18 @@ export class TossPaymentsBillingClient {
 
   constructor(secretKey: string) {
     this.secretKey = secretKey;
-    this.authHeader = 'Basic ' + Buffer.from(this.secretKey + ':', 'utf8').toString('base64');
+    this.authHeader =
+      'Basic ' + Buffer.from(this.secretKey + ':', 'utf8').toString('base64');
   }
 
   /**
    * Exchange authKey (from payment window success redirect) for billingKey.
    * POST /v1/billing/authorizations/issue
    */
-  async issueBillingKey(customerKey: string, authKey: string): Promise<TossBillingKeyResponse> {
+  async issueBillingKey(
+    customerKey: string,
+    authKey: string,
+  ): Promise<TossBillingKeyResponse> {
     const res = await fetch(`${TOSS_BILLING_BASE}/authorizations/issue`, {
       method: 'POST',
       headers: {
@@ -68,7 +72,9 @@ export class TossPaymentsBillingClient {
 
     if (!res.ok) {
       const err: TossErrorBody = await res.json().catch(() => ({}));
-      throw new Error(err?.message || `Toss billing key issue failed: ${res.status}`);
+      throw new Error(
+        err?.message || `Toss billing key issue failed: ${res.status}`,
+      );
     }
 
     return res.json() as Promise<TossBillingKeyResponse>;
@@ -82,26 +88,31 @@ export class TossPaymentsBillingClient {
     billingKey: string,
     body: TossBillingPaymentRequest,
   ): Promise<TossBillingPaymentResponse> {
-    const res = await fetch(`${TOSS_BILLING_BASE}/${encodeURIComponent(billingKey)}`, {
-      method: 'POST',
-      headers: {
-        Authorization: this.authHeader,
-        'Content-Type': 'application/json',
+    const res = await fetch(
+      `${TOSS_BILLING_BASE}/${encodeURIComponent(billingKey)}`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: this.authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerKey: body.customerKey,
+          amount: body.amount,
+          orderId: body.orderId,
+          orderName: body.orderName,
+          customerEmail: body.customerEmail,
+          customerName: body.customerName,
+          taxFreeAmount: body.taxFreeAmount ?? 0,
+        }),
       },
-      body: JSON.stringify({
-        customerKey: body.customerKey,
-        amount: body.amount,
-        orderId: body.orderId,
-        orderName: body.orderName,
-        customerEmail: body.customerEmail,
-        customerName: body.customerName,
-        taxFreeAmount: body.taxFreeAmount ?? 0,
-      }),
-    });
+    );
 
     if (!res.ok) {
       const err: TossErrorBody = await res.json().catch(() => ({}));
-      throw new Error(err?.message || `Toss billing payment failed: ${res.status}`);
+      throw new Error(
+        err?.message || `Toss billing payment failed: ${res.status}`,
+      );
     }
 
     return res.json() as Promise<TossBillingPaymentResponse>;

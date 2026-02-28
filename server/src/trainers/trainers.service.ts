@@ -58,14 +58,19 @@ export class TrainersService {
       const n = r.ordInt ?? 0;
       return n >= 1 && n <= 3;
     }).length;
-    const winRate = totalRaces > 0 ? Math.round((winCount / totalRaces) * 10000) / 100 : 0;
-    const placeRate = totalRaces > 0 ? Math.round((placeCount / totalRaces) * 10000) / 100 : 0;
+    const winRate =
+      totalRaces > 0 ? Math.round((winCount / totalRaces) * 10000) / 100 : 0;
+    const placeRate =
+      totalRaces > 0 ? Math.round((placeCount / totalRaces) * 10000) / 100 : 0;
     const recentForm = normalResults
       .slice(0, 10)
       .map((r) => r.ordInt ?? 0)
       .reverse();
 
-    const meetMap = new Map<string, { wins: number; places: number; count: number }>();
+    const meetMap = new Map<
+      string,
+      { wins: number; places: number; count: number }
+    >();
     for (const r of normalResults) {
       const meet = r.race?.meet ?? 'unknown';
       const cur = meetMap.get(meet) ?? { wins: 0, places: 0, count: 0 };
@@ -78,7 +83,8 @@ export class TrainersService {
       meet,
       count: v.count,
       winRate: v.count > 0 ? Math.round((v.wins / v.count) * 10000) / 100 : 0,
-      placeRate: v.count > 0 ? Math.round((v.places / v.count) * 10000) / 100 : 0,
+      placeRate:
+        v.count > 0 ? Math.round((v.places / v.count) * 10000) / 100 : 0,
     }));
 
     return {
@@ -97,7 +103,11 @@ export class TrainersService {
     trName: string,
     page = 1,
     limit = 20,
-  ): Promise<{ items: TrainerHistoryItemDto[]; total: number; totalPages: number }> {
+  ): Promise<{
+    items: TrainerHistoryItemDto[];
+    total: number;
+    totalPages: number;
+  }> {
     const where: Prisma.RaceResultWhereInput = { trName };
     const [items, total] = await Promise.all([
       this.prisma.raceResult.findMany({

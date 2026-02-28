@@ -2,7 +2,7 @@
  * Daily race comprehensive guide — Yongsan comprehensive style
  * View all daily race AI predictions with matrix ticket (1,000 KRW)
  */
-import { useCallback, useMemo, useState, useEffect } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
@@ -120,15 +120,14 @@ export default function PredictionMatrixPage() {
   const hasAccess = matrixAccess?.hasAccess ?? false;
   const availableMatrixTickets = matrixBalance?.available ?? 0;
 
-  const [showHint, setShowHint] = useState(false);
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
+  const [showHint, setShowHint] = useState(() => {
+    if (typeof window === 'undefined') return false;
     try {
-      setShowHint(!window.localStorage.getItem(MATRIX_HINT_STORAGE_KEY));
+      return !window.localStorage.getItem(MATRIX_HINT_STORAGE_KEY);
     } catch {
-      setShowHint(false);
+      return false;
     }
-  }, []);
+  });
   const dismissHint = useCallback(() => {
     setShowHint(false);
     try {
@@ -139,7 +138,7 @@ export default function PredictionMatrixPage() {
   }, []);
 
   const useMatrixMutation = useMutation({
-    mutationFn: () => PredictionTicketsApi.useMatrixTicket(apiDateStr),
+    mutationFn: () => PredictionTicketsApi.consumeMatrixTicket(apiDateStr),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions', 'matrix-access'] });
       queryClient.invalidateQueries({ queryKey: ['predictions', 'matrix-balance'] });

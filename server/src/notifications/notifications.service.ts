@@ -267,7 +267,9 @@ export class NotificationsService {
 
       if (tokens.length > 0) {
         const baseUrl = this.getWebappBaseUrl();
-        const deepLink = baseUrl ? `${baseUrl}/mypage/notifications` : '/mypage/notifications';
+        const deepLink = baseUrl
+          ? `${baseUrl}/mypage/notifications`
+          : '/mypage/notifications';
         const messages = tokens.map((t) => ({
           to: t.token,
           title: data.title,
@@ -311,13 +313,21 @@ export class NotificationsService {
     rcDate?: string;
     confidencePercent: number;
   }): Promise<{ count: number }> {
-    const { raceId, predictionId, meet = '', rcNo = '', rcDate = '', confidencePercent } = payload;
+    const {
+      raceId,
+      predictionId,
+      meet = '',
+      rcNo = '',
+      confidencePercent,
+    } = payload;
     const meetLabel = meet || '경주';
     const raceLabel = rcNo ? `${meetLabel} ${rcNo}R` : meetLabel;
     const title = '고신뢰도 AI 예측 준비됨';
     const message = `${raceLabel} — 예측 확률 ${confidencePercent}%. 상세 분석을 확인하세요.`;
     const baseUrl = this.getWebappBaseUrl();
-    const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
+    const deepLink = baseUrl
+      ? `${baseUrl}/races/${raceId}`
+      : `/races/${raceId}`;
     const data = {
       raceId,
       predictionId,
@@ -378,10 +388,15 @@ export class NotificationsService {
         for (const chunk of chunks) {
           await this.expo.sendPushNotificationsAsync(chunk);
         }
-        this.logger.log(`[SmartAlert] Push sent to ${tokens.length} device(s) with deepLink`);
+        this.logger.log(
+          `[SmartAlert] Push sent to ${tokens.length} device(s) with deepLink`,
+        );
       }
     } catch (err) {
-      this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);
+      this.logger.warn(
+        '[SmartAlert] Push send failed',
+        (err as Error)?.message,
+      );
     }
 
     return { count: created.count };

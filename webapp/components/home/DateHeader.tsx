@@ -6,7 +6,7 @@
 import Icon from '@/components/icons';
 import Link from 'next/link';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
 import { getDateHeaderMessage, getNextRaceDayLabel } from '@/lib/utils/dateHeaderMessages';
@@ -51,20 +51,22 @@ export default function DateHeader() {
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
   });
-  const races = (todayData?.races ?? []) as RaceWithTime[];
+  const races = useMemo(
+    () => (todayData?.races ?? []) as RaceWithTime[],
+    [todayData?.races],
+  );
   const todayCount = todayData?.total ?? races.length;
   const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, now);
   const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel);
 
-  const [countdownMins, setCountdownMins] = useState<number | null>(() => getNextRaceMinutes(races));
+  const [countdownMins, setCountdownMins] = useState<number | null>(() =>
+    getNextRaceMinutes(races),
+  );
   useEffect(() => {
-    setCountdownMins(getNextRaceMinutes(races));
     if (!isTodayRaceDay || races.length === 0) return;
-    const tick = () => setCountdownMins((prev) => {
-      const next = getNextRaceMinutes(races);
-      return next;
-    });
+    const tick = () => setCountdownMins(getNextRaceMinutes(races));
     const id = setInterval(tick, COUNTDOWN_TICK_MS);
+    queueMicrotask(tick);
     return () => clearInterval(id);
   }, [races, isTodayRaceDay]);
 

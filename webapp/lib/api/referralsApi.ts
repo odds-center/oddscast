@@ -1,4 +1,4 @@
-import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
+import { axiosInstance } from '@/lib/api/axios';
 
 export interface ReferralMyCode {
   code: string;

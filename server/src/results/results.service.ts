@@ -56,12 +56,22 @@ export class ResultsService {
           rcTime: true,
           diffUnit: true,
           race: {
-            select: { meet: true, meetName: true, rcNo: true, rcDate: true, rcDist: true },
+            select: {
+              meet: true,
+              meetName: true,
+              rcNo: true,
+              rcDate: true,
+              rcDist: true,
+            },
           },
         },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: [{ race: { rcDate: 'desc' } }, { ordInt: 'asc' }, { ord: 'asc' }],
+        orderBy: [
+          { race: { rcDate: 'desc' } },
+          { ordInt: 'asc' },
+          { ord: 'asc' },
+        ],
       }),
       this.prisma.raceResult.count({ where }),
     ]);

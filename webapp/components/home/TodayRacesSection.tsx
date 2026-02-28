@@ -21,7 +21,7 @@ function isRaceDay(d: Date): boolean {
 
 export default function TodayRacesSection() {
   const isTodayRaceDay = isRaceDay(new Date());
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'today'],
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
@@ -44,6 +44,13 @@ export default function TodayRacesSection() {
       {isLoading ? (
         <div className='py-6'>
           <LoadingSpinner size={24} label='준비 중...' />
+        </div>
+      ) : error ? (
+        <div className='py-4 text-center text-text-secondary text-sm'>
+          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+            다시 시도
+          </button>
         </div>
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>

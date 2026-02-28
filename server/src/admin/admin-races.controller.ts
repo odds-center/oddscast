@@ -42,10 +42,7 @@ export class AdminRacesController {
 
   @Patch(':id')
   @ApiOperation({ summary: '[Admin] 경주 수정' })
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateRaceDto,
-  ) {
+  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRaceDto) {
     return this.racesService.update(id, dto);
   }
 }

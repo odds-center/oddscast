@@ -11,6 +11,9 @@
   "scripts": {
     "build": "prisma generate && nest build",
     "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
+    "db:setup": "prisma generate && prisma migrate deploy && prisma db execute --file prisma/seed.sql",
     "db:push": "prisma db push",
     "db:seed": "prisma db execute --file prisma/seed.sql",
     "fetch-kra-sample": "node scripts/fetch-kra-sample.mjs",

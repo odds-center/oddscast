@@ -45,10 +45,17 @@ export class RacesService {
     if (stTime && typeof stTime === 'string') {
       const timeStr = stTime.trim().replace(':', '');
       const hour =
-        timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
-      const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
+        timeStr.length >= 2
+          ? parseInt(timeStr.slice(0, 2), 10)
+          : parseInt(timeStr, 10);
+      const minute =
+        timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
       if (!Number.isNaN(hour) && hour >= 0 && hour <= 23) {
-        const raceStart = dayjs(norm, 'YYYYMMDD').hour(hour).minute(minute).second(0).millisecond(0);
+        const raceStart = dayjs(norm, 'YYYYMMDD')
+          .hour(hour)
+          .minute(minute)
+          .second(0)
+          .millisecond(0);
         return raceStart.isBefore(now);
       }
     }

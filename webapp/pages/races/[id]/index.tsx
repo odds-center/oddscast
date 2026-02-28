@@ -337,9 +337,20 @@ export default function RaceDetailPage() {
   if (error || !race) {
     return (
       <Layout>
-        <div className='text-center p-6 md:p-8 msg-error'>
-          <h2 className='text-lg md:text-xl font-bold mb-4'>경주를 찾을 수 없습니다</h2>
-          <BackLink href={routes.home} label='목록으로' />
+        <div className='text-center p-6 md:p-8'>
+          <h2 className='text-lg md:text-xl font-bold mb-2 text-foreground'>경주를 찾을 수 없습니다</h2>
+          <p className='text-text-secondary text-sm mb-4'>일시적인 오류일 수 있습니다. 다시 시도해 보세요.</p>
+          <div className='flex flex-col sm:flex-row items-center justify-center gap-3'>
+            <button
+              type='button'
+              onClick={() => refetchRace()}
+              className='btn-primary px-4 py-2 text-sm'
+              aria-label='다시 시도'
+            >
+              다시 시도
+            </button>
+            <BackLink href={routes.races.list} label='경주 목록' />
+          </div>
         </div>
       </Layout>
     );

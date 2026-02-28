@@ -69,7 +69,7 @@ export default function SimulatorPage() {
     enabled: !!id,
   });
 
-  const horseScores = preview?.scores?.horseScores ?? [];
+  const horseScores = useMemo(() => preview?.scores?.horseScores ?? [], [preview?.scores?.horseScores]);
   const hasScores = horseScores.length > 0;
 
   const factorsPerHorse = useMemo(

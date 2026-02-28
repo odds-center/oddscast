@@ -52,13 +52,17 @@ export class ActivityLogsService {
           adminEmail: params.adminEmail,
           action: params.action,
           target: params.target,
-          details: (params.details ?? undefined) as Prisma.InputJsonValue | undefined,
+          details: (params.details ?? undefined) as
+            | Prisma.InputJsonValue
+            | undefined,
           ipAddress: params.ipAddress,
           userAgent: params.userAgent,
         },
       });
     } catch (err) {
-      this.logger.warn(`Failed to log admin activity: ${params.action} — ${this.activityLogErrorMessage(err)}`);
+      this.logger.warn(
+        `Failed to log admin activity: ${params.action} — ${this.activityLogErrorMessage(err)}`,
+      );
     }
   }
 
@@ -79,7 +83,8 @@ export class ActivityLogsService {
     if (filters.dateFrom || filters.dateTo) {
       const createdAt: Record<string, Date> = {};
       if (filters.dateFrom) createdAt.gte = new Date(filters.dateFrom);
-      if (filters.dateTo) createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
+      if (filters.dateTo)
+        createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
       where.createdAt = createdAt;
     }
 
@@ -110,13 +115,17 @@ export class ActivityLogsService {
           event: params.event,
           page: params.page,
           target: params.target,
-          metadata: (params.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
+          metadata: (params.metadata ?? undefined) as
+            | Prisma.InputJsonValue
+            | undefined,
           ipAddress: params.ipAddress,
           userAgent: params.userAgent,
         },
       });
     } catch (err) {
-      this.logger.warn(`Failed to log user activity: ${params.event} — ${this.activityLogErrorMessage(err)}`);
+      this.logger.warn(
+        `Failed to log user activity: ${params.event} — ${this.activityLogErrorMessage(err)}`,
+      );
     }
   }
 
@@ -129,13 +138,17 @@ export class ActivityLogsService {
           event: e.event,
           page: e.page,
           target: e.target,
-          metadata: (e.metadata ?? undefined) as Prisma.InputJsonValue | undefined,
+          metadata: (e.metadata ?? undefined) as
+            | Prisma.InputJsonValue
+            | undefined,
           ipAddress: e.ipAddress,
           userAgent: e.userAgent,
         })),
       });
     } catch (err) {
-      this.logger.warn(`Failed to bulk log user activities — ${this.activityLogErrorMessage(err)}`);
+      this.logger.warn(
+        `Failed to bulk log user activities — ${this.activityLogErrorMessage(err)}`,
+      );
     }
   }
 
@@ -156,7 +169,8 @@ export class ActivityLogsService {
     if (filters.dateFrom || filters.dateTo) {
       const createdAt: Record<string, Date> = {};
       if (filters.dateFrom) createdAt.gte = new Date(filters.dateFrom);
-      if (filters.dateTo) createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
+      if (filters.dateTo)
+        createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
       where.createdAt = createdAt;
     }
 
@@ -196,7 +210,10 @@ export class ActivityLogsService {
     return {
       totalEvents,
       recentEvents,
-      topEvents: topEvents.map((e) => ({ event: e.event, count: e._count.event })),
+      topEvents: topEvents.map((e) => ({
+        event: e.event,
+        count: e._count.event,
+      })),
     };
   }
 }

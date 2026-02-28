@@ -2,7 +2,7 @@
  * Tooltip — portal-rendered so it is not clipped by overflow
  * Min font size 14px for readability
  */
-import { type ReactNode, useState, useRef, useCallback } from 'react';
+import { type ReactNode, useState, useRef, useCallback, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 
 interface TooltipProps {
@@ -55,7 +55,17 @@ export default function Tooltip({
     return style;
   }, [position]);
 
-  const tooltipStyle = isVisible ? updatePosition() : undefined;
+  const [tooltipStyle, setTooltipStyle] = useState<React.CSSProperties | null>(null);
+  useEffect(() => {
+    if (!isVisible) {
+      queueMicrotask(() => setTooltipStyle(null));
+      return;
+    }
+    const id = requestAnimationFrame(() => {
+      setTooltipStyle(updatePosition() ?? null);
+    });
+    return () => cancelAnimationFrame(id);
+  }, [isVisible, updatePosition]);
 
   const Tag = inline ? 'span' : 'div';
 

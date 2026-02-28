@@ -27,7 +27,11 @@ export class AdminActivityInterceptor implements NestInterceptor {
     if (method === 'GET') return next.handle();
 
     const action = `${controller}.${handler}`;
-    const target = this.buildTarget(url, req.query as Record<string, string>, req.params as Record<string, string>);
+    const target = this.buildTarget(
+      url,
+      req.query as Record<string, string>,
+      req.params as Record<string, string>,
+    );
     const details = this.sanitizeBody(req.body as Record<string, unknown>);
     const adminInfo = this.extractAdminInfo(req);
 
@@ -88,7 +92,9 @@ export class AdminActivityInterceptor implements NestInterceptor {
 
   private extractAdminInfo(req: Request): { id?: number; email?: string } {
     try {
-      const user = (req as Request & { user?: { sub?: number; email?: string } }).user;
+      const user = (
+        req as Request & { user?: { sub?: number; email?: string } }
+      ).user;
       if (user) return { id: user.sub, email: user.email };
 
       const authHeader = req.headers.authorization;

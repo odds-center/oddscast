@@ -3,10 +3,15 @@ import Icon from '../icons';
 
 type Status = 'online' | 'offline' | 'reconnected';
 
+function getInitialStatus(): Status {
+  if (typeof navigator === 'undefined') return 'online';
+  return navigator.onLine ? 'online' : 'offline';
+}
+
 export default function NetworkStatusBanner() {
-  const [status, setStatus] = useState<Status>('online');
-  const [visible, setVisible] = useState(false);
-  const [wasOffline, setWasOffline] = useState(false);
+  const [status, setStatus] = useState<Status>(getInitialStatus);
+  const [visible, setVisible] = useState(() => !navigator.onLine);
+  const [wasOffline, setWasOffline] = useState(() => !navigator.onLine);
 
   const goOffline = useCallback(() => {
     setStatus('offline');
@@ -18,13 +23,11 @@ export default function NetworkStatusBanner() {
     if (!wasOffline) return;
     setStatus('reconnected');
     setVisible(true);
-    const timer = setTimeout(() => setVisible(false), 3000);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setVisible(false), 3000);
+    return () => clearTimeout(t);
   }, [wasOffline]);
 
   useEffect(() => {
-    if (!navigator.onLine) goOffline();
-
     window.addEventListener('offline', goOffline);
     window.addEventListener('online', goOnline);
     return () => {

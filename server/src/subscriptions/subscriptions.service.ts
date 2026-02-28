@@ -81,7 +81,8 @@ export class SubscriptionsService {
     nextBillingDate.setDate(nextBillingDate.getDate() + BILLING_PERIOD_DAYS);
 
     const ticketsToIssue = sub.plan.totalTickets;
-    const matrixTicketsToIssue = (sub.plan as { matrixTickets?: number }).matrixTickets ?? 0;
+    const matrixTicketsToIssue =
+      (sub.plan as { matrixTickets?: number }).matrixTickets ?? 0;
     const ticketExpiresAt = new Date(nextBillingDate);
 
     const raceTicketData = Array.from({ length: ticketsToIssue }, () => ({
@@ -92,13 +93,16 @@ export class SubscriptionsService {
       expiresAt: ticketExpiresAt,
     }));
 
-    const matrixTicketData = Array.from({ length: matrixTicketsToIssue }, () => ({
-      userId: sub.userId,
-      subscriptionId: sub.id,
-      type: 'MATRIX' as const,
-      status: 'AVAILABLE' as const,
-      expiresAt: ticketExpiresAt,
-    }));
+    const matrixTicketData = Array.from(
+      { length: matrixTicketsToIssue },
+      () => ({
+        userId: sub.userId,
+        subscriptionId: sub.id,
+        type: 'MATRIX' as const,
+        status: 'AVAILABLE' as const,
+        expiresAt: ticketExpiresAt,
+      }),
+    );
 
     const [updated] = await this.prisma.$transaction([
       this.prisma.subscription.update({

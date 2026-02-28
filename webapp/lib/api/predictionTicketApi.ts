@@ -181,8 +181,8 @@ export default class PredictionTicketsApi {
     }
   }
 
-  /** Use comprehensive prediction ticket */
-  static async useMatrixTicket(date: string): Promise<{ ticket: PredictionTicket; alreadyUsed: boolean }> {
+  /** Consume comprehensive prediction ticket for the given date */
+  static async consumeMatrixTicket(date: string): Promise<{ ticket: PredictionTicket; alreadyUsed: boolean }> {
     try {
       const response = await axiosInstance.post('/prediction-tickets/matrix/use', { date });
       return handleApiResponse(response);

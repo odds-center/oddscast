@@ -21,7 +21,16 @@
 
 ---
 
-## 2. 데이터베이스 연결 방식
+## 2. 로컬 PostgreSQL + 스키마 oddscast + DBeaver
+
+로컬 개발 시 **PostgreSQL**만 사용하고, **스키마 이름 `oddscast`**, **DBeaver** 연결까지 한 번에 하려면 **[LOCAL_DB_SETUP.md](LOCAL_DB_SETUP.md)** 를 따르면 됩니다. 요약:
+
+- DB·스키마 생성 SQL 실행 후 `DATABASE_URL="...?schema=oddscast"` 설정
+- `pnpm run db:migrate:deploy` 로 모든 마이그레이션 적용 → `pnpm run db:seed`
+
+---
+
+## 3. 데이터베이스 연결 방식
 
 PrismaService는 `DATABASE_URL` 형식에 따라 자동으로 연결 방식을 선택합니다.
 
@@ -51,9 +60,11 @@ DATABASE_URL="postgresql://user:password@host:5432/database?schema=public"
 DATABASE_URL="postgresql://user:password@pooler-host:6543/database"
 ```
 
+**Dev vs Prod:** Prisma 스키마·마이그레이션은 dev/prod 동일. 개발 시에는 `server/.env`의 `DATABASE_URL`(로컬/개발 DB), 프로덕션(Railway 등)에서는 배포 환경에 설정한 `DATABASE_URL`(별도 운영 DB)만 다르게 두면 됨. → [Railway 배포 가이드](../RAILWAY_DEPLOYMENT.md)
+
 ---
 
-## 3. .env 설정
+## 4. .env 설정
 
 `server/.env` 파일 (루트에서 `./scripts/setup-env.sh` 실행으로 생성 또는 직접 작성):
 
@@ -76,22 +87,50 @@ JWT_SECRET=your-jwt-secret-at-least-32-chars
 
 ---
 
-## 4. 데이터베이스 초기화
+## 5. 로컬 개발용 DB (무료 한도 없음)
+
+지금은 **개발만** 하므로 Prisma/호스팅 무료 한도와 관계없이 **로컬 PostgreSQL**만 사용하면 됩니다.
+
+1. **로컬 PostgreSQL** 설치 후 DB 생성 (예: `createdb oddscast`).
+2. **`server/.env`** 에서 `DATABASE_URL`을 로컬로 설정 (스키마 `oddscast` 필수):
+
+   ```env
+   DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/oddscast?schema=oddscast"
+   ```
+
+   (USER/PASSWORD는 본인 환경에 맞게. DB·스키마 생성·DBeaver 연결은 [LOCAL_DB_SETUP.md](LOCAL_DB_SETUP.md) 참고.)
+
+3. **스키마·테이블 생성:** DB와 스키마 `oddscast`를 만든 뒤 마이그레이션 적용:
+
+   ```bash
+   cd server
+   pnpm run db:migrate:deploy
+   pnpm run db:seed
+   ```
+
+   (DB·스키마 생성 SQL은 [LOCAL_DB_SETUP.md](LOCAL_DB_SETUP.md) 참고.)
+
+- **로컬:** `DATABASE_URL`에 `?schema=oddscast` 포함 → `db:migrate:deploy`로 모든 마이그레이션 적용. DBeaver에서 DB=`oddscast`, 스키마=`oddscast`로 연결.
+- **배포(프로덕션)** 시에도 `db:migrate:deploy` 사용 (해당 환경의 `DATABASE_URL`만 다르게 설정).
+
+---
+
+## 6. 데이터베이스 초기화 요약
 
 ```bash
 cd server
 
 # 1) Prisma Client 생성
-npm run db:generate
+pnpm run db:generate
 
-# 2) 스키마를 DB에 반영 (마이그레이션 없음)
-npm run db:push
+# 2) 스키마를 DB에 반영 (로컬 개발: db push)
+pnpm run db:push
 
 # 3) 시드 데이터 삽입
-npm run db:seed
+pnpm run db:seed
 
 # 한 번에 실행
-npm run db:init
+pnpm run db:init
 ```
 
 ### package.json 스크립트
@@ -99,13 +138,15 @@ npm run db:init
 | 스크립트 | 설명 |
 |----------|------|
 | `db:generate` | Prisma Client 생성 |
-| `db:push` | schema.prisma → DB 반영 |
+| `db:migrate` | (로컬) migrate dev — 현재 baseline 구조상 새 DB에선 실패할 수 있음 |
+| `db:migrate:deploy` | (배포) 마이그레이션만 적용, shadow DB 없음 |
+| `db:push` | schema.prisma → DB 반영 (로컬 개발 권장) |
 | `db:seed` | seed.sql 실행 |
 | `db:init` | db:push + db:seed |
 
 ---
 
-## 5. prisma.config.ts (CLI용)
+## 7. prisma.config.ts (CLI용)
 
 Prisma CLI 명령(`db push`, `db execute`, `generate` 등)에서 사용:
 
@@ -125,11 +166,11 @@ export default defineConfig({
 ```
 
 - **Prisma Accelerate 사용 시**: `db push`, `db execute`는 `prisma+postgres://` URL로 동작 (PostgreSQL의 경우)
-- **직접 연결만 사용 시**: `postgresql://` URL 사용
+- **직접 연결만 사용 시**: `postgresql://` URL 사용 (로컬 개발 권장)
 
 ---
 
-## 6. 주요 파일 구조
+## 8. 주요 파일 구조
 
 ```
 server/
@@ -145,7 +186,7 @@ server/
 
 ---
 
-## 7. Prisma 7 변경 사항
+## 9. Prisma 7 변경 사항
 
 | 항목 | 설명 |
 |------|------|
@@ -156,7 +197,7 @@ server/
 
 ---
 
-## 8. 트러블슈팅
+## 10. 트러블슈팅
 
 ### ETIMEDOUT
 

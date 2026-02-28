@@ -65,7 +65,7 @@ export default function PointTransactionsPage() {
     placeholderData: keepPreviousData,
   });
 
-  const allTransactions = data?.transactions ?? [];
+  const allTransactions = useMemo(() => data?.transactions ?? [], [data?.transactions]);
   const transactions = useMemo(() => {
     if (typeFilter === 'all') return allTransactions;
     if (typeFilter === 'income') return allTransactions.filter((t) => isIncome(t.transactionType));

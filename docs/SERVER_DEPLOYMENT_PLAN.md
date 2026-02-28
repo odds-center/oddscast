@@ -7,6 +7,10 @@
 >
 > **Last updated**: 2026-02-19
 
+**현재 배포 선택:** 프로덕션은 **Railway**로 배포하며, **DB는 별도** 운영( Railway PostgreSQL add-on 또는 외부 PostgreSQL).  
+→ 상세 절차는 **[Railway 배포 가이드](RAILWAY_DEPLOYMENT.md)** 참고.  
+→ Prisma는 dev/prod 동일 사용, `DATABASE_URL`만 개발용 DB / 프로덕션용 DB로 구분.
+
 ---
 
 ## 1. Architecture Overview
@@ -69,7 +73,7 @@
 | **ECS Fargate** | Auto-scaling, no server mgmt | Complex setup, higher cost | Phase 2 |
 | **Lambda + API GW** | Pay per request, auto-scale | Cold starts, no cron, no python-shell | ❌ Not suitable |
 | **Lightsail** | Simpler than EC2, fixed price | Limited config, no RDS integration | ❌ |
-| **Railway/Render** | Easy deploy, managed | Expensive at scale, limited regions | ❌ |
+| **Railway/Render** | Easy deploy, managed | Expensive at scale, limited regions | ✅ **현재 선택: Railway** (DB 별도) |
 
 ---
 

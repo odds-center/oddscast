@@ -7,11 +7,7 @@ import { GlobalConfigModule } from '../config/config.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
-  imports: [
-    AnalysisModule,
-    GlobalConfigModule,
-    NotificationsModule,
-  ],
+  imports: [AnalysisModule, GlobalConfigModule, NotificationsModule],
   controllers: [PredictionsController],
   providers: [PredictionsService, PredictionsScheduler],
   exports: [PredictionsService],

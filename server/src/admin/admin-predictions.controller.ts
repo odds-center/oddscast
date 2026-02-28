@@ -112,7 +112,10 @@ export class AdminPredictionsController {
   @ApiOperation({ summary: '[Admin] 미생성 예측 일괄 생성' })
   generateBatch(
     @Body()
-    body: { dateFrom?: string; dateTo?: string },
+    body: {
+      dateFrom?: string;
+      dateTo?: string;
+    },
   ) {
     return this.predictionsService.generateBatch({
       dateFrom: body?.dateFrom,

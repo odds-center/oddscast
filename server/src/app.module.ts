@@ -42,7 +42,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot([
-      { name: 'short', ttl: 60_000, limit: 120 },   // 120 req/min per IP (general API)
+      { name: 'short', ttl: 60_000, limit: 120 }, // 120 req/min per IP (general API)
       { name: 'long', ttl: 3600_000, limit: 2000 }, // 2000 req/hour per IP
     ]),
     PrismaModule,

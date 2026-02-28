@@ -9,7 +9,7 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge } from '@/components/ui';
 import TrainerApi from '@/lib/api/trainerApi';
-import type { TrainerProfile, TrainerHistoryItem } from '@/lib/api/trainerApi';
+import type { TrainerHistoryItem } from '@/lib/api/trainerApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useState } from 'react';

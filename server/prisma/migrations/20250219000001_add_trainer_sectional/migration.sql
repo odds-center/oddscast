@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "trainer_results" (
+-- CreateTable (IF NOT EXISTS for idempotency when init migration already created full schema)
+CREATE TABLE IF NOT EXISTS "trainer_results" (
     "id" SERIAL NOT NULL,
     "meet" TEXT NOT NULL,
     "trNo" TEXT NOT NULL,
@@ -24,7 +24,7 @@ CREATE TABLE "trainer_results" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "trainer_results_meet_trNo_key" ON "trainer_results"("meet", "trNo");
+CREATE UNIQUE INDEX IF NOT EXISTS "trainer_results_meet_trNo_key" ON "trainer_results"("meet", "trNo");
 
 -- AlterTable
 ALTER TABLE "race_entries" ADD COLUMN IF NOT EXISTS "sectionalStats" JSONB;

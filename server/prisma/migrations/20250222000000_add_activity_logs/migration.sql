@@ -1,5 +1,5 @@
--- CreateTable
-CREATE TABLE "admin_activity_logs" (
+-- CreateTable (IF NOT EXISTS for idempotency)
+CREATE TABLE IF NOT EXISTS "admin_activity_logs" (
     "id" SERIAL NOT NULL,
     "adminUserId" INTEGER,
     "adminEmail" TEXT,
@@ -13,12 +13,12 @@ CREATE TABLE "admin_activity_logs" (
     CONSTRAINT "admin_activity_logs_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "admin_activity_logs_adminUserId_idx" ON "admin_activity_logs"("adminUserId");
-CREATE INDEX "admin_activity_logs_action_idx" ON "admin_activity_logs"("action");
-CREATE INDEX "admin_activity_logs_createdAt_idx" ON "admin_activity_logs"("createdAt");
+CREATE INDEX IF NOT EXISTS "admin_activity_logs_adminUserId_idx" ON "admin_activity_logs"("adminUserId");
+CREATE INDEX IF NOT EXISTS "admin_activity_logs_action_idx" ON "admin_activity_logs"("action");
+CREATE INDEX IF NOT EXISTS "admin_activity_logs_createdAt_idx" ON "admin_activity_logs"("createdAt");
 
--- CreateTable
-CREATE TABLE "user_activity_logs" (
+-- CreateTable (IF NOT EXISTS for idempotency)
+CREATE TABLE IF NOT EXISTS "user_activity_logs" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER,
     "sessionId" TEXT,
@@ -33,6 +33,6 @@ CREATE TABLE "user_activity_logs" (
     CONSTRAINT "user_activity_logs_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "user_activity_logs_userId_idx" ON "user_activity_logs"("userId");
-CREATE INDEX "user_activity_logs_event_idx" ON "user_activity_logs"("event");
-CREATE INDEX "user_activity_logs_createdAt_idx" ON "user_activity_logs"("createdAt");
+CREATE INDEX IF NOT EXISTS "user_activity_logs_userId_idx" ON "user_activity_logs"("userId");
+CREATE INDEX IF NOT EXISTS "user_activity_logs_event_idx" ON "user_activity_logs"("event");
+CREATE INDEX IF NOT EXISTS "user_activity_logs_createdAt_idx" ON "user_activity_logs"("createdAt");

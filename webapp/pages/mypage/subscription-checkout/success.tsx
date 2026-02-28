@@ -35,8 +35,10 @@ export default function SubscriptionCheckoutSuccessPage() {
     const aKey = typeof authKey === 'string' ? authKey : Array.isArray(authKey) ? authKey[0] : '';
 
     if (!subId || !cKey || !aKey) {
-      setStatus('error');
-      setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
+      queueMicrotask(() => {
+        setStatus('error');
+        setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
+      });
       return;
     }
 

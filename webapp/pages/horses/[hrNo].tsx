@@ -2,7 +2,6 @@
  * Horse performance profile — race history, win rate, recent form
  */
 import { useRouter } from 'next/router';
-import Link from 'next/link';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
@@ -10,7 +9,7 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge } from '@/components/ui';
 import HorseApi from '@/lib/api/horseApi';
-import type { HorseProfile, HorseHistoryItem } from '@/lib/api/horseApi';
+import type { HorseHistoryItem } from '@/lib/api/horseApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useState } from 'react';

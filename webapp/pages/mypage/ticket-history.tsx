@@ -27,7 +27,7 @@ export default function TicketHistoryPage() {
     placeholderData: keepPreviousData,
   });
 
-  const allTickets = data?.tickets ?? [];
+  const allTickets = useMemo(() => data?.tickets ?? [], [data?.tickets]);
   const tickets = useMemo(() => {
     if (statusFilter === 'all') return allTickets;
     return allTickets.filter((t: PredictionTicket) => t.status === statusFilter);

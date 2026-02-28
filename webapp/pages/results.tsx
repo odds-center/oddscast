@@ -8,7 +8,6 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge } from '@/components/ui';
 import ResultApi from '@/lib/api/resultApi';
-import type { RaceResult } from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate } from '@/lib/utils/format';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';

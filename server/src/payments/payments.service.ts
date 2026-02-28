@@ -298,8 +298,7 @@ export class PaymentsService {
 
       return true;
     } catch (err: unknown) {
-      const message =
-        err instanceof Error ? err.message : '자동 결제 실패';
+      const message = err instanceof Error ? err.message : '자동 결제 실패';
       await this.prisma.billingHistory.create({
         data: {
           userId: sub.userId,

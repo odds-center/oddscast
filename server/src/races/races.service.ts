@@ -30,6 +30,31 @@ export class RacesService {
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
+  /**
+   * True if race start (rcDate + stTime) is before now. stTime format: "14:00" or "1400".
+   * If no stTime, uses date only (past when rcDate < today).
+   */
+  private isPastRaceDateTime(
+    rcDate: string | null | undefined,
+    stTime: string | null | undefined,
+  ): boolean {
+    if (!rcDate || typeof rcDate !== 'string') return false;
+    const norm = rcDate.replace(/-/g, '').slice(0, 8);
+    if (norm.length < 8) return false;
+    const now = dayjs();
+    if (stTime && typeof stTime === 'string') {
+      const timeStr = stTime.trim().replace(':', '');
+      const hour =
+        timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
+      const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
+      if (!Number.isNaN(hour) && hour >= 0 && hour <= 23) {
+        const raceStart = dayjs(norm, 'YYYYMMDD').hour(hour).minute(minute).second(0).millisecond(0);
+        return raceStart.isBefore(now);
+      }
+    }
+    return norm < now.format('YYYYMMDD');
+  }
+
   async findAll(filters: RaceFilterDto) {
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
@@ -245,22 +270,17 @@ export class RacesService {
   }
 
   /**
-   * Returns race results only when the race is completed (status COMPLETED or rcDate in the past).
-   * Avoids exposing results for future/scheduled races that may have stray DB rows.
+   * Returns race results only when the race is completed (status COMPLETED or race date+time in the past).
+   * Uses rcDate + stTime so only races whose start time has passed are considered completed.
    */
   async getRaceResult(raceId: number) {
     const race = await this.prisma.race.findUnique({
       where: { id: raceId },
-      select: { status: true, rcDate: true },
+      select: { status: true, rcDate: true, stTime: true },
     });
     if (!race) return [];
     const status = race.status ?? null;
-    const isPast =
-      race.rcDate &&
-      dayjs(race.rcDate.replace(/-/g, '').slice(0, 8), 'YYYYMMDD').isBefore(
-        dayjs(),
-        'day',
-      );
+    const isPast = this.isPastRaceDateTime(race.rcDate, race.stTime);
     if (status !== 'COMPLETED' && !isPast) return [];
 
     const results = await this.prisma.raceResult.findMany({

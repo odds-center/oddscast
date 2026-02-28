@@ -1,4 +1,4 @@
-import { isPastRaceDate, isTodayRcDate, minutesUntilStart } from '@/lib/utils/format';
+import { isPastRaceDateTime, isTodayRcDate, minutesUntilStart } from '@/lib/utils/format';
 
 interface StatusBadgeProps {
   status: string;
@@ -22,7 +22,7 @@ const DEFAULT = { label: '-', cls: 'bg-stone-50 text-stone-400 border-stone-200'
 
 export default function StatusBadge({ status, rcDate, stTime, className = '' }: StatusBadgeProps) {
   const effectiveStatus =
-    rcDate != null && isPastRaceDate(rcDate) && status !== 'CANCELLED' && status !== 'cancelled'
+    rcDate != null && isPastRaceDateTime(rcDate, stTime) && status !== 'CANCELLED' && status !== 'cancelled'
       ? 'COMPLETED'
       : status;
   const base = STATUS_MAP[effectiveStatus] ?? DEFAULT;

@@ -2163,14 +2163,24 @@ export class KraService {
         });
 
         await this.delay(200);
-      } catch (error) {
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
         await this.logKraSync(endpoint, {
           rcDate: normalizedDate,
           status: 'FAILED',
-          errorMessage: error instanceof Error ? error.message : String(error),
+          errorMessage: msg,
           durationMs: Date.now() - start,
         });
-        this.logger.error('Failed to fetch race horse ratings', error);
+        const statusCode =
+          error &&
+          typeof error === 'object' &&
+          'response' in error &&
+          typeof (error as { response?: { status?: number } }).response?.status === 'number'
+            ? (error as { response: { status: number } }).response.status
+            : null;
+        this.logger.warn(
+          `Failed to fetch race horse ratings${statusCode != null ? ` (${statusCode})` : ''}: ${msg}`,
+        );
         break;
       }
     }
@@ -2373,9 +2383,12 @@ export class KraService {
             (e) => e.hrNo === String(item.hrNo ?? item.hr_no ?? ''),
           );
           if (entry) {
+            const raw = item.wgHr ?? item.wg_hr ?? null;
+            const horseWeight =
+              raw == null ? null : typeof raw === 'number' ? String(raw) : String(raw);
             await this.prisma.raceEntry.update({
               where: { id: entry.id },
-              data: { horseWeight: item.wgHr ?? item.wg_hr ?? null },
+              data: { horseWeight },
             });
           }
         }

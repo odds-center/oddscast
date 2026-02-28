@@ -8,7 +8,7 @@ const TZ = 'Asia/Seoul';
 
 // ─── Date ───
 
-/** Returns true if rcDate(YYYYMMDD) is before today — past race dates are considered finished */
+/** Returns true if rcDate(YYYYMMDD) is before today — date-only check (no time). Prefer isPastRaceDateTime when stTime is available. */
 export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
@@ -18,6 +18,24 @@ export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   const m = String(today.getMonth() + 1).padStart(2, '0');
   const d = String(today.getDate()).padStart(2, '0');
   return norm < `${y}${m}${d}`;
+}
+
+/**
+ * Returns true if race start (rcDate + stTime) is in the past. Use for "종료" vs "예정".
+ * stTime format: "14:00" or "1400". If stTime is missing, falls back to date-only (isPastRaceDate).
+ */
+export function isPastRaceDateTime(
+  rcDate: string | null | undefined,
+  stTime?: string | null,
+): boolean {
+  if (!rcDate || typeof rcDate !== 'string') return false;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return false;
+  if (stTime && typeof stTime === 'string') {
+    const start = parseStTimeToDate(stTime, rcDate);
+    if (start) return start.getTime() < Date.now();
+  }
+  return isPastRaceDate(rcDate);
 }
 
 /** Returns true if rcDate(YYYYMMDD) is today */

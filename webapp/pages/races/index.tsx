@@ -11,7 +11,7 @@ import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
-import { formatRcDate, isPastRaceDate } from '@/lib/utils/format';
+import { formatRcDate, isPastRaceDateTime } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import type { GetServerSideProps } from 'next';
@@ -91,7 +91,8 @@ export default function RacesListPage() {
     if (!qStatus) return races;
     return races.filter((race) => {
       const s = race.status || (race as RaceDto & { raceStatus?: string }).raceStatus || '';
-      const isCompleted = s.toUpperCase() === 'COMPLETED' || isPastRaceDate(race.rcDate);
+      const stTime = race.stTime ?? (race as RaceDto & { rcStartTime?: string }).rcStartTime;
+      const isCompleted = s.toUpperCase() === 'COMPLETED' || isPastRaceDateTime(race.rcDate, stTime);
       if (qStatus === 'COMPLETED') return isCompleted;
       if (qStatus === 'SCHEDULED') return !isCompleted;
       return true;

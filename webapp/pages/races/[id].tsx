@@ -17,6 +17,7 @@ import RaceApi from '@/lib/api/raceApi';
 import PicksApi, { PICK_TYPE_HORSE_COUNTS } from '@/lib/api/picksApi';
 import HorsePickPanel from '@/components/HorsePickPanel';
 import BetTypePredictionsSection from '@/components/predictions/BetTypePredictionsSection';
+import PredictionResultComparison from '@/components/predictions/PredictionResultComparison';
 import { CONFIG } from '@/lib/config';
 import PredictionApi from '@/lib/api/predictionApi';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
@@ -27,7 +28,7 @@ import { routes } from '@/lib/routes';
 import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatTime, isPastRaceDate } from '@/lib/utils/format';
+import { formatTime, isPastRaceDateTime } from '@/lib/utils/format';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
 function formatOrdTypeLabel(ordType: string | null | undefined): string {
@@ -135,8 +136,9 @@ export default function RaceDetailPage() {
     (race as { status?: string; raceStatus?: string })?.status ??
     (race as { status?: string; raceStatus?: string })?.raceStatus;
   const rcDate = (race as { rcDate?: string })?.rcDate;
+  const stTime = (race as { stTime?: string })?.stTime;
   const isRaceCompleted =
-    raceStatus === 'COMPLETED' || (!!rcDate && isPastRaceDate(rcDate));
+    raceStatus === 'COMPLETED' || (!!rcDate && isPastRaceDateTime(rcDate, stTime));
 
   const { data: myPick } = useQuery({
     queryKey: ['picks', 'race', id],
@@ -841,39 +843,43 @@ export default function RaceDetailPage() {
                 에서 확인하세요.
               </p>
 
-              {/* 예측 vs 결과 (경주 종료 + 예측 데이터 있을 때만) */}
-              {fullPredictionData?.scores?.horseScores && fullPredictionData.scores.horseScores.length > 0 && (() => {
-                const predTop3 = (fullPredictionData.scores.horseScores as Array<{ hrNo?: string; chulNo?: string; hrName?: string }>).slice(0, 3);
-                const actualTop3 = effectiveResults
-                  .filter((r) => (r.ordType ?? '') === 'NORMAL' && Number(r.ordInt ?? 0) >= 1 && Number(r.ordInt ?? 0) <= 3)
-                  .sort((a, b) => Number(a.ordInt ?? 99) - Number(b.ordInt ?? 99))
-                  .slice(0, 3);
-                const actualHrNos = new Set(actualTop3.map((r) => String(r.hrNo ?? r.chulNo ?? '')));
-                const hitCount = predTop3.filter((p) => actualHrNos.has(String(p.hrNo ?? p.chulNo ?? ''))).length;
-                return (
-                  <div className='mt-4 rounded-xl border border-border bg-stone-50/50 p-4'>
-                    <p className='text-sm font-semibold text-foreground mb-2'>예측 vs 결과</p>
-                    <div className='grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm'>
-                      <div>
-                        <p className='text-xs text-text-tertiary mb-1'>AI 예측 상위 3마</p>
-                        <p className='text-foreground'>
-                          {predTop3.map((p) => (p.hrName ?? p.hrNo ?? '-')).join(' · ')}
-                        </p>
-                      </div>
-                      <div>
-                        <p className='text-xs text-text-tertiary mb-1'>실제 1·2·3위</p>
-                        <p className='text-foreground'>
-                          {actualTop3.map((r) => r.hrName ?? r.hrNo ?? '-').join(' · ')}
-                        </p>
-                      </div>
+              {/* Prediction vs Result: rank-by-rank match (completed race + prediction + results) */}
+              {isRaceCompleted &&
+                hasResults &&
+                displayPrediction?.scores?.horseScores &&
+                displayPrediction.scores.horseScores.length > 0 && (() => {
+                  const sorted = [...displayPrediction.scores.horseScores].sort(
+                    (a, b) => (b.score ?? 0) - (a.score ?? 0),
+                  );
+                  const predictedTop = sorted.slice(0, 3).map((p, i) => ({
+                    rank: i + 1,
+                    hrNo: String(p.hrNo ?? p.chulNo ?? '').trim(),
+                    hrName: (p.hrName ?? p.horseName ?? '').trim() || '-',
+                  }));
+                  const normalResults = effectiveResults.filter((res) => {
+                    const ord = parseInt(String(res.ord ?? ''), 10);
+                    const ok = ord >= 1 && ord <= 3 && (!res.ordType || res.ordType === 'NORMAL');
+                    return ok;
+                  });
+                  const actualTop = normalResults
+                    .sort((a, b) => parseInt(String(a.ord), 10) - parseInt(String(b.ord), 10))
+                    .slice(0, 3)
+                    .map((res) => ({
+                      ord: parseInt(String(res.ord), 10),
+                      hrNo: String(res.hrNo ?? '').trim(),
+                      hrName: (res.hrName ?? '').trim() || '-',
+                      ordType: res.ordType,
+                    }));
+                  return (
+                    <div className='mt-4'>
+                      <PredictionResultComparison
+                        predictedTop={predictedTop}
+                        actualTop={actualTop}
+                        horseLink={routes.horses.detail}
+                      />
                     </div>
-                    <p className='mt-2 text-xs font-medium text-foreground'>
-                      적중: <span className={hitCount >= 2 ? 'text-emerald-600' : 'text-stone-600'}>{hitCount}/3</span>
-                      <span className='text-text-tertiary font-normal'> (예측 상위 3마 중 실제 3위 내 입상)</span>
-                    </p>
-                  </div>
-                );
-              })()}
+                  );
+                })()}
               </>
               )}
             </section>

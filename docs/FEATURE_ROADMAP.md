@@ -169,22 +169,21 @@
 
 ## 3. Mid-term Roadmap (Phase 2 — 3–4 months)
 
-### 3.1 📈 Prediction Comparison (Before vs After)
+### 3.1 📈 Prediction Comparison (Before vs After) — ✅ Implemented
 
 > Show how AI prediction matched actual results after race completion.
 
 | Item | Detail |
 |------|--------|
 | **What** | Side-by-side view: AI's predicted top horses vs actual finishing order |
-| **Where** | Race detail page — new tab "Prediction vs Result" |
+| **Where** | Race detail page — section "예측 vs 결과" (below 경주 결과) |
 | **Value** | Users see the AI's track record per race — builds long-term trust |
 | **Priority** | ⭐⭐⭐ HIGH |
 
-**Implementation plan:**
-- Component: `PredictionResultComparison` — predicted rank ↔ actual rank
-- Green highlight for correct predictions, red for misses
-- "Hit rate for this race: X/3" badge
-- Available only for COMPLETED races with both prediction and results
+**Implemented:**
+- Component: `PredictionResultComparison` — predicted rank ↔ actual rank (1st/2nd/3rd)
+- Green check for rank match, red X for miss; "이 경주 적중: X/3" badge
+- Shown only for COMPLETED races with both prediction and results
 
 ---
 

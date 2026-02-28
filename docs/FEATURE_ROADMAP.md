@@ -356,9 +356,11 @@
 **My past predictions (implemented):** GET /prediction-tickets/my-predictions (page, limit). WebApp `/mypage/prediction-history` — list of predictions user viewed with RACE ticket; race label, usedAt, accuracy; link to race detail.
 
 ### 5.3 Content Quality
-- [ ] Rich prediction cards with mini charts (bar chart of horse scores)
+- [x] Rich prediction cards with mini charts (bar chart of horse scores) ✅
 - [ ] Race replay links (external KRA video when available)
 - [ ] Post-race analysis summary (Gemini-generated after results)
+
+**Mini bar chart (implemented):** `HorseScoresBarChart` on race detail prediction full view — horizontal bars per horse score above the ranking table.
 
 ### 5.4 Performance
 - [ ] ISR (Incremental Static Regeneration) for race list pages

@@ -17,6 +17,7 @@ import RaceApi from '@/lib/api/raceApi';
 import PicksApi, { PICK_TYPE_HORSE_COUNTS } from '@/lib/api/picksApi';
 import HorsePickPanel from '@/components/HorsePickPanel';
 import BetTypePredictionsSection from '@/components/predictions/BetTypePredictionsSection';
+import HorseScoresBarChart from '@/components/predictions/HorseScoresBarChart';
 import PredictionResultComparison from '@/components/predictions/PredictionResultComparison';
 import { CONFIG } from '@/lib/config';
 import PredictionApi from '@/lib/api/predictionApi';
@@ -1311,6 +1312,10 @@ function PredictionFullView({
             <p className='text-xs text-text-secondary font-semibold mb-1.5'>
               AI 추천 순위 <span className='text-text-tertiary font-normal'>(참고용)</span>
             </p>
+            <HorseScoresBarChart
+              horseScores={prediction.scores!.horseScores!}
+              className='mb-4 rounded-xl border border-border bg-background-elevated p-3 shadow-sm'
+            />
             <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
               <table className='data-table data-table-compact w-full text-sm'>
                 <thead>

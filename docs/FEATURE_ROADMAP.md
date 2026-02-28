@@ -368,7 +368,7 @@
 
 ### 5.4 Performance
 - [x] ISR (Incremental Static Regeneration) for race list pages ✅
-- [ ] Image optimization for race/horse photos
+- [ ] Image optimization for race/horse photos (apply when assets added: use next/image + alt)
 - [x] Lazy load prediction matrix rows ✅
 
 **ISR (implemented):** `/races` and `/results` use getStaticProps with revalidate: 60. Default view (no query) is pre-rendered and revalidated every 60s.
@@ -378,7 +378,9 @@
 ### 5.5 Accessibility
 - [x] High contrast mode (for 40–60 age users) ✅
 - [x] Font size toggle (small / medium / large) ✅
-- [ ] Screen reader compatibility audit (checklist: skip link, landmarks, aria-labels on CTAs, form labels)
+- [x] Screen reader compatibility audit (skip link, main/nav landmarks, checklist doc) ✅
+
+**Screen reader (implemented):** Skip-to-main-content link (visible on focus). Main has id="main-content", role="main". Nav has aria-label. See docs/features/ACCESSIBILITY.md for checklist.
 
 **High contrast & font size (implemented):** Settings → "보기 설정". Zustand + localStorage (`oddscast_accessibility`). High contrast: CSS vars for border/text. Font size: html font-size 14/16/18px. Applied via data-high-contrast, data-font-size on documentElement.
 

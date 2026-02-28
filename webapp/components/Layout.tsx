@@ -312,6 +312,12 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast' }) => {
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
+      <a
+        href='#main-content'
+        className='absolute w-px h-px p-0 -m-px overflow-hidden whitespace-nowrap border-0 [clip:rect(0,0,0,0)] focus:absolute focus:z-[100] focus:left-4 focus:top-4 focus:w-auto focus:h-auto focus:p-4 focus:m-0 focus:overflow-visible focus:whitespace-normal focus:[clip:auto] focus:bg-primary focus:text-white focus:rounded-lg focus:font-medium focus:outline-none'
+      >
+        Skip to main content
+      </a>
       <Head>
         <title>{title}</title>
         <meta
@@ -327,7 +333,7 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast' }) => {
         <meta property='og:type' content='website' />
       </Head>
 
-      <main className='flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain flex flex-col lg:max-w-[1200px] mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-0 lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))] lg:pt-6'>
+      <main id='main-content' role='main' aria-label='Main content' className='flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain flex flex-col lg:max-w-[1200px] mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-0 lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))] lg:pt-6'>
         <div className='px-0 pt-[max(1rem,env(safe-area-inset-top))] sm:pt-[max(1.25rem,env(safe-area-inset-top))] lg:pt-8 pb-[200px] sm:pb-[220px] lg:pb-[400px]'>
           {children}
         </div>

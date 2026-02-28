@@ -20,6 +20,11 @@ export class NotificationsService {
     this.expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   }
 
+  /** Base URL for deep links (FEATURE_ROADMAP 3.4). Mobile app resolves relative path if empty. */
+  private getWebappBaseUrl(): string {
+    return (process.env.WEBAPP_BASE_URL ?? '').replace(/\/$/, '');
+  }
+
   async findAll(
     userId: number,
     filters: { page?: number; limit?: number; isRead?: boolean },
@@ -261,12 +266,14 @@ export class NotificationsService {
       });
 
       if (tokens.length > 0) {
+        const baseUrl = this.getWebappBaseUrl();
+        const deepLink = baseUrl ? `${baseUrl}/mypage/notifications` : '/mypage/notifications';
         const messages = tokens.map((t) => ({
           to: t.token,
           title: data.title,
           body: data.message,
           sound: 'default' as const,
-          data: { type: 'SYSTEM' },
+          data: { type: 'SYSTEM', deepLink },
         }));
 
         const chunks = this.expo.chunkPushNotifications(messages);
@@ -309,7 +316,14 @@ export class NotificationsService {
     const raceLabel = rcNo ? `${meetLabel} ${rcNo}R` : meetLabel;
     const title = '고신뢰도 AI 예측 준비됨';
     const message = `${raceLabel} — 예측 확률 ${confidencePercent}%. 상세 분석을 확인하세요.`;
-    const data = { raceId, predictionId, type: 'HIGH_CONFIDENCE' } as Prisma.InputJsonValue;
+    const baseUrl = this.getWebappBaseUrl();
+    const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
+    const data = {
+      raceId,
+      predictionId,
+      type: 'HIGH_CONFIDENCE',
+      deepLink,
+    } as Prisma.InputJsonValue;
 
     const users = await this.prisma.user.findMany({
       where: {
@@ -337,6 +351,39 @@ export class NotificationsService {
     this.logger.log(
       `[SmartAlert] HIGH_CONFIDENCE: raceId=${raceId} → ${created.count} notifications`,
     );
+
+    // Push with deepLink so tapping opens race detail (FEATURE_ROADMAP 3.4)
+    try {
+      const tokens = await this.prisma.pushToken.findMany({
+        where: {
+          userId: { in: userIds },
+          user: {
+            OR: [
+              { notificationPreference: null },
+              { notificationPreference: { pushEnabled: true } },
+            ],
+          },
+        },
+        select: { token: true },
+      });
+      if (tokens.length > 0) {
+        const pushMessages = tokens.map((t) => ({
+          to: t.token,
+          title,
+          body: message,
+          sound: 'default' as const,
+          data: { type: 'HIGH_CONFIDENCE', raceId, predictionId, deepLink },
+        }));
+        const chunks = this.expo.chunkPushNotifications(pushMessages);
+        for (const chunk of chunks) {
+          await this.expo.sendPushNotificationsAsync(chunk);
+        }
+        this.logger.log(`[SmartAlert] Push sent to ${tokens.length} device(s) with deepLink`);
+      }
+    } catch (err) {
+      this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);
+    }
+
     return { count: created.count };
   }
 }

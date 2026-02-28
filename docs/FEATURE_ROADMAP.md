@@ -226,7 +226,7 @@
 
 ---
 
-### 3.4 📱 Push Notification Deep Links
+### 3.4 📱 Push Notification Deep Links — ✅ Server implemented
 
 > Tapping a push notification opens the relevant page.
 
@@ -236,10 +236,12 @@
 | **Platform** | Mobile (Expo push + deep link) |
 | **Priority** | ⭐⭐ MEDIUM |
 
-**Implementation plan:**
-- Mobile: Configure Expo deep linking to webapp routes
-- Server: Include `deepLink` field in push notification payload
-- WebView: Handle `window.location` change on deep link reception
+**Implemented (server):**
+- All Expo push payloads include `data.deepLink` (WEBAPP_BASE_URL env + path)
+- Admin send: `deepLink` = `/mypage/notifications`
+- High-confidence prediction push: `deepLink` = `/races/{raceId}`; Smart Alert now sends Expo push (not only in-app notification) so tap opens race detail
+
+**Remaining (mobile):** Configure Expo deep linking; WebView handle `data.deepLink` on notification tap and set `window.location` / navigate to path
 
 ---
 

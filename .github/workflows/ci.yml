@@ -1,0 +1,48 @@
+# CI: lint + build (server, webapp, admin)
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+defaults:
+  run:
+    working-directory: .
+
+jobs:
+  lint-and-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint server
+        run: pnpm --filter server lint
+
+      - name: Lint webapp
+        run: pnpm --filter webapp lint
+
+      - name: Build shared
+        run: pnpm --filter @oddscast/shared build
+
+      - name: Build server
+        run: pnpm --filter server build
+
+      - name: Build webapp
+        run: pnpm --filter webapp build
+
+      - name: Build admin
+        run: pnpm --filter oddscast-admin build

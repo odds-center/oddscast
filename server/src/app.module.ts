@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Core
 import { PrismaModule } from './prisma/prisma.module';
@@ -40,6 +41,10 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([
+      { name: 'short', ttl: 60_000, limit: 120 },   // 120 req/min per IP (general API)
+      { name: 'long', ttl: 3600_000, limit: 2000 }, // 2000 req/hour per IP
+    ]),
     PrismaModule,
     HealthModule, // nginx/LB 헬스체크 — /health
     CacheModule, // Redis(선택) / 인메모리 캐시
@@ -77,6 +82,10 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     ActivityLogsModule,
   ],
   providers: [
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,

@@ -399,6 +399,10 @@
 | Load testing | ⭐ LOW | Simulate race day traffic spikes |
 | CDN for static assets | ⭐ LOW | CloudFront / Vercel Edge for webapp |
 
+**Rate limiting (implemented):** @nestjs/throttler. Global: 120 req/min + 2000 req/hour per IP. Health controller uses @SkipThrottle() for LB checks.
+
+**CI (implemented):** .github/workflows/ci.yml — on push/PR to master|main: pnpm install, lint server + webapp, build shared → server → webapp → admin.
+
 ---
 
 ## 7. Priority Matrix

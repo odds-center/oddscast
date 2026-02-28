@@ -1,6 +1,8 @@
 import { Controller, Get } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 
-/** nginx / 로드밸런서용 헬스체크 */
+/** nginx / 로드밸런서용 헬스체크 — rate limit 제외 */
+@SkipThrottle()
 @Controller('health')
 export class HealthController {
   @Get()

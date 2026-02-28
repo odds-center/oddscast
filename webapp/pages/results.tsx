@@ -12,9 +12,11 @@ import type { RaceResult } from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
 import { formatRcDate } from '@/lib/utils/format';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
+
+const REVALIDATE_RESULTS = 60;
 
 interface TableResult {
   ord: string;
@@ -249,19 +251,15 @@ function dateToParam(dateFilter: string): string | undefined {
   return undefined;
 }
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const query = context.query as Record<string, string | undefined>;
-  const qDate = query?.date;
-  const qMeet = query?.meet || '';
-  const dateFilter = parseDateFilter(qDate);
-  const page = Math.max(1, parseInt(String(query?.page ?? 1), 10) || 1);
-  const date = dateToParam(dateFilter);
-
+export const getStaticProps: GetStaticProps = async () => {
   const queryClient = new QueryClient();
+  const dateFilter = '';
+  const page = 1;
+  const qMeet = '';
+  const date = dateToParam(dateFilter);
   try {
     const params: Record<string, string | number> = { groupByRace: 'true', limit: 20, page };
     if (date) params.date = date;
-    if (qMeet) params.meet = qMeet;
     await queryClient.prefetchQuery({
       queryKey: ['results', 'grouped', page, dateFilter, qMeet],
       queryFn: () =>
@@ -270,5 +268,5 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   } catch {
     // Fetch on client if SSR fails
   }
-  return { props: { dehydratedState: dehydrate(queryClient) } };
+  return { props: { dehydratedState: dehydrate(queryClient) }, revalidate: REVALIDATE_RESULTS };
 };

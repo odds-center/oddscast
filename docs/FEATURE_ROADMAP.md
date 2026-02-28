@@ -367,9 +367,13 @@
 **Mini bar chart (implemented):** `HorseScoresBarChart` on race detail prediction full view — horizontal bars per horse score above the ranking table.
 
 ### 5.4 Performance
-- [ ] ISR (Incremental Static Regeneration) for race list pages
+- [x] ISR (Incremental Static Regeneration) for race list pages ✅
 - [ ] Image optimization for race/horse photos
-- [ ] Lazy load prediction matrix rows
+- [x] Lazy load prediction matrix rows ✅
+
+**ISR (implemented):** `/races` and `/results` use getStaticProps with revalidate: 60. Default view (no query) is pre-rendered and revalidated every 60s.
+
+**Lazy matrix (implemented):** PredictionMatrixTable shows first 12 rows when unlocked; Intersection Observer loads 12 more as user scrolls to bottom.
 
 ### 5.5 Accessibility
 - [ ] High contrast mode (for 40–60 age users)

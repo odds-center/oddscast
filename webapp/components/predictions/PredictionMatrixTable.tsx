@@ -1,7 +1,9 @@
 /**
  * Comprehensive prediction matrix — Yongsan comprehensive style
- * Dark header, gate color numbers, race information included
+ * Dark header, gate color numbers, race information included.
+ * Lazy loads rows when not locked (Intersection Observer).
  */
+import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import type { MatrixResponseDto, MatrixRowDto } from '@/lib/api/predictionMatrixApi';
 import { getGateBgColor } from '@/components/race/RaceHeaderCard';
@@ -82,6 +84,9 @@ export interface PredictionMatrixTableProps {
   previewCount?: number;
 }
 
+const LAZY_INITIAL_ROWS = 12;
+const LAZY_PAGE_SIZE = 12;
+
 export default function PredictionMatrixTable({
   data,
   locked = false,
@@ -90,8 +95,32 @@ export default function PredictionMatrixTable({
   const { raceMatrix, experts } = data;
   const aiExpert = experts.find((e) => e.id === 'ai_consensus');
   const expertList = experts.filter((e) => e.id !== 'ai_consensus');
-  const visibleRows = locked ? raceMatrix.slice(0, previewCount) : raceMatrix;
+
+  const [lazyCount, setLazyCount] = useState(LAZY_INITIAL_ROWS);
+  const sentinelRef = useRef<HTMLTableRowElement | null>(null);
+
+  const visibleRows = useMemo(() => {
+    if (locked) return raceMatrix.slice(0, previewCount);
+    return raceMatrix.slice(0, lazyCount);
+  }, [locked, previewCount, raceMatrix, lazyCount]);
+
   const hiddenCount = locked ? Math.max(0, raceMatrix.length - previewCount) : 0;
+  const hasMoreLazy = !locked && lazyCount < raceMatrix.length;
+
+  useEffect(() => {
+    if (locked || raceMatrix.length <= LAZY_INITIAL_ROWS) return;
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        setLazyCount((c) => Math.min(raceMatrix.length, c + LAZY_PAGE_SIZE));
+      },
+      { rootMargin: '120px', threshold: 0 },
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [locked, raceMatrix.length]);
 
   return (
     <div className='relative'>
@@ -155,6 +184,11 @@ export default function PredictionMatrixTable({
                 </td>
               </tr>
             ))}
+            {hasMoreLazy && (
+              <tr ref={sentinelRef} aria-hidden>
+                <td colSpan={expertList.length + 2} className='h-4 p-0 bg-transparent' />
+              </tr>
+            )}
           </tbody>
         </table>
         {raceMatrix.length === 0 && (

@@ -17,9 +17,12 @@ import { formatRcDate, isPastRaceDateTime } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
-import type { GetServerSideProps } from 'next';
+import type { GetStaticProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
+
+/** ISR revalidate interval (seconds) for race list */
+const REVALIDATE_RACES = 60;
 
 const RACES_PER_PAGE = 20;
 const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
@@ -268,20 +271,16 @@ export default function RacesListPage() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async (context) => {
-  const query = context.query as Record<string, string | undefined>;
-  const qDate = query?.date;
-  const qMeet = query?.meet || '';
-  const qStatus = query?.status || '';
-  const dateFilter = parseDateFilter(qDate);
-  const page = Math.max(1, parseInt(String(query?.page ?? 1), 10) || 1);
-  const date = dateToParam(dateFilter);
-
+export const getStaticProps: GetStaticProps = async () => {
   const queryClient = new QueryClient();
+  const dateFilter = ''; // default when no query (client: parseDateFilter(undefined) => '')
+  const date = dateToParam(dateFilter);
+  const page = 1;
+  const qMeet = '';
+  const qStatus = '';
   try {
     const params: Record<string, string | number> = { limit: RACES_PER_PAGE, page };
     if (date) params.date = date;
-    if (qMeet) params.meet = qMeet;
     await queryClient.prefetchQuery({
       queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
       queryFn: () => serverGet<{ races?: unknown[]; totalPages?: number }>('/races', { params }),
@@ -289,5 +288,5 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   } catch {
     // Fetch on client if SSR fails
   }
-  return { props: { dehydratedState: dehydrate(queryClient) } };
+  return { props: { dehydratedState: dehydrate(queryClient) }, revalidate: REVALIDATE_RACES };
 };

@@ -29,6 +29,7 @@ import { HorsesModule } from './horses/horses.module';
 import { JockeysModule } from './jockeys/jockeys.module';
 import { TrainersModule } from './trainers/trainers.module';
 import { FortuneModule } from './fortune/fortune.module';
+import { ReferralsModule } from './referrals/referrals.module';
 import { AdminModule } from './admin/admin.module';
 import { GlobalConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
@@ -60,6 +61,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     PicksModule, // 내가 고른 말 (사행성 없음)
 
     // P2 — Monetization & Social
+    ReferralsModule,
     NotificationsModule,
     SubscriptionsModule,
     PaymentsModule,

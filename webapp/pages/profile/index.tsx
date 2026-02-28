@@ -11,11 +11,13 @@ import Dropdown from '@/components/ui/Dropdown';
 import { Tooltip } from '@/components/ui';
 import PointApi from '@/lib/api/pointApi';
 import AuthApi from '@/lib/api/authApi';
+import ReferralsApi from '@/lib/api/referralsApi';
 import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -71,6 +73,32 @@ export default function Profile() {
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets'] });
     },
   });
+
+  const { data: referralCode } = useQuery({
+    queryKey: ['referrals', 'me'],
+    queryFn: () => ReferralsApi.getMyCode(),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
+  const [claimCodeInput, setClaimCodeInput] = useState('');
+  const claimMutation = useMutation({
+    mutationFn: (code: string) => ReferralsApi.claim(code),
+    onSuccess: () => {
+      setClaimCodeInput('');
+      queryClient.invalidateQueries({ queryKey: ['referrals', 'me'] });
+      queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
+    },
+  });
+
+  const handleCopyReferralCode = () => {
+    if (!referralCode?.code) return;
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(referralCode.code).then(() => alert('코드가 복사되었습니다.'));
+    } else {
+      prompt('아래 코드를 복사하세요', referralCode.code);
+    }
+  };
 
   const handlePurchase = () => {
     purchaseMutation.mutate(purchaseQty);
@@ -160,6 +188,66 @@ export default function Profile() {
                 이벤트·구독 등으로 적립됩니다.
                 <Tooltip content='예측권 구매, 구독 시 보너스 지급' inline> 사용</Tooltip>
               </p>
+            </SectionCard>
+
+            <SectionCard
+              title='내 추천 코드'
+              icon='UserPlus'
+              description='친구가 코드를 입력하면 둘 다 예측권을 받아요 (추천인 3장, 친구 2장)'
+            >
+              {referralCode ? (
+                <>
+                  <div className='flex items-center gap-3 flex-wrap'>
+                    <span className='font-mono text-xl font-bold text-foreground tracking-wider bg-muted/50 px-3 py-2 rounded-lg'>
+                      {referralCode.code}
+                    </span>
+                    <button
+                      type='button'
+                      onClick={handleCopyReferralCode}
+                      className='btn-secondary inline-flex items-center gap-1.5'
+                    >
+                      <Icon name='ClipboardList' size={16} />
+                      복사
+                    </button>
+                  </div>
+                  <p className='text-text-secondary text-sm mt-2'>
+                    사용 {referralCode.usedCount}/{referralCode.maxUses}회 (최대 10명)
+                  </p>
+                </>
+              ) : (
+                <p className='text-text-secondary text-sm'>불러오는 중...</p>
+              )}
+            </SectionCard>
+
+            <SectionCard title='추천 코드 사용' icon='Ticket' description='친구에게 받은 코드를 입력하면 예측권 2장이 지급됩니다'>
+              <div className='flex flex-col sm:flex-row gap-2'>
+                <input
+                  type='text'
+                  value={claimCodeInput}
+                  onChange={(e) => setClaimCodeInput(e.target.value.trim().toUpperCase())}
+                  placeholder='코드 입력'
+                  className='flex-1 min-w-0 rounded-lg border border-border px-3 py-2 text-foreground font-mono'
+                  maxLength={12}
+                />
+                <button
+                  type='button'
+                  onClick={() => claimMutation.mutate(claimCodeInput)}
+                  disabled={!claimCodeInput || claimCodeInput.length < 4 || claimMutation.isPending}
+                  className='btn-primary shrink-0 inline-flex items-center justify-center gap-1.5'
+                >
+                  {claimMutation.isPending ? (
+                    <Icon name='Loader2' size={16} className='animate-spin' />
+                  ) : (
+                    '사용하기'
+                  )}
+                </button>
+              </div>
+              {claimMutation.isError && (
+                <p className='msg-error mt-2 text-sm'>{getErrorMessage(claimMutation.error)}</p>
+              )}
+              {claimMutation.isSuccess && (
+                <p className='msg-success mt-2 text-sm'>예측권이 지급되었습니다.</p>
+              )}
             </SectionCard>
 
             <SectionCard title='포인트로 예측권 구매' icon='CreditCard'>

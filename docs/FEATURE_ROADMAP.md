@@ -243,7 +243,7 @@
 
 ---
 
-### 3.5 🎁 Referral & Promotion System
+### 3.5 🎁 Referral & Promotion System — ✅ Implemented
 
 > Grow the user base through word-of-mouth.
 
@@ -254,11 +254,11 @@
 | **Limit** | Max 10 referrals per user |
 | **Priority** | ⭐⭐ MEDIUM |
 
-**Implementation plan:**
-- Server: `ReferralCode` model (userId, code, usedCount, maxUses)
-- Server: `POST /api/referrals/claim` — validates code, grants tickets
-- WebApp: `/profile` section with "My Referral Code" + share button
-- Admin: Referral statistics dashboard
+**Implemented:**
+- Server: `ReferralCode` + `ReferralClaim` (one claim per referred user). `GET /api/referrals/me`, `POST /api/referrals/claim`
+- Referrer 3 RACE, Referred 2 RACE (30-day expiry); max 10 uses per code
+- WebApp: Profile "내 추천 코드" (code + copy), "추천 코드 사용" (input + submit)
+- Admin dashboard: optional later
 
 ---
 

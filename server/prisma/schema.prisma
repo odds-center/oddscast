@@ -46,8 +46,39 @@ model User {
   passwordResetTokens     PasswordResetToken[]
   emailVerificationTokens EmailVerificationToken[]
   dailyFortunes           UserDailyFortune[]
+  referralCodes           ReferralCode[]
 
   @@map("users")
+}
+
+// ============================================
+// 추천 코드 (ReferralCode) — FEATURE_ROADMAP 3.5
+// ============================================
+model ReferralCode {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  code       String   @unique
+  usedCount  Int      @default(0)
+  maxUses    Int      @default(10)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims ReferralClaim[]
+
+  @@map("referral_codes")
+}
+
+model ReferralClaim {
+  id             Int      @id @default(autoincrement())
+  referralCodeId Int
+  referredUserId Int
+  createdAt      DateTime @default(now())
+
+  referralCode ReferralCode @relation(fields: [referralCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([referredUserId])
+  @@map("referral_claims")
 }
 
 // ============================================

@@ -238,7 +238,7 @@ export default function PrivacyPage() {
             본 개인정보처리방침은 2025년 1월 1일부터 시행됩니다. 이용약관은 <Link href={routes.legal.terms} className='text-primary underline'>서비스 이용 약관</Link>을 참고하세요.
           </p>
         </div>
-        <BackLink href={routes.home} label='홈으로' />
+        <BackLink href={routes.profile.index} label='정보로' />
       </div>
     </Layout>
   );

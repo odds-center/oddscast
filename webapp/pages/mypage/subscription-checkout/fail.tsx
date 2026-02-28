@@ -5,6 +5,7 @@
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
+import BackLink from '@/components/page/BackLink';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
@@ -34,6 +35,7 @@ export default function SubscriptionCheckoutFailPage() {
         <Link href={routes.mypage.subscriptions} className='btn-primary block text-center mt-4'>
           구독 플랜으로
         </Link>
+        <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block' />
       </div>
     </Layout>
   );

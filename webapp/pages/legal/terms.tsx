@@ -221,7 +221,7 @@ export default function TermsPage() {
             본 약관에 대한 문의: support@oddscast.com | 법적 분쟁 시 관할: 회사 본사 소재지 관할 법원
           </p>
         </div>
-        <BackLink href={routes.home} label='홈으로' />
+        <BackLink href={routes.profile.index} label='정보로' />
       </div>
     </Layout>
   );

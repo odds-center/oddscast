@@ -94,7 +94,7 @@
 | **경주 목록** | `/races` | 날짜/경마장 필터, 경주 카드 목록, 페이지네이션 | C1~C8 | ✅ DataFetchState | URL 동기화·빈 메시지 확인 |
 | **시행일** | `/races/schedule` | 달력형 시행일 목록 | C1,C2,C5,C6,C7,C8 | ✅ | isEmpty=false 등 로직 점검 |
 | **경주 상세** | `/races/[id]` | 출전마, 결과, 예측 미리보기/전체, 예측권 사용, 경주 후 분석 | C1~C8 | ✅ 로딩/에러/재시도 | 탭/섹션 접근성 점검 |
-| **시뮬레이터** | `/races/[id]/simulator` | 가중치 조절·재순위 시뮬레이션 | C1,C2,C3,C6,C7,C8,C9 | 점검 | 경주 없을 때 에러/빈 상태 |
+| **시뮬레이터** | `/races/[id]/simulator` | 가중치 조절·재순위 시뮬레이션 | C1,C2,C3,C6,C7,C8,C9 | ✅ | 경주 없음/에러/예측 없음 처리, 다시 시도 |
 
 ---
 
@@ -144,11 +144,11 @@
 | **예측권 이력** | `/mypage/ticket-history` | 사용/미사용 필터, 테이블 | C1~C8 | ✅ DataFetchState | emptyMessage |
 | **내가 본 예측** | `/mypage/prediction-history` | 열람한 예측 목록, 경주 링크 | C1~C8 | ✅ DataFetchState | emptyMessage |
 | **포인트 거래 내역** | `/mypage/point-transactions` | 거래 목록 테이블 | C1~C8 | ✅ DataFetchState | 빈 목록 |
-| **구독 플랜** | `/mypage/subscriptions` | 플랜 목록·현재 구독·결제/취소 | C1,C2,C5,C6,C7,C8,C9 | 점검 | 로딩/에러/빈 |
-| **구독 결제** | `/mypage/subscription-checkout` | 플랜 선택·PG 연동 | C1,C6,C8,C9 | 점검 | 실패/성공 라우트와 일관성 |
-| **구독 결제 성공** | `/mypage/subscription-checkout/success` | 성공 안내·다음 액션 | C1,C6,C7,C8 | 점검 | BackLink |
-| **구독 결제 실패** | `/mypage/subscription-checkout/fail` | 실패 안내·재시도 링크 | C1,C6,C7,C8 | 점검 | BackLink |
-| **종합 예측권 구매** | `/mypage/matrix-ticket-purchase` | 매트릭스 티켓 구매 플로우 | C1,C6,C7,C8,C9 | 점검 | 로딩/에러 |
+| **구독 플랜** | `/mypage/subscriptions` | 플랜 목록·현재 구독·결제/취소 | C1,C2,C5,C6,C7,C8,C9 | ✅ | 로딩/에러/빈, BackLink |
+| **구독 결제** | `/mypage/subscription-checkout` | 플랜 선택·PG 연동 | C1,C6,C8,C9 | ✅ | 실패/성공 라우트와 일관 |
+| **구독 결제 성공** | `/mypage/subscription-checkout/success` | 성공 안내·다음 액션 | C1,C6,C7,C8 | ✅ | BackLink(정보로) |
+| **구독 결제 실패** | `/mypage/subscription-checkout/fail` | 실패 안내·재시도 링크 | C1,C6,C7,C8 | ✅ | BackLink |
+| **종합 예측권 구매** | `/mypage/matrix-ticket-purchase` | 매트릭스 티켓 구매 플로우 | C1,C6,C7,C8,C9 | ✅ | 로딩/에러/다시 시도, BackLink |
 | **알림** | `/mypage/notifications` | 알림 목록 | C1~C8 | ✅ DataFetchState | emptyMessage |
 | **내가 고른 말** | `/mypage/picks` | (서비스 제외, 미노출) | — | 미노출 | 메뉴에서 제거 유지 |
 
@@ -169,9 +169,9 @@
 
 | 페이지 | 라우트 | 목적 | C1~C10 체크 | 현황 | 비고/계획 |
 |--------|--------|------|-------------|------|-----------|
-| **설정** | `/settings` | 메뉴(알림 설정, 회원탈퇴 등) | C1,C6,C7,C8 | 점검 | BackLink |
-| **알림 설정** | `/settings/notifications` | 푸시 등 채널별 토글 (네이티브에서만 노출) | C1,C6,C7,C8,C9 | 점검 | useIsNativeApp |
-| **회원탈퇴** | `/settings/delete-account` | 확인 절차·탈퇴 API | C1,C6,C7,C8,C9 | 점검 | 위험 액션 확인 UI |
+| **설정** | `/settings` | 메뉴(알림 설정, 회원탈퇴 등) | C1,C6,C7,C8 | ✅ | BackLink(프로필로) |
+| **알림 설정** | `/settings/notifications` | 푸시 등 채널별 토글 (네이티브에서만 노출) | C1,C6,C7,C8,C9 | ✅ | useIsNativeApp |
+| **회원탈퇴** | `/settings/delete-account` | 확인 절차·탈퇴 API | C1,C6,C7,C8,C9 | ✅ | 동의 체크박스 후 제출 가능 |
 
 ---
 
@@ -179,9 +179,9 @@
 
 | 페이지 | 라우트 | 목적 | C1~C10 체크 | 현황 | 비고/계획 |
 |--------|--------|------|-------------|------|-----------|
-| **이용약관** | `/legal/terms` | 정적 약관 본문 | C1,C6,C8 | 점검 | BackLink(정보로) |
-| **개인정보처리방침** | `/legal/privacy` | 정적 방침 본문 | C1,C6,C8 | 점검 | 동일 |
-| **환불정책** | `/legal/refund` | 정적 환불 정책 | C1,C6,C8 | 점검 | 동일 |
+| **이용약관** | `/legal/terms` | 정적 약관 본문 | C1,C6,C8 | ✅ | BackLink(정보로) |
+| **개인정보처리방침** | `/legal/privacy` | 정적 방침 본문 | C1,C6,C8 | ✅ | BackLink(정보로) |
+| **환불정책** | `/legal/refund` | 정적 환불 정책 | C1,C6,C8 | ✅ | BackLink(정보로) |
 
 ---
 

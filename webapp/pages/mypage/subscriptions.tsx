@@ -1,5 +1,6 @@
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
+import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
@@ -156,6 +157,7 @@ export default function SubscriptionsPage() {
             )}
           </div>
         )}
+        <BackLink href={routes.profile.index} label='정보로' className='mt-6 block' />
     </Layout>
   );
 }

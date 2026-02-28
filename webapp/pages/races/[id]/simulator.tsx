@@ -8,6 +8,8 @@ import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
 import BackLink from '@/components/page/BackLink';
+import DataFetchState from '@/components/page/DataFetchState';
+import EmptyState from '@/components/EmptyState';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import Icon from '@/components/icons';
 import { SectionTitle } from '@/components/ui';
@@ -57,13 +59,23 @@ export default function SimulatorPage() {
     FACTOR_LABELS.map(() => SLIDER_DEFAULT),
   );
 
-  const { data: race, isLoading: raceLoading } = useQuery({
+  const {
+    data: race,
+    isLoading: raceLoading,
+    isError: raceError,
+    refetch: refetchRace,
+  } = useQuery({
     queryKey: ['race', id],
     queryFn: () => RaceApi.getRace(id!),
     enabled: !!id,
   });
 
-  const { data: preview, isLoading: previewLoading } = useQuery({
+  const {
+    data: preview,
+    isLoading: previewLoading,
+    isError: previewError,
+    refetch: refetchPreview,
+  } = useQuery({
     queryKey: ['prediction', 'preview', id],
     queryFn: () => PredictionApi.getPreview(id!),
     enabled: !!id,
@@ -108,6 +120,11 @@ export default function SimulatorPage() {
   }, [customRanked, race, id]);
 
   const isLoading = raceLoading || previewLoading;
+  const isError = raceError || previewError;
+  const refetch = useCallback(() => {
+    refetchRace();
+    refetchPreview();
+  }, [refetchRace, refetchPreview]);
   const rcNo = (race as { rcNo?: string } | undefined)?.rcNo ?? id ?? '';
   const meetName = (race as { meetName?: string } | undefined)?.meetName ?? '';
 
@@ -115,10 +132,36 @@ export default function SimulatorPage() {
     <Layout title={`커스텀 예측 시뮬레이터 — 경주 #${rcNo ?? ''} | OddsCast`}>
       <BackLink href={id ? routes.races.detail(id) : routes.races.list} label="경주 상세로" className="block mb-4" />
 
-      {isLoading ? (
+      {!id ? (
+        <DataFetchState
+          isLoading={false}
+          error={null}
+          isEmpty
+          emptyTitle="경주를 선택해 주세요"
+          emptyAction={
+            <Link href={routes.races.list} className="btn-primary inline-flex items-center gap-2">
+              <Icon name="ClipboardList" size={18} />
+              경주 목록
+            </Link>
+          }
+        >
+          {null}
+        </DataFetchState>
+      ) : isLoading ? (
         <div className="flex justify-center py-12">
           <LoadingSpinner />
         </div>
+      ) : isError ? (
+        <EmptyState
+          icon="AlertCircle"
+          title="경주 또는 예측 정보를 불러올 수 없습니다"
+          description="잠시 후 다시 시도해 주세요."
+          action={
+            <button type="button" onClick={() => refetch()} className="btn-secondary px-3 py-1.5 text-sm">
+              다시 시도
+            </button>
+          }
+        />
       ) : !hasScores ? (
         <div className="rounded-xl border border-border bg-muted/20 px-4 py-8 text-center">
           <p className="text-foreground font-medium mb-2">예측 데이터가 없습니다</p>

@@ -107,6 +107,7 @@ export default function SubscriptionCheckoutSuccessPage() {
         >
           구독 관리
         </Link>
+        <BackLink href={routes.profile.index} label='정보로' className='mt-4 block' />
       </div>
     </Layout>
   );

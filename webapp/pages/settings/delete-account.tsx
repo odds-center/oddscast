@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -20,6 +21,7 @@ export default function DeleteAccountPage() {
   const router = useRouter();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const logout = useAuthStore((s) => s.logout);
+  const [confirmChecked, setConfirmChecked] = useState(false);
 
   const {
     register,
@@ -67,12 +69,24 @@ export default function DeleteAccountPage() {
               {...register('password', { required: '비밀번호를 입력하세요.' })}
               error={errors.password?.message}
             />
+            <label className='flex items-start gap-3 cursor-pointer text-sm'>
+              <input
+                type='checkbox'
+                checked={confirmChecked}
+                onChange={(e) => setConfirmChecked(e.target.checked)}
+                className='mt-1 rounded border-border accent-red-600'
+                aria-describedby='delete-confirm-desc'
+              />
+              <span id='delete-confirm-desc' className='text-text-secondary'>
+                탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다. 동의합니다.
+              </span>
+            </label>
             {errors.root && (
               <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
             <button
               type='submit'
-              disabled={isSubmitting}
+              disabled={isSubmitting || !confirmChecked}
               className='btn-secondary w-full py-2.5 flex items-center justify-center gap-2 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 disabled:opacity-50'
             >
               {isSubmitting ? (

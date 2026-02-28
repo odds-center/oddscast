@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
+import BackLink from '@/components/page/BackLink';
 import SectionCard from '@/components/page/SectionCard';
 import Icon from '@/components/icons';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -19,7 +20,12 @@ export default function MatrixTicketPurchasePage() {
   const [count, setCount] = useState(1);
   const [purchaseSuccess, setPurchaseSuccess] = useState(false);
 
-  const { data: balance, isLoading: balanceLoading } = useQuery({
+  const {
+    data: balance,
+    isLoading: balanceLoading,
+    isError: balanceError,
+    refetch: refetchBalance,
+  } = useQuery({
     queryKey: ['matrix-ticket-balance'],
     queryFn: () => PredictionTicketsApi.getMatrixBalance(),
     enabled: isLoggedIn,
@@ -79,6 +85,17 @@ export default function MatrixTicketPurchasePage() {
           <SectionCard title='보유 현황' icon='Ticket'>
             {balanceLoading ? (
               <p className='text-stone-400 text-sm'>준비 중...</p>
+            ) : balanceError ? (
+              <div className='flex flex-col gap-2'>
+                <p className='text-red-600 text-sm'>보유 현황을 불러올 수 없습니다.</p>
+                <button
+                  type='button'
+                  onClick={() => refetchBalance()}
+                  className='btn-secondary text-sm w-fit'
+                >
+                  다시 시도
+                </button>
+              </div>
             ) : (
               <div className='flex items-center gap-4'>
                 <div>
@@ -167,6 +184,7 @@ export default function MatrixTicketPurchasePage() {
           >
             종합 예상표 바로가기 →
           </Link>
+          <BackLink href={routes.profile.index} label='정보로' className='mt-6 block' />
         </div>
       )}
     </Layout>

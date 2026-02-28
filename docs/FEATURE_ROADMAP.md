@@ -334,9 +334,11 @@
 ## 5. UX Enhancement Backlog
 
 ### 5.1 Onboarding Flow
-- [ ] First-time user tutorial (swipe through key features)
+- [x] First-time user tutorial (swipe through key features) ✅
 - [x] "Try a free prediction" — 1 complimentary RACE ticket on signup ✅
 - [x] Tooltip hints on first visit to prediction matrix page ✅
+
+**First-time tutorial (implemented):** Full-screen overlay on first visit (localStorage `oddscast_onboarding_tutorial_done`). Four slides: 경주, 종합 예측, 결과, 정보. Swipe/키보드/버튼으로 진행, 건너뛰기·시작하기로 닫기.
 
 **Signup bonus (implemented):** Server grants 1 RACE ticket (30-day expiry) on register; failure to grant is logged but does not block signup.
 

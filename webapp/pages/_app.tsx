@@ -12,6 +12,7 @@ import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { FloatingAppBar } from '@/components/Layout';
 import NetworkStatusBanner from '@/components/ui/NetworkStatusBanner';
+import { OnboardingTutorial, hasSeenOnboarding } from '@/components/onboarding';
 import { trackActivity, ACTIVITY_EVENTS } from '@/lib/api/activityApi';
 
 const MOBILE_BREAKPOINT = 768;
@@ -23,6 +24,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
 
   const [clientMounted, setClientMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
@@ -31,6 +33,14 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     queueMicrotask(() => setClientMounted(true));
     return () => window.removeEventListener('resize', check);
   }, []);
+
+  // First-time tutorial: show once per device when user has not seen it
+  useEffect(() => {
+    if (!clientMounted) return;
+    const needOnboarding = !hasSeenOnboarding();
+    const id = setTimeout(() => setShowOnboarding(needOnboarding), 0);
+    return () => clearTimeout(id);
+  }, [clientMounted]);
 
   useEffect(() => {
     if (!CONFIG.analytics.gaMeasurementId) return;
@@ -116,6 +126,9 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           <Component {...restPageProps} />
         </HydrationBoundary>
       </QueryClientProvider>
+      {clientMounted && showOnboarding && (
+        <OnboardingTutorial onComplete={() => setShowOnboarding(false)} />
+      )}
       {clientMounted && <NetworkStatusBanner />}
       {clientMounted && <FloatingAppBar pathname={pathname} isMobile={isMobile} />}
     </>

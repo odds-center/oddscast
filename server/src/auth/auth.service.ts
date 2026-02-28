@@ -9,6 +9,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
+import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 
 export interface SanitizedUser {
@@ -33,12 +34,17 @@ export interface SanitizedAdminUser {
   updatedAt: Date;
 }
 
+/** Signup bonus: 1 complimentary RACE ticket, 30 days expiry (FEATURE_ROADMAP 5.1) */
+const SIGNUP_BONUS_TICKETS = 1;
+const SIGNUP_BONUS_EXPIRES_DAYS = 30;
+
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
+    private predictionTicketsService: PredictionTicketsService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -56,6 +62,20 @@ export class AuthService {
         nickname: dto.nickname,
       },
     });
+
+    try {
+      await this.predictionTicketsService.grantTickets(
+        user.id,
+        SIGNUP_BONUS_TICKETS,
+        SIGNUP_BONUS_EXPIRES_DAYS,
+        'RACE',
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (this.config.get('NODE_ENV') !== 'test') {
+        console.warn(`[Auth] Signup bonus ticket grant failed for user ${user.id}: ${msg}`);
+      }
+    }
 
     const token = this.generateToken(user.id, user.email, user.role);
     return { user: this.sanitize(user), ...token };

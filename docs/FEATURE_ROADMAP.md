@@ -333,8 +333,10 @@
 
 ### 5.1 Onboarding Flow
 - [ ] First-time user tutorial (swipe through key features)
-- [ ] "Try a free prediction" — 1 complimentary RACE ticket on signup
+- [x] "Try a free prediction" — 1 complimentary RACE ticket on signup ✅
 - [ ] Tooltip hints on first visit to prediction matrix page
+
+**Signup bonus (implemented):** Server grants 1 RACE ticket (30-day expiry) on register; failure to grant is logged but does not block signup.
 
 ### 5.2 Personalization
 - [ ] "Your recent races" section on home page

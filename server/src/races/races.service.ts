@@ -1,9 +1,14 @@
 import { Injectable, Inject, NotFoundException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
 import dayjs from 'dayjs';
+import { PredictionStatus, RaceStatus } from '../database/db-enums';
+import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { Prediction } from '../database/entities/prediction.entity';
 import {
   CreateRaceDto,
   UpdateRaceDto,
@@ -15,18 +20,27 @@ import {
   serializeRace,
   serializeRaces,
 } from '../common/serializers/kra.serializer';
-import {
-  RACE_INCLUDE_ENTRIES,
-  RACE_INCLUDE_ENTRIES_ACTIVE,
-  RACE_INCLUDE_FULL,
-} from '../common/prisma-includes';
 import { toKraMeetForDb } from '@oddscast/shared';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
+
+type RaceRow = Record<string, unknown> & {
+  id: number;
+  rcDate: string;
+  meet: string;
+  rcNo: string;
+  meetName?: string | null;
+  status?: string | null;
+  stTime?: string | null;
+};
+type EntryRow = Record<string, unknown> & { raceId: number };
 
 @Injectable()
 export class RacesService {
   constructor(
-    private prisma: PrismaService,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
 
@@ -66,51 +80,79 @@ export class RacesService {
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
     const { q, date, dateFrom, dateTo, meet, status } = filters;
-    const where: Prisma.RaceWhereInput = {};
-    if (date) {
-      where.rcDate = date.replace(/-/g, '').slice(0, 8);
-    } else if (dateFrom && dateTo) {
-      const from = dateFrom.replace(/-/g, '').slice(0, 8);
-      const to = dateTo.replace(/-/g, '').slice(0, 8);
-      where.rcDate = { gte: from, lte: to };
-    }
-    if (meet) where.meet = toKraMeetName(meet);
-    if (status) where.status = status as Prisma.EnumRaceStatusFilter;
-    if (q && q.trim()) {
-      const term = q.trim();
-      where.OR = [
-        { rcName: { contains: term, mode: 'insensitive' } },
-        { meet: { contains: term, mode: 'insensitive' } },
-        { rcNo: { contains: term, mode: 'insensitive' } },
-      ];
-    }
-
     const maxFetch = 5000;
-    const [allRaces, total] = await Promise.all([
-      this.prisma.race.findMany({
-        where,
-        include: RACE_INCLUDE_ENTRIES,
-        take: maxFetch,
-        orderBy: { rcDate: 'desc' },
-      }),
-      this.prisma.race.count({ where }),
-    ]);
 
-    const sorted = sortRacesByNumericRcNo(allRaces, {
-      getRcDate: (r) => r.rcDate ?? '',
-      getMeet: (r) => r.meet ?? '',
-      getRcNo: (r) => r.rcNo ?? '',
+    const qb = this.raceRepo
+      .createQueryBuilder('r')
+      .orderBy('r.rcDate', 'DESC')
+      .take(maxFetch);
+
+    if (date) {
+      qb.andWhere('r.rcDate = :date', {
+        date: date.replace(/-/g, '').slice(0, 8),
+      });
+    } else if (dateFrom && dateTo) {
+      qb.andWhere('r.rcDate >= :from', {
+        from: dateFrom.replace(/-/g, '').slice(0, 8),
+      });
+      qb.andWhere('r.rcDate <= :to', {
+        to: dateTo.replace(/-/g, '').slice(0, 8),
+      });
+    }
+    if (meet) {
+      qb.andWhere('r.meet = :meet', { meet: toKraMeetName(meet) });
+    }
+    if (status) {
+      qb.andWhere('r.status = :status', { status });
+    }
+    if (q?.trim()) {
+      const term = `%${q.trim()}%`;
+      qb.andWhere(
+        '(r.rcName ILIKE :term OR r.meet ILIKE :term OR r.rcNo ILIKE :term)',
+        { term },
+      );
+    }
+
+    const [allRaces, total] = await qb.getManyAndCount();
+    const raceIds = allRaces.map((r) => r.id);
+    const entriesByRace = await this._loadEntriesForRaces(raceIds);
+    const merged = allRaces.map((r) => ({
+      ...r,
+      entries: entriesByRace.get(r.id) ?? [],
+    }));
+
+    const sorted = sortRacesByNumericRcNo(merged, {
+      getRcDate: (r) => (r as RaceRow).rcDate ?? '',
+      getMeet: (r) => (r as RaceRow).meet ?? '',
+      getRcNo: (r) => (r as RaceRow).rcNo ?? '',
       rcDateOrder: 'desc',
     });
     const start = (page - 1) * limit;
     const races = sorted.slice(start, start + limit);
 
     return {
-      races: serializeRaces(races),
+      races: serializeRaces(races as RaceRow[]),
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
+  }
+
+  private async _loadEntriesForRaces(
+    raceIds: number[],
+  ): Promise<Map<number, EntryRow[]>> {
+    if (raceIds.length === 0) return new Map();
+    const entries = await this.entryRepo.find({
+      where: { raceId: In(raceIds) },
+      order: { raceId: 'ASC', id: 'ASC' },
+    });
+    const map = new Map<number, EntryRow[]>();
+    for (const e of entries) {
+      const id = e.raceId;
+      if (!map.has(id)) map.set(id, []);
+      map.get(id)!.push(e as unknown as EntryRow);
+    }
+    return map;
   }
 
   async findOne(id: number) {
@@ -139,38 +181,82 @@ export class RacesService {
     return serialized ?? race;
   }
 
-  private async _findOneRaw(id: number) {
-    return this.prisma.race.findUnique({
-      where: { id },
-      include: RACE_INCLUDE_FULL,
+  private async _findOneRaw(
+    id: number,
+  ): Promise<(RaceRow & { entries: EntryRow[]; results?: unknown[] }) | null> {
+    const race = await this.raceRepo.findOne({ where: { id } });
+    if (!race) return null;
+    const entries = await this.entryRepo.find({
+      where: { raceId: id },
+      order: { id: 'ASC' },
     });
+    const results = await this.resultRepo.find({
+      where: { raceId: id },
+      order: { ordInt: 'ASC', ord: 'ASC' },
+    });
+    return {
+      ...race,
+      entries: entries as unknown as EntryRow[],
+      results,
+    };
   }
 
   async create(dto: CreateRaceDto) {
-    const data = { ...dto, meet: toKraMeetForDb(dto.meet) ?? dto.meet };
-    const created = await this.prisma.race.create({
-      data,
-      include: RACE_INCLUDE_ENTRIES,
+    const meet = toKraMeetForDb(dto.meet) ?? dto.meet;
+    const race = this.raceRepo.create({
+      rcName: dto.rcName ?? null,
+      meet,
+      meetName: dto.meetName ?? null,
+      rcDate: dto.rcDate,
+      rcDay: dto.rcDay ?? null,
+      rcNo: dto.rcNo,
+      stTime: dto.stTime ?? null,
+      rcDist: dto.rcDist ?? null,
+      rank: dto.rank ?? null,
+      rcCondition: dto.rcCondition ?? null,
+      rcPrize: dto.rcPrize ?? null,
+      weather: dto.weather ?? null,
+      track: dto.track ?? null,
+      status: (dto.status as RaceStatus) ?? RaceStatus.SCHEDULED,
     });
-    return serializeRace(created) ?? created;
+    const created = await this.raceRepo.save(race);
+    return serializeRace({ ...created, entries: [] }) ?? created;
   }
 
   async update(id: number, dto: UpdateRaceDto) {
-    const data =
-      dto.meet != null
-        ? { ...dto, meet: toKraMeetForDb(dto.meet) ?? dto.meet }
-        : dto;
-    const race = await this.prisma.race.update({
-      where: { id },
-      data,
-      include: RACE_INCLUDE_ENTRIES,
-    });
+    const race = await this.raceRepo.findOne({ where: { id } });
+    if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
+
+    const meet =
+      dto.meet != null ? (toKraMeetForDb(dto.meet) ?? dto.meet) : undefined;
+    if (dto.rcName !== undefined) race.rcName = dto.rcName;
+    if (meet !== undefined) race.meet = meet;
+    if (dto.meetName !== undefined) race.meetName = dto.meetName;
+    if (dto.rcDate !== undefined) race.rcDate = dto.rcDate;
+    if (dto.rcDay !== undefined) race.rcDay = dto.rcDay;
+    if (dto.rcNo !== undefined) race.rcNo = dto.rcNo;
+    if (dto.stTime !== undefined) race.stTime = dto.stTime;
+    if (dto.rcDist !== undefined) race.rcDist = dto.rcDist;
+    if (dto.rank !== undefined) race.rank = dto.rank;
+    if (dto.rcCondition !== undefined) race.rcCondition = dto.rcCondition;
+    if (dto.rcPrize !== undefined) race.rcPrize = dto.rcPrize;
+    if (dto.weather !== undefined) race.weather = dto.weather;
+    if (dto.track !== undefined) race.track = dto.track;
+    if (dto.status !== undefined) race.status = dto.status as RaceStatus;
+
+    await this.raceRepo.save(race);
     await this.cache.del(`race:${id}`);
-    return serializeRace(race) ?? race;
+    const entries = await this.entryRepo.find({
+      where: { raceId: id },
+      order: { id: 'ASC' },
+    });
+    return (
+      serializeRace({ ...race, entries }) ?? { ...race, entries }
+    );
   }
 
   async remove(id: number) {
-    await this.prisma.race.delete({ where: { id } });
+    await this.raceRepo.delete(id);
     await this.cache.del(`race:${id}`);
     return { message: '경주가 삭제되었습니다' };
   }
@@ -180,32 +266,40 @@ export class RacesService {
     dateTo?: string;
     meet?: string;
   }) {
-    const where: Prisma.RaceWhereInput = {};
-    if (filters.dateFrom && filters.dateTo) {
-      const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
-      const to = filters.dateTo.replace(/-/g, '').slice(0, 8);
-      where.rcDate = { gte: from, lte: to };
-    }
-    if (filters.meet) where.meet = toKraMeetName(filters.meet);
+    const qb = this.raceRepo
+      .createQueryBuilder('r')
+      .orderBy('r.rcDate', 'ASC');
 
-    const races = await this.prisma.race.findMany({
-      where,
-      include: RACE_INCLUDE_ENTRIES,
-      orderBy: { rcDate: 'asc' },
-    });
-    const sorted = sortRacesByNumericRcNo(races, {
-      getRcDate: (r) => r.rcDate ?? '',
-      getMeet: (r) => r.meet ?? '',
-      getRcNo: (r) => r.rcNo ?? '',
+    if (filters.dateFrom && filters.dateTo) {
+      qb.andWhere('r.rcDate >= :from', {
+        from: filters.dateFrom.replace(/-/g, '').slice(0, 8),
+      });
+      qb.andWhere('r.rcDate <= :to', {
+        to: filters.dateTo.replace(/-/g, '').slice(0, 8),
+      });
+    }
+    if (filters.meet) {
+      qb.andWhere('r.meet = :meet', {
+        meet: toKraMeetName(filters.meet),
+      });
+    }
+
+    const allRaces = await qb.getMany();
+    const raceIds = allRaces.map((r) => r.id);
+    const entriesByRace = await this._loadEntriesForRaces(raceIds);
+    const merged = allRaces.map((r) => ({
+      ...r,
+      entries: entriesByRace.get(r.id) ?? [],
+    }));
+    const sorted = sortRacesByNumericRcNo(merged, {
+      getRcDate: (r) => (r as RaceRow).rcDate ?? '',
+      getMeet: (r) => (r as RaceRow).meet ?? '',
+      getRcNo: (r) => (r as RaceRow).rcNo ?? '',
       rcDateOrder: 'asc',
     });
-    return serializeRaces(sorted);
+    return serializeRaces(sorted as RaceRow[]);
   }
 
-  /**
-   * 경마 시행일 목록 — 날짜별 경주 유무 및 경마장별 경주 수
-   * KRA 동기화된 DB 기준 (금·토·일 시행일)
-   */
   async getScheduleDates(filters: {
     dateFrom?: string;
     dateTo?: string;
@@ -213,21 +307,30 @@ export class RacesService {
   }): Promise<
     { date: string; meetCounts: Record<string, number>; totalRaces: number }[]
   > {
-    const where: Prisma.RaceWhereInput = {};
+    const qb = this.raceRepo
+      .createQueryBuilder('r')
+      .select('r.rcDate', 'rcDate')
+      .addSelect('r.meet', 'meet')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('r.rcDate')
+      .addGroupBy('r.meet')
+      .orderBy('r.rcDate', 'ASC');
+
     if (filters.dateFrom && filters.dateTo) {
-      const from = filters.dateFrom.replace(/-/g, '').slice(0, 8);
-      const to = filters.dateTo.replace(/-/g, '').slice(0, 8);
-      where.rcDate = { gte: from, lte: to };
+      qb.andWhere('r.rcDate >= :from', {
+        from: filters.dateFrom.replace(/-/g, '').slice(0, 8),
+      });
+      qb.andWhere('r.rcDate <= :to', {
+        to: filters.dateTo.replace(/-/g, '').slice(0, 8),
+      });
     }
-    if (filters.meet) where.meet = toKraMeetName(filters.meet);
+    if (filters.meet) {
+      qb.andWhere('r.meet = :meet', {
+        meet: toKraMeetName(filters.meet),
+      });
+    }
 
-    const rows = await this.prisma.race.groupBy({
-      by: ['rcDate', 'meet'],
-      where,
-      _count: { id: true },
-      orderBy: { rcDate: 'asc' },
-    });
-
+    const rows = await qb.getRawMany<{ rcDate: string; meet: string; count: string }>();
     const byDate = new Map<string, Record<string, number>>();
     for (const r of rows) {
       const meetName =
@@ -240,7 +343,7 @@ export class RacesService {
               : r.meet;
       if (!byDate.has(r.rcDate)) byDate.set(r.rcDate, {});
       const counts = byDate.get(r.rcDate)!;
-      counts[meetName] = (counts[meetName] ?? 0) + r._count.id;
+      counts[meetName] = (counts[meetName] ?? 0) + parseInt(r.count, 10);
     }
 
     return Array.from(byDate.entries())
@@ -257,81 +360,61 @@ export class RacesService {
     return this.getRacesByDate(today);
   }
 
-  /**
-   * 날짜별 경기 목록 조회 (YYYYMMDD 형식)
-   * 예: getRacesByDate('20250212') → 해당 날짜의 모든 경주
-   */
   async getRacesByDate(date: string) {
-    const rcDate = date.replace(/-/g, '').slice(0, 8); // YYYYMMDD 정규화
-    const races = await this.prisma.race.findMany({
+    const rcDate = date.replace(/-/g, '').slice(0, 8);
+    const races = await this.raceRepo.find({
       where: { rcDate },
-      include: RACE_INCLUDE_ENTRIES_ACTIVE,
+      order: { id: 'ASC' },
     });
-    const sorted = sortRacesByNumericRcNo(races, {
+    const raceIds = races.map((r) => r.id);
+    const entriesByRace = await this._loadEntriesForRaces(raceIds);
+    const merged = races.map((r) => ({
+      ...r,
+      entries: (entriesByRace.get(r.id) ?? []).filter(
+        (e) => !(e as Record<string, unknown>).isScratched,
+      ),
+    }));
+    const sorted = sortRacesByNumericRcNo(merged, {
       getRcDate: () => rcDate,
-      getMeet: (r) => r.meet ?? '',
-      getRcNo: (r) => r.rcNo ?? '',
+      getMeet: (r) => (r as RaceRow).meet ?? '',
+      getRcNo: (r) => (r as RaceRow).rcNo ?? '',
       rcDateOrder: 'asc',
     });
-    return serializeRaces(sorted);
+    return serializeRaces(sorted as RaceRow[]);
   }
 
-  /**
-   * Returns race results only when the race is completed (status COMPLETED or race date+time in the past).
-   * Uses rcDate + stTime so only races whose start time has passed are considered completed.
-   */
   async getRaceResult(raceId: number) {
-    const race = await this.prisma.race.findUnique({
+    const race = await this.raceRepo.findOne({
       where: { id: raceId },
-      select: { status: true, rcDate: true, stTime: true },
+      select: ['status', 'rcDate', 'stTime'],
     });
     if (!race) return [];
-    const status = race.status ?? null;
     const isPast = this.isPastRaceDateTime(race.rcDate, race.stTime);
-    if (status !== 'COMPLETED' && !isPast) return [];
+    if (race.status !== 'COMPLETED' && !isPast) return [];
 
-    const results = await this.prisma.raceResult.findMany({
+    const results = await this.resultRepo.find({
       where: { raceId },
-      select: {
-        id: true,
-        ord: true,
-        ordType: true,
-        chulNo: true,
-        hrNo: true,
-        hrName: true,
-        jkNo: true,
-        jkName: true,
-        trName: true,
-        wgBudam: true,
-        wgHr: true,
-        rcTime: true,
-        diffUnit: true,
-        winOdds: true,
-        plcOdds: true,
-      },
-      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
+      select: ['id', 'ord', 'ordType', 'chulNo', 'hrNo', 'hrName', 'jkNo', 'jkName', 'trName', 'wgBudam', 'wgHr', 'rcTime', 'diffUnit', 'winOdds', 'plcOdds'],
+      order: { ordInt: 'ASC', ord: 'ASC' },
     });
     return results;
   }
 
-  /**
-   * Returns race dividends derived from results (winOdds = 단승식, plcOdds = 연승식 per horse).
-   * Used for "승식별 배당률" display on race detail.
-   */
   async getDividends(raceId: number) {
-    const results = await this.prisma.raceResult.findMany({
+    type ResultRow = {
+      ord: string | null;
+      ordInt: number | null;
+      ordType: string | null;
+      chulNo: string | null;
+      hrNo: string | null;
+      winOdds: number | null;
+      plcOdds: number | null;
+    };
+    const results = await this.resultRepo.find({
       where: { raceId },
-      select: {
-        ord: true,
-        ordInt: true,
-        ordType: true,
-        chulNo: true,
-        hrNo: true,
-        winOdds: true,
-        plcOdds: true,
-      },
-      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
-    });
+      select: ['ord', 'ordInt', 'ordType', 'chulNo', 'hrNo', 'winOdds', 'plcOdds'],
+      order: { ordInt: 'ASC', ord: 'ASC' },
+    }) as unknown as ResultRow[];
     const list: {
       poolName: string;
       chulNo?: string;
@@ -357,55 +440,80 @@ export class RacesService {
   }
 
   async createEntry(raceId: number, dto: CreateRaceEntryDto) {
-    return this.prisma.raceEntry.create({ data: { ...dto, raceId } });
+    const entry = this.entryRepo.create({
+      raceId,
+      hrNo: dto.hrNo,
+      hrName: dto.hrName ?? '',
+      jkName: dto.jkName ?? '',
+      trName: dto.trName ?? null,
+      owNo: dto.owNo ?? null,
+      owName: dto.owName ?? null,
+      wgBudam: dto.wgBudam ?? null,
+    });
+    return this.entryRepo.save(entry);
   }
 
   async createBulkEntries(raceId: number, entries: CreateRaceEntryDto[]) {
-    const created = await this.prisma.raceEntry.createMany({
-      data: entries.map((e) => ({ ...e, raceId })),
-    });
-    return { count: created.count };
+    let count = 0;
+    for (const e of entries) {
+      const entry = this.entryRepo.create({
+        raceId,
+        hrNo: e.hrNo,
+        hrName: e.hrName ?? '',
+        jkName: e.jkName ?? '',
+        trName: e.trName ?? null,
+        owNo: e.owNo ?? null,
+        owName: e.owName ?? null,
+        wgBudam: e.wgBudam ?? null,
+      });
+      await this.entryRepo.save(entry);
+      count++;
+    }
+    return { count };
   }
 
   async getAnalysis(raceId: number) {
-    const prediction = await this.prisma.prediction.findFirst({
-      where: { raceId, status: 'COMPLETED' },
-      orderBy: { createdAt: 'desc' },
+    return this.predictionRepo.findOne({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
     });
-    return prediction || null;
   }
 
-  /**
-   * 경주 통계 (meet/date/month/year 기준 집계)
-   */
   async getStatistics(filters: {
     meet?: string;
     date?: string;
     month?: string;
     year?: string;
   }) {
-    const where: Prisma.RaceWhereInput = {};
-    if (filters.meet) where.meet = toKraMeetName(filters.meet);
-    if (filters.date) {
-      where.rcDate = filters.date.replace(/-/g, '').slice(0, 8);
-    } else if (filters.year && filters.month) {
-      const m = String(filters.month).padStart(2, '0');
-      const prefix = `${filters.year}${m}`;
-      where.rcDate = { gte: `${prefix}01`, lte: `${prefix}31` };
-    } else if (filters.year) {
-      where.rcDate = {
-        gte: `${filters.year}0101`,
-        lte: `${filters.year}1231`,
-      };
-    }
+    const baseQb = () => {
+      const q = this.raceRepo.createQueryBuilder('r');
+      if (filters.meet) {
+        q.andWhere('r.meet = :meet', {
+          meet: toKraMeetName(filters.meet),
+        });
+      }
+      if (filters.date) {
+        q.andWhere('r.rcDate = :date', {
+          date: filters.date.replace(/-/g, '').slice(0, 8),
+        });
+      } else if (filters.year && filters.month) {
+        const m = String(filters.month).padStart(2, '0');
+        q.andWhere('r.rcDate >= :from', { from: `${filters.year}${m}01` });
+        q.andWhere('r.rcDate <= :to', { to: `${filters.year}${m}31` });
+      } else if (filters.year) {
+        q.andWhere('r.rcDate >= :from', { from: `${filters.year}0101` });
+        q.andWhere('r.rcDate <= :to', { to: `${filters.year}1231` });
+      }
+      return q;
+    };
 
-    const [total, byStatus] = await Promise.all([
-      this.prisma.race.count({ where }),
-      this.prisma.race.groupBy({
-        by: ['status'],
-        where,
-        _count: { id: true },
-      }),
+    const [total, byStatusRows] = await Promise.all([
+      baseQb().getCount(),
+      baseQb()
+        .select('r.status', 'status')
+        .addSelect('COUNT(*)', 'count')
+        .groupBy('r.status')
+        .getRawMany<{ status: string; count: string }>(),
     ]);
 
     const statusCounts: Record<string, number> = {
@@ -414,8 +522,8 @@ export class RacesService {
       COMPLETED: 0,
       CANCELLED: 0,
     };
-    for (const g of byStatus) {
-      statusCounts[g.status] = g._count.id;
+    for (const g of byStatusRows) {
+      statusCounts[g.status] = parseInt(g.count, 10);
     }
 
     return {

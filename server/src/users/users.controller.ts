@@ -19,7 +19,7 @@ import {
 import { UpdateUserDto } from './dto/user.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../database/db-enums';
 
 @ApiTags('Users')
 @ApiBearerAuth()

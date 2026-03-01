@@ -1,14 +1,25 @@
 import { Module } from '@nestjs/common';
-import { AuthService } from './auth.service';
-import { AuthController } from './auth.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
-import { JwtStrategy } from './strategies/jwt.strategy';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { User } from '../database/entities/user.entity';
+import { AdminUser } from '../database/entities/admin-user.entity';
+import { PasswordResetToken } from '../database/entities/password-reset-token.entity';
+import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt.strategy';
 import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
 
 @Module({
   imports: [
+    TypeOrmModule.forFeature([
+      User,
+      AdminUser,
+      PasswordResetToken,
+      EmailVerificationToken,
+    ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     PredictionTicketsModule,
     JwtModule.registerAsync({

@@ -8,7 +8,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { BetType, BetStatus, BetResult } from '@prisma/client';
+import { BetType, BetStatus, BetResult } from '../../database/db-enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class SelectionsDto {

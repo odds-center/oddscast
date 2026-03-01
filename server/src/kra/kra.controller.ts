@@ -6,13 +6,15 @@ import {
   UseGuards,
   Logger,
 } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
 import { KraService } from './kra.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { PrismaService } from '../prisma/prisma.service';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '@prisma/client';
+import { UserRole } from '../database/db-enums';
 
 @ApiTags('KRA Integration')
 @Controller('kra')
@@ -23,7 +25,7 @@ export class KraController {
 
   constructor(
     private readonly kraService: KraService,
-    private readonly prisma: PrismaService,
+    @InjectRepository(KraSyncLog) private readonly kraSyncLogRepo: Repository<KraSyncLog>,
   ) {}
 
   @Get('sync-logs')
@@ -35,14 +37,17 @@ export class KraController {
     @Query('limit') limit?: number,
   ) {
     const take = Math.min(Number(limit) || 50, 100);
-    const logs = await this.prisma.kraSyncLog.findMany({
-      where: {
-        ...(endpoint && { endpoint }),
-        ...(rcDate && { rcDate }),
-      },
-      orderBy: { createdAt: 'desc' },
-      take,
-    });
+    const qb = this.kraSyncLogRepo
+      .createQueryBuilder('k')
+      .orderBy('k.createdAt', 'DESC')
+      .take(take);
+    if (endpoint != null && endpoint !== '') {
+      qb.andWhere('k.endpoint = :endpoint', { endpoint });
+    }
+    if (rcDate != null && rcDate !== '') {
+      qb.andWhere('k.rcDate = :rcDate', { rcDate });
+    }
+    const logs = await qb.getMany();
     return { logs, total: logs.length };
   }
 

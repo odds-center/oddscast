@@ -7,7 +7,7 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { PickType } from '@prisma/client';
+import { PickType } from '../../database/db-enums';
 
 export const PICK_TYPE_HORSE_COUNTS: Record<PickType, number> = {
   SINGLE: 1,

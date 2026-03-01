@@ -24,7 +24,7 @@ import {
   BetFilterDto,
   CreateBetSlipDto,
 } from './dto/bet.dto';
-import { BetResult } from '@prisma/client';
+import { BetResult } from '../database/db-enums';
 
 @ApiTags('Bets')
 @ApiBearerAuth()

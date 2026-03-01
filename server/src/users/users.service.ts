@@ -1,11 +1,21 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma, UserRole } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserRole } from '../database/db-enums';
+import { User } from '../database/entities/user.entity';
+import { Favorite } from '../database/entities/favorite.entity';
+import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
+import { TicketStatus } from '../database/db-enums';
 import { UpdateUserDto } from './dto/user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Favorite) private readonly favoriteRepo: Repository<Favorite>,
+    @InjectRepository(PredictionTicket)
+    private readonly ticketRepo: Repository<PredictionTicket>,
+  ) {}
 
   async findAll(filters: {
     page?: number;
@@ -14,117 +24,148 @@ export class UsersService {
     search?: string;
   }) {
     const { page = 1, limit = 20, role, search } = filters;
-    const where: Prisma.UserWhereInput = {};
-    if (role) where.role = role as UserRole;
+    const skip = (page - 1) * limit;
+
+    const qb = this.userRepo
+      .createQueryBuilder('u')
+      .select([
+        'u.id',
+        'u.email',
+        'u.name',
+        'u.nickname',
+        'u.avatar',
+        'u.role',
+        'u.isActive',
+        'u.createdAt',
+      ])
+      .orderBy('u.createdAt', 'DESC')
+      .skip(skip)
+      .take(limit);
+
+    if (role) {
+      qb.andWhere('u.role = :role', { role: role as UserRole });
+    }
     if (search) {
-      where.OR = [
-        { email: { contains: search, mode: 'insensitive' } },
-        { name: { contains: search, mode: 'insensitive' } },
-        { nickname: { contains: search, mode: 'insensitive' } },
-      ];
+      const term = `%${search}%`;
+      qb.andWhere(
+        '(u.email ILIKE :term OR u.name ILIKE :term OR u.nickname ILIKE :term)',
+        { term },
+      );
     }
 
-    const [usersRaw, total] = await Promise.all([
-      this.prisma.user.findMany({
-        where,
-        select: {
-          id: true,
-          email: true,
-          name: true,
-          nickname: true,
-          avatar: true,
-          role: true,
-          isActive: true,
-          createdAt: true,
-          _count: { select: { predictionTickets: true } },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.user.count({ where }),
-    ]);
-
-    const now = new Date();
+    const [usersRaw, total] = await qb.getManyAndCount();
     const userIds = usersRaw.map((u) => u.id);
-    const availableCounts =
-      userIds.length > 0
-        ? await this.prisma.predictionTicket.groupBy({
-            by: ['userId'],
-            where: {
-              userId: { in: userIds },
-              status: 'AVAILABLE',
-              expiresAt: { gte: now },
-            },
-            _count: true,
-          })
-        : [];
-    const availMap = new Map(availableCounts.map((c) => [c.userId, c._count]));
 
-    const users = usersRaw.map(({ _count, ...u }) => ({
-      ...u,
+    let availMap = new Map<number, number>();
+    let totalMap = new Map<number, number>();
+    if (userIds.length > 0) {
+      const now = new Date();
+      const totalRows = await this.ticketRepo
+        .createQueryBuilder('pt')
+        .select('pt.userId', 'userId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('pt.userId IN (:...ids)', { ids: userIds })
+        .groupBy('pt.userId')
+        .getRawMany<{ userId: number; cnt: string }>();
+      totalRows.forEach((r) => totalMap.set(r.userId, parseInt(r.cnt, 10)));
+
+      const availRows = await this.ticketRepo
+        .createQueryBuilder('pt')
+        .select('pt.userId', 'userId')
+        .addSelect('COUNT(*)', 'cnt')
+        .where('pt.userId IN (:...ids)', { ids: userIds })
+        .andWhere('pt.status = :status', { status: TicketStatus.AVAILABLE })
+        .andWhere('pt.expiresAt >= :now', { now })
+        .groupBy('pt.userId')
+        .getRawMany<{ userId: number; cnt: string }>();
+      availRows.forEach((r) => availMap.set(r.userId, parseInt(r.cnt, 10)));
+    }
+
+    const users = usersRaw.map((u) => ({
+      id: u.id,
+      email: u.email,
+      name: u.name,
+      nickname: u.nickname,
+      avatar: u.avatar,
+      role: u.role,
+      isActive: u.isActive,
+      createdAt: u.createdAt,
       availableTickets: availMap.get(u.id) ?? 0,
-      totalTickets: _count.predictionTickets,
+      totalTickets: totalMap.get(u.id) ?? 0,
     }));
 
-    return { users, total, page, totalPages: Math.ceil(total / limit) };
+    return {
+      users,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: number) {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepo.findOne({
       where: { id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        nickname: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-        lastLoginAt: true,
-      },
+      select: [
+        'id',
+        'email',
+        'name',
+        'nickname',
+        'avatar',
+        'role',
+        'isActive',
+        'createdAt',
+        'lastLoginAt',
+      ],
     });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
     return user;
   }
 
   async update(id: number, dto: UpdateUserDto) {
-    return this.prisma.user.update({
+    const user = await this.userRepo.findOne({ where: { id } });
+    if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
+
+    if (dto.name !== undefined) user.name = dto.name;
+    if (dto.nickname !== undefined) user.nickname = dto.nickname;
+    if (dto.avatar !== undefined) user.avatar = dto.avatar;
+    if (dto.isActive !== undefined) user.isActive = dto.isActive;
+
+    await this.userRepo.save(user);
+    return this.userRepo.findOne({
       where: { id },
-      data: dto,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        nickname: true,
-        avatar: true,
-        role: true,
-        isActive: true,
-      },
-    });
+      select: ['id', 'email', 'name', 'nickname', 'avatar', 'role', 'isActive'],
+    }) as Promise<{
+      id: number;
+      email: string;
+      name: string;
+      nickname: string | null;
+      avatar: string | null;
+      role: string;
+      isActive: boolean;
+    }>;
   }
 
   async remove(id: number) {
-    await this.prisma.user.update({ where: { id }, data: { isActive: false } });
+    await this.userRepo.update(id, {
+      isActive: false,
+      updatedAt: new Date(),
+    });
     return { message: '사용자가 비활성화되었습니다' };
   }
 
   async getStats(id: number) {
-    const [ticketCount, favCount] = await Promise.all([
-      this.prisma.predictionTicket.count({ where: { userId: id } }),
-      this.prisma.favorite.count({ where: { userId: id } }),
+    const [totalTickets, usedTickets, totalFavorites] = await Promise.all([
+      this.ticketRepo.count({ where: { userId: id } }),
+      this.ticketRepo.count({
+        where: { userId: id, status: TicketStatus.USED },
+      }),
+      this.favoriteRepo.count({ where: { userId: id } }),
     ]);
-
-    const usedTickets = await this.prisma.predictionTicket.count({
-      where: { userId: id, status: 'USED' },
-    });
-
     return {
-      totalTickets: ticketCount,
+      totalTickets,
       usedTickets,
-      availableTickets: ticketCount - usedTickets,
-      totalFavorites: favCount,
+      availableTickets: totalTickets - usedTickets,
+      totalFavorites,
     };
   }
 }

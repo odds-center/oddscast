@@ -1,10 +1,15 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Between, In, Not, Repository } from 'typeorm';
+import { Prediction } from '../database/entities/prediction.entity';
+import { PredictionStatus } from '../database/db-enums';
+import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
-import { Prisma } from '@prisma/client';
-import { RACE_INCLUDE_FOR_ANALYSIS } from '../common/prisma-includes';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import { meetToCode, toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
@@ -28,88 +33,125 @@ let lastWorkingGeminiModel: string | null = null;
 @Injectable()
 export class PredictionsService {
   constructor(
-    private prisma: PrismaService,
-    private analysisService: AnalysisService,
-    private configService: GlobalConfigService,
-    private notificationsService: NotificationsService,
+    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(TrainerResult) private readonly trainerResultRepo: Repository<TrainerResult>,
+    private readonly analysisService: AnalysisService,
+    private readonly configService: GlobalConfigService,
+    private readonly notificationsService: NotificationsService,
   ) {}
+
+  /** Load race by id with entries for analysis (replaces Prisma race findUnique + include). */
+  private async loadRaceWithEntries(raceId: number): Promise<RaceForPython | null> {
+    const race = await this.raceRepo.findOne({ where: { id: raceId } });
+    if (!race) return null;
+    const entries = await this.entryRepo.find({
+      where: { raceId },
+      order: { id: 'ASC' },
+    });
+    return { ...race, entries } as unknown as RaceForPython;
+  }
 
   async findAll(filters: PredictionFilterDto) {
     const { page = 1, limit = 20, status } = filters;
-    const where: Prisma.PredictionWhereInput = {};
-    if (status) where.status = status as Prisma.EnumPredictionStatusFilter;
-
-    const [predictions, total] = await Promise.all([
-      this.prisma.prediction.findMany({
-        where,
-        include: { race: true },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.prediction.count({ where }),
-    ]);
-
+    const qb = this.predictionRepo
+      .createQueryBuilder('p')
+      .innerJoinAndSelect('p.race', 'r')
+      .orderBy('p.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+    if (status) {
+      qb.andWhere('p.status = :status', { status });
+    }
+    const [items, total] = await qb.getManyAndCount();
+    const predictions = items.map((p) => ({
+      ...p,
+      race: p.race
+        ? {
+            id: p.race.id,
+            rcDate: p.race.rcDate,
+            meet: p.race.meet,
+            meetName: p.race.meetName,
+            rcNo: p.race.rcNo,
+            rcName: p.race.rcName,
+            status: p.race.status,
+            rcDist: p.race.rcDist,
+            rank: p.race.rank,
+            weather: p.race.weather,
+            track: p.race.track,
+            stTime: p.race.stTime,
+            rcCondition: p.race.rcCondition,
+            rcPrize: p.race.rcPrize,
+            createdAt: p.race.createdAt,
+            updatedAt: p.race.updatedAt,
+          }
+        : undefined,
+    }));
     return { predictions, total, page, totalPages: Math.ceil(total / limit) };
   }
 
   async findOne(id: number) {
-    const prediction = await this.prisma.prediction.findUnique({
+    const prediction = await this.predictionRepo.findOne({
       where: { id },
-      include: { race: { include: { entries: true } } },
+      relations: ['race'],
     });
     if (!prediction) throw new NotFoundException('예측을 찾을 수 없습니다');
-    return prediction;
+    const entries = await this.entryRepo.find({
+      where: { raceId: prediction.raceId },
+      order: { id: 'ASC' },
+    });
+    const race = prediction.race
+      ? { ...prediction.race, entries }
+      : { entries };
+    return { ...prediction, race };
   }
 
   async create(dto: CreatePredictionDto) {
-    return this.prisma.prediction.create({
-      data: {
-        raceId: dto.raceId,
-        scores: dto.scores as Prisma.InputJsonValue | undefined,
-        analysis: dto.analysis,
-        preview: dto.preview,
-      },
-      include: { race: true },
+    const prediction = this.predictionRepo.create({
+      raceId: dto.raceId,
+      scores: dto.scores ?? null,
+      analysis: dto.analysis ?? null,
+      preview: dto.preview ?? null,
     });
+    const row = await this.predictionRepo.save(prediction);
+    const race = await this.raceRepo.findOne({ where: { id: row.raceId } });
+    return { ...row, race: race ?? undefined };
   }
 
   async updateStatus(id: number, dto: UpdatePredictionStatusDto) {
-    return this.prisma.prediction.update({
-      where: { id },
-      data: {
-        status:
-          dto.status as Prisma.EnumPredictionStatusFieldUpdateOperationsInput['set'],
-        scores: dto.scores as Prisma.InputJsonValue | undefined,
-        analysis: dto.analysis,
-        accuracy: dto.accuracy,
-        previewApproved: dto.previewApproved,
-      },
-    });
+    const prediction = await this.predictionRepo.findOne({ where: { id } });
+    if (!prediction) return null;
+    if (dto.status !== undefined) prediction.status = dto.status as PredictionStatus;
+    if (dto.scores !== undefined) prediction.scores = dto.scores;
+    if (dto.analysis !== undefined) prediction.analysis = dto.analysis;
+    if (dto.accuracy !== undefined) prediction.accuracy = dto.accuracy;
+    if (dto.previewApproved !== undefined) prediction.previewApproved = dto.previewApproved;
+    await this.predictionRepo.save(prediction);
+    return prediction;
   }
 
   async getDashboard() {
-    const [total, completed, pending] = await Promise.all([
-      this.prisma.prediction.count(),
-      this.prisma.prediction.count({ where: { status: 'COMPLETED' } }),
-      this.prisma.prediction.count({ where: { status: 'PENDING' } }),
+    const [total, completed, pending, avgRow] = await Promise.all([
+      this.predictionRepo.count(),
+      this.predictionRepo.count({ where: { status: PredictionStatus.COMPLETED } }),
+      this.predictionRepo.count({ where: { status: PredictionStatus.PENDING } }),
+      this.predictionRepo
+        .createQueryBuilder('p')
+        .select('AVG(p.accuracy)', 'avg')
+        .where('p.status = :status', { status: PredictionStatus.COMPLETED })
+        .andWhere('p.accuracy IS NOT NULL')
+        .getRawOne<{ avg: string | null }>(),
     ]);
-    const avgAccuracy = await this.prisma.prediction.aggregate({
-      _avg: { accuracy: true },
-      where: { status: 'COMPLETED', accuracy: { not: null } },
-    });
-    return {
-      total,
-      completed,
-      pending,
-      averageAccuracy: avgAccuracy._avg.accuracy || 0,
-    };
+    const averageAccuracy = avgRow?.avg != null ? parseFloat(avgRow.avg) : 0;
+    return { total, completed, pending, averageAccuracy };
   }
 
   async getAnalyticsDashboard() {
-    const completed = await this.prisma.prediction.findMany({
-      where: { status: 'COMPLETED', accuracy: { not: null } },
-      select: { id: true, accuracy: true, scores: true },
+    const completed = await this.predictionRepo.find({
+      where: { status: PredictionStatus.COMPLETED },
+      select: ['id', 'accuracy', 'scores'],
     });
     const totalPredictions = completed.length;
     const correctPredictions = completed.filter(
@@ -177,18 +219,18 @@ export class PredictionsService {
       start.setHours(0, 0, 0, 0);
       const end = new Date(d);
       end.setHours(23, 59, 59, 999);
-      const dayPreds = await this.prisma.prediction.findMany({
-        where: {
-          status: 'COMPLETED',
-          accuracy: { not: null },
-          createdAt: { gte: start, lte: end },
-        },
-        select: { accuracy: true },
+      const dayPreds = await this.predictionRepo.find({
+        where: { status: PredictionStatus.COMPLETED },
+        select: ['accuracy', 'createdAt'],
+        order: { createdAt: 'ASC' },
       });
-      const count = dayPreds.length;
+      const dayPredsFiltered = dayPreds.filter(
+        (p) => p.createdAt >= start && p.createdAt <= end && p.accuracy != null,
+      );
+      const count = dayPredsFiltered.length;
       const accuracy =
         count > 0
-          ? dayPreds.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count
+          ? dayPredsFiltered.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count
           : 0;
       results.push({
         date: d.toISOString().slice(0, 10),
@@ -204,18 +246,19 @@ export class PredictionsService {
   }
 
   async getAnalyticsFailures(opts: { startDate?: string; endDate?: string }) {
-    const where: Prisma.PredictionWhereInput = { status: 'COMPLETED' };
+    const qb = this.predictionRepo
+      .createQueryBuilder('p')
+      .select(['p.id', 'p.raceId', 'p.accuracy'])
+      .where("p.status = 'COMPLETED'")
+      .andWhere('(p.accuracy = 0 OR p.accuracy IS NULL)')
+      .take(50);
     if (opts.startDate && opts.endDate) {
-      where.createdAt = {
-        gte: new Date(opts.startDate),
-        lte: new Date(opts.endDate),
-      };
+      qb.andWhere('p.createdAt BETWEEN :start AND :end', {
+        start: new Date(opts.startDate),
+        end: new Date(opts.endDate),
+      });
     }
-    const failed = await this.prisma.prediction.findMany({
-      where: { ...where, OR: [{ accuracy: 0 }, { accuracy: null }] },
-      select: { id: true, raceId: true, accuracy: true },
-      take: 50,
-    });
+    const failed = await qb.getMany();
     return {
       totalFailures: failed.length,
       byReason: [
@@ -228,12 +271,13 @@ export class PredictionsService {
 
   async getAccuracyHistory(filters: AccuracyHistoryFilterDto) {
     const { limit = 30 } = filters;
-    return this.prisma.prediction.findMany({
-      where: { status: 'COMPLETED', accuracy: { not: null } },
-      select: { id: true, raceId: true, accuracy: true, createdAt: true },
-      orderBy: { createdAt: 'desc' },
+    const rows = await this.predictionRepo.find({
+      where: { status: PredictionStatus.COMPLETED },
+      select: ['id', 'raceId', 'accuracy', 'createdAt'],
+      order: { createdAt: 'DESC' },
       take: limit,
     });
+    return rows.filter((p) => p.accuracy != null);
   }
 
   /**
@@ -244,25 +288,24 @@ export class PredictionsService {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return;
 
-    const prediction = await this.prisma.prediction.findFirst({
-      where: { raceId, status: 'COMPLETED' },
-      orderBy: { createdAt: 'desc' },
-      include: { race: { select: { meet: true, rcDate: true, rcNo: true } } },
+    const pred = await this.predictionRepo.findOne({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      relations: ['race'],
+      order: { createdAt: 'DESC' },
     });
+    if (!pred?.race) return;
+    const prediction = {
+      ...pred,
+      race: { meet: pred.race.meet, rcDate: pred.race.rcDate, rcNo: pred.race.rcNo },
+    };
     if (!prediction?.race) return;
     const scoresObj = prediction.scores as { horseScores?: unknown[] } | null;
     if (!scoresObj?.horseScores?.length) return;
 
-    const results = await this.prisma.raceResult.findMany({
+    const results = await this.resultRepo.find({
       where: { raceId },
-      orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }],
-      select: {
-        ord: true,
-        ordType: true,
-        hrName: true,
-        hrNo: true,
-        rcTime: true,
-      },
+      select: ['ord', 'ordType', 'hrName', 'hrNo', 'rcTime'],
+      order: { ordInt: 'ASC', ord: 'ASC' },
     });
     const topResults = results
       .filter((r) => isEligibleForAccuracy(r.ordType))
@@ -283,7 +326,9 @@ export class PredictionsService {
       .join(', ');
 
     const acc =
-      prediction.accuracy != null ? Math.round(prediction.accuracy) : 0;
+      (prediction as { accuracy?: number | null }).accuracy != null
+        ? Math.round((prediction as { accuracy: number }).accuracy)
+        : 0;
     const { meet, rcDate, rcNo } = prediction.race;
 
     const prompt = `다음 경주 결과와 AI 예측을 바탕으로 2~3문장의 경주 후 분석 요약을 한국어로 작성해 주세요. 감탄사나 과장 없이 사실 위주로.
@@ -305,9 +350,9 @@ AI 예측 순위: ${predictedTop || '-'}
       const result = await model.generateContent(prompt);
       const text = result.response?.text()?.trim();
       if (text) {
-        await this.prisma.prediction.update({
-          where: { id: prediction.id },
-          data: { postRaceSummary: text } as Prisma.PredictionUpdateInput,
+        await this.predictionRepo.update(pred.id, {
+          postRaceSummary: text,
+          updatedAt: new Date(),
         });
       }
     } catch (err) {
@@ -327,14 +372,16 @@ AI 예측 순위: ${predictedTop || '-'}
     byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
     byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
   }> {
-    const completed = await this.prisma.prediction.findMany({
-      where: { status: 'COMPLETED', accuracy: { not: null } },
-      select: {
-        accuracy: true,
-        createdAt: true,
-        race: { select: { meet: true } },
-      },
-    });
+    const completedRows = await this.predictionRepo
+      .createQueryBuilder('p')
+      .innerJoin('p.race', 'r')
+      .select('p.accuracy', 'accuracy')
+      .addSelect('p.createdAt', 'createdAt')
+      .addSelect('r.meet', 'meet')
+      .where("p.status = 'COMPLETED'")
+      .andWhere('p.accuracy IS NOT NULL')
+      .getRawMany<{ accuracy: number | null; createdAt: Date; meet: string }>();
+    const completed = completedRows.map((r) => ({ accuracy: r.accuracy, createdAt: r.createdAt, race: { meet: r.meet } }));
 
     const totalCount = completed.length;
     const hitCount = completed.filter((p) => (p.accuracy ?? 0) > 0).length;
@@ -395,36 +442,42 @@ AI 예측 순위: ${predictedTop || '-'}
    * UI 표시용: scores.horseScores, analysis, preview 반환
    */
   async getPreview(raceId: number) {
-    const prediction = await this.prisma.prediction.findFirst({
-      where: { raceId, previewApproved: true, status: 'COMPLETED' },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        preview: true,
-        analysis: true,
-        scores: true,
-        status: true,
-        createdAt: true,
-      },
+    const p = await this.predictionRepo.findOne({
+      where: { raceId, previewApproved: true, status: PredictionStatus.COMPLETED },
+      select: ['id', 'preview', 'analysis', 'scores', 'status', 'createdAt'],
+      order: { createdAt: 'DESC' },
     });
-    return prediction || null;
+    return p ?? null;
   }
 
   async getByRace(raceId: number) {
-    return this.prisma.prediction.findFirst({
-      where: { raceId, status: 'COMPLETED' },
-      include: { race: { include: { entries: true } } },
-      orderBy: { createdAt: 'desc' },
+    const prediction = await this.predictionRepo.findOne({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
     });
+    if (!prediction) return null;
+    const race = await this.raceRepo.findOne({ where: { id: raceId } });
+    const entries = await this.entryRepo.find({
+      where: { raceId },
+      order: { id: 'ASC' },
+    });
+    return { ...prediction, race: race ? { ...race, entries } : { entries } };
   }
 
   /** 경주별 예측 기록 목록 (다시 예측 시 이전 기록 유지) */
   async getByRaceHistory(raceId: number) {
-    return this.prisma.prediction.findMany({
-      where: { raceId, status: 'COMPLETED' },
-      include: { race: { include: { entries: true } } },
-      orderBy: { createdAt: 'desc' },
+    const predictions = await this.predictionRepo.find({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
     });
+    if (predictions.length === 0) return [];
+    const race = await this.raceRepo.findOne({ where: { id: raceId } });
+    const entries = await this.entryRepo.find({
+      where: { raceId },
+      order: { id: 'ASC' },
+    });
+    const raceWithEntries = race ? { ...race, entries } : { entries };
+    return predictions.map((p) => ({ ...p, race: raceWithEntries }));
   }
 
   /**
@@ -439,40 +492,30 @@ AI 예측 순위: ${predictedTop || '-'}
   }) {
     const page = Math.max(1, filters.page ?? 1);
     const limit = Math.min(100, Math.max(1, filters.limit ?? 20));
-    const where: Prisma.PredictionWhereInput = {};
-    if (filters.status)
-      where.status = filters.status as Prisma.EnumPredictionStatusFilter;
-    if (filters.raceId != null) where.raceId = filters.raceId;
-
-    const [predictions, total] = await Promise.all([
-      this.prisma.prediction.findMany({
-        where,
-        include: {
-          race: {
-            select: {
-              id: true,
-              rcDate: true,
-              rcNo: true,
-              meet: true,
-              meetName: true,
-              rcName: true,
-              status: true,
-            },
-          },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-      }),
-      this.prisma.prediction.count({ where }),
-    ]);
-
-    return {
-      predictions,
-      total,
-      page,
-      totalPages: Math.ceil(total / limit),
-    };
+    const qb = this.predictionRepo
+      .createQueryBuilder('p')
+      .innerJoinAndSelect('p.race', 'r')
+      .orderBy('p.createdAt', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit);
+    if (filters.status) qb.andWhere('p.status = :status', { status: filters.status });
+    if (filters.raceId != null) qb.andWhere('p.raceId = :raceId', { raceId: filters.raceId });
+    const [items, total] = await qb.getManyAndCount();
+    const predictions = items.map((p) => ({
+      ...p,
+      race: p.race
+        ? {
+            id: p.race.id,
+            rcDate: p.race.rcDate,
+            rcNo: p.race.rcNo,
+            meet: p.race.meet,
+            meetName: p.race.meetName,
+            rcName: p.race.rcName,
+            status: p.race.status,
+          }
+        : undefined,
+    }));
+    return { predictions, total, page, totalPages: Math.ceil(total / limit) };
   }
 
   /**
@@ -556,15 +599,16 @@ AI 예측 순위: ${predictedTop || '-'}
     const delayMs =
       options.delayBetweenRacesMs ?? PredictionsService.DELAY_BETWEEN_RACES_MS;
 
-    const rawRaces = await this.prisma.race.findMany({
+    const completedRaceIds = await this.predictionRepo
+      .find({ where: { status: PredictionStatus.COMPLETED }, select: ['raceId'] })
+      .then((rows) => [...new Set(rows.map((r) => r.raceId))]);
+    const rawRaces = await this.raceRepo.find({
       where: {
-        rcDate: { gte: dateFrom, lte: dateTo },
-        NOT: {
-          predictions: { some: { status: 'COMPLETED' } },
-        },
+        rcDate: Between(dateFrom, dateTo),
+        ...(completedRaceIds.length > 0 ? { id: Not(In(completedRaceIds)) } : {}),
       },
-      select: { id: true, rcDate: true, rcNo: true, meet: true },
-      orderBy: { rcDate: 'asc' },
+      select: ['id', 'rcDate', 'rcNo', 'meet'],
+      order: { rcDate: 'ASC' },
     });
     const races = sortRacesByNumericRcNo(rawRaces, {
       getRcDate: (r) => r.rcDate ?? '',
@@ -647,27 +691,39 @@ AI 예측 순위: ${predictedTop || '-'}
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
       : new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const where: Prisma.RaceWhereInput = { rcDate };
-    if (meet) where.meet = toKraMeetName(meet);
-
-    const rawRaces = await this.prisma.race.findMany({
-      where,
-      select: {
-        id: true,
-        meet: true,
-        meetName: true,
-        rcNo: true,
-        stTime: true,
-        rcDist: true,
-        rank: true,
-        entries: { select: { hrNo: true, hrName: true } },
-      },
-      orderBy: { meet: 'asc' },
+    const params: unknown[] = [rcDate];
+    let raceWhere = `r."rcDate" = $1`;
+    if (meet) {
+      params.push(toKraMeetName(meet));
+      raceWhere += ` AND r.meet = $${params.length}`;
+    }
+    const raceWhereOpts: { rcDate: string; meet?: string } = { rcDate };
+    if (meet) raceWhereOpts.meet = toKraMeetName(meet);
+    const rawRacesList = await this.raceRepo.find({
+      where: raceWhereOpts,
+      select: ['id', 'meet', 'meetName', 'rcNo', 'stTime', 'rcDist', 'rank'],
+      order: { meet: 'ASC' },
     });
+    const raceIds = rawRacesList.map((r) => r.id);
+    const entriesMap = new Map<number, Array<{ hrNo: string; hrName: string }>>();
+    if (raceIds.length > 0) {
+      const entriesList = await this.entryRepo.find({
+        where: { raceId: In(raceIds) },
+        select: ['raceId', 'hrNo', 'hrName'],
+      });
+      for (const e of entriesList) {
+        if (!entriesMap.has(e.raceId)) entriesMap.set(e.raceId, []);
+        entriesMap.get(e.raceId)!.push({ hrNo: e.hrNo, hrName: e.hrName });
+      }
+    }
+    const rawRaces = rawRacesList.map((r) => ({
+      ...r,
+      entries: entriesMap.get(r.id) ?? [],
+    }));
     const races = sortRacesByNumericRcNo(rawRaces, {
       getRcDate: () => rcDate,
-      getMeet: (r) => r.meet ?? '',
-      getRcNo: (r) => r.rcNo ?? '',
+      getMeet: (r) => (r as { meet?: string }).meet ?? '',
+      getRcNo: (r) => (r as { rcNo?: string }).rcNo ?? '',
       rcDateOrder: 'asc',
     });
 
@@ -688,16 +744,16 @@ AI 예측 순위: ${predictedTop || '-'}
     }> = [];
 
     for (const race of races) {
-      const pred = await this.prisma.prediction.findFirst({
-        where: { raceId: race.id, previewApproved: true, status: 'COMPLETED' },
-        orderBy: { createdAt: 'desc' },
-        select: { scores: true },
+      const pred = await this.predictionRepo.findOne({
+        where: { raceId: (race as unknown as { id: number }).id, previewApproved: true, status: PredictionStatus.COMPLETED },
+        select: ['scores'],
+        order: { createdAt: 'DESC' },
       });
       const scores =
         (
-          pred?.scores as {
+          (pred?.scores as {
             horseScores?: Array<{ hrNo?: string; hrName?: string }>;
-          }
+          } | null)
         )?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
@@ -722,11 +778,11 @@ AI 예측 순위: ${predictedTop || '-'}
       }
 
       rows.push({
-        raceId: String(race.id),
-        meet: race.meet ?? '',
-        meetName: race.meetName ?? undefined,
-        rcNo: race.rcNo ?? '',
-        stTime: race.stTime ?? undefined,
+        raceId: String((race as unknown as { id: number }).id),
+        meet: (race as { meet?: string }).meet ?? '',
+        meetName: (race as { meetName?: string }).meetName ?? undefined,
+        rcNo: (race as { rcNo?: string }).rcNo ?? '',
+        stTime: (race as { stTime?: string }).stTime ?? undefined,
         rcDist: (race as { rcDist?: string }).rcDist ?? undefined,
         rank: (race as { rank?: string }).rank ?? undefined,
         entryCount: entryList.length > 0 ? entryList.length : undefined,
@@ -757,21 +813,27 @@ AI 예측 순위: ${predictedTop || '-'}
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
       : new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const raceWhere: Prisma.RaceWhereInput = { rcDate };
-    if (meet) raceWhere.meet = toKraMeetName(meet);
-    const preds = await this.prisma.prediction.findMany({
+    const predsList = await this.predictionRepo.find({
       where: {
         previewApproved: true,
-        status: 'COMPLETED',
-        race: raceWhere,
+        status: PredictionStatus.COMPLETED,
+        race: { rcDate, ...(meet ? { meet: toKraMeetName(meet) } : {}) },
       },
-      include: {
-        race: { select: { id: true, meet: true, meetName: true, rcNo: true } },
-      },
-      orderBy: { createdAt: 'desc' },
+      relations: ['race'],
+      order: { createdAt: 'DESC' },
       skip: offset,
       take: limit,
     });
+    type CommentaryPred = { id: number; raceId: number; scores: unknown; preview: string | null; race: { id: number; meet: string; meetName?: string; rcNo: string } };
+    const preds: CommentaryPred[] = predsList.map((p) => ({
+      id: p.id,
+      raceId: p.raceId,
+      scores: p.scores,
+      preview: p.preview != null ? p.preview : null,
+      race: p.race
+        ? { id: p.race.id, meet: p.race.meet, meetName: p.race.meetName ?? undefined, rcNo: p.race.rcNo }
+        : { id: 0, meet: '', rcNo: '' },
+    }));
 
     const comments: Array<{
       id: string;
@@ -814,8 +876,12 @@ AI 예측 순위: ${predictedTop || '-'}
       });
     }
 
-    const total = await this.prisma.prediction.count({
-      where: { previewApproved: true, status: 'COMPLETED', race: raceWhere },
+    const total = await this.predictionRepo.count({
+      where: {
+        previewApproved: true,
+        status: PredictionStatus.COMPLETED,
+        race: { rcDate, ...(meet ? { meet: toKraMeetName(meet) } : {}) },
+      },
     });
     return { comments, total };
   }
@@ -824,18 +890,28 @@ AI 예측 순위: ${predictedTop || '-'}
    * 적중 내역 배너 (높은 정확도 예측)
    */
   async getHitRecords(limit = 5) {
-    const preds = await this.prisma.prediction.findMany({
-      where: { status: 'COMPLETED', accuracy: { not: null, gte: 33 } },
-      include: { race: { select: { rcDate: true, meet: true } } },
-      orderBy: { createdAt: 'desc' },
+    const predsList = await this.predictionRepo.find({
+      where: { status: PredictionStatus.COMPLETED },
+      relations: ['race'],
+      select: ['id', 'accuracy', 'createdAt'],
+      order: { createdAt: 'DESC' },
       take: Math.min(limit, 20),
     });
+    type HitPred = { id: number; accuracy: number | null; createdAt: Date; race: { rcDate?: string; meet?: string } };
+    const preds: HitPred[] = predsList
+      .filter((p) => p.accuracy != null && p.accuracy >= 33)
+      .map((p) => ({
+        id: p.id,
+        accuracy: p.accuracy,
+        createdAt: p.createdAt,
+        race: p.race ? { rcDate: p.race.rcDate, meet: p.race.meet } : {},
+      }));
 
     return preds.map((p) => {
       const d = p.race?.rcDate
         ? `${p.race.rcDate.slice(0, 4)}-${p.race.rcDate.slice(4, 6)}-${p.race.rcDate.slice(6, 8)}`
         : new Date(p.createdAt).toISOString().slice(0, 10);
-      const acc = Math.round(p.accuracy ?? 0);
+      const acc = Math.round((p.accuracy ?? 0) as number);
       return {
         id: `hit-${p.id}`,
         hitDate: d,
@@ -900,10 +976,7 @@ AI 예측 순위: ${predictedTop || '-'}
     const genAI = new GoogleGenerativeAI(apiKey);
 
     // 2. Fetch Race Data (출전마·기수·훈련 내역)
-    const race = await this.prisma.race.findUnique({
-      where: { id: raceId },
-      include: RACE_INCLUDE_FOR_ANALYSIS,
-    });
+    const race = await this.loadRaceWithEntries(raceId);
     if (!race) throw new NotFoundException('Race not found');
 
     // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
@@ -992,16 +1065,16 @@ AI 예측 순위: ${predictedTop || '-'}
         lastWorkingGeminiModel = modelName;
 
         // 새 예측 생성 (이전 예측 기록 유지 — update/delete 없음)
-        const created = await this.prisma.prediction.create({
-          data: {
+        const created = await this.predictionRepo.save(
+          this.predictionRepo.create({
             raceId,
-            scores: scoresToSave as Prisma.InputJsonValue,
+            scores: scoresToSave as Record<string, unknown>,
             analysis: predictionData?.analysis ?? '',
             preview: predictionData?.preview ?? '',
-            status: 'COMPLETED',
-            previewApproved: true, // 검수 통과 시 preview API 노출 (관리자가 미승인 시 false로 변경 가능)
-          },
-        });
+            status: PredictionStatus.COMPLETED,
+            previewApproved: true,
+          }),
+        );
 
         // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
         const horseScores =
@@ -1223,19 +1296,19 @@ AI 예측 순위: ${predictedTop || '-'}
     const beforeRcDate = race.rcDate ?? '';
     if (!beforeRcDate) return race;
 
-    const results = await this.prisma.raceResult.findMany({
-      where: {
-        hrNo: { in: hrNos },
-        race: { rcDate: { lt: beforeRcDate } },
-      },
-      select: {
-        hrNo: true,
-        ord: true,
-        ordInt: true,
-        race: { select: { rcDate: true } },
-      },
-      take: 500,
-    });
+    const resultsRows = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('rr.ord', 'ord')
+      .addSelect('rr.ordInt', 'ordInt')
+      .addSelect('r.rcDate', 'rcDate')
+      .where('rr.hrNo IN (:...hrNos)', { hrNos })
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .orderBy('r.rcDate', 'DESC')
+      .limit(500)
+      .getRawMany<{ hrNo: string; ord: string | null; ordInt: number | null; rcDate: string }>();
+    const results = resultsRows.map((r) => ({ ...r, race: { rcDate: r.rcDate } }));
 
     // rcDate 내림차순 정렬 후 hrNo별 최근 5경기 착순 (Prisma relation orderBy 비일관 대비)
     const sorted = [...results].sort((a, b) => {
@@ -1298,15 +1371,16 @@ AI 예측 순위: ${predictedTop || '-'}
     const beforeRcDate = race.rcDate ?? '';
     if (!beforeRcDate) return race;
 
-    const fallResults = await this.prisma.raceResult.findMany({
-      where: {
-        ordType: 'FALL',
-        race: { rcDate: { lt: beforeRcDate } },
-        OR: [{ hrNo: { in: hrNos } }, { jkNo: { in: jkNos } }],
-      },
-      select: { hrNo: true, jkNo: true },
-      take: 2000,
-    });
+    const fallResults = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('rr.jkNo', 'jkNo')
+      .where("rr.ordType = 'FALL'")
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .andWhere('(rr.hrNo IN (:...hrNos) OR rr.jkNo IN (:...jkNos))', { hrNos, jkNos })
+      .limit(2000)
+      .getRawMany<{ hrNo: string | null; jkNo: string | null }>();
 
     const byHorse = new Map<string, number>();
     const byJockey = new Map<string, number>();
@@ -1345,13 +1419,9 @@ AI 예측 순위: ${predictedTop || '-'}
     ];
     if (!trNos.length) return race;
 
-    const trainers = await this.prisma.trainerResult.findMany({
-      where: { meet: meetCode, trNo: { in: trNos } },
-      select: {
-        trNo: true,
-        winRateTsum: true,
-        quRateTsum: true,
-      },
+    const trainers = await this.trainerResultRepo.find({
+      where: { meet: meetCode, trNo: In(trNos) },
+      select: ['trNo', 'winRateTsum', 'quRateTsum'],
     });
     const byTrNo = new Map(
       trainers.map((t) => [
@@ -1445,18 +1515,20 @@ AI 예측 순위: ${predictedTop || '-'}
     const hrNosWithout = hrNos.filter((h) => !covered.has(h));
     if (hrNosWithout.length === 0) return out;
 
-    const results = await this.prisma.raceResult.findMany({
-      where: {
-        hrNo: { in: hrNosWithout },
-        sectionalTimes: { not: Prisma.JsonNull },
-        race: {
-          rcDate: { lt: race.rcDate ?? '' },
-          meet: race.meet ?? undefined,
-        },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
+    const rcDateLt = race.rcDate ?? '';
+    const meetVal = race.meet ?? undefined;
+    const rrQb = this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('rr.sectionalTimes', 'sectionalTimes')
+      .where('rr.hrNo IN (:...hrNosWithout)', { hrNosWithout })
+      .andWhere('rr.sectionalTimes IS NOT NULL')
+      .andWhere('r.rcDate < :rcDateLt', { rcDateLt })
+      .orderBy('rr.createdAt', 'DESC')
+      .limit(200);
+    if (meetVal) rrQb.andWhere('r.meet = :meetVal', { meetVal });
+    const results = await rrQb.getRawMany<{ hrNo: string; sectionalTimes: unknown }>();
     const byHorse: Record<
       string,
       { s1fSum: number; g1fSum: number; s1fN: number; g1fN: number }

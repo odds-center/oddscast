@@ -1,6 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import type { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { PgService } from '../database/pg.service';
 
 interface AdminLogParams {
   adminUserId?: number;
@@ -32,33 +31,33 @@ interface PaginationParams {
 export class ActivityLogsService {
   private readonly logger = new Logger(ActivityLogsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
-
-  // --- Admin Activity ---
+  constructor(private readonly db: PgService) {}
 
   private activityLogErrorMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('does not exist')) {
-      return 'Activity log table missing. Run: cd server && pnpm prisma db push';
+      return 'Activity log table missing. Apply docs/DB_SCHEMA_FULL.sql to your database.';
     }
     return msg;
   }
 
   async logAdminActivity(params: AdminLogParams): Promise<void> {
     try {
-      await this.prisma.adminActivityLog.create({
-        data: {
-          adminUserId: params.adminUserId,
-          adminEmail: params.adminEmail,
-          action: params.action,
-          target: params.target,
-          details: (params.details ?? undefined) as
-            | Prisma.InputJsonValue
-            | undefined,
-          ipAddress: params.ipAddress,
-          userAgent: params.userAgent,
-        },
-      });
+      const now = new Date();
+      await this.db.query(
+        `INSERT INTO admin_activity_logs ("adminUserId", "adminEmail", action, target, details, "ipAddress", "userAgent", "createdAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+        [
+          params.adminUserId ?? null,
+          params.adminEmail ?? null,
+          params.action,
+          params.target ?? null,
+          params.details != null ? JSON.stringify(params.details) : null,
+          params.ipAddress ?? null,
+          params.userAgent ?? null,
+          now,
+        ],
+      );
     } catch (err) {
       this.logger.warn(
         `Failed to log admin activity: ${params.action} — ${this.activityLogErrorMessage(err)}`,
@@ -76,52 +75,61 @@ export class ActivityLogsService {
   ) {
     const p = Math.max(1, Number(filters.page) || 1);
     const l = Math.min(100, Math.max(1, Number(filters.limit) || 50));
-
-    const where: Record<string, unknown> = {};
-    if (filters.adminUserId) where.adminUserId = filters.adminUserId;
-    if (filters.action) where.action = filters.action;
-    if (filters.dateFrom || filters.dateTo) {
-      const createdAt: Record<string, Date> = {};
-      if (filters.dateFrom) createdAt.gte = new Date(filters.dateFrom);
-      if (filters.dateTo)
-        createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
-      where.createdAt = createdAt;
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+    if (filters.adminUserId) {
+      conditions.push(`"adminUserId" = $${idx++}`);
+      values.push(filters.adminUserId);
     }
-
-    const [logs, total] = await Promise.all([
-      this.prisma.adminActivityLog.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (p - 1) * l,
-        take: l,
-      }),
-      this.prisma.adminActivityLog.count({ where }),
+    if (filters.action) {
+      conditions.push(`action = $${idx++}`);
+      values.push(filters.action);
+    }
+    if (filters.dateFrom) {
+      conditions.push(`"createdAt" >= $${idx++}`);
+      values.push(new Date(filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      conditions.push(`"createdAt" <= $${idx++}`);
+      values.push(new Date(filters.dateTo + 'T23:59:59.999Z'));
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const [countRes, rowsRes] = await Promise.all([
+      this.db.query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM admin_activity_logs ${where}`,
+        values,
+      ),
+      this.db.query(
+        `SELECT * FROM admin_activity_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+        [...values, l, (p - 1) * l],
+      ),
     ]);
-
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
     return {
-      data: logs,
+      data: rowsRes.rows,
       meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
     };
   }
 
-  // --- User Activity ---
-
   async logUserActivity(params: UserLogParams): Promise<void> {
     try {
-      await this.prisma.userActivityLog.create({
-        data: {
-          userId: params.userId,
-          sessionId: params.sessionId,
-          event: params.event,
-          page: params.page,
-          target: params.target,
-          metadata: (params.metadata ?? undefined) as
-            | Prisma.InputJsonValue
-            | undefined,
-          ipAddress: params.ipAddress,
-          userAgent: params.userAgent,
-        },
-      });
+      const now = new Date();
+      await this.db.query(
+        `INSERT INTO user_activity_logs ("userId", "sessionId", event, page, target, metadata, "ipAddress", "userAgent", "createdAt")
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+        [
+          params.userId ?? null,
+          params.sessionId ?? null,
+          params.event,
+          params.page ?? null,
+          params.target ?? null,
+          params.metadata != null ? JSON.stringify(params.metadata) : null,
+          params.ipAddress ?? null,
+          params.userAgent ?? null,
+          now,
+        ],
+      );
     } catch (err) {
       this.logger.warn(
         `Failed to log user activity: ${params.event} — ${this.activityLogErrorMessage(err)}`,
@@ -130,25 +138,8 @@ export class ActivityLogsService {
   }
 
   async logUserActivities(events: UserLogParams[]): Promise<void> {
-    try {
-      await this.prisma.userActivityLog.createMany({
-        data: events.map((e) => ({
-          userId: e.userId,
-          sessionId: e.sessionId,
-          event: e.event,
-          page: e.page,
-          target: e.target,
-          metadata: (e.metadata ?? undefined) as
-            | Prisma.InputJsonValue
-            | undefined,
-          ipAddress: e.ipAddress,
-          userAgent: e.userAgent,
-        })),
-      });
-    } catch (err) {
-      this.logger.warn(
-        `Failed to bulk log user activities — ${this.activityLogErrorMessage(err)}`,
-      );
+    for (const e of events) {
+      await this.logUserActivity(e);
     }
   }
 
@@ -162,58 +153,63 @@ export class ActivityLogsService {
   ) {
     const p = Math.max(1, Number(filters.page) || 1);
     const l = Math.min(100, Math.max(1, Number(filters.limit) || 50));
-
-    const where: Record<string, unknown> = {};
-    if (filters.userId) where.userId = filters.userId;
-    if (filters.event) where.event = filters.event;
-    if (filters.dateFrom || filters.dateTo) {
-      const createdAt: Record<string, Date> = {};
-      if (filters.dateFrom) createdAt.gte = new Date(filters.dateFrom);
-      if (filters.dateTo)
-        createdAt.lte = new Date(filters.dateTo + 'T23:59:59.999Z');
-      where.createdAt = createdAt;
+    const conditions: string[] = [];
+    const values: unknown[] = [];
+    let idx = 1;
+    if (filters.userId) {
+      conditions.push(`"userId" = $${idx++}`);
+      values.push(filters.userId);
     }
-
-    const [logs, total] = await Promise.all([
-      this.prisma.userActivityLog.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (p - 1) * l,
-        take: l,
-      }),
-      this.prisma.userActivityLog.count({ where }),
+    if (filters.event) {
+      conditions.push(`event = $${idx++}`);
+      values.push(filters.event);
+    }
+    if (filters.dateFrom) {
+      conditions.push(`"createdAt" >= $${idx++}`);
+      values.push(new Date(filters.dateFrom));
+    }
+    if (filters.dateTo) {
+      conditions.push(`"createdAt" <= $${idx++}`);
+      values.push(new Date(filters.dateTo + 'T23:59:59.999Z'));
+    }
+    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
+    const [countRes, rowsRes] = await Promise.all([
+      this.db.query<{ count: string }>(
+        `SELECT COUNT(*)::text AS count FROM user_activity_logs ${where}`,
+        values,
+      ),
+      this.db.query(
+        `SELECT * FROM user_activity_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx} OFFSET $${idx + 1}`,
+        [...values, l, (p - 1) * l],
+      ),
     ]);
-
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
     return {
-      data: logs,
+      data: rowsRes.rows,
       meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
     };
   }
 
   async getUserActivitySummary(userId: number) {
-    const [totalEvents, recentEvents, topEvents] = await Promise.all([
-      this.prisma.userActivityLog.count({ where: { userId } }),
-      this.prisma.userActivityLog.findMany({
-        where: { userId },
-        orderBy: { createdAt: 'desc' },
-        take: 10,
-      }),
-      this.prisma.userActivityLog.groupBy({
-        by: ['event'],
-        where: { userId },
-        _count: { event: true },
-        orderBy: { _count: { event: 'desc' } },
-        take: 10,
-      }),
+    const [totalRes, recentRes, topRes] = await Promise.all([
+      this.db.query<{ count: string }>(
+        'SELECT COUNT(*)::text AS count FROM user_activity_logs WHERE "userId" = $1',
+        [userId],
+      ),
+      this.db.query(
+        'SELECT * FROM user_activity_logs WHERE "userId" = $1 ORDER BY "createdAt" DESC LIMIT 10',
+        [userId],
+      ),
+      this.db.query<{ event: string; count: string }>(
+        'SELECT event, COUNT(*)::text AS count FROM user_activity_logs WHERE "userId" = $1 GROUP BY event ORDER BY COUNT(*) DESC LIMIT 10',
+        [userId],
+      ),
     ]);
-
+    const totalEvents = parseInt(totalRes.rows[0]?.count ?? '0', 10);
     return {
       totalEvents,
-      recentEvents,
-      topEvents: topEvents.map((e) => ({
-        event: e.event,
-        count: e._count.event,
-      })),
+      recentEvents: recentRes.rows,
+      topEvents: topRes.rows.map((r) => ({ event: r.event, count: parseInt(r.count, 10) })),
     };
   }
 }

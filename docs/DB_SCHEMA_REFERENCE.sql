@@ -1,0 +1,6 @@
+-- OddsCast DB schema reference for Railway (or any PostgreSQL).
+-- Full DDL: run docs/DB_SCHEMA_FULL.sql (copy of Prisma init migration).
+-- Optional alters after init:
+--   ALTER TABLE "subscriptions" ADD COLUMN IF NOT EXISTS "customerKey" TEXT;
+--   ALTER TABLE "predictions" ADD COLUMN IF NOT EXISTS "postRaceSummary" TEXT;
+-- For public schema: in DB_SCHEMA_FULL.sql comment out CREATE SCHEMA and SET search_path.

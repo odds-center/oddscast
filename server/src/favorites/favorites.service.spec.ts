@@ -1,35 +1,38 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { FavoritesService } from './favorites.service';
-import { PrismaService } from '../prisma/prisma.service';
+import { Favorite } from '../database/entities/favorite.entity';
+import { FavoriteType, FavoritePriority } from '../database/db-enums';
 
-const mockPrismaService = {
-  favorite: {
-    findMany: jest.fn(),
-    findUnique: jest.fn(),
-    create: jest.fn(),
-    update: jest.fn(),
-    delete: jest.fn(),
-    count: jest.fn(),
-    createMany: jest.fn(),
-    deleteMany: jest.fn(),
-    groupBy: jest.fn(),
-  },
+const mockRepository = {
+  findOne: jest.fn(),
+  find: jest.fn(),
+  findAndCount: jest.fn(),
+  create: jest.fn(),
+  save: jest.fn(),
+  delete: jest.fn(),
+  createQueryBuilder: jest.fn(),
 };
 
 describe('FavoritesService', () => {
   let service: FavoritesService;
-  let prisma: PrismaService;
+  let repo: Repository<Favorite>;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FavoritesService,
-        { provide: PrismaService, useValue: mockPrismaService },
+        {
+          provide: getRepositoryToken(Favorite),
+          useValue: mockRepository,
+        },
       ],
     }).compile();
 
     service = module.get<FavoritesService>(FavoritesService);
-    prisma = module.get<PrismaService>(PrismaService);
+    repo = module.get<Repository<Favorite>>(getRepositoryToken(Favorite));
   });
 
   it('should be defined', () => {
@@ -39,39 +42,52 @@ describe('FavoritesService', () => {
   describe('create', () => {
     it('should create a favorite with priority and tags', async () => {
       const dto = {
-        type: 'HORSE',
+        type: 'RACE',
         targetId: '123',
         targetName: 'Thunder',
         priority: 'HIGH',
         tags: ['fast', 'winner'],
       };
+      const created = {
+        id: 1,
+        userId: 1,
+        type: FavoriteType.RACE,
+        targetId: '123',
+        targetName: 'Thunder',
+        priority: FavoritePriority.HIGH,
+        tags: ['fast', 'winner'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as Favorite;
+      mockRepository.create.mockReturnValue(created);
+      mockRepository.save.mockResolvedValue(created);
 
-      const expectedResult = { id: 1, ...dto, createdAt: new Date() };
+      const result = await service.create(
+        1,
+        dto as Parameters<FavoritesService['create']>[1],
+      );
 
-      (prisma.favorite.create as jest.Mock).mockResolvedValue(expectedResult);
-
-      const result = await service.create(1, dto as any);
-
-      expect(prisma.favorite.create).toHaveBeenCalledWith({
-        data: {
+      expect(repo.create).toHaveBeenCalledWith(
+        expect.objectContaining({
           userId: 1,
-          type: 'HORSE',
+          type: 'RACE',
           targetId: '123',
           targetName: 'Thunder',
-          targetData: undefined,
-          memo: undefined,
           priority: 'HIGH',
           tags: ['fast', 'winner'],
-        },
-      });
-      expect(result).toEqual(expectedResult);
+        }),
+      );
+      expect(repo.save).toHaveBeenCalledWith(created);
+      expect(result).toEqual(created);
     });
   });
 
   describe('toggle', () => {
     it('should add a favorite if not exists', async () => {
-      (prisma.favorite.findUnique as jest.Mock).mockResolvedValue(null);
-      (prisma.favorite.create as jest.Mock).mockResolvedValue({ id: 1 });
+      mockRepository.findOne.mockResolvedValue(null);
+      const saved = { id: 1 } as Favorite;
+      mockRepository.create.mockReturnValue(saved);
+      mockRepository.save.mockResolvedValue(saved);
 
       const dto = {
         type: 'RACE',
@@ -81,15 +97,21 @@ describe('FavoritesService', () => {
         tags: ['weekend'],
       };
 
-      const result = await service.toggle(1, dto as any);
+      const result = await service.toggle(
+        1,
+        dto as Parameters<FavoritesService['toggle']>[1],
+      );
 
-      expect(result).toEqual({ action: 'ADDED', favorite: { id: 1 } });
-      expect(prisma.favorite.create).toHaveBeenCalled();
+      expect(result).toEqual({ action: 'ADDED', favorite: saved });
+      expect(repo.findOne).toHaveBeenCalledWith({
+        where: { userId: 1, type: 'RACE', targetId: 'r1' },
+      });
+      expect(repo.save).toHaveBeenCalled();
     });
 
     it('should remove a favorite if exists', async () => {
-      (prisma.favorite.findUnique as jest.Mock).mockResolvedValue({ id: 1 });
-      (prisma.favorite.delete as jest.Mock).mockResolvedValue({ id: 1 });
+      mockRepository.findOne.mockResolvedValue({ id: 1 });
+      mockRepository.delete.mockResolvedValue({ affected: 1 });
 
       const dto = {
         type: 'RACE',
@@ -97,12 +119,13 @@ describe('FavoritesService', () => {
         targetName: 'Seoul Race 1',
       };
 
-      const result = await service.toggle(1, dto as any);
+      const result = await service.toggle(
+        1,
+        dto as Parameters<FavoritesService['toggle']>[1],
+      );
 
       expect(result).toEqual({ action: 'REMOVED' });
-      expect(prisma.favorite.delete).toHaveBeenCalledWith({
-        where: { id: 1 },
-      });
+      expect(repo.delete).toHaveBeenCalledWith(1);
     });
   });
 });

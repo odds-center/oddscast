@@ -1,10 +1,16 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { AnalysisService } from './analysis.service';
 import { AnalysisController } from './analysis.controller';
-import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [
+    TypeOrmModule.forFeature([Race, RaceEntry, RaceResult, JockeyResult]),
+  ],
   controllers: [AnalysisController],
   providers: [AnalysisService],
   exports: [AnalysisService],

@@ -1,10 +1,32 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Core
-import { PrismaModule } from './prisma/prisma.module';
+import { DatabaseModule } from './database/database.module';
+import {
+  User,
+  Favorite,
+  AdminUser,
+  PasswordResetToken,
+  EmailVerificationToken,
+  PredictionTicket,
+  ReferralCode,
+  ReferralClaim,
+  Race,
+  RaceEntry,
+  RaceResult,
+  Prediction,
+  Training,
+  JockeyResult,
+  TrainerResult,
+  KraSyncLog,
+  GlobalConfig,
+  WeeklyPreview,
+  UserDailyFortune,
+} from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
 // Feature modules
@@ -45,7 +67,39 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
       { name: 'short', ttl: 60_000, limit: 120 }, // 120 req/min per IP (general API)
       { name: 'long', ttl: 3600_000, limit: 2000 }, // 2000 req/hour per IP
     ]),
-    PrismaModule,
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        url: config.get<string>('DATABASE_URL'),
+        schema: 'oddscast',
+        entities: [
+          User,
+          Favorite,
+          AdminUser,
+          PasswordResetToken,
+          EmailVerificationToken,
+          PredictionTicket,
+          ReferralCode,
+          ReferralClaim,
+          Race,
+          RaceEntry,
+          RaceResult,
+          Prediction,
+          Training,
+          JockeyResult,
+          TrainerResult,
+          KraSyncLog,
+          GlobalConfig,
+          WeeklyPreview,
+          UserDailyFortune,
+        ],
+        logging: config.get<string>('NODE_ENV') === 'development',
+        synchronize: false,
+      }),
+      inject: [ConfigService],
+    }),
+    DatabaseModule,
     HealthModule, // nginx/LB 헬스체크 — /health
     CacheModule, // Redis(선택) / 인메모리 캐시
 

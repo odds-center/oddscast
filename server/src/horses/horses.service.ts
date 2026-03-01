@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { PgService } from '../database/pg.service';
 
 export interface HorseProfileDto {
   hrNo: string;
@@ -31,37 +30,36 @@ export interface HorseHistoryItemDto {
 
 @Injectable()
 export class HorsesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly db: PgService) {}
 
   /**
    * Horse profile aggregated from RaceResult (and latest RaceEntry for name/age/sex).
    * Win = 1st, Place = top 3 (ordInt 1,2,3 with NORMAL type).
    */
   async getProfile(hrNo: string): Promise<HorseProfileDto | null> {
-    const results = await this.prisma.raceResult.findMany({
-      where: { hrNo },
-      select: {
-        hrName: true,
-        sex: true,
-        age: true,
-        ord: true,
-        ordInt: true,
-        ordType: true,
-        createdAt: true,
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 100,
-    });
+    const resultsRes = await this.db.query<{
+      hrName: string;
+      sex: string | null;
+      age: number | null;
+      ord: string | null;
+      ordInt: number | null;
+      ordType: string | null;
+    }>(
+      'SELECT "hrName", sex, age, ord, "ordInt", "ordType" FROM race_results WHERE "hrNo" = $1 ORDER BY "createdAt" DESC LIMIT 100',
+      [hrNo],
+    );
+    const results = resultsRes.rows;
 
     if (results.length === 0) {
-      const entry = await this.prisma.raceEntry.findFirst({
-        where: { hrNo },
-        select: { hrName: true, sex: true, age: true },
-      });
+      const entryRes = await this.db.query<{ hrName: string; sex: string | null; age: number | null }>(
+        'SELECT "hrName", sex, age FROM race_entries WHERE "hrNo" = $1 LIMIT 1',
+        [hrNo],
+      );
+      const entry = entryRes.rows[0];
       if (!entry) return null;
       return {
         hrNo,
-        hrName: entry.hrName,
+        hrName: entry.hrName ?? '',
         sex: entry.sex ?? null,
         age: entry.age != null ? String(entry.age) : null,
         totalRaces: 0,
@@ -73,7 +71,7 @@ export class HorsesService {
       };
     }
 
-    const latest = results[0];
+    const latest = results[0]!;
     const normalResults = results.filter((r) => {
       const t = r.ordType ?? '';
       const ordN = r.ordInt ?? (r.ord ? parseInt(String(r.ord), 10) : NaN);
@@ -98,7 +96,7 @@ export class HorsesService {
       hrNo,
       hrName: latest.hrName,
       sex: latest.sex ?? null,
-      age: latest.age ?? null,
+      age: latest.age != null ? String(latest.age) : null,
       totalRaces,
       winCount,
       placeCount,
@@ -120,41 +118,36 @@ export class HorsesService {
     total: number;
     totalPages: number;
   }> {
-    const where: Prisma.RaceResultWhereInput = { hrNo };
-    const [items, total] = await Promise.all([
-      this.prisma.raceResult.findMany({
-        where,
-        select: {
-          raceId: true,
-          ord: true,
-          ordInt: true,
-          chulNo: true,
-          jkName: true,
-          rcTime: true,
-          race: {
-            select: {
-              rcDate: true,
-              meet: true,
-              meetName: true,
-              rcNo: true,
-              rcDist: true,
-            },
-          },
-        },
-        orderBy: { race: { rcDate: 'desc' } },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.raceResult.count({ where }),
+    const [itemsRes, countRes] = await Promise.all([
+      this.db.query<{
+        raceId: number;
+        ord: string | null;
+        ordInt: number | null;
+        chulNo: string | null;
+        jkName: string | null;
+        rcTime: string | null;
+        rcDate: string;
+        meet: string;
+        meetName: string | null;
+        rcNo: string;
+        rcDist: string | null;
+      }>(
+        `SELECT rr."raceId", rr.ord, rr."ordInt", rr."chulNo", rr."jkName", rr."rcTime",
+                r."rcDate", r.meet, r."meetName", r."rcNo", r."rcDist"
+         FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."hrNo" = $1 ORDER BY r."rcDate" DESC LIMIT $2 OFFSET $3`,
+        [hrNo, limit, (page - 1) * limit],
+      ),
+      this.db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM race_results WHERE "hrNo" = $1', [hrNo]),
     ]);
-
+    const items = itemsRes.rows;
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
     const dtos: HorseHistoryItemDto[] = items.map((r) => ({
       raceId: r.raceId,
-      rcDate: r.race.rcDate,
-      meet: r.race.meet,
-      meetName: r.race.meetName ?? null,
-      rcNo: r.race.rcNo,
-      rcDist: r.race.rcDist ?? null,
+      rcDate: r.rcDate,
+      meet: r.meet,
+      meetName: r.meetName ?? null,
+      rcNo: r.rcNo,
+      rcDist: r.rcDist ?? null,
       ord: r.ord,
       ordInt: r.ordInt,
       chulNo: r.chulNo,

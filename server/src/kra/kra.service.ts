@@ -3,8 +3,16 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
-import { Prisma } from '@prisma/client';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { RaceStatus } from '../database/db-enums';
+import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { Training } from '../database/entities/training.entity';
+import { JockeyResult } from '../database/entities/jockey-result.entity';
+import { TrainerResult } from '../database/entities/trainer-result.entity';
+import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
 import { GlobalConfigService } from '../config/config.service';
 import { ResultsService } from '../results/results.service';
 import { Cron } from '@nestjs/schedule';
@@ -31,7 +39,13 @@ export class KraService {
     private httpService: HttpService,
     private configService: ConfigService,
     private globalConfigService: GlobalConfigService,
-    private prisma: PrismaService,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(Training) private readonly trainingRepo: Repository<Training>,
+    @InjectRepository(JockeyResult) private readonly jockeyResultRepo: Repository<JockeyResult>,
+    @InjectRepository(TrainerResult) private readonly trainerResultRepo: Repository<TrainerResult>,
+    @InjectRepository(KraSyncLog) private readonly kraSyncLogRepo: Repository<KraSyncLog>,
     private resultsService: ResultsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
@@ -47,6 +61,19 @@ export class KraService {
     return override?.trim() && override.length > 0
       ? override.trim()
       : DEFAULT_KRA_BASE_URL;
+  }
+
+  /** Find race id by meet/rcDate/rcNo (avoids raw SQL). */
+  private async findRaceByMeetDateNo(
+    meet: string,
+    rcDate: string,
+    rcNo: string,
+  ): Promise<{ id: number } | null> {
+    const r = await this.raceRepo.findOne({
+      where: { meet, rcDate, rcNo },
+      select: ['id'],
+    });
+    return r ? { id: r.id } : null;
   }
 
   /** For Admin: current KRA configuration status (Base URL, API key presence) */
@@ -177,15 +204,20 @@ export class KraService {
     const todayStr = this.formatYyyyMmDd(today);
     const fromStr = this.formatYyyyMmDd(twoWeeksAgo);
 
-    const orphanedRaces = await this.prisma.race.findMany({
-      where: {
-        rcDate: { gte: fromStr, lt: todayStr },
-        status: 'COMPLETED',
-        results: { none: {} },
-      },
-      select: { id: true, rcDate: true, meet: true, rcNo: true },
-      orderBy: { rcDate: 'asc' },
-    });
+    const raceIdsWithResults = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select('DISTINCT rr.raceId')
+      .getRawMany<{ rr_raceId: number }>()
+      .then((rows) => rows.map((r) => r.rr_raceId));
+    const allInRange = await this.raceRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.rcDate', 'r.meet', 'r.rcNo'])
+      .where('r.rcDate >= :from', { from: fromStr })
+      .andWhere('r.rcDate < :to', { to: todayStr })
+      .andWhere('r.status = :status', { status: RaceStatus.COMPLETED })
+      .orderBy('r.rcDate', 'ASC')
+      .getMany();
+    const orphanedRaces = allInRange.filter((r) => !raceIdsWithResults.includes(r.id));
 
     if (orphanedRaces.length === 0) {
       this.logger.log('No orphaned races found — data is consistent');
@@ -199,7 +231,7 @@ export class KraService {
 
     for (const date of dates) {
       try {
-        await this.fetchRaceResults(date, true);
+        await this.fetchRaceResults(String(date), true);
         await this.delay(500);
       } catch (err) {
         this.logger.warn(`[syncOrphanedRaceResults] Failed for ${date}`, err);
@@ -264,8 +296,8 @@ export class KraService {
     },
   ) {
     try {
-      await this.prisma.kraSyncLog.create({
-        data: {
+      await this.kraSyncLogRepo.save(
+        this.kraSyncLogRepo.create({
           endpoint,
           meet: opts.meet ?? null,
           rcDate: opts.rcDate ?? null,
@@ -273,8 +305,8 @@ export class KraService {
           recordCount: opts.recordCount ?? 0,
           errorMessage: opts.errorMessage ?? null,
           durationMs: opts.durationMs ?? null,
-        },
-      });
+        }),
+      );
     } catch {
       // Continue sync logic even if KraSyncLog fails
     }
@@ -452,36 +484,34 @@ export class KraService {
     const rcName =
       rcNameRaw && rcNameRaw.trim() ? rcNameRaw.trim() : `경주 ${rcNo}R`;
 
-    const race = await this.prisma.race.upsert({
-      where: {
-        meet_rcDate_rcNo: { meet: meetForRace, rcDate: date, rcNo },
-      },
-      update: {
-        rcDist: vs('rcDist') ?? vs('rc_dist'),
-        rcName,
-        rcDay: vs('rcDay') ?? vs('rc_day'),
-        rank: vs('rank'),
-        rcPrize: prize,
-        meetName: meetFromApi ?? meetName,
-        stTime: stTime ?? undefined,
-      },
-      create: {
+    const now = new Date();
+    await this.raceRepo.upsert(
+      {
         meet: meetForRace,
         rcDate: date,
         rcNo,
-        rcDist: vs('rcDist') ?? vs('rc_dist'),
+        rcDist: vs('rcDist') ?? vs('rc_dist') ?? null,
         rcName,
-        rcDay: vs('rcDay') ?? vs('rc_day'),
-        rank: vs('rank'),
-        rcPrize: prize,
-        meetName: meetFromApi ?? meetName,
-        stTime: stTime ?? undefined,
+        rcDay: vs('rcDay') ?? vs('rc_day') ?? null,
+        rank: vs('rank') ?? null,
+        rcPrize: prize ?? null,
+        meetName: meetFromApi ?? meetName ?? null,
+        stTime: stTime ?? null,
+        createdAt: now,
+        updatedAt: now,
       },
+      { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
+    );
+    const raceRow = await this.raceRepo.findOne({
+      where: { meet: meetForRace, rcDate: date, rcNo },
+      select: ['id'],
     });
+    const race = { id: raceRow!.id };
 
     const hrNo = vs('hrNo') || vs('hr_no') || '';
-    const existingEntry = await this.prisma.raceEntry.findFirst({
+    const existingEntry = await this.entryRepo.findOne({
       where: { raceId: race.id, hrNo },
+      select: ['id'],
     });
 
     const wgBudamRaw = v('wgBudam') ?? v('wg_budam');
@@ -540,15 +570,60 @@ export class KraService {
       budam: budam ?? undefined,
     };
 
+    const ent = entryData;
+    const chaksunTStr = ent.chaksunT != null ? String(ent.chaksunT) : null;
     if (existingEntry) {
-      await this.prisma.raceEntry.update({
-        where: { id: existingEntry.id },
-        data: entryData,
+      await this.entryRepo.update(existingEntry.id, {
+        hrName: ent.hrName,
+        hrNameEn: ent.hrNameEn ?? null,
+        jkNo: ent.jkNo ?? null,
+        jkName: ent.jkName,
+        jkNameEn: ent.jkNameEn ?? null,
+        trNo: ent.trNo ?? null,
+        trName: ent.trName ?? null,
+        owNo: ent.owNo ?? null,
+        owName: ent.owName ?? null,
+        wgBudam: ent.wgBudam ?? null,
+        rating: ent.rating ?? null,
+        chulNo: ent.chulNo ?? null,
+        dusu: ent.dusu ?? null,
+        sex: ent.sex ?? null,
+        age: ent.age ?? null,
+        prd: ent.prd ?? null,
+        chaksun1: ent.chaksun1 ?? null,
+        chaksunT: chaksunTStr,
+        rcCntT: ent.rcCntT ?? null,
+        ord1CntT: ent.ord1CntT ?? null,
+        budam: ent.budam ?? null,
       });
     } else {
-      await this.prisma.raceEntry.create({
-        data: entryData,
-      });
+      await this.entryRepo.save(
+        this.entryRepo.create({
+          raceId: ent.raceId,
+          hrNo: ent.hrNo,
+          hrName: ent.hrName,
+          hrNameEn: ent.hrNameEn ?? null,
+          jkNo: ent.jkNo ?? null,
+          jkName: ent.jkName,
+          jkNameEn: ent.jkNameEn ?? null,
+          trNo: ent.trNo ?? null,
+          trName: ent.trName ?? null,
+          owNo: ent.owNo ?? null,
+          owName: ent.owName ?? null,
+          wgBudam: ent.wgBudam ?? null,
+          rating: ent.rating ?? null,
+          chulNo: ent.chulNo ?? null,
+          dusu: ent.dusu ?? null,
+          sex: ent.sex ?? null,
+          age: ent.age ?? null,
+          prd: ent.prd ?? null,
+          chaksun1: ent.chaksun1 ?? null,
+          chaksunT: chaksunTStr,
+          rcCntT: ent.rcCntT ?? null,
+          ord1CntT: ent.ord1CntT ?? null,
+          budam: ent.budam ?? null,
+        }),
+      );
     }
     await this.cache.del(`race:${race.id}`);
   }
@@ -802,29 +877,24 @@ export class KraService {
             v('stTime') ??
             v('st_time');
 
-          await this.prisma.race.upsert({
-            where: { meet_rcDate_rcNo: { meet: meetName, rcDate: d, rcNo } },
-            update: {
-              rcDist: rcDist ?? undefined,
-              rcName,
-              rcDay: rcDay ?? undefined,
-              rank: rank ?? undefined,
-              rcPrize: prize,
-              stTime: stTime ?? undefined,
-            },
-            create: {
+          const nowRace = new Date();
+          await this.raceRepo.upsert(
+            {
               meet: meetName,
               rcDate: d,
               rcNo,
-              rcDist: rcDist ?? undefined,
+              rcDist: rcDist ?? null,
               rcName,
-              rcDay: rcDay ?? undefined,
-              rank: rank ?? undefined,
-              rcPrize: prize,
+              rcDay: rcDay ?? null,
+              rank: rank ?? null,
+              rcPrize: prize ?? null,
               meetName,
-              stTime: stTime ?? undefined,
+              stTime: stTime ?? null,
+              createdAt: nowRace,
+              updatedAt: nowRace,
             },
-          });
+            { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
+          );
           totalRaces++;
         }
 
@@ -923,29 +993,24 @@ export class KraService {
             v('stTime') ??
             v('st_time');
 
-          await this.prisma.race.upsert({
-            where: { meet_rcDate_rcNo: { meet: meetName, rcDate, rcNo } },
-            update: {
-              rcDist: rcDist ?? undefined,
-              rcName,
-              rcDay: rcDay ?? undefined,
-              rank: rank ?? undefined,
-              rcPrize: prize,
-              stTime: stTime ?? undefined,
-            },
-            create: {
+          const nowRace = new Date();
+          await this.raceRepo.upsert(
+            {
               meet: meetName,
               rcDate,
               rcNo,
-              rcDist: rcDist ?? undefined,
+              rcDist: rcDist ?? null,
               rcName,
-              rcDay: rcDay ?? undefined,
-              rank: rank ?? undefined,
-              rcPrize: prize,
+              rcDay: rcDay ?? null,
+              rank: rank ?? null,
+              rcPrize: prize ?? null,
               meetName,
-              stTime: stTime ?? undefined,
+              stTime: stTime ?? null,
+              createdAt: nowRace,
+              updatedAt: nowRace,
             },
-          });
+            { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
+          );
           totalRaces++;
         }
 
@@ -1145,15 +1210,7 @@ export class KraService {
 
         for (const item of items as KraApiItem[]) {
           const rcNo = String(item.rcNo ?? item.rc_no ?? '');
-          let race = await this.prisma.race.findUnique({
-            where: {
-              meet_rcDate_rcNo: {
-                meet: meet.name,
-                rcDate: normalizedDate,
-                rcNo,
-              },
-            },
-          });
+          let race = await this.findRaceByMeetDateNo(meet.name, normalizedDate, rcNo);
 
           const rcNameVal = getRcName(item);
           const rcNameToSave = rcNameVal ?? rcNameFallback(rcNo);
@@ -1169,15 +1226,9 @@ export class KraService {
               ['서울', '제주', '부산경남'].includes(String(item.meet))
                 ? String(item.meet)
                 : meet.name;
-            race = await this.prisma.race.upsert({
-              where: {
-                meet_rcDate_rcNo: {
-                  meet: meetName,
-                  rcDate: normalizedDate,
-                  rcNo,
-                },
-              },
-              create: {
+            const nowRace = new Date();
+            await this.raceRepo.upsert(
+              {
                 meet: meetName,
                 rcDate: normalizedDate,
                 rcNo,
@@ -1187,27 +1238,22 @@ export class KraService {
                 rank: rankVal != null ? String(rankVal) : null,
                 weather: weatherVal != null ? String(weatherVal) : null,
                 track: trackVal != null ? String(trackVal) : null,
-                status: 'COMPLETED',
+                status: RaceStatus.COMPLETED,
+                createdAt: nowRace,
+                updatedAt: nowRace,
               },
-              update: {
-                rcName: rcNameToSave,
-                rcDist: rcDistVal != null ? String(rcDistVal) : undefined,
-                rcDay: rcDayVal != null ? String(rcDayVal) : undefined,
-                rank: rankVal != null ? String(rankVal) : undefined,
-                weather: weatherVal != null ? String(weatherVal) : undefined,
-                track: trackVal != null ? String(trackVal) : undefined,
-              },
-            });
+              { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
+            );
+            race = await this.findRaceByMeetDateNo(meetName, normalizedDate, rcNo);
           } else if (race) {
-            const patch: Prisma.RaceUpdateInput = { rcName: rcNameToSave };
-            if (rcDistVal != null) patch.rcDist = String(rcDistVal);
-            if (rcDayVal != null) patch.rcDay = String(rcDayVal);
-            if (rankVal != null) patch.rank = String(rankVal);
-            if (weatherVal != null) patch.weather = String(weatherVal);
-            if (trackVal != null) patch.track = String(trackVal);
-            await this.prisma.race.update({
-              where: { id: race.id },
-              data: patch,
+            await this.raceRepo.update(race.id, {
+              rcName: rcNameToSave,
+              ...(rcDistVal != null && { rcDist: String(rcDistVal) }),
+              ...(rcDayVal != null && { rcDay: String(rcDayVal) }),
+              ...(rankVal != null && { rank: String(rankVal) }),
+              ...(weatherVal != null && { weather: String(weatherVal) }),
+              ...(trackVal != null && { track: String(trackVal) }),
+              updatedAt: new Date(),
             });
           }
 
@@ -1220,52 +1266,44 @@ export class KraService {
                 ? String(item.hr_no)
                 : '';
 
-          // RaceEntry integration: if results API runs first, Entry may be missing → supplement Entry with results data
           if (hrNoStr) {
-            const existingEntry = await this.prisma.raceEntry.findFirst({
+            const existingEntry = await this.entryRepo.findOne({
               where: { raceId: race.id, hrNo: hrNoStr },
+              select: ['id'],
             });
             if (!existingEntry) {
               const sv = (val: unknown) =>
                 val != null ? String(val) : undefined;
-              await this.prisma.raceEntry.create({
-                data: {
+              const wgBudam =
+                item.wgBudam != null
+                  ? parseFloat(String(item.wgBudam))
+                  : item.wg_budam != null
+                    ? parseFloat(String(item.wg_budam))
+                    : null;
+              const ageVal =
+                item.age != null ? parseInt(String(item.age), 10) : null;
+              await this.entryRepo.save(
+                this.entryRepo.create({
                   raceId: race.id,
                   hrNo: hrNoStr,
                   hrName: sv(item.hrName ?? item.hr_name) ?? '',
-                  jkNo: sv(item.jkNo ?? item.jk_no),
+                  jkNo: sv(item.jkNo ?? item.jk_no) ?? null,
                   jkName: sv(item.jkName ?? item.jk_name) ?? '',
-                  trName: sv(item.trName ?? item.tr_name),
-                  owName: sv(item.owName ?? item.ow_name),
-                  wgBudam:
-                    item.wgBudam != null
-                      ? parseFloat(String(item.wgBudam))
-                      : item.wg_budam != null
-                        ? parseFloat(String(item.wg_budam))
-                        : undefined,
-                  chulNo: sv(item.chulNo ?? item.chul_no),
-                  age:
-                    item.age != null
-                      ? parseInt(String(item.age), 10)
-                      : undefined,
-                  sex: sv(item.sex),
-                },
-              });
+                  trName: sv(item.trName ?? item.tr_name) ?? null,
+                  owName: sv(item.owName ?? item.ow_name) ?? null,
+                  wgBudam,
+                  chulNo: sv(item.chulNo ?? item.chul_no) ?? null,
+                  age: ageVal,
+                  sex: sv(item.sex) ?? null,
+                }),
+              );
               await this.cache.del(`race:${race.id}`);
             }
           }
 
-          // Upsert RaceResult
-          // Unique constraint for RaceResult in schema?
-          // Schema doesn't have unique constraint on RaceResult (raceId, hrNo).
-          // We should probably add one, or use findFirst to check existence.
-          // For now, we'll try to find first.
-
-          const existingResult = await this.prisma.raceResult.findFirst({
-            where: {
-              raceId: race.id,
-              hrNo: hrNoStr,
-            },
+          const existingResult = await this.resultRepo.findOne({
+            where: { raceId: race.id, hrNo: hrNoStr },
+            select: ['id'],
           });
 
           // KRA response: ord=finishing order, rank=grade condition. rcRank uses ord (finishing order).
@@ -1327,27 +1365,55 @@ export class KraService {
           };
           if (sectionalTimes) resultData.sectionalTimes = sectionalTimes;
 
-          const data = { ...resultData } as Parameters<
-            typeof this.prisma.raceResult.create
-          >[0]['data'];
+          const data = resultData;
+          const sectional = (data as Record<string, unknown>).sectionalTimes as Record<string, unknown> | null | undefined;
+          const resultPayload = {
+            ord: (data.ord ?? null) as string | null,
+            ordInt: (data.ordInt ?? null) as number | null,
+            ordType: (data.ordType ?? null) as string | null,
+            rcTime: (data.rcTime ?? null) as string | null,
+            chulNo: (data.chulNo ?? null) as string | null,
+            age: (data.age ?? null) as string | null,
+            sex: (data.sex ?? null) as string | null,
+            jkNo: (data.jkNo ?? null) as string | null,
+            jkName: (data.jkName ?? null) as string | null,
+            trName: (data.trName ?? null) as string | null,
+            owName: (data.owName ?? null) as string | null,
+            wgBudam: (data.wgBudam ?? null) as number | null,
+            wgHr: (data.wgHr ?? null) as string | null,
+            hrTool: (data.hrTool ?? null) as string | null,
+            diffUnit: (data.diffUnit ?? null) as string | null,
+            winOdds: (data.winOdds ?? null) as number | null,
+            plcOdds: (data.plcOdds ?? null) as number | null,
+            track: (data.track ?? null) as string | null,
+            weather: (data.weather ?? null) as string | null,
+            chaksun1: (data.chaksun1 ?? null) as number | null,
+            sectionalTimes: (sectional ?? null) as Record<string, unknown> | null,
+          };
           if (existingResult) {
-            await this.prisma.raceResult.update({
-              where: { id: existingResult.id },
-              data,
-            });
+            await this.resultRepo.update(
+              existingResult.id,
+              resultPayload as Parameters<Repository<RaceResult>['update']>[1],
+            );
           } else {
-            await this.prisma.raceResult.create({ data });
+            await this.resultRepo.save(
+              this.resultRepo.create({
+                raceId: data.raceId as number,
+                hrNo: data.hrNo as string,
+                hrName: data.hrName as string,
+                ...resultPayload,
+              }),
+            );
           }
 
           racesToUpdate.add(race.id);
           totalResults++;
         }
 
-        // Update Race Status to COMPLETED
         for (const raceId of racesToUpdate) {
-          await this.prisma.race.update({
-            where: { id: raceId },
-            data: { status: 'COMPLETED' },
+          await this.raceRepo.update(raceId, {
+            status: RaceStatus.COMPLETED,
+            updatedAt: new Date(),
           });
         }
         // Update prediction accuracy and generate post-race summary
@@ -1397,21 +1463,22 @@ export class KraService {
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     const today = dayjs().format('YYYYMMDD');
     if (normalizedDate < today) {
-      const updated = await this.prisma.race.updateMany({
-        where: {
+      await this.raceRepo.update(
+        {
           rcDate: normalizedDate,
-          status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
+          status: In([RaceStatus.SCHEDULED, RaceStatus.IN_PROGRESS]),
         },
-        data: { status: 'COMPLETED' },
+        { status: RaceStatus.COMPLETED, updatedAt: new Date() },
+      );
+      const races = await this.raceRepo.find({
+        where: { rcDate: normalizedDate },
+        select: ['id'],
       });
-      if (updated.count > 0) {
+      if (races.length > 0) {
         this.logger.log(
-          `Marked ${updated.count} past-date races as COMPLETED (rcDate=${normalizedDate})`,
+          `Marked ${races.length} past-date races as COMPLETED (rcDate=${normalizedDate})`,
         );
-        for (const r of await this.prisma.race.findMany({
-          where: { rcDate: normalizedDate },
-          select: { id: true },
-        })) {
+        for (const r of races) {
           await this.cache.del(`race:${r.id}`);
         }
       }
@@ -1473,11 +1540,7 @@ export class KraService {
       );
       if (filtered.length === 0) return { message: 'No entries for race' };
 
-      const race = await this.prisma.race.findUnique({
-        where: {
-          meet_rcDate_rcNo: { meet, rcDate: normalizedDate, rcNo: raceNo },
-        },
-      });
+      const race = await this.findRaceByMeetDateNo(meet, normalizedDate, raceNo);
       if (!race) {
         this.logger.warn(`Race not found: ${meet} ${date} R${raceNo}`);
         return { message: 'Race not found' };
@@ -1490,8 +1553,9 @@ export class KraService {
         const hrNo = vs('hrNo') || vs('hr_no') || '';
         if (!hrNo) continue;
 
-        const existingEntry = await this.prisma.raceEntry.findFirst({
+        const existingEntry = await this.entryRepo.findOne({
           where: { raceId: race.id, hrNo },
+          select: ['id'],
         });
         const wgBudam = v('wgBudam') ?? v('wg_budam');
         const entryData = {
@@ -1506,16 +1570,39 @@ export class KraService {
           trName: vs('trName') || vs('tr_name'),
           owNo: vs('owNo') || vs('ow_no'),
           owName: vs('owName') || vs('ow_name'),
-          wgBudam: wgBudam != null ? parseFloat(String(wgBudam)) : undefined,
+          wgBudam: wgBudam != null ? parseFloat(String(wgBudam)) : null,
         };
 
         if (existingEntry) {
-          await this.prisma.raceEntry.update({
-            where: { id: existingEntry.id },
-            data: entryData,
+          await this.entryRepo.update(existingEntry.id, {
+            hrName: entryData.hrName,
+            hrNameEn: entryData.hrNameEn ?? null,
+            jkNo: entryData.jkNo ?? null,
+            jkName: entryData.jkName,
+            jkNameEn: entryData.jkNameEn ?? null,
+            trNo: entryData.trNo ?? null,
+            trName: entryData.trName ?? null,
+            owNo: entryData.owNo ?? null,
+            owName: entryData.owName ?? null,
+            wgBudam: entryData.wgBudam,
           });
         } else {
-          await this.prisma.raceEntry.create({ data: entryData });
+          await this.entryRepo.save(
+            this.entryRepo.create({
+              raceId: entryData.raceId,
+              hrNo: entryData.hrNo,
+              hrName: entryData.hrName,
+              hrNameEn: entryData.hrNameEn ?? null,
+              jkNo: entryData.jkNo ?? null,
+              jkName: entryData.jkName,
+              jkNameEn: entryData.jkNameEn ?? null,
+              trNo: entryData.trNo ?? null,
+              trName: entryData.trName ?? null,
+              owNo: entryData.owNo ?? null,
+              owName: entryData.owName ?? null,
+              wgBudam: entryData.wgBudam,
+            }),
+          );
         }
       }
       return { message: `Fetched ${filtered.length} entries` };
@@ -1540,18 +1627,18 @@ export class KraService {
       return { message: 'KRA_SERVICE_KEY not configured' };
 
     const baseUrl = await this.resolveBaseUrl();
-    const race = await this.prisma.race.findUnique({
-      where: {
-        meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
-      },
-      include: { entries: true },
-    });
+    const raceRow = await this.findRaceByMeetDateNo(meet, date, raceNo);
+    if (!raceRow) return { message: 'No entries' };
 
-    if (!race || race.entries.length === 0) return { message: 'No entries' };
+    const entries = await this.entryRepo.find({
+      where: { raceId: raceRow.id },
+      select: ['id', 'hrNo'],
+    });
+    if (entries.length === 0) return { message: 'No entries' };
 
     const meetCode = this.meetNameToCode(meet);
 
-    for (const entry of race.entries) {
+    for (const entry of entries) {
       if (!entry.hrNo) continue;
 
       try {
@@ -1600,17 +1687,15 @@ export class KraService {
             ? BigInt(parseInt(String(chaksunT).replace(/,/g, ''), 10) || 0)
             : undefined;
 
-        await this.prisma.raceEntry.update({
-          where: { id: entry.id },
-          data: {
-            rating: rating ?? undefined,
-            rcCntT: rcCntT ?? undefined,
-            ord1CntT: ord1CntT ?? undefined,
-            chaksunT: prizeT ?? undefined,
-            sex: vs('sex') ?? undefined,
-            age: vi('age') ?? undefined,
-            prd: vs('prd') ?? vs('name') ?? undefined,
-          },
+        const chaksunTStr = prizeT != null ? String(prizeT) : null;
+        await this.entryRepo.update(entry.id, {
+          rating: rating ?? null,
+          rcCntT: rcCntT ?? null,
+          ord1CntT: ord1CntT ?? null,
+          chaksunT: chaksunTStr,
+          sex: vs('sex') ?? null,
+          age: vi('age') ?? null,
+          prd: vs('prd') ?? vs('name') ?? null,
         });
 
         await this.delay(150);
@@ -1632,21 +1717,21 @@ export class KraService {
       return { message: 'KRA_SERVICE_KEY not configured' };
 
     const baseUrl = await this.resolveBaseUrl();
-    const race = await this.prisma.race.findUnique({
-      where: {
-        meet_rcDate_rcNo: { meet, rcDate: date, rcNo: raceNo },
-      },
-      include: { entries: true },
-    });
+    const raceRow = await this.findRaceByMeetDateNo(meet, date, raceNo);
+    if (!raceRow) return { message: 'No entries' };
 
-    if (!race || race.entries.length === 0) return { message: 'No entries' };
+    const entries = await this.entryRepo.find({
+      where: { raceId: raceRow.id },
+      select: ['id', 'hrNo'],
+    });
+    if (entries.length === 0) return { message: 'No entries' };
 
     const trDateTo = this.normalizeToYyyyMmDd(date);
     const trDateFrom = dayjs(date, 'YYYYMMDD')
       .subtract(14, 'day')
       .format('YYYYMMDD');
 
-    for (const entry of race.entries) {
+    for (const entry of entries) {
       if (!entry.hrNo) continue;
 
       try {
@@ -1671,12 +1756,10 @@ export class KraService {
           items = (Array.isArray(raw) ? raw : [raw]) as KraApiItem[];
         }
 
-        // Delete existing training data then reload (by raceEntryId)
-        await this.prisma.training.deleteMany({
-          where: { raceEntryId: entry.id },
-        });
+        await this.trainingRepo.delete({ raceEntryId: entry.id });
 
         const trainingSummaries: string[] = [];
+        const nowTr = new Date();
         for (const item of items) {
           const trDate = String(item.trDate ?? item.tr_date ?? '');
           const trTime = String(item.trTime ?? item.tr_time ?? '');
@@ -1684,45 +1767,43 @@ export class KraService {
           const trContent = String(item.trContent ?? item.tr_content ?? '');
           const place = String(item.place ?? '');
           const intensity = trType || trContent || '';
+          const trEndTime = String(item.trEndTime ?? item.tr_end_time ?? '') || null;
+          const trDuration = String(item.trDuration ?? item.tr_duration ?? '') || null;
+          const managerType = String(item.managerType ?? item.manager_type ?? '') || null;
+          const managerName = String(item.managerName ?? item.manager_name ?? '') || null;
+          const weather = String(item.weather ?? '') || null;
+          const trackCondition = String(item.trackCondition ?? item.track_condition ?? '') || null;
 
-          await this.prisma.training.create({
-            data: {
+          await this.trainingRepo.save(
+            this.trainingRepo.create({
               raceEntryId: entry.id,
-              horseNo: entry.hrNo,
+              horseNo: entry.hrNo ?? '',
               trDate,
-              trTime: trTime || undefined,
-              trEndTime:
-                String(item.trEndTime ?? item.tr_end_time ?? '') || undefined,
-              trDuration:
-                String(item.trDuration ?? item.tr_duration ?? '') || undefined,
-              trContent: trContent || undefined,
-              trType: trType || undefined,
-              managerType:
-                String(item.managerType ?? item.manager_type ?? '') ||
-                undefined,
-              managerName:
-                String(item.managerName ?? item.manager_name ?? '') ||
-                undefined,
-              place: place || undefined,
-              weather: String(item.weather ?? '') || undefined,
-              trackCondition:
-                String(item.trackCondition ?? item.track_condition ?? '') ||
-                undefined,
-              intensity: intensity || undefined,
-            },
-          });
+              trTime: trTime || null,
+              trEndTime,
+              trDuration,
+              trContent: trContent || null,
+              trType: trType || null,
+              managerType,
+              managerName,
+              place: place || null,
+              weather,
+              trackCondition,
+              intensity: intensity || null,
+              createdAt: nowTr,
+              updatedAt: nowTr,
+            }),
+          );
           trainingSummaries.push(`${trDate} ${trType || trContent}`);
         }
 
         if (trainingSummaries.length > 0) {
-          await this.prisma.raceEntry.update({
-            where: { id: entry.id },
-            data: {
-              trainingData: {
-                count: items.length,
-                summary: trainingSummaries.slice(-7),
-              } as Prisma.InputJsonValue,
-            },
+          const trainingData = {
+            count: items.length,
+            summary: trainingSummaries.slice(-7),
+          };
+          await this.entryRepo.update(entry.id, {
+            trainingData,
           });
         }
 
@@ -1818,24 +1899,9 @@ export class KraService {
           ).replace(/,/g, '');
           const chaksunT = BigInt(parseInt(chaksunStr, 10) || 0);
 
-          await this.prisma.jockeyResult.upsert({
-            where: {
-              meet_jkNo: {
-                meet: m.code,
-                jkNo,
-              },
-            },
-            update: {
-              jkName,
-              rcCntT,
-              ord1CntT,
-              ord2CntT,
-              ord3CntT,
-              winRateTsum,
-              quRateTsum,
-              chaksunT,
-            },
-            create: {
+          const nowJk = new Date();
+          await this.jockeyResultRepo.upsert(
+            {
               meet: m.code,
               jkNo,
               jkName,
@@ -1845,9 +1911,11 @@ export class KraService {
               ord3CntT,
               winRateTsum,
               quRateTsum,
-              chaksunT,
+              chaksunT: String(chaksunT),
+              updatedAt: nowJk,
             },
-          });
+            { conflictPaths: ['meet', 'jkNo'] },
+          );
           totalJockeys++;
         }
 
@@ -1997,28 +2065,9 @@ export class KraService {
                   undefined
                 : undefined;
 
-            await this.prisma.trainerResult.upsert({
-              where: {
-                meet_trNo: { meet: m.code, trNo },
-              },
-              update: {
-                trName,
-                rcCntT,
-                ord1CntT,
-                ord2CntT,
-                ord3CntT,
-                winRateTsum,
-                quRateTsum,
-                plRateTsum: plRateTsum ?? undefined,
-                rcCntY,
-                ord1CntY,
-                ord2CntY,
-                ord3CntY,
-                winRateY,
-                quRateY,
-                plRateY,
-              },
-              create: {
+            const nowTr = new Date();
+            await this.trainerResultRepo.upsert(
+              {
                 meet: m.code,
                 trNo,
                 trName,
@@ -2028,16 +2077,18 @@ export class KraService {
                 ord3CntT,
                 winRateTsum,
                 quRateTsum,
-                plRateTsum: plRateTsum ?? undefined,
-                rcCntY,
-                ord1CntY,
-                ord2CntY,
-                ord3CntY,
-                winRateY,
-                quRateY,
-                plRateY,
+                plRateTsum: plRateTsum ?? null,
+                rcCntY: rcCntY ?? null,
+                ord1CntY: ord1CntY ?? null,
+                ord2CntY: ord2CntY ?? null,
+                ord3CntY: ord3CntY ?? null,
+                winRateY: winRateY ?? null,
+                quRateY: quRateY ?? null,
+                plRateY: plRateY ?? null,
+                updatedAt: nowTr,
               },
-            });
+              { conflictPaths: ['meet', 'trNo'] },
+            );
             totalTrainers++;
           }
 
@@ -2104,25 +2155,21 @@ export class KraService {
         }
 
         for (const item of items) {
-          const race = await this.prisma.race.findUnique({
-            where: {
-              meet_rcDate_rcNo: {
-                meet: meet.name,
-                rcDate: date,
-                rcNo: String(item.rcNo ?? item.rc_no ?? ''),
-              },
-            },
+          const rcNo = String(item.rcNo ?? item.rc_no ?? '');
+          const race = await this.raceRepo.findOne({
+            where: { meet: meet.name, rcDate: date, rcNo },
+            select: ['id', 'weather', 'track'],
           });
           if (race) {
-            await this.prisma.race.update({
-              where: { id: race.id },
-              data: {
-                weather: item.weather ?? race.weather,
-                track:
-                  (item.track ?? item.moisture)
-                    ? `${item.track ?? ''} (moisture ${item.moisture ?? '-'}%)`
-                    : race.track,
-              },
+            const weather = item.weather ?? race.weather;
+            const track =
+              item.track ?? item.moisture
+                ? `${item.track ?? ''} (moisture ${item.moisture ?? '-'}%)`
+                : race.track;
+            await this.raceRepo.update(race.id, {
+              weather,
+              track,
+              updatedAt: new Date(),
             });
           }
         }
@@ -2158,18 +2205,18 @@ export class KraService {
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     const baseUrl = await this.resolveBaseUrl();
 
-    const entries = await this.prisma.raceEntry.findMany({
-      where: { race: { rcDate: normalizedDate } },
-      select: { id: true, hrNo: true, race: { select: { meet: true } } },
-    });
+    const entries = await this.entryRepo
+      .createQueryBuilder('re')
+      .innerJoin('re.race', 'r')
+      .select('re.id', 'id')
+      .addSelect('re.hrNo', 'hrNo')
+      .addSelect('r.meet', 'meet')
+      .where('r.rcDate = :rcDate', { rcDate: normalizedDate })
+      .getRawMany<{ id: number; hrNo: string; meet: string }>();
     if (entries.length === 0) return { updated: 0 };
 
-    const needKeys = new Set(
-      entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`),
-    );
-    const entryByKey = new Map(
-      entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]),
-    );
+    const needKeys = new Set(entries.map((e) => `${e.meet}:${e.hrNo}`));
+    const entryByKey = new Map(entries.map((e) => [`${e.meet}:${e.hrNo}`, e]));
 
     let updated = 0;
     let pageNo = 1;
@@ -2236,14 +2283,15 @@ export class KraService {
             }
           }
 
-          await this.prisma.raceEntry.update({
-            where: { id: entry.id },
-            data: {
-              rating: rating1 ?? undefined,
-              ratingHistory:
-                ratingHistory.length > 0 ? ratingHistory : undefined,
-            },
-          });
+          const ratingVal = rating1 ?? null;
+          const ratingHistoryForDb: Record<string, unknown> | null =
+            ratingHistory.length > 0
+              ? (ratingHistory as unknown as Record<string, unknown>)
+              : null;
+          await this.entryRepo.update(entry.id, {
+            rating: ratingVal,
+            ratingHistory: ratingHistoryForDb,
+          } as Parameters<Repository<RaceEntry>['update']>[1]);
           needKeys.delete(key);
           updated++;
         }
@@ -2296,18 +2344,18 @@ export class KraService {
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     const baseUrl = await this.resolveBaseUrl();
 
-    const entries = await this.prisma.raceEntry.findMany({
-      where: { race: { rcDate: normalizedDate } },
-      select: { id: true, hrNo: true, race: { select: { meet: true } } },
-    });
+    const entries = await this.entryRepo
+      .createQueryBuilder('re')
+      .innerJoin('re.race', 'r')
+      .select('re.id', 'id')
+      .addSelect('re.hrNo', 'hrNo')
+      .addSelect('r.meet', 'meet')
+      .where('r.rcDate = :rcDate', { rcDate: normalizedDate })
+      .getRawMany<{ id: number; hrNo: string; meet: string }>();
     if (entries.length === 0) return { updated: 0 };
 
-    const needKeys = new Set(
-      entries.map((e) => `${e.race?.meet ?? ''}:${e.hrNo}`),
-    );
-    const entryByKey = new Map(
-      entries.map((e) => [`${e.race?.meet ?? ''}:${e.hrNo}`, e]),
-    );
+    const needKeys = new Set(entries.map((e) => `${e.meet}:${e.hrNo}`));
+    const entryByKey = new Map(entries.map((e) => [`${e.meet}:${e.hrNo}`, e]));
     let updated = 0;
 
     for (const meet of KRA_MEETS) {
@@ -2384,14 +2432,14 @@ export class KraService {
             if (s1fMax != null) stats.s1fMax = s1fMax;
             if (g1fMin != null) stats.g1fMin = g1fMin;
             if (g1fMax != null) stats.g1fMax = g1fMax;
-            const sectionalStats: Prisma.InputJsonValue | undefined =
-              Object.keys(stats).length > 0 ? stats : undefined;
+            const sectionalStats =
+              Object.keys(stats).length > 0 ? JSON.stringify(stats) : null;
 
             if (sectionalStats) {
-              await this.prisma.raceEntry.update({
-                where: { id: entry.id },
-                data: { sectionalStats },
-              });
+              const sectionalStatsObj = JSON.parse(sectionalStats) as Record<string, unknown>;
+              await this.entryRepo.update(entry.id, {
+                sectionalStats: sectionalStatsObj,
+              } as Parameters<Repository<RaceEntry>['update']>[1]);
               needKeys.delete(key);
               updated++;
             }
@@ -2465,33 +2513,20 @@ export class KraService {
         }
 
         for (const item of items) {
-          const race = await this.prisma.race.findUnique({
-            where: {
-              meet_rcDate_rcNo: {
-                meet: meet.name,
-                rcDate: date,
-                rcNo: String(item.rcNo ?? item.rc_no ?? ''),
-              },
-            },
-            include: { entries: true },
-          });
-          if (!race) continue;
+          const rcNo = String(item.rcNo ?? item.rc_no ?? '');
+          const hrNo = String(item.hrNo ?? item.hr_no ?? '');
+          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          if (!raceRow) continue;
 
-          const entry = race.entries.find(
-            (e) => e.hrNo === String(item.hrNo ?? item.hr_no ?? ''),
-          );
+          const entry = await this.entryRepo.findOne({
+            where: { raceId: raceRow.id, hrNo },
+            select: ['id'],
+          });
           if (entry) {
             const raw = item.wgHr ?? item.wg_hr ?? null;
             const horseWeight =
-              raw == null
-                ? null
-                : typeof raw === 'number'
-                  ? String(raw)
-                  : String(raw);
-            await this.prisma.raceEntry.update({
-              where: { id: entry.id },
-              data: { horseWeight },
-            });
+              raw == null ? null : typeof raw === 'number' ? String(raw) : String(raw);
+            await this.entryRepo.update(entry.id, { horseWeight });
           }
         }
 
@@ -2547,39 +2582,26 @@ export class KraService {
         }
 
         for (const item of items) {
-          const race = await this.prisma.race.findUnique({
-            where: {
-              meet_rcDate_rcNo: {
-                meet: meet.name,
-                rcDate: date,
-                rcNo: String(item.rcNo ?? item.rc_no ?? ''),
-              },
-            },
-            include: { entries: true },
-          });
-          if (!race) continue;
+          const rcNo = String(item.rcNo ?? item.rc_no ?? '');
+          const hrNo = String(item.hrNo ?? item.hr_no ?? '');
+          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          if (!raceRow) continue;
 
-          const entry = race.entries.find(
-            (e) => e.hrNo === String(item.hrNo ?? item.hr_no ?? ''),
-          );
+          const entry = await this.entryRepo.findOne({
+            where: { raceId: raceRow.id, hrNo },
+            select: ['id'],
+          });
           if (entry) {
-            await this.prisma.raceEntry.update({
-              where: { id: entry.id },
-              data: {
-                equipment:
-                  item.hrTool ?? item.equipment ?? item.equipChange ?? null,
-                bleedingInfo:
-                  item.bleCnt != null ||
-                  item.bleDate != null ||
-                  item.medicalInfo != null
-                    ? ({
-                        bleCnt: item.bleCnt,
-                        bleDate: item.bleDate,
-                        medicalInfo: item.medicalInfo,
-                      } as Prisma.InputJsonValue)
-                    : Prisma.DbNull,
-              },
-            });
+            const equipmentRaw = item.hrTool ?? item.equipment ?? item.equipChange ?? null;
+            const equipment = equipmentRaw != null ? String(equipmentRaw) : null;
+            const bleedingInfoObj =
+              item.bleCnt != null || item.bleDate != null || item.medicalInfo != null
+                ? ({ bleCnt: item.bleCnt, bleDate: item.bleDate, medicalInfo: item.medicalInfo } as Record<string, unknown>)
+                : null;
+            await this.entryRepo.update(entry.id, {
+              equipment,
+              bleedingInfo: bleedingInfoObj,
+            } as Parameters<Repository<RaceEntry>['update']>[1]);
           }
         }
 
@@ -2636,24 +2658,16 @@ export class KraService {
 
         for (const item of items) {
           const hrNo = String(item.hrNo ?? item.hr_no ?? '');
-          const race = await this.prisma.race.findUnique({
-            where: {
-              meet_rcDate_rcNo: {
-                meet: meet.name,
-                rcDate: date,
-                rcNo: String(item.rcNo ?? item.rc_no ?? ''),
-              },
-            },
-            include: { entries: true },
-          });
-          if (!race) continue;
+          const rcNo = String(item.rcNo ?? item.rc_no ?? '');
+          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          if (!raceRow) continue;
 
-          const entry = race.entries.find((e) => e.hrNo === hrNo);
+          const entry = await this.entryRepo.findOne({
+            where: { raceId: raceRow.id, hrNo },
+            select: ['id'],
+          });
           if (entry) {
-            await this.prisma.raceEntry.update({
-              where: { id: entry.id },
-              data: { isScratched: true },
-            });
+            await this.entryRepo.update(entry.id, { isScratched: true });
           }
         }
 
@@ -2688,9 +2702,9 @@ export class KraService {
       `Syncing analysis data (Training, Equipment, etc.) for date: ${date}`,
     );
     const normalizedDate = this.normalizeToYyyyMmDd(date);
-    const races = await this.prisma.race.findMany({
+    const races = await this.raceRepo.find({
       where: { rcDate: normalizedDate },
-      select: { meet: true, rcDate: true, rcNo: true },
+      select: ['meet', 'rcDate', 'rcNo'],
     });
 
     if (races.length === 0) {
@@ -2788,12 +2802,10 @@ export class KraService {
         const rcName = `Race ${r}`;
         const rcDist = [1000, 1200, 1400, 1600][r % 4].toString();
 
-        let race = await this.prisma.race.findFirst({
-          where: { meet: meet.name, rcDate, rcNo },
-        });
-        if (!race) {
-          race = await this.prisma.race.create({
-            data: {
+        let raceRow = await this.findRaceByMeetDateNo(meet.name, rcDate, rcNo);
+        if (!raceRow) {
+          await this.raceRepo.upsert(
+            {
               meet: meet.name,
               meetName: meet.name,
               rcDate,
@@ -2803,38 +2815,55 @@ export class KraService {
               rank: '일반',
               rcPrize: 5000000,
             },
-          });
+            { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
+          );
+          raceRow = await this.findRaceByMeetDateNo(meet.name, rcDate, rcNo);
         }
+        const raceId = raceRow!.id;
         raceCount++;
 
+        const chaksunTStr = '50000000';
         for (const e of ENTRIES) {
-          const existing = await this.prisma.raceEntry.findFirst({
-            where: { raceId: race.id, hrNo: e.hrNo },
+          const existing = await this.entryRepo.findOne({
+            where: { raceId, hrNo: e.hrNo },
+            select: ['id'],
           });
-          const data = {
-            raceId: race.id,
-            hrNo: e.hrNo,
-            hrName: e.hrName,
-            jkName: e.jkName,
-            trName: e.trName,
-            wgBudam: e.wgBudam,
-            chulNo: e.hrNo,
-            dusu: ENTRIES.length,
-            age: 4,
-            sex: '거',
-            prd: '국산',
-            chaksun1: 3000000,
-            chaksunT: BigInt(50000000),
-            rcCntT: 20,
-            ord1CntT: 3,
-          };
           if (existing) {
-            await this.prisma.raceEntry.update({
-              where: { id: existing.id },
-              data,
+            await this.entryRepo.update(existing.id, {
+              hrName: e.hrName,
+              jkName: e.jkName,
+              trName: e.trName,
+              wgBudam: e.wgBudam,
+              chulNo: e.hrNo,
+              dusu: ENTRIES.length,
+              age: 4,
+              sex: '거',
+              prd: '국산',
+              chaksun1: 3000000,
+              chaksunT: chaksunTStr,
+              rcCntT: 20,
+              ord1CntT: 3,
             });
           } else {
-            await this.prisma.raceEntry.create({ data });
+            await this.entryRepo.save(
+              this.entryRepo.create({
+                raceId,
+                hrNo: e.hrNo,
+                hrName: e.hrName,
+                jkName: e.jkName,
+                trName: e.trName,
+                wgBudam: e.wgBudam,
+                chulNo: e.hrNo,
+                dusu: ENTRIES.length,
+                age: 4,
+                sex: '거',
+                prd: '국산',
+                chaksun1: 3000000,
+                chaksunT: chaksunTStr,
+                rcCntT: 20,
+                ord1CntT: 3,
+              }),
+            );
           }
           entryCount++;
         }

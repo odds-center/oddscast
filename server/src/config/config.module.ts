@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { GlobalConfig } from '../database/entities/global-config.entity';
 import { ConfigController } from './config.controller';
 import { GlobalConfigService } from './config.service';
-import { PrismaModule } from '../prisma/prisma.module';
 
 @Module({
-  imports: [PrismaModule],
+  imports: [TypeOrmModule.forFeature([GlobalConfig])],
   controllers: [ConfigController],
   providers: [GlobalConfigService],
   exports: [GlobalConfigService],

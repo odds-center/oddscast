@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserDailyFortune } from '../database/entities/user-daily-fortune.entity';
 import {
   MESSAGE_OVERALL_POOL,
   MESSAGE_RACE_POOL,
@@ -32,7 +33,9 @@ function pickRandomN<T>(arr: T[], n: number): T[] {
 
 @Injectable()
 export class FortuneService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(UserDailyFortune) private readonly fortuneRepo: Repository<UserDailyFortune>,
+  ) {}
 
   private getTodayDate(): string {
     const now = new Date();
@@ -44,8 +47,8 @@ export class FortuneService {
 
   async getOrCreateToday(userId: number): Promise<TodaysFortuneDto> {
     const date = this.getTodayDate();
-    const existing = await this.prisma.userDailyFortune.findUnique({
-      where: { userId_date: { userId, date } },
+    const existing = await this.fortuneRepo.findOne({
+      where: { userId, date },
     });
     if (existing) {
       return this.toDto(existing);
@@ -56,42 +59,30 @@ export class FortuneService {
     const luckyNumbers = pickRandomN(LUCKY_NUMBERS_POOL, 2);
     const luckyColorItem = pickRandom(LUCKY_COLOR_POOL);
     const keyword = pickRandom(KEYWORD_POOL);
-    const created = await this.prisma.userDailyFortune.upsert({
-      where: { userId_date: { userId, date } },
-      create: {
+    const now = new Date();
+    await this.fortuneRepo.upsert(
+      {
         userId,
         date,
         messageOverall,
         messageRace,
         messageAdvice,
-        luckyNumbers: luckyNumbers as Prisma.InputJsonValue,
+        luckyNumbers: JSON.parse(JSON.stringify(luckyNumbers)),
         luckyColor: luckyColorItem.name,
         luckyColorHex: luckyColorItem.hex ?? null,
         keyword,
-      },
-      update: {
-        messageOverall,
-        messageRace,
-        messageAdvice,
-        luckyNumbers: luckyNumbers as Prisma.InputJsonValue,
-        luckyColor: luckyColorItem.name,
-        luckyColorHex: luckyColorItem.hex ?? null,
-        keyword,
-      },
+        updatedAt: now,
+      } as Parameters<Repository<UserDailyFortune>['upsert']>[0],
+      { conflictPaths: ['userId', 'date'] },
+    );
+    const created = await this.fortuneRepo.findOne({
+      where: { userId, date },
     });
+    if (!created) throw new Error('Fortune create failed');
     return this.toDto(created);
   }
 
-  private toDto(row: {
-    date: string;
-    messageOverall: string;
-    messageRace: string;
-    messageAdvice: string;
-    luckyNumbers: unknown;
-    luckyColor: string;
-    luckyColorHex: string | null;
-    keyword: string | null;
-  }): TodaysFortuneDto {
+  private toDto(row: UserDailyFortune): TodaysFortuneDto {
     const numbers = Array.isArray(row.luckyNumbers)
       ? (row.luckyNumbers as number[])
       : [];

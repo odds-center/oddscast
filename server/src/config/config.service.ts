@@ -1,49 +1,39 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { GlobalConfig } from '../database/entities/global-config.entity';
 
 @Injectable()
 export class GlobalConfigService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(GlobalConfig) private readonly configRepo: Repository<GlobalConfig>,
+  ) {}
 
-  /**
-   * 전체 설정을 key-value 맵으로 반환
-   */
   async getAll(): Promise<Record<string, string>> {
-    const rows = await this.prisma.globalConfig.findMany();
+    const rows = await this.configRepo.find({ select: ['key', 'value'] });
     const map: Record<string, string> = {};
-    for (const row of rows) {
-      map[row.key] = row.value;
-    }
+    for (const row of rows) map[row.key] = row.value;
     return map;
   }
 
-  /**
-   * 단일 키 조회
-   */
   async get(key: string): Promise<string | null> {
-    const row = await this.prisma.globalConfig.findUnique({
-      where: { key: key },
+    const row = await this.configRepo.findOne({
+      where: { key },
+      select: ['value'],
     });
     return row?.value ?? null;
   }
 
-  /**
-   * 키에 해당하는 boolean 값 (show_google_login 등)
-   */
   async getBoolean(key: string, defaultValue = false): Promise<boolean> {
     const val = await this.get(key);
     if (val === null || val === undefined) return defaultValue;
     return val === 'true' || val === '1' || val === 'yes';
   }
 
-  /**
-   * 설정 upsert (Admin용)
-   */
   async set(key: string, value: string): Promise<void> {
-    await this.prisma.globalConfig.upsert({
-      where: { key },
-      create: { key, value },
-      update: { value },
-    });
+    await this.configRepo.upsert(
+      { key, value, updatedAt: new Date() },
+      { conflictPaths: ['key'] },
+    );
   }
 }

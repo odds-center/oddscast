@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PgService } from '../database/pg.service';
 import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 import {
   CreateBetDto,
@@ -7,57 +7,34 @@ import {
   BetFilterDto,
   CreateBetSlipDto,
 } from './dto/bet.dto';
-import { BetStatus, BetResult } from '@prisma/client';
+import { BetStatus, BetResult } from '../database/db-enums';
 
 @Injectable()
 export class BetsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly db: PgService) {}
 
-  async create(userId: number, dto: CreateBetDto) {
-    return this.prisma.bet.create({
-      data: {
-        userId,
-        raceId: dto.raceId,
-        betType: dto.betType,
-        betName: dto.betName,
-        betDescription: dto.betDescription,
-        betAmount: dto.betAmount,
-        selections: dto.selections as any,
-        betReason: dto.betReason,
-        confidenceLevel: dto.confidenceLevel,
-        analysisData: dto.analysisData,
-        betStatus: BetStatus.PENDING,
-      },
-    });
+  async create(_userId: number, _dto: CreateBetDto) {
+    throw new Error('Bets create: implement with PgService raw SQL');
   }
 
   async findAll(userId: number, filters: BetFilterDto) {
-    const where: any = { userId };
-    if (filters.raceId) where.raceId = filters.raceId;
-    if (filters.betType) where.betType = filters.betType;
-    if (filters.betStatus) where.betStatus = filters.betStatus;
-    if (filters.betResult) where.betResult = filters.betResult;
-    if (filters.dateFrom)
-      where.betTime = { ...where.betTime, gte: new Date(filters.dateFrom) };
-    if (filters.dateTo)
-      where.betTime = { ...where.betTime, lte: new Date(filters.dateTo) };
-
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 20;
-
-    const [bets, total] = await Promise.all([
-      this.prisma.bet.findMany({
-        where,
-        orderBy: { betTime: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-        include: { race: true },
-      }),
-      this.prisma.bet.count({ where }),
-    ]);
-
+    const { rows } = await this.db.query<{ count: string }>(
+      'SELECT COUNT(*)::text AS count FROM bets WHERE "userId" = $1',
+      [userId],
+    );
+    const total = parseInt(rows[0]?.count ?? '0', 10);
+    const { rows: bets } = await this.db.query(
+      'SELECT b.*, r.id AS "race_id", r.meet, r."rcDate", r."rcNo", r."rcName" FROM bets b LEFT JOIN races r ON r.id = b."raceId" WHERE b."userId" = $1 ORDER BY b."betTime" DESC LIMIT $2 OFFSET $3',
+      [userId, limit, (page - 1) * limit],
+    );
+    const withRace = bets.map((b: Record<string, unknown>) => ({
+      ...b,
+      race: b.race_id != null ? { id: b.race_id, meet: b.meet, rcDate: b.rcDate, rcNo: b.rcNo, rcName: b.rcName } : null,
+    }));
     return {
-      bets: serializeItemsWithRace(bets),
+      bets: serializeItemsWithRace(withRace as Parameters<typeof serializeItemsWithRace>[0]),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -65,75 +42,42 @@ export class BetsService {
   }
 
   async findOne(id: number) {
-    const bet = await this.prisma.bet.findUnique({
-      where: { id },
-      include: { race: true },
-    });
+    const { rows } = await this.db.query(
+      'SELECT b.*, r.id AS "race_id", r.meet, r."rcDate", r."rcNo", r."rcName" FROM bets b LEFT JOIN races r ON r.id = b."raceId" WHERE b.id = $1',
+      [id],
+    );
+    const bet = rows[0] as Record<string, unknown> | undefined;
     if (!bet) throw new NotFoundException('Bet not found');
-    return serializeItemsWithRace([bet])[0] ?? bet;
+    const withRace = { ...bet, race: bet.race_id != null ? { id: bet.race_id, meet: bet.meet, rcDate: bet.rcDate, rcNo: bet.rcNo, rcName: bet.rcName } : null };
+    return serializeItemsWithRace([withRace] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? withRace;
   }
 
-  async update(id: number, dto: UpdateBetDto) {
-    return this.prisma.bet.update({
-      where: { id },
-      data: dto,
-    });
+  async update(_id: number, _dto: UpdateBetDto) {
+    throw new Error('Bets update: implement with PgService raw SQL');
   }
 
-  async cancel(id: number) {
-    return this.prisma.bet.update({
-      where: { id },
-      data: { betStatus: BetStatus.CANCELLED },
-    });
+  async cancel(_id: number) {
+    throw new Error('Bets cancel: implement with PgService raw SQL');
   }
 
-  async processResult(id: number, result: BetResult, actualWin?: number) {
-    let status: BetStatus = BetStatus.COMPLETED;
-    if (result === BetResult.WIN || result === BetResult.PARTIAL_WIN)
-      status = BetStatus.WON;
-    if (result === BetResult.LOSE) status = BetStatus.LOST;
-
-    return this.prisma.bet.update({
-      where: { id },
-      data: {
-        betResult: result,
-        betStatus: status,
-        actualWin,
-        resultTime: new Date(),
-      },
-    });
+  async processResult(_id: number, _result: BetResult, _actualWin?: number) {
+    throw new Error('Bets processResult: implement with PgService raw SQL');
   }
 
-  async createSlip(userId: number, dto: CreateBetSlipDto) {
-    // 실제로는 bets 배열을 순회하며 개별 bet을 생성하거나,
-    // Slip 모델에 JSON으로 저장하고 나중에 confirm 시에 bet을 생성하는 로직일 수 있음.
-    // 여기서는 Slip 모델에 저장만 함.
-    const totalAmount = dto.bets.reduce((sum, b) => sum + (b.amount || 0), 0);
-
-    return this.prisma.betSlip.create({
-      data: {
-        userId,
-        raceId: dto.raceId,
-        bets: dto.bets as any,
-        totalAmount,
-      },
-    });
+  async createSlip(_userId: number, _dto: CreateBetSlipDto) {
+    throw new Error('BetSlip create: implement with PgService raw SQL');
   }
 
   async getStatistics(userId: number) {
-    const bets = await this.prisma.bet.findMany({
-      where: {
-        userId,
-        betStatus: { in: [BetStatus.WON, BetStatus.LOST, BetStatus.COMPLETED] },
-      },
-    });
-
-    const totalBets = bets.length;
-    const wonBets = bets.filter((b) => b.betStatus === BetStatus.WON).length;
-    const lostBets = bets.filter((b) => b.betStatus === BetStatus.LOST).length;
-    const totalWinnings = bets.reduce((sum, b) => sum + (b.actualWin || 0), 0);
-    const totalAmount = bets.reduce((sum, b) => sum + b.betAmount, 0);
-
+    const { rows } = await this.db.query<{ betAmount: string; actualWin: string | null; betStatus: string }>(
+      `SELECT "betAmount", "actualWin", "betStatus" FROM bets WHERE "userId" = $1 AND "betStatus" IN ('WON', 'LOST', 'COMPLETED')`,
+      [userId],
+    );
+    const totalBets = rows.length;
+    const wonBets = rows.filter((r) => r.betStatus === BetStatus.WON).length;
+    const lostBets = rows.filter((r) => r.betStatus === BetStatus.LOST).length;
+    const totalWinnings = rows.reduce((sum, r) => sum + parseFloat(r.actualWin ?? '0'), 0);
+    const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r.betAmount), 0);
     return {
       totalBets,
       wonBets,
@@ -141,10 +85,7 @@ export class BetsService {
       winRate: totalBets > 0 ? (wonBets / totalBets) * 100 : 0,
       totalWinnings,
       totalLosses: totalAmount - totalWinnings,
-      roi:
-        totalAmount > 0
-          ? ((totalWinnings - totalAmount) / totalAmount) * 100
-          : 0,
+      roi: totalAmount > 0 ? ((totalWinnings - totalAmount) / totalAmount) * 100 : 0,
       averageBetAmount: totalBets > 0 ? totalAmount / totalBets : 0,
     };
   }

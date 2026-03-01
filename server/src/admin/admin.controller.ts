@@ -17,11 +17,11 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole, BetStatus } from '@prisma/client';
+import { UserRole, BetStatus } from '../database/db-enums';
 import { KraService } from '../kra/kra.service';
+import { AdminService } from './admin.service';
 import { UsersService } from '../users/users.service';
 import { GlobalConfigService } from '../config/config.service';
-import { PrismaService } from '../prisma/prisma.service';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { SinglePurchasesService } from '../single-purchases/single-purchases.service';
@@ -41,7 +41,7 @@ export class AdminController {
     private readonly kraService: KraService,
     private readonly usersService: UsersService,
     private readonly configService: GlobalConfigService,
-    private readonly prisma: PrismaService,
+    private readonly adminService: AdminService,
     private readonly subscriptionsService: SubscriptionsService,
     private readonly notificationsService: NotificationsService,
     private readonly singlePurchasesService: SinglePurchasesService,
@@ -278,16 +278,7 @@ export class AdminController {
     @Query('rcDate') rcDate?: string,
     @Query('limit') limit?: number,
   ) {
-    const take = Math.min(Number(limit) || 50, 100);
-    const logs = await this.prisma.kraSyncLog.findMany({
-      where: {
-        ...(endpoint && { endpoint }),
-        ...(rcDate && { rcDate }),
-      },
-      orderBy: { createdAt: 'desc' },
-      take,
-    });
-    return { logs, total: logs.length };
+    return this.adminService.getKraSyncLogs(endpoint, rcDate, Number(limit));
   }
 
   @Post('kra/seed-sample')
@@ -544,40 +535,19 @@ export class AdminController {
     @Query('raceId') raceId?: string,
     @Query('status') status?: string,
   ) {
-    const p = Math.max(1, Number(page) || 1);
-    const l = Math.min(100, Math.max(1, Number(limit) || 20));
-    const where: any = {};
-    if (userId) where.userId = parseInt(userId, 10);
-    if (raceId) where.raceId = parseInt(raceId, 10);
-    if (status) where.betStatus = status;
-
-    const [bets, total] = await Promise.all([
-      this.prisma.bet.findMany({
-        where,
-        orderBy: { betTime: 'desc' },
-        skip: (p - 1) * l,
-        take: l,
-        include: { race: true },
-      }),
-      this.prisma.bet.count({ where }),
-    ]);
-
-    return {
-      data: bets,
-      meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
-    };
+    return this.adminService.getBetsAdmin(
+      Number(page),
+      Number(limit),
+      userId != null ? parseInt(userId, 10) : undefined,
+      raceId != null ? parseInt(raceId, 10) : undefined,
+      status ?? undefined,
+    );
   }
 
   @Get('bets/:id')
   @ApiOperation({ summary: '[Admin] 마권 상세 조회' })
   async getBet(@Param('id', ParseIntPipe) id: number) {
-    return this.prisma.bet.findUnique({
-      where: { id },
-      include: {
-        race: true,
-        user: { select: { id: true, email: true, name: true } },
-      },
-    });
+    return this.adminService.getBetById(id);
   }
 
   @Patch('bets/:id/status')
@@ -590,15 +560,7 @@ export class AdminController {
     const status = valid.includes(body?.status as BetStatus)
       ? (body.status as BetStatus)
       : BetStatus.PENDING;
-    const bet = await this.prisma.bet.update({
-      where: { id },
-      data: { betStatus: status },
-      include: {
-        race: true,
-        user: { select: { id: true, email: true, name: true } },
-      },
-    });
-    return bet;
+    return this.adminService.updateBetStatus(id, status);
   }
 
   // --- Subscription Plans (Admin) ---
@@ -633,9 +595,7 @@ export class AdminController {
   @Get('subscriptions/plans/:id')
   @ApiOperation({ summary: '[Admin] 구독 플랜 상세' })
   async getSubscriptionPlan(@Param('id', ParseIntPipe) id: number) {
-    return this.prisma.subscriptionPlan.findUnique({
-      where: { id },
-    });
+    return this.adminService.getSubscriptionPlanById(id);
   }
 
   @Patch('subscriptions/plans/:id')
@@ -697,237 +657,20 @@ export class AdminController {
   @Get('statistics/dashboard')
   @ApiOperation({ summary: '[Admin] 대시보드 통계' })
   async getDashboardStats() {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-
-    const [
-      totalUsers,
-      activeUsers,
-      todayRaces,
-      todayBetsCount,
-      todayBetsAmount,
-      totalBetsAgg,
-      activeSubscriptions,
-    ] = await Promise.all([
-      this.prisma.user.count(),
-      this.prisma.user.count({ where: { isActive: true } }),
-      this.prisma.race.count({ where: { rcDate: today } }),
-      this.prisma.bet.count({
-        where: {
-          betTime: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lt: new Date(new Date().setHours(23, 59, 59, 999)),
-          },
-        },
-      }),
-      this.prisma.bet.aggregate({
-        where: {
-          betTime: {
-            gte: new Date(new Date().setHours(0, 0, 0, 0)),
-            lt: new Date(new Date().setHours(23, 59, 59, 999)),
-          },
-        },
-        _sum: { betAmount: true },
-      }),
-      this.prisma.bet.aggregate({
-        _count: true,
-        _sum: { betAmount: true },
-      }),
-      this.prisma.subscription.count({ where: { status: 'ACTIVE' } }),
-    ]);
-
-    const todayBets = {
-      count: todayBetsCount,
-      amount: todayBetsAmount._sum?.betAmount ?? 0,
-    };
-    const totalBets = {
-      count: totalBetsAgg._count,
-      amount: totalBetsAgg._sum?.betAmount ?? 0,
-      winAmount: 0, // actualWin sum calculation needed
-    };
-
-    const winAmountAgg = await this.prisma.bet.aggregate({
-      where: { actualWin: { not: null } },
-      _sum: { actualWin: true },
-    });
-    totalBets.winAmount = winAmountAgg._sum?.actualWin ?? 0;
-
-    return {
-      totalUsers,
-      activeUsers,
-      todayRaces,
-      todayBets,
-      totalBets,
-      activeSubscriptions,
-    };
+    return this.adminService.getDashboardStats();
   }
 
   @Get('statistics/revenue')
   @ApiOperation({ summary: '[Admin] 수익 통계' })
   async getRevenueStats(@Query('period') period?: string) {
-    const subs = await this.prisma.subscription.findMany({
-      where: { status: 'ACTIVE' },
-      include: { plan: true },
-    });
-    const monthlyRevenue = subs.reduce((s, sub) => s + (sub.price ?? 0), 0);
-
-    const singleAgg = await this.prisma.singlePurchase.aggregate({
-      _sum: { totalAmount: true },
-      _count: { id: true },
-    });
-    const singleRevenue = singleAgg._sum?.totalAmount ?? 0;
-    const singlePurchaseCount = singleAgg._count?.id ?? 0;
-
-    const totalRevenue = monthlyRevenue + singleRevenue;
-    const monthlyCost = 0; // AI/infra costs to be integrated later
-    const monthlyProfit = totalRevenue - monthlyCost;
-    const margin = totalRevenue > 0 ? (monthlyProfit / totalRevenue) * 100 : 0;
-
-    const subscriptionByPlan: Array<{
-      planName: string;
-      count: number;
-      revenue: number;
-    }> = [];
-    const planMap = new Map<string, { count: number; revenue: number }>();
-    for (const sub of subs) {
-      const name = sub.plan?.planName ?? 'Unknown';
-      const curr = planMap.get(name) ?? { count: 0, revenue: 0 };
-      curr.count++;
-      curr.revenue += sub.price ?? 0;
-      planMap.set(name, curr);
-    }
-    planMap.forEach((v, k) =>
-      subscriptionByPlan.push({
-        planName: k,
-        count: v.count,
-        revenue: v.revenue,
-      }),
-    );
-
-    const periodType = period || 'month';
-    const rows: Array<{
-      period: string;
-      revenue: number;
-      payout: number;
-      profit: number;
-    }> = [];
-
-    if (periodType === 'day') {
-      const today = new Date().toISOString().slice(0, 10);
-      const daySingle = await this.prisma.singlePurchase.aggregate({
-        where: {
-          purchasedAt: {
-            gte: new Date(today + 'T00:00:00.000Z'),
-            lt: new Date(new Date(today).getTime() + 86400000),
-          },
-        },
-        _sum: { totalAmount: true },
-      });
-      const dayRev = daySingle._sum?.totalAmount ?? 0;
-      rows.push({
-        period: today,
-        revenue: dayRev,
-        payout: 0,
-        profit: dayRev,
-      });
-    } else if (periodType === 'year') {
-      const y = new Date().getFullYear();
-      const yearSingle = await this.prisma.singlePurchase.aggregate({
-        where: {
-          purchasedAt: {
-            gte: new Date(`${y}-01-01`),
-            lt: new Date(`${y + 1}-01-01`),
-          },
-        },
-        _sum: { totalAmount: true },
-      });
-      const yearRev = monthlyRevenue * 12 + (yearSingle._sum?.totalAmount ?? 0);
-      rows.push({
-        period: String(y),
-        revenue: yearRev,
-        payout: 0,
-        profit: yearRev,
-      });
-    } else {
-      const now = new Date();
-      const m =
-        now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      rows.push({
-        period: m,
-        revenue: totalRevenue,
-        payout: monthlyCost,
-        profit: monthlyProfit,
-      });
-      for (let i = 1; i <= 11; i++) {
-        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const mp =
-          d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
-        const start = new Date(d.getFullYear(), d.getMonth(), 1);
-        const end = new Date(
-          d.getFullYear(),
-          d.getMonth() + 1,
-          0,
-          23,
-          59,
-          59,
-          999,
-        );
-        const monthSingle = await this.prisma.singlePurchase.aggregate({
-          where: { purchasedAt: { gte: start, lte: end } },
-          _sum: { totalAmount: true },
-        });
-        const rev = monthSingle._sum?.totalAmount ?? 0;
-        rows.unshift({
-          period: mp,
-          revenue: rev,
-          payout: 0,
-          profit: rev,
-        });
-      }
-    }
-
-    return {
-      monthlyRevenue,
-      singleRevenue,
-      totalRevenue,
-      monthlyCost,
-      monthlyProfit,
-      margin,
-      activeSubscribers: subs.length,
-      avgRevenuePerUser: subs.length > 0 ? monthlyRevenue / subs.length : 0,
-      subscriptionByPlan,
-      singlePurchaseCount,
-      rows,
-    };
+    return this.adminService.getRevenueStats(period);
   }
 
   @Get('statistics/users-growth')
   @ApiOperation({ summary: '[Admin] 사용자 증가 추이' })
   async getUsersGrowth(@Query('days') days?: number) {
     const d = Math.min(90, Math.max(7, Number(days) || 30));
-    const start = new Date();
-    start.setDate(start.getDate() - d);
-    start.setHours(0, 0, 0, 0);
-
-    const users = await this.prisma.user.findMany({
-      where: { createdAt: { gte: start } },
-      select: { createdAt: true },
-    });
-
-    const byDate: Record<string, number> = {};
-    for (let i = 0; i < d; i++) {
-      const dt = new Date(start);
-      dt.setDate(dt.getDate() + i);
-      const key = dt.toISOString().slice(0, 10);
-      byDate[key] = 0;
-    }
-    users.forEach((u) => {
-      const key = u.createdAt.toISOString().slice(0, 10);
-      if (byDate[key] !== undefined) byDate[key]++;
-    });
-
-    return Object.entries(byDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, count]) => ({ date, count }));
+    return this.adminService.getUsersGrowth(d);
   }
 
   @Get('prediction-tickets/usage')
@@ -941,107 +684,18 @@ export class AdminController {
   ) {
     const pageNum = Math.max(1, Number(page) || 1);
     const limitNum = Math.min(100, Math.max(1, Number(limit) || 20));
-    const where: { status: 'USED'; userId?: number } = { status: 'USED' };
-    if (userId) where.userId = parseInt(userId, 10);
-
-    const [tickets, total] = await Promise.all([
-      this.prisma.predictionTicket.findMany({
-        where,
-        include: {
-          user: {
-            select: { id: true, email: true, name: true, nickname: true },
-          },
-          prediction: {
-            select: {
-              id: true,
-              analysis: true,
-              status: true,
-              accuracy: true,
-              scores: true,
-            },
-          },
-          subscription: { select: { id: true } },
-        },
-        orderBy: { usedAt: 'desc' },
-        skip: (pageNum - 1) * limitNum,
-        take: limitNum,
-      }),
-      this.prisma.predictionTicket.count({ where }),
-    ]);
-
-    const raceIds = [
-      ...new Set(tickets.map((t) => t.raceId).filter(Boolean)),
-    ] as number[];
-    const races =
-      raceIds.length > 0
-        ? await this.prisma.race.findMany({
-            where: { id: { in: raceIds } },
-            select: {
-              id: true,
-              rcNo: true,
-              meet: true,
-              meetName: true,
-              rcDate: true,
-              rcName: true,
-            },
-          })
-        : [];
-    const raceMap = new Map(races.map((r) => [r.id, r]));
-
-    const items = tickets.map((t) => {
-      const race = t.raceId ? raceMap.get(t.raceId) : null;
-      return {
-        id: t.id,
-        userId: t.userId,
-        user: t.user,
-        raceId: t.raceId,
-        race: race ?? null,
-        predictionId: t.predictionId,
-        prediction: t.prediction,
-        type: t.type,
-        usedAt: t.usedAt,
-        matrixDate: t.matrixDate,
-      };
-    });
-
-    return {
-      items,
-      total,
-      page: pageNum,
-      totalPages: Math.ceil(total / limitNum),
-    };
+    return this.adminService.getPredictionTicketUsage(
+      pageNum,
+      limitNum,
+      userId != null ? parseInt(userId, 10) : undefined,
+    );
   }
 
   @Get('statistics/ticket-usage-trend')
   @ApiOperation({ summary: '[Admin] 예측권 사용량 추이' })
   async getTicketUsageTrend(@Query('days') days?: number) {
     const d = Math.min(90, Math.max(7, Number(days) || 30));
-    const start = new Date();
-    start.setDate(start.getDate() - d);
-    start.setHours(0, 0, 0, 0);
-
-    const tickets = await this.prisma.predictionTicket.findMany({
-      where: { status: 'USED', usedAt: { gte: start } },
-      select: { usedAt: true },
-    });
-
-    const byDate: Record<string, number> = {};
-    for (let i = 0; i < d; i++) {
-      const dt = new Date(start);
-      dt.setDate(dt.getDate() + i);
-      const key = dt.toISOString().slice(0, 10);
-      byDate[key] = 0;
-    }
-    tickets.forEach((t) => {
-      if (t.usedAt) {
-        const key = t.usedAt.toISOString().slice(0, 10);
-        if (byDate[key] != null) byDate[key]++;
-      }
-    });
-
-    return Object.entries(byDate)
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([date, count]) => ({ date, count }));
+    return this.adminService.getTicketUsageTrend(d);
   }
 
   // --- Activity Logs ---

@@ -1,12 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { JockeyResult } from '../database/entities/jockey-result.entity';
 import * as path from 'path';
 import { spawn } from 'child_process';
 
-/**
- * KRA API 기반 통계·분석 서비스 (KRA_ANALYSIS_STRATEGY.md 연동)
- * Python analysis.py 호출하여 기수 점수, 말 vs 기수 가중치, 2단계 필터링 수행
- */
 @Injectable()
 export class AnalysisService {
   private readonly scriptPath = path.join(
@@ -15,11 +16,13 @@ export class AnalysisService {
     'analysis.py',
   );
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(JockeyResult) private readonly jockeyResultRepo: Repository<JockeyResult>,
+  ) {}
 
-  /**
-   * Python 스크립트 실행 (stdin JSON → stdout JSON)
-   */
   private runPythonScript(input: object): Promise<unknown> {
     return new Promise((resolve, reject) => {
       const pythonProcess = spawn('python3', [this.scriptPath], {
@@ -58,19 +61,12 @@ export class AnalysisService {
     });
   }
 
-  /**
-   * 기존 calculate_score (말 기준) — PredictionsService 호환
-   */
   async calculateScore(raceData: {
     entries: Array<{ hrNo?: string; rating?: number }>;
   }): Promise<unknown> {
     return this.runPythonScript(raceData);
   }
 
-  /**
-   * 2단계 필터링 분석 (마칠기삼·기수 점수·가중치)
-   * Race + Entries + JockeyResult + RaceResult 활용
-   */
   async analyzeJockey(raceId: number): Promise<{
     entriesWithScores: Array<{
       hrNo: string;
@@ -90,17 +86,23 @@ export class AnalysisService {
       jockeyScore: number;
     } | null;
   }> {
-    const race = await this.prisma.race.findUnique({
+    const race = await this.raceRepo.findOne({
       where: { id: raceId },
-      include: {
-        entries: true,
-        results: { orderBy: [{ ordInt: 'asc' }, { ord: 'asc' }] },
-      },
+      select: ['id', 'meet', 'meetName', 'rcDate', 'rcNo', 'rcDist', 'weather', 'track'],
     });
-
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
 
-    // JockeyResult.meet: "1"=서울, "2"=제주, "3"=부경 | Race.meet: KRA API 기준 "서울","제주","부산경남"
+    const entries = await this.entryRepo.find({
+      where: { raceId },
+      select: ['hrNo', 'hrName', 'jkNo', 'jkName', 'rating'],
+    });
+
+    const results = await this.resultRepo.find({
+      where: { raceId },
+      select: ['rcTime', 'ord'],
+      order: { ordInt: 'ASC', ord: 'ASC' },
+    });
+
     const meetMap: Record<string, string> = {
       서울: '1',
       제주: '2',
@@ -114,18 +116,23 @@ export class AnalysisService {
     const meet =
       meetMap[String(race.meet)] ??
       (String(race.meet).replace(/[^123]/g, '') || '1');
-    const jockeyNos = [
-      ...new Set(race.entries.map((e) => e.jkNo).filter(Boolean)),
-    ] as string[];
+    const jockeyNos = [...new Set(entries.map((e) => e.jkNo).filter(Boolean))] as string[];
+    let jockeys: Array<{ meet: string; jkNo: string; winRateTsum: number; quRateTsum: number; rcCntT: number }> = [];
+    if (jockeyNos.length > 0) {
+      const jockeyRows = await this.jockeyResultRepo.find({
+        where: { meet, jkNo: In(jockeyNos) },
+        select: ['meet', 'jkNo', 'winRateTsum', 'quRateTsum', 'rcCntT'],
+      });
+      jockeys = jockeyRows.map((j) => ({
+        meet: j.meet,
+        jkNo: j.jkNo,
+        winRateTsum: j.winRateTsum,
+        quRateTsum: j.quRateTsum,
+        rcCntT: j.rcCntT,
+      }));
+    }
 
-    const jockeys = await this.prisma.jockeyResult.findMany({
-      where: {
-        meet,
-        jkNo: { in: jockeyNos },
-      },
-    });
-
-    const jockeyMap: Record<string, object> = {};
+    const jockeyMap: Record<string, { winRateTsum: number; quRateTsum: number; rcCntT: number }> = {};
     for (const j of jockeys) {
       jockeyMap[`${j.meet}_${j.jkNo}`] = {
         winRateTsum: j.winRateTsum,
@@ -145,7 +152,7 @@ export class AnalysisService {
         weather: race.weather,
         track: race.track ?? undefined,
       },
-      entries: race.entries.map((e) => ({
+      entries: entries.map((e) => ({
         hrNo: e.hrNo,
         hrName: e.hrName,
         jkNo: e.jkNo,
@@ -153,10 +160,7 @@ export class AnalysisService {
         rating: e.rating,
       })),
       jockeyMap,
-      results: race.results.map((r) => ({
-        rcTime: r.rcTime,
-        ord: r.ord,
-      })),
+      results: results.map((r) => ({ rcTime: r.rcTime, ord: r.ord })),
     };
 
     const result = (await this.runPythonScript(input)) as {
@@ -177,10 +181,11 @@ export class AnalysisService {
         jkName: string;
         jockeyScore: number;
       } | null;
+      error?: string;
     };
 
     if (result && typeof result === 'object' && 'error' in result) {
-      throw new Error(`Analysis error: ${(result as { error: string }).error}`);
+      throw new Error(`Analysis error: ${result.error}`);
     }
 
     return {

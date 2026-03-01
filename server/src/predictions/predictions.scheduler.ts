@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Race } from '../database/entities/race.entity';
 import { PredictionsService } from './predictions.service';
 import { GlobalConfigService } from '../config/config.service';
 import dayjs from 'dayjs';
@@ -16,9 +18,9 @@ export class PredictionsScheduler {
   private readonly logger = new Logger(PredictionsScheduler.name);
 
   constructor(
-    private prisma: PrismaService,
-    private predictionsService: PredictionsService,
-    private configService: GlobalConfigService,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    private readonly predictionsService: PredictionsService,
+    private readonly configService: GlobalConfigService,
   ) {}
 
   @Cron('0 9 * * 5,6,0') // Fri, Sat, Sun at 09:00 KST (ai_config.batchCronSchedule 참고)
@@ -34,18 +36,16 @@ export class PredictionsScheduler {
     const today = dayjs().format('YYYYMMDD');
     this.logger.log(`[Cron] Generate predictions for ${today}`);
 
-    const races = await this.prisma.race.findMany({
-      where: {
-        rcDate: today,
-        status: { in: ['SCHEDULED', 'IN_PROGRESS'] },
-        NOT: {
-          predictions: {
-            some: { status: 'COMPLETED' },
-          },
-        },
-      },
-      select: { id: true, rcNo: true, meet: true },
-    });
+    const races = await this.raceRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.rcNo', 'r.meet'])
+      .where('r.rcDate = :today', { today })
+      .andWhere('r.status IN (:...statuses)', { statuses: ['SCHEDULED', 'IN_PROGRESS'] })
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,
+      )
+      .orderBy('r.id')
+      .getMany();
 
     if (!races.length) {
       this.logger.log(`[Cron] No races to predict for ${today}`);
@@ -90,17 +90,19 @@ export class PredictionsScheduler {
     for (let i = 0; i < 7; i++) {
       dates.push(today.subtract(i, 'day').format('YYYYMMDD'));
     }
-    const races = await this.prisma.race.findMany({
-      where: {
-        rcDate: { in: dates },
-        status: 'COMPLETED',
-        results: { some: {} },
-        NOT: {
-          predictions: { some: { status: 'COMPLETED' } },
-        },
-      },
-      select: { id: true, rcNo: true, meet: true, rcDate: true },
-    });
+    const races = await this.raceRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.rcNo', 'r.meet', 'r.rcDate'])
+      .where('r.rcDate IN (:...dates)', { dates })
+      .andWhere('r.status = :status', { status: 'COMPLETED' })
+      .andWhere(
+        `EXISTS (SELECT 1 FROM oddscast.race_results rr WHERE rr."raceId" = r.id)`,
+      )
+      .andWhere(
+        `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,
+      )
+      .orderBy('r.id')
+      .getMany();
     if (!races.length) {
       this.logger.log('[Cron] No completed races missing predictions');
       return;

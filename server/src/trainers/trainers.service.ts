@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { Prisma } from '@prisma/client';
+import { PgService } from '../database/pg.service';
 
 export interface TrainerProfileDto {
   trName: string;
@@ -28,22 +27,21 @@ export interface TrainerHistoryItemDto {
 
 @Injectable()
 export class TrainersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(private readonly db: PgService) {}
 
   async getProfile(trName: string): Promise<TrainerProfileDto | null> {
-    const results = await this.prisma.raceResult.findMany({
-      where: { trName },
-      select: {
-        trName: true,
-        ord: true,
-        ordInt: true,
-        ordType: true,
-        race: { select: { meet: true } },
-      },
-      orderBy: { createdAt: 'desc' },
-      take: 200,
-    });
-
+    const res = await this.db.query<{
+      trName: string | null;
+      ord: string | null;
+      ordInt: number | null;
+      ordType: string | null;
+      meet: string;
+    }>(
+      `SELECT rr."trName", rr.ord, rr."ordInt", rr."ordType", r.meet
+       FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."trName" = $1 ORDER BY rr."createdAt" DESC LIMIT 200`,
+      [trName],
+    );
+    const results = res.rows;
     if (results.length === 0) return null;
 
     const normalResults = results.filter((r) => {
@@ -72,7 +70,7 @@ export class TrainersService {
       { wins: number; places: number; count: number }
     >();
     for (const r of normalResults) {
-      const meet = r.race?.meet ?? 'unknown';
+      const meet = r.meet ?? 'unknown';
       const cur = meetMap.get(meet) ?? { wins: 0, places: 0, count: 0 };
       cur.count += 1;
       if ((r.ordInt ?? 0) === 1) cur.wins += 1;
@@ -108,40 +106,35 @@ export class TrainersService {
     total: number;
     totalPages: number;
   }> {
-    const where: Prisma.RaceResultWhereInput = { trName };
-    const [items, total] = await Promise.all([
-      this.prisma.raceResult.findMany({
-        where,
-        select: {
-          raceId: true,
-          ord: true,
-          ordInt: true,
-          hrName: true,
-          rcTime: true,
-          race: {
-            select: {
-              rcDate: true,
-              meet: true,
-              meetName: true,
-              rcNo: true,
-              rcDist: true,
-            },
-          },
-        },
-        orderBy: { race: { rcDate: 'desc' } },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.raceResult.count({ where }),
+    const [itemsRes, countRes] = await Promise.all([
+      this.db.query<{
+        raceId: number;
+        ord: string | null;
+        ordInt: number | null;
+        hrName: string | null;
+        rcTime: string | null;
+        rcDate: string;
+        meet: string;
+        meetName: string | null;
+        rcNo: string;
+        rcDist: string | null;
+      }>(
+        `SELECT rr."raceId", rr.ord, rr."ordInt", rr."hrName", rr."rcTime",
+                r."rcDate", r.meet, r."meetName", r."rcNo", r."rcDist"
+         FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."trName" = $1 ORDER BY r."rcDate" DESC LIMIT $2 OFFSET $3`,
+        [trName, limit, (page - 1) * limit],
+      ),
+      this.db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM race_results WHERE "trName" = $1', [trName]),
     ]);
-
+    const items = itemsRes.rows;
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
     const dtos: TrainerHistoryItemDto[] = items.map((r) => ({
       raceId: r.raceId,
-      rcDate: r.race.rcDate,
-      meet: r.race.meet,
-      meetName: r.race.meetName ?? null,
-      rcNo: r.race.rcNo,
-      rcDist: r.race.rcDist ?? null,
+      rcDate: r.rcDate,
+      meet: r.meet,
+      meetName: r.meetName ?? null,
+      rcNo: r.rcNo,
+      rcDist: r.rcDist ?? null,
       ord: r.ord,
       ordInt: r.ordInt,
       hrName: r.hrName ?? null,

@@ -3,69 +3,62 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, IsNull, Not, Repository } from 'typeorm';
+import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
+import { Prediction } from '../database/entities/prediction.entity';
+import { TicketStatus, TicketType, PredictionStatus } from '../database/db-enums';
 import { PredictionsService } from '../predictions/predictions.service';
 import { UseTicketDto } from '../common/dto/payment.dto';
 
 @Injectable()
 export class PredictionTicketsService {
   constructor(
-    private prisma: PrismaService,
-    private predictionsService: PredictionsService,
+    @InjectRepository(PredictionTicket) private readonly ticketRepo: Repository<PredictionTicket>,
+    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    private readonly dataSource: DataSource,
+    private readonly predictionsService: PredictionsService,
   ) {}
 
-  /**
-   * 예측권 사용 — AI 분석 조회.
-   * 해당 경주에 예측이 없으면 먼저 Gemini로 생성한 뒤 반환.
-   * 같은 경주에 대해 1분 이내 재사용 불가 (regenerate 포함).
-   */
   async useTicket(userId: number, dto: UseTicketDto) {
     const raceId = Number(dto.raceId);
-
-    // 1분 쿨다운 — 같은 경주에 대해 마지막 사용 후 60초 이내 재사용 불가
-    const lastUsed = await this.prisma.predictionTicket.findFirst({
-      where: { userId, raceId, status: 'USED', usedAt: { not: null } },
-      orderBy: { usedAt: 'desc' },
-      select: { usedAt: true },
+    const lastUsed = await this.ticketRepo.findOne({
+      where: { userId, raceId, status: TicketStatus.USED },
+      select: ['usedAt'],
+      order: { usedAt: 'DESC' },
     });
     if (lastUsed?.usedAt) {
       const elapsed = Date.now() - new Date(lastUsed.usedAt).getTime();
-      const COOLDOWN_MS = 60_000;
-      if (elapsed < COOLDOWN_MS) {
-        const remaining = Math.ceil((COOLDOWN_MS - elapsed) / 1000);
+      if (elapsed < 60_000) {
         throw new BadRequestException(
-          `${remaining}초 후 다시 예측할 수 있습니다`,
+          `${Math.ceil((60_000 - elapsed) / 1000)}초 후 다시 예측할 수 있습니다`,
         );
       }
     }
 
-    const ticket = await this.prisma.predictionTicket.findFirst({
-      where: { userId, status: 'AVAILABLE', expiresAt: { gte: new Date() } },
-      orderBy: { expiresAt: 'asc' },
+    const now = new Date();
+    const ticketToUse = await this.ticketRepo
+      .createQueryBuilder('t')
+      .where('t.userId = :userId', { userId })
+      .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
+      .andWhere('t.expiresAt >= :now', { now })
+      .orderBy('t.expiresAt', 'ASC')
+      .limit(1)
+      .getOne();
+    if (!ticketToUse) throw new BadRequestException('사용 가능한 예측권이 없습니다');
+
+    let pred = await this.predictionRepo.findOne({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      select: ['id'],
+      order: { createdAt: 'DESC' },
     });
 
-    if (!ticket) throw new BadRequestException('사용 가능한 예측권이 없습니다');
-
-    let prediction = await this.prisma.prediction.findFirst({
-      where: { raceId: Number(dto.raceId), status: 'COMPLETED' },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    // 예측이 없거나 regenerate=true 이면 AI로 새 예측 생성 (create만 사용 — 이전 예측 기록 유지)
-    if (!prediction || dto.regenerate) {
+    if (!pred || dto.regenerate) {
       try {
-        prediction = await this.predictionsService.generatePrediction(
-          Number(dto.raceId),
-        );
+        pred = await this.predictionsService.generatePrediction(raceId);
       } catch (err: unknown) {
-        const status = (err as { status?: number })?.status;
         const msg = err instanceof Error ? err.message : String(err);
-        const isQuota =
-          status === 429 ||
-          msg.includes('429') ||
-          msg.includes('quota') ||
-          msg.includes('Too Many Requests');
-        if (isQuota) {
+        if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
           throw new BadRequestException(
             'AI 예측 생성 한도가 초과되었습니다. 잠시 후 다시 시도해 주세요.',
           );
@@ -74,206 +67,179 @@ export class PredictionTicketsService {
       }
     }
 
-    const updated = await this.prisma.predictionTicket.update({
-      where: { id: ticket.id },
-      data: {
-        status: 'USED',
-        usedAt: new Date(),
-        predictionId: prediction.id,
-        raceId: Number(dto.raceId),
-      },
+    await this.ticketRepo.update(ticketToUse.id, {
+      status: TicketStatus.USED,
+      usedAt: now,
+      predictionId: pred.id,
+      raceId,
     });
 
-    return { ticket: updated, prediction };
+    const updated = await this.ticketRepo.findOne({
+      where: { id: ticketToUse.id },
+    });
+    return {
+      ticket: updated,
+      prediction: pred,
+    };
   }
 
   async getBalance(userId: number) {
-    const [available, used, expired] = await Promise.all([
-      this.prisma.predictionTicket.count({
-        where: { userId, status: 'AVAILABLE', expiresAt: { gte: new Date() } },
+    const now = new Date();
+    const [availCount, usedCount, expiredCount] = await Promise.all([
+      this.ticketRepo
+        .createQueryBuilder('t')
+        .where('t.userId = :userId', { userId })
+        .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
+        .andWhere('t.expiresAt >= :now', { now })
+        .getCount(),
+      this.ticketRepo.count({
+        where: { userId, status: TicketStatus.USED },
       }),
-      this.prisma.predictionTicket.count({ where: { userId, status: 'USED' } }),
-      this.prisma.predictionTicket.count({
-        where: {
-          userId,
-          OR: [
-            { status: 'EXPIRED' },
-            { status: 'AVAILABLE', expiresAt: { lt: new Date() } },
-          ],
-        },
-      }),
+      this.ticketRepo
+        .createQueryBuilder('t')
+        .where('t.userId = :userId', { userId })
+        .andWhere('(t.status = :expired OR (t.status = :avail AND t.expiresAt < :now))', {
+          expired: TicketStatus.EXPIRED,
+          avail: TicketStatus.AVAILABLE,
+          now,
+        })
+        .getCount(),
     ]);
-
-    return { available, used, expired, total: available + used + expired };
+    return {
+      available: availCount,
+      used: usedCount,
+      expired: expiredCount,
+      total: availCount + usedCount + expiredCount,
+    };
   }
 
   async getHistory(userId: number, page: number = 1, limit: number = 20) {
     const [tickets, total] = await Promise.all([
-      this.prisma.predictionTicket.findMany({
+      this.ticketRepo.find({
         where: { userId },
-        include: { prediction: true },
+        order: { issuedAt: 'DESC' },
         skip: (page - 1) * limit,
         take: limit,
-        orderBy: { issuedAt: 'desc' },
       }),
-      this.prisma.predictionTicket.count({ where: { userId } }),
+      this.ticketRepo.count({ where: { userId } }),
     ]);
-
-    return { tickets, total, page, totalPages: Math.ceil(total / limit) };
-  }
-
-  /**
-   * My past predictions — tickets used for race predictions (USED + predictionId), with race and accuracy.
-   */
-  async getMyPredictionsHistory(
-    userId: number,
-    page: number = 1,
-    limit: number = 20,
-  ) {
-    const [items, total] = await Promise.all([
-      this.prisma.predictionTicket.findMany({
-        where: {
-          userId,
-          status: 'USED',
-          predictionId: { not: null },
-          type: 'RACE',
-        },
-        include: {
-          prediction: {
-            select: { id: true, raceId: true, accuracy: true, status: true },
-            include: { race: true },
-          },
-        },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { usedAt: 'desc' },
-      }),
-      this.prisma.predictionTicket.count({
-        where: {
-          userId,
-          status: 'USED',
-          predictionId: { not: null },
-          type: 'RACE',
-        },
-      }),
-    ]);
-
-    const list = items
-      .filter(
-        (
-          t,
-        ): t is typeof t & {
-          prediction: NonNullable<typeof t.prediction> & {
-            race: NonNullable<NonNullable<typeof t.prediction>['race']>;
-          };
-        } => t.prediction?.race != null,
-      )
-      .map((t) => ({
-        ticketId: t.id,
-        usedAt: t.usedAt,
-        raceId: t.raceId ?? t.prediction.raceId,
-        predictionId: t.predictionId,
-        accuracy: t.prediction.accuracy ?? null,
-        race: {
-          id: t.prediction.race.id,
-          meet: t.prediction.race.meet,
-          rcDate: t.prediction.race.rcDate,
-          rcNo: t.prediction.race.rcNo,
-          rcName: t.prediction.race.rcName,
-        },
-      }));
-
     return {
-      list,
+      tickets,
       total,
       page,
       totalPages: Math.ceil(total / limit),
     };
   }
 
-  async findOne(id: number) {
-    const ticket = await this.prisma.predictionTicket.findUnique({
-      where: { id },
-      include: { prediction: true, subscription: true },
+  async getMyPredictionsHistory(
+    userId: number,
+    page: number = 1,
+    limit: number = 20,
+  ) {
+    const whereOpts = {
+      userId,
+      status: TicketStatus.USED,
+      type: TicketType.RACE,
+      predictionId: Not(IsNull()),
+    };
+    const items = await this.ticketRepo.find({
+      where: whereOpts,
+      relations: ['prediction', 'prediction.race', 'race'],
+      order: { usedAt: 'DESC' },
+      skip: (page - 1) * limit,
+      take: limit,
     });
+    const total = await this.ticketRepo.count({ where: whereOpts });
+    const list = items.map((t) => {
+      const race = t.race ?? t.prediction?.race;
+      return {
+        ticketId: t.id,
+        usedAt: t.usedAt,
+        raceId: t.raceId ?? t.prediction?.raceId,
+        predictionId: t.predictionId,
+        accuracy: t.prediction?.accuracy ?? null,
+        race: race
+          ? { id: race.id, meet: race.meet, rcDate: race.rcDate, rcNo: race.rcNo, rcName: race.rcName }
+          : undefined,
+      };
+    });
+    return { list, total, page, totalPages: Math.ceil(total / limit) };
+  }
+
+  async findOne(id: number) {
+    const ticket = await this.ticketRepo.findOne({ where: { id } });
     if (!ticket) throw new NotFoundException('예측권을 찾을 수 없습니다');
     return ticket;
   }
 
-  /** 종합 예측권 — 해당 날짜 접근 권한 확인 */
   async checkMatrixAccess(
     userId: number,
     date: string,
   ): Promise<{ hasAccess: boolean; expiresAt?: Date }> {
     const normalized = date.replace(/-/g, '').slice(0, 8);
-    const ticket = await this.prisma.predictionTicket.findFirst({
-      where: {
-        userId,
-        type: 'MATRIX',
-        status: 'USED',
-        matrixDate: normalized,
-        expiresAt: { gte: new Date() },
-      },
-    });
-    return { hasAccess: !!ticket, expiresAt: ticket?.expiresAt };
+    const now = new Date();
+    const ticket = await this.ticketRepo
+      .createQueryBuilder('t')
+      .where('t.userId = :userId', { userId })
+      .andWhere('t.type = :type', { type: TicketType.MATRIX })
+      .andWhere('t.status = :status', { status: TicketStatus.USED })
+      .andWhere('t.matrixDate = :normalized', { normalized })
+      .andWhere('t.expiresAt >= :now', { now })
+      .select(['t.expiresAt'])
+      .limit(1)
+      .getOne();
+    if (!ticket) return { hasAccess: false };
+    return { hasAccess: true, expiresAt: ticket.expiresAt };
   }
 
-  /** 종합 예측권 사용 — 하루치 전체 예상표 열람 */
   async useMatrixTicket(userId: number, date: string) {
     const normalized = date.replace(/-/g, '').slice(0, 8);
-
-    const existing = await this.prisma.predictionTicket.findFirst({
-      where: {
-        userId,
-        type: 'MATRIX',
-        status: 'USED',
-        matrixDate: normalized,
-        expiresAt: { gte: new Date() },
-      },
+    const now = new Date();
+    const existing = await this.ticketRepo.findOne({
+      where: { userId, type: TicketType.MATRIX, status: TicketStatus.USED, matrixDate: normalized },
     });
-    if (existing) {
-      return { ticket: existing, alreadyUsed: true };
+    if (existing && existing.expiresAt >= now) {
+      const t = await this.ticketRepo.findOne({ where: { id: existing.id } });
+      return { ticket: t, alreadyUsed: true };
     }
 
-    const ticket = await this.prisma.predictionTicket.findFirst({
-      where: {
-        userId,
-        type: 'MATRIX',
-        status: 'AVAILABLE',
-        expiresAt: { gte: new Date() },
-      },
-      orderBy: { expiresAt: 'asc' },
+    const availQb = this.ticketRepo
+      .createQueryBuilder('t')
+      .where('t.userId = :userId', { userId })
+      .andWhere('t.type = :type', { type: TicketType.MATRIX })
+      .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
+      .andWhere('t.expiresAt >= :now', { now })
+      .orderBy('t.expiresAt', 'ASC')
+      .limit(1);
+    const ticketEntity = await availQb.getOne();
+    if (!ticketEntity) throw new BadRequestException('사용 가능한 종합 예측권이 없습니다');
+
+    await this.ticketRepo.update(ticketEntity.id, {
+      status: TicketStatus.USED,
+      usedAt: now,
+      matrixDate: normalized,
     });
-
-    if (!ticket) {
-      throw new BadRequestException('사용 가능한 종합 예측권이 없습니다');
-    }
-
-    const updated = await this.prisma.predictionTicket.update({
-      where: { id: ticket.id },
-      data: { status: 'USED', usedAt: new Date(), matrixDate: normalized },
-    });
-
+    const updated = await this.ticketRepo.findOne({ where: { id: ticketEntity.id } });
     return { ticket: updated, alreadyUsed: false };
   }
 
-  /** 종합 예측권 잔액 조회 */
   async getMatrixBalance(userId: number) {
-    const available = await this.prisma.predictionTicket.count({
-      where: {
-        userId,
-        type: 'MATRIX',
-        status: 'AVAILABLE',
-        expiresAt: { gte: new Date() },
-      },
-    });
-    const used = await this.prisma.predictionTicket.count({
-      where: { userId, type: 'MATRIX', status: 'USED' },
-    });
-    return { available, used, total: available + used };
+    const now = new Date();
+    const [availCount, usedCount] = await Promise.all([
+      this.ticketRepo
+        .createQueryBuilder('t')
+        .where('t.userId = :userId', { userId })
+        .andWhere('t.type = :type', { type: TicketType.MATRIX })
+        .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
+        .andWhere('t.expiresAt >= :now', { now })
+        .getCount(),
+      this.ticketRepo.count({
+        where: { userId, type: TicketType.MATRIX, status: TicketStatus.USED },
+      }),
+    ]);
+    return { available: availCount, used: usedCount, total: availCount + usedCount };
   }
 
-  /** 종합 예측권 개별 구매 (1,000원/장, 30일 유효) */
   async purchaseMatrixTickets(userId: number, count: number) {
     if (count < 1 || count > 10) {
       throw new BadRequestException('구매 수량은 1~10장 사이여야 합니다');
@@ -283,29 +249,33 @@ export class PredictionTicketsService {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const tickets = await this.prisma.$transaction(
-      Array.from({ length: count }, () =>
-        this.prisma.predictionTicket.create({
-          data: {
+    const tickets = await this.dataSource.transaction(async (manager) => {
+      const repo = manager.getRepository(PredictionTicket);
+      const created: PredictionTicket[] = [];
+      for (let i = 0; i < count; i++) {
+        const t = await repo.save(
+          repo.create({
             userId,
-            type: 'MATRIX',
-            status: 'AVAILABLE',
+            type: TicketType.MATRIX,
+            status: TicketStatus.AVAILABLE,
             expiresAt,
-          },
-        }),
-      ),
-    );
+            issuedAt: new Date(),
+          }),
+        );
+        created.push(t);
+      }
+      return created;
+    });
 
     return {
       purchased: tickets.length,
       totalPrice,
       pricePerTicket: PRICE_PER_TICKET,
       expiresAt,
-      tickets,
+      tickets: tickets.map((t) => ({ id: t.id })),
     };
   }
 
-  /** Admin: 사용자에게 예측권 지급 (구독/결제 없이) */
   async grantTickets(
     userId: number,
     count: number,
@@ -319,22 +289,20 @@ export class PredictionTicketsService {
     expiresAt.setDate(
       expiresAt.getDate() + Math.min(365, Math.max(1, expiresInDays)),
     );
-
-    const tickets = await this.prisma.$transaction(
-      Array.from({ length: count }, () =>
-        this.prisma.predictionTicket.create({
-          data: {
-            userId,
-            subscriptionId: null,
-            predictionId: null,
-            raceId: null,
-            type,
-            status: 'AVAILABLE',
-            expiresAt,
-          },
+    const ticketType = type === 'MATRIX' ? TicketType.MATRIX : TicketType.RACE;
+    const tickets: PredictionTicket[] = [];
+    for (let i = 0; i < count; i++) {
+      const t = await this.ticketRepo.save(
+        this.ticketRepo.create({
+          userId,
+          type: ticketType,
+          status: TicketStatus.AVAILABLE,
+          expiresAt,
+          issuedAt: new Date(),
         }),
-      ),
-    );
-    return { granted: tickets.length, type, tickets };
+      );
+      tickets.push(t);
+    }
+    return { granted: tickets.length, type, tickets: tickets.map((t) => ({ id: t.id })) };
   }
 }

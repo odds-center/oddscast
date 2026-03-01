@@ -3,9 +3,12 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import * as crypto from 'crypto';
+import { ReferralCode } from '../database/entities/referral-code.entity';
+import { ReferralClaim } from '../database/entities/referral-claim.entity';
+import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 
 const REFERRER_TICKETS = 3;
 const REFERRED_TICKETS = 2;
@@ -24,23 +27,28 @@ function generateCode(): string {
 @Injectable()
 export class ReferralsService {
   constructor(
-    private prisma: PrismaService,
-    private predictionTickets: PredictionTicketsService,
+    @InjectRepository(ReferralCode)
+    private readonly referralCodeRepo: Repository<ReferralCode>,
+    @InjectRepository(ReferralClaim)
+    private readonly referralClaimRepo: Repository<ReferralClaim>,
+    private readonly predictionTickets: PredictionTicketsService,
   ) {}
 
   async getOrCreateMyCode(
     userId: number,
   ): Promise<{ code: string; usedCount: number; maxUses: number }> {
-    let row = await this.prisma.referralCode.findFirst({
+    let codeEntity = await this.referralCodeRepo.findOne({
       where: { userId },
+      select: ['id', 'code', 'usedCount', 'maxUses'],
     });
-    if (!row) {
+    if (!codeEntity) {
       let code: string | null = null;
       for (let i = 0; i < 5; i++) {
         const candidate = generateCode();
-        const exists = await this.prisma.referralCode
-          .findUnique({ where: { code: candidate } })
-          .then(Boolean);
+        const exists = await this.referralCodeRepo.findOne({
+          where: { code: candidate },
+          select: ['id'],
+        });
         if (!exists) {
           code = candidate;
           break;
@@ -51,14 +59,21 @@ export class ReferralsService {
           '추천 코드 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.',
         );
       }
-      row = await this.prisma.referralCode.create({
-        data: { userId, code, maxUses: 10 },
+      const now = new Date();
+      codeEntity = this.referralCodeRepo.create({
+        userId,
+        code,
+        maxUses: 10,
+        usedCount: 0,
+        createdAt: now,
+        updatedAt: now,
       });
+      await this.referralCodeRepo.save(codeEntity);
     }
     return {
-      code: row.code,
-      usedCount: row.usedCount,
-      maxUses: row.maxUses,
+      code: codeEntity.code,
+      usedCount: codeEntity.usedCount,
+      maxUses: codeEntity.maxUses,
     };
   }
 
@@ -71,9 +86,9 @@ export class ReferralsService {
     referredTickets: number;
   }> {
     const trimmed = code.trim().toUpperCase();
-    const referral = await this.prisma.referralCode.findUnique({
+    const referral = await this.referralCodeRepo.findOne({
       where: { code: trimmed },
-      include: { user: true },
+      select: ['id', 'userId', 'usedCount', 'maxUses'],
     });
     if (!referral) {
       throw new NotFoundException('유효하지 않은 추천 코드입니다.');
@@ -85,26 +100,25 @@ export class ReferralsService {
       throw new BadRequestException('이 추천 코드는 사용 한도에 도달했습니다.');
     }
 
-    const alreadyClaimed = await this.prisma.referralClaim.findUnique({
+    const existingClaim = await this.referralClaimRepo.findOne({
       where: { referredUserId: userId },
+      select: ['id'],
     });
-    if (alreadyClaimed) {
+    if (existingClaim) {
       throw new BadRequestException(
         '이미 추천 코드를 사용하셨습니다. 한 계정당 한 번만 사용할 수 있습니다.',
       );
     }
 
-    await this.prisma.$transaction(async (tx) => {
-      await tx.referralClaim.create({
-        data: {
-          referralCodeId: referral.id,
-          referredUserId: userId,
-        },
-      });
-      await tx.referralCode.update({
-        where: { id: referral.id },
-        data: { usedCount: referral.usedCount + 1 },
-      });
+    await this.referralClaimRepo.save(
+      this.referralClaimRepo.create({
+        referralCodeId: referral.id,
+        referredUserId: userId,
+      }),
+    );
+    await this.referralCodeRepo.update(referral.id, {
+      usedCount: referral.usedCount + 1,
+      updatedAt: new Date(),
     });
 
     await this.predictionTickets.grantTickets(

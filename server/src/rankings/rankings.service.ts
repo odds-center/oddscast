@@ -1,24 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { User } from '../database/entities/user.entity';
 import { PicksService } from '../picks/picks.service';
 
 @Injectable()
 export class RankingsService {
   constructor(
-    private prisma: PrismaService,
-    private picksService: PicksService,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    private readonly picksService: PicksService,
   ) {}
 
-  /**
-   * 랭킹 = 맞춘 횟수 (많이 맞춘 유저 순).
-   * UserPick + RaceResult 승식별 적중 판정.
-   */
   async getRankings(type: string = 'overall', limit: number = 20) {
     const correctCountMap = await this.picksService.getCorrectCountByUser();
     const userIds = [...correctCountMap.keys()];
-    const users = await this.prisma.user.findMany({
-      where: { id: { in: userIds }, isActive: true },
-      select: { id: true, name: true, nickname: true, avatar: true },
+    if (userIds.length === 0) {
+      return { data: [], total: 0, type };
+    }
+
+    const users = await this.userRepo.find({
+      where: { id: In(userIds), isActive: true },
+      select: ['id', 'name', 'nickname', 'avatar'],
     });
 
     const rankings = users
@@ -38,11 +40,10 @@ export class RankingsService {
   }
 
   async getMyRanking(userId: number, _type: string = 'overall') {
-    const user = await this.prisma.user.findUnique({
+    const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: { id: true, name: true, nickname: true, avatar: true },
+      select: ['id', 'name', 'nickname', 'avatar'],
     });
-
     const correctCount = await this.picksService.getCorrectCount(userId);
 
     return {

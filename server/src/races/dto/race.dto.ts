@@ -24,9 +24,19 @@ export class CreateRaceDto {
   @IsString()
   rcDate: string;
 
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  rcDay?: string;
+
   @ApiProperty({ example: '01' })
   @IsString()
   rcNo: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  stTime?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -58,6 +68,11 @@ export class CreateRaceDto {
   @IsOptional()
   @IsString()
   track?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  status?: string;
 }
 
 export class UpdateRaceDto extends PartialType(CreateRaceDto) {}
@@ -79,6 +94,11 @@ export class CreateRaceEntryDto {
   @IsOptional()
   @IsString()
   trName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  owNo?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

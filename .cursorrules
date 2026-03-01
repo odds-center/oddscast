@@ -45,6 +45,7 @@
 | **새 기능 기획/추가** | `FEATURE_ROADMAP.md` + `SERVICE_SPECIFICATION.md` + `BUSINESS_LOGIC.md` |
 | **서버 API 추가/수정** | `API_SPECIFICATION.md` + `ARCHITECTURE.md` |
 | **DB 스키마 변경** | `DATABASE_SCHEMA.md` + `BUSINESS_LOGIC.md` |
+| **DB 레이어/ORM 전환(TypeORM 마이그레이션)** | `TYPEORM_MIGRATION.md` + `DB_SCHEMA_FULL.sql` + `DATABASE_SCHEMA.md` |
 | **모바일 API 호출 추가** | `API_SPECIFICATION.md` + `PROJECT_STRUCTURE.md` |
 | **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
 | **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
@@ -67,7 +68,7 @@
 | **App** | React Native (Expo) — TypeScript |
 | **Backend** | NestJS (Node.js) — API 서버 + Control Tower |
 | **Analysis** | Python (pandas, numpy) — python-shell로 실행 |
-| **Database** | PostgreSQL — Prisma ORM |
+| **Database** | PostgreSQL — pg + PgService(raw SQL), TypeORM 전환 예정 (`TYPEORM_MIGRATION.md`) |
 | **AI** | Google Gemini API |
 | **Admin** | Next.js |
 

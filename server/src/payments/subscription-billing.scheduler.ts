@@ -5,14 +5,14 @@
 
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PrismaService } from '../prisma/prisma.service';
+import { PgService } from '../database/pg.service';
 import { PaymentsService } from './payments.service';
 
 @Injectable()
 export class SubscriptionBillingScheduler {
   constructor(
-    private prisma: PrismaService,
-    private paymentsService: PaymentsService,
+    private readonly db: PgService,
+    private readonly paymentsService: PaymentsService,
   ) {}
 
   /**
@@ -25,17 +25,13 @@ export class SubscriptionBillingScheduler {
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
 
-    const due = await this.prisma.subscription.findMany({
-      where: {
-        status: 'ACTIVE',
-        nextBillingDate: { gte: todayStart, lt: tomorrowStart },
-        billingKey: { not: null },
-        customerKey: { not: null },
-      },
-      select: { id: true },
-    });
-
-    for (const sub of due) {
+    const res = await this.db.query<{ id: number }>(
+      `SELECT id FROM subscriptions
+       WHERE status = 'ACTIVE' AND "nextBillingDate" >= $1 AND "nextBillingDate" < $2
+         AND "billingKey" IS NOT NULL AND "customerKey" IS NOT NULL`,
+      [todayStart, tomorrowStart],
+    );
+    for (const sub of res.rows) {
       await this.paymentsService.requestRecurringBilling(sub.id);
     }
   }

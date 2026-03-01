@@ -1,17 +1,17 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { PgService } from '../database/pg.service';
 import { GlobalConfigService } from '../config/config.service';
-import { TicketStatus } from '@prisma/client';
+import { TicketStatus } from '../database/db-enums';
 import { PurchaseDto } from '../common/dto/payment.dto';
 
 @Injectable()
 export class SinglePurchasesService {
   constructor(
-    private prisma: PrismaService,
-    private configService: GlobalConfigService,
+    private readonly db: PgService,
+    private readonly configService: GlobalConfigService,
   ) {}
 
-  private readonly DEFAULT_PRICE_PER_TICKET = 550; // 500원 원가 + 10% VAT
+  private readonly DEFAULT_PRICE_PER_TICKET = 550;
 
   private async getPricePerTicket(): Promise<number> {
     const raw = await this.configService.get('single_purchase_config');
@@ -34,29 +34,27 @@ export class SinglePurchasesService {
     const unitPrice = await this.getPricePerTicket();
     const totalAmount = quantity * unitPrice;
 
-    const purchase = await this.prisma.singlePurchase.create({
-      data: {
-        userId,
-        quantity,
-        totalAmount,
-        paymentMethod: dto.paymentMethod,
-        pgTransactionId: dto.pgTransactionId,
-      },
-    });
+    const { rows } = await this.db.query<{ id: number }>(
+      `INSERT INTO single_purchases ("userId", quantity, "totalAmount", "paymentMethod", "pgTransactionId") VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+      [userId, quantity, totalAmount, dto.paymentMethod ?? null, dto.pgTransactionId ?? null],
+    );
+    const purchaseId = rows[0]?.id;
+    if (purchaseId == null) throw new Error('Single purchase insert failed');
 
-    // 예측권 발급
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
 
-    const ticketData = Array.from({ length: quantity }, () => ({
-      userId,
-      status: 'AVAILABLE' as TicketStatus,
-      expiresAt,
-    }));
+    for (let i = 0; i < quantity; i++) {
+      await this.db.query(
+        `INSERT INTO prediction_tickets ("userId", type, status, "expiresAt") VALUES ($1, 'RACE', $2, $3)`,
+        [userId, TicketStatus.AVAILABLE, expiresAt],
+      );
+    }
 
-    await this.prisma.predictionTicket.createMany({ data: ticketData });
-
-    return { purchase, ticketsIssued: quantity };
+    const purchase = await this.db.query('SELECT * FROM single_purchases WHERE id = $1', [
+      purchaseId,
+    ]);
+    return { purchase: purchase.rows[0], ticketsIssued: quantity };
   }
 
   async getConfig() {
@@ -131,7 +129,6 @@ export class SinglePurchasesService {
     const discount = 0;
     const subtotal = quantity * unitPrice;
     const discountAmount = Math.floor(subtotal * discount);
-
     return {
       unitPrice,
       quantity,
@@ -143,29 +140,30 @@ export class SinglePurchasesService {
   }
 
   async getHistory(userId: number, page: number = 1, limit: number = 20) {
-    const [purchases, total] = await Promise.all([
-      this.prisma.singlePurchase.findMany({
-        where: { userId },
-        skip: (page - 1) * limit,
-        take: limit,
-        orderBy: { purchasedAt: 'desc' },
-      }),
-      this.prisma.singlePurchase.count({ where: { userId } }),
+    const offset = (page - 1) * limit;
+    const [countRes, rowsRes] = await Promise.all([
+      this.db.query<{ count: string }>(
+        'SELECT COUNT(*)::text AS count FROM single_purchases WHERE "userId" = $1',
+        [userId],
+      ),
+      this.db.query(
+        'SELECT * FROM single_purchases WHERE "userId" = $1 ORDER BY "purchasedAt" DESC LIMIT $2 OFFSET $3',
+        [userId, limit, offset],
+      ),
     ]);
-
-    return { purchases, total, page, totalPages: Math.ceil(total / limit) };
+    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
+    return { purchases: rowsRes.rows, total, page, totalPages: Math.ceil(total / limit) };
   }
 
   async getTotalSpent(userId: number) {
-    const result = await this.prisma.singlePurchase.aggregate({
-      where: { userId },
-      _sum: { totalAmount: true },
-      _count: true,
-    });
-
+    const { rows } = await this.db.query<{ sum: string; count: string }>(
+      'SELECT COALESCE(SUM("totalAmount"), 0)::text AS sum, COUNT(*)::text AS count FROM single_purchases WHERE "userId" = $1',
+      [userId],
+    );
+    const r = rows[0];
     return {
-      totalSpent: result._sum?.totalAmount ?? 0,
-      totalPurchases: result._count,
+      totalSpent: parseInt(r?.sum ?? '0', 10),
+      totalPurchases: parseInt(r?.count ?? '0', 10),
     };
   }
 }

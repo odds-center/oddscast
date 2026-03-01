@@ -7,7 +7,7 @@ import {
   IsDateString,
   Min,
 } from 'class-validator';
-import { PointTransactionType, PointStatus } from '@prisma/client';
+import { PointTransactionType, PointStatus } from '../../database/db-enums';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class CreatePointTransactionDto {

@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { WeeklyPreview } from '../database/entities/weekly-preview.entity';
+import { Race } from '../database/entities/race.entity';
 
 export interface WeeklyPreviewContent {
   highlights?: string;
@@ -8,11 +11,9 @@ export interface WeeklyPreviewContent {
   raceDates?: string[];
 }
 
-/** Get next Friday, Saturday, Sunday from a given date (e.g. Thursday). */
 function getNextFriSatSun(from: Date): [string, string, string] {
   const d = new Date(from);
   const day = d.getDay();
-  // 4=Thu: next Fri = +1, Sat = +2, Sun = +3
   let daysUntilFri = 5 - day;
   if (daysUntilFri <= 0) daysUntilFri += 7;
   const fri = new Date(d);
@@ -25,7 +26,6 @@ function getNextFriSatSun(from: Date): [string, string, string] {
   return [fmt(fri), fmt(sat), fmt(sun)];
 }
 
-/** Thursday of current week as YYYY-MM-DD (for weekLabel when running Thu 20:00). */
 function getThursdayLabel(from: Date): string {
   const d = new Date(from);
   const day = d.getDay();
@@ -38,27 +38,34 @@ function getThursdayLabel(from: Date): string {
 export class WeeklyPreviewService {
   private readonly logger = new Logger(WeeklyPreviewService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    @InjectRepository(WeeklyPreview) private readonly previewRepo: Repository<WeeklyPreview>,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+  ) {}
 
   async getLatest(): Promise<{
     weekLabel: string;
     content: WeeklyPreviewContent;
   } | null> {
-    const row = await this.prisma.weeklyPreview.findFirst({
-      orderBy: { createdAt: 'desc' },
+    const row = await this.previewRepo.find({
+      select: ['weekLabel', 'content'],
+      order: { createdAt: 'DESC' },
+      take: 1,
     });
-    if (!row) return null;
+    const first = row[0];
+    if (!first) return null;
     return {
-      weekLabel: row.weekLabel,
-      content: (row.content as WeeklyPreviewContent) ?? {},
+      weekLabel: first.weekLabel,
+      content: (first.content as WeeklyPreviewContent) ?? {},
     };
   }
 
   async getByWeek(
     weekLabel: string,
   ): Promise<{ weekLabel: string; content: WeeklyPreviewContent } | null> {
-    const row = await this.prisma.weeklyPreview.findUnique({
+    const row = await this.previewRepo.findOne({
       where: { weekLabel },
+      select: ['weekLabel', 'content'],
     });
     if (!row) return null;
     return {
@@ -67,7 +74,6 @@ export class WeeklyPreviewService {
     };
   }
 
-  /** Generate preview for the upcoming Fri–Sun; call from cron (Thursday 20:00) or admin. */
   async generate(opts?: {
     fromDate?: Date;
   }): Promise<{ weekLabel: string; content: WeeklyPreviewContent }> {
@@ -75,27 +81,17 @@ export class WeeklyPreviewService {
     const [fri, sat, sun] = getNextFriSatSun(from);
     const weekLabel = getThursdayLabel(from);
 
-    const races = await this.prisma.race.findMany({
-      where: {
-        rcDate: { in: [fri, sat, sun] },
-      },
-      select: {
-        id: true,
-        rcNo: true,
-        rcDate: true,
-        meetName: true,
-        meet: true,
-        rcDist: true,
-        rank: true,
-      },
-      orderBy: [{ rcDate: 'asc' }, { rcNo: 'asc' }],
+    const races = await this.raceRepo.find({
+      where: { rcDate: In([fri, sat, sun]) },
+      select: ['id', 'rcNo', 'rcDate', 'meetName', 'meet', 'rcDist', 'rank'],
+      order: { rcDate: 'ASC', rcNo: 'ASC' },
     });
 
     const raceSummary = races
       .slice(0, 50)
       .map(
         (r) =>
-          `${r.rcDate} ${(r as { meetName?: string }).meetName ?? r.meet} ${r.rcNo}경주 ${r.rcDist ?? ''} ${r.rank ?? ''}`,
+          `${r.rcDate} ${r.meetName ?? r.meet} ${r.rcNo}경주 ${r.rcDist ?? ''} ${r.rank ?? ''}`,
       )
       .join('\n');
 
@@ -183,10 +179,15 @@ Example: {"highlights":"...", "horsesToWatch":["...","..."], "trackConditions":"
     weekLabel: string,
     content: WeeklyPreviewContent,
   ): Promise<void> {
-    await this.prisma.weeklyPreview.upsert({
-      where: { weekLabel },
-      create: { weekLabel, content: content as object },
-      update: { content: content as object },
-    });
+    const now = new Date();
+    await this.previewRepo.upsert(
+      {
+        weekLabel,
+        content: content as unknown as Record<string, unknown>,
+        createdAt: now,
+        updatedAt: now,
+      } as Parameters<Repository<WeeklyPreview>['upsert']>[0],
+      { conflictPaths: ['weekLabel'] },
+    );
   }
 }

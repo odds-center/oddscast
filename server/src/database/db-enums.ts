@@ -149,8 +149,15 @@ export type InputJsonValue =
   | unknown[];
 
 /** Compatibility namespace for code still referencing Prisma.* types (no runtime Prisma). */
+// eslint-disable-next-line @typescript-eslint/no-namespace -- backward compatibility for Prisma.* type references
 export namespace Prisma {
-  export type InputJsonValue = string | number | boolean | null | Record<string, unknown> | unknown[];
+  export type InputJsonValue =
+    | string
+    | number
+    | boolean
+    | null
+    | Record<string, unknown>
+    | unknown[];
   export type RaceUpdateInput = Record<string, unknown>;
   export type DbNull = null;
   export type PredictionWhereInput = Record<string, unknown>;

@@ -55,13 +55,16 @@ export class PointsService {
   constructor(
     @InjectRepository(PointTransaction)
     private readonly pointTransactionRepo: Repository<PointTransaction>,
-    @InjectRepository(PointConfig) private readonly pointConfigRepo: Repository<PointConfig>,
+    @InjectRepository(PointConfig)
+    private readonly pointConfigRepo: Repository<PointConfig>,
     @InjectRepository(PointPromotion)
     private readonly pointPromotionRepo: Repository<PointPromotion>,
     @InjectRepository(PointTicketPrice)
     private readonly pointTicketPriceRepo: Repository<PointTicketPrice>,
-    @InjectRepository(UserPick) private readonly userPickRepo: Repository<UserPick>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(UserPick)
+    private readonly userPickRepo: Repository<UserPick>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
     @InjectRepository(PredictionTicket)
     private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private readonly picksService: PicksService,
@@ -101,7 +104,8 @@ export class PointsService {
       transactionType?: PointTransactionType;
       status?: PointStatus;
     } = { userId };
-    if (filters.type) where.transactionType = filters.type as PointTransactionType;
+    if (filters.type)
+      where.transactionType = filters.type as PointTransactionType;
     if (filters.status) where.status = filters.status as PointStatus;
 
     const [transactions, total] = await this.pointTransactionRepo.findAndCount({
@@ -294,7 +298,6 @@ export class PointsService {
       const multKey = PICK_TYPE_CONFIG_KEYS[pick.pickType];
       const mult = parseFloat(configMap[multKey] ?? '1');
       const points = Math.round(basePoints * mult);
-      const bal = await this.getBalance(pick.userId);
       await this.createTransaction(pick.userId, {
         type: PointTransactionType.EARNED,
         amount: points,

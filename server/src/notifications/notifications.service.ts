@@ -27,12 +27,15 @@ export class NotificationsService {
   private expo: Expo;
 
   constructor(
-    @InjectRepository(Notification) private readonly notificationRepo: Repository<Notification>,
-    @InjectRepository(PushToken) private readonly pushTokenRepo: Repository<PushToken>,
+    @InjectRepository(Notification)
+    private readonly notificationRepo: Repository<Notification>,
+    @InjectRepository(PushToken)
+    private readonly pushTokenRepo: Repository<PushToken>,
     @InjectRepository(UserNotificationPreference)
     private readonly prefRepo: Repository<UserNotificationPreference>,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(Subscription) private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepo: Repository<Subscription>,
   ) {
     this.expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   }
@@ -71,7 +74,8 @@ export class NotificationsService {
 
   async create(dto: CreateNotificationDto) {
     const type = (dto.type as NotificationType) || NotificationType.SYSTEM;
-    const category = (dto.category as NotificationCategory) || NotificationCategory.GENERAL;
+    const category =
+      (dto.category as NotificationCategory) || NotificationCategory.GENERAL;
     const notification = this.notificationRepo.create({
       userId: dto.userId,
       title: dto.title,
@@ -185,14 +189,21 @@ export class NotificationsService {
     return { message: '푸시 알림 구독이 해제되었습니다.' };
   }
 
-  async updatePreferences(userId: number, dto: UpdateNotificationPreferenceDto) {
+  async updatePreferences(
+    userId: number,
+    dto: UpdateNotificationPreferenceDto,
+  ) {
     const prefs = await this.getPreferences(userId);
     if (dto.pushEnabled !== undefined) prefs.pushEnabled = dto.pushEnabled;
     if (dto.raceEnabled !== undefined) prefs.raceEnabled = dto.raceEnabled;
-    if (dto.predictionEnabled !== undefined) prefs.predictionEnabled = dto.predictionEnabled;
-    if (dto.subscriptionEnabled !== undefined) prefs.subscriptionEnabled = dto.subscriptionEnabled;
-    if (dto.systemEnabled !== undefined) prefs.systemEnabled = dto.systemEnabled;
-    if (dto.promotionEnabled !== undefined) prefs.promotionEnabled = dto.promotionEnabled;
+    if (dto.predictionEnabled !== undefined)
+      prefs.predictionEnabled = dto.predictionEnabled;
+    if (dto.subscriptionEnabled !== undefined)
+      prefs.subscriptionEnabled = dto.subscriptionEnabled;
+    if (dto.systemEnabled !== undefined)
+      prefs.systemEnabled = dto.systemEnabled;
+    if (dto.promotionEnabled !== undefined)
+      prefs.promotionEnabled = dto.promotionEnabled;
     await this.prefRepo.save(prefs);
     return this.getPreferences(userId);
   }
@@ -245,7 +256,6 @@ export class NotificationsService {
       return { count: 0, pushSent: 0, message: '발송 대상이 없습니다.' };
     }
 
-    const now = new Date();
     for (const userId of userIds) {
       await this.notificationRepo.save(
         this.notificationRepo.create({
@@ -266,7 +276,9 @@ export class NotificationsService {
       });
       if (tokens.length > 0) {
         const baseUrl = this.getWebappBaseUrl();
-        const deepLink = baseUrl ? `${baseUrl}/mypage/notifications` : '/mypage/notifications';
+        const deepLink = baseUrl
+          ? `${baseUrl}/mypage/notifications`
+          : '/mypage/notifications';
         const messages = tokens.map((t) => ({
           to: t.token,
           title: data.title,
@@ -303,12 +315,20 @@ export class NotificationsService {
     rcDate?: string;
     confidencePercent: number;
   }): Promise<{ count: number }> {
-    const { raceId, predictionId, meet = '', rcNo = '', confidencePercent } = payload;
+    const {
+      raceId,
+      predictionId,
+      meet = '',
+      rcNo = '',
+      confidencePercent,
+    } = payload;
     const raceLabel = rcNo ? `${meet || '경주'} ${rcNo}R` : meet || '경주';
     const title = '고신뢰도 AI 예측 준비됨';
     const message = `${raceLabel} — 예측 확률 ${confidencePercent}%. 상세 분석을 확인하세요.`;
     const baseUrl = this.getWebappBaseUrl();
-    const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
+    const deepLink = baseUrl
+      ? `${baseUrl}/races/${raceId}`
+      : `/races/${raceId}`;
     const dataJson: Record<string, unknown> = {
       raceId,
       predictionId,
@@ -318,11 +338,7 @@ export class NotificationsService {
 
     const users = await this.userRepo
       .createQueryBuilder('u')
-      .leftJoin(
-        UserNotificationPreference,
-        'unp',
-        'unp."userId" = u.id',
-      )
+      .leftJoin(UserNotificationPreference, 'unp', 'unp."userId" = u.id')
       .where('u.isActive = :active', { active: true })
       .andWhere('(unp.id IS NULL OR unp.predictionEnabled = true)')
       .select('u.id')
@@ -330,7 +346,6 @@ export class NotificationsService {
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) return { count: 0 };
 
-    const now = new Date();
     for (const userId of userIds) {
       await this.notificationRepo.save(
         this.notificationRepo.create({
@@ -364,10 +379,15 @@ export class NotificationsService {
         for (const chunk of chunks) {
           await this.expo.sendPushNotificationsAsync(chunk);
         }
-        this.logger.log(`[SmartAlert] Push sent to ${pushTokens.length} device(s) with deepLink`);
+        this.logger.log(
+          `[SmartAlert] Push sent to ${pushTokens.length} device(s) with deepLink`,
+        );
       }
     } catch (err) {
-      this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);
+      this.logger.warn(
+        '[SmartAlert] Push send failed',
+        (err as Error)?.message,
+      );
     }
     return { count: userIds.length };
   }

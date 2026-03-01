@@ -33,18 +33,24 @@ let lastWorkingGeminiModel: string | null = null;
 @Injectable()
 export class PredictionsService {
   constructor(
-    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(Prediction)
+    private readonly predictionRepo: Repository<Prediction>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
-    @InjectRepository(TrainerResult) private readonly trainerResultRepo: Repository<TrainerResult>,
+    @InjectRepository(RaceEntry)
+    private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(TrainerResult)
+    private readonly trainerResultRepo: Repository<TrainerResult>,
     private readonly analysisService: AnalysisService,
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
   ) {}
 
   /** Load race by id with entries for analysis (replaces Prisma race findUnique + include). */
-  private async loadRaceWithEntries(raceId: number): Promise<RaceForPython | null> {
+  private async loadRaceWithEntries(
+    raceId: number,
+  ): Promise<RaceForPython | null> {
     const race = await this.raceRepo.findOne({ where: { id: raceId } });
     if (!race) return null;
     const entries = await this.entryRepo.find({
@@ -123,11 +129,13 @@ export class PredictionsService {
   async updateStatus(id: number, dto: UpdatePredictionStatusDto) {
     const prediction = await this.predictionRepo.findOne({ where: { id } });
     if (!prediction) return null;
-    if (dto.status !== undefined) prediction.status = dto.status as PredictionStatus;
+    if (dto.status !== undefined)
+      prediction.status = dto.status as PredictionStatus;
     if (dto.scores !== undefined) prediction.scores = dto.scores;
     if (dto.analysis !== undefined) prediction.analysis = dto.analysis;
     if (dto.accuracy !== undefined) prediction.accuracy = dto.accuracy;
-    if (dto.previewApproved !== undefined) prediction.previewApproved = dto.previewApproved;
+    if (dto.previewApproved !== undefined)
+      prediction.previewApproved = dto.previewApproved;
     await this.predictionRepo.save(prediction);
     return prediction;
   }
@@ -135,8 +143,12 @@ export class PredictionsService {
   async getDashboard() {
     const [total, completed, pending, avgRow] = await Promise.all([
       this.predictionRepo.count(),
-      this.predictionRepo.count({ where: { status: PredictionStatus.COMPLETED } }),
-      this.predictionRepo.count({ where: { status: PredictionStatus.PENDING } }),
+      this.predictionRepo.count({
+        where: { status: PredictionStatus.COMPLETED },
+      }),
+      this.predictionRepo.count({
+        where: { status: PredictionStatus.PENDING },
+      }),
       this.predictionRepo
         .createQueryBuilder('p')
         .select('AVG(p.accuracy)', 'avg')
@@ -296,7 +308,11 @@ export class PredictionsService {
     if (!pred?.race) return;
     const prediction = {
       ...pred,
-      race: { meet: pred.race.meet, rcDate: pred.race.rcDate, rcNo: pred.race.rcNo },
+      race: {
+        meet: pred.race.meet,
+        rcDate: pred.race.rcDate,
+        rcNo: pred.race.rcNo,
+      },
     };
     if (!prediction?.race) return;
     const scoresObj = prediction.scores as { horseScores?: unknown[] } | null;
@@ -381,7 +397,11 @@ AI 예측 순위: ${predictedTop || '-'}
       .where("p.status = 'COMPLETED'")
       .andWhere('p.accuracy IS NOT NULL')
       .getRawMany<{ accuracy: number | null; createdAt: Date; meet: string }>();
-    const completed = completedRows.map((r) => ({ accuracy: r.accuracy, createdAt: r.createdAt, race: { meet: r.meet } }));
+    const completed = completedRows.map((r) => ({
+      accuracy: r.accuracy,
+      createdAt: r.createdAt,
+      race: { meet: r.meet },
+    }));
 
     const totalCount = completed.length;
     const hitCount = completed.filter((p) => (p.accuracy ?? 0) > 0).length;
@@ -443,7 +463,11 @@ AI 예측 순위: ${predictedTop || '-'}
    */
   async getPreview(raceId: number) {
     const p = await this.predictionRepo.findOne({
-      where: { raceId, previewApproved: true, status: PredictionStatus.COMPLETED },
+      where: {
+        raceId,
+        previewApproved: true,
+        status: PredictionStatus.COMPLETED,
+      },
       select: ['id', 'preview', 'analysis', 'scores', 'status', 'createdAt'],
       order: { createdAt: 'DESC' },
     });
@@ -498,8 +522,10 @@ AI 예측 순위: ${predictedTop || '-'}
       .orderBy('p.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
-    if (filters.status) qb.andWhere('p.status = :status', { status: filters.status });
-    if (filters.raceId != null) qb.andWhere('p.raceId = :raceId', { raceId: filters.raceId });
+    if (filters.status)
+      qb.andWhere('p.status = :status', { status: filters.status });
+    if (filters.raceId != null)
+      qb.andWhere('p.raceId = :raceId', { raceId: filters.raceId });
     const [items, total] = await qb.getManyAndCount();
     const predictions = items.map((p) => ({
       ...p,
@@ -600,12 +626,17 @@ AI 예측 순위: ${predictedTop || '-'}
       options.delayBetweenRacesMs ?? PredictionsService.DELAY_BETWEEN_RACES_MS;
 
     const completedRaceIds = await this.predictionRepo
-      .find({ where: { status: PredictionStatus.COMPLETED }, select: ['raceId'] })
+      .find({
+        where: { status: PredictionStatus.COMPLETED },
+        select: ['raceId'],
+      })
       .then((rows) => [...new Set(rows.map((r) => r.raceId))]);
     const rawRaces = await this.raceRepo.find({
       where: {
         rcDate: Between(dateFrom, dateTo),
-        ...(completedRaceIds.length > 0 ? { id: Not(In(completedRaceIds)) } : {}),
+        ...(completedRaceIds.length > 0
+          ? { id: Not(In(completedRaceIds)) }
+          : {}),
       },
       select: ['id', 'rcDate', 'rcNo', 'meet'],
       order: { rcDate: 'ASC' },
@@ -691,12 +722,6 @@ AI 예측 순위: ${predictedTop || '-'}
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
       : new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const params: unknown[] = [rcDate];
-    let raceWhere = `r."rcDate" = $1`;
-    if (meet) {
-      params.push(toKraMeetName(meet));
-      raceWhere += ` AND r.meet = $${params.length}`;
-    }
     const raceWhereOpts: { rcDate: string; meet?: string } = { rcDate };
     if (meet) raceWhereOpts.meet = toKraMeetName(meet);
     const rawRacesList = await this.raceRepo.find({
@@ -705,7 +730,10 @@ AI 예측 순위: ${predictedTop || '-'}
       order: { meet: 'ASC' },
     });
     const raceIds = rawRacesList.map((r) => r.id);
-    const entriesMap = new Map<number, Array<{ hrNo: string; hrName: string }>>();
+    const entriesMap = new Map<
+      number,
+      Array<{ hrNo: string; hrName: string }>
+    >();
     if (raceIds.length > 0) {
       const entriesList = await this.entryRepo.find({
         where: { raceId: In(raceIds) },
@@ -745,15 +773,19 @@ AI 예측 순위: ${predictedTop || '-'}
 
     for (const race of races) {
       const pred = await this.predictionRepo.findOne({
-        where: { raceId: (race as unknown as { id: number }).id, previewApproved: true, status: PredictionStatus.COMPLETED },
+        where: {
+          raceId: (race as unknown as { id: number }).id,
+          previewApproved: true,
+          status: PredictionStatus.COMPLETED,
+        },
         select: ['scores'],
         order: { createdAt: 'DESC' },
       });
       const scores =
         (
-          (pred?.scores as {
+          pred?.scores as {
             horseScores?: Array<{ hrNo?: string; hrName?: string }>;
-          } | null)
+          } | null
         )?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
@@ -824,14 +856,25 @@ AI 예측 순위: ${predictedTop || '-'}
       skip: offset,
       take: limit,
     });
-    type CommentaryPred = { id: number; raceId: number; scores: unknown; preview: string | null; race: { id: number; meet: string; meetName?: string; rcNo: string } };
+    type CommentaryPred = {
+      id: number;
+      raceId: number;
+      scores: unknown;
+      preview: string | null;
+      race: { id: number; meet: string; meetName?: string; rcNo: string };
+    };
     const preds: CommentaryPred[] = predsList.map((p) => ({
       id: p.id,
       raceId: p.raceId,
       scores: p.scores,
       preview: p.preview != null ? p.preview : null,
       race: p.race
-        ? { id: p.race.id, meet: p.race.meet, meetName: p.race.meetName ?? undefined, rcNo: p.race.rcNo }
+        ? {
+            id: p.race.id,
+            meet: p.race.meet,
+            meetName: p.race.meetName ?? undefined,
+            rcNo: p.race.rcNo,
+          }
         : { id: 0, meet: '', rcNo: '' },
     }));
 
@@ -897,7 +940,12 @@ AI 예측 순위: ${predictedTop || '-'}
       order: { createdAt: 'DESC' },
       take: Math.min(limit, 20),
     });
-    type HitPred = { id: number; accuracy: number | null; createdAt: Date; race: { rcDate?: string; meet?: string } };
+    type HitPred = {
+      id: number;
+      accuracy: number | null;
+      createdAt: Date;
+      race: { rcDate?: string; meet?: string };
+    };
     const preds: HitPred[] = predsList
       .filter((p) => p.accuracy != null && p.accuracy >= 33)
       .map((p) => ({
@@ -1307,8 +1355,16 @@ AI 예측 순위: ${predictedTop || '-'}
       .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
       .orderBy('r.rcDate', 'DESC')
       .limit(500)
-      .getRawMany<{ hrNo: string; ord: string | null; ordInt: number | null; rcDate: string }>();
-    const results = resultsRows.map((r) => ({ ...r, race: { rcDate: r.rcDate } }));
+      .getRawMany<{
+        hrNo: string;
+        ord: string | null;
+        ordInt: number | null;
+        rcDate: string;
+      }>();
+    const results = resultsRows.map((r) => ({
+      ...r,
+      race: { rcDate: r.rcDate },
+    }));
 
     // rcDate 내림차순 정렬 후 hrNo별 최근 5경기 착순 (Prisma relation orderBy 비일관 대비)
     const sorted = [...results].sort((a, b) => {
@@ -1378,7 +1434,10 @@ AI 예측 순위: ${predictedTop || '-'}
       .addSelect('rr.jkNo', 'jkNo')
       .where("rr.ordType = 'FALL'")
       .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
-      .andWhere('(rr.hrNo IN (:...hrNos) OR rr.jkNo IN (:...jkNos))', { hrNos, jkNos })
+      .andWhere('(rr.hrNo IN (:...hrNos) OR rr.jkNo IN (:...jkNos))', {
+        hrNos,
+        jkNos,
+      })
       .limit(2000)
       .getRawMany<{ hrNo: string | null; jkNo: string | null }>();
 
@@ -1528,7 +1587,10 @@ AI 예측 순위: ${predictedTop || '-'}
       .orderBy('rr.createdAt', 'DESC')
       .limit(200);
     if (meetVal) rrQb.andWhere('r.meet = :meetVal', { meetVal });
-    const results = await rrQb.getRawMany<{ hrNo: string; sectionalTimes: unknown }>();
+    const results = await rrQb.getRawMany<{
+      hrNo: string;
+      sectionalTimes: unknown;
+    }>();
     const byHorse: Record<
       string,
       { s1fSum: number; g1fSum: number; s1fN: number; g1fN: number }

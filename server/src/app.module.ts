@@ -5,7 +5,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 // Core
-import { DatabaseModule } from './database/database.module';
 import {
   User,
   Favorite,
@@ -129,7 +128,6 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
       }),
       inject: [ConfigService],
     }),
-    DatabaseModule,
     HealthModule, // nginx/LB 헬스체크 — /health
     CacheModule, // Redis(선택) / 인메모리 캐시
 

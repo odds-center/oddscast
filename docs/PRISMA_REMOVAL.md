@@ -3,10 +3,7 @@
 ## 완료된 작업
 
 - Prisma 패키지 및 `server/prisma/` 폴더 제거
-- `PgService` (pg Pool) 및 `DatabaseModule` 추가
-- `app.module`에서 `PrismaModule` 제거, `DatabaseModule` 사용
-- **구현 완료 (raw SQL):** Auth, Config, Users, Rankings, PredictionTickets, Horses, Jockeys, Trainers, Admin controller, Payments, SubscriptionBillingScheduler, Referrals, PredictionsScheduler, **RacesService**, **ResultsService**, **KraService**, **PredictionsService**, FavoritesService 등 전부 `this.db.query(...)` 로 전환 완료
-- **공용:** `server/src/common/race-includes.ts`, `server/src/database/db-enums.ts` (타입 호환용)
+- **TypeORM 전환 완료:** DB 접근은 TypeORM(Entity/Repository/QueryBuilder) 전용. `PgService`·`DatabaseModule` 제거됨.
 - **참조:** `docs/DB_SCHEMA_FULL.sql` — Railway 등에서 스키마 적용용
 
 ## TypeORM 마이그레이션 — 완료

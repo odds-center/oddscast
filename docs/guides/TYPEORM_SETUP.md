@@ -40,21 +40,26 @@ TypeORM은 **synchronize: false**로 설정되어 있어, 스키마를 자동으
 ## 4. 앱에서의 사용
 
 - **Entity:** `server/src/database/entities/` 에 정의.  
-  현재: `User`, `Favorite`. 추가 Entity는 동일 디렉터리에 생성 후 `entities/index.ts`와 `app.module.ts`의 `entities: [...]`에 등록.
-- **Repository 주입:** 서비스에서 `@InjectRepository(User)` 등으로 주입 후 사용.
-- **PgService와 병행:** 전환 완료 전까지는 기존 `PgService`(raw SQL)와 TypeORM을 함께 사용 가능. 모듈별로 TypeORM으로 옮긴 뒤, 최종적으로 PgService 제거.
+  `entities/index.ts`와 `app.module.ts`의 `entities: [...]`에 등록된 Entity만 사용. 추가 시 두 곳 모두 반영.
+- **Repository 주입:** 서비스에서 `@InjectRepository(Entity)` 등으로 주입 후 사용. DB 접근은 TypeORM 전용.
 
 ---
 
-## 5. 마이그레이션 (추후)
+## 5. 마이그레이션
 
-스키마 변경 시 TypeORM CLI로 마이그레이션 생성·실행할 예정.
+**현재:** 스키마는 `docs/DB_SCHEMA_FULL.sql` 수동 적용. TypeORM `synchronize: false`이므로 앱이 스키마를 자동 생성하지 않음.
+
+**TypeORM migration CLI 도입 시:**
 
 - **생성:** `pnpm --filter server exec typeorm migration:generate -d src/database/data-source.js src/database/migrations/MigrationName`
 - **실행:** `pnpm --filter server exec typeorm migration:run -d src/database/data-source.js`
+- DataSource 파일(`data-source.ts`)과 `migrations` 디렉터리는 도입 시 추가.
 
-DataSource 파일(`data-source.ts`)과 `migrations` 디렉터리는 마이그레이션 도입 시 추가.  
-현재는 기존 `DB_SCHEMA_FULL.sql` 수동 적용으로 스키마 관리.
+### CI / 배포 시 마이그레이션 실행
+
+- **수동 스키마 (현재):** 배포 전 또는 배포 스크립트에서 `psql $DATABASE_URL -f docs/DB_SCHEMA_FULL.sql` 실행. 기존 DB가 있으면 스키마가 이미 적용된 상태이므로, 신규 컬럼/테이블만 반영된 SQL을 별도로 작성·실행하는 방식 권장.
+- **TypeORM migration 사용 시:** 배포 파이프라인에서 `pnpm --filter server run migration:run`(또는 위 `typeorm migration:run`)을 DB 연결 가능한 단계에서 실행. 보통 앱 기동 전 한 번만 실행.
+- **권장 순서:** 1) DB 마이그레이션 실행, 2) 앱 빌드/배포, 3) 앱 기동.
 
 ---
 

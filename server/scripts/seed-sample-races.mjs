@@ -1,37 +1,23 @@
 #!/usr/bin/env node
 /**
- * 샘플 경주 데이터 적재 (KRA API 키 없이 개발용)
+ * Sample race data seed (dev without KRA API key).
+ * Uses pg only; no Prisma.
  *
- * 용도: KRA_SERVICE_KEY가 없을 때 로컬 개발을 위한 샘플 Race + RaceEntry 데이터
- * 실행: server 디렉토리에서
- *   pnpm run seed:sample-races [YYYYMMDD]
- *
- * 기본: 오늘 또는 최근 주말(금/토/일)
+ * Run from server dir: pnpm run seed:sample-races [YYYYMMDD]
+ * Or use Admin API: POST /api/admin/kra/seed-sample?date=YYYYMMDD
  */
 
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { config } from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-import { PrismaPg } from '@prisma/adapter-pg';
+import pg from 'pg';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 config({ path: path.resolve(__dirname, '../.env') });
 
-function createPrismaClient() {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error('DATABASE_URL 미설정. server/.env에 DATABASE_URL을 추가하세요.');
-  }
-  const isAccelerate = url.startsWith('prisma://') || url.startsWith('prisma+postgres://');
-  if (isAccelerate) {
-    return new PrismaClient({ accelerateUrl: url });
-  }
-  const adapter = new PrismaPg({ connectionString: url });
-  return new PrismaClient({ adapter });
-}
-
-const prisma = createPrismaClient();
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+});
 
 function getTargetDate() {
   const arg = process.argv[2];
@@ -46,10 +32,7 @@ function getTargetDate() {
   return d.toISOString().slice(0, 10).replace(/-/g, '');
 }
 
-const MEETS = [
-  { name: '서울' },
-  { name: '부산경남' },
-];
+const MEETS = [{ name: '서울' }, { name: '부산경남' }];
 
 const SAMPLE_ENTRIES = [
   { hrNo: '001', hrName: '다크호스', jkName: '김기수', trName: '이조교', wgBudam: 56 },
@@ -63,8 +46,13 @@ const SAMPLE_ENTRIES = [
 ];
 
 async function main() {
+  const url = process.env.DATABASE_URL;
+  if (!url) {
+    throw new Error('DATABASE_URL not set. Add it to server/.env');
+  }
+
   const rcDate = getTargetDate();
-  console.log(`\n📥 샘플 경주 데이터 적재 (rcDate: ${rcDate})\n`);
+  console.log(`\n📥 Sample race seed (rcDate: ${rcDate})\n`);
 
   let raceCount = 0;
   let entryCount = 0;
@@ -75,76 +63,85 @@ async function main() {
       const rcName = `${r}장 경주`;
       const rcDist = [1000, 1200, 1400, 1600, 1800, 2000][r % 6].toString();
 
-      let race = await prisma.race.findFirst({
-        where: { meet: meet.name, rcDate, rcNo },
-      });
-      if (!race) {
-        race = await prisma.race.create({
-          data: {
-            meet: meet.name,
-            meetName: meet.name,
-            rcDate,
-            rcNo,
-            rcDist: rcDist || '1200',
-            rcName: rcName || `${r}장`,
-            rank: '일반',
-            rcCondition: '일반',
-            rcPrize: 5000000,
-            weather: '맑음',
-            track: '보통',
-          },
-        });
+      const existing = await pool.query(
+        `SELECT id FROM oddscast.races WHERE meet = $1 AND "rcDate" = $2 AND "rcNo" = $3`,
+        [meet.name, rcDate, rcNo],
+      );
+      let raceId;
+      if (existing.rows.length === 0) {
+        const ins = await pool.query(
+          `INSERT INTO oddscast.races (meet, "meetName", "rcDate", "rcNo", "rcDist", "rcName", rank, "rcCondition", "rcPrize", weather, track, status)
+           VALUES ($1, $2, $3, $4, $5, $6, '일반', '일반', 5000000, '맑음', '보통', 'SCHEDULED')
+           RETURNING id`,
+          [meet.name, meet.name, rcDate, rcNo, rcDist || '1200', rcName || `${r}장`],
+        );
+        raceId = ins.rows[0].id;
       } else {
-        await prisma.race.update({
-          where: { id: race.id },
-          data: {
-            rcDist: rcDist || '1200',
-            rcName: rcName || `${r}장`,
-            rank: '일반',
-            rcPrize: 5000000,
-            meetName: meet.name,
-          },
-        });
+        raceId = existing.rows[0].id;
+        await pool.query(
+          `UPDATE oddscast.races SET "rcDist" = $1, "rcName" = $2, rank = '일반', "rcPrize" = 5000000, "meetName" = $3, "updatedAt" = NOW() WHERE id = $4`,
+          [rcDist || '1200', rcName || `${r}장`, meet.name, raceId],
+        );
       }
 
       raceCount++;
 
       for (const e of SAMPLE_ENTRIES) {
-        const existing = await prisma.raceEntry.findFirst({
-          where: { raceId: race.id, hrNo: e.hrNo },
-        });
-        const entryData = {
-          raceId: race.id,
-          hrNo: e.hrNo,
-          hrName: e.hrName,
-          jkName: e.jkName,
-          trName: e.trName,
-          wgBudam: e.wgBudam,
-          chulNo: e.hrNo,
-          dusu: SAMPLE_ENTRIES.length,
-          age: 4,
-          sex: '거',
-          prd: '국산',
-          chaksun1: 3000000,
-          chaksunT: BigInt(50000000),
-          rcCntT: 20,
-          ord1CntT: 3,
-        };
-        if (existing) {
-          await prisma.raceEntry.update({
-            where: { id: existing.id },
-            data: entryData,
-          });
+        const exEntry = await pool.query(
+          `SELECT id FROM oddscast.race_entries WHERE "raceId" = $1 AND "hrNo" = $2`,
+          [raceId, e.hrNo],
+        );
+        const entryPayload = [
+          raceId,
+          e.hrNo,
+          e.hrName,
+          e.jkName,
+          e.trName,
+          e.wgBudam,
+          e.hrNo,
+          SAMPLE_ENTRIES.length,
+          4,
+          '거',
+          '국산',
+          3000000,
+          '50000000',
+          20,
+          3,
+        ];
+        if (exEntry.rows.length === 0) {
+          await pool.query(
+            `INSERT INTO oddscast.race_entries ("raceId", "hrNo", "hrName", "jkName", "trName", "wgBudam", "chulNo", dusu, age, sex, prd, chaksun1, "chaksunT", "rcCntT", "ord1CntT")
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::bigint, $14, $15)`,
+            entryPayload,
+          );
         } else {
-          await prisma.raceEntry.create({ data: entryData });
+          await pool.query(
+            `UPDATE oddscast.race_entries SET "hrName" = $1, "jkName" = $2, "trName" = $3, "wgBudam" = $4, "chulNo" = $5, dusu = $6, age = $7, sex = $8, prd = $9, chaksun1 = $10, "chaksunT" = $11::bigint, "rcCntT" = $12, "ord1CntT" = $13 WHERE id = $14`,
+            [
+              e.hrName,
+              e.jkName,
+              e.trName,
+              e.wgBudam,
+              e.hrNo,
+              SAMPLE_ENTRIES.length,
+              4,
+              '거',
+              '국산',
+              3000000,
+              '50000000',
+              20,
+              3,
+              exEntry.rows[0].id,
+            ],
+          );
         }
         entryCount++;
       }
     }
   }
 
-  console.log(`  ✅ 경주 ${raceCount}건, 출전마 ${entryCount}건 적재 완료`);
-  console.log(`  📅 날짜: ${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}\n`);
+  console.log(`  ✅ Races ${raceCount}, entries ${entryCount}`);
+  console.log(`  📅 ${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}\n`);
 }
 
 main()
@@ -152,4 +149,4 @@ main()
     console.error(e);
     process.exit(1);
   })
-  .finally(() => prisma.$disconnect());
+  .finally(() => pool.end());

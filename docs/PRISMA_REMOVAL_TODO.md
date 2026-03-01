@@ -46,14 +46,15 @@
 
 ### 4. 최종 점검
 
-- [ ] **전역 검색**  
-  - `PrismaService` / `this.prisma` / `from '../prisma/` 검색 시 0건.
+- [x] **전역 검색**  
+  - `server/src`: PrismaService / this.prisma / from '../prisma/' 0건.
+  - `server/scripts/seed-sample-races.mjs`: Prisma 제거 완료 → `pg`만 사용.
 
-- [ ] **빌드**  
+- [x] **빌드**  
   - `pnpm --filter server build` 성공.
 
-- [ ] **문서 갱신**  
-  - `docs/PRISMA_REMOVAL.md` 의 “남은 작업” 섹션 비우거나 “완료”로 갱신.
+- [x] **문서 갱신**  
+  - `docs/PRISMA_REMOVAL.md` “다음 단계”에 TypeORM 완료 반영.
 
 ---
 

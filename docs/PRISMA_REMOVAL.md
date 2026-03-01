@@ -9,13 +9,12 @@
 - **공용:** `server/src/common/race-includes.ts`, `server/src/database/db-enums.ts` (타입 호환용)
 - **참조:** `docs/DB_SCHEMA_FULL.sql` — Railway 등에서 스키마 적용용
 
-## 다음 단계: TypeORM 마이그레이션 (권장)
+## TypeORM 마이그레이션 — 완료
 
-현재는 **raw SQL 직접 작성** 방식이라 유지보수·타입 안전성·스키마 마이그레이션 관리에 한계가 있다.  
-**TypeORM** 으로 전환하는 계획과 작업 순서는 **`docs/TYPEORM_MIGRATION.md`** 에 정리되어 있다.
+서버는 **TypeORM** 기반으로 전환 완료되었다. 엔티티·Repository·QueryBuilder 사용, Prisma 및 `server/prisma/` 제거 완료.
 
-- **마이그레이션 문서:** [docs/TYPEORM_MIGRATION.md](./TYPEORM_MIGRATION.md)  
-- 상세 TODO·체크리스트: `docs/PRISMA_REMOVAL_TODO.md` (Prisma → raw SQL 전환 완료 상태 반영)
+- **참고:** [docs/TYPEORM_MIGRATION.md](./TYPEORM_MIGRATION.md), [docs/PRISMA_REMOVAL_TODO.md](./PRISMA_REMOVAL_TODO.md)
+- **CLI 시드:** `server/scripts/seed-sample-races.mjs`는 Prisma 없이 `pg`만 사용.
 
 ## DB 스키마 적용 (Railway 등)
 

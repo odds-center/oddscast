@@ -1,15 +1,15 @@
 # OddsCast Server
 
-NestJS 기반 경마 예측 API 서버 (PostgreSQL, Prisma, Python/Gemini)
+NestJS 기반 경마 예측 API 서버 (PostgreSQL, TypeORM, Python/Gemini)
 
 ## 빠른 시작
 
 ```bash
 pnpm install
-# 루트에서 env 생성: ../scripts/setup-env.sh (server/.env 생성 + prisma generate)
-pnpm run db:init
+# DB: docs/DB_SCHEMA_FULL.sql 적용 후 DATABASE_URL 설정
+pnpm run db:seed   # 스키마 안내만 출력
 pnpm run dev
 # → http://localhost:3001, Swagger: /docs
 ```
 
-**상세 가이드:** [docs/guides/PRISMA_SETUP.md](../docs/guides/PRISMA_SETUP.md)
+**DB/TypeORM:** [docs/guides/TYPEORM_SETUP.md](../docs/guides/TYPEORM_SETUP.md), [docs/DB_SCHEMA_FULL.sql](../docs/DB_SCHEMA_FULL.sql)

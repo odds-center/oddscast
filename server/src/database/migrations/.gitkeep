@@ -1,0 +1,1 @@
+# TypeORM migrations go here. Generate: pnpm run migration:generate -- <MigrationName>

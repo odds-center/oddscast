@@ -1,8 +1,7 @@
 # Prisma 제거 작업 계획 (TODO)
 
-> **목적:** 서버에서 Prisma 완전 제거, PostgreSQL은 `pg` Pool + `PgService` + raw SQL 사용.  
-> **다음 단계:** raw SQL 직접 작성의 한계를 줄이기 위해 **TypeORM** 으로 전환할 예정. → **`docs/TYPEORM_MIGRATION.md`** 참고.  
-> **참고:** `docs/PRISMA_REMOVAL.md` (전체 요약), `docs/DB_SCHEMA_FULL.sql` (테이블/컬럼 참고)
+> **상태:** Prisma 제거 완료. **TypeORM 전환 완료.** DB 접근은 TypeORM(Entity/Repository/QueryBuilder) 전용. PgService·DatabaseModule 제거됨.  
+> **참고:** `docs/PRISMA_REMOVAL.md`, `docs/TYPEORM_MIGRATION.md`, `docs/DB_SCHEMA_FULL.sql`
 
 ---
 

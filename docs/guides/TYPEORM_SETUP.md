@@ -49,11 +49,11 @@ TypeORM은 **synchronize: false**로 설정되어 있어, 스키마를 자동으
 
 **현재:** 스키마는 `docs/DB_SCHEMA_FULL.sql` 수동 적용. TypeORM `synchronize: false`이므로 앱이 스키마를 자동 생성하지 않음.
 
-**TypeORM migration CLI 도입 시:**
+**TypeORM migration CLI (도입됨):**
 
-- **생성:** `pnpm --filter server exec typeorm migration:generate -d src/database/data-source.js src/database/migrations/MigrationName`
-- **실행:** `pnpm --filter server exec typeorm migration:run -d src/database/data-source.js`
-- DataSource 파일(`data-source.ts`)과 `migrations` 디렉터리는 도입 시 추가.
+- **실행:** 서버 디렉터리에서 `pnpm run migration:run`. (빌드 후 `dist/database/data-source.js`로 migration 실행.)
+- **생성:** `pnpm run migration:generate --name=MigrationName` (예: `--name=AddNewColumn`). 생성된 파일은 `server/src/database/migrations/`에 추가됨.
+- DataSource: `server/src/database/data-source.ts`. 마이그레이션 디렉터리: `server/src/database/migrations/`.
 
 ### CI / 배포 시 마이그레이션 실행
 

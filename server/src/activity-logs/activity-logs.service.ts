@@ -1,5 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { AdminActivityLog } from '../database/entities/admin-activity-log.entity';
+import { UserActivityLog } from '../database/entities/user-activity-log.entity';
 
 interface AdminLogParams {
   adminUserId?: number;
@@ -31,7 +34,12 @@ interface PaginationParams {
 export class ActivityLogsService {
   private readonly logger = new Logger(ActivityLogsService.name);
 
-  constructor(private readonly db: PgService) {}
+  constructor(
+    @InjectRepository(AdminActivityLog)
+    private readonly adminLogRepo: Repository<AdminActivityLog>,
+    @InjectRepository(UserActivityLog)
+    private readonly userLogRepo: Repository<UserActivityLog>,
+  ) {}
 
   private activityLogErrorMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
@@ -43,20 +51,16 @@ export class ActivityLogsService {
 
   async logAdminActivity(params: AdminLogParams): Promise<void> {
     try {
-      const now = new Date();
-      await this.db.query(
-        `INSERT INTO admin_activity_logs ("adminUserId", "adminEmail", action, target, details, "ipAddress", "userAgent", "createdAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
-        [
-          params.adminUserId ?? null,
-          params.adminEmail ?? null,
-          params.action,
-          params.target ?? null,
-          params.details != null ? JSON.stringify(params.details) : null,
-          params.ipAddress ?? null,
-          params.userAgent ?? null,
-          now,
-        ],
+      await this.adminLogRepo.save(
+        this.adminLogRepo.create({
+          adminUserId: params.adminUserId ?? null,
+          adminEmail: params.adminEmail ?? null,
+          action: params.action,
+          target: params.target ?? null,
+          details: params.details ?? null,
+          ipAddress: params.ipAddress ?? null,
+          userAgent: params.userAgent ?? null,
+        }),
       );
     } catch (err) {
       this.logger.warn(
@@ -75,60 +79,45 @@ export class ActivityLogsService {
   ) {
     const p = Math.max(1, Number(filters.page) || 1);
     const l = Math.min(100, Math.max(1, Number(filters.limit) || 50));
-    const conditions: string[] = [];
-    const values: unknown[] = [];
-    let idx = 1;
-    if (filters.adminUserId) {
-      conditions.push(`"adminUserId" = $${idx++}`);
-      values.push(filters.adminUserId);
+
+    const qb = this.adminLogRepo.createQueryBuilder('a');
+    if (filters.adminUserId != null) {
+      qb.andWhere('a.adminUserId = :adminUserId', { adminUserId: filters.adminUserId });
     }
     if (filters.action) {
-      conditions.push(`action = $${idx++}`);
-      values.push(filters.action);
+      qb.andWhere('a.action = :action', { action: filters.action });
     }
     if (filters.dateFrom) {
-      conditions.push(`"createdAt" >= $${idx++}`);
-      values.push(new Date(filters.dateFrom));
+      qb.andWhere('a.createdAt >= :dateFrom', { dateFrom: new Date(filters.dateFrom) });
     }
     if (filters.dateTo) {
-      conditions.push(`"createdAt" <= $${idx++}`);
-      values.push(new Date(filters.dateTo + 'T23:59:59.999Z'));
+      qb.andWhere(
+        'a.createdAt <= :dateTo',
+        { dateTo: new Date(filters.dateTo + 'T23:59:59.999Z') },
+      );
     }
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM admin_activity_logs ${where}`,
-        values,
-      ),
-      this.db.query(
-        `SELECT * FROM admin_activity_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx} OFFSET $${idx + 1}`,
-        [...values, l, (p - 1) * l],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
+    qb.orderBy('a.createdAt', 'DESC').skip((p - 1) * l).take(l);
+
+    const [data, total] = await qb.getManyAndCount();
     return {
-      data: rowsRes.rows,
+      data,
       meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
     };
   }
 
   async logUserActivity(params: UserLogParams): Promise<void> {
     try {
-      const now = new Date();
-      await this.db.query(
-        `INSERT INTO user_activity_logs ("userId", "sessionId", event, page, target, metadata, "ipAddress", "userAgent", "createdAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-        [
-          params.userId ?? null,
-          params.sessionId ?? null,
-          params.event,
-          params.page ?? null,
-          params.target ?? null,
-          params.metadata != null ? JSON.stringify(params.metadata) : null,
-          params.ipAddress ?? null,
-          params.userAgent ?? null,
-          now,
-        ],
+      await this.userLogRepo.save(
+        this.userLogRepo.create({
+          userId: params.userId ?? null,
+          sessionId: params.sessionId ?? null,
+          event: params.event,
+          page: params.page ?? null,
+          target: params.target ?? null,
+          metadata: params.metadata ?? null,
+          ipAddress: params.ipAddress ?? null,
+          userAgent: params.userAgent ?? null,
+        }),
       );
     } catch (err) {
       this.logger.warn(
@@ -153,63 +142,55 @@ export class ActivityLogsService {
   ) {
     const p = Math.max(1, Number(filters.page) || 1);
     const l = Math.min(100, Math.max(1, Number(filters.limit) || 50));
-    const conditions: string[] = [];
-    const values: unknown[] = [];
-    let idx = 1;
-    if (filters.userId) {
-      conditions.push(`"userId" = $${idx++}`);
-      values.push(filters.userId);
+
+    const qb = this.userLogRepo.createQueryBuilder('u');
+    if (filters.userId != null) {
+      qb.andWhere('u.userId = :userId', { userId: filters.userId });
     }
     if (filters.event) {
-      conditions.push(`event = $${idx++}`);
-      values.push(filters.event);
+      qb.andWhere('u.event = :event', { event: filters.event });
     }
     if (filters.dateFrom) {
-      conditions.push(`"createdAt" >= $${idx++}`);
-      values.push(new Date(filters.dateFrom));
+      qb.andWhere('u.createdAt >= :dateFrom', { dateFrom: new Date(filters.dateFrom) });
     }
     if (filters.dateTo) {
-      conditions.push(`"createdAt" <= $${idx++}`);
-      values.push(new Date(filters.dateTo + 'T23:59:59.999Z'));
+      qb.andWhere(
+        'u.createdAt <= :dateTo',
+        { dateTo: new Date(filters.dateTo + 'T23:59:59.999Z') },
+      );
     }
-    const where = conditions.length ? `WHERE ${conditions.join(' AND ')}` : '';
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM user_activity_logs ${where}`,
-        values,
-      ),
-      this.db.query(
-        `SELECT * FROM user_activity_logs ${where} ORDER BY "createdAt" DESC LIMIT $${idx} OFFSET $${idx + 1}`,
-        [...values, l, (p - 1) * l],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
+    qb.orderBy('u.createdAt', 'DESC').skip((p - 1) * l).take(l);
+
+    const [data, total] = await qb.getManyAndCount();
     return {
-      data: rowsRes.rows,
+      data,
       meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
     };
   }
 
   async getUserActivitySummary(userId: number) {
-    const [totalRes, recentRes, topRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        'SELECT COUNT(*)::text AS count FROM user_activity_logs WHERE "userId" = $1',
-        [userId],
-      ),
-      this.db.query(
-        'SELECT * FROM user_activity_logs WHERE "userId" = $1 ORDER BY "createdAt" DESC LIMIT 10',
-        [userId],
-      ),
-      this.db.query<{ event: string; count: string }>(
-        'SELECT event, COUNT(*)::text AS count FROM user_activity_logs WHERE "userId" = $1 GROUP BY event ORDER BY COUNT(*) DESC LIMIT 10',
-        [userId],
-      ),
+    const [totalEvents, recentEvents, topRows] = await Promise.all([
+      this.userLogRepo.count({ where: { userId } }),
+      this.userLogRepo.find({
+        where: { userId },
+        order: { createdAt: 'DESC' },
+        take: 10,
+      }),
+      this.userLogRepo
+        .createQueryBuilder('u')
+        .select('u.event', 'event')
+        .addSelect('COUNT(*)', 'count')
+        .where('u.userId = :userId', { userId })
+        .groupBy('u.event')
+        .orderBy('count', 'DESC')
+        .limit(10)
+        .getRawMany<{ event: string; count: string }>(),
     ]);
-    const totalEvents = parseInt(totalRes.rows[0]?.count ?? '0', 10);
+
     return {
       totalEvents,
-      recentEvents: recentRes.rows,
-      topEvents: topRes.rows.map((r) => ({ event: r.event, count: parseInt(r.count, 10) })),
+      recentEvents,
+      topEvents: topRows.map((r) => ({ event: r.event, count: parseInt(r.count, 10) })),
     };
   }
 }

@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
+import { Race } from '../database/entities/race.entity';
 
 export interface HorseProfileDto {
   hrNo: string;
@@ -30,32 +34,29 @@ export interface HorseHistoryItemDto {
 
 @Injectable()
 export class HorsesService {
-  constructor(private readonly db: PgService) {}
+  constructor(
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+  ) {}
 
   /**
    * Horse profile aggregated from RaceResult (and latest RaceEntry for name/age/sex).
    * Win = 1st, Place = top 3 (ordInt 1,2,3 with NORMAL type).
    */
   async getProfile(hrNo: string): Promise<HorseProfileDto | null> {
-    const resultsRes = await this.db.query<{
-      hrName: string;
-      sex: string | null;
-      age: number | null;
-      ord: string | null;
-      ordInt: number | null;
-      ordType: string | null;
-    }>(
-      'SELECT "hrName", sex, age, ord, "ordInt", "ordType" FROM race_results WHERE "hrNo" = $1 ORDER BY "createdAt" DESC LIMIT 100',
-      [hrNo],
-    );
-    const results = resultsRes.rows;
+    const results = await this.resultRepo.find({
+      where: { hrNo },
+      order: { createdAt: 'DESC' },
+      take: 100,
+      select: ['hrName', 'sex', 'age', 'ord', 'ordInt', 'ordType'],
+    });
 
     if (results.length === 0) {
-      const entryRes = await this.db.query<{ hrName: string; sex: string | null; age: number | null }>(
-        'SELECT "hrName", sex, age FROM race_entries WHERE "hrNo" = $1 LIMIT 1',
-        [hrNo],
-      );
-      const entry = entryRes.rows[0];
+      const entry = await this.entryRepo.findOne({
+        where: { hrNo },
+        select: ['hrName', 'sex', 'age'],
+      });
       if (!entry) return null;
       return {
         hrNo,
@@ -118,45 +119,30 @@ export class HorsesService {
     total: number;
     totalPages: number;
   }> {
-    const [itemsRes, countRes] = await Promise.all([
-      this.db.query<{
-        raceId: number;
-        ord: string | null;
-        ordInt: number | null;
-        chulNo: string | null;
-        jkName: string | null;
-        rcTime: string | null;
-        rcDate: string;
-        meet: string;
-        meetName: string | null;
-        rcNo: string;
-        rcDist: string | null;
-      }>(
-        `SELECT rr."raceId", rr.ord, rr."ordInt", rr."chulNo", rr."jkName", rr."rcTime",
-                r."rcDate", r.meet, r."meetName", r."rcNo", r."rcDist"
-         FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."hrNo" = $1 ORDER BY r."rcDate" DESC LIMIT $2 OFFSET $3`,
-        [hrNo, limit, (page - 1) * limit],
-      ),
-      this.db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM race_results WHERE "hrNo" = $1', [hrNo]),
-    ]);
-    const items = itemsRes.rows;
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    const dtos: HorseHistoryItemDto[] = items.map((r) => ({
-      raceId: r.raceId,
-      rcDate: r.rcDate,
-      meet: r.meet,
-      meetName: r.meetName ?? null,
-      rcNo: r.rcNo,
-      rcDist: r.rcDist ?? null,
-      ord: r.ord,
-      ordInt: r.ordInt,
-      chulNo: r.chulNo,
-      jkName: r.jkName ?? null,
-      rcTime: r.rcTime ?? null,
+    const [withRace, total] = await this.resultRepo.findAndCount({
+      where: { hrNo },
+      relations: ['race'],
+      order: { race: { rcDate: 'DESC' } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const items: HorseHistoryItemDto[] = withRace.map((rr) => ({
+      raceId: rr.raceId,
+      rcDate: rr.race?.rcDate ?? '',
+      meet: rr.race?.meet ?? '',
+      meetName: rr.race?.meetName ?? null,
+      rcNo: rr.race?.rcNo ?? '',
+      rcDist: rr.race?.rcDist ?? null,
+      ord: rr.ord,
+      ordInt: rr.ordInt,
+      chulNo: rr.chulNo,
+      jkName: rr.jkName ?? null,
+      rcTime: rr.rcTime ?? null,
     }));
 
     return {
-      items: dtos,
+      items,
       total,
       totalPages: Math.ceil(total / limit),
     };

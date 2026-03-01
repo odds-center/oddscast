@@ -5,13 +5,17 @@
 
 import { Injectable } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Subscription } from '../database/entities/subscription.entity';
+import { SubscriptionStatus } from '../database/db-enums';
 import { PaymentsService } from './payments.service';
 
 @Injectable()
 export class SubscriptionBillingScheduler {
   constructor(
-    private readonly db: PgService,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepo: Repository<Subscription>,
     private readonly paymentsService: PaymentsService,
   ) {}
 
@@ -25,13 +29,17 @@ export class SubscriptionBillingScheduler {
     const tomorrowStart = new Date(todayStart);
     tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
 
-    const res = await this.db.query<{ id: number }>(
-      `SELECT id FROM subscriptions
-       WHERE status = 'ACTIVE' AND "nextBillingDate" >= $1 AND "nextBillingDate" < $2
-         AND "billingKey" IS NOT NULL AND "customerKey" IS NOT NULL`,
-      [todayStart, tomorrowStart],
-    );
-    for (const sub of res.rows) {
+    const subs = await this.subscriptionRepo
+      .createQueryBuilder('s')
+      .where('s.status = :status', { status: SubscriptionStatus.ACTIVE })
+      .andWhere('s.nextBillingDate >= :start', { start: todayStart })
+      .andWhere('s.nextBillingDate < :end', { end: tomorrowStart })
+      .andWhere('s.billingKey IS NOT NULL')
+      .andWhere('s.customerKey IS NOT NULL')
+      .select(['s.id'])
+      .getMany();
+
+    for (const sub of subs) {
       await this.paymentsService.requestRecurringBilling(sub.id);
     }
   }

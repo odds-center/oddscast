@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { RaceResult } from '../database/entities/race-result.entity';
 
 export interface JockeyProfileDto {
   jkNo: string;
@@ -28,21 +30,17 @@ export interface JockeyHistoryItemDto {
 
 @Injectable()
 export class JockeysService {
-  constructor(private readonly db: PgService) {}
+  constructor(
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+  ) {}
 
   async getProfile(jkNo: string): Promise<JockeyProfileDto | null> {
-    const res = await this.db.query<{
-      jkName: string | null;
-      ord: string | null;
-      ordInt: number | null;
-      ordType: string | null;
-      meet: string;
-    }>(
-      `SELECT rr."jkName", rr.ord, rr."ordInt", rr."ordType", r.meet
-       FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."jkNo" = $1 ORDER BY rr."createdAt" DESC LIMIT 200`,
-      [jkNo],
-    );
-    const results = res.rows;
+    const results = await this.resultRepo.find({
+      where: { jkNo },
+      relations: ['race'],
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
     if (results.length === 0) return null;
 
     const normalResults = results.filter((r) => {
@@ -71,7 +69,7 @@ export class JockeysService {
       { wins: number; places: number; count: number }
     >();
     for (const r of normalResults) {
-      const meet = r.meet ?? 'unknown';
+      const meet = r.race?.meet ?? 'unknown';
       const cur = meetMap.get(meet) ?? { wins: 0, places: 0, count: 0 };
       cur.count += 1;
       if ((r.ordInt ?? 0) === 1) cur.wins += 1;
@@ -110,43 +108,29 @@ export class JockeysService {
     total: number;
     totalPages: number;
   }> {
-    const [itemsRes, countRes] = await Promise.all([
-      this.db.query<{
-        raceId: number;
-        ord: string | null;
-        ordInt: number | null;
-        hrName: string | null;
-        rcTime: string | null;
-        rcDate: string;
-        meet: string;
-        meetName: string | null;
-        rcNo: string;
-        rcDist: string | null;
-      }>(
-        `SELECT rr."raceId", rr.ord, rr."ordInt", rr."hrName", rr."rcTime",
-                r."rcDate", r.meet, r."meetName", r."rcNo", r."rcDist"
-         FROM race_results rr JOIN races r ON r.id = rr."raceId" WHERE rr."jkNo" = $1 ORDER BY r."rcDate" DESC LIMIT $2 OFFSET $3`,
-        [jkNo, limit, (page - 1) * limit],
-      ),
-      this.db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM race_results WHERE "jkNo" = $1', [jkNo]),
-    ]);
-    const items = itemsRes.rows;
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    const dtos: JockeyHistoryItemDto[] = items.map((r) => ({
-      raceId: r.raceId,
-      rcDate: r.rcDate,
-      meet: r.meet,
-      meetName: r.meetName ?? null,
-      rcNo: r.rcNo,
-      rcDist: r.rcDist ?? null,
-      ord: r.ord,
-      ordInt: r.ordInt,
-      hrName: r.hrName ?? null,
-      rcTime: r.rcTime ?? null,
+    const [withRace, total] = await this.resultRepo.findAndCount({
+      where: { jkNo },
+      relations: ['race'],
+      order: { race: { rcDate: 'DESC' } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+
+    const items: JockeyHistoryItemDto[] = withRace.map((rr) => ({
+      raceId: rr.raceId,
+      rcDate: rr.race?.rcDate ?? '',
+      meet: rr.race?.meet ?? '',
+      meetName: rr.race?.meetName ?? null,
+      rcNo: rr.race?.rcNo ?? '',
+      rcDist: rr.race?.rcDist ?? null,
+      ord: rr.ord,
+      ordInt: rr.ordInt,
+      hrName: rr.hrName ?? null,
+      rcTime: rr.rcTime ?? null,
     }));
 
     return {
-      items: dtos,
+      items,
       total,
       totalPages: Math.ceil(total / limit),
     };

@@ -1,13 +1,19 @@
 import { Injectable } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { SinglePurchase } from '../database/entities/single-purchase.entity';
+import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { GlobalConfigService } from '../config/config.service';
-import { TicketStatus } from '../database/db-enums';
+import { TicketStatus, TicketType } from '../database/db-enums';
 import { PurchaseDto } from '../common/dto/payment.dto';
 
 @Injectable()
 export class SinglePurchasesService {
   constructor(
-    private readonly db: PgService,
+    @InjectRepository(SinglePurchase)
+    private readonly singlePurchaseRepo: Repository<SinglePurchase>,
+    @InjectRepository(PredictionTicket)
+    private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private readonly configService: GlobalConfigService,
   ) {}
 
@@ -17,7 +23,7 @@ export class SinglePurchasesService {
     const raw = await this.configService.get('single_purchase_config');
     if (raw) {
       try {
-        const cfg = JSON.parse(raw);
+        const cfg = JSON.parse(raw) as Record<string, unknown>;
         if (typeof cfg.originalPrice === 'number') {
           return Math.round(cfg.originalPrice * 1.1);
         }
@@ -34,43 +40,52 @@ export class SinglePurchasesService {
     const unitPrice = await this.getPricePerTicket();
     const totalAmount = quantity * unitPrice;
 
-    const { rows } = await this.db.query<{ id: number }>(
-      `INSERT INTO single_purchases ("userId", quantity, "totalAmount", "paymentMethod", "pgTransactionId") VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [userId, quantity, totalAmount, dto.paymentMethod ?? null, dto.pgTransactionId ?? null],
+    const purchase = await this.singlePurchaseRepo.save(
+      this.singlePurchaseRepo.create({
+        userId,
+        quantity,
+        totalAmount,
+        paymentMethod: dto.paymentMethod ?? null,
+        pgTransactionId: dto.pgTransactionId ?? null,
+        purchasedAt: new Date(),
+      }),
     );
-    const purchaseId = rows[0]?.id;
-    if (purchaseId == null) throw new Error('Single purchase insert failed');
 
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
+    const now = new Date();
 
     for (let i = 0; i < quantity; i++) {
-      await this.db.query(
-        `INSERT INTO prediction_tickets ("userId", type, status, "expiresAt") VALUES ($1, 'RACE', $2, $3)`,
-        [userId, TicketStatus.AVAILABLE, expiresAt],
+      await this.predictionTicketRepo.save(
+        this.predictionTicketRepo.create({
+          userId,
+          type: TicketType.RACE,
+          status: TicketStatus.AVAILABLE,
+          expiresAt,
+          issuedAt: now,
+        }),
       );
     }
 
-    const purchase = await this.db.query('SELECT * FROM single_purchases WHERE id = $1', [
-      purchaseId,
-    ]);
-    return { purchase: purchase.rows[0], ticketsIssued: quantity };
+    return { purchase, ticketsIssued: quantity };
   }
 
   async getConfig() {
     const raw = await this.configService.get('single_purchase_config');
     if (raw) {
       try {
-        const cfg = JSON.parse(raw);
+        const cfg = JSON.parse(raw) as Record<string, unknown>;
         if (cfg.originalPrice != null) {
-          const vat = cfg.vat ?? Math.round(cfg.originalPrice * 0.1);
-          const total = cfg.totalPrice ?? cfg.originalPrice + vat;
+          const originalPrice = Number(cfg.originalPrice);
+          const vat = (cfg.vat as number) ?? Math.round(originalPrice * 0.1);
+          const total =
+            (cfg.totalPrice as number) ?? originalPrice + vat;
           return {
-            id: cfg.id ?? 'default',
-            configName: cfg.configName ?? 'single_purchase',
-            displayName: cfg.displayName ?? '예측권 개별 구매',
-            description: cfg.description ?? '',
-            originalPrice: cfg.originalPrice,
+            id: (cfg.id as string) ?? 'default',
+            configName: (cfg.configName as string) ?? 'single_purchase',
+            displayName: (cfg.displayName as string) ?? '예측권 개별 구매',
+            description: (cfg.description as string) ?? '',
+            originalPrice,
             vat,
             totalPrice: total,
             isActive: cfg.isActive !== false,
@@ -139,31 +154,34 @@ export class SinglePurchasesService {
     };
   }
 
-  async getHistory(userId: number, page: number = 1, limit: number = 20) {
-    const offset = (page - 1) * limit;
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        'SELECT COUNT(*)::text AS count FROM single_purchases WHERE "userId" = $1',
-        [userId],
-      ),
-      this.db.query(
-        'SELECT * FROM single_purchases WHERE "userId" = $1 ORDER BY "purchasedAt" DESC LIMIT $2 OFFSET $3',
-        [userId, limit, offset],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    return { purchases: rowsRes.rows, total, page, totalPages: Math.ceil(total / limit) };
+  async getHistory(userId: number, page = 1, limit = 20) {
+    const [purchases, total] = await this.singlePurchaseRepo.findAndCount({
+      where: { userId },
+      order: { purchasedAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    return {
+      purchases,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async getTotalSpent(userId: number) {
-    const { rows } = await this.db.query<{ sum: string; count: string }>(
-      'SELECT COALESCE(SUM("totalAmount"), 0)::text AS sum, COUNT(*)::text AS count FROM single_purchases WHERE "userId" = $1',
-      [userId],
-    );
-    const r = rows[0];
+    const result = await this.singlePurchaseRepo
+      .createQueryBuilder('s')
+      .select('COALESCE(SUM(s.totalAmount), 0)', 'sum')
+      .addSelect('COUNT(*)', 'count')
+      .where('s.userId = :userId', { userId })
+      .getRawOne<{ sum: string; count: string }>();
+
+    const sum = result?.sum ?? '0';
+    const count = result?.count ?? '0';
     return {
-      totalSpent: parseInt(r?.sum ?? '0', 10),
-      totalPurchases: parseInt(r?.count ?? '0', 10),
+      totalSpent: parseInt(String(sum), 10),
+      totalPurchases: parseInt(String(count), 10),
     };
   }
 }

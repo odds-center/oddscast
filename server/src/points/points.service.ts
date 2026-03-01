@@ -3,14 +3,28 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { DataSource, IsNull, Repository } from 'typeorm';
+import { PointTransaction } from '../database/entities/point-transaction.entity';
+import { PointConfig } from '../database/entities/point-config.entity';
+import { PointPromotion } from '../database/entities/point-promotion.entity';
+import { PointTicketPrice } from '../database/entities/point-ticket-price.entity';
+import { UserPick } from '../database/entities/user-pick.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { PicksService } from '../picks/picks.service';
 import {
   CreatePointTransactionDto,
   PointTransferDto,
   PurchaseTicketDto,
 } from './dto/point.dto';
-import { PointTransactionType, PointStatus, PickType } from '../database/db-enums';
+import {
+  PointTransactionType,
+  PointStatus,
+  PickType,
+  TicketType,
+  TicketStatus,
+} from '../database/db-enums';
 
 const PICK_TYPE_CONFIG_KEYS: Record<PickType, string> = {
   SINGLE: 'SINGLE_MULTIPLIER',
@@ -23,33 +37,48 @@ const PICK_TYPE_CONFIG_KEYS: Record<PickType, string> = {
 };
 
 const EARN_TYPES = [
-  'EARNED',
-  'BONUS',
-  'PROMOTION',
-  'REFUNDED',
-  'TRANSFER_IN',
-  'ADMIN_ADJUSTMENT',
+  PointTransactionType.EARNED,
+  PointTransactionType.BONUS,
+  PointTransactionType.PROMOTION,
+  PointTransactionType.REFUNDED,
+  PointTransactionType.TRANSFER_IN,
+  PointTransactionType.ADMIN_ADJUSTMENT,
 ];
-const SPEND_TYPES = ['SPENT', 'TRANSFER_OUT', 'EXPIRED'];
+const SPEND_TYPES = [
+  PointTransactionType.SPENT,
+  PointTransactionType.TRANSFER_OUT,
+  PointTransactionType.EXPIRED,
+];
 
 @Injectable()
 export class PointsService {
   constructor(
-    private readonly db: PgService,
+    @InjectRepository(PointTransaction)
+    private readonly pointTransactionRepo: Repository<PointTransaction>,
+    @InjectRepository(PointConfig) private readonly pointConfigRepo: Repository<PointConfig>,
+    @InjectRepository(PointPromotion)
+    private readonly pointPromotionRepo: Repository<PointPromotion>,
+    @InjectRepository(PointTicketPrice)
+    private readonly pointTicketPriceRepo: Repository<PointTicketPrice>,
+    @InjectRepository(UserPick) private readonly userPickRepo: Repository<UserPick>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(PredictionTicket)
+    private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private readonly picksService: PicksService,
+    private readonly dataSource: DataSource,
   ) {}
 
   async getBalance(userId: number) {
-    const { rows } = await this.db.query<{ transactionType: string; amount: string }>(
-      'SELECT "transactionType", amount::text AS amount FROM point_transactions WHERE "userId" = $1 AND status = $2',
-      [userId, PointStatus.ACTIVE],
-    );
+    const rows = await this.pointTransactionRepo.find({
+      where: { userId, status: PointStatus.ACTIVE },
+      select: ['transactionType', 'amount'],
+    });
     const totalEarned = rows
       .filter((t) => EARN_TYPES.includes(t.transactionType))
-      .reduce((sum, t) => sum + parseInt(t.amount, 10), 0);
+      .reduce((sum, t) => sum + t.amount, 0);
     const totalSpent = rows
       .filter((t) => SPEND_TYPES.includes(t.transactionType))
-      .reduce((sum, t) => sum + parseInt(t.amount, 10), 0);
+      .reduce((sum, t) => sum + t.amount, 0);
     return {
       userId,
       currentPoints: totalEarned - totalSpent,
@@ -67,30 +96,22 @@ export class PointsService {
   ) {
     const page = filters.page || 1;
     const limit = filters.limit || 20;
-    const conditions = ['"userId" = $1'];
-    const params: unknown[] = [userId];
-    if (filters.type) {
-      conditions.push('"transactionType" = $' + (params.length + 1));
-      params.push(filters.type);
-    }
-    if (filters.status) {
-      conditions.push('status = $' + (params.length + 1));
-      params.push(filters.status);
-    }
-    const where = conditions.join(' AND ');
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM point_transactions WHERE ${where}`,
-        params,
-      ),
-      this.db.query(
-        `SELECT * FROM point_transactions WHERE ${where} ORDER BY "createdAt" DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-        [...params, limit, (page - 1) * limit],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
+    const where: {
+      userId: number;
+      transactionType?: PointTransactionType;
+      status?: PointStatus;
+    } = { userId };
+    if (filters.type) where.transactionType = filters.type as PointTransactionType;
+    if (filters.status) where.status = filters.status as PointStatus;
+
+    const [transactions, total] = await this.pointTransactionRepo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
     return {
-      transactions: rowsRes.rows,
+      transactions,
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -100,27 +121,26 @@ export class PointsService {
   async createTransaction(userId: number, dto: CreatePointTransactionDto) {
     const currentBalance = (await this.getBalance(userId)).currentPoints;
     let balanceAfter = currentBalance;
-    if (['SPENT', 'TRANSFER_OUT'].includes(dto.type)) {
+    if (
+      dto.type === PointTransactionType.SPENT ||
+      dto.type === PointTransactionType.TRANSFER_OUT
+    ) {
       balanceAfter -= dto.amount;
     } else {
       balanceAfter += dto.amount;
     }
     const now = new Date();
-    const { rows } = await this.db.query(
-      `INSERT INTO point_transactions ("userId", "transactionType", amount, "balanceAfter", description, metadata, status, "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8) RETURNING *`,
-      [
-        userId,
-        dto.type,
-        dto.amount,
-        balanceAfter,
-        dto.description,
-        dto.metadata != null ? JSON.stringify(dto.metadata) : null,
-        PointStatus.ACTIVE,
-        now,
-      ],
-    );
-    return rows[0];
+    const tx = this.pointTransactionRepo.create({
+      userId,
+      transactionType: dto.type,
+      amount: dto.amount,
+      balanceAfter,
+      description: dto.description,
+      metadata: dto.metadata ?? null,
+      status: PointStatus.ACTIVE,
+      transactionTime: now,
+    });
+    return this.pointTransactionRepo.save(tx);
   }
 
   async transfer(fromUserId: number, dto: PointTransferDto) {
@@ -129,62 +149,44 @@ export class PointsService {
       throw new BadRequestException('잔액이 부족합니다.');
     }
     const toUserId = Number(dto.toUserId);
-    const client = await this.db.getClient();
-    if (client) {
-      try {
-        await client.query('BEGIN');
-        await client.query(
-          `INSERT INTO point_transactions ("userId", "transactionType", amount, "balanceAfter", description, status, "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
-          [
-            fromUserId,
-            PointTransactionType.TRANSFER_OUT,
-            dto.amount,
-            fromBalance.currentPoints - dto.amount,
-            `Transfer to ${toUserId}: ${dto.description}`,
-            PointStatus.ACTIVE,
-            new Date(),
-          ],
-        );
-        const toBalance = await this.getBalance(toUserId);
-        await client.query(
-          `INSERT INTO point_transactions ("userId", "transactionType", amount, "balanceAfter", description, status, "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $7)`,
-          [
-            toUserId,
-            PointTransactionType.TRANSFER_IN,
-            dto.amount,
-            toBalance.currentPoints + dto.amount,
-            `Transfer from ${fromUserId}: ${dto.description}`,
-            PointStatus.ACTIVE,
-            new Date(),
-          ],
-        );
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
-      }
-    }
+
+    await this.dataSource.transaction(async (manager) => {
+      const now = new Date();
+      await manager.save(PointTransaction, {
+        userId: fromUserId,
+        transactionType: PointTransactionType.TRANSFER_OUT,
+        amount: dto.amount,
+        balanceAfter: fromBalance.currentPoints - dto.amount,
+        description: `Transfer to ${toUserId}: ${dto.description}`,
+        status: PointStatus.ACTIVE,
+        transactionTime: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+      const toBalance = await this.getBalance(toUserId);
+      await manager.save(PointTransaction, {
+        userId: toUserId,
+        transactionType: PointTransactionType.TRANSFER_IN,
+        amount: dto.amount,
+        balanceAfter: toBalance.currentPoints + dto.amount,
+        description: `Transfer from ${fromUserId}: ${dto.description}`,
+        status: PointStatus.ACTIVE,
+        transactionTime: now,
+        createdAt: now,
+        updatedAt: now,
+      });
+    });
     return { status: 'COMPLETED' };
   }
 
   async getPromotions(_filters: Record<string, unknown>) {
-    const { rows } = await this.db.query(
-      'SELECT * FROM point_promotions WHERE "isActive" = true',
-      [],
-    );
-    return rows;
+    return this.pointPromotionRepo.find({ where: { isActive: true } });
   }
 
   async applyPromotion(userId: number, promotionId: number) {
-    const { rows } = await this.db.query(
-      'SELECT * FROM point_promotions WHERE id = $1',
-      [promotionId],
-    );
-    const promotion = rows[0] as { isActive: boolean; points: number; name: string } | undefined;
+    const promotion = await this.pointPromotionRepo.findOne({
+      where: { id: promotionId },
+    });
     if (!promotion || !promotion.isActive) {
       throw new NotFoundException('프로모션을 찾을 수 없거나 만료되었습니다.');
     }
@@ -193,7 +195,10 @@ export class PointsService {
       amount: promotion.points,
       description: `Promotion applied: ${promotion.name}`,
     });
-    return { message: '프로모션이 적용되었습니다.', pointsEarned: promotion.points };
+    return {
+      message: '프로모션이 적용되었습니다.',
+      pointsEarned: promotion.points,
+    };
   }
 
   async getExpirySettings() {
@@ -205,12 +210,11 @@ export class PointsService {
   }
 
   async getTicketPrice(): Promise<{ pointsPerTicket: number }> {
-    const { rows } = await this.db.query<{ pointsPerTicket: string }>(
-      'SELECT "pointsPerTicket"::text FROM point_ticket_prices WHERE "isActive" = true AND "effectiveTo" IS NULL ORDER BY "effectiveFrom" DESC LIMIT 1',
-      [],
-    );
-    const price = rows[0];
-    return { pointsPerTicket: price ? parseInt(price.pointsPerTicket, 10) : 1200 };
+    const row = await this.pointTicketPriceRepo.findOne({
+      where: { isActive: true, effectiveTo: IsNull() },
+      order: { effectiveFrom: 'DESC' },
+    });
+    return { pointsPerTicket: row?.pointsPerTicket ?? 1200 };
   }
 
   async purchaseTicket(userId: number, dto: PurchaseTicketDto) {
@@ -224,105 +228,89 @@ export class PointsService {
     }
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);
-    const client = await this.db.getClient();
-    const tickets: Record<string, unknown>[] = [];
-    if (client) {
-      try {
-        await client.query('BEGIN');
-        await client.query(
-          `INSERT INTO point_transactions ("userId", "transactionType", amount, "balanceAfter", description, metadata, status, "createdAt", "updatedAt")
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)`,
-          [
+    const now = new Date();
+    const tickets: PredictionTicket[] = [];
+
+    await this.dataSource.transaction(async (manager) => {
+      const ptRepo = manager.getRepository(PointTransaction);
+      await ptRepo.save(
+        ptRepo.create({
+          userId,
+          transactionType: PointTransactionType.SPENT,
+          amount: totalCost,
+          balanceAfter: balance.currentPoints - totalCost,
+          description: `예측권 ${dto.quantity}장 구매 (포인트)`,
+          metadata: { quantity: dto.quantity },
+          status: PointStatus.ACTIVE,
+          transactionTime: now,
+        }),
+      );
+      const ticketRepo = manager.getRepository(PredictionTicket);
+      for (let i = 0; i < dto.quantity; i++) {
+        const t = await ticketRepo.save(
+          ticketRepo.create({
             userId,
-            PointTransactionType.SPENT,
-            totalCost,
-            balance.currentPoints - totalCost,
-            `예측권 ${dto.quantity}장 구매 (포인트)`,
-            JSON.stringify({ quantity: dto.quantity }),
-            PointStatus.ACTIVE,
-            new Date(),
-          ],
+            type: TicketType.RACE,
+            status: TicketStatus.AVAILABLE,
+            expiresAt,
+            issuedAt: now,
+          }),
         );
-        for (let i = 0; i < dto.quantity; i++) {
-          const r = await client.query(
-            `INSERT INTO prediction_tickets ("userId", type, status, "expiresAt") VALUES ($1, 'RACE', 'AVAILABLE', $2) RETURNING *`,
-            [userId, expiresAt],
-          );
-          if (r.rows[0]) tickets.push(r.rows[0]);
-        }
-        await client.query('COMMIT');
-      } catch (e) {
-        await client.query('ROLLBACK');
-        throw e;
-      } finally {
-        client.release();
+        tickets.push(t);
       }
-    }
+    });
+
     const newBalance = await this.getBalance(userId);
-    return { tickets, pointsSpent: totalCost, remainingPoints: newBalance.currentPoints };
+    return {
+      tickets,
+      pointsSpent: totalCost,
+      remainingPoints: newBalance.currentPoints,
+    };
   }
 
   async awardPickPointsForRace(raceId: number): Promise<{ awarded: number }> {
-    const { rows: picks } = await this.db.query<{
-      id: number;
-      userId: number;
-      pickType: string;
-      hrNos: string[];
-      pointsAwarded: number | null;
-    }>('SELECT id, "userId", "pickType", "hrNos", "pointsAwarded" FROM user_picks WHERE "raceId" = $1', [
-      raceId,
-    ]);
+    const picks = await this.userPickRepo.find({
+      where: { raceId },
+      select: ['id', 'userId', 'pickType', 'hrNos', 'pointsAwarded'],
+    });
     const configMap = await this.getPointConfigMap();
     const basePoints = parseInt(configMap['BASE_POINTS'] ?? '100', 10);
     let awardedCount = 0;
 
     for (const pick of picks) {
       if (pick.pointsAwarded != null && pick.pointsAwarded > 0) continue;
-      const resRes = await this.db.query<{ hrNo: string; ord: string | null }>(
-        'SELECT "hrNo", ord FROM race_results WHERE "raceId" = $1 ORDER BY "ordInt" ASC, ord ASC',
-        [raceId],
-      );
-      const results = resRes.rows;
+      const results = await this.resultRepo.find({
+        where: { raceId },
+        order: { ordInt: 'ASC', ord: 'ASC' },
+        select: ['hrNo', 'ord'],
+      });
       if (results.length === 0) continue;
       const isHit = this.picksService.checkPickHit(
-        pick.pickType as PickType,
+        pick.pickType,
         Array.isArray(pick.hrNos) ? pick.hrNos : [],
-        results,
+        results.map((r) => ({ hrNo: r.hrNo, ord: r.ord })),
       );
       if (!isHit) continue;
-      const multKey = PICK_TYPE_CONFIG_KEYS[pick.pickType as PickType];
+      const multKey = PICK_TYPE_CONFIG_KEYS[pick.pickType];
       const mult = parseFloat(configMap[multKey] ?? '1');
       const points = Math.round(basePoints * mult);
       const bal = await this.getBalance(pick.userId);
-      const now = new Date();
-      await this.db.query(
-        `INSERT INTO point_transactions ("userId", "transactionType", amount, "balanceAfter", description, metadata, status, "createdAt", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $8)`,
-        [
-          pick.userId,
-          PointTransactionType.EARNED,
-          points,
-          bal.currentPoints + points,
-          `경주 적중 보상 (${pick.pickType})`,
-          JSON.stringify({ raceId, pickId: pick.id }),
-          PointStatus.ACTIVE,
-          now,
-        ],
-      );
-      await this.db.query('UPDATE user_picks SET "pointsAwarded" = $1 WHERE id = $2', [
-        points,
-        pick.id,
-      ]);
+      await this.createTransaction(pick.userId, {
+        type: PointTransactionType.EARNED,
+        amount: points,
+        description: `경주 적중 보상 (${pick.pickType})`,
+        metadata: { raceId, pickId: pick.id },
+      });
+      await this.userPickRepo.update(pick.id, { pointsAwarded: points });
       awardedCount++;
     }
     return { awarded: awardedCount };
   }
 
   private async getPointConfigMap(): Promise<Record<string, string>> {
-    const { rows } = await this.db.query<{ configKey: string; configValue: string }>(
-      'SELECT "configKey", "configValue" FROM point_configs',
-      [],
-    );
+    const rows = await this.pointConfigRepo.find({
+      select: ['configKey', 'configValue'],
+    });
     return Object.fromEntries(rows.map((c) => [c.configKey, c.configValue]));
   }
 }

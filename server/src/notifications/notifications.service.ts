@@ -1,6 +1,16 @@
 import { Injectable, NotFoundException, Logger } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
-import { NotificationType, NotificationCategory } from '../database/db-enums';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Notification } from '../database/entities/notification.entity';
+import { PushToken } from '../database/entities/push-token.entity';
+import { UserNotificationPreference } from '../database/entities/user-notification-preference.entity';
+import { User } from '../database/entities/user.entity';
+import { Subscription } from '../database/entities/subscription.entity';
+import {
+  NotificationType,
+  NotificationCategory,
+  SubscriptionStatus,
+} from '../database/db-enums';
 import Expo from 'expo-server-sdk';
 import {
   CreateNotificationDto,
@@ -16,7 +26,14 @@ export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
   private expo: Expo;
 
-  constructor(private readonly db: PgService) {
+  constructor(
+    @InjectRepository(Notification) private readonly notificationRepo: Repository<Notification>,
+    @InjectRepository(PushToken) private readonly pushTokenRepo: Repository<PushToken>,
+    @InjectRepository(UserNotificationPreference)
+    private readonly prefRepo: Repository<UserNotificationPreference>,
+    @InjectRepository(User) private readonly userRepo: Repository<User>,
+    @InjectRepository(Subscription) private readonly subscriptionRepo: Repository<Subscription>,
+  ) {
     this.expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
   }
 
@@ -29,128 +46,98 @@ export class NotificationsService {
     filters: { page?: number; limit?: number; isRead?: boolean },
   ) {
     const { page = 1, limit = 20, isRead } = filters;
-    const offset = (page - 1) * limit;
-    const conditions = ['"userId" = $1'];
-    const params: unknown[] = [userId];
-    if (isRead !== undefined) {
-      conditions.push('"isRead" = $2');
-      params.push(isRead);
-    }
-    const where = conditions.join(' AND ');
-    const countParams = params.slice(0, conditions.length);
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        `SELECT COUNT(*)::text AS count FROM notifications WHERE ${where}`,
-        countParams,
-      ),
-      this.db.query(
-        `SELECT * FROM notifications WHERE ${where} ORDER BY "createdAt" DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`,
-        [...params, limit, offset],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    return { notifications: rowsRes.rows, total, page, totalPages: Math.ceil(total / limit) };
+    const where: { userId: number; isRead?: boolean } = { userId };
+    if (isRead !== undefined) where.isRead = isRead;
+
+    const [notifications, total] = await this.notificationRepo.findAndCount({
+      where,
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    return {
+      notifications,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findOne(id: number) {
-    const { rows } = await this.db.query('SELECT * FROM notifications WHERE id = $1', [id]);
-    if (!rows[0]) throw new NotFoundException('알림을 찾을 수 없습니다');
-    return rows[0];
+    const row = await this.notificationRepo.findOne({ where: { id } });
+    if (!row) throw new NotFoundException('알림을 찾을 수 없습니다');
+    return row;
   }
 
   async create(dto: CreateNotificationDto) {
-    const now = new Date();
-    const type = (dto.type as NotificationType) || 'SYSTEM';
-    const category = (dto.category as NotificationCategory) || 'GENERAL';
-    const { rows } = await this.db.query(
-      `INSERT INTO notifications ("userId", title, message, type, category, data, "isRead", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $5, $6, false, $7, $7) RETURNING *`,
-      [
-        dto.userId,
-        dto.title,
-        dto.message,
-        type,
-        category,
-        dto.data != null ? JSON.stringify(dto.data) : null,
-        now,
-      ],
-    );
-    return rows[0];
+    const type = (dto.type as NotificationType) || NotificationType.SYSTEM;
+    const category = (dto.category as NotificationCategory) || NotificationCategory.GENERAL;
+    const notification = this.notificationRepo.create({
+      userId: dto.userId,
+      title: dto.title,
+      message: dto.message,
+      type,
+      category,
+      data: dto.data ?? null,
+      isRead: false,
+    });
+    return this.notificationRepo.save(notification);
   }
 
   async update(id: number, dto: UpdateNotificationDto) {
-    const updates: string[] = [];
-    const values: unknown[] = [];
-    let i = 1;
-    if (dto.title !== undefined) {
-      updates.push(`title = $${i++}`);
-      values.push(dto.title);
-    }
-    if (dto.message !== undefined) {
-      updates.push(`message = $${i++}`);
-      values.push(dto.message);
-    }
+    const notification = await this.notificationRepo.findOne({ where: { id } });
+    if (!notification) throw new NotFoundException('알림을 찾을 수 없습니다');
+    if (dto.title !== undefined) notification.title = dto.title;
+    if (dto.message !== undefined) notification.message = dto.message;
     if (dto.isRead !== undefined) {
-      updates.push(`"isRead" = $${i++}`);
-      values.push(dto.isRead);
-      if (dto.isRead) {
-        updates.push(`"readAt" = $${i++}`);
-        values.push(new Date());
-      }
+      notification.isRead = dto.isRead;
+      if (dto.isRead) notification.readAt = new Date();
     }
-    if (updates.length === 0) return this.findOne(id);
-    updates.push(`"updatedAt" = $${i++}`);
-    values.push(new Date(), id);
-    await this.db.query(
-      `UPDATE notifications SET ${updates.join(', ')} WHERE id = $${i}`,
-      values,
-    );
+    await this.notificationRepo.save(notification);
     return this.findOne(id);
   }
 
   async remove(id: number) {
-    await this.db.query('DELETE FROM notifications WHERE id = $1', [id]);
+    await this.notificationRepo.delete(id);
     return { message: '알림이 삭제되었습니다' };
   }
 
   async markAsRead(id: number) {
     const now = new Date();
-    await this.db.query(
-      'UPDATE notifications SET "isRead" = true, "readAt" = $1, "updatedAt" = $1 WHERE id = $2',
-      [now, id],
-    );
+    await this.notificationRepo.update(id, {
+      isRead: true,
+      readAt: now,
+      updatedAt: now,
+    });
     return this.findOne(id);
   }
 
   async markAllAsRead(userId: number) {
-    const now = new Date();
-    const r = await this.db.query(
-      'UPDATE notifications SET "isRead" = true, "readAt" = $1, "updatedAt" = $1 WHERE "userId" = $2 AND "isRead" = false',
-      [now, userId],
+    const result = await this.notificationRepo.update(
+      { userId, isRead: false },
+      { isRead: true, readAt: new Date(), updatedAt: new Date() },
     );
-    return { count: r.rowCount ?? 0 };
+    return { count: result.affected ?? 0 };
   }
 
   async getUnreadCount(userId: number) {
-    const { rows } = await this.db.query<{ count: string }>(
-      'SELECT COUNT(*)::text AS count FROM notifications WHERE "userId" = $1 AND "isRead" = false',
-      [userId],
-    );
-    return { count: parseInt(rows[0]?.count ?? '0', 10) };
+    const count = await this.notificationRepo.count({
+      where: { userId, isRead: false },
+    });
+    return { count };
   }
 
   async bulkSend(dto: BulkSendDto) {
-    const now = new Date();
     let count = 0;
     for (const userId of dto.recipients) {
-      await this.db.query(
-        `INSERT INTO notifications ("userId", title, message, type, category, "createdAt", "updatedAt") VALUES ($1, $2, $3, 'SYSTEM', 'GENERAL', $4, $4)`,
-        [
+      await this.notificationRepo.save(
+        this.notificationRepo.create({
           userId,
-          `Template: ${dto.templateId}`,
-          JSON.stringify(dto.variables || {}),
-          now,
-        ],
+          title: `Template: ${dto.templateId}`,
+          message: JSON.stringify(dto.variables ?? {}),
+          type: NotificationType.SYSTEM,
+          category: NotificationCategory.GENERAL,
+        }),
       );
       count++;
     }
@@ -158,122 +145,100 @@ export class NotificationsService {
   }
 
   async deleteAll(userId: number) {
-    const r = await this.db.query('DELETE FROM notifications WHERE "userId" = $1', [userId]);
-    return { count: r.rowCount ?? 0 };
+    const result = await this.notificationRepo.delete({ userId });
+    return { count: result.affected ?? 0 };
   }
 
   async getPreferences(userId: number) {
-    let { rows } = await this.db.query(
-      'SELECT * FROM user_notification_preferences WHERE "userId" = $1',
-      [userId],
-    );
-    if (!rows[0]) {
-      const now = new Date();
-      await this.db.query(
-        `INSERT INTO user_notification_preferences ("userId", "createdAt", "updatedAt") VALUES ($1, $2, $2)`,
-        [userId, now],
-      );
-      const res = await this.db.query(
-        'SELECT * FROM user_notification_preferences WHERE "userId" = $1',
-        [userId],
-      );
-      rows = res.rows;
+    let prefs = await this.prefRepo.findOne({ where: { userId } });
+    if (!prefs) {
+      prefs = this.prefRepo.create({ userId });
+      await this.prefRepo.save(prefs);
     }
-    return rows[0];
+    return prefs;
   }
 
   async pushSubscribe(userId: number, dto: PushSubscribeDto) {
     if (!Expo.isExpoPushToken(dto.token)) {
       throw new Error('유효하지 않은 Expo Push Token입니다.');
     }
-    const now = new Date();
-    await this.db.query(
-      `INSERT INTO push_tokens ("userId", token, "deviceId", "createdAt", "updatedAt")
-       VALUES ($1, $2, $3, $4, $4)
-       ON CONFLICT ("userId", token) DO UPDATE SET "deviceId" = $3, "updatedAt" = $4`,
-      [userId, dto.token, dto.deviceId ?? null, now],
-    );
+    const existing = await this.pushTokenRepo.findOne({
+      where: { userId, token: dto.token },
+    });
+    if (existing) {
+      existing.deviceId = dto.deviceId ?? null;
+      await this.pushTokenRepo.save(existing);
+    } else {
+      await this.pushTokenRepo.save(
+        this.pushTokenRepo.create({
+          userId,
+          token: dto.token,
+          deviceId: dto.deviceId ?? null,
+        }),
+      );
+    }
     return { message: '푸시 알림이 구독되었습니다.' };
   }
 
   async pushUnsubscribe(userId: number, dto: PushUnsubscribeDto) {
-    await this.db.query('DELETE FROM push_tokens WHERE "userId" = $1 AND token = $2', [
-      userId,
-      dto.token,
-    ]);
+    await this.pushTokenRepo.delete({ userId, token: dto.token });
     return { message: '푸시 알림 구독이 해제되었습니다.' };
   }
 
   async updatePreferences(userId: number, dto: UpdateNotificationPreferenceDto) {
     const prefs = await this.getPreferences(userId);
-    const updates: string[] = [];
-    const values: unknown[] = [];
-    let i = 1;
-    const fields = [
-      'pushEnabled',
-      'raceEnabled',
-      'predictionEnabled',
-      'subscriptionEnabled',
-      'systemEnabled',
-      'promotionEnabled',
-    ] as const;
-    for (const key of fields) {
-      if (dto[key] !== undefined) {
-        updates.push(`"${key}" = $${i++}`);
-        values.push(dto[key]);
-      }
-    }
-    const now = new Date();
-    if (updates.length > 0) {
-      updates.push(`"updatedAt" = $${i++}`);
-      values.push(now, userId);
-      await this.db.query(
-        `UPDATE user_notification_preferences SET ${updates.join(', ')} WHERE "userId" = $${i}`,
-        values,
-      );
-    }
+    if (dto.pushEnabled !== undefined) prefs.pushEnabled = dto.pushEnabled;
+    if (dto.raceEnabled !== undefined) prefs.raceEnabled = dto.raceEnabled;
+    if (dto.predictionEnabled !== undefined) prefs.predictionEnabled = dto.predictionEnabled;
+    if (dto.subscriptionEnabled !== undefined) prefs.subscriptionEnabled = dto.subscriptionEnabled;
+    if (dto.systemEnabled !== undefined) prefs.systemEnabled = dto.systemEnabled;
+    if (dto.promotionEnabled !== undefined) prefs.promotionEnabled = dto.promotionEnabled;
+    await this.prefRepo.save(prefs);
     return this.getPreferences(userId);
   }
 
   async findAllAdmin(filters: { page?: number; limit?: number }) {
     const { page = 1, limit = 20 } = filters;
-    const offset = (page - 1) * limit;
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>('SELECT COUNT(*)::text AS count FROM notifications', []),
-      this.db.query(
-        `SELECT n.*, u.id AS "user_id", u.email AS "user_email", u.name AS "user_name"
-         FROM notifications n LEFT JOIN users u ON u.id = n."userId" ORDER BY n."createdAt" DESC LIMIT $1 OFFSET $2`,
-        [limit, offset],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    const data = rowsRes.rows.map((r: Record<string, unknown>) => ({
-      ...r,
-      user: r.user_id != null ? { id: r.user_id, email: r.user_email, name: r.user_name } : null,
+    const [data, total] = await this.notificationRepo.findAndCount({
+      relations: ['user'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    const mapped = data.map((n) => ({
+      ...n,
+      user: n.user
+        ? { id: n.user.id, email: n.user.email, name: n.user.name }
+        : null,
     }));
-    return { data, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
+    return {
+      data: mapped,
+      meta: { total, page, limit, totalPages: Math.ceil(total / limit) },
+    };
   }
 
   async adminSend(data: { title: string; message: string; target: string }) {
     let userIds: number[] = [];
     if (data.target === 'all') {
-      const { rows } = await this.db.query<{ id: number }>(
-        'SELECT id FROM users WHERE "isActive" = true',
-        [],
-      );
-      userIds = rows.map((r) => r.id);
+      const users = await this.userRepo.find({
+        where: { isActive: true },
+        select: ['id'],
+      });
+      userIds = users.map((u) => u.id);
     } else if (data.target === 'active') {
-      const { rows } = await this.db.query<{ id: number }>(
-        'SELECT id FROM users WHERE "isActive" = true AND "lastLoginAt" IS NOT NULL',
-        [],
-      );
-      userIds = rows.map((r) => r.id);
+      const users = await this.userRepo
+        .createQueryBuilder('u')
+        .where('u.isActive = :active', { active: true })
+        .andWhere('u.lastLoginAt IS NOT NULL')
+        .select('u.id')
+        .getMany();
+      userIds = users.map((u) => u.id);
     } else if (data.target === 'subscribers') {
-      const { rows } = await this.db.query<{ userId: number }>(
-        'SELECT DISTINCT "userId" FROM subscriptions WHERE status = \'ACTIVE\'',
-        [],
-      );
-      userIds = rows.map((r) => r.userId);
+      const subs = await this.subscriptionRepo.find({
+        where: { status: SubscriptionStatus.ACTIVE },
+        select: ['userId'],
+      });
+      userIds = [...new Set(subs.map((s) => s.userId))];
     }
 
     if (userIds.length === 0) {
@@ -282,18 +247,23 @@ export class NotificationsService {
 
     const now = new Date();
     for (const userId of userIds) {
-      await this.db.query(
-        `INSERT INTO notifications ("userId", title, message, type, category, "createdAt", "updatedAt") VALUES ($1, $2, $3, 'SYSTEM', 'GENERAL', $4, $4)`,
-        [userId, data.title, data.message, now],
+      await this.notificationRepo.save(
+        this.notificationRepo.create({
+          userId,
+          title: data.title,
+          message: data.message,
+          type: NotificationType.SYSTEM,
+          category: NotificationCategory.GENERAL,
+        }),
       );
     }
+
     let pushSent = 0;
     try {
-      const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
-      const { rows: tokens } = await this.db.query<{ token: string }>(
-        `SELECT pt.token FROM push_tokens pt WHERE pt."userId" IN (${placeholders})`,
-        userIds,
-      );
+      const tokens = await this.pushTokenRepo.find({
+        where: { userId: In(userIds) },
+        select: ['token'],
+      });
       if (tokens.length > 0) {
         const baseUrl = this.getWebappBaseUrl();
         const deepLink = baseUrl ? `${baseUrl}/mypage/notifications` : '/mypage/notifications';
@@ -339,27 +309,38 @@ export class NotificationsService {
     const message = `${raceLabel} — 예측 확률 ${confidencePercent}%. 상세 분석을 확인하세요.`;
     const baseUrl = this.getWebappBaseUrl();
     const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
-    const dataJson = JSON.stringify({
+    const dataJson: Record<string, unknown> = {
       raceId,
       predictionId,
       type: 'HIGH_CONFIDENCE',
       deepLink,
-    });
+    };
 
-    const { rows: users } = await this.db.query<{ id: number }>(
-      `SELECT u.id FROM users u
-       LEFT JOIN user_notification_preferences unp ON unp."userId" = u.id
-       WHERE u."isActive" = true AND (unp.id IS NULL OR unp."predictionEnabled" = true)`,
-      [],
-    );
+    const users = await this.userRepo
+      .createQueryBuilder('u')
+      .leftJoin(
+        UserNotificationPreference,
+        'unp',
+        'unp."userId" = u.id',
+      )
+      .where('u.isActive = :active', { active: true })
+      .andWhere('(unp.id IS NULL OR unp.predictionEnabled = true)')
+      .select('u.id')
+      .getMany();
     const userIds = users.map((u) => u.id);
     if (userIds.length === 0) return { count: 0 };
 
     const now = new Date();
     for (const userId of userIds) {
-      await this.db.query(
-        `INSERT INTO notifications ("userId", title, message, type, category, data, "createdAt", "updatedAt") VALUES ($1, $2, $3, 'PREDICTION', 'INFO', $4, $5, $5)`,
-        [userId, title, message, dataJson, now],
+      await this.notificationRepo.save(
+        this.notificationRepo.create({
+          userId,
+          title,
+          message,
+          type: NotificationType.PREDICTION,
+          category: NotificationCategory.INFO,
+          data: dataJson,
+        }),
       );
     }
     this.logger.log(
@@ -367,13 +348,12 @@ export class NotificationsService {
     );
 
     try {
-      const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ');
-      const { rows: tokens } = await this.db.query<{ token: string }>(
-        `SELECT token FROM push_tokens WHERE "userId" IN (${placeholders})`,
-        userIds,
-      );
-      if (tokens.length > 0) {
-        const pushMessages = tokens.map((t) => ({
+      const pushTokens = await this.pushTokenRepo.find({
+        where: { userId: In(userIds) },
+        select: ['token'],
+      });
+      if (pushTokens.length > 0) {
+        const pushMessages = pushTokens.map((t) => ({
           to: t.token,
           title,
           body: message,
@@ -384,7 +364,7 @@ export class NotificationsService {
         for (const chunk of chunks) {
           await this.expo.sendPushNotificationsAsync(chunk);
         }
-        this.logger.log(`[SmartAlert] Push sent to ${tokens.length} device(s) with deepLink`);
+        this.logger.log(`[SmartAlert] Push sent to ${pushTokens.length} device(s) with deepLink`);
       }
     } catch (err) {
       this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);

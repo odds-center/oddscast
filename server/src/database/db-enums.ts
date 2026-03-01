@@ -88,6 +88,20 @@ export enum PointStatus {
   PROCESSING = 'PROCESSING',
 }
 
+export enum PromotionType {
+  SIGNUP_BONUS = 'SIGNUP_BONUS',
+  REFERRAL_BONUS = 'REFERRAL_BONUS',
+  DAILY_LOGIN = 'DAILY_LOGIN',
+  SPECIAL_EVENT = 'SPECIAL_EVENT',
+  CUSTOM = 'CUSTOM',
+}
+
+export enum PaymentStatus {
+  SUCCESS = 'SUCCESS',
+  FAILED = 'FAILED',
+  REFUNDED = 'REFUNDED',
+}
+
 export enum BetType {
   WIN = 'WIN',
   PLACE = 'PLACE',

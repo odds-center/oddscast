@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { In, Repository } from 'typeorm';
+import { Bet } from '../database/entities/bet.entity';
 import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 import {
   CreateBetDto,
@@ -11,30 +13,38 @@ import { BetStatus, BetResult } from '../database/db-enums';
 
 @Injectable()
 export class BetsService {
-  constructor(private readonly db: PgService) {}
+  constructor(
+    @InjectRepository(Bet) private readonly betRepo: Repository<Bet>,
+  ) {}
 
   async create(_userId: number, _dto: CreateBetDto) {
-    throw new Error('Bets create: implement with PgService raw SQL');
+    throw new Error('Bets create: implement with TypeORM');
   }
 
   async findAll(userId: number, filters: BetFilterDto) {
     const page = Number(filters.page) || 1;
     const limit = Number(filters.limit) || 20;
-    const { rows } = await this.db.query<{ count: string }>(
-      'SELECT COUNT(*)::text AS count FROM bets WHERE "userId" = $1',
-      [userId],
-    );
-    const total = parseInt(rows[0]?.count ?? '0', 10);
-    const { rows: bets } = await this.db.query(
-      'SELECT b.*, r.id AS "race_id", r.meet, r."rcDate", r."rcNo", r."rcName" FROM bets b LEFT JOIN races r ON r.id = b."raceId" WHERE b."userId" = $1 ORDER BY b."betTime" DESC LIMIT $2 OFFSET $3',
-      [userId, limit, (page - 1) * limit],
-    );
-    const withRace = bets.map((b: Record<string, unknown>) => ({
+    const [bets, total] = await this.betRepo.findAndCount({
+      where: { userId },
+      relations: ['race'],
+      order: { betTime: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    const items = bets.map((b) => ({
       ...b,
-      race: b.race_id != null ? { id: b.race_id, meet: b.meet, rcDate: b.rcDate, rcNo: b.rcNo, rcName: b.rcName } : null,
+      race: b.race
+        ? {
+            id: b.race.id,
+            meet: b.race.meet,
+            rcDate: b.race.rcDate,
+            rcNo: b.race.rcNo,
+            rcName: b.race.rcName,
+          }
+        : null,
     }));
     return {
-      bets: serializeItemsWithRace(withRace as Parameters<typeof serializeItemsWithRace>[0]),
+      bets: serializeItemsWithRace(items as Parameters<typeof serializeItemsWithRace>[0]),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -42,42 +52,55 @@ export class BetsService {
   }
 
   async findOne(id: number) {
-    const { rows } = await this.db.query(
-      'SELECT b.*, r.id AS "race_id", r.meet, r."rcDate", r."rcNo", r."rcName" FROM bets b LEFT JOIN races r ON r.id = b."raceId" WHERE b.id = $1',
-      [id],
-    );
-    const bet = rows[0] as Record<string, unknown> | undefined;
+    const bet = await this.betRepo.findOne({
+      where: { id },
+      relations: ['race'],
+    });
     if (!bet) throw new NotFoundException('Bet not found');
-    const withRace = { ...bet, race: bet.race_id != null ? { id: bet.race_id, meet: bet.meet, rcDate: bet.rcDate, rcNo: bet.rcNo, rcName: bet.rcName } : null };
-    return serializeItemsWithRace([withRace] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? withRace;
+    const item = {
+      ...bet,
+      race: bet.race
+        ? {
+            id: bet.race.id,
+            meet: bet.race.meet,
+            rcDate: bet.race.rcDate,
+            rcNo: bet.race.rcNo,
+            rcName: bet.race.rcName,
+          }
+        : null,
+    };
+    return serializeItemsWithRace([item] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? item;
   }
 
   async update(_id: number, _dto: UpdateBetDto) {
-    throw new Error('Bets update: implement with PgService raw SQL');
+    throw new Error('Bets update: implement with TypeORM');
   }
 
   async cancel(_id: number) {
-    throw new Error('Bets cancel: implement with PgService raw SQL');
+    throw new Error('Bets cancel: implement with TypeORM');
   }
 
   async processResult(_id: number, _result: BetResult, _actualWin?: number) {
-    throw new Error('Bets processResult: implement with PgService raw SQL');
+    throw new Error('Bets processResult: implement with TypeORM');
   }
 
   async createSlip(_userId: number, _dto: CreateBetSlipDto) {
-    throw new Error('BetSlip create: implement with PgService raw SQL');
+    throw new Error('BetSlip create: implement with TypeORM');
   }
 
   async getStatistics(userId: number) {
-    const { rows } = await this.db.query<{ betAmount: string; actualWin: string | null; betStatus: string }>(
-      `SELECT "betAmount", "actualWin", "betStatus" FROM bets WHERE "userId" = $1 AND "betStatus" IN ('WON', 'LOST', 'COMPLETED')`,
-      [userId],
-    );
+    const rows = await this.betRepo.find({
+      where: {
+        userId,
+        betStatus: In([BetStatus.WON, BetStatus.LOST, BetStatus.COMPLETED]),
+      },
+      select: ['betAmount', 'actualWin', 'betStatus'],
+    });
     const totalBets = rows.length;
     const wonBets = rows.filter((r) => r.betStatus === BetStatus.WON).length;
     const lostBets = rows.filter((r) => r.betStatus === BetStatus.LOST).length;
-    const totalWinnings = rows.reduce((sum, r) => sum + parseFloat(r.actualWin ?? '0'), 0);
-    const totalAmount = rows.reduce((sum, r) => sum + parseFloat(r.betAmount), 0);
+    const totalWinnings = rows.reduce((sum, r) => sum + (r.actualWin ?? 0), 0);
+    const totalAmount = rows.reduce((sum, r) => sum + r.betAmount, 0);
     return {
       totalBets,
       wonBets,

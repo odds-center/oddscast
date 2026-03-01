@@ -3,20 +3,26 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
-import { PgService } from '../database/pg.service';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { UserPick } from '../database/entities/user-pick.entity';
+import { Race } from '../database/entities/race.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
 import { CreatePickDto, PICK_TYPE_HORSE_COUNTS } from './dto/pick.dto';
 import { PickType } from '../database/db-enums';
 import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 
 @Injectable()
 export class PicksService {
-  constructor(private readonly db: PgService) {}
+  constructor(
+    @InjectRepository(UserPick) private readonly userPickRepo: Repository<UserPick>,
+    @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
+    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+  ) {}
 
   async create(userId: number, dto: CreatePickDto) {
-    const raceCheck = await this.db.query('SELECT id FROM races WHERE id = $1', [
-      dto.raceId,
-    ]);
-    if (!raceCheck.rows[0]) throw new NotFoundException('경주를 찾을 수 없습니다');
+    const race = await this.raceRepo.findOne({ where: { id: dto.raceId } });
+    if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
 
     const requiredCount = PICK_TYPE_HORSE_COUNTS[dto.pickType];
     if (!dto.hrNos || dto.hrNos.length !== requiredCount) {
@@ -27,75 +33,86 @@ export class PicksService {
 
     const hrNames = dto.hrNames ?? dto.hrNos.map(() => '');
 
-    const existing = await this.db.query(
-      'SELECT * FROM user_picks WHERE "userId" = $1 AND "raceId" = $2',
-      [userId, dto.raceId],
-    );
-    const existingRow = existing.rows[0] as { id: number } | undefined;
+    const existing = await this.userPickRepo.findOne({
+      where: { userId, raceId: dto.raceId },
+    });
 
-    if (existingRow) {
-      await this.db.query(
-        `UPDATE user_picks SET "pickType" = $1, "hrNos" = $2, "hrNames" = $3 WHERE id = $4`,
-        [dto.pickType, dto.hrNos, hrNames, existingRow.id],
-      );
-      const updated = await this.db.query(
-        `SELECT up.*, r.id AS "race_id", r.meet AS "race_meet", r."rcDate" AS "race_rcDate", r."rcNo" AS "race_rcNo", r."rcName" AS "race_rcName"
-         FROM user_picks up LEFT JOIN races r ON r.id = up."raceId" WHERE up.id = $1`,
-        [existingRow.id],
-      );
-      const row = updated.rows[0] as Record<string, unknown>;
-      const withRace = {
-        ...row,
-        race: row.race_id != null
-          ? { id: row.race_id, meet: row.race_meet, rcDate: row.race_rcDate, rcNo: row.race_rcNo, rcName: row.race_rcName }
-          : null,
-      };
-      return serializeItemsWithRace([withRace] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? withRace;
+    if (existing) {
+      existing.pickType = dto.pickType as PickType;
+      existing.hrNos = dto.hrNos;
+      existing.hrNames = hrNames;
+      await this.userPickRepo.save(existing);
+      const updated = await this.userPickRepo.findOne({
+        where: { id: existing.id },
+        relations: ['race'],
+      });
+      const item = updated
+        ? {
+            ...updated,
+            race: updated.race
+              ? {
+                  id: updated.race.id,
+                  meet: updated.race.meet,
+                  rcDate: updated.race.rcDate,
+                  rcNo: updated.race.rcNo,
+                  rcName: updated.race.rcName,
+                }
+              : null,
+          }
+        : null;
+      return item ? serializeItemsWithRace([item])[0] ?? item : null;
     }
 
-    const inserted = await this.db.query<{ id: number }>(
-      `INSERT INTO user_picks ("userId", "raceId", "pickType", "hrNos", "hrNames") VALUES ($1, $2, $3, $4, $5) RETURNING id`,
-      [userId, dto.raceId, dto.pickType, dto.hrNos, hrNames],
-    );
-    const id = inserted.rows[0]?.id;
-    if (id == null) throw new Error('User pick insert failed');
-    const created = await this.db.query(
-      `SELECT up.*, r.id AS "race_id", r.meet AS "race_meet", r."rcDate" AS "race_rcDate", r."rcNo" AS "race_rcNo", r."rcName" AS "race_rcName"
-       FROM user_picks up LEFT JOIN races r ON r.id = up."raceId" WHERE up.id = $1`,
-      [id],
-    );
-    const row = created.rows[0] as Record<string, unknown>;
-    const withRace = {
-      ...row,
-      race: row.race_id != null
-        ? { id: row.race_id, meet: row.race_meet, rcDate: row.race_rcDate, rcNo: row.race_rcNo, rcName: row.race_rcName }
-        : null,
-    };
-    return serializeItemsWithRace([withRace] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? withRace;
+    const created = await this.userPickRepo.save({
+      userId,
+      raceId: dto.raceId,
+      pickType: dto.pickType as PickType,
+      hrNos: dto.hrNos,
+      hrNames,
+    });
+    const withRace = await this.userPickRepo.findOne({
+      where: { id: created.id },
+      relations: ['race'],
+    });
+    const item = withRace
+      ? {
+          ...withRace,
+          race: withRace.race
+            ? {
+                id: withRace.race.id,
+                meet: withRace.race.meet,
+                rcDate: withRace.race.rcDate,
+                rcNo: withRace.race.rcNo,
+                rcName: withRace.race.rcName,
+              }
+            : null,
+        }
+      : null;
+    return item ? serializeItemsWithRace([item])[0] ?? item : null;
   }
 
   async findByUser(userId: number, page = 1, limit = 20) {
-    const offset = (page - 1) * limit;
-    const [countRes, rowsRes] = await Promise.all([
-      this.db.query<{ count: string }>(
-        'SELECT COUNT(*)::text AS count FROM user_picks WHERE "userId" = $1',
-        [userId],
-      ),
-      this.db.query(
-        `SELECT up.*, r.id AS "race_id", r.meet AS "race_meet", r."rcDate" AS "race_rcDate", r."rcNo" AS "race_rcNo", r."rcName" AS "race_rcName"
-         FROM user_picks up LEFT JOIN races r ON r.id = up."raceId" WHERE up."userId" = $1 ORDER BY up."createdAt" DESC LIMIT $2 OFFSET $3`,
-        [userId, limit, offset],
-      ),
-    ]);
-    const total = parseInt(countRes.rows[0]?.count ?? '0', 10);
-    const picks = rowsRes.rows.map((row: Record<string, unknown>) => ({
-      ...row,
-      race: row.race_id != null
-        ? { id: row.race_id, meet: row.race_meet, rcDate: row.race_rcDate, rcNo: row.race_rcNo, rcName: row.race_rcName }
+    const [picks, total] = await this.userPickRepo.findAndCount({
+      where: { userId },
+      relations: ['race'],
+      order: { createdAt: 'DESC' },
+      take: limit,
+      skip: (page - 1) * limit,
+    });
+    const items = picks.map((p) => ({
+      ...p,
+      race: p.race
+        ? {
+            id: p.race.id,
+            meet: p.race.meet,
+            rcDate: p.race.rcDate,
+            rcNo: p.race.rcNo,
+            rcName: p.race.rcName,
+          }
         : null,
     }));
     return {
-      picks: serializeItemsWithRace(picks as Parameters<typeof serializeItemsWithRace>[0]),
+      picks: serializeItemsWithRace(items as Parameters<typeof serializeItemsWithRace>[0]),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -103,66 +120,55 @@ export class PicksService {
   }
 
   async findByRace(raceId: number, userId?: number) {
-    const conditions = ['up."raceId" = $1'];
-    const params: unknown[] = [raceId];
-    if (userId !== undefined) {
-      conditions.push('up."userId" = $2');
-      params.push(userId);
-    }
-    const { rows } = await this.db.query<{
-      race_id: number | null;
-      race_meet: string | null;
-      race_rcDate: string | null;
-      race_rcNo: string | null;
-      race_rcName: string | null;
-    }>(
-      `SELECT up.*, r.id AS "race_id", r.meet AS "race_meet", r."rcDate" AS "race_rcDate", r."rcNo" AS "race_rcNo", r."rcName" AS "race_rcName"
-       FROM user_picks up LEFT JOIN races r ON r.id = up."raceId" WHERE ${conditions.join(' AND ')} LIMIT 1`,
-      params,
-    );
-    const pick = rows[0];
+    const where: { raceId: number; userId?: number } = { raceId };
+    if (userId !== undefined) where.userId = userId;
+    const pick = await this.userPickRepo.findOne({
+      where,
+      relations: ['race'],
+    });
     if (!pick) return null;
-    const withRace = {
+    const item = {
       ...pick,
-      race: pick.race_id != null
-        ? { id: pick.race_id, meet: pick.race_meet, rcDate: pick.race_rcDate, rcNo: pick.race_rcNo, rcName: pick.race_rcName }
+      race: pick.race
+        ? {
+            id: pick.race.id,
+            meet: pick.race.meet,
+            rcDate: pick.race.rcDate,
+            rcNo: pick.race.rcNo,
+            rcName: pick.race.rcName,
+          }
         : null,
     };
-    return serializeItemsWithRace([withRace] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? withRace;
+    return serializeItemsWithRace([item] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? item;
   }
 
   async delete(userId: number, raceId: number) {
-    const { rows } = await this.db.query(
-      'SELECT id FROM user_picks WHERE "userId" = $1 AND "raceId" = $2',
-      [userId, raceId],
-    );
-    if (!rows[0]) throw new NotFoundException('기록을 찾을 수 없습니다');
-    const id = (rows[0] as { id: number }).id;
-    await this.db.query('DELETE FROM user_picks WHERE id = $1', [id]);
+    const pick = await this.userPickRepo.findOne({
+      where: { userId, raceId },
+    });
+    if (!pick) throw new NotFoundException('기록을 찾을 수 없습니다');
+    await this.userPickRepo.delete(pick.id);
     return { message: '삭제되었습니다' };
   }
 
   async getCorrectCount(userId: number): Promise<number> {
-    const { rows: picks } = await this.db.query<{
-      pickType: string;
-      hrNos: string[];
-      raceId: number;
-    }>('SELECT "pickType", "hrNos", "raceId" FROM user_picks WHERE "userId" = $1', [
-      userId,
-    ]);
+    const picks = await this.userPickRepo.find({
+      where: { userId },
+      select: ['pickType', 'hrNos', 'raceId'],
+    });
 
     let correct = 0;
     for (const pick of picks) {
-      const res = await this.db.query<{ hrNo: string; ord: string | null }>(
-        'SELECT "hrNo", ord FROM race_results WHERE "raceId" = $1 ORDER BY "ordInt" ASC, ord ASC',
-        [pick.raceId],
-      );
-      const results = res.rows;
+      const results = await this.resultRepo.find({
+        where: { raceId: pick.raceId },
+        order: { ordInt: 'ASC', ord: 'ASC' },
+        select: ['hrNo', 'ord'],
+      });
       if (results.length === 0) continue;
       const isHit = this.checkPickHit(
-        pick.pickType as PickType,
+        pick.pickType,
         Array.isArray(pick.hrNos) ? pick.hrNos : [],
-        results,
+        results.map((r) => ({ hrNo: r.hrNo, ord: r.ord })),
       );
       if (isHit) correct++;
     }
@@ -170,25 +176,22 @@ export class PicksService {
   }
 
   async getCorrectCountByUser(): Promise<Map<number, number>> {
-    const { rows: picks } = await this.db.query<{
-      userId: number;
-      pickType: string;
-      hrNos: string[];
-      raceId: number;
-    }>('SELECT "userId", "pickType", "hrNos", "raceId" FROM user_picks');
+    const picks = await this.userPickRepo.find({
+      select: ['userId', 'pickType', 'hrNos', 'raceId'],
+    });
 
     const map = new Map<number, number>();
     for (const pick of picks) {
-      const res = await this.db.query<{ hrNo: string; ord: string | null }>(
-        'SELECT "hrNo", ord FROM race_results WHERE "raceId" = $1 ORDER BY "ordInt" ASC, ord ASC',
-        [pick.raceId],
-      );
-      const results = res.rows;
+      const results = await this.resultRepo.find({
+        where: { raceId: pick.raceId },
+        order: { ordInt: 'ASC', ord: 'ASC' },
+        select: ['hrNo', 'ord'],
+      });
       if (results.length === 0) continue;
       const isHit = this.checkPickHit(
-        pick.pickType as PickType,
+        pick.pickType,
         Array.isArray(pick.hrNos) ? pick.hrNos : [],
-        results,
+        results.map((r) => ({ hrNo: r.hrNo, ord: r.ord })),
       );
       if (isHit) {
         map.set(pick.userId, (map.get(pick.userId) ?? 0) + 1);

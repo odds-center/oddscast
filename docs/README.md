@@ -22,6 +22,7 @@
 - [`RACE_DETAIL_UI_SPEC.md`](features/RACE_DETAIL_UI_SPEC.md) — **경주 상세 UI** (헤더, 결과 테이블, 배당, TabBar)
 - [`NOTIFICATION_SETTINGS.md`](features/NOTIFICATION_SETTINGS.md) — 알림 설정 (플랫폼별 푸시, 플래그 구조)
 - [`POINT_PICK_SYSTEM.md`](features/POINT_PICK_SYSTEM.md) — 포인트·승식 시스템
+- [`BET_TYPE_ODDS_ALIGNMENT.md`](features/BET_TYPE_ODDS_ALIGNMENT.md) — 승식별 예측·배당 연동 (점수에 배당 반영 원칙)
 
 ### 📝 Specs (기술 명세)
 

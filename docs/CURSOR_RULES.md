@@ -25,6 +25,7 @@
 | 기술 명세    | `docs/specs/COST_ANALYSIS.md`            | Gemini API 비용, 캐싱 전략                              |
 | UI 패턴      | `docs/features/UI_PATTERNS.md`           | 공용 컴포넌트, 테이블, 페이지네이션, 탭바, 테마(라이트) |
 | 경주 상세 UI | `docs/features/RACE_DETAIL_UI_SPEC.md`   | 경주 헤더, 결과 테이블, 배당, TabBar                    |
+| 승식·배당 연동 | `docs/features/BET_TYPE_ODDS_ALIGNMENT.md` | 점수에 배당 반영, 승식별 예측 원칙 (추천이 아닌 점수 반영) |
 | 데이터 적재  | `docs/DATA_LOADING.md`                   | KRA 동기화, 출전마, Admin 수동 적재                     |
 | 법적         | `docs/legal/LEGAL_NOTICE.md`             | 서비스 법적 고지 (약관·개인정보·환불정책 링크)          |
 | **계속 할 일** | `docs/TODO_CONTINUE.md`                 | 배포·인프라, 모니터링, 기능·콘텐츠, 기술 부채 — 진행 순서·우선순위·추천 순서 |
@@ -43,7 +44,7 @@
 | UI 컴포넌트 추가/수정  | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md`                                            |
 | 경주·결과 UI 작업      | `RACE_DETAIL_UI_SPEC.md` + `UI_PATTERNS.md`                                          |
 | 결제/구독 관련         | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` + `PREDICTION_TICKET_PRICING_SIMULATION.md` |
-| AI 예측 관련           | `BUSINESS_LOGIC.md` + `HORSE_RACING_SPEC.md`                                         |
+| AI 예측 관련           | `BUSINESS_LOGIC.md` + `ANALYSIS_SPEC.md` + `features/BET_TYPE_ODDS_ALIGNMENT.md` (배당 반영 시) |
 | 알림 설정 관련         | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md`                         |
 | 즐겨찾기 관련          | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md`                                         |
 | 출전마/KRA 데이터 적재 | `DATA_LOADING.md` + `guides/ADMIN_GUIDE.md`                                          |

@@ -11,7 +11,8 @@ OddsCast 서버를 Railway에 배포할 때의 절차와 개념 정리.
 3. [DB 구축/선택](#3-db-구축선택)
 4. [Railway 설정](#4-railway-설정)
 5. [프로덕션 스키마 적용 (필요 시)](#5-프로덕션-스키마-적용-필요-시)
-6. [요약](#6-요약)
+6. [첫 배포 체크리스트](#6-첫-배포-체크리스트)
+7. [요약](#7-요약)
 
 ---
 
@@ -80,8 +81,10 @@ Railway 서비스 → **Variables**에 다음 설정:
 | `JWT_SECRET` | ✅ | JWT 서명용 시크릿 |
 | `GEMINI_API_KEY` | 선택 | Gemini API (예측 등) |
 | `KRA_SERVICE_KEY` | 선택 | KRA 공공데이터 API |
+| `SENTRY_DSN` | 선택 | Sentry 에러 추적 (설정 시 main.ts에서 조건부 초기화) |
 
 - dev용 DB는 로컬 `server/.env`에만 두고, Railway에는 **운영 DB URL만** 넣는다.
+- 에러 모니터링: [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) 참고.
 
 ### 4.4 빌드 & 실행
 
@@ -127,7 +130,21 @@ pnpm run migration:run
 
 ---
 
-## 6. 요약
+## 6. 첫 배포 체크리스트
+
+| 순서 | 항목 | 비고 |
+|------|------|------|
+| 1 | Railway 프로젝트 + PostgreSQL 서비스 생성 | Add-on 또는 외부 DB URL |
+| 2 | Server 서비스 추가 (GitHub 연동 또는 `railway up`) | Root/Dockerfile 경로 확인 |
+| 3 | Variables: `DATABASE_URL`, `PORT`, `NODE_ENV`, `JWT_SECRET` | 필수 4개 |
+| 4 | 프로덕션 스키마 적용 | §5 — schema.sql 또는 migration:run |
+| 5 | `GET /health` 또는 `GET /api/health` 확인 | 브라우저/curl |
+| 6 | (선택) `SENTRY_DSN`, `GEMINI_API_KEY`, `KRA_SERVICE_KEY` | 모니터링·기능용 |
+| 7 | (선택) GitHub Actions `RAILWAY_TOKEN` → push 시 자동 배포 | §4.2 |
+
+---
+
+## 7. 요약
 
 - **Railway:** Server 배포. DB는 Railway PostgreSQL 또는 외부 PostgreSQL.
 - **TypeORM:** dev/prod 동일 사용. 연결만 `DATABASE_URL`로 구분. 용량·업그레이드는 DB 쪽만 해당.

@@ -32,6 +32,7 @@
 ### 🎨 UI 패턴 (프론트엔드 작업 시 참조)
 - `docs/features/UI_PATTERNS.md` — 공용 테이블, 페이지네이션(1…2 3 4…5), TabBar, LinkBadge, FilterDateBar, URL 동기화
 - `docs/features/RACE_DETAIL_UI_SPEC.md` — 경주 상세 UI (헤더, 결과 테이블, 배당, TabBar)
+- `docs/features/BET_TYPE_ODDS_ALIGNMENT.md` — 승식별 예측·배당 연동 (점수에 배당 반영, 추천이 아닌 점수 반영)
 
 ### ⚖️ 법적 고지
 - `docs/legal/LEGAL_NOTICE.md` — 서비스 법적 고지사항
@@ -59,7 +60,7 @@
 | **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
 | **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
 | **결제/구독 관련** | `BUSINESS_LOGIC.md` + `COST_ANALYSIS.md` + `PREDICTION_TICKET_PRICING_SIMULATION.md` |
-| **AI 예측 관련** | `BUSINESS_LOGIC.md` + `ANALYSIS_SPEC.md` + `KRA_ANALYSIS_STRATEGY.md` |
+| **AI 예측 관련** | `BUSINESS_LOGIC.md` + `ANALYSIS_SPEC.md` + `KRA_ANALYSIS_STRATEGY.md` + `features/BET_TYPE_ODDS_ALIGNMENT.md` (배당 반영 시) |
 | **알림 설정 관련** | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md` |
 | **즐겨찾기 관련** | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md` |
 | **UI 컴포넌트/테이블/페이지네이션** | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md` |

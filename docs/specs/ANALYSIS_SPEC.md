@@ -279,6 +279,7 @@ Python이 이미 처리한 raw 데이터를 Gemini에 중복 전송하지 않음
 | `enrichEntriesWithSectionalTag` | sectionalStats/RaceResult 기반 선행마/추입마 태깅 |
 | `getSectionalAnalysisByHorse` | RaceEntry.sectionalStats 또는 RaceResult.sectionalTimes |
 | `computeWinProbabilities` | softmax 기반 승률 확률 산출 (finalScore 기반) |
+| (배당 반영) | `loadRaceWithEntries`에서 해당 경주 `race_results.winOdds`로 `oddsByHrNo` 구성. `constructPrompt`에서 배당 있으면 finalScore를 모델 80% + 배당 암시확률 20%로 블렌딩. |
 
 ---
 
@@ -287,4 +288,5 @@ Python이 이미 처리한 raw 데이터를 Gemini에 중복 전송하지 않음
 - [KRA_ANALYSIS_STRATEGY.md](KRA_ANALYSIS_STRATEGY.md) — 마칠기삼, 기수 점수, 가중치
 - [KRA_API_ANALYSIS_SPEC.md](KRA_API_ANALYSIS_SPEC.md) — DB·API·분석 흐름
 - [BUSINESS_LOGIC.md](../architecture/BUSINESS_LOGIC.md) — 예측 파이프라인
+- [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) — 점수에 배당 반영 원칙
 - [KRA_EQUIPMENT_BLEEDING_SPEC.md](KRA_EQUIPMENT_BLEEDING_SPEC.md) — 장구·폐출혈 (fall risk 입력)

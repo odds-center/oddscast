@@ -42,7 +42,7 @@ flowchart TD
 |------|------|
 | **jockeyScore** | winRate·quRate 80점 + experienceScore 20점. 신인(100회 미만) ×0.85 |
 | **weightRatio** | 혼전 50/50, 특수(비·습·장거리) 60/40, 일반 70/30 |
-| **NestJS 통합** | finalScore = horseScore × wH + jockeyScore × wJ → softmax winProb |
+| **NestJS 통합** | finalScore = horseScore × wH + jockeyScore × wJ → (선택) 배당 있으면 80% 모델 + 20% 배당 암시확률 블렌딩 → softmax winProb. 상세: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) |
 
 ### 1.3 Gemini 프롬프트 구조 v2 (토큰 최적화)
 

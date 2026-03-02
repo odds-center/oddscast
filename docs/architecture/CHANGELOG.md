@@ -10,6 +10,14 @@
 
 ---
 
+## 예측·배당 연동 — 점수에 배당 반영 + 문서 정리
+
+- **원칙**: 배당률로 "추천 대상"을 바꾸지 않고, **점수(finalScore)에만 배당을 반영**. 해당 경주에 `race_results.winOdds`가 있으면 말별 finalScore를 모델 80% + 배당 암시확률 20%로 블렌딩.
+- **서버**: `loadRaceWithEntries`에서 해당 경주 결과의 winOdds로 `oddsByHrNo` 구성 → `constructPrompt`에서 블렌딩. `deriveBetTypePredictionsFromHorseScores`는 score 기준 정렬만 사용.
+- **문서**: `docs/features/BET_TYPE_ODDS_ALIGNMENT.md` 신규 — 승식별 예측·배당 연동 원칙. `BUSINESS_LOGIC.md`, `README.md`, `ANALYSIS_SPEC.md`, `KRA_ANALYSIS_STRATEGY.md`, `ARCHITECTURE.md`에 배당 반영 및 해당 문서 참조 반영.
+
+---
+
 ## 2026-02-19 (목) — 종합 예측권 구매/지급 확장 + 구독 플랜 MATRIX 포함 + 말 이름 표시
 
 ### 1. 구독 플랜 종합 예측권 포함 (5,000원당 1장)

@@ -56,13 +56,17 @@ Cron Scheduler (경기 시작 전)
    - Momentum Score (기세 지수)
    - Compatibility (기수-말 적합도)
     ↓
-4. 계산 결과 + 원본 데이터를 Gemini API에 프롬프트로 전달
+4. NestJS가 말·기수 통합 finalScore 산출 (해당 경주에 결과·winOdds 있으면 점수에 배당 암시확률 20% 반영. [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md))
     ↓
-5. Gemini가 분석 코멘트 생성
+5. 계산 결과 + 원본 데이터를 Gemini API에 프롬프트로 전달
     ↓
-6. 결과를 DB predictions 테이블에 캐싱
+6. Gemini가 분석 코멘트 생성
+    ↓
+7. 결과를 DB predictions 테이블에 캐싱
     ↓
 사용자 → GET /api/predictions/race/:raceId → DB에서 캐싱된 결과 반환 (Gemini 호출 없음)
+
+> 점수에 배당 반영 상세: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md)
 ```
 
 ---

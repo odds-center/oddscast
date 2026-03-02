@@ -108,13 +108,15 @@ Gemini API (constructPrompt)
 Prediction 테이블에 scores, analysis, preview 저장
 ```
 
+- 해당 경주에 `race_results.winOdds`가 있으면 NestJS가 finalScore에 배당 암시확률을 일부 반영. [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md)
+
 > 상세 분석 명세: [ANALYSIS_SPEC.md](ANALYSIS_SPEC.md)
 
 ### 4.2 분석 단계별 사용 DB 테이블
 
 | 분석 단계 | 사용 DB | 사용 컬럼 | 역할 |
 | --------- | ------ | --------- | ---- |
-| **NestJS 보강** | `race_results` | `ord`, `ordInt`, `ordType` | recentRanks, fallHistoryHorse/Jockey (ordType=FALL) |
+| **NestJS 보강** | `race_results` | `ord`, `ordInt`, `ordType`, `winOdds` | recentRanks, fallHistory; winOdds → oddsByHrNo(점수 블렌딩, [BET_TYPE_ODDS_ALIGNMENT](../features/BET_TYPE_ODDS_ALIGNMENT.md)) |
 | | `trainer_results` | `winRateTsum`, `quRateTsum` | 조교사 승률/복승률 |
 | **Python (말 기준)** | `races` | `rcDist`, `weather`, `track` | 거리·날씨·주로 기반 보정 |
 | | `race_entries` | `recentRanks`, `rating`, `rcCntT`, `ord1CntT`, `fallHistoryHorse`, `fallHistoryJockey`, `equipment`, `bleedingInfo`, `sectionalTag` | 레이팅·기세·경험·낙마리스크·구간별 |

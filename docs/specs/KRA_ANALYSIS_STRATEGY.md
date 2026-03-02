@@ -154,8 +154,11 @@ rating: 0.33, form: 0.26, condition: 0.14, experience: 0.10, suitability: 0.10, 
 
 ```
 finalScore = horseScore × wH + jockeyScore × wJ
+(해당 경주에 race_results.winOdds 있으면) finalScore = 0.8×finalScore + 0.2×배당암시확률(0~100)
 winProb = softmax(finalScores, T=15)
 ```
+
+- 점수에 배당 반영: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md)
 
 ---
 

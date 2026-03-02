@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
 
-**Last updated:** 2026-02-24 (모바일 첫 화면·WebApp/Admin 에러 처리·문서 갱신 반영)
+**Last updated:** 2026-03-02 (문서 통합: NEXT_TASKS 내용 본 문서에 반영, KRA 경주별 배치·종료 판단 10분 반영)
 
 ---
 
@@ -23,7 +23,7 @@
 | **모바일 첫 화면** | ✅ 완료 | WebApp에서 네이티브 앱일 때 비로그인 → 로그인 페이지, 로그인 시 홈. AUTH_LOGOUT 연동. |
 | **WebApp/Admin 에러·타입** | ✅ 완료 | API catch (err: unknown), Admin any 제거·getErrorMessage, 서버 admin body 타입 정리. |
 
-**관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [NEXT_TASKS.md](NEXT_TASKS.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
+**관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
 ---
 
@@ -127,7 +127,6 @@
 
 | 문서 | 용도 |
 |------|------|
-| [NEXT_TASKS.md](NEXT_TASKS.md) | 배포·WebApp·콘텐츠·장기 할 일 요약 |
 | [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md) | 기능 로드맵·우선순위·구현 상태 |
 | [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) | Railway 배포 절차 (GitHub Actions §4.2) |
 | [SERVER_DEPLOYMENT_PLAN.md](SERVER_DEPLOYMENT_PLAN.md) | AWS/PM2/Nginx 등 상세 배포 계획 |
@@ -146,7 +145,7 @@
 - **작업 완료 시:** 해당 항목의 **상태**를 갱신하고, 관련 **docs도 함께 갱신**한다. (문서 갱신 규칙: `.cursorrules` §문서 갱신(Docs Update) 참고.)
 - **새 작업 추가 시:**  
   - 해당 섹션(1 배포·인프라 / 2 품질·운영 / 3 기능·콘텐츠 / 4 기술·유지보수)에 행을 추가하고,  
-  - 필요하면 [NEXT_TASKS.md](NEXT_TASKS.md) 또는 [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)에도 맞춰 적는다.
+  - 필요하면 [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)에도 맞춰 적는다.
 - **우선순위 변경 시:** §5 추천 순서와 각 표의 순서를 팀 상황에 맞게 조정한다.
 - **세부 체크리스트가 필요하면:** 이 문서에 하위 항목을 추가하거나, 별도 파일(예: `docs/tasks/railway-checklist.md`)로 나눠도 된다.
 

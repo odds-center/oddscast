@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Brackets, In, Repository } from 'typeorm';
 import { PredictionStatus, RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
@@ -123,11 +123,20 @@ export class ResultsService {
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
     const { date, meet } = filters;
 
-    const subQb = this.raceRepo
-      .createQueryBuilder('r')
-      .where(
-        `EXISTS (SELECT 1 FROM oddscast.race_results rr2 WHERE rr2."raceId" = r.id AND (rr2.ordInt IS NOT NULL OR rr2.ordType IS NOT NULL))`,
-      );
+    const subQb = this.raceRepo.createQueryBuilder('r');
+    const hasResultSubQuery = subQb
+      .subQuery()
+      .select('1')
+      .from(RaceResult, 'rr2')
+      .where('rr2.raceId = r.id')
+      .andWhere(
+        new Brackets((qb) => {
+          qb.where('rr2.ordInt IS NOT NULL').orWhere('rr2.ordType IS NOT NULL');
+        }),
+      )
+      .getQuery();
+    subQb.where(`EXISTS ${hasResultSubQuery}`);
+
     if (date) {
       subQb.andWhere('r.rcDate = :date', {
         date: String(date).replace(/-/g, '').slice(0, 8),

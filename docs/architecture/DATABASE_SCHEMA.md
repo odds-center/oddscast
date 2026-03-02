@@ -3,6 +3,8 @@
 > **TypeORM + PostgreSQL.** 스키마 DDL: `docs/db/schema.sql` (전체 SQL은 `docs/db/`에서 확인), 엔티티: `server/src/database/entities/`  
 > **KRA API 기준 정렬** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
+**Last updated:** 2026-03-02
+
 ---
 
 ## 스키마 적용

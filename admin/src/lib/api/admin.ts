@@ -581,7 +581,6 @@ export class AdminPredictionTicketsApi {
  */
 export class AdminSystemConfigApi {
   static async getConfig(): Promise<{
-    show_google_login: boolean;
     kra_base_url_override: string;
   }> {
     try {
@@ -593,9 +592,8 @@ export class AdminSystemConfigApi {
   }
 
   static async updateConfig(data: {
-    show_google_login?: boolean;
     kra_base_url_override?: string;
-  }): Promise<any> {
+  }): Promise<{ kra_base_url_override: string }> {
     try {
       const response = await axiosInstance.patch('/config/system', data);
       return handleApiResponse(response);

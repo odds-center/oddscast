@@ -1,8 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
+import { PredictionStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
+import { RaceResult } from '../database/entities/race-result.entity';
+import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionsService } from './predictions.service';
 import { GlobalConfigService } from '../config/config.service';
 import dayjs from 'dayjs';
@@ -36,16 +39,23 @@ export class PredictionsScheduler {
     const today = dayjs().format('YYYYMMDD');
     this.logger.log(`[Cron] Generate predictions for ${today}`);
 
-    const races = await this.raceRepo
+    const qbToday = this.raceRepo
       .createQueryBuilder('r')
       .select(['r.id', 'r.rcNo', 'r.meet'])
       .where('r.rcDate = :today', { today })
       .andWhere('r.status IN (:...statuses)', {
         statuses: ['SCHEDULED', 'IN_PROGRESS'],
-      })
-      .andWhere(
-        `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,
-      )
+      });
+    const noPredictionSubQuery = qbToday
+      .subQuery()
+      .select('1')
+      .from(Prediction, 'p')
+      .where('p.raceId = r.id')
+      .andWhere('p.status = :noPredStatus')
+      .getQuery();
+    const races = await qbToday
+      .andWhere(`NOT EXISTS ${noPredictionSubQuery}`)
+      .setParameter('noPredStatus', PredictionStatus.COMPLETED)
       .orderBy('r.id')
       .getMany();
 
@@ -92,19 +102,38 @@ export class PredictionsScheduler {
     for (let i = 0; i < 7; i++) {
       dates.push(today.subtract(i, 'day').format('YYYYMMDD'));
     }
-    const races = await this.raceRepo
+    const qb = this.raceRepo
       .createQueryBuilder('r')
       .select(['r.id', 'r.rcNo', 'r.meet', 'r.rcDate'])
       .where('r.rcDate IN (:...dates)', { dates })
-      .andWhere('r.status = :status', { status: 'COMPLETED' })
+      .andWhere('r.status = :status', { status: 'COMPLETED' });
+
+    const hasResultSubQuery = qb
+      .subQuery()
+      .select('1')
+      .from(RaceResult, 'rr')
+      .where('rr.raceId = r.id')
       .andWhere(
-        `EXISTS (SELECT 1 FROM oddscast.race_results rr WHERE rr."raceId" = r.id AND (rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL))`,
+        new Brackets((sq) => {
+          sq.where('rr.ordInt IS NOT NULL').orWhere('rr.ordType IS NOT NULL');
+        }),
       )
-      .andWhere(
-        `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,
-      )
-      .orderBy('r.id')
-      .getMany();
+      .getQuery();
+    qb.andWhere(`EXISTS ${hasResultSubQuery}`);
+
+    const hasPredictionSubQuery = qb
+      .subQuery()
+      .select('1')
+      .from(Prediction, 'p')
+      .where('p.raceId = r.id')
+      .andWhere('p.status = :predStatus')
+      .getQuery();
+    qb.andWhere(`NOT EXISTS ${hasPredictionSubQuery}`).setParameter(
+      'predStatus',
+      PredictionStatus.COMPLETED,
+    );
+
+    const races = await qb.orderBy('r.id').getMany();
     if (!races.length) {
       this.logger.log('[Cron] No completed races missing predictions');
       return;

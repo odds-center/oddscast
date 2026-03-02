@@ -17,7 +17,6 @@ import { AdminIcon } from '@/components/common/AdminIcon';
 import toast from 'react-hot-toast';
 
 type SystemConfigForm = {
-  show_google_login: boolean;
   kra_base_url_override: string;
 };
 
@@ -47,7 +46,6 @@ export default function SettingsPage() {
 
   const { register, handleSubmit, reset } = useForm<SystemConfigForm>({
     defaultValues: {
-      show_google_login: false,
       kra_base_url_override: '',
     },
   });
@@ -55,7 +53,6 @@ export default function SettingsPage() {
   useEffect(() => {
     if (systemConfig) {
       reset({
-        show_google_login: systemConfig.show_google_login,
         kra_base_url_override: systemConfig.kra_base_url_override || '',
       });
     }
@@ -197,15 +194,6 @@ export default function SettingsPage() {
                 onSubmit={handleSubmit((d) => updateMutation.mutate(d))}
                 className='space-y-4'
               >
-                <div>
-                  <label className='flex items-center gap-2 cursor-pointer'>
-                    <input type='checkbox' {...register('show_google_login')} className='rounded' />
-                    <span className='font-medium text-gray-900'>Google 로그인 노출</span>
-                  </label>
-                  <p className='mt-1 text-sm text-gray-500'>
-                    모바일 앱에서 Google 소셜 로그인 버튼 표시 여부
-                  </p>
-                </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-1'>
                     KRA API Base URL (선택)

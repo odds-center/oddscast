@@ -1,7 +1,7 @@
 # 서버 작업 완료 점검 (Server Completeness Checklist)
 
 > NestJS 백엔드 구현 상태 및 문서·빌드 정합성 점검 결과.  
-> **Last updated:** 2026-02-24
+> **Last updated:** 2026-03-02
 
 ---
 

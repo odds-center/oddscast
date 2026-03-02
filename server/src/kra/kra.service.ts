@@ -220,8 +220,11 @@ export class KraService {
     await this.syncAnalysisData(today);
   }
 
-  /** Buffer (minutes) after race start to consider race "ended" for result sync. */
-  private static readonly RACE_END_BUFFER_MINUTES = 20;
+  /**
+   * Minutes after race start to consider race "ended" for result sync.
+   * Korean racing: typically ~2–3 min per race; KRA result API reflects within ~5–10 min.
+   */
+  private static readonly RACE_END_BUFFER_MINUTES = 10;
 
   /**
    * Parse race end time (rcDate + stTime + buffer) as UTC ms. KST assumed for rcDate/stTime.
@@ -301,33 +304,54 @@ export class KraService {
   }
 
   /**
-   * Enqueue a KRA result fetch job for rcDate at (last race end time for that date).
-   * Skips if a PENDING job for the same jobType+targetRcDate already exists.
+   * Enqueue KRA result fetch jobs for rcDate: one per race end time (stTime + buffer).
+   * When each job runs, it fetches results for the whole rcDate so races are marked COMPLETED as soon as results are available.
+   * Skips past times and dedupes by (jobType, targetRcDate, scheduledAt).
    */
   async scheduleResultFetchForRcDate(rcDate: string): Promise<void> {
     const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
     if (norm.length < 8) return;
-    const existing = await this.batchScheduleRepo.findOne({
-      where: {
-        jobType: BATCH_JOB_KRA_RESULT_FETCH,
-        targetRcDate: norm,
-        status: BatchScheduleStatus.PENDING,
-      },
+    const now = Date.now();
+    const bufferMin = KraService.RACE_END_BUFFER_MINUTES;
+    const races = await this.raceRepo.find({
+      where: { rcDate: norm },
+      select: ['id', 'stTime'],
     });
-    if (existing) return;
-    const scheduledAt = await this.getLastRaceEndTimeForRcDate(norm);
-    if (scheduledAt.getTime() < Date.now()) return;
-    await this.batchScheduleRepo.save(
-      this.batchScheduleRepo.create({
-        jobType: BATCH_JOB_KRA_RESULT_FETCH,
-        targetRcDate: norm,
-        scheduledAt,
-        status: BatchScheduleStatus.PENDING,
-      }),
+    const scheduledTimes = new Set<number>();
+    for (const r of races) {
+      const endMs = this.getRaceEndTimeMs(norm, r.stTime, bufferMin);
+      if (endMs > 0 && endMs > now) scheduledTimes.add(endMs);
+    }
+    if (scheduledTimes.size === 0) return;
+    const existing = await this.batchScheduleRepo
+      .createQueryBuilder('b')
+      .select('b.scheduledAt')
+      .where('b.jobType = :jobType', { jobType: BATCH_JOB_KRA_RESULT_FETCH })
+      .andWhere('b.targetRcDate = :targetRcDate', { targetRcDate: norm })
+      .andWhere('b.status = :status', { status: BatchScheduleStatus.PENDING })
+      .getRawMany<{ scheduledAt: Date }>();
+    const existingMs = new Set(
+      existing.map((r) => new Date(r.scheduledAt).getTime()),
     );
-    this.logger.log(
-      `[BatchSchedule] Enqueued KRA_RESULT_FETCH for ${norm} at ${scheduledAt.toISOString()}`,
-    );
+    let added = 0;
+    for (const ms of scheduledTimes) {
+      if (existingMs.has(ms)) continue;
+      await this.batchScheduleRepo.save(
+        this.batchScheduleRepo.create({
+          jobType: BATCH_JOB_KRA_RESULT_FETCH,
+          targetRcDate: norm,
+          scheduledAt: new Date(ms),
+          status: BatchScheduleStatus.PENDING,
+        }),
+      );
+      existingMs.add(ms);
+      added++;
+    }
+    if (added > 0) {
+      this.logger.log(
+        `[BatchSchedule] Enqueued ${added} KRA_RESULT_FETCH job(s) for ${norm} (per race end time)`,
+      );
+    }
   }
 
   /** List batch schedules (for Admin / KRA controller). */
@@ -528,10 +552,44 @@ export class KraService {
     return d.format('YYYYMMDD');
   }
 
-  /** Normalize input to YYYYMMDD (supports YYYY-MM-DD and YYYYMMDD) */
+  /** Normalize input to YYYYMMDD (supports YYYY-MM-DD and YYYYMMDD). Coerces to string. */
   private normalizeToYyyyMmDd(date: string): string {
-    const d = date.includes('-') ? dayjs(date) : dayjs(date, 'YYYYMMDD');
+    const s = String(date ?? '').trim();
+    if (!s) return this.formatYyyyMmDd(dayjs());
+    const d = s.includes('-') ? dayjs(s) : dayjs(s, 'YYYYMMDD', true);
+    if (!d.isValid()) return this.formatYyyyMmDd(dayjs());
     return d.format('YYYYMMDD');
+  }
+
+  /**
+   * Normalize KRA API response body.items to array.
+   * Handles: body.items as array, body.items.item as array/single, body.items as single object.
+   */
+  private parseKraBodyItems(body: unknown): Record<string, unknown>[] {
+    const items =
+      body && typeof body === 'object' && 'items' in body
+        ? (body as { items?: unknown }).items
+        : undefined;
+    if (!items) return [];
+    if (Array.isArray(items)) return items as Record<string, unknown>[];
+    if (typeof items === 'object' && items !== null && 'item' in items) {
+      const raw = (items as { item?: unknown }).item;
+      if (raw == null) return [];
+      return Array.isArray(raw)
+        ? (raw as Record<string, unknown>[])
+        : [raw as Record<string, unknown>];
+    }
+    // Single item object (e.g. one race with rcNo/rc_date)
+    const obj = items as Record<string, unknown>;
+    if (
+      obj.rcNo != null ||
+      obj.rc_no != null ||
+      obj.rcDate != null ||
+      obj.rc_date != null
+    ) {
+      return [obj];
+    }
+    return [];
   }
 
   private getTodayDateString(): string {
@@ -668,21 +726,30 @@ export class KraService {
         let items: Record<string, unknown>[] = [];
         let body: { totalCount?: number } | undefined;
 
-        if (response.data?.response?.body?.items?.item) {
-          body = response.data.response.body;
-          const rawItems = response.data.response.body.items.item;
-          items = Array.isArray(rawItems) ? rawItems : [rawItems];
-        } else if (
-          typeof response.data === 'string' &&
-          response.data.includes('<')
-        ) {
+        if (typeof response.data === 'string' && response.data.includes('<')) {
           const parser = new xml2js.Parser({ explicitArray: false });
           const result = await parser.parseStringPromise(response.data);
-          if (result?.response?.body?.items?.item) {
-            body = result.response.body;
-            const rawItems = result.response.body.items.item;
-            items = Array.isArray(rawItems) ? rawItems : [rawItems];
-          }
+          body = result?.response?.body;
+          items = this.parseKraBodyItems(body ?? {});
+        } else if (response.data?.response?.body) {
+          body = response.data.response.body as { totalCount?: number };
+          items = this.parseKraBodyItems(body);
+        }
+
+        const resultCode = response.data?.response?.header?.resultCode;
+        if (resultCode != null && String(resultCode) !== '00') {
+          const msg = response.data?.response?.header?.resultMsg ?? 'API error';
+          this.logger.warn(
+            `[syncEntrySheet] ${meet.name} ${normalizedDate} resultCode=${resultCode} ${msg}`,
+          );
+          await this.logKraSync(endpoint, {
+            meet: meet.code,
+            rcDate: normalizedDate,
+            status: 'FAILED',
+            errorMessage: `resultCode=${resultCode} ${msg}`,
+            durationMs: Date.now() - start,
+          });
+          continue;
         }
 
         // Collect all pages even if totalCount is missing: paginate until last page has fewer than numOfRows
@@ -703,16 +770,17 @@ export class KraService {
             }),
           );
           const nextBody = nextRes?.data?.response?.body;
-          const raw = nextBody?.items?.item;
-          if (!raw) break;
-          const arr = Array.isArray(raw) ? raw : [raw];
-          items.push(...arr);
+          const nextItems = this.parseKraBodyItems(nextBody ?? {});
+          if (nextItems.length === 0) break;
+          items.push(...nextItems);
           pageNo++;
-          if (arr.length < numOfRows) break;
+          if (nextItems.length < numOfRows) break;
         }
 
         if (items.length === 0) {
-          this.logger.warn(`No entries found for meet ${meet.name} on ${date}`);
+          this.logger.warn(
+            `No entries found for meet ${meet.name} on ${normalizedDate}`,
+          );
           continue;
         }
 
@@ -815,7 +883,13 @@ export class KraService {
       where: { meet: meetForRace, rcDate: date, rcNo },
       select: ['id'],
     });
-    const race = { id: raceRow!.id };
+    if (!raceRow) {
+      this.logger.warn(
+        `[processEntrySheetItem] Race not found after upsert: ${meetForRace} ${date} R${rcNo}`,
+      );
+      return;
+    }
+    const race = { id: raceRow.id };
 
     const hrNo = vs('hrNo') || vs('hr_no') || '';
     const existingEntry = await this.entryRepo.findOne({
@@ -1135,16 +1209,18 @@ export class KraService {
           this.httpService.get(url, { params }),
         );
 
-        let items: Record<string, unknown>[] = [];
-        const bodyItems = response.data?.response?.body?.items;
-        if (bodyItems) {
-          if (Array.isArray(bodyItems)) {
-            items = bodyItems;
-          } else if (bodyItems.item) {
-            const raw = bodyItems.item;
-            items = Array.isArray(raw) ? raw : [raw];
-          }
+        const resBody = response.data?.response?.body;
+        const resultCode = response.data?.response?.header?.resultCode;
+        if (resultCode != null && String(resultCode) !== '00') {
+          const msg = response.data?.response?.header?.resultMsg ?? 'API error';
+          this.logger.warn(
+            `[fetchRacePlanSchedule] ${meet.name} ${d} resultCode=${resultCode} ${msg}`,
+          );
+          await this.delay(200);
+          continue;
         }
+
+        const items = this.parseKraBodyItems(resBody ?? {});
 
         for (const item of items) {
           const v = (key: string): string | null => {
@@ -1255,17 +1331,17 @@ export class KraService {
           this.httpService.get(url, { params }),
         );
 
-        let items: Record<string, unknown>[] = [];
         const body = response.data?.response?.body;
-        const bodyItems = body?.items;
-        if (bodyItems) {
-          if (Array.isArray(bodyItems)) {
-            items = bodyItems;
-          } else if (bodyItems.item) {
-            const raw = bodyItems.item;
-            items = Array.isArray(raw) ? raw : [raw];
-          }
+        const resultCode = response.data?.response?.header?.resultCode;
+        if (resultCode != null && String(resultCode) !== '00') {
+          const msg = response.data?.response?.header?.resultMsg ?? 'API error';
+          this.logger.warn(
+            `[fetchRacePlanScheduleByYearMonth] ${rcYear}-${String(month).padStart(2, '0')} page ${pageNo} resultCode=${resultCode} ${msg}`,
+          );
+          break;
         }
+
+        const items = this.parseKraBodyItems(body ?? {});
 
         for (const item of items) {
           const v = (key: string): string | null => {
@@ -1331,7 +1407,9 @@ export class KraService {
         }
 
         const totalCount =
-          body?.totalCount != null ? Number(String(body.totalCount)) : 0;
+          body != null && typeof body === 'object' && 'totalCount' in body
+            ? Number(String((body as { totalCount?: unknown }).totalCount))
+            : 0;
         if (
           items.length < numOfRows ||
           (totalCount > 0 && totalRaces >= totalCount)
@@ -1460,11 +1538,10 @@ export class KraService {
         const response = await firstValueFrom(
           this.httpService.get(url, { params }),
         );
-        let result: { response?: { body?: { items?: { item?: unknown } } } };
-        if (
-          typeof response.data === 'object' &&
-          response.data?.response?.body?.items?.item
-        ) {
+        let result: {
+          response?: { header?: { resultCode?: string }; body?: unknown };
+        } = {};
+        if (typeof response.data === 'object' && response.data?.response) {
           result = response.data as typeof result;
         } else if (
           typeof response.data === 'string' &&
@@ -1472,24 +1549,36 @@ export class KraService {
         ) {
           const parser = new xml2js.Parser({ explicitArray: false });
           result = await parser.parseStringPromise(response.data);
-        } else {
-          result = {};
         }
 
-        if (!result?.response?.body?.items?.item) {
+        const resultCode = result?.response?.header?.resultCode;
+        if (resultCode != null && String(resultCode) !== '00') {
+          const msg =
+            (result?.response?.header as { resultMsg?: string })?.resultMsg ??
+            'API error';
+          this.logger.warn(
+            `[fetchRaceResults] ${meet.name} ${normalizedDate} resultCode=${resultCode} ${msg}`,
+          );
+          await this.logKraSync(endpoint, {
+            meet: meet.code,
+            rcDate: normalizedDate,
+            status: 'FAILED',
+            errorMessage: `resultCode=${resultCode} ${msg}`,
+            durationMs: Date.now() - start,
+          });
           continue;
         }
 
-        let items = Array.isArray(result.response.body.items.item)
-          ? result.response.body.items.item
-          : [result.response.body.items.item];
+        const body = result?.response?.body;
+        let items: KraApiItem[] = this.parseKraBodyItems(
+          body ?? {},
+        ) as KraApiItem[];
 
         // Pagination: fetch additional pages when totalCount is exceeded
-        const body = result.response?.body as
-          | { totalCount?: number }
-          | undefined;
         const totalCount =
-          body?.totalCount != null ? Number(body.totalCount) : items.length;
+          body != null && typeof body === 'object' && 'totalCount' in body
+            ? Number((body as { totalCount?: number }).totalCount)
+            : items.length;
         if (totalCount > items.length && totalCount > 0) {
           const allItems: KraApiItem[] = [...items];
           for (let pageNo = 2; allItems.length < totalCount; pageNo++) {
@@ -1498,12 +1587,15 @@ export class KraService {
                 params: { ...params, pageNo, numOfRows: 300 },
               }),
             );
-            const nextResult = nextRes?.data as typeof result;
-            const nextItems = nextResult?.response?.body?.items?.item;
-            if (!nextItems) break;
-            const arr = Array.isArray(nextItems) ? nextItems : [nextItems];
-            allItems.push(...arr);
-            if (arr.length < 300) break;
+            const nextBody = (
+              nextRes?.data as { response?: { body?: unknown } }
+            )?.response?.body;
+            const nextItems = this.parseKraBodyItems(
+              nextBody ?? {},
+            ) as KraApiItem[];
+            if (nextItems.length === 0) break;
+            allItems.push(...nextItems);
+            if (nextItems.length < 300) break;
           }
           items = allItems;
         }

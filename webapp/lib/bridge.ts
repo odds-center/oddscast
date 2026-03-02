@@ -1,8 +1,5 @@
 // Define known types for autocompletion, but allow any string
 export type NativeMessageType =
-  | 'LOGIN_GOOGLE'
-  | 'LOGIN_SUCCESS'
-  | 'LOGIN_FAILURE'
   | 'AUTH_READY'
   | 'NAVIGATION'
   | string;
@@ -38,7 +35,7 @@ class NativeBridge {
           if (typeof e.data === 'string') {
             const data = JSON.parse(e.data) as NativeMessage;
             // Only process Native Bridge format (LOGIN_SUCCESS, etc. - exclude other postMessages like GSI)
-            if (data?.type && /^(LOGIN_|AUTH_READY|ECHO|NAVIGATION)/.test(data.type)) {
+            if (data?.type && /^(AUTH_READY|ECHO|NAVIGATION)/.test(data.type)) {
               handler(data);
             }
           }

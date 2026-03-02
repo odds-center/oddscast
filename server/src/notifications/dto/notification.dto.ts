@@ -73,7 +73,7 @@ export class BulkSendDto {
 }
 
 export class PushSubscribeDto {
-  @ApiProperty({ description: 'Expo Push Token (ExponentPushToken[xxx])' })
+  @ApiProperty({ description: 'FCM registration token (from @react-native-firebase/messaging)' })
   @IsString()
   token: string;
 
@@ -84,7 +84,7 @@ export class PushSubscribeDto {
 }
 
 export class PushUnsubscribeDto {
-  @ApiProperty({ description: 'Expo Push Token' })
+  @ApiProperty({ description: 'FCM registration token' })
   @IsString()
   token: string;
 }

@@ -1,3 +1,13 @@
+/* Auth pages: card with comfortable padding */
+.auth-card {
+  padding: 1.25rem 1rem;
+}
+@media (min-width: 768px) {
+  .auth-card {
+    padding: 1.75rem 1.5rem;
+  }
+}
+
 /* Page layout, section gap, list dividers */
 .page-header {
   margin-bottom: 0.75rem;

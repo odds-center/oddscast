@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import BackLink from '@/components/page/BackLink';
+import AuthCard from '@/components/page/AuthCard';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
@@ -64,60 +65,79 @@ export default function Login() {
   };
 
   return (
-    <Layout title='OddsCast'>
-      <div className='max-w-sm md:max-w-md mx-auto'>
-        {loginBonusMessage && (
-          <div
-            className='mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400 text-sm'
-            role='alert'
-          >
-            {loginBonusMessage}
-          </div>
-        )}
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-          <FormInput
-            label='이메일'
-            type='email'
-            {...register('email', { required: '이메일을 입력하세요.' })}
-            error={errors.email?.message}
-          />
-          <FormInput
-            label='비밀번호'
-            type='password'
-            {...register('password', { required: '비밀번호를 입력하세요.' })}
-            error={errors.password?.message}
-          />
-          {errors.root && <p className='msg-error'>{errors.root.message}</p>}
-          <p className='text-text-tertiary text-xs'>
-            <Link href={routes.auth.forgotPassword} className='link-primary'>
-              비밀번호를 잊으셨나요?
-            </Link>
-          </p>
-          <button
-            type='submit'
-            disabled={isSubmitting}
-            className='btn-primary w-full py-2 disabled:opacity-50 flex items-center gap-2'
-          >
-            {isSubmitting ? (
-              <>
-                <Icon name='Loader2' size={18} className='animate-spin' />
-                로그인 중...
-              </>
-            ) : (
-              <>
-                <Icon name='LogIn' size={18} />
-                로그인
-              </>
+    <Layout title='로그인 — OddsCast'>
+      <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <AuthCard
+          title='로그인'
+          description='OddsCast 계정으로 로그인하세요.'
+        >
+          {loginBonusMessage && (
+            <div
+              className='mb-4 p-3 rounded-lg bg-primary-muted border border-primary/20 text-success text-sm'
+              role='alert'
+            >
+              {loginBonusMessage}
+            </div>
+          )}
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+            <FormInput
+              label='이메일'
+              type='email'
+              autoComplete='email'
+              placeholder='example@email.com'
+              {...register('email', { required: '이메일을 입력하세요.' })}
+              error={errors.email?.message}
+            />
+            <FormInput
+              label='비밀번호'
+              type='password'
+              autoComplete='current-password'
+              {...register('password', { required: '비밀번호를 입력하세요.' })}
+              error={errors.password?.message}
+            />
+            {errors.root && (
+              <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
-          </button>
-        </form>
-        <p className='mt-3 md:mt-4 text-text-secondary text-sm'>
+            <div className='flex justify-end'>
+              <Link
+                href={routes.auth.forgotPassword}
+                className='text-sm text-text-secondary hover:text-primary transition-colors touch-manipulation min-h-[44px] sm:min-h-0 inline-flex items-center'
+              >
+                비밀번호를 잊으셨나요?
+              </Link>
+            </div>
+            <button
+              type='submit'
+              disabled={isSubmitting}
+              className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+            >
+              {isSubmitting ? (
+                <>
+                  <Icon name='Loader2' size={20} className='animate-spin' />
+                  로그인 중...
+                </>
+              ) : (
+                <>
+                  <Icon name='LogIn' size={20} />
+                  로그인
+                </>
+              )}
+            </button>
+          </form>
+        </AuthCard>
+
+        <p className='mt-6 text-center text-text-secondary text-sm'>
           계정이 없으신가요?{' '}
-          <Link href={routes.auth.register} className='link-primary'>
+          <Link
+            href={routes.auth.register}
+            className='font-medium text-primary hover:underline'
+          >
             회원가입
           </Link>
         </p>
-        <BackLink href={routes.home} label='홈으로' className='mt-6 block' />
+        <div className='mt-6 flex justify-center'>
+          <BackLink href={routes.home} label='홈으로' />
+        </div>
       </div>
     </Layout>
   );

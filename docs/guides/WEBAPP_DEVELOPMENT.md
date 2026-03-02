@@ -1,6 +1,16 @@
 # WebApp 개발 가이드
 
-> WebApp (`webapp/`) UI/UX, API 연동, 모바일 최적화 가이드
+> WebApp (`webapp/`) UI/UX, API 연동, 모바일 최적화 가이드.  
+> **Last updated:** 2026-03-02
+
+---
+
+## 0. Quick start / 요약
+
+- **테마 (라이트)**: primary `#c9a227` (골드), background `#fafafa`, 폰트 Syne(제목)·Plus Jakarta Sans(본문), 아이콘 Lucide React.
+- **실행**: `cd webapp && npm install && npm run dev` → http://localhost:3000
+- **환경 변수**: `NEXT_PUBLIC_API_URL` (Server API, 기본 `http://localhost:3001/api`), `NEXT_PUBLIC_WEBAPP_URL` (배포 URL, 기본 `http://localhost:3000`)
+- **주요 라우트**: `/` 경주 목록, `/races/[id]` 경주 상세, `/auth/login`, `/auth/register`, `/profile`, `/mypage/*`, `/settings`, `/ranking`, `/results`
 
 ---
 
@@ -179,7 +189,6 @@ import BackLink from '@/components/page/BackLink';
 |------|------|--------|
 | `NEXT_PUBLIC_API_URL` | NestJS 서버 API URL | `http://localhost:3001/api` |
 | `NEXT_PUBLIC_WEBAPP_URL` | WebApp 배포 URL (선택) | `http://localhost:3000` |
-| `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | Google Sign-In Web Client ID | — |
 
 ---
 
@@ -207,11 +216,7 @@ Mobile 앱은 WebView로 WebApp을 로드합니다.
 
 Mobile WebView가 `injectedJavaScriptBeforeContentLoaded="window.__IS_NATIVE_APP__=true"`를 주입. WebApp의 `useIsNativeApp()` 훅이 이를 감지하여 푸시 알림 토글을 mobile에서만 표시.
 
-### 구글 로그인 (WebView 내)
-
-- **웹**: Google GSI (accounts.google.com/gsi/client) 사용
-- **WebView**: Native Bridge 사용 — `bridge.send('LOGIN_GOOGLE')` → Native 앱이 구글 로그인 → `LOGIN_SUCCESS` { token } 수신 후 `AuthApi.googleLogin(token)` 호출
-- **Bridge 초기화**: `_app.tsx`에서 `import '@/lib/bridge'`로 앱 로드 시 초기화
+- **Bridge 초기화**: `_app.tsx`에서 `import '@/lib/bridge'`로 앱 로드 시 초기화 (AUTH_READY 등)
 
 ### 모바일 UX (7번과 연계)
 

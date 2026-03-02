@@ -14,10 +14,6 @@ export const CONFIG = {
     // WebApp base URL (for mobile WebView)
     baseURL: process.env.NEXT_PUBLIC_WEBAPP_URL || 'http://localhost:3000',
   },
-  google: {
-    // Web Client ID (GSI, same value used for Server idToken verification)
-    clientId: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '',
-  },
   analytics: {
     gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
   },

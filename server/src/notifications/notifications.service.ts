@@ -11,7 +11,7 @@ import {
   NotificationCategory,
   SubscriptionStatus,
 } from '../database/db-enums';
-import Expo from 'expo-server-sdk';
+import * as admin from 'firebase-admin';
 import {
   CreateNotificationDto,
   UpdateNotificationDto,
@@ -24,7 +24,7 @@ import {
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
-  private expo: Expo;
+  private firebaseApp: admin.app.App | null = null;
 
   constructor(
     @InjectRepository(Notification)
@@ -37,7 +37,48 @@ export class NotificationsService {
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
   ) {
-    this.expo = new Expo({ accessToken: process.env.EXPO_ACCESS_TOKEN });
+    if (!admin.apps.length) {
+      const jsonCred = process.env.FIREBASE_SERVICE_ACCOUNT_JSON;
+      try {
+        if (jsonCred) {
+          const serviceAccount = JSON.parse(jsonCred) as admin.ServiceAccount;
+          this.firebaseApp = admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+          });
+        } else {
+          this.firebaseApp = admin.initializeApp({
+            credential: admin.credential.applicationDefault(),
+          });
+        }
+      } catch (e) {
+        this.logger.warn('Firebase init failed', (e as Error)?.message);
+      }
+    }
+    if (!this.firebaseApp && admin.apps.length) {
+      this.firebaseApp = admin.app() as admin.app.App;
+    }
+  }
+
+  private async sendFcm(token: string, title: string, body: string, data: Record<string, string>): Promise<boolean> {
+    if (!this.firebaseApp) return false;
+    try {
+      await admin.messaging().send({
+        token,
+        notification: { title, body },
+        data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+        android: { priority: 'high' as const },
+        apns: { payload: { aps: { sound: 'default' } } },
+      });
+      return true;
+    } catch (err) {
+      const msg = (err as Error)?.message ?? String(err);
+      if (msg.includes('registration-token-not-registered') || msg.includes('invalid-registration-token')) {
+        this.logger.debug(`Removing invalid FCM token: ${msg}`);
+      } else {
+        this.logger.warn(`FCM send failed: ${msg}`);
+      }
+      return false;
+    }
   }
 
   private getWebappBaseUrl(): string {
@@ -168,8 +209,8 @@ export class NotificationsService {
   }
 
   async pushSubscribe(userId: number, dto: PushSubscribeDto) {
-    if (!Expo.isExpoPushToken(dto.token)) {
-      throw new Error('유효하지 않은 Expo Push Token입니다.');
+    if (!dto.token || typeof dto.token !== 'string' || dto.token.length < 10) {
+      throw new Error('유효하지 않은 푸시 토큰입니다.');
     }
     const existing = await this.pushTokenRepo.findOne({
       where: { userId, token: dto.token },
@@ -288,26 +329,16 @@ export class NotificationsService {
         const deepLink = baseUrl
           ? `${baseUrl}/mypage/notifications`
           : '/mypage/notifications';
-        const messages = tokens.map((t) => ({
-          to: t.token,
-          title: data.title,
-          body: data.message,
-          sound: 'default' as const,
-          data: { type: 'SYSTEM', deepLink },
-        }));
-        const chunks = this.expo.chunkPushNotifications(messages);
-        for (const chunk of chunks) {
-          const receipts = await this.expo.sendPushNotificationsAsync(chunk);
-          for (const r of receipts) {
-            if (r.status === 'ok') pushSent++;
-            else if (r.status === 'error' && r.details?.error) {
-              this.logger.warn(`Push failed: ${r.details.error}`);
-            }
-          }
+        for (const t of tokens) {
+          const ok = await this.sendFcm(t.token, data.title, data.message, {
+            type: 'SYSTEM',
+            deepLink,
+          });
+          if (ok) pushSent++;
         }
       }
     } catch (err) {
-      this.logger.error('Expo push send error', err);
+      this.logger.error('FCM send error', err);
     }
     return {
       count: userIds.length,
@@ -377,26 +408,20 @@ export class NotificationsService {
         select: ['token'],
       });
       if (pushTokens.length > 0) {
-        const pushMessages = pushTokens.map((t) => ({
-          to: t.token,
-          title,
-          body: message,
-          sound: 'default' as const,
-          data: { type: 'HIGH_CONFIDENCE', raceId, predictionId, deepLink },
-        }));
-        const chunks = this.expo.chunkPushNotifications(pushMessages);
-        for (const chunk of chunks) {
-          await this.expo.sendPushNotificationsAsync(chunk);
+        let sent = 0;
+        for (const t of pushTokens) {
+          const ok = await this.sendFcm(t.token, title, message, {
+            type: 'HIGH_CONFIDENCE',
+            raceId: String(raceId),
+            predictionId: String(predictionId),
+            deepLink,
+          });
+          if (ok) sent++;
         }
-        this.logger.log(
-          `[SmartAlert] Push sent to ${pushTokens.length} device(s) with deepLink`,
-        );
+        this.logger.log(`[SmartAlert] Push sent to ${sent}/${pushTokens.length} device(s)`);
       }
     } catch (err) {
-      this.logger.warn(
-        '[SmartAlert] Push send failed',
-        (err as Error)?.message,
-      );
+      this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);
     }
     return { count: userIds.length };
   }
@@ -452,16 +477,12 @@ export class NotificationsService {
         select: ['token'],
       });
       if (pushTokens.length > 0) {
-        const pushMessages = pushTokens.map((t) => ({
-          to: t.token,
-          title,
-          body: message,
-          sound: 'default' as const,
-          data: { type: 'FIRST_RACE_SOON', raceId, deepLink },
-        }));
-        const chunks = this.expo.chunkPushNotifications(pushMessages);
-        for (const chunk of chunks) {
-          await this.expo.sendPushNotificationsAsync(chunk);
+        for (const t of pushTokens) {
+          await this.sendFcm(t.token, title, message, {
+            type: 'FIRST_RACE_SOON',
+            raceId: String(raceId),
+            deepLink,
+          });
         }
       }
     } catch (err) {

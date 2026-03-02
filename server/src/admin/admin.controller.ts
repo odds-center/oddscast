@@ -452,8 +452,6 @@ export class AdminController {
   async getSystemConfig() {
     const all = await this.configService.getAll();
     return {
-      show_google_login:
-        all.show_google_login === 'true' || all.show_google_login === '1',
       kra_base_url_override: all.kra_base_url_override || '',
     };
   }
@@ -463,16 +461,9 @@ export class AdminController {
   async updateSystemConfig(
     @Body()
     body: {
-      show_google_login?: boolean;
       kra_base_url_override?: string;
     },
   ) {
-    if (body.show_google_login !== undefined) {
-      await this.configService.set(
-        'show_google_login',
-        body.show_google_login ? 'true' : 'false',
-      );
-    }
     if (body.kra_base_url_override !== undefined) {
       await this.configService.set(
         'kra_base_url_override',

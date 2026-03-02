@@ -5,8 +5,8 @@ import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 import Link from 'next/link';
 import BackLink from '@/components/page/BackLink';
+import AuthCard from '@/components/page/AuthCard';
 import FormInput from '@/components/page/FormInput';
-import SectionCard from '@/components/page/SectionCard';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useMutation } from '@tanstack/react-query';
@@ -34,54 +34,64 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Layout title='OddsCast'>
-      <div className='max-w-sm md:max-w-md mx-auto'>
+    <Layout title='비밀번호 찾기 — OddsCast'>
+      <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         {sent ? (
-          <SectionCard>
-            <p className='text-foreground font-medium mb-2'>
-              이메일을 확인해주세요.
+          <AuthCard
+            title='이메일을 확인해주세요'
+            description={`${submittedEmail}로 비밀번호 재설정 링크를 발송했습니다.`}
+          >
+            <p className='text-text-secondary text-sm mb-6'>
+              메일함에서 링크를 클릭하여 새 비밀번호를 설정하세요.
             </p>
-            <p className='text-text-secondary text-sm'>
-              {submittedEmail}로 비밀번호 재설정 링크를 발송했습니다. 링크를 클릭하여 새 비밀번호를 설정하세요.
-            </p>
-            <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-2 mt-4'>
-              <Icon name='LogIn' size={18} />
+            <Link
+              href={routes.auth.login}
+              className='btn-primary w-full min-h-[44px] py-3 inline-flex items-center justify-center gap-2 rounded-lg text-[16px]'
+            >
+              <Icon name='LogIn' size={20} />
               로그인
             </Link>
-          </SectionCard>
+          </AuthCard>
         ) : (
-          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-            <FormInput
-              label='이메일'
-              type='email'
-              {...register('email', { required: '이메일을 입력하세요.' })}
-              error={errors.email?.message}
-            />
-            {mutation.isError && (
-              <p className='msg-error'>
-                {getErrorMessage(mutation.error)}
-              </p>
-            )}
-            <button
-              type='submit'
-              disabled={mutation.isPending || isSubmitting}
-              className='btn-primary w-full py-2 disabled:opacity-50 flex items-center gap-2'
-            >
-              {mutation.isPending ? (
-                <>
-                  <Icon name='Loader2' size={18} className='animate-spin' />
-                  전송 중...
-                </>
-              ) : (
-                '재설정 링크 발송'
+          <AuthCard
+            title='비밀번호 찾기'
+            description='가입한 이메일을 입력하면 재설정 링크를 보내드립니다.'
+          >
+            <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+              <FormInput
+                label='이메일'
+                type='email'
+                autoComplete='email'
+                placeholder='example@email.com'
+                {...register('email', { required: '이메일을 입력하세요.' })}
+                error={errors.email?.message}
+              />
+              {mutation.isError && (
+                <p className='msg-error text-sm'>
+                  {getErrorMessage(mutation.error)}
+                </p>
               )}
-            </button>
-          </form>
+              <button
+                type='submit'
+                disabled={mutation.isPending || isSubmitting}
+                className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+              >
+                {mutation.isPending ? (
+                  <>
+                    <Icon name='Loader2' size={20} className='animate-spin' />
+                    전송 중...
+                  </>
+                ) : (
+                  '재설정 링크 발송'
+                )}
+              </button>
+            </form>
+          </AuthCard>
         )}
 
-        <p className='mt-6 text-text-secondary text-sm'>
-          <BackLink href={routes.auth.login} label='로그인' />
-        </p>
+        <div className='mt-6 flex justify-center'>
+          <BackLink href={routes.auth.login} label='로그인으로' />
+        </div>
       </div>
     </Layout>
   );

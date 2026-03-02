@@ -6,7 +6,7 @@
 > overall product direction. It must be read before any planning/development
 > session via `.cursorrules`.
 >
-> **Last updated**: 2026-02-24
+> **Last updated:** 2026-03-02
 
 ---
 

@@ -43,7 +43,7 @@
 
 ### 📝 문서 갱신 (Docs Update) — 필수
 - **기능·API·스키마·비즈니스 로직을 변경할 때마다** 해당하는 `docs/` 문서를 **반드시 함께 갱신**한다.
-- 갱신 대상 예: `TODO_CONTINUE.md`, `NEXT_TASKS.md`, `FEATURE_ROADMAP.md`, `API_SPECIFICATION.md`, `DATABASE_SCHEMA.md`, `BUSINESS_LOGIC.md`, `WEBAPP_ADMIN_GAPS.md`, 관련 feature/spec 문서.
+- 갱신 대상 예: `TODO_CONTINUE.md`, `FEATURE_ROADMAP.md`, `API_SPECIFICATION.md`, `DATABASE_SCHEMA.md`, `BUSINESS_LOGIC.md`, `WEBAPP_ADMIN_GAPS.md`, 관련 feature/spec 문서.
 - 작업 완료 시: 상태(미진행/완료 등), Last updated, 새 엔드포인트·필드·응답 형식, 정책 변경 내용을 문서에 반영한다.
 
 ---
@@ -66,7 +66,7 @@
 | **UI 컴포넌트/테이블/페이지네이션** | `UI_PATTERNS.md` + `PROJECT_STRUCTURE.md` |
 | **경주·결과 UI 작업** | `RACE_DETAIL_UI_SPEC.md` + `UI_PATTERNS.md` |
 | **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` + `KRA_RACE_PLAN_SPEC.md` + `KRA_ENTRY_SHEET_SPEC.md` |
-| **구글 로그인/OAuth 설정** | `guides/GOOGLE_OAUTH_SETUP.md` + `API_SPECIFICATION.md` |
+| **인증** | 이메일/비밀번호만. 구글 로그인 없음. `API_SPECIFICATION.md` §1 Auth 참고. |
 | **배포·인프라·모니터링** | `TODO_CONTINUE.md` + `RAILWAY_DEPLOYMENT.md` 또는 `SERVER_DEPLOYMENT_PLAN.md` |
 | **TypeScript/타입 안전성** | `COMPATIBILITY_RULES.md` §6, `WEBAPP_DEVELOPMENT.md` §6 |
 

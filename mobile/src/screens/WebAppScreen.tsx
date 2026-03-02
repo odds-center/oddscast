@@ -8,69 +8,50 @@ import {
   Platform,
 } from 'react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
-import * as Notifications from 'expo-notifications';
-import * as Device from 'expo-device';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import DeviceInfo from 'react-native-device-info';
+import { config } from '../config';
+import { getPushToken, setForegroundHandler } from '../push';
 
-import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
+type RootStackParamList = {
+  Index: undefined;
+  Webview: { initialUrl?: string };
+  NotFound: undefined;
+};
 
-// WebApp URL — dev: 로컬, prod: EXPO_PUBLIC_WEBAPP_URL 또는 기본 Vercel
-const WEBAPP_URL =
-  __DEV__
-    ? Platform.OS === 'android'
-      ? 'http://10.0.2.2:3000'
-      : 'http://localhost:3000'
-    : (process.env.EXPO_PUBLIC_WEBAPP_URL as string | undefined) || 'https://gold-race-webapp.vercel.app';
-
-// API URL — 푸시 등록용
-const API_BASE =
-  __DEV__
-    ? Platform.OS === 'android'
-      ? 'http://10.0.2.2:3001/api'
-      : 'http://localhost:3001/api'
-    : (Constants.expoConfig?.extra?.apiBaseUrl as string) || '';
-
-const webClientId =
-  Constants.expoConfig?.extra?.webClientId as string | undefined;
-
-if (webClientId) {
-  GoogleSignin.configure({
-    webClientId,
-    offlineAccess: true,
-  });
-}
-
-// Foreground에서도 알림 표시 (app.json 설정과 동일)
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+const WEBAPP_URL = config.webappUrl;
+const API_BASE = config.apiBaseUrl;
 
 export default function WebAppScreen() {
-  const webViewRef = useRef<WebView>(null);
-  const router = useRouter();
-  const { initialUrl } = useLocalSearchParams<{ initialUrl?: string }>();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Webview'>>();
+  const route = useRoute<RouteProp<RootStackParamList, 'Webview'>>();
+  const { initialUrl } = route.params ?? {};
   const initialUri =
     initialUrl && initialUrl.trim()
       ? initialUrl.startsWith('http')
         ? initialUrl.trim()
         : `${WEBAPP_URL}${initialUrl.startsWith('/') ? '' : '/'}${initialUrl.trim()}`
       : WEBAPP_URL;
+  const webViewRef = useRef<WebView>(null);
   const [canGoBack, setCanGoBack] = useState(false);
-  const expoPushTokenRef = useRef<string | null>(null);
+  const pushTokenRef = useRef<string | null>(null);
   const authTokenRef = useRef<string | null>(null);
   const hasRegisteredRef = useRef(false);
 
+  useEffect(() => {
+    setForegroundHandler(() => {
+      // Optional: show in-app banner when notification received in foreground
+    });
+  }, []);
+
   const tryRegisterPush = async () => {
-    const expoToken = expoPushTokenRef.current;
+    const token = pushTokenRef.current;
     const accessToken = authTokenRef.current;
-    if (!expoToken || !accessToken || !API_BASE || hasRegisteredRef.current) return;
+    if (!token || !accessToken || !API_BASE || hasRegisteredRef.current) return;
     try {
+      const deviceId = await DeviceInfo.getModel();
       const res = await fetch(`${API_BASE}/notifications/push-subscribe`, {
         method: 'POST',
         headers: {
@@ -78,8 +59,8 @@ export default function WebAppScreen() {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          token: expoToken,
-          deviceId: Device.modelName ?? undefined,
+          token,
+          deviceId: deviceId ?? undefined,
         }),
       });
       if (res.ok) hasRegisteredRef.current = true;
@@ -89,20 +70,12 @@ export default function WebAppScreen() {
   };
 
   useEffect(() => {
-    if (!Device.isDevice) return;
     (async () => {
-      const { status: existing } = await Notifications.getPermissionsAsync();
-      let final = existing;
-      if (existing !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        final = status;
+      const token = await getPushToken();
+      if (token) {
+        pushTokenRef.current = token;
+        tryRegisterPush();
       }
-      if (final !== 'granted') return;
-      const tokenData = await Notifications.getExpoPushTokenAsync({
-        projectId: Constants.expoConfig?.extra?.eas?.projectId as string,
-      });
-      expoPushTokenRef.current = tokenData.data;
-      tryRegisterPush();
     })();
   }, []);
 
@@ -114,7 +87,7 @@ export default function WebAppScreen() {
     if (canGoBack) {
       webViewRef.current?.goBack();
     } else {
-      router.back();
+      navigation.goBack();
     }
   };
 
@@ -136,12 +109,12 @@ export default function WebAppScreen() {
 
   const handleMessage = async (event: { nativeEvent: { data: string } }) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data) as { type: string; payload?: { token?: string } };
+      const data = JSON.parse(event.nativeEvent.data) as {
+        type: string;
+        payload?: { token?: string };
+      };
 
       switch (data.type) {
-        case 'LOGIN_GOOGLE':
-          await handleGoogleLogin();
-          break;
         case 'AUTH_READY':
           if (data.payload?.token) {
             authTokenRef.current = data.payload.token;
@@ -163,26 +136,6 @@ export default function WebAppScreen() {
     }
   };
 
-  const handleGoogleLogin = async () => {
-    try {
-      await GoogleSignin.hasPlayServices();
-      const userInfo = await GoogleSignin.signIn();
-      const token = userInfo.data?.idToken;
-
-      if (token) {
-        sendToWeb('LOGIN_SUCCESS', { token });
-      }
-    } catch (err: unknown) {
-      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined;
-      if (code === statusCodes.SIGN_IN_CANCELLED) {
-        // cancelled
-      } else {
-        const msg = err instanceof Error ? err.message : 'Login failed';
-        sendToWeb('LOGIN_FAILURE', { error: msg });
-      }
-    }
-  };
-
   const reload = () => {
     webViewRef.current?.reload();
   };
@@ -195,11 +148,11 @@ export default function WebAppScreen() {
           style={styles.iconButton}
           accessibilityLabel={canGoBack ? '웹 뒤로가기' : '화면 닫기'}
         >
-          <Ionicons name='arrow-back' size={24} color='#FFD700' />
+          <Ionicons name="arrow-back" size={24} color="#FFD700" />
         </TouchableOpacity>
         <Text style={styles.title}>GOLDEN RACE</Text>
         <TouchableOpacity onPress={reload} style={styles.iconButton}>
-          <Ionicons name='refresh' size={24} color='#FFD700' />
+          <Ionicons name="refresh" size={24} color="#FFD700" />
         </TouchableOpacity>
       </View>
 
@@ -213,7 +166,6 @@ export default function WebAppScreen() {
         injectedJavaScriptBeforeContentLoaded="window.__IS_NATIVE_APP__=true;"
         onNavigationStateChange={onNavStateChange}
         onMessage={handleMessage}
-        // 모바일 스크롤/터치/키보드 최적화
         scrollEnabled={true}
         bounces={true}
         overScrollMode="always"

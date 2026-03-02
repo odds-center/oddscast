@@ -53,8 +53,6 @@ export const GA_EVENTS = {
   PREDICTION_REGENERATE: 'prediction_regenerate',
   /** Login attempt */
   LOGIN_CLICK: 'login_click',
-  /** Google login click */
-  GOOGLE_LOGIN_CLICK: 'google_login_click',
   /** Save selected horse */
   PICK_SAVE: 'pick_save',
   /** Race detail view */

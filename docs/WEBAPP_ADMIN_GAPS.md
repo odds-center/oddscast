@@ -3,7 +3,7 @@
 > 웹앱(유저 사이트)과 관리자(Admin)에서 보완이 필요한 항목을 한곳에 정리합니다.  
 > **Planning 시 참고:** [TODO_CONTINUE.md](TODO_CONTINUE.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)
 
-**Last updated:** 2026-02-24 (모바일 첫 화면·Admin 타입·에러 처리·알림 전송 결과 반영)
+**Last updated:** 2026-03-02 (문서 통합 반영)
 
 ---
 

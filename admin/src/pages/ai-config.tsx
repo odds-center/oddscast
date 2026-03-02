@@ -130,28 +130,28 @@ export default function AIConfigPage() {
     },
   });
 
-  // 서버에서 데이터 로드 시 폼에 설정
+  // 서버에서 데이터 로드 시 폼에 설정 (API 응답은 Record<string, unknown>이므로 폼 타입으로 변환)
   useEffect(() => {
     if (configData) {
-      reset({
-        llmProvider: configData.llmProvider || 'gemini',
-        primaryModel: configData.primaryModel || 'gemini-2.5-flash',
-        fallbackModels: configData.fallbackModels || ['gemini-2.0-flash-exp', 'gemini-1.5-flash'],
-        costStrategy: configData.costStrategy || 'balanced',
-        temperature: configData.temperature || 0.7,
-        maxTokens: configData.maxTokens || 1000,
-        enableCaching: configData.enableCaching !== undefined ? configData.enableCaching : true,
-        cacheTTL: configData.cacheTTL || 3600,
-        enableBatchPrediction:
-          configData.enableBatchPrediction !== undefined ? configData.enableBatchPrediction : true,
-        batchCronSchedule: configData.batchCronSchedule || '0 9 * * 5,6,0',
-        enableAutoUpdate:
-          configData.enableAutoUpdate !== undefined ? configData.enableAutoUpdate : true,
-        updateIntervalMinutes: configData.updateIntervalMinutes || 10,
-        oddsChangeThreshold: configData.oddsChangeThreshold || 10,
-        promptVersion: configData.promptVersion || 'v1.0.0',
-        systemPromptTemplate: configData.systemPromptTemplate || '',
-      });
+      const d = configData as Record<string, unknown>;
+      const values: AIConfigFormData = {
+        llmProvider: 'gemini',
+        primaryModel: (d.primaryModel as string) || 'gemini-2.5-flash',
+        fallbackModels: Array.isArray(d.fallbackModels) ? (d.fallbackModels as string[]) : ['gemini-2.0-flash-exp', 'gemini-1.5-flash'],
+        costStrategy: (['premium', 'balanced', 'budget'].includes(String(d.costStrategy)) ? d.costStrategy : 'balanced') as 'premium' | 'balanced' | 'budget',
+        temperature: Number(d.temperature) || 0.7,
+        maxTokens: Number(d.maxTokens) || 1000,
+        enableCaching: d.enableCaching !== undefined ? Boolean(d.enableCaching) : true,
+        cacheTTL: Number(d.cacheTTL) || 3600,
+        enableBatchPrediction: d.enableBatchPrediction !== undefined ? Boolean(d.enableBatchPrediction) : true,
+        batchCronSchedule: (d.batchCronSchedule as string) || '0 9 * * 5,6,0',
+        enableAutoUpdate: d.enableAutoUpdate !== undefined ? Boolean(d.enableAutoUpdate) : true,
+        updateIntervalMinutes: Number(d.updateIntervalMinutes) || 10,
+        oddsChangeThreshold: Number(d.oddsChangeThreshold) || 10,
+        promptVersion: (d.promptVersion as string) || 'v1.0.0',
+        systemPromptTemplate: (d.systemPromptTemplate as string) || '',
+      };
+      reset(values);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [configData]);

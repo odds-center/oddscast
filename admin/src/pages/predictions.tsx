@@ -208,8 +208,8 @@ export default function PredictionsListPage() {
             <span className={aiConfig?.enableBatchPrediction ? 'text-green-700' : 'text-amber-700'}>
               {aiConfig?.enableBatchPrediction ? 'ON' : 'OFF'}
             </span>
-            {aiConfig?.batchCronSchedule && (
-              <span className='text-gray-600'>스케줄: {aiConfig.batchCronSchedule}</span>
+            {aiConfig?.batchCronSchedule != null && (
+              <span className='text-gray-600'>스케줄: {String(aiConfig.batchCronSchedule)}</span>
             )}
             <Link href='/ai-config' className='text-primary-600 hover:underline'>
               AI 설정에서 변경

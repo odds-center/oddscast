@@ -1,9 +1,15 @@
+const path = require('path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
     domains: ['localhost'],
+  },
+  // Resolve server deps from workspace root so webpack cache paths match (pnpm monorepo)
+  experimental: {
+    outputFileTracingRoot: path.join(__dirname, '..'),
   },
   async rewrites() {
     return [

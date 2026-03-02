@@ -48,20 +48,12 @@
 
 | type | 설명 | payload |
 |------|------|---------|
-| `LOGIN_GOOGLE` | 네이티브 구글 로그인 요청 | - |
 | `AUTH_READY` | JWT 로그인 완료 (푸시 등록용) | `{ token: string }` |
+| `AUTH_LOGOUT` | 로그아웃 시 토큰 초기화 | - |
 
-### Mobile → WebApp
+**WebApp 사용:** `bridge.send('AUTH_READY', { token })` — _app.tsx (로그인 시)
 
-| type | 설명 | payload |
-|------|------|---------|
-| `LOGIN_SUCCESS` | 구글 로그인 성공 | `{ token: string }` (idToken) |
-| `LOGIN_FAILURE` | 구글 로그인 실패 | `{ error?: string }` |
-
-**WebApp 사용:**
-- `bridge.send('LOGIN_GOOGLE')` — GoogleSignInButton (Native 모드)
-- `bridge.send('AUTH_READY', { token })` — _app.tsx (로그인 시)
-- `bridge.subscribe('LOGIN_SUCCESS', cb)` — index, login 페이지
+(Google 로그인 제거됨 — 이메일/비밀번호만 사용)
 
 ---
 
@@ -71,7 +63,6 @@
 |------|--------|--------|------|
 | API URL | `NEXT_PUBLIC_API_URL` | `EXPO_PUBLIC_API_URL` | NestJS 서버 (푸시 등록 포함) |
 | WebApp URL | `NEXT_PUBLIC_WEBAPP_URL` | `EXPO_PUBLIC_WEBAPP_URL` | WebView 로드 대상 (prod) |
-| Google Client ID | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` | app.config.js (webClientId) | OAuth 검증용 |
 
 **Mobile 개발:**
 - dev: WebApp `localhost:3000` (Android `10.0.2.2:3000`)
@@ -88,7 +79,7 @@
 |------|-----|------------------|
 | 푸시 알림 토글 | 숨김 | 노출 |
 | 상단 헤더 | WebApp 헤더 | Native 헤더만 (WebApp 헤더 숨김) |
-| 구글 로그인 | GSI 버튼 | Native Google Sign-In |
+| 로그인 | 이메일/비밀번호 | 동일 (WebApp 로그인 페이지) |
 | 하단 네비 | WebApp 네비 | 동일 |
 
 ---

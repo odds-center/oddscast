@@ -4,6 +4,8 @@
 >
 > 기능 개발 시 이 문서를 기준으로 요구사항을 파악하고 구현합니다.
 
+**Last updated:** 2026-03-02
+
 ---
 
 ## 1. 서비스 개요
@@ -231,7 +233,7 @@
 | **서버** | NestJS, TypeORM, PostgreSQL |
 | **분석** | Python (pandas, numpy), python-shell |
 | **AI** | Google Gemini API |
-| **인증** | JWT, Google OAuth (idToken) |
+| **인증** | JWT, 이메일/비밀번호 회원가입·로그인 |
 
 ---
 

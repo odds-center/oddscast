@@ -4,6 +4,7 @@ import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import BackLink from '@/components/page/BackLink';
+import AuthCard from '@/components/page/AuthCard';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
@@ -48,60 +49,81 @@ export default function ResetPasswordPage() {
 
   if (!token && typeof window !== 'undefined' && router.isReady) {
     return (
-      <Layout title='OddsCast'>
-        <div className='max-w-sm md:max-w-md mx-auto'>
-          <p className='text-text-secondary text-sm mb-4'>비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.</p>
-          <Link href={routes.auth.forgotPassword} className='btn-primary inline-flex items-center gap-2'>
-            <Icon name='Mail' size={18} />
-            비밀번호 찾기
-          </Link>
+      <Layout title='비밀번호 재설정 — OddsCast'>
+        <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+          <AuthCard
+            title='링크를 확인해주세요'
+            description='비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.'
+          >
+            <Link
+              href={routes.auth.forgotPassword}
+              className='btn-primary w-full min-h-[44px] py-3 inline-flex items-center justify-center gap-2 rounded-lg text-[16px]'
+            >
+              <Icon name='Mail' size={20} />
+              비밀번호 찾기
+            </Link>
+          </AuthCard>
+          <div className='mt-6 flex justify-center'>
+            <BackLink href={routes.auth.login} label='로그인으로' />
+          </div>
         </div>
       </Layout>
     );
   }
 
   return (
-    <Layout title='OddsCast'>
-      <div className='max-w-sm md:max-w-md mx-auto'>
-        <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
-          <FormInput
-            label='새 비밀번호'
-            type='password'
-            {...register('newPassword', {
-              required: '비밀번호를 입력하세요.',
-              minLength: { value: 6, message: '6자 이상 입력하세요.' },
-            })}
-            error={errors.newPassword?.message}
-          />
-          <FormInput
-            label='비밀번호 확인'
-            type='password'
-            {...register('confirmPassword', {
-              required: '비밀번호를 다시 입력하세요.',
-              validate: (v) => v === getValues('newPassword') || '비밀번호가 일치하지 않습니다.',
-            })}
-            error={errors.confirmPassword?.message}
-          />
-          {errors.root && <p className='msg-error'>{errors.root.message}</p>}
-          <button
-            type='submit'
-            disabled={isSubmitting || mutation.isPending}
-            className='btn-primary w-full py-2 disabled:opacity-50 flex items-center justify-center gap-2'
-          >
-            {mutation.isPending ? (
-              <>
-                <Icon name='Loader2' size={18} className='animate-spin' />
-                처리 중...
-              </>
-            ) : (
-              '비밀번호 변경'
+    <Layout title='비밀번호 재설정 — OddsCast'>
+      <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <AuthCard
+          title='비밀번호 재설정'
+          description='새 비밀번호를 입력하세요. (6자 이상)'
+        >
+          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+            <FormInput
+              label='새 비밀번호'
+              type='password'
+              autoComplete='new-password'
+              placeholder='6자 이상'
+              {...register('newPassword', {
+                required: '비밀번호를 입력하세요.',
+                minLength: { value: 6, message: '6자 이상 입력하세요.' },
+              })}
+              error={errors.newPassword?.message}
+            />
+            <FormInput
+              label='비밀번호 확인'
+              type='password'
+              autoComplete='new-password'
+              {...register('confirmPassword', {
+                required: '비밀번호를 다시 입력하세요.',
+                validate: (v) =>
+                  v === getValues('newPassword') || '비밀번호가 일치하지 않습니다.',
+              })}
+              error={errors.confirmPassword?.message}
+            />
+            {errors.root && (
+              <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
-          </button>
-        </form>
+            <button
+              type='submit'
+              disabled={isSubmitting || mutation.isPending}
+              className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+            >
+              {mutation.isPending ? (
+                <>
+                  <Icon name='Loader2' size={20} className='animate-spin' />
+                  처리 중...
+                </>
+              ) : (
+                '비밀번호 변경'
+              )}
+            </button>
+          </form>
+        </AuthCard>
 
-        <p className='mt-6 text-text-secondary text-sm'>
-          <BackLink href={routes.auth.login} label='로그인' />
-        </p>
+        <div className='mt-6 flex justify-center'>
+          <BackLink href={routes.auth.login} label='로그인으로' />
+        </div>
       </div>
     </Layout>
   );

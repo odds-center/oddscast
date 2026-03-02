@@ -1,5 +1,9 @@
 # 데이터 적재 가이드
 
+**Last updated:** 2026-03-02
+
+---
+
 ## 경마 시행일 데이터 출처 (공공데이터)
 
 **경마 시행일/일정 데이터는 공공데이터로 제공됩니다.**
@@ -54,13 +58,22 @@
 | `POST /api/admin/kra/seed-sample?date=YYYYMMDD` | 샘플 경주 데이터 (KRA 키 없음) |
 | `GET /api/admin/kra/sync-logs` | 동기화 로그 조회 |
 
+### 경주 종료 판단 및 배치 스케줄 (batch_schedules)
+
+- **1경기 종료 시점**: 한국마사회 기준 발주 후 약 2~3분 내 결선, 결과 API 반영까지 여유를 두어 **발주 시각 + 10분**을 "경주 종료"로 판단 (`RACE_END_BUFFER_MINUTES = 10`).
+- **경기 적재 시**: 경주계획표/출전표 적재 후 `scheduleResultFetchForRcDate(rcDate)` 호출. 해당 날짜의 **각 경주**에 대해 (stTime + 10분) 시각에 `batch_schedules`에 `KRA_RESULT_FETCH` job을 등록. 동일 (targetRcDate, scheduledAt)은 중복 등록하지 않음.
+- **배치 실행**: `processDueBatchSchedulesCron`이 5분마다 실행되어 `scheduledAt <= now`인 PENDING job을 처리. job 1건당 해당 `targetRcDate` 전체 결과를 KRA에서 가져와 저장하고, 결과가 있는 경주는 `Race.status = COMPLETED`로 갱신.
+- 따라서 11:00 경주는 11:10에 배치가 돌아 결과 적재 후 경주 목록에서 "종료"로 표시됨.
+
 ### Cron 스케줄 (자동 동기화)
 
 | Cron | 시각 | 동작 |
 |------|------|------|
+| `processDueBatchSchedulesCron` | 5분마다 | `batch_schedules`의 PENDING job 중 due 실행 → KRA 결과 수집 |
 | `syncFutureRacePlans` | 매주 월 03:00 | API72_2 경주계획표 → 오늘~1년 내 금·토·일 Race 적재 |
 | `syncWeeklySchedule` | 수·목 18:00 | 금·토·일 경주계획표+출전표 선적재 |
 | `syncRaceDayMorning` | 금·토·일 08:00 | 당일 출전표+상세정보 |
+| `syncResultsWhenRacesEnded` | 금·토·일 10~20시 5분 간격 | 경주 종료 시각 지난 날짜 결과 수집 (배치 미실행 시 보완) |
 | `syncRealtimeResults` | 금·토·일 10:30~19:00 (30분 간격) | 결과·상세 갱신 |
 | `syncPreviousDayResults` | 매일 06:00 | 전날(금·토·일) 결과 사후 동기화 |
 
@@ -75,10 +88,13 @@
 - **상세 명세**: [`KRA_RACE_PLAN_SPEC.md`](specs/KRA_RACE_PLAN_SPEC.md), [`KRA_ENTRY_SHEET_SPEC.md`](specs/KRA_ENTRY_SHEET_SPEC.md)
 
 ### 개선 사항 (적재 성공률 향상)
-- 날짜 정규화: `YYYY-MM-DD` → `YYYYMMDD` 자동 변환
-- KRA API 응답 키 정규화: `rc_no`/`rcNo`, `hr_name`/`hrName` 등 양쪽 지원
+- **날짜 정규화**: `YYYY-MM-DD` / `YYYYMMDD` 자동 변환, 빈값·잘못된 값 시 오늘 날짜 fallback
+- **KRA API 응답 파싱 통일**: `body.items`(배열), `body.items.item`(배열/단일), 단일 객체(경주 1건) 모두 처리 (`parseKraBodyItems`)
+- **API resultCode 검사**: `resultCode !== '00'` 시 해당 meet/날짜 스킵 후 로그·KraSyncLog 기록 (경주계획표·출전표·결과 동일 적용)
+- **응답 키 정규화**: `rc_no`/`rcNo`, `hr_name`/`hrName` 등 양쪽 지원
 - `_type=json` 파라미터로 JSON 응답 우선 사용
 - 키 미설정 시 500 대신 안내 메시지 반환
+- 출전표 처리 시 Race upsert 후 조회 실패 시 경고 로그 후 해당 항목만 스킵 (전체 실패 방지)
 
 ---
 

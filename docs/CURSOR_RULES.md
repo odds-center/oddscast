@@ -193,7 +193,7 @@ oddscast/
 
 - **Planning 또는 "다음에 할 일" 논의 시** `docs/TODO_CONTINUE.md`를 먼저 확인할 것.
 - **작업 완료 시** 해당 항목 상태를 문서에서 갱신 (예: 미진행 → 완료).
-- **새 작업 추가 시** `TODO_CONTINUE.md`의 해당 섹션(배포·품질·기능·기술)에 항목을 추가하고, 필요하면 `NEXT_TASKS.md` 또는 `FEATURE_ROADMAP.md`와 맞출 것.
+- **새 작업 추가 시** `TODO_CONTINUE.md`의 해당 섹션(배포·품질·기능·기술)에 항목을 추가하고, 필요하면 `FEATURE_ROADMAP.md`와 맞출 것.
 
 ---
 

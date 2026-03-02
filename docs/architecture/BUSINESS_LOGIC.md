@@ -2,6 +2,8 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
+**Last updated:** 2026-03-02
+
 ---
 
 ## 1. AI 예측 시스템 (Prediction Pipeline)
@@ -119,7 +121,8 @@ flowchart TD
 ### 1.8 경주 상태 (종료/예정)
 
 - **종료(COMPLETED)** 는 KRA 결과 API로 결과가 DB에 적재된 경주에만 설정된다. 날짜가 지났다고 해서 COMPLETED로 바꾸지 않는다.
-- 클라이언트·API는 **DB의 `race.status`만**으로 종료/예정을 판단한다. 상세: [RACE_STATUS_AND_KRA.md](../features/RACE_STATUS_AND_KRA.md).
+- **경주 종료 시점**: 발주 시각(stTime) + 10분을 "경주 종료"로 판단(한국마사회 기준). 경기 적재 시 `batch_schedules`에 경주별 종료 시각으로 결과 수집 job을 등록하고, 5분마다 due job을 실행해 해당 날짜 결과를 가져오면 해당 경주를 COMPLETED로 갱신. 상세: [DATA_LOADING.md](../DATA_LOADING.md) §경주 종료 판단 및 배치 스케줄.
+- 클라이언트·API는 **DB의 `race.status`** 및 목록 API에서는 **결과 존재 여부(ordInt/ordType)** 로 종료/예정을 보정해 노출한다. 상세: [RACE_STATUS_AND_KRA.md](../features/RACE_STATUS_AND_KRA.md).
 
 ---
 

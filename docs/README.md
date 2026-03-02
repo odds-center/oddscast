@@ -1,5 +1,7 @@
 # OddsCast Documentation
 
+**Last updated:** 2026-03-02 (문서 통합: NEXT_TASKS→TODO_CONTINUE, GOOGLE_AUTH→GOOGLE_OAUTH_SETUP, WEBAPP_README→WEBAPP_DEVELOPMENT)
+
 ## 📂 Active Documentation
 
 ### 📋 서비스 명세 (Planning)
@@ -56,12 +58,10 @@
 - [`TYPEORM_SETUP.md`](guides/TYPEORM_SETUP.md) — TypeORM 설정, 마이그레이션, CI/배포
 - [`MONITORING_SETUP.md`](guides/MONITORING_SETUP.md) — Sentry, 업타임 모니터링 설정
 - [`DB_BACKUP.md`](guides/DB_BACKUP.md) — PostgreSQL 백업 (pg_dump, cron)
-- [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp 페이지 컴포넌트, 모바일 최적화, 구독 플로우
-- [`WEBAPP_README.md`](guides/WEBAPP_README.md) — WebApp 요약 (테마, 환경변수, 라우트)
+- [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp 개발 가이드 (Quick start, 테마·환경변수·라우트, 페이지 컴포넌트, 모바일 최적화, 구독 플로우)
 - [`ADMIN_GUIDE.md`](guides/ADMIN_GUIDE.md) — Admin 대시보드 가이드
 - [`MOBILE_GUIDE.md`](guides/MOBILE_GUIDE.md) — Mobile (WebView) 앱 가이드
-- [`GOOGLE_OAUTH_SETUP.md`](guides/GOOGLE_OAUTH_SETUP.md) — Google OAuth 로그인 설정 (Web + 신규/기존 회원 자동 처리)
-- [`guides/authentication/GOOGLE_AUTH_SETUP.md`](guides/authentication/GOOGLE_AUTH_SETUP.md) — Mobile WebView ↔ Native 구글 로그인 흐름
+- [`GOOGLE_OAUTH_SETUP.md`](guides/GOOGLE_OAUTH_SETUP.md) — Google 로그인 제거 안내 (현재 이메일/비밀번호만 사용)
 
 ### ⚖️ Legal (법적 고지)
 

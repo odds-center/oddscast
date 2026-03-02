@@ -1,12 +1,11 @@
-// Top-level build file where you can add configuration options common to all sub-projects/modules.
-
+// Top-level build file
 buildscript {
   repositories {
     google()
     mavenCentral()
   }
   dependencies {
-        classpath 'com.google.gms:google-services:4.4.1'
+    classpath 'com.google.gms:google-services:4.4.1'
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
     classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
@@ -23,16 +22,11 @@ def reactNativeAndroidDir = new File(
 
 allprojects {
   repositories {
-    maven {
-      // All of React Native (JS, Obj-C sources, Android binaries) is installed from npm
-      url(reactNativeAndroidDir)
-    }
-
+    maven { url(reactNativeAndroidDir) }
     google()
     mavenCentral()
     maven { url 'https://www.jitpack.io' }
   }
 }
 
-apply plugin: "expo-root-project"
 apply plugin: "com.facebook.react.rootproject"

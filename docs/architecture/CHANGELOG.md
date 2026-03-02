@@ -10,6 +10,15 @@
 
 ---
 
+## 2026-03-02 — 구글 로그인 제거 + 문서 통합
+
+- **구글 로그인 제거:** 서버 Admin `show_google_login` 제거. WebApp `CONFIG.google`·bridge `LOGIN_GOOGLE`/`LOGIN_SUCCESS`·analytics `GOOGLE_LOGIN_CLICK` 제거. Mobile `@react-native-google-signin/google-signin` 제거, webview `LOGIN_GOOGLE` 핸들러·configure 제거, app.config `google`·extra `webClientId`/`iosClientId` 제거. Admin 설정 페이지에서 Google 로그인 노출 체크 제거. 문서: GOOGLE_OAUTH_SETUP.md → 제거 안내로 대체, SERVICE_SPECIFICATION·MOBILE_GUIDE·WEBAPP_MOBILE_INTEGRATION·.cursorrules·README 갱신.
+- **문서 통합:** (1) `NEXT_TASKS.md` → `TODO_CONTINUE.md`에 통합 후 삭제. (2) `guides/authentication/GOOGLE_AUTH_SETUP.md` → `guides/GOOGLE_OAUTH_SETUP.md`에 Web + Mobile 통합 후 삭제. (3) `guides/WEBAPP_README.md` → `guides/WEBAPP_DEVELOPMENT.md` 상단 Quick start로 통합 후 삭제.
+- **참조 갱신:** `.cursorrules`, `docs/CURSOR_RULES.md`, `docs/README.md`에서 삭제된 문서 링크 제거·단일 문서로 정리.
+- **Last updated:** `docs/README.md`, `TODO_CONTINUE.md`, `FEATURE_ROADMAP.md`, `SERVICE_SPECIFICATION.md`, `DATA_LOADING.md`, `BUSINESS_LOGIC.md`, `API_SPECIFICATION.md`, `ARCHITECTURE.md`, `DATABASE_SCHEMA.md`, `WEBAPP_ADMIN_GAPS.md`, `SERVER_COMPLETENESS.md`, `GOOGLE_OAUTH_SETUP.md`, `WEBAPP_DEVELOPMENT.md`에 2026-03-02 반영.
+
+---
+
 ## 2026-02-24 — 문서·API 명세 누락 보완 + 모바일 첫 화면·에러 처리·Admin 타입
 
 - **API_SPECIFICATION.md**: Horses(§4-4), Fortune(§4-5), Referrals(§13-1), Weekly Preview(§13-2), Activity(§13-3) 섹션 추가. 서버 구현과 명세 일치.
@@ -18,14 +27,14 @@
 - **WEBAPP_ADMIN_GAPS.md**: Last updated 갱신. 모바일 첫 화면(로그인 여부에 따른 홈/로그인 리다이렉트) 적용 반영.
 - **PROJECT_STRUCTURE.md**: 서버 — analysis, horses, jockeys, trainers, fortune, referrals, weekly-preview, activity-logs, config, health, cache, admin 모듈 추가. WebApp — index(홈), races 목록/상세/시뮬레이터/schedule, results, predictions/accuracy, weekly-preview, horses/jockeys/trainers 프로필, mypage(구독 성공/실패, 종합 예측권 구매, 예측 이력), legal/refund 보완.
 - **docs/README.md**: SERVER_COMPLETENESS, FEATURE_ROADMAP, WEBAPP_ADMIN_GAPS, WEBAPP_COMPLETENESS 링크 추가.
-- **TODO_CONTINUE.md**, **NEXT_TASKS.md**: Last updated 및 문서 동기화 항목에 최근 보완 반영.
+- **TODO_CONTINUE.md**: Last updated 및 문서 동기화 항목에 최근 보완 반영. (NEXT_TASKS 내용 통합됨)
 
 **추가 완료 (같은 날):**
 - **모바일 첫 화면**: WebApp `_app.tsx`에서 네이티브 앱일 때 비로그인 → `/auth/login`, 로그인 상태에서 `/auth/login` 접근 시 → `/` 리다이렉트. AuthStore 로그아웃 시 `AUTH_LOGOUT` 전송, 모바일 WebView에서 수신 시 토큰 ref 초기화.
 - **WebApp API 에러 처리**: `lib/api/*.ts` 전반 `catch (error)` → `catch (err: unknown)`, `handleApiError(err)` 통일.
 - **Admin**: API 타입 정리(`CancelUserSubscriptionBody`, `AIConfigUpdate`, `AdminListResponse`), `getConfig`/`updateConfig`/`estimateCost` 반환 타입·`catch (err: unknown)` 통일. Admin 페이지 `onError`에 `getErrorMessage(err)` 사용, `console.error` 제거. 서버 admin controller `body: any` → `UpdateUserDto`/`Record<string, unknown>`.
 - **설정·알림**: Admin 설정 페이지 에러 시 early return(다시 시도만 노출). 알림 페이지 마지막 전송 결과(대상 N명·푸시 M건) 표시.
-- **문서**: TODO_CONTINUE·WEBAPP_ADMIN_GAPS·NEXT_TASKS — 푸시 타이밍·AI 신뢰도·Push Deep Link·예측 관리 적용 완료 반영. §5.1 Plan→Todos feat-1~3 완료 표시.
+- **문서**: TODO_CONTINUE·WEBAPP_ADMIN_GAPS — 푸시 타이밍·AI 신뢰도·Push Deep Link·예측 관리 적용 완료 반영. §5.1 Plan→Todos feat-1~3 완료 표시.
 - **서버 any 제거**: users.controller 검색 파라미터 `query`→`search` 전달, `updatePreferences` body `Record<string, unknown>`. jwt.strategy payload 타입 명시. points.controller/point.dto/bet.dto `any`→`Record<string, unknown>` 또는 `unknown[]`.
 - **KRA 데이터 적재 보완**: (1) Race.rcCondition·weather·track — 경주계획(API72_2)·출전표(API26_2)·결과 API 적재 시 매핑 추가. (2) syncOrphanedRaceResults — 결과가 없는 경주를 찾을 때 status=COMPLETED 조건 제거(과거 14일 내 race row는 있으나 result row가 0건인 경주 백필).
 - **경주 한 세트 통일**: Race + RaceEntry[] + RaceResult[] (+ Prediction)을 한 세트로 관리. (1) `buildRaceUpsertPayload()`로 경주계획·출전표·결과 API에서 동일 Race 필드 매핑. (2) 결과 동기화 시 출전마 생성·갱신을 결과 API 항목과 동일 필드(hrNameEn, jkNameEn, trNo, owNo, prd, chaksun1, chaksunT, rcCntT, ord1CntT, budam 등)로 보강. (3) 결과만 있는 경주도 meetName 포함해 Race 생성, 해당 결과로 출전마 없으면 생성·있으면 결과 기준으로 갱신.
@@ -1054,7 +1063,7 @@ cd server && npx prisma migrate dev --name add-matrix-ticket-type
 - **WebApp (Mobile)**: Native Bridge `LOGIN_SUCCESS` 시 `AuthApi.googleLogin(idToken)` → JWT 저장
 - **Mobile**: `app.config.js` webClientId → `GoogleSignin.configure` — idToken 획득 후 WebApp에 전달
 - **설정**: Server `GOOGLE_CLIENT_ID`, WebApp `NEXT_PUBLIC_GOOGLE_CLIENT_ID`, Mobile `app.config.js` — 동일 Web Client ID
-- 문서: [docs/guides/authentication/GOOGLE_AUTH_SETUP.md](../guides/authentication/GOOGLE_AUTH_SETUP.md)
+- 문서: [docs/guides/GOOGLE_OAUTH_SETUP.md](../guides/GOOGLE_OAUTH_SETUP.md) (Web + Mobile 통합)
 
 ---
 

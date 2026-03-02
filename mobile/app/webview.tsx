@@ -8,7 +8,7 @@ import {
   Platform,
 } from 'react-native';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import * as Notifications from 'expo-notifications';
@@ -54,6 +54,13 @@ Notifications.setNotificationHandler({
 export default function WebAppScreen() {
   const webViewRef = useRef<WebView>(null);
   const router = useRouter();
+  const { initialUrl } = useLocalSearchParams<{ initialUrl?: string }>();
+  const initialUri =
+    initialUrl && initialUrl.trim()
+      ? initialUrl.startsWith('http')
+        ? initialUrl.trim()
+        : `${WEBAPP_URL}${initialUrl.startsWith('/') ? '' : '/'}${initialUrl.trim()}`
+      : WEBAPP_URL;
   const [canGoBack, setCanGoBack] = useState(false);
   const expoPushTokenRef = useRef<string | null>(null);
   const authTokenRef = useRef<string | null>(null);
@@ -111,7 +118,7 @@ export default function WebAppScreen() {
     }
   };
 
-  const sendToWeb = (type: string, payload?: any) => {
+  const sendToWeb = (type: string, payload?: unknown) => {
     const script = `
       window.postMessage(JSON.stringify({
         type: '${type}',
@@ -127,10 +134,9 @@ export default function WebAppScreen() {
     webViewRef.current?.injectJavaScript(script);
   };
 
-  const handleMessage = async (event: any) => {
+  const handleMessage = async (event: { nativeEvent: { data: string } }) => {
     try {
-      const data = JSON.parse(event.nativeEvent.data);
-      console.log('Native received:', data);
+      const data = JSON.parse(event.nativeEvent.data) as { type: string; payload?: { token?: string } };
 
       switch (data.type) {
         case 'LOGIN_GOOGLE':
@@ -142,14 +148,18 @@ export default function WebAppScreen() {
             tryRegisterPush();
           }
           break;
+        case 'AUTH_LOGOUT':
+          authTokenRef.current = null;
+          break;
         case 'ECHO':
           sendToWeb('ECHO_REPLY', data.payload);
           break;
         default:
           console.warn('Unknown message type:', data.type);
       }
-    } catch (e) {
-      console.error('Failed to parse message from WebView', e);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('Failed to parse message from WebView', msg);
     }
   };
 
@@ -162,12 +172,13 @@ export default function WebAppScreen() {
       if (token) {
         sendToWeb('LOGIN_SUCCESS', { token });
       }
-    } catch (error: any) {
-      if (error.code === statusCodes.SIGN_IN_CANCELLED) {
+    } catch (err: unknown) {
+      const code = err && typeof err === 'object' && 'code' in err ? (err as { code: string }).code : undefined;
+      if (code === statusCodes.SIGN_IN_CANCELLED) {
         // cancelled
       } else {
-        console.error(error);
-        sendToWeb('LOGIN_FAILURE', { error: error.message || 'Login failed' });
+        const msg = err instanceof Error ? err.message : 'Login failed';
+        sendToWeb('LOGIN_FAILURE', { error: msg });
       }
     }
   };
@@ -194,7 +205,7 @@ export default function WebAppScreen() {
 
       <WebView
         ref={webViewRef}
-        source={{ uri: WEBAPP_URL }}
+        source={{ uri: initialUri }}
         style={styles.webview}
         startInLoadingState={true}
         javaScriptEnabled={true}

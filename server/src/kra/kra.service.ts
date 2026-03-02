@@ -94,6 +94,50 @@ export class KraService {
     return r ? { id: r.id } : null;
   }
 
+  /**
+   * Build Race upsert payload from KRA item fields.
+   * Race, RaceEntry[], RaceResult[] (and optionally Prediction) are one set per race;
+   * use this same mapping for plan, entry sheet, and result APIs so data stays consistent.
+   */
+  private buildRaceUpsertPayload(params: {
+    meet: string;
+    meetName: string | null;
+    rcDate: string;
+    rcNo: string;
+    rcName: string;
+    rcDist?: string | null;
+    rcDay?: string | null;
+    rank?: string | null;
+    rcPrize?: number | null;
+    stTime?: string | null;
+    rcCondition?: string | null;
+    weather?: string | null;
+    track?: string | null;
+    status?: RaceStatus;
+    createdAt: Date;
+    updatedAt: Date;
+  }): Parameters<Repository<Race>['upsert']>[0] {
+    const now = params.createdAt;
+    return {
+      meet: params.meet,
+      meetName: params.meetName ?? null,
+      rcDate: params.rcDate,
+      rcNo: params.rcNo,
+      rcName: params.rcName,
+      rcDist: params.rcDist ?? null,
+      rcDay: params.rcDay ?? null,
+      rank: params.rank ?? null,
+      rcPrize: params.rcPrize ?? null,
+      stTime: params.stTime ?? null,
+      rcCondition: params.rcCondition ?? null,
+      weather: params.weather ?? null,
+      track: params.track ?? null,
+      ...(params.status != null && { status: params.status }),
+      createdAt: now,
+      updatedAt: params.updatedAt,
+    };
+  }
+
   /** For Admin: current KRA configuration status (Base URL, API key presence) */
   async getKraStatus(): Promise<{
     baseUrlInUse: string;
@@ -427,9 +471,9 @@ export class KraService {
 
   /**
    * 5. Data consistency check (daily 05:30 KST)
-   * Finds past races that have plans but no results (orphaned),
+   * Finds past races (in last 14 days) that have a race row but no result rows (orphaned),
    * and attempts to backfill their results from KRA API.
-   * Scans the last 14 days to catch any missed results.
+   * Does not filter by status so that SCHEDULED races that never received result sync are included.
    */
   @Cron('0 30 5 * * *', { timeZone: 'Asia/Seoul' })
   async syncOrphanedRaceResults() {
@@ -451,7 +495,6 @@ export class KraService {
       .select(['r.id', 'r.rcDate', 'r.meet', 'r.rcNo'])
       .where('r.rcDate >= :from', { from: fromStr })
       .andWhere('r.rcDate < :to', { to: todayStr })
-      .andWhere('r.status = :status', { status: RaceStatus.COMPLETED })
       .orderBy('r.rcDate', 'ASC')
       .getMany();
     const orphanedRaces = allInRange.filter(
@@ -586,6 +629,7 @@ export class KraService {
   /**
    * Syncs Entry Sheet (Race Schedule + Entries) for a specific date.
    * Uses KRA API: /API26_2/entrySheet_2
+   * Race + RaceEntry[] + RaceResult[] (+ Prediction) are one set; mapping must match fetchRaceResults.
    */
   async syncEntrySheet(date: string, opts?: KraSyncProgressOptions) {
     this.ensureServiceKeyOrThrow();
@@ -747,22 +791,24 @@ export class KraService {
     const rcName =
       rcNameRaw && rcNameRaw.trim() ? rcNameRaw.trim() : `경주 ${rcNo}R`;
 
+    const rcCondition = vs('rcCondition') ?? vs('rc_condition');
     const now = new Date();
     await this.raceRepo.upsert(
-      {
+      this.buildRaceUpsertPayload({
         meet: meetForRace,
+        meetName: meetFromApi ?? meetName ?? null,
         rcDate: date,
         rcNo,
-        rcDist: vs('rcDist') ?? vs('rc_dist') ?? null,
         rcName,
+        rcDist: vs('rcDist') ?? vs('rc_dist') ?? null,
         rcDay: vs('rcDay') ?? vs('rc_day') ?? null,
         rank: vs('rank') ?? null,
         rcPrize: prize ?? null,
-        meetName: meetFromApi ?? meetName ?? null,
         stTime: stTime ?? null,
+        rcCondition: rcCondition ?? null,
         createdAt: now,
         updatedAt: now,
-      },
+      }),
       { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
     );
     const raceRow = await this.raceRepo.findOne({
@@ -1131,23 +1177,29 @@ export class KraService {
             v('rc_start_time') ??
             v('stTime') ??
             v('st_time');
+          const rcCondition = v('rcCondition') ?? v('rc_condition');
+          const weather = v('weather');
+          const track = v('track');
 
           const nowRace = new Date();
           await this.raceRepo.upsert(
-            {
+            this.buildRaceUpsertPayload({
               meet: meetName,
+              meetName,
               rcDate: d,
               rcNo,
-              rcDist: rcDist ?? null,
               rcName,
+              rcDist: rcDist ?? null,
               rcDay: rcDay ?? null,
               rank: rank ?? null,
               rcPrize: prize ?? null,
-              meetName,
               stTime: stTime ?? null,
+              rcCondition: rcCondition ?? null,
+              weather: weather ?? null,
+              track: track ?? null,
               createdAt: nowRace,
               updatedAt: nowRace,
-            },
+            }),
             { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
           );
           totalRaces++;
@@ -1250,23 +1302,29 @@ export class KraService {
             v('rc_start_time') ??
             v('stTime') ??
             v('st_time');
+          const rcCondition = v('rcCondition') ?? v('rc_condition');
+          const weather = v('weather');
+          const track = v('track');
 
           const nowRace = new Date();
           await this.raceRepo.upsert(
-            {
+            this.buildRaceUpsertPayload({
               meet: meetName,
+              meetName,
               rcDate,
               rcNo,
-              rcDist: rcDist ?? null,
               rcName,
+              rcDist: rcDist ?? null,
               rcDay: rcDay ?? null,
               rank: rank ?? null,
               rcPrize: prize ?? null,
-              meetName,
               stTime: stTime ?? null,
+              rcCondition: rcCondition ?? null,
+              weather: weather ?? null,
+              track: track ?? null,
               createdAt: nowRace,
               updatedAt: nowRace,
-            },
+            }),
             { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
           );
           totalRaces++;
@@ -1361,6 +1419,10 @@ export class KraService {
     return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
+  /**
+   * Fetches race results (API4_3), upserts Race, ensures RaceEntry per horse, saves RaceResult.
+   * Race + RaceEntry[] + RaceResult[] (+ Prediction) are one set; Race/Entry mapping matches syncEntrySheet.
+   */
   async fetchRaceResults(
     date: string,
     createRaceIfMissing = false,
@@ -1478,22 +1540,29 @@ export class KraService {
                 ? String(item.meet)
                 : meet.name;
             const nowRace = new Date();
-            // Create as SCHEDULED; set COMPLETED only when we have result rows with ord (below)
+            const rcConditionVal =
+              item.rcCondition != null
+                ? String(item.rcCondition)
+                : (item as Record<string, unknown>).rc_condition != null
+                  ? String((item as Record<string, unknown>).rc_condition)
+                  : null;
             await this.raceRepo.upsert(
-              {
+              this.buildRaceUpsertPayload({
                 meet: meetName,
+                meetName,
                 rcDate: normalizedDate,
                 rcNo,
-                rcDist: rcDistVal != null ? String(rcDistVal) : null,
                 rcName: rcNameToSave,
+                rcDist: rcDistVal != null ? String(rcDistVal) : null,
                 rcDay: rcDayVal != null ? String(rcDayVal) : null,
                 rank: rankVal != null ? String(rankVal) : null,
+                rcCondition: rcConditionVal,
                 weather: weatherVal != null ? String(weatherVal) : null,
                 track: trackVal != null ? String(trackVal) : null,
                 status: RaceStatus.SCHEDULED,
                 createdAt: nowRace,
                 updatedAt: nowRace,
-              },
+              }),
               { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
             );
             race = await this.findRaceByMeetDateNo(
@@ -1502,11 +1571,18 @@ export class KraService {
               rcNo,
             );
           } else if (race) {
+            const rcConditionVal =
+              item.rcCondition != null
+                ? String(item.rcCondition)
+                : (item as Record<string, unknown>).rc_condition != null
+                  ? String((item as Record<string, unknown>).rc_condition)
+                  : undefined;
             await this.raceRepo.update(race.id, {
               rcName: rcNameToSave,
               ...(rcDistVal != null && { rcDist: String(rcDistVal) }),
               ...(rcDayVal != null && { rcDay: String(rcDayVal) }),
               ...(rankVal != null && { rank: String(rankVal) }),
+              ...(rcConditionVal != null && { rcCondition: rcConditionVal }),
               ...(weatherVal != null && { weather: String(weatherVal) }),
               ...(trackVal != null && { track: String(trackVal) }),
               updatedAt: new Date(),
@@ -1522,38 +1598,95 @@ export class KraService {
                 ? String(item.hr_no)
                 : '';
 
+          const sv = (val: unknown) => (val != null ? String(val) : undefined);
+          const wgBudam =
+            item.wgBudam != null
+              ? parseFloat(String(item.wgBudam))
+              : item.wg_budam != null
+                ? parseFloat(String(item.wg_budam))
+                : null;
+          const ageVal =
+            item.age != null ? parseInt(String(item.age), 10) : null;
+          const chaksun1Val =
+            item.chaksun1 != null || item.rcPrize != null
+              ? parseInt(String(item.chaksun1 ?? item.rcPrize ?? 0), 10)
+              : null;
+          const chaksunTRaw =
+            item.chaksunT ?? (item as Record<string, unknown>).chaksun_t;
+          const chaksunTStr =
+            chaksunTRaw != null ? String(chaksunTRaw).replace(/,/g, '') : null;
+          const rcCntTVal =
+            item.rcCntT != null ||
+            (item as Record<string, unknown>).rc_cnt_t != null
+              ? parseInt(
+                  String(
+                    item.rcCntT ??
+                      (item as Record<string, unknown>).rc_cnt_t ??
+                      0,
+                  ),
+                  10,
+                )
+              : null;
+          const ord1CntTVal =
+            item.ord1CntT != null ||
+            (item as Record<string, unknown>).ord1_cnt_t != null
+              ? parseInt(
+                  String(
+                    item.ord1CntT ??
+                      (item as Record<string, unknown>).ord1_cnt_t ??
+                      0,
+                  ),
+                  10,
+                )
+              : null;
+
           if (hrNoStr) {
             const existingEntry = await this.entryRepo.findOne({
               where: { raceId: race.id, hrNo: hrNoStr },
               select: ['id'],
             });
+            const entryPayload = {
+              hrName: sv(item.hrName ?? item.hr_name) ?? '',
+              hrNameEn:
+                sv(
+                  item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en,
+                ) ?? null,
+              jkNo: sv(item.jkNo ?? item.jk_no) ?? null,
+              jkName: sv(item.jkName ?? item.jk_name) ?? '',
+              jkNameEn:
+                sv(
+                  item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en,
+                ) ?? null,
+              trNo:
+                sv(item.trNo ?? (item as Record<string, unknown>).tr_no) ??
+                null,
+              trName: sv(item.trName ?? item.tr_name) ?? null,
+              owNo:
+                sv(item.owNo ?? (item as Record<string, unknown>).ow_no) ??
+                null,
+              owName: sv(item.owName ?? item.ow_name) ?? null,
+              wgBudam,
+              chulNo: sv(item.chulNo ?? item.chul_no) ?? null,
+              age: ageVal,
+              sex: sv(item.sex) ?? null,
+              prd: sv(item.prd) ?? null,
+              chaksun1: chaksun1Val,
+              chaksunT: chaksunTStr,
+              rcCntT: rcCntTVal,
+              ord1CntT: ord1CntTVal,
+              budam: sv(item.budam) ?? null,
+            };
             if (!existingEntry) {
-              const sv = (val: unknown) =>
-                val != null ? String(val) : undefined;
-              const wgBudam =
-                item.wgBudam != null
-                  ? parseFloat(String(item.wgBudam))
-                  : item.wg_budam != null
-                    ? parseFloat(String(item.wg_budam))
-                    : null;
-              const ageVal =
-                item.age != null ? parseInt(String(item.age), 10) : null;
               await this.entryRepo.save(
                 this.entryRepo.create({
                   raceId: race.id,
                   hrNo: hrNoStr,
-                  hrName: sv(item.hrName ?? item.hr_name) ?? '',
-                  jkNo: sv(item.jkNo ?? item.jk_no) ?? null,
-                  jkName: sv(item.jkName ?? item.jk_name) ?? '',
-                  trName: sv(item.trName ?? item.tr_name) ?? null,
-                  owName: sv(item.owName ?? item.ow_name) ?? null,
-                  wgBudam,
-                  chulNo: sv(item.chulNo ?? item.chul_no) ?? null,
-                  age: ageVal,
-                  sex: sv(item.sex) ?? null,
+                  ...entryPayload,
                 }),
               );
               await this.cache.del(`race:${race.id}`);
+            } else {
+              await this.entryRepo.update(existingEntry.id, entryPayload);
             }
           }
 
@@ -1577,7 +1710,6 @@ export class KraService {
               >)
             : undefined;
 
-          const sv = (val: unknown) => (val != null ? String(val) : undefined);
           const ordStr = sv(item.ord);
           const { ordInt: ordIntVal, ordType: ordTypeVal } = parseOrd(ordStr);
           const resultData: Record<string, unknown> = {

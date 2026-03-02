@@ -1246,8 +1246,37 @@ function PredictionFullView({
   const cooldownRemaining = useCooldown(lastUsedAt);
   const isCoolingDown = cooldownRemaining > 0;
 
+  const horseScores = prediction?.scores?.horseScores ?? [];
+  const maxWinProb =
+    horseScores.length > 0
+      ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
+      : 0;
+  const confidenceLabel =
+    maxWinProb >= 70 ? '높음' : maxWinProb >= 50 ? '보통' : maxWinProb > 0 ? '낮음' : null;
+
   return (
     <div className='space-y-4'>
+      {/* Confidence badge */}
+      {confidenceLabel && (
+        <div className='flex items-center gap-2 text-sm'>
+          <span className='text-text-secondary'>신뢰도:</span>
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-medium ${
+              confidenceLabel === '높음'
+                ? 'bg-emerald-100 text-emerald-800'
+                : confidenceLabel === '보통'
+                  ? 'bg-amber-100 text-amber-800'
+                  : 'bg-stone-100 text-stone-600'
+            }`}
+          >
+            {confidenceLabel}
+            {maxWinProb > 0 && (
+              <span className='ml-1 font-normal opacity-90'>({Math.round(maxWinProb)}%)</span>
+            )}
+          </span>
+        </div>
+      )}
+
       {/* Toolbar: prediction count + regenerate (section title "AI 예측" is above) */}
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center gap-1.5'>

@@ -39,8 +39,8 @@ export default class JockeyApi {
       );
       const data = handleApiResponse(response);
       return (data as JockeyProfile | null) ?? null;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -57,8 +57,8 @@ export default class JockeyApi {
       });
       const data = handleApiResponse(response);
       return (data as JockeyHistoryResponse) ?? { items: [], total: 0, totalPages: 0 };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

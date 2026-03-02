@@ -42,8 +42,8 @@ export default class UserApi {
         `/users?${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -51,8 +51,8 @@ export default class UserApi {
     try {
       const response = await axiosInstance.get<ApiResponse<User>>(`/users/${userId}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -60,8 +60,8 @@ export default class UserApi {
     try {
       const response = await axiosInstance.post<ApiResponse<User>>('/users', userData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -69,8 +69,8 @@ export default class UserApi {
     try {
       const response = await axiosInstance.put<ApiResponse<User>>(`/users/${userId}`, updateData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -80,8 +80,8 @@ export default class UserApi {
         `/users/${userId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -91,8 +91,8 @@ export default class UserApi {
         `/users/${userId}/profile`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -106,8 +106,8 @@ export default class UserApi {
         updateData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -117,8 +117,8 @@ export default class UserApi {
         `/users/${userId}/statistics`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -128,8 +128,8 @@ export default class UserApi {
         `/users/${userId}/achievements`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -148,8 +148,8 @@ export default class UserApi {
         `/users/search?${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -173,8 +173,8 @@ export default class UserApi {
       >(`/users/${userId}/activities?${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -203,8 +203,8 @@ export default class UserApi {
       >(`/users/${userId}/notifications?${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -214,8 +214,8 @@ export default class UserApi {
         `/users/${userId}/preferences`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -229,8 +229,8 @@ export default class UserApi {
         preferences,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

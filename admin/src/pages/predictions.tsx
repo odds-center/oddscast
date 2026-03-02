@@ -9,7 +9,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { AdminAIApi } from '@/lib/api/admin';
+import { AdminAIApi, adminAIConfigApi } from '@/lib/api/admin';
 import { formatDateTime } from '@/lib/utils';
 
 type PredictionRow = {
@@ -53,6 +53,18 @@ export default function PredictionsListPage() {
         status: statusFilter || undefined,
       }),
     placeholderData: (prev) => prev,
+    staleTime: 60 * 1000,
+  });
+
+  const { data: todayStats } = useQuery({
+    queryKey: ['admin', 'predictions', 'today'],
+    queryFn: () => AdminAIApi.getPredictionsTodayCount(),
+    staleTime: 60 * 1000,
+  });
+
+  const { data: aiConfig } = useQuery({
+    queryKey: ['ai-config'],
+    queryFn: () => adminAIConfigApi.getConfig(),
     staleTime: 60 * 1000,
   });
 
@@ -153,10 +165,23 @@ export default function PredictionsListPage() {
     },
     {
       key: 'accuracy',
-      header: '정확도',
+      header: '적중률',
       className: 'w-20',
-      render: (row: PredictionRow) =>
-        row.accuracy != null ? `${row.accuracy}%` : '-',
+      render: (row: PredictionRow) => {
+        const r = row.race;
+        const text = row.accuracy != null ? `${row.accuracy}%` : '-';
+        if (r?.id) {
+          return (
+            <Link
+              href={`/races/${r.id}`}
+              className='text-primary-600 hover:underline font-medium'
+            >
+              {text}
+            </Link>
+          );
+        }
+        return text;
+      },
     },
     {
       key: 'createdAt',
@@ -177,6 +202,22 @@ export default function PredictionsListPage() {
             title='예측 목록'
             description='전체 AI 예측을 순서대로 조회합니다. 경주별 결과와 연계해 확인할 수 있으며, 미생성 예측을 기간·경주 순으로 일괄 생성할 수 있습니다.'
           />
+
+          <div className='flex flex-wrap items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm'>
+            <span className='font-medium text-gray-700'>배치 예측:</span>
+            <span className={aiConfig?.enableBatchPrediction ? 'text-green-700' : 'text-amber-700'}>
+              {aiConfig?.enableBatchPrediction ? 'ON' : 'OFF'}
+            </span>
+            {aiConfig?.batchCronSchedule && (
+              <span className='text-gray-600'>스케줄: {aiConfig.batchCronSchedule}</span>
+            )}
+            <Link href='/ai-config' className='text-primary-600 hover:underline'>
+              AI 설정에서 변경
+            </Link>
+            <span className='text-gray-400'>|</span>
+            <span className='font-medium text-gray-700'>오늘 생성:</span>
+            <span className='text-gray-800'>{todayStats?.count ?? '-'}건</span>
+          </div>
 
           <Card
             title='미생성 예측 일괄 생성'

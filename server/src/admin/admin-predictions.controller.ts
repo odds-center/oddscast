@@ -62,6 +62,12 @@ export class AdminPredictionsController {
     return this.predictionsService.getCostStats();
   }
 
+  @Get('stats/today')
+  @ApiOperation({ summary: '[Admin] 오늘 생성된 예측 건수 (KST)' })
+  getTodayCount() {
+    return this.predictionsService.getTodayCreatedCount();
+  }
+
   /** [Admin] 전체 예측 목록 (페이지네이션, 최대 100건/페이지) */
   @Get('list')
   @ApiOperation({ summary: '[Admin] 전체 예측 목록' })

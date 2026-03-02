@@ -5,8 +5,11 @@ import { PushToken } from '../database/entities/push-token.entity';
 import { UserNotificationPreference } from '../database/entities/user-notification-preference.entity';
 import { User } from '../database/entities/user.entity';
 import { Subscription } from '../database/entities/subscription.entity';
+import { Race } from '../database/entities/race.entity';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
+import { NotificationsSchedulerService } from './notifications-scheduler.service';
+import { GlobalConfigModule } from '../config/config.module';
 
 @Module({
   imports: [
@@ -16,10 +19,12 @@ import { NotificationsController } from './notifications.controller';
       UserNotificationPreference,
       User,
       Subscription,
+      Race,
     ]),
+    GlobalConfigModule,
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService],
+  providers: [NotificationsService, NotificationsSchedulerService],
   exports: [NotificationsService],
 })
 export class NotificationsModule {}

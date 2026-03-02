@@ -9,6 +9,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import PageLoading from '@/components/common/PageLoading';
 import { adminSubscriptionsApi } from '@/lib/api/admin';
+import { getErrorMessage } from '@/lib/utils';
 
 interface SubscriptionPlan {
   id: string;
@@ -80,9 +81,8 @@ export default function SubscriptionPlansPage() {
       setEditingPlan(null);
       reset();
     },
-    onError: (error: unknown) => {
-      console.error('저장 실패:', error);
-      toast.error('저장에 실패했습니다. 다시 시도해주세요.');
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err) || '저장에 실패했습니다. 다시 시도해주세요.');
     },
   });
 
@@ -94,8 +94,8 @@ export default function SubscriptionPlansPage() {
       toast.success(result && 'isActive' in result && !result.isActive ? '플랜이 비활성화되었습니다' : '플랜이 삭제되었습니다');
       setDeletingPlan(null);
     },
-    onError: (error: unknown) => {
-      toast.error(error instanceof Error ? error.message : '삭제에 실패했습니다');
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err) || '삭제에 실패했습니다');
     },
   });
 

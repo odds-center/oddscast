@@ -82,8 +82,8 @@ export default class PredictionTicketsApi {
         { timeout: 60000 },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -101,8 +101,8 @@ export default class PredictionTicketsApi {
         expiredTickets: d?.expired ?? d?.expiredTickets ?? 0,
         totalTickets: d?.total ?? d?.totalTickets ?? 0,
       } as TicketBalance;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -135,8 +135,8 @@ export default class PredictionTicketsApi {
         page: d?.page ?? 1,
         totalPages: d?.totalPages ?? 1,
       };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -166,8 +166,8 @@ export default class PredictionTicketsApi {
         page: d?.page ?? 1,
         totalPages: d?.totalPages ?? 1,
       };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -186,8 +186,8 @@ export default class PredictionTicketsApi {
     try {
       const response = await axiosInstance.post('/prediction-tickets/matrix/use', { date });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -212,8 +212,8 @@ export default class PredictionTicketsApi {
     try {
       const response = await axiosInstance.post('/prediction-tickets/matrix/purchase', { count });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -236,8 +236,8 @@ export default class PredictionTicketsApi {
         `/prediction-tickets/${id}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

@@ -83,8 +83,8 @@ export default class PaymentsApi {
         ApiResponse<{ success: boolean; subscription?: unknown; paymentKey?: string; orderId?: string }>
       >('/payments/billing-key', params);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -98,8 +98,8 @@ export default class PaymentsApi {
     try {
       const response = await axiosInstance.post<ApiResponse<{ billing: BillingHistory; planName: string }>>('/payments/subscribe', data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

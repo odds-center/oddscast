@@ -10,6 +10,7 @@ import PageHeader from '@/components/common/PageHeader';
 import PageLoading from '@/components/common/PageLoading';
 import Button from '@/components/common/Button';
 import { adminSinglePurchaseApi } from '@/lib/api/admin';
+import { getErrorMessage } from '@/lib/utils';
 
 // Zod 스키마
 const configSchema = z.object({
@@ -64,9 +65,8 @@ export default function SinglePurchaseConfigPage() {
       queryClient.invalidateQueries({ queryKey: ['single-purchase-config'] });
       toast.success('저장되었습니다');
     },
-    onError: (error) => {
-      console.error('저장 실패:', error);
-      toast.error('저장에 실패했습니다. 다시 시도해주세요.');
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err) || '저장에 실패했습니다. 다시 시도해주세요.');
     },
   });
 

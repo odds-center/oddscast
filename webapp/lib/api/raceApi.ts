@@ -38,8 +38,8 @@ export default class RaceApi {
       const response = await axiosInstance.get<ApiResponseDto<RaceDto[]>>('/races/today');
       const data = handleApiResponse(response) as RaceDto[] | undefined;
       return Array.isArray(data) ? data : [];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -61,8 +61,8 @@ export default class RaceApi {
         `/races?${params.toString()}`,
       );
       return handleApiResponse(response) as RaceListResponseDto;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -70,8 +70,8 @@ export default class RaceApi {
     try {
       const response = await axiosInstance.get<ApiResponseDto<RaceDetailDto>>(`/races/${raceId}`);
       return handleApiResponse(response) as RaceDetailDto;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -79,8 +79,8 @@ export default class RaceApi {
     try {
       const response = await axiosInstance.post<ApiResponseDto<RaceDto>>('/races', raceData);
       return handleApiResponse(response) as RaceDto;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -88,8 +88,8 @@ export default class RaceApi {
     try {
       const response = await axiosInstance.put<ApiResponseDto<RaceDto>>(`/races/${raceId}`, updateData);
       return handleApiResponse(response) as RaceDto;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -99,8 +99,8 @@ export default class RaceApi {
         `/races/${raceId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -110,8 +110,8 @@ export default class RaceApi {
         `/races/${raceId}/results`,
       );
       return handleApiResponse(response) as RaceResultDto[];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -122,8 +122,8 @@ export default class RaceApi {
         { results },
       );
       return handleApiResponse(response) as RaceResultDto[];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -133,8 +133,8 @@ export default class RaceApi {
         `/races/${raceId}/dividends`,
       );
       return handleApiResponse(response) as DividendDto[];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -144,8 +144,8 @@ export default class RaceApi {
         `/races/${raceId}/entries`,
       );
       return handleApiResponse(response) as RaceEntryDto[];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -167,8 +167,8 @@ export default class RaceApi {
         `/races/statistics?${params.toString()}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -176,8 +176,8 @@ export default class RaceApi {
     try {
       const response = await axiosInstance.get<ApiResponseDto<unknown>>(`/races/${raceId}/analysis`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -199,8 +199,8 @@ export default class RaceApi {
         `/races/schedule?${params.toString()}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -214,8 +214,8 @@ export default class RaceApi {
         `/races/calendar?${params.toString()}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -235,8 +235,8 @@ export default class RaceApi {
       );
       const data = handleApiResponse(response);
       return Array.isArray(data) ? data : [];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -259,8 +259,8 @@ export default class RaceApi {
         `/races/search?${params.toString()}`,
       );
       return handleApiResponse(response) as RaceListResponseDto;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

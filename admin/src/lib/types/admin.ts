@@ -114,6 +114,20 @@ export interface UserSubscription {
   autoRenew: boolean;
 }
 
+/** Body for admin cancel user subscription */
+export interface CancelUserSubscriptionBody {
+  reason?: string;
+}
+
+/** AI config is stored as JSON; update payload is key-value */
+export type AIConfigUpdate = Record<string, unknown>;
+
+/** Paginated list response (results, races, etc.) */
+export interface AdminListResponse<T> {
+  data: T[];
+  meta: { total: number; totalPages: number; page: number };
+}
+
 // Single Purchase Config
 export interface SinglePurchaseConfig {
   id: string;

@@ -400,4 +400,73 @@ export class NotificationsService {
     }
     return { count: userIds.length };
   }
+
+  /**
+   * First race 30 min reminder — notify users with raceEnabled (type RACE, data.type FIRST_RACE_SOON).
+   */
+  async notifyFirstRaceSoon(payload: {
+    raceId: number;
+    rcDate: string;
+    meet: string;
+    rcNo: string;
+    stTime: string | null;
+  }): Promise<{ count: number }> {
+    const { raceId, meet, rcNo } = payload;
+    const raceLabel = rcNo ? `${meet || '경주'} ${rcNo}R` : meet || '경주';
+    const title = '첫 경주 30분 전';
+    const message = `${raceLabel}이(가) 곧 시작됩니다. 경주 정보를 확인하세요.`;
+    const baseUrl = this.getWebappBaseUrl();
+    const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
+    const dataJson: Record<string, unknown> = {
+      type: 'FIRST_RACE_SOON',
+      raceId,
+      deepLink,
+    };
+
+    const users = await this.userRepo
+      .createQueryBuilder('u')
+      .leftJoin(UserNotificationPreference, 'unp', 'unp."userId" = u.id')
+      .where('u.isActive = :active', { active: true })
+      .andWhere('(unp.id IS NULL OR unp.raceEnabled = true)')
+      .select('u.id')
+      .getMany();
+    const userIds = users.map((u) => u.id);
+    if (userIds.length === 0) return { count: 0 };
+
+    for (const userId of userIds) {
+      await this.notificationRepo.save(
+        this.notificationRepo.create({
+          userId,
+          title,
+          message,
+          type: NotificationType.RACE,
+          category: NotificationCategory.INFO,
+          data: dataJson,
+        }),
+      );
+    }
+
+    try {
+      const pushTokens = await this.pushTokenRepo.find({
+        where: { userId: In(userIds) },
+        select: ['token'],
+      });
+      if (pushTokens.length > 0) {
+        const pushMessages = pushTokens.map((t) => ({
+          to: t.token,
+          title,
+          body: message,
+          sound: 'default' as const,
+          data: { type: 'FIRST_RACE_SOON', raceId, deepLink },
+        }));
+        const chunks = this.expo.chunkPushNotifications(pushMessages);
+        for (const chunk of chunks) {
+          await this.expo.sendPushNotificationsAsync(chunk);
+        }
+      }
+    } catch (err) {
+      this.logger.warn('[FirstRaceReminder] Push failed', (err as Error)?.message);
+    }
+    return { count: userIds.length };
+  }
 }

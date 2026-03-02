@@ -41,8 +41,8 @@ export default class HorseApi {
       );
       const data = handleApiResponse(response);
       return (data as HorseProfile | null) ?? null;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -59,8 +59,8 @@ export default class HorseApi {
       });
       const data = handleApiResponse(response);
       return (data as HorseHistoryResponse) ?? { items: [], total: 0, totalPages: 0 };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

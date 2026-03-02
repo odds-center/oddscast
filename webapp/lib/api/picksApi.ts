@@ -107,8 +107,8 @@ export default class PicksApi {
     try {
       const response = await axiosInstance.post<ApiResponse<Pick>>('/picks', payload);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -123,8 +123,8 @@ export default class PicksApi {
         ApiResponse<{ picks: Pick[]; total: number; page: number; totalPages: number }>
       >('/picks', { params: { page, limit } });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -132,8 +132,8 @@ export default class PicksApi {
     try {
       const response = await axiosInstance.get<ApiResponse<Pick>>(`/picks/race/${raceId}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -143,8 +143,8 @@ export default class PicksApi {
         `/picks/race/${raceId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

@@ -45,8 +45,8 @@ export default class PointApi {
     try {
       const response = await axiosInstance.get<ApiResponse<UserPointBalance>>('/points/me/balance');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -66,8 +66,8 @@ export default class PointApi {
         `/points/me/transactions${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -77,8 +77,8 @@ export default class PointApi {
         '/points/ticket-price',
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -92,8 +92,8 @@ export default class PointApi {
         quantity,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -103,8 +103,8 @@ export default class PointApi {
         `/points/${userId}/balance`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -123,8 +123,8 @@ export default class PointApi {
         `/points/${userId}/transactions${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -138,8 +138,8 @@ export default class PointApi {
         transactionData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -153,8 +153,8 @@ export default class PointApi {
         updateData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -164,8 +164,8 @@ export default class PointApi {
         `/points/${userId}/statistics`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -176,8 +176,8 @@ export default class PointApi {
         transferData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -197,8 +197,8 @@ export default class PointApi {
         `/points/promotions${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -211,8 +211,8 @@ export default class PointApi {
         ApiResponse<{ message: string; pointsEarned: number }>
       >(`/points/${userId}/promotions/${promotionId}/apply`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -222,8 +222,8 @@ export default class PointApi {
         `/points/${userId}/expiring`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -236,8 +236,8 @@ export default class PointApi {
         ApiResponse<{ message: string; newExpiryDate: string }>
       >(`/points/transactions/${transactionId}/extend`, { extensionDays });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -261,8 +261,8 @@ export default class PointApi {
       >(`/points/${userId}/audit-log${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -270,8 +270,8 @@ export default class PointApi {
     try {
       const response = await axiosInstance.get<ApiResponse<PointSettings[]>>('/points/settings');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -282,8 +282,8 @@ export default class PointApi {
         { value },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -302,8 +302,8 @@ export default class PointApi {
         `/points/reports${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -324,8 +324,8 @@ export default class PointApi {
         `/points/${userId}/transactions/search${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -338,8 +338,8 @@ export default class PointApi {
         ApiResponse<{ message: string; newBalance: number }>
       >(`/points/${userId}/adjust`, adjustmentData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -348,8 +348,8 @@ export default class PointApi {
       const response =
         await axiosInstance.get<ApiResponse<PointExpirySettings>>('/points/expiry-settings');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

@@ -28,7 +28,7 @@ export class PointsController {
 
   @Get('promotions')
   @ApiOperation({ summary: '프로모션 목록 조회' })
-  getPromotions(@Query() filters: any) {
+  getPromotions(@Query() filters: Record<string, unknown>) {
     return this.pointsService.getPromotions(filters);
   }
 
@@ -102,7 +102,7 @@ export class PointsController {
   @ApiOperation({ summary: '포인트 트랜잭션 조회' })
   getTransactions(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() filters: any,
+    @Query() filters: Record<string, unknown>,
   ) {
     return this.pointsService.getTransactions(userId, filters);
   }

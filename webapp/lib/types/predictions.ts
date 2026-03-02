@@ -14,6 +14,8 @@ export interface PredictionHorseScore {
   weaknesses?: string[];
   /** AI confidence level: high/medium/low */
   confidence?: 'high' | 'medium' | 'low';
+  /** Win probability 0–100 (from model) */
+  winProb?: number;
 }
 
 /** AI prediction by bet type — separate recommendation for each bet type */

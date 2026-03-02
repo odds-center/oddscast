@@ -26,7 +26,7 @@ export class CreatePointTransactionDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsObject()
-  metadata?: any;
+  metadata?: Record<string, unknown>;
 
   @ApiProperty({ required: false })
   @IsOptional()

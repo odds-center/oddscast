@@ -33,8 +33,8 @@ export default class BetApi {
     try {
       const response = await axiosInstance.post<ApiResponse<Bet>>('/bets', betData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -42,8 +42,8 @@ export default class BetApi {
     try {
       const response = await axiosInstance.get<ApiResponse<Bet>>(`/bets/${betId}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -69,8 +69,8 @@ export default class BetApi {
       >(`/bets?${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -78,8 +78,8 @@ export default class BetApi {
     try {
       const response = await axiosInstance.put<ApiResponse<Bet>>(`/bets/${betId}`, updateData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -89,8 +89,8 @@ export default class BetApi {
         `/bets/${betId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -98,8 +98,8 @@ export default class BetApi {
     try {
       const response = await axiosInstance.patch<ApiResponse<Bet>>(`/bets/${betId}/cancel`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -114,8 +114,8 @@ export default class BetApi {
         actualWin,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -135,8 +135,8 @@ export default class BetApi {
         `/bets/statistics?${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -144,8 +144,8 @@ export default class BetApi {
     try {
       const response = await axiosInstance.get<ApiResponse<BetAnalysis>>(`/bets/${betId}/analysis`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -163,8 +163,8 @@ export default class BetApi {
         bets,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -174,8 +174,8 @@ export default class BetApi {
         `/bets/slip/${slipId}/confirm`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -190,8 +190,8 @@ export default class BetApi {
         `/bets/history?${queryString}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -221,8 +221,8 @@ export default class BetApi {
       >(`/bets/search?${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -238,8 +238,8 @@ export default class BetApi {
         responseType: 'blob',
       });
       return response.data;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

@@ -565,6 +565,19 @@ AI 예측 순위: ${predictedTop || '-'}
     return { predictions, total, page, totalPages: Math.ceil(total / limit) };
   }
 
+  /** Admin: count of predictions created today (KST). */
+  async getTodayCreatedCount(): Promise<{ count: number }> {
+    const kstDateStr = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
+    const dayStart = new Date(`${kstDateStr}T00:00:00+09:00`);
+    const dayEnd = new Date(`${kstDateStr}T23:59:59.999+09:00`);
+    const count = await this.predictionRepo.count({
+      where: {
+        createdAt: Between(dayStart, dayEnd),
+      },
+    });
+    return { count };
+  }
+
   /**
    * Admin: generate predictions for races that have no COMPLETED prediction, in order (rcDate, meet, rcNo).
    * dateFrom/dateTo: YYYYMMDD. Defaults to last 30 days if omitted.

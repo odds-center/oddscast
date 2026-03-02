@@ -36,8 +36,8 @@ export default class SinglePurchasesApi {
         data,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -52,8 +52,8 @@ export default class SinglePurchasesApi {
         params: { quantity },
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -66,8 +66,8 @@ export default class SinglePurchasesApi {
         params: { limit, offset },
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -80,8 +80,8 @@ export default class SinglePurchasesApi {
         '/single-purchases/total-spent',
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

@@ -360,7 +360,7 @@ export class AdminController {
 
   @Patch('users/:id')
   @ApiOperation({ summary: '[Admin] 사용자 수정' })
-  async updateUser(@Param('id', ParseIntPipe) id: number, @Body() body: any) {
+  async updateUser(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateUserDto) {
     return this.usersService.update(id, body);
   }
 
@@ -442,7 +442,7 @@ export class AdminController {
 
   @Post('ai/config')
   @ApiOperation({ summary: '[Admin] AI 설정 저장 (Gemini)' })
-  async updateAIConfig(@Body() body: any) {
+  async updateAIConfig(@Body() body: Record<string, unknown>) {
     await this.configService.set('ai_config', JSON.stringify(body));
     return body;
   }
@@ -651,7 +651,7 @@ export class AdminController {
 
   @Patch('single-purchase/config')
   @ApiOperation({ summary: '[Admin] 개별 구매 설정 수정' })
-  async updateSinglePurchaseConfig(@Body() body: any) {
+  async updateSinglePurchaseConfig(@Body() body: Record<string, unknown>) {
     return this.singlePurchasesService.updateConfig(body);
   }
 

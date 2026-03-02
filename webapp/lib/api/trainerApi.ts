@@ -38,8 +38,8 @@ export default class TrainerApi {
       );
       const data = handleApiResponse(response);
       return (data as TrainerProfile | null) ?? null;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -56,8 +56,8 @@ export default class TrainerApi {
       });
       const data = handleApiResponse(response);
       return (data as TrainerHistoryResponse) ?? { items: [], total: 0, totalPages: 0 };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

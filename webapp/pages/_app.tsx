@@ -11,6 +11,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 import { useAccessibilityStore } from '@/lib/store/accessibilityStore';
 import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
+import { routes } from '@/lib/routes';
 import { FloatingAppBar } from '@/components/Layout';
 import NetworkStatusBanner from '@/components/ui/NetworkStatusBanner';
 import { OnboardingTutorial, hasSeenOnboarding } from '@/components/onboarding';
@@ -109,6 +110,19 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
       bridge.send('AUTH_READY', { token });
     }
   }, [token]);
+
+  // Native app only: first screen by login state — logged in → home, not logged in → login page
+  useEffect(() => {
+    if (!clientMounted || !bridge.isNativeApp()) return;
+    const isLoggedIn = !!token;
+    if (!isLoggedIn && pathname === '/') {
+      router.replace(routes.auth.login);
+      return;
+    }
+    if (isLoggedIn && pathname === '/auth/login') {
+      router.replace(routes.home);
+    }
+  }, [clientMounted, token, pathname, router]);
 
   return (
     <>

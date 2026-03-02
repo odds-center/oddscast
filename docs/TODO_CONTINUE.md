@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
 
-**Last updated:** 2026-02-24 (문서·API 명세 누락 보완, PROJECT_STRUCTURE·docs/README 갱신)
+**Last updated:** 2026-02-24 (모바일 첫 화면·WebApp/Admin 에러 처리·문서 갱신 반영)
 
 ---
 
@@ -20,6 +20,8 @@
 | 구독 PG (토스페이먼츠) | ✅ 완료 | 빌링키·첫 결제·정기 결제 크론, 결제창 연동 |
 | **종료/예정·KRA 정책** | ✅ 완료 | COMPLETED는 KRA 결과 적재 시에만 설정. 날짜 기반 COMPLETED 제거. WebApp/서버는 status만 사용. [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
 | **배치 스케줄(결과 조회)** | ✅ 완료 | batch_schedules 테이블·Cron 5분마다 due 작업 실행. Admin KRA 페이지에 예정/완료/실패 테이블·집계 표시. |
+| **모바일 첫 화면** | ✅ 완료 | WebApp에서 네이티브 앱일 때 비로그인 → 로그인 페이지, 로그인 시 홈. AUTH_LOGOUT 연동. |
+| **WebApp/Admin 에러·타입** | ✅ 완료 | API catch (err: unknown), Admin any 제거·getErrorMessage, 서버 admin body 타입 정리. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [NEXT_TASKS.md](NEXT_TASKS.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -58,16 +60,16 @@
 |------|------|------|
 | **일일 로그인 보너스** | ✅ 완료 | `DAILY_LOGIN_BONUS_POINTS`(기본 10pt), 로그인 시 1일 1회 지급 |
 | **연속 로그인 보상** | ✅ 완료 | 7일 연속 시 RACE 예측권 1장 지급. 프로필/로그인 응답에 연속 일수 노출 |
-| **푸시 타이밍 개선** | 선택 | 첫 경주 30분 전 알림 등 |
-| **AI 신뢰도 표시** | 선택 | 예측별 confidence(low/medium/high), 모델 버전·방법론 노출 |
+| **푸시 타이밍 개선** | ✅ 완료 | 첫 경주 30분 전 알림 (NotificationsSchedulerService, 금/토/일 15분마다) |
+| **AI 신뢰도 표시** | ✅ 완료 | 경주 상세 예측 영역에 신뢰도(높음/보통/낮음) + winProb % 표시 |
 | **이미지 최적화** | 선택 | 경주/말 사진 추가 시 next/image + alt 적용 ([FEATURE_ROADMAP.md](FEATURE_ROADMAP.md) §5.4) |
 
 ### 중기 (3–4개월)
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| **Push Deep Link (Mobile)** | 서버 완료 | 모바일에서 알림 탭 시 해당 경주/페이지로 이동 — Expo deep link + WebView 연동 남음 |
-| **Smart Alert 확장** | 선택 | BIG_RACE, FIRST_RACE_SOON 등 추가 알림 타입 |
+| **Push Deep Link (Mobile)** | ✅ 완료 | 알림 탭 시 getLastNotificationResponseAsync → WebView initialUrl로 해당 페이지 로드 |
+| **Smart Alert 확장** | ✅ 완료 | FIRST_RACE_SOON(첫 경주 30분 전) 구현. BIG_RACE는 추후 확장 시 data.type 추가 |
 
 ### 장기 (Phase 3)
 
@@ -107,9 +109,9 @@
 | ops-1 | SENTRY_DSN 에러 모니터링 | §2 품질·운영 |
 | ops-2 | 업타임 모니터링 (/health) | §2 |
 | ops-3 | E2E/통합 테스트 (선택) | §2 |
-| feat-1 | 푸시 타이밍 개선 (선택) | §3 단기 |
-| feat-2 | AI 신뢰도 표시 (선택) | §3 |
-| feat-3 | Push Deep Link (Mobile) | §3 중기 |
+| feat-1 | 푸시 타이밍 개선 | §3 단기 — ✅ 완료 |
+| feat-2 | AI 신뢰도 표시 | §3 — ✅ 완료 |
+| feat-3 | Push Deep Link (Mobile) | §3 중기 — ✅ 완료 |
 | feat-4 | 이미지 최적화 (선택) | §3 |
 | tech-1 | TypeORM 마이그레이션 CLI (선택) | §4 |
 | tech-2 | 시드 스크립트 통일 (선택) | §4 |

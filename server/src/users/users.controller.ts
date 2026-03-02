@@ -43,7 +43,7 @@ export class UsersController {
   @Get('search')
   @ApiOperation({ summary: '사용자 검색' })
   search(@Query('q') query: string) {
-    return this.usersService.findAll({ query } as any);
+    return this.usersService.findAll({ search: query });
   }
 
   @Get('me')
@@ -118,7 +118,7 @@ export class UsersController {
 
   @Put(':id/preferences')
   @ApiOperation({ summary: '사용자 설정 수정' })
-  updatePreferences(@Param('id') _id: string, @Body() _body: any) {
+  updatePreferences(@Param('id') _id: string, @Body() _body: Record<string, unknown>) {
     return { marketing: true, notifications: true };
   }
 

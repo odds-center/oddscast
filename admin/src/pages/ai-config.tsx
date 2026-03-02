@@ -9,6 +9,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import PageLoading from '@/components/common/PageLoading';
 import { adminAIConfigApi } from '@/lib/api/admin';
+import { getErrorMessage } from '@/lib/utils';
 import { Bot, Zap, DollarSign, Settings as SettingsIcon } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 
@@ -173,9 +174,8 @@ export default function AIConfigPage() {
       queryClient.invalidateQueries({ queryKey: ['ai-config'] });
       toast.success('설정이 저장되었습니다');
     },
-    onError: (error) => {
-      console.error('저장 실패:', error);
-      toast.error('저장에 실패했습니다');
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err) || '저장에 실패했습니다');
     },
   });
 

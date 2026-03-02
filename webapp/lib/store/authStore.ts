@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { axiosInstance } from '@/lib/api/axios';
 import { onUnauthorized } from '@/lib/authEvents';
+import bridge from '@/lib/bridge';
 
 const JWT_KEY = 'jwt_token';
 const USER_KEY = 'jwt_user';
@@ -49,6 +50,7 @@ const store = create<AuthState>((set) => ({
       localStorage.removeItem(JWT_KEY);
       localStorage.removeItem(USER_KEY);
       delete axiosInstance.defaults.headers.common['Authorization'];
+      if (bridge.isNativeApp()) bridge.send('AUTH_LOGOUT');
     }
     set({ token: null, user: null, isLoggedIn: false });
   },

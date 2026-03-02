@@ -50,8 +50,8 @@ export default class SubscriptionsApi {
     try {
       const response = await axiosInstance.post<ApiResponse<SubscriptionStatus>>('/subscriptions/subscribe', data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -65,8 +65,8 @@ export default class SubscriptionsApi {
         { billingKey },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -79,8 +79,8 @@ export default class SubscriptionsApi {
         reason,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -92,8 +92,8 @@ export default class SubscriptionsApi {
       const response =
         await axiosInstance.get<ApiResponse<SubscriptionStatus | null>>('/subscriptions/status');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -112,8 +112,8 @@ export default class SubscriptionsApi {
         params: { limit, offset },
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

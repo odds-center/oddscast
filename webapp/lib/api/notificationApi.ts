@@ -35,8 +35,8 @@ export default class NotificationApi {
       >(`${NotificationApi.baseUrl}?${queryString}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -47,8 +47,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/${notificationId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -62,8 +62,8 @@ export default class NotificationApi {
         notificationData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -78,8 +78,8 @@ export default class NotificationApi {
         updateData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -90,8 +90,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/${notificationId}/read`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -102,8 +102,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/read-all`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -114,8 +114,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/${notificationId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -126,8 +126,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/unread-count`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -138,8 +138,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/preferences`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -153,8 +153,8 @@ export default class NotificationApi {
         preferences,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -169,8 +169,8 @@ export default class NotificationApi {
         { deviceToken, platform },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -182,8 +182,8 @@ export default class NotificationApi {
         { deviceToken },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -204,8 +204,8 @@ export default class NotificationApi {
         `${NotificationApi.baseUrl}/templates`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -225,8 +225,8 @@ export default class NotificationApi {
         },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

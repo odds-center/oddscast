@@ -63,8 +63,22 @@ TypeORM은 **synchronize: false**로 설정되어 있어, 스키마를 자동으
 
 ---
 
-## 6. 참고
+## 6. 시드 데이터 (초기 데이터)
+
+**통일된 적용 순서:**
+
+1. **스키마:** `docs/db/schema.sql` — 테이블·Enum·기본 구조.
+2. **패치:** `docs/db/patches/` — 컬럼 추가/기본값 등 (updated_at_default.sql, login_bonus_columns.sql 등). 필요 시 순서대로 실행.
+3. **초기 설정값:** PointConfig, SubscriptionPlan 등은 `schema.sql` 또는 별도 시드 SQL에 포함. Admin에서도 설정 가능.
+
+- **로컬:** `./scripts/setup.sh` 실행 시 schema.sql 적용. 패치는 수동으로 `psql $DATABASE_URL -f docs/db/patches/파일명.sql`.
+- **배포:** 동일 순서로 schema + patches 적용 후 앱 기동.
+
+---
+
+## 7. 참고
 
 - **마이그레이션 계획:** `docs/TYPEORM_MIGRATION.md`
 - **전체 스키마:** `docs/db/schema.sql`
 - **로컬 DB:** `docs/guides/LOCAL_DB_SETUP.md`
+- **E2E 테스트:** `server/test/app.e2e-spec.ts` — Health, /api/races, /api/results, 404. `pnpm --filter server run test:e2e`

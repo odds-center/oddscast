@@ -154,8 +154,8 @@ export default class ResultApi {
       >(`${ResultApi.baseUrl}?${params.toString()}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -198,8 +198,8 @@ export default class ResultApi {
         `${ResultApi.baseUrl}/${resultId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -210,8 +210,8 @@ export default class ResultApi {
         `${ResultApi.baseUrl}/race/${raceId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -225,8 +225,8 @@ export default class ResultApi {
         resultData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -241,8 +241,8 @@ export default class ResultApi {
         updateData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -253,8 +253,8 @@ export default class ResultApi {
         `${ResultApi.baseUrl}/${resultId}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -281,8 +281,8 @@ export default class ResultApi {
         `${ResultApi.baseUrl}/statistics?${params.toString()}`,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -316,8 +316,8 @@ export default class ResultApi {
       >(`${ResultApi.baseUrl}/search?${params.toString()}`);
 
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -340,8 +340,8 @@ export default class ResultApi {
         responseType: 'blob',
       });
       return response.data;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -357,8 +357,8 @@ export default class ResultApi {
         { results },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

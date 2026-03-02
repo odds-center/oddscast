@@ -24,8 +24,8 @@ export default class AuthApi {
         credentials,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -36,8 +36,8 @@ export default class AuthApi {
         userData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -45,8 +45,8 @@ export default class AuthApi {
     try {
       const response = await axiosInstance.post<ApiResponse<{ message: string }>>('/auth/logout');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -54,8 +54,8 @@ export default class AuthApi {
     try {
       const response = await axiosInstance.post<ApiResponse<AuthResponse>>('/auth/refresh');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -63,8 +63,8 @@ export default class AuthApi {
     try {
       const response = await axiosInstance.get<ApiResponse<User>>('/auth/me');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -72,8 +72,8 @@ export default class AuthApi {
     try {
       const response = await axiosInstance.put<ApiResponse<User>>('/auth/profile', updateData);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -87,8 +87,8 @@ export default class AuthApi {
         passwordData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -99,8 +99,8 @@ export default class AuthApi {
         { email },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -114,8 +114,8 @@ export default class AuthApi {
         resetData,
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -126,8 +126,8 @@ export default class AuthApi {
         { token },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -138,8 +138,8 @@ export default class AuthApi {
         { email },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -151,8 +151,8 @@ export default class AuthApi {
         { data: { password } },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 

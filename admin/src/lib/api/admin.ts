@@ -10,6 +10,10 @@ import type {
   Bet,
   SubscriptionPlan,
   SinglePurchaseConfig,
+  UserSubscription,
+  CancelUserSubscriptionBody,
+  AIConfigUpdate,
+  AdminListResponse,
   AIAccuracyDashboard,
   AIDailyStats,
   AIFailureAnalysis,
@@ -27,8 +31,8 @@ export class AdminDashboardApi {
     try {
       const response = await axiosInstance.get<DashboardStats>('/statistics/dashboard');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -46,8 +50,8 @@ export class AdminUsersApi {
     try {
       const response = await axiosInstance.get<UserListResponse>('/users', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -55,8 +59,8 @@ export class AdminUsersApi {
     try {
       const response = await axiosInstance.get<User>(`/users/${id}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -64,16 +68,16 @@ export class AdminUsersApi {
     try {
       const response = await axiosInstance.patch<User>(`/users/${id}`, data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
   static async delete(id: string): Promise<void> {
     try {
       await axiosInstance.delete(`/users/${id}`);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -81,8 +85,8 @@ export class AdminUsersApi {
     try {
       const response = await axiosInstance.patch<User>(`/users/${id}/activate`, {});
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -90,8 +94,8 @@ export class AdminUsersApi {
     try {
       const response = await axiosInstance.patch<User>(`/users/${id}/deactivate`, {});
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -107,8 +111,8 @@ export class AdminUsersApi {
         { count, expiresInDays, type },
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -127,8 +131,8 @@ export class AdminBetsApi {
     try {
       const response = await axiosInstance.get<BetListResponse>('/bets', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -136,8 +140,8 @@ export class AdminBetsApi {
     try {
       const response = await axiosInstance.get<Bet>(`/bets/${id}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -145,8 +149,8 @@ export class AdminBetsApi {
     try {
       const response = await axiosInstance.patch<Bet>(`/bets/${id}/status`, { status });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -160,8 +164,8 @@ export class AdminSubscriptionsApi {
     try {
       const response = await axiosInstance.get<SubscriptionPlan[]>('/subscriptions/plans');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -171,8 +175,8 @@ export class AdminSubscriptionsApi {
         `/subscriptions/plans/${planId}`
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -183,8 +187,8 @@ export class AdminSubscriptionsApi {
         data
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -198,8 +202,8 @@ export class AdminSubscriptionsApi {
         data
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -209,8 +213,8 @@ export class AdminSubscriptionsApi {
         `/subscriptions/plans/${planId}`
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -223,40 +227,43 @@ export class AdminSubscriptionsApi {
     try {
       const response = await axiosInstance.get('/subscriptions/users', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async getUserSubscription(userId: string): Promise<any> {
+  static async getUserSubscription(userId: string): Promise<UserSubscription | unknown> {
     try {
       const response = await axiosInstance.get(`/subscriptions/users/${userId}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async cancelUserSubscription(userId: string, body: any): Promise<any> {
+  static async cancelUserSubscription(
+    userId: string,
+    body: CancelUserSubscriptionBody
+  ): Promise<unknown> {
     try {
       const response = await axiosInstance.patch(
         `/subscriptions/users/${userId}/cancel`,
         body
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async extendUserSubscription(userId: string, days: number): Promise<any> {
+  static async extendUserSubscription(userId: string, days: number): Promise<unknown> {
     try {
       const response = await axiosInstance.patch(`/subscriptions/users/${userId}/extend`, {
         days,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -271,8 +278,8 @@ export class AdminSinglePurchaseApi {
         '/single-purchase/config'
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -283,8 +290,8 @@ export class AdminSinglePurchaseApi {
         data
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -296,8 +303,8 @@ export class AdminSinglePurchaseApi {
         { params: { quantity } }
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -312,8 +319,8 @@ export class AdminAIApi {
         '/predictions/analytics/dashboard'
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -326,8 +333,8 @@ export class AdminAIApi {
         }
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -341,8 +348,8 @@ export class AdminAIApi {
         { params }
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -352,8 +359,8 @@ export class AdminAIApi {
         '/predictions/stats/accuracy'
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -361,8 +368,18 @@ export class AdminAIApi {
     try {
       const response = await axiosInstance.get<{ totalCost: number }>('/predictions/stats/cost');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
+  /** [Admin] 오늘 생성된 예측 건수 (KST) */
+  static async getPredictionsTodayCount(): Promise<{ count: number }> {
+    try {
+      const response = await axiosInstance.get<{ count: number }>('/predictions/stats/today');
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -396,8 +413,8 @@ export class AdminAIApi {
     try {
       const response = await axiosInstance.get('/predictions/list', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -406,8 +423,8 @@ export class AdminAIApi {
     try {
       const response = await axiosInstance.get(`/predictions/race/${raceId}/history`);
       return handleApiResponse(response) as unknown[];
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -416,8 +433,8 @@ export class AdminAIApi {
     try {
       const response = await axiosInstance.get(`/predictions/race/${raceId}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -426,8 +443,8 @@ export class AdminAIApi {
     try {
       const response = await axiosInstance.post(`/predictions/generate/${raceId}`, {}, { timeout: 120_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -441,8 +458,8 @@ export class AdminAIApi {
         timeout: 600_000,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -553,8 +570,8 @@ export class AdminPredictionTicketsApi {
     try {
       const response = await axiosInstance.get('/prediction-tickets/usage', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -570,8 +587,8 @@ export class AdminSystemConfigApi {
     try {
       const response = await axiosInstance.get('/config/system');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -582,8 +599,8 @@ export class AdminSystemConfigApi {
     try {
       const response = await axiosInstance.patch('/config/system', data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -592,30 +609,30 @@ export class AdminSystemConfigApi {
  * AI Config API
  */
 export class AdminAIConfigApi {
-  static async getConfig(): Promise<any> {
+  static async getConfig(): Promise<AIConfigUpdate> {
     try {
       const response = await axiosInstance.get('/ai/config');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async updateConfig(data: any): Promise<any> {
+  static async updateConfig(data: AIConfigUpdate): Promise<AIConfigUpdate> {
     try {
       const response = await axiosInstance.post('/ai/config', data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async estimateCost(): Promise<any> {
+  static async estimateCost(): Promise<{ estimatedMonthlyCost?: number; enableCaching?: boolean; calculationText?: string }> {
     try {
       const response = await axiosInstance.get('/ai/estimate-cost');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -628,8 +645,8 @@ export class AdminKraApi {
     try {
       const response = await axiosInstance.get('/kra/status');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -649,8 +666,8 @@ export class AdminKraApi {
       const url = search.toString() ? `/kra/sync/schedule?${search.toString()}` : '/kra/sync/schedule';
       const response = await axiosInstance.post(url, {}, { timeout: 600_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -659,8 +676,8 @@ export class AdminKraApi {
       const url = date ? `/kra/sync/results?date=${date}` : '/kra/sync/results';
       const response = await axiosInstance.post(url, {}, { timeout: 300_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -800,8 +817,8 @@ export class AdminKraApi {
     try {
       const response = await axiosInstance.post(`/kra/sync/details?date=${date}`, {}, { timeout: 120_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -810,8 +827,8 @@ export class AdminKraApi {
       const url = meet ? `/kra/sync/jockeys?meet=${meet}` : '/kra/sync/jockeys';
       const response = await axiosInstance.post(url, {}, { timeout: 60_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -825,8 +842,8 @@ export class AdminKraApi {
         new Date().toISOString().slice(0, 10).replace(/-/g, '');
       const response = await axiosInstance.post(`/kra/sync/all?date=${d}`, {}, { timeout: 300_000 });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -839,8 +856,8 @@ export class AdminKraApi {
         { timeout: 300_000 }
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -849,8 +866,8 @@ export class AdminKraApi {
       const url = date ? `/kra/seed-sample?date=${date}` : '/kra/seed-sample';
       const response = await axiosInstance.post(url);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -877,8 +894,8 @@ export class AdminKraApi {
       const qs = searchParams.toString();
       const response = await axiosInstance.get(`/kra/sync-logs${qs ? `?${qs}` : ''}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -908,8 +925,8 @@ export class AdminKraApi {
       const qs = searchParams.toString();
       const response = await axiosInstance.get(`/kra/batch-schedules${qs ? `?${qs}` : ''}`);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -943,8 +960,8 @@ export class AdminRacesApi {
           totalPages: (payload as { totalPages?: number })?.totalPages ?? 1,
         },
       };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -955,8 +972,8 @@ export class AdminRacesApi {
       return body && typeof body === 'object' && 'data' in body
         ? (body as { data: unknown }).data
         : body;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -973,8 +990,8 @@ export class AdminRacesApi {
       return body && typeof body === 'object' && 'data' in body
         ? (body as { data: unknown }).data
         : body;
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -1032,8 +1049,8 @@ export class AdminResultsApi {
           page: payload?.page ?? 1,
         },
       };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1042,10 +1059,16 @@ export class AdminResultsApi {
     limit?: number;
     date?: string;
     meet?: string;
-  }): Promise<any> {
+  }): Promise<AdminListResponse<unknown>> {
     try {
       const response = await axiosInstance.get('/results', { params });
-      const payload = handleApiResponse(response) as any;
+      const payload = handleApiResponse(response) as {
+        results?: unknown[];
+        data?: unknown[];
+        total?: number;
+        totalPages?: number;
+        page?: number;
+      };
       const results = payload?.results ?? payload?.data ?? [];
       return {
         data: Array.isArray(results) ? results : [],
@@ -1055,18 +1078,17 @@ export class AdminResultsApi {
           page: payload?.page ?? 1,
         },
       };
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
-  static async getOne(id: string): Promise<any> {
+  static async getOne(id: string): Promise<unknown> {
     try {
       const response = await axiosInstance.get(`/results/${id}`);
-      const data = handleApiResponse(response);
-      return (data as any)?.data ?? data;
-    } catch (error) {
-      throw handleApiError(error);
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1084,8 +1106,8 @@ export class AdminResultsApi {
     try {
       const response = await axiosInstance.post('/results', dto);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1093,16 +1115,16 @@ export class AdminResultsApi {
     try {
       const response = await axiosInstance.put(`/results/${id}`, dto);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
   static async delete(id: string): Promise<void> {
     try {
       await axiosInstance.delete(`/results/${id}`);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -1115,8 +1137,8 @@ export class AdminNotificationsApi {
     try {
       const response = await axiosInstance.get('/notifications', { params });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1124,8 +1146,8 @@ export class AdminNotificationsApi {
     try {
       const response = await axiosInstance.post('/notifications/send', data);
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -1144,8 +1166,8 @@ export class AdminRevenueApi {
         params,
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }
@@ -1158,8 +1180,8 @@ export class AdminStatisticsApi {
     try {
       const response = await axiosInstance.get('/statistics/dashboard');
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1169,8 +1191,8 @@ export class AdminStatisticsApi {
         params: { days },
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1181,8 +1203,8 @@ export class AdminStatisticsApi {
         { params: { days } }
       );
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 
@@ -1204,8 +1226,8 @@ export class AdminStatisticsApi {
         params: { period },
       });
       return handleApiResponse(response);
-    } catch (error) {
-      throw handleApiError(error);
+    } catch (err: unknown) {
+      throw handleApiError(err);
     }
   }
 }

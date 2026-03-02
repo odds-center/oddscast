@@ -12,7 +12,7 @@ import Button from '@/components/common/Button';
 import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import { adminNotificationsApi } from '@/lib/api/admin';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, getErrorMessage } from '@/lib/utils';
 import { Bell } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 
@@ -35,9 +35,12 @@ const notificationSchema = z.object({
 
 type NotificationFormData = z.infer<typeof notificationSchema>;
 
+type LastSendResult = { count: number; pushSent: number };
+
 export default function NotificationsPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
+  const [lastSendResult, setLastSendResult] = useState<LastSendResult | null>(null);
 
   // react-hook-form 설정
   const {
@@ -65,6 +68,11 @@ export default function NotificationsPage() {
     mutationFn: (data: NotificationFormData) => adminNotificationsApi.send(data),
     onSuccess: (res) => {
       queryClient.invalidateQueries({ queryKey: ['admin-notifications'] });
+      if (typeof res?.count === 'number' && typeof res?.pushSent === 'number') {
+        setLastSendResult({ count: res.count, pushSent: res.pushSent });
+      } else {
+        setLastSendResult(null);
+      }
       const msg =
         res?.pushSent !== undefined
           ? `알림 ${res.count ?? 0}건 저장, 푸시 ${res.pushSent}건 발송`
@@ -72,9 +80,8 @@ export default function NotificationsPage() {
       toast.success(msg);
       reset();
     },
-    onError: (error) => {
-      console.error('알림 전송 실패:', error);
-      toast.error('알림 전송에 실패했습니다.');
+    onError: (err: unknown) => {
+      toast.error(getErrorMessage(err) || '알림 전송에 실패했습니다.');
     },
   });
 
@@ -222,6 +229,20 @@ export default function NotificationsPage() {
                 <AdminIcon icon={Bell} className='w-4 h-4 mr-2' />
                 {sendNotificationMutation.isPending ? '전송 중...' : '알림 전송'}
               </Button>
+
+              {lastSendResult && (
+                <div className='rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800'>
+                  <p className='font-medium'>마지막 전송 결과</p>
+                  <p className='mt-1'>
+                    대상 {lastSendResult.count}명, 푸시 {lastSendResult.pushSent}건 발송
+                    {lastSendResult.count > lastSendResult.pushSent && (
+                      <span className='ml-1 text-green-700'>
+                        (미발송: 푸시 토큰 없음 또는 발송 실패)
+                      </span>
+                    )}
+                  </p>
+                </div>
+              )}
             </form>
           </Card>
 

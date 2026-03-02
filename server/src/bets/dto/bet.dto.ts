@@ -70,7 +70,7 @@ export class CreateBetDto {
   @ApiProperty({ required: false })
   @IsOptional()
   @IsObject()
-  analysisData?: any;
+  analysisData?: Record<string, unknown>;
 }
 
 export class UpdateBetDto {
@@ -154,9 +154,7 @@ export class CreateBetSlipDto {
   @Type(() => Number)
   raceId: number;
 
-  // Assuming bets in a slip are simplified or refer to CreateBetDto structure
-  // For simplicity, using any[] here but should be typed strictly if possible
-  @ApiProperty()
+  @ApiProperty({ type: [Object], description: 'Array of bet items in the slip' })
   @IsArray()
-  bets: any[];
+  bets: unknown[];
 }

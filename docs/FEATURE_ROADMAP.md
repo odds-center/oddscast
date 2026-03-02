@@ -52,6 +52,7 @@
 | 23 | 기수·조교사 프로필 (Jockey & Trainer) | ✅ Done | `/jockeys/[jkNo]`, `/trainers/[trName]` — 통산·경마장별·경주 이력 |
 | 24 | Smart Race Alerts (고신뢰도 예측 알림) | ✅ Done | 예측 생성 시 winProb≥70% → predictionEnabled 사용자에게 알림 |
 | 25 | 경주 상태(종료/예정) 정책 | ✅ Done | COMPLETED는 KRA 결과 적재 시에만 설정. UI는 출전번호·마명 표기(마번 미사용). [RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
+| 26 | 일일/연속 로그인 보너스 | ✅ Done | 일일: 1일 1회 포인트(DAILY_LOGIN_BONUS_POINTS). 연속 7일: RACE 예측권 1장. [BUSINESS_LOGIC.md](architecture/BUSINESS_LOGIC.md) §2.7 |
 
 ---
 

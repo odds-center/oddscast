@@ -75,7 +75,8 @@ RegisterDto { email, password, name, nickname } — nickname 필수
 
 // 로그인
 LoginDto { email, password }
-→ { accessToken, user: SanitizedUser }
+→ { accessToken, user: SanitizedUser, loginBonus?: LoginBonusResult }
+// loginBonus: 일일 보너스·연속 로그인 처리 결과 (dailyBonusGranted, dailyBonusPoints, consecutiveDays, consecutiveRewardGranted)
 
 // 프로필 수정
 UpdateProfileDto { name?, nickname?, avatar? }

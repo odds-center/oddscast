@@ -62,6 +62,10 @@ erDiagram
 | `isActive`        | Boolean       | 활성 상태              | default: true  |
 | `isEmailVerified` | Boolean       | 이메일 인증 여부       | default: false |
 | `lastLoginAt`     | DateTime?     | 마지막 로그인          |                |
+| `lastDailyBonusAt` | DateTime?    | 마지막 일일 로그인 보너스 지급 시각 (KST 일자 기준 1일 1회) | |
+| `lastConsecutiveLoginDate` | String? | 연속 로그인 기준일 (KST YYYY-MM-DD) | |
+| `consecutiveLoginDays` | Int       | 연속 로그인 일수 (7일 달성 시 예측권 지급 후 0 리셋) | default: 0 |
+| `favoriteMeet`    | String?       | 즐겨찾기 경마장        | 서울/제주/부산경남 등 |
 | `createdAt`       | DateTime      | 생성일                 | auto           |
 | `updatedAt`       | DateTime      | 수정일                 | auto           |
 

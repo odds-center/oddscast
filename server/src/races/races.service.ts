@@ -3,7 +3,6 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import dayjs from 'dayjs';
 import { PredictionStatus, RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
@@ -23,6 +22,27 @@ import {
 import { toKraMeetForDb } from '@oddscast/shared';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 
+const KST_TZ = 'Asia/Seoul';
+
+/** Today's date as YYYYMMDD in Korea (KST). Used for "오늘 경주" filtering. */
+function getTodayKstYyyymmdd(): string {
+  const s = new Date().toLocaleString('en-CA', { timeZone: KST_TZ }).slice(0, 10);
+  return s.replace(/-/g, '');
+}
+
+/** Yesterday in KST as YYYYMMDD. */
+function getYesterdayKstYyyymmdd(): string {
+  const today = getTodayKstYyyymmdd();
+  const d = new Date(
+    `${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6, 8)}T12:00:00+09:00`,
+  );
+  d.setUTCDate(d.getUTCDate() - 1);
+  const y = d.getUTCFullYear();
+  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+  const day = String(d.getUTCDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
 type RaceRow = Record<string, unknown> & {
   id: number;
   rcDate: string;
@@ -38,43 +58,14 @@ type EntryRow = Record<string, unknown> & { raceId: number };
 export class RacesService {
   constructor(
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
-    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(RaceEntry)
+    private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(Prediction)
+    private readonly predictionRepo: Repository<Prediction>,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {}
-
-  /**
-   * True if race start (rcDate + stTime) is before now. stTime format: "14:00" or "1400".
-   * If no stTime, uses date only (past when rcDate < today).
-   */
-  private isPastRaceDateTime(
-    rcDate: string | null | undefined,
-    stTime: string | null | undefined,
-  ): boolean {
-    if (!rcDate || typeof rcDate !== 'string') return false;
-    const norm = rcDate.replace(/-/g, '').slice(0, 8);
-    if (norm.length < 8) return false;
-    const now = dayjs();
-    if (stTime && typeof stTime === 'string') {
-      const timeStr = stTime.trim().replace(':', '');
-      const hour =
-        timeStr.length >= 2
-          ? parseInt(timeStr.slice(0, 2), 10)
-          : parseInt(timeStr, 10);
-      const minute =
-        timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
-      if (!Number.isNaN(hour) && hour >= 0 && hour <= 23) {
-        const raceStart = dayjs(norm, 'YYYYMMDD')
-          .hour(hour)
-          .minute(minute)
-          .second(0)
-          .millisecond(0);
-        return raceStart.isBefore(now);
-      }
-    }
-    return norm < now.format('YYYYMMDD');
-  }
 
   async findAll(filters: RaceFilterDto) {
     const page = Math.max(1, Number(filters.page) || 1);
@@ -88,9 +79,14 @@ export class RacesService {
       .take(maxFetch);
 
     if (date) {
-      qb.andWhere('r.rcDate = :date', {
-        date: date.replace(/-/g, '').slice(0, 8),
-      });
+      const lower = String(date).toLowerCase();
+      const dateNorm =
+        lower === 'today'
+          ? getTodayKstYyyymmdd()
+          : lower === 'yesterday'
+            ? getYesterdayKstYyyymmdd()
+            : date.replace(/-/g, '').slice(0, 8);
+      qb.andWhere('r.rcDate = :date', { date: dateNorm });
     } else if (dateFrom && dateTo) {
       qb.andWhere('r.rcDate >= :from', {
         from: dateFrom.replace(/-/g, '').slice(0, 8),
@@ -116,10 +112,18 @@ export class RacesService {
     const [allRaces, total] = await qb.getManyAndCount();
     const raceIds = allRaces.map((r) => r.id);
     const entriesByRace = await this._loadEntriesForRaces(raceIds);
-    const merged = allRaces.map((r) => ({
-      ...r,
-      entries: entriesByRace.get(r.id) ?? [],
-    }));
+    const raceIdsWithResults = await this._getRaceIdsWithResults(raceIds);
+    const merged = allRaces.map((r) => {
+      const hasResults = raceIdsWithResults.has(r.id);
+      let status = r.status;
+      if (hasResults) status = RaceStatus.COMPLETED;
+      else if (status === RaceStatus.COMPLETED) status = RaceStatus.SCHEDULED;
+      return {
+        ...r,
+        status,
+        entries: entriesByRace.get(r.id) ?? [],
+      };
+    });
 
     const sorted = sortRacesByNumericRcNo(merged, {
       getRcDate: (r) => (r as RaceRow).rcDate ?? '',
@@ -155,6 +159,30 @@ export class RacesService {
     return map;
   }
 
+  /** Race IDs that have at least one result row with actual finish data (ordInt or ordType). */
+  private async _getRaceIdsWithResults(
+    raceIds: number[],
+  ): Promise<Set<number>> {
+    if (raceIds.length === 0) return new Set();
+    const rows = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select('DISTINCT rr.raceId', 'raceId')
+      .where('rr.raceId IN (:...ids)', { ids: raceIds })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .getRawMany<{ raceId: number }>();
+    return new Set(rows.map((r) => r.raceId));
+  }
+
+  /** True only when at least one result row has finish data (ordInt or ordType). */
+  private _hasActualFinishData(results: unknown[] | undefined): boolean {
+    if (!Array.isArray(results) || results.length === 0) return false;
+    return results.some(
+      (r) =>
+        (r as { ordInt?: number | null; ordType?: string | null }).ordInt != null ||
+        (r as { ordInt?: number | null; ordType?: string | null }).ordType != null,
+    );
+  }
+
   async findOne(id: number) {
     const cacheKey = `race:${id}`;
     const cached =
@@ -167,18 +195,34 @@ export class RacesService {
       if (!hasEntries) {
         const fresh = await this._findOneRaw(id);
         if (fresh && Array.isArray(fresh.entries) && fresh.entries.length > 0) {
-          const serialized = serializeRace(fresh);
-          await this.cache.set(cacheKey, fresh, 60 * 5 * 1000);
-          return serialized ?? fresh;
+          const hasResults = this._hasActualFinishData(fresh.results);
+          const corrected = {
+            ...fresh,
+            status: hasResults ? RaceStatus.COMPLETED : fresh.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : fresh.status,
+          };
+          const serialized = serializeRace(corrected);
+          await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
+          return serialized ?? corrected;
         }
       }
-      return serializeRace(cached) ?? cached;
+      const c = cached as { results?: unknown[]; status?: RaceStatus };
+      const hasResults = this._hasActualFinishData(c.results);
+      const corrected = {
+        ...cached,
+        status: hasResults ? RaceStatus.COMPLETED : c.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : c.status,
+      };
+      return serializeRace(corrected) ?? corrected;
     }
     const race = await this._findOneRaw(id);
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
-    const serialized = serializeRace(race);
-    await this.cache.set(cacheKey, race, 60 * 5 * 1000);
-    return serialized ?? race;
+    const hasResults = this._hasActualFinishData(race.results);
+    const corrected = {
+      ...race,
+      status: hasResults ? RaceStatus.COMPLETED : race.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : race.status,
+    };
+    const serialized = serializeRace(corrected);
+    await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
+    return serialized ?? corrected;
   }
 
   private async _findOneRaw(
@@ -190,10 +234,13 @@ export class RacesService {
       where: { raceId: id },
       order: { id: 'ASC' },
     });
-    const results = await this.resultRepo.find({
-      where: { raceId: id },
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .where('rr.raceId = :id', { id })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
     return {
       ...race,
       entries: entries as unknown as EntryRow[],
@@ -203,6 +250,7 @@ export class RacesService {
 
   async create(dto: CreateRaceDto) {
     const meet = toKraMeetForDb(dto.meet) ?? dto.meet;
+    const now = new Date();
     const race = this.raceRepo.create({
       rcName: dto.rcName ?? null,
       meet,
@@ -218,6 +266,7 @@ export class RacesService {
       weather: dto.weather ?? null,
       track: dto.track ?? null,
       status: (dto.status as RaceStatus) ?? RaceStatus.SCHEDULED,
+      updatedAt: now,
     });
     const created = await this.raceRepo.save(race);
     return serializeRace({ ...created, entries: [] }) ?? created;
@@ -250,9 +299,7 @@ export class RacesService {
       where: { raceId: id },
       order: { id: 'ASC' },
     });
-    return (
-      serializeRace({ ...race, entries }) ?? { ...race, entries }
-    );
+    return serializeRace({ ...race, entries }) ?? { ...race, entries };
   }
 
   async remove(id: number) {
@@ -266,9 +313,7 @@ export class RacesService {
     dateTo?: string;
     meet?: string;
   }) {
-    const qb = this.raceRepo
-      .createQueryBuilder('r')
-      .orderBy('r.rcDate', 'ASC');
+    const qb = this.raceRepo.createQueryBuilder('r').orderBy('r.rcDate', 'ASC');
 
     if (filters.dateFrom && filters.dateTo) {
       qb.andWhere('r.rcDate >= :from', {
@@ -330,7 +375,11 @@ export class RacesService {
       });
     }
 
-    const rows = await qb.getRawMany<{ rcDate: string; meet: string; count: string }>();
+    const rows = await qb.getRawMany<{
+      rcDate: string;
+      meet: string;
+      count: string;
+    }>();
     const byDate = new Map<string, Record<string, number>>();
     for (const r of rows) {
       const meetName =
@@ -356,7 +405,7 @@ export class RacesService {
   }
 
   async getTodayRaces() {
-    const today = dayjs().format('YYYYMMDD');
+    const today = getTodayKstYyyymmdd();
     return this.getRacesByDate(today);
   }
 
@@ -368,12 +417,20 @@ export class RacesService {
     });
     const raceIds = races.map((r) => r.id);
     const entriesByRace = await this._loadEntriesForRaces(raceIds);
-    const merged = races.map((r) => ({
-      ...r,
-      entries: (entriesByRace.get(r.id) ?? []).filter(
-        (e) => !(e as Record<string, unknown>).isScratched,
-      ),
-    }));
+    const raceIdsWithResults = await this._getRaceIdsWithResults(raceIds);
+    const merged = races.map((r) => {
+      const hasResults = raceIdsWithResults.has(r.id);
+      let status = r.status;
+      if (hasResults) status = RaceStatus.COMPLETED;
+      else if (status === RaceStatus.COMPLETED) status = RaceStatus.SCHEDULED;
+      return {
+        ...r,
+        status,
+        entries: (entriesByRace.get(r.id) ?? []).filter(
+          (e) => !(e as Record<string, unknown>).isScratched,
+        ),
+      };
+    });
     const sorted = sortRacesByNumericRcNo(merged, {
       getRcDate: () => rcDate,
       getMeet: (r) => (r as RaceRow).meet ?? '',
@@ -386,17 +443,37 @@ export class RacesService {
   async getRaceResult(raceId: number) {
     const race = await this.raceRepo.findOne({
       where: { id: raceId },
-      select: ['status', 'rcDate', 'stTime'],
+      select: ['status'],
     });
     if (!race) return [];
-    const isPast = this.isPastRaceDateTime(race.rcDate, race.stTime);
-    if (race.status !== 'COMPLETED' && !isPast) return [];
+    // Return results only when race is COMPLETED (results synced from KRA). Do not use date/time.
+    if (race.status !== 'COMPLETED') return [];
 
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      select: ['id', 'ord', 'ordType', 'chulNo', 'hrNo', 'hrName', 'jkNo', 'jkName', 'trName', 'wgBudam', 'wgHr', 'rcTime', 'diffUnit', 'winOdds', 'plcOdds'],
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    });
+    // Only return rows with actual finish data (ordInt or ordType). Do not expose 출전마-only rows as results.
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select([
+        'rr.id',
+        'rr.ord',
+        'rr.ordType',
+        'rr.chulNo',
+        'rr.hrNo',
+        'rr.hrName',
+        'rr.jkNo',
+        'rr.jkName',
+        'rr.trName',
+        'rr.wgBudam',
+        'rr.wgHr',
+        'rr.rcTime',
+        'rr.diffUnit',
+        'rr.winOdds',
+        'rr.plcOdds',
+      ])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
     return results;
   }
 
@@ -410,11 +487,14 @@ export class RacesService {
       winOdds: number | null;
       plcOdds: number | null;
     };
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      select: ['ord', 'ordInt', 'ordType', 'chulNo', 'hrNo', 'winOdds', 'plcOdds'],
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    }) as unknown as ResultRow[];
+    const results = (await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.ord', 'rr.ordInt', 'rr.ordType', 'rr.chulNo', 'rr.hrNo', 'rr.winOdds', 'rr.plcOdds'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany()) as unknown as ResultRow[];
     const list: {
       poolName: string;
       chulNo?: string;

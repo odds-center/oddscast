@@ -49,7 +49,7 @@ Admin은 `/api/admin` prefix로 별도 base URL 사용:
 | -------- | --------------------------- | ------------------- | ---- | ------------------ |
 | `POST`   | `/auth/register`            | 회원가입            | 🔓   | auth.controller.ts |
 | `POST`   | `/auth/login`               | 로그인 (이메일/비밀번호) | 🔓   | auth.controller.ts |
-| `POST`   | `/auth/admin/login`        | 관리자 로그인 (legacy) | 🔓 | auth.controller.ts |
+| `POST`   | `/auth/admin/login`        | 관리자 로그인 (구)   | 🔓 | auth.controller.ts |
 | `POST`   | `/admin/auth/login`        | 관리자 로그인 (Admin 전용) | 🔓 | admin-auth.controller.ts |
 | `GET`    | `/admin/auth/me`           | 관리자 내 정보       | 🔐   | admin-auth.controller.ts |
 | `POST`   | `/admin/auth/refresh`      | 관리자 토큰 갱신     | 🔐   | admin-auth.controller.ts |

@@ -94,7 +94,7 @@ pnpm run seed:sample-races [YYYYMMDD]
 - 서울/부산 각 6경주, 경주당 8마리 출전마
 
 ### 오류 시
-- `Null constraint violation`: DB 스키마가 Prisma와 다를 수 있음. Supabase Table Editor에서 `races` 테이블 구조 확인
+- `Null constraint violation`: DB 스키마가 DDL/엔티티와 다를 수 있음. Supabase Table Editor에서 `races` 테이블 구조 확인
 - `DATABASE_URL 미설정`: `server/.env`에 `DATABASE_URL` 추가
 
 ---
@@ -108,9 +108,9 @@ DB에 `stTime` 컬럼이 없으면 `races` 테이블에 추가:
 ALTER TABLE "races" ADD COLUMN IF NOT EXISTS "stTime" VARCHAR(20);
 ```
 
-Supabase SQL Editor 또는 `psql`로 실행 후, `schema.prisma`의 Race 모델에 `stTime String?` 필드를 다시 추가.
+Supabase SQL Editor 또는 `psql`로 실행 후, TypeORM `Race` 엔티티(`server/src/database/entities/race.entity.ts`)에 `stTime` 필드가 있는지 확인.
 
-### Prisma ↔ DB 불일치 시
-- Prisma: camelCase (raceName, rcDate 등)
-- Supabase/일부 PostgreSQL: snake_case (race_name, rc_date 등) 사용 시 `@map` 적용
-- 현재 프로젝트는 camelCase DB 기준
+### TypeORM ↔ DB 불일치 시
+- 엔티티: camelCase (raceName, rcDate 등)
+- DB가 snake_case (race_name, rc_date 등) 사용 시 엔티티에 `@Column({ name: 'race_name' })` 등 매핑 적용
+- 현재 프로젝트는 camelCase DB 기준 (`docs/db/schema.sql`)

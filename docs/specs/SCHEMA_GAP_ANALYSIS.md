@@ -1,6 +1,6 @@
 # 📋 DB 스키마 누락·보완 분석
 
-> **docs/specs/** 및 **BUSINESS_LOGIC** 대비 현재 Prisma 스키마의 누락·보완 사항 정리.
+> **docs/specs/** 및 **BUSINESS_LOGIC** 대비 현재 DB 스키마(TypeORM 엔티티·DDL)의 누락·보완 사항 정리.
 
 ---
 
@@ -8,15 +8,10 @@
 
 ### 1.1 BetSlip — User, Race와 관계 없음
 
-**현재**: `raceId`, `userId`만 있고 `@relation` 없음.
+**현재**: `raceId`, `userId`만 있고 relation 없음. (개념적 스키마 — 실제는 TypeORM 엔티티 참고.)
 
-```prisma
-model BetSlip {
-  raceId  Int
-  userId  Int
-  // user User @relation(...)  ← 누락
-  // race Race @relation(...)  ← 누락
-}
+```text
+BetSlip: raceId, userId (user/race relation 누락 → 보완 완료)
 ```
 
 **영향**: 조회 시 JOIN 불가, FK 검증 없음.  

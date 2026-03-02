@@ -25,7 +25,7 @@ export default function SubscriptionsPage() {
   const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
-  const { data: plans, isLoading } = useQuery({
+  const { data: plans, isLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['admin-subscription-plans'],
     queryFn: () => adminSubscriptionsApi.getPlans(),
   });
@@ -101,6 +101,15 @@ export default function SubscriptionsPage() {
           >
             <Button onClick={() => setShowCreateModal(true)}>플랜 추가</Button>
           </PageHeader>
+
+          {plansError && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>구독 플랜을 불러오는 중 오류가 발생했습니다.</p>
+              <Button type='button' variant='secondary' size='sm' className='mt-2' onClick={() => refetchPlans()}>
+                다시 시도
+              </Button>
+            </div>
+          )}
 
           <div>
             <h2 className='text-base font-semibold mb-3'>구독 플랜</h2>

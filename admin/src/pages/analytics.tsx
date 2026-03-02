@@ -3,6 +3,7 @@ import Head from 'next/head';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import Button from '@/components/common/Button';
 import { adminAIApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import {
@@ -25,7 +26,7 @@ export default function AnalyticsPage() {
   });
 
   // AI 대시보드 데이터
-  const { data: dashboard, isLoading } = useQuery({
+  const { data: dashboard, isLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
     queryKey: ['ai-dashboard'],
     queryFn: () => adminAIApi.getAccuracyDashboard(),
   });
@@ -54,6 +55,24 @@ export default function AnalyticsPage() {
         </Head>
         <Layout>
           <PageLoading label='데이터를 불러오는 중...' />
+        </Layout>
+      </>
+    );
+  }
+
+  if (dashboardError) {
+    return (
+      <>
+        <Head>
+          <title>AI 분석 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>AI 분석 데이터를 불러오는 중 오류가 발생했습니다.</p>
+            <Button variant='secondary' size='sm' className='mt-4' onClick={() => refetchDashboard()}>
+              다시 시도
+            </Button>
+          </div>
         </Layout>
       </>
     );

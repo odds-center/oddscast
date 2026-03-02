@@ -15,7 +15,7 @@ export default function BetsPage() {
   const [page, setPage] = useState(1);
   const [userId, setUserId] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: listError, refetch: refetchList } = useQuery({
     queryKey: ['admin-bets', page, userId],
     queryFn: () => adminBetsApi.getAll({ page, limit: 20, userId }),
     placeholderData: (previousData) => previousData, // 이전 데이터 유지 (깜빡임 방지)
@@ -130,6 +130,15 @@ export default function BetsPage() {
             title='결제 내역'
             description='사용자별 결제·예측권 구매 내역을 조회합니다. 사용자 ID로 특정 사용자의 결제 이력을 검색할 수 있습니다.'
           />
+
+          {listError && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>결제 내역을 불러오는 중 오류가 발생했습니다.</p>
+              <Button type='button' variant='secondary' size='sm' className='mt-2' onClick={() => refetchList()}>
+                다시 시도
+              </Button>
+            </div>
+          )}
 
           <Card>
             <div className='mb-4'>

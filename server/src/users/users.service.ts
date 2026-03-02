@@ -12,7 +12,8 @@ import { UpdateUserDto } from './dto/user.dto';
 export class UsersService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(Favorite) private readonly favoriteRepo: Repository<Favorite>,
+    @InjectRepository(Favorite)
+    private readonly favoriteRepo: Repository<Favorite>,
     @InjectRepository(PredictionTicket)
     private readonly ticketRepo: Repository<PredictionTicket>,
   ) {}
@@ -56,8 +57,8 @@ export class UsersService {
     const [usersRaw, total] = await qb.getManyAndCount();
     const userIds = usersRaw.map((u) => u.id);
 
-    let availMap = new Map<number, number>();
-    let totalMap = new Map<number, number>();
+    const availMap = new Map<number, number>();
+    const totalMap = new Map<number, number>();
     if (userIds.length > 0) {
       const now = new Date();
       const totalRows = await this.ticketRepo

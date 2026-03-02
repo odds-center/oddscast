@@ -38,6 +38,7 @@ export interface CommentaryDto {
   raceId: string;
   meet: string;
   rcNo: string;
+  chulNo?: string;
   hrNo: string;
   hrName: string;
   comment: string;

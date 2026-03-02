@@ -28,13 +28,21 @@ export function formatNextRaceSubline(weekdayName: string, datePart: string): st
 
 /**
  * Returns title, subtitle, and whether to show "오늘의 경주" link
- * based on actual today race count and next race day.
+ * based on actual today race count, next race day, and whether all today's races have ended.
  */
 export function getDateHeaderMessage(
   todayCount: number,
-  nextRaceDayLabel: string | null
+  nextRaceDayLabel: string | null,
+  todayAllEnded?: boolean,
 ): DateHeaderMessage {
   if (todayCount > 0) {
+    if (todayAllEnded) {
+      return {
+        title: '오늘 경기가 모두 종료되었습니다',
+        subtitle: '결과에서 순위와 배당을 확인하세요.',
+        showTodayLink: true,
+      };
+    }
     const titles = [
       '오늘 경주가 진행됩니다',
       '오늘의 경주가 열렸습니다',

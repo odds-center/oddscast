@@ -36,15 +36,23 @@ type ResultWithRace = Record<string, unknown> & {
   rcNo?: string;
   rcDate?: string;
   rcDist?: string | null;
-  race?: { meet: string; meetName: string | null; rcNo: string; rcDate: string; rcDist: string | null };
+  race?: {
+    meet: string;
+    meetName: string | null;
+    rcNo: string;
+    rcDate: string;
+    rcDist: string | null;
+  };
 };
 
 @Injectable()
 export class ResultsService {
   constructor(
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(Prediction)
+    private readonly predictionRepo: Repository<Prediction>,
     private readonly pointsService: PointsService,
     private readonly predictionsService: PredictionsService,
   ) {}
@@ -118,7 +126,7 @@ export class ResultsService {
     const subQb = this.raceRepo
       .createQueryBuilder('r')
       .where(
-        `EXISTS (SELECT 1 FROM oddscast.race_results rr2 WHERE rr2."raceId" = r.id)`,
+        `EXISTS (SELECT 1 FROM oddscast.race_results rr2 WHERE rr2."raceId" = r.id AND (rr2.ordInt IS NOT NULL OR rr2.ordType IS NOT NULL))`,
       );
     if (date) {
       subQb.andWhere('r.rcDate = :date', {
@@ -146,10 +154,13 @@ export class ResultsService {
 
     let results: RaceResult[] = [];
     if (raceIds.length > 0) {
-      results = await this.resultRepo.find({
-        where: { raceId: In(raceIds) },
-        order: { ordInt: 'ASC', ord: 'ASC' },
-      });
+      results = await this.resultRepo
+        .createQueryBuilder('rr')
+        .where('rr.raceId IN (:...raceIds)', { raceIds })
+        .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+        .orderBy('rr.ordInt', 'ASC')
+        .addOrderBy('rr.ord', 'ASC')
+        .getMany();
     }
 
     const resultsByRaceId = new Map<number, RaceResult[]>();
@@ -211,6 +222,7 @@ export class ResultsService {
   }
 
   async create(dto: CreateResultDto) {
+    const now = new Date();
     const result = this.resultRepo.create({
       raceId: dto.raceId,
       ord: dto.ord ?? null,
@@ -222,6 +234,7 @@ export class ResultsService {
       owName: dto.owName ?? null,
       rcTime: dto.rcTime ?? null,
       chaksun1: dto.chaksun1 ?? null,
+      updatedAt: now,
     });
     const saved = await this.resultRepo.save(result);
     return this.findOne(saved.id);
@@ -245,6 +258,7 @@ export class ResultsService {
 
   async bulkCreate(dto: BulkCreateResultDto) {
     let count = 0;
+    const now = new Date();
     for (const row of dto.results) {
       const result = this.resultRepo.create({
         raceId: row.raceId,
@@ -257,6 +271,7 @@ export class ResultsService {
         owName: row.owName ?? null,
         rcTime: row.rcTime ?? null,
         chaksun1: row.chaksun1 ?? null,
+        updatedAt: now,
       });
       await this.resultRepo.save(result);
       count++;
@@ -293,11 +308,14 @@ export class ResultsService {
     const horseScores = scores.horseScores;
     if (!horseScores?.length) return;
 
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      order: { ordInt: 'ASC', ord: 'ASC' },
-      select: ['hrNo', 'hrName', 'ordType', 'ordInt', 'ord'],
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.hrNo', 'rr.hrName', 'rr.ordType', 'rr.ordInt', 'rr.ord'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
     if (!results.length) return;
 
     const predictedOrder = horseScores
@@ -322,16 +340,20 @@ export class ResultsService {
   }
 
   async getByRace(raceId: number) {
-    return this.resultRepo.find({
-      where: { raceId },
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    });
+    return this.resultRepo
+      .createQueryBuilder('rr')
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
   }
 
   async getStatistics(filters: ResultStatisticsFilterDto) {
     const qb = this.resultRepo
       .createQueryBuilder('rr')
-      .innerJoin('rr.race', 'r');
+      .innerJoin('rr.race', 'r')
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)');
     if (filters.dateFrom && filters.dateTo) {
       qb.andWhere('r.rcDate >= :from', { from: filters.dateFrom });
       qb.andWhere('r.rcDate <= :to', { to: filters.dateTo });
@@ -344,11 +366,13 @@ export class ResultsService {
   }
 
   async exportResults(format: string, _filters: ResultStatisticsFilterDto) {
-    const items = await this.resultRepo.find({
-      relations: ['race'],
-      order: { createdAt: 'DESC' },
-      take: 100,
-    });
+    const items = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoinAndSelect('rr.race', 'r')
+      .where('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.createdAt', 'DESC')
+      .take(100)
+      .getMany();
     const results = items.map((rr) => ({
       ...rr,
       race: rr.race
@@ -369,6 +393,7 @@ export class ResultsService {
     const qb = this.resultRepo
       .createQueryBuilder('rr')
       .innerJoinAndSelect('rr.race', 'r')
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
       .orderBy('rr.createdAt', 'DESC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -418,11 +443,14 @@ export class ResultsService {
   }
 
   async validateByRaceId(raceId: number) {
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      order: { ordInt: 'ASC', ord: 'ASC' },
-      select: ['id', 'hrNo', 'hrName'],
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.id', 'rr.hrNo', 'rr.hrName'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
     const errors: string[] = [];
     const hrNos = new Set<string>();
     for (const r of results) {
@@ -430,7 +458,7 @@ export class ResultsService {
         errors.push(`결과 id=${r.id}: hrNo, hrName 필수`);
       }
       if (hrNos.has(r.hrNo)) {
-        errors.push(`중복 마번: ${r.hrNo}`);
+        errors.push(`중복 출전번호/말: ${r.hrNo}`);
       }
       hrNos.add(r.hrNo);
     }

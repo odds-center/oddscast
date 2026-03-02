@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
@@ -42,6 +43,13 @@ export default function NotificationSettingsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const isNativeApp = useIsNativeApp();
   const queryClient = useQueryClient();
+  const [saveSuccess, setSaveSuccess] = useState(false);
+
+  useEffect(() => {
+    if (!saveSuccess) return;
+    const t = setTimeout(() => setSaveSuccess(false), 2500);
+    return () => clearTimeout(t);
+  }, [saveSuccess]);
 
   const visibleSettings = SETTINGS.filter((s) => {
     if (s.showOn === 'all') return true;
@@ -61,6 +69,7 @@ export default function NotificationSettingsPage() {
       NotificationApi.updateNotificationPreferences(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
+      setSaveSuccess(true);
     },
     onError: () => {
       // handleApiError throws; message stored in mutation.error → displayed below
@@ -95,6 +104,11 @@ export default function NotificationSettingsPage() {
             icon='Bell'
             description='푸시·경주·예측 등 알림을 켜거나 끌 수 있습니다.'
           >
+          {saveSuccess && (
+            <p className='msg-success mb-4' role='status'>
+              알림 설정이 저장되었습니다.
+            </p>
+          )}
           {updateMutation.isError && (
             <p className='msg-error mb-4'>
               {(updateMutation.error as Error)?.message || '설정 저장에 실패했습니다.'}

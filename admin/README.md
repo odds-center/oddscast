@@ -6,7 +6,7 @@ Next.js 관리자 대시보드 (port 3002)
 
 ```bash
 pnpm install
-# 루트에서 env 생성: ./scripts/setup-env.sh (admin/.env 생성)
+# 루트에서 셋업: ./scripts/setup.sh (admin/.env 포함 생성)
 pnpm dev
 ```
 

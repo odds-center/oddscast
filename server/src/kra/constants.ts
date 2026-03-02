@@ -1,5 +1,5 @@
 /**
- * KRA API 기준 상수 (docs/specs/KRA_*.md, docs/legacy/KRA_OFFICIAL_GUIDE.md)
+ * KRA API 기준 상수 (docs/specs/KRA_*.md)
  *
  * - meet 코드: API 요청 시 사용 (1:서울, 2:제주, 3:부산)
  * - meet 이름: API 응답 값 (경주결과·출전표 등에서 반환)

@@ -2,7 +2,7 @@
  * predictions.service 내부 사용 타입
  */
 
-/** Python/Gemini용 경주 데이터 (Prisma Race + entries 기반) */
+/** Python/Gemini용 경주 데이터 (Race + entries 기반) */
 export interface RaceForPython {
   meet?: string;
   meetName?: string | null | undefined;
@@ -18,7 +18,7 @@ export interface RaceForPython {
   [key: string]: unknown;
 }
 
-/** 출전마 (훈련 내역 포함) — Prisma RaceEntry 호환 (null → undefined 변환) */
+/** 출전마 (훈련 내역 포함), null → undefined 변환 */
 export interface RaceEntryForAnalysis {
   hrNo: string;
   hrName?: string | null;

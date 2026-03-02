@@ -44,7 +44,7 @@ export class ActivityLogsService {
   private activityLogErrorMessage(err: unknown): string {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes('does not exist')) {
-      return 'Activity log table missing. Apply docs/DB_SCHEMA_FULL.sql to your database.';
+      return 'Activity log table missing. Run ./scripts/setup.sh or psql $DATABASE_URL -f docs/db/schema.sql';
     }
     return msg;
   }
@@ -82,21 +82,26 @@ export class ActivityLogsService {
 
     const qb = this.adminLogRepo.createQueryBuilder('a');
     if (filters.adminUserId != null) {
-      qb.andWhere('a.adminUserId = :adminUserId', { adminUserId: filters.adminUserId });
+      qb.andWhere('a.adminUserId = :adminUserId', {
+        adminUserId: filters.adminUserId,
+      });
     }
     if (filters.action) {
       qb.andWhere('a.action = :action', { action: filters.action });
     }
     if (filters.dateFrom) {
-      qb.andWhere('a.createdAt >= :dateFrom', { dateFrom: new Date(filters.dateFrom) });
+      qb.andWhere('a.createdAt >= :dateFrom', {
+        dateFrom: new Date(filters.dateFrom),
+      });
     }
     if (filters.dateTo) {
-      qb.andWhere(
-        'a.createdAt <= :dateTo',
-        { dateTo: new Date(filters.dateTo + 'T23:59:59.999Z') },
-      );
+      qb.andWhere('a.createdAt <= :dateTo', {
+        dateTo: new Date(filters.dateTo + 'T23:59:59.999Z'),
+      });
     }
-    qb.orderBy('a.createdAt', 'DESC').skip((p - 1) * l).take(l);
+    qb.orderBy('a.createdAt', 'DESC')
+      .skip((p - 1) * l)
+      .take(l);
 
     const [data, total] = await qb.getManyAndCount();
     return {
@@ -151,15 +156,18 @@ export class ActivityLogsService {
       qb.andWhere('u.event = :event', { event: filters.event });
     }
     if (filters.dateFrom) {
-      qb.andWhere('u.createdAt >= :dateFrom', { dateFrom: new Date(filters.dateFrom) });
+      qb.andWhere('u.createdAt >= :dateFrom', {
+        dateFrom: new Date(filters.dateFrom),
+      });
     }
     if (filters.dateTo) {
-      qb.andWhere(
-        'u.createdAt <= :dateTo',
-        { dateTo: new Date(filters.dateTo + 'T23:59:59.999Z') },
-      );
+      qb.andWhere('u.createdAt <= :dateTo', {
+        dateTo: new Date(filters.dateTo + 'T23:59:59.999Z'),
+      });
     }
-    qb.orderBy('u.createdAt', 'DESC').skip((p - 1) * l).take(l);
+    qb.orderBy('u.createdAt', 'DESC')
+      .skip((p - 1) * l)
+      .take(l);
 
     const [data, total] = await qb.getManyAndCount();
     return {
@@ -190,7 +198,10 @@ export class ActivityLogsService {
     return {
       totalEvents,
       recentEvents,
-      topEvents: topRows.map((r) => ({ event: r.event, count: parseInt(r.count, 10) })),
+      topEvents: topRows.map((r) => ({
+        event: r.event,
+        count: parseInt(r.count, 10),
+      })),
     };
   }
 }

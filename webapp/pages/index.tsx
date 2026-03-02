@@ -31,7 +31,7 @@ export default function Home() {
   useEffect(() => {
     queryClient.prefetchQuery({
       queryKey: ['results', 1, ''],
-      queryFn: () => ResultApi.getResults({ limit: 250, page: 1 }),
+      queryFn: () => ResultApi.getResults({ limit: 40, page: 1 }),
       staleTime: 60 * 1000,
     });
   }, [queryClient]);
@@ -156,7 +156,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
         queryKey: ['races', 'today', 'stats'],
         queryFn: async () => {
           const res = await serverGet<{ races?: unknown[]; total?: number }>('/races', {
-            params: { date: 'today', limit: 100, page: 1 },
+            params: { date: 'today', limit: 30, page: 1 },
           });
           return res ?? { races: [], total: 0 };
         },
@@ -165,7 +165,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
         queryKey: ['races', 'week', 'count'],
         queryFn: async () => {
           const res = await serverGet<{ races?: { rcDate?: string }[] }>('/races', {
-            params: { limit: 150, page: 1 },
+            params: { limit: 40, page: 1 },
           });
           const races = res?.races ?? [];
           const total = races.filter((r) => {
@@ -179,7 +179,7 @@ export const getServerSideProps: GetServerSideProps = async () => {
         queryKey: ['races', 'week'],
         queryFn: async () => {
           const res = await serverGet<{ races?: { rcDate?: string }[] }>('/races', {
-            params: { limit: 50, page: 1 },
+            params: { limit: 30, page: 1 },
           });
           const races = (res?.races ?? []).filter((r) => {
             const d = (r.rcDate ?? '').replace(/-/g, '').slice(0, 8);
@@ -191,15 +191,10 @@ export const getServerSideProps: GetServerSideProps = async () => {
       queryClient.prefetchQuery({
         queryKey: ['results', 'recent'],
         queryFn: () =>
-          serverGet<{ results?: unknown[] }>('/results', { params: { limit: 60, page: 1 } }),
+          serverGet<{ results?: unknown[] }>('/results', { params: { limit: 30, page: 1 } }),
       }),
       queryClient.prefetchQuery({
         queryKey: ['predictions', 'matrix', 'preview'],
-        queryFn: () =>
-          serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix'),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['predictions', 'races', 'preview'],
         queryFn: () =>
           serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix'),
       }),

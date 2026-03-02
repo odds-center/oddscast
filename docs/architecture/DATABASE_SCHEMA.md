@@ -1,22 +1,22 @@
 # 🗄️ 데이터베이스 스키마 (Database Schema)
 
-> **Prisma ORM 기반 PostgreSQL 스키마. 파일: `server/prisma/schema.prisma`**  
-> **KRA API 기준으로 정렬됨** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
+> **TypeORM + PostgreSQL.** 스키마 DDL: `docs/db/schema.sql` (전체 SQL은 `docs/db/`에서 확인), 엔티티: `server/src/database/entities/`  
+> **KRA API 기준 정렬** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
 ---
 
-## 스키마 전략: 마이그레이션 없음
+## 스키마 적용
 
-- **schema가 default state** — column, default 값이 모두 schema에 정의됨
-- **`prisma db push`** — schema → DB 반영 (마이그레이션 파일 생성 안 함)
-- **`prisma/seed.sql`** — 초기 데이터 (PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig, AdminUser)
+- **DDL:** `docs/db/schema.sql` — 테이블·Enum·스키마 `oddscast` 정의. 신규 DB에 `./scripts/setup.sh` 또는 수동 적용.
+- **TypeORM:** `synchronize: false`. 스키마 변경 시 `server/package.json`의 `migration:generate` / `migration:run` 사용 (선택).
+- **시드:** 초기 데이터(PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig, AdminUser 등)는 SQL 또는 시드 스크립트로 별도 적용.
 
 ```bash
-# DB 초기화
-cd server && npm run db:init
-# 또는
-npx prisma db push
-psql $DATABASE_URL -f prisma/seed.sql
+# DB 스키마 적용 (수동)
+./scripts/setup.sh   # or: psql $DATABASE_URL -f docs/db/schema.sql
+
+# TypeORM 마이그레이션 사용 시 (선택)
+cd server && pnpm run migration:run
 ```
 
 ---
@@ -123,7 +123,7 @@ SinglePurchase[]
 | -------------- | ------------- | ------------------ | -------------------------------- |
 | `id`           | String (UUID) | 고유 ID            | PK                               |
 | `raceId`       | String        | 경기 FK            | → Race.id (CASCADE)               |
-| `hrNo`         | String        | 마번               |                                  |
+| `hrNo`         | String        | 경주마 고유번호 (KRA용, UI에는 출전번호·마명 사용) |  |
 | `hrName`       | String        | 마명               |                                  |
 | `jkName`       | String        | 기수명             |                                  |
 | `trName`       | String?       | 조교사명           |                                  |
@@ -148,7 +148,7 @@ SinglePurchase[]
 | `ord`              | String?       | 순서      |                     |
 | `ordType`          | String?       | 낙마/실격/기권 | NORMAL, FALL, DQ, WITHDRAWN |
 | `chulNo`           | String?       | 출전번호  | KRA                 |
-| `hrNo`             | String        | 마번      |                     |
+| `hrNo`             | String        | 말 식별 (UI에는 출전번호·마명 표기) |  |
 | `hrName`           | String        | 마명      |                     |
 | `jkName`           | String?       | 기수명    |                     |
 | `trName`           | String?       | 조교사명  |                     |
@@ -276,7 +276,7 @@ SinglePurchase[]
 | `userId`       | String    | 사용자 FK            | → User.id (CASCADE) |
 | `raceId`       | String    | 경기 FK              | → Race.id (CASCADE) |
 | `pickType`     | PickType  | 승식                 | SINGLE, PLACE 등    |
-| `hrNos`        | String[]  | 고른 마번 배열       | [1, 5] or [1, 5, 7] |
+| `hrNos`        | String[]  | 고른 출전번호(또는 말 식별) 배열 | [1, 5] or [1, 5, 7] |
 | `hrNames`      | String[]  | 마명 (표시용)        |                     |
 | `pointsAwarded`| Int?      | 적중 시 지급 포인트  |                     |
 | `createdAt`    | DateTime  | 생성일               |                     |

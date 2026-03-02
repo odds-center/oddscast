@@ -137,7 +137,7 @@ export class ResultStatisticsFilterDto {
 }
 
 export class ResultSearchDto {
-  @ApiPropertyOptional({ description: '마명, 마번, 기수명 검색' })
+  @ApiPropertyOptional({ description: '마명, 출전번호, 기수명 검색' })
   @IsOptional()
   @IsString()
   q?: string;

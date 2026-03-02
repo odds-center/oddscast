@@ -37,7 +37,7 @@ export default function UsersPage() {
   const [grantExpiresDays, setGrantExpiresDays] = useState(30);
   const [grantTicketType, setGrantTicketType] = useState<'RACE' | 'MATRIX'>('RACE');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', page, search],
     queryFn: () => adminUsersApi.getAll({ page, limit: 20, search }),
     placeholderData: (previousData) => previousData,
@@ -193,7 +193,20 @@ export default function UsersPage() {
                 className='w-full max-w-md px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500'
               />
             </div>
-
+            {usersError && (
+              <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>회원 목록을 불러오는 중 오류가 발생했습니다.</p>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='mt-2'
+                  onClick={() => refetchUsers()}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
             <Table
               data={data?.data || []}
               columns={columns}

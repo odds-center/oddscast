@@ -141,7 +141,7 @@ interface TodaysRacingFortune {
 
 ### 5.1 DB
 
-- [x] Prisma 모델 `UserDailyFortune`: `userId`, `date`(YYYYMMDD), `messageOverall`, `messageRace`, `messageAdvice`, `luckyNumbers`(Json), `luckyColor`, `luckyColorHex?`, `keyword?`, `createdAt`, `updatedAt`.
+- [x] TypeORM 엔티티 `UserDailyFortune`: `userId`, `date`(YYYYMMDD), `messageOverall`, `messageRace`, `messageAdvice`, `luckyNumbers`(Json), `luckyColor`, `luckyColorHex?`, `keyword?`, `createdAt`, `updatedAt`.
 - [x] 유니크 제약: `(userId, date)` — 날짜별 1건, 저장 시 upsert(덮어쓰기).
 
 ### 5.2 백엔드

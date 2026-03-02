@@ -1,8 +1,9 @@
 /**
  * Your recent races — races recently viewed on this device (FEATURE_ROADMAP 5.2)
  * Uses localStorage; no server-side tracking.
+ * Initial state is always [] so server and client first paint match (avoids hydration error).
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQueries, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import RaceApi from '@/lib/api/raceApi';
@@ -13,9 +14,11 @@ import { routes } from '@/lib/routes';
 const MAX_DISPLAY = 5;
 
 export default function RecentRacesSection() {
-  const [recentIds] = useState<string[]>(() =>
-    getRecentRaceIds().slice(0, MAX_DISPLAY),
-  );
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    setRecentIds(getRecentRaceIds().slice(0, MAX_DISPLAY));
+  }, []);
 
   const queries = useQueries({
     queries: recentIds.map((raceId) => ({

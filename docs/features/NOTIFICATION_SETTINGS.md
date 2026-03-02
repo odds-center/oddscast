@@ -46,6 +46,6 @@
 | 구분 | 경로 |
 |------|------|
 | Server | `server/src/notifications/` (controller, service, dto) |
-| Prisma | `server/prisma/schema.prisma` — UserNotificationPreference |
+| DB/엔티티 | `server/src/database/entities/` — UserNotificationPref (TypeORM) |
 | WebApp | `webapp/pages/settings/notifications.tsx`, `lib/hooks/useIsNativeApp.ts`, `components/ui/Toggle.tsx` |
 | Mobile | `mobile/app/webview.tsx` — injectedJavaScriptBeforeContentLoaded |

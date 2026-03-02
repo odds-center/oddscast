@@ -16,21 +16,22 @@ import { TicketStatus } from '../database/db-enums';
 @Injectable()
 export class AdminService {
   constructor(
-    @InjectRepository(KraSyncLog) private readonly kraSyncLogRepo: Repository<KraSyncLog>,
+    @InjectRepository(KraSyncLog)
+    private readonly kraSyncLogRepo: Repository<KraSyncLog>,
     @InjectRepository(Bet) private readonly betRepo: Repository<Bet>,
-    @InjectRepository(Subscription) private readonly subscriptionRepo: Repository<Subscription>,
-    @InjectRepository(SubscriptionPlan) private readonly planRepo: Repository<SubscriptionPlan>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(SubscriptionPlan)
+    private readonly planRepo: Repository<SubscriptionPlan>,
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(SinglePurchase) private readonly singlePurchaseRepo: Repository<SinglePurchase>,
-    @InjectRepository(PredictionTicket) private readonly predictionTicketRepo: Repository<PredictionTicket>,
+    @InjectRepository(SinglePurchase)
+    private readonly singlePurchaseRepo: Repository<SinglePurchase>,
+    @InjectRepository(PredictionTicket)
+    private readonly predictionTicketRepo: Repository<PredictionTicket>,
   ) {}
 
-  async getKraSyncLogs(
-    endpoint?: string,
-    rcDate?: string,
-    limit = 50,
-  ) {
+  async getKraSyncLogs(endpoint?: string, rcDate?: string, limit = 50) {
     const take = Math.min(Number(limit) || 50, 100);
     const where: { endpoint?: string; rcDate?: string } = {};
     if (endpoint) where.endpoint = endpoint;
@@ -52,7 +53,8 @@ export class AdminService {
   ) {
     const p = Math.max(1, Number(page) || 1);
     const l = Math.min(100, Math.max(1, Number(limit) || 20));
-    const where: { userId?: number; raceId?: number; betStatus?: BetStatus } = {};
+    const where: { userId?: number; raceId?: number; betStatus?: BetStatus } =
+      {};
     if (userId != null) where.userId = userId;
     if (raceId != null) where.raceId = raceId;
     if (status != null) where.betStatus = status as BetStatus;
@@ -67,10 +69,19 @@ export class AdminService {
     const data = bets.map((b) => ({
       ...b,
       race: b.race
-        ? { id: b.race.id, meet: b.race.meet, rcDate: b.race.rcDate, rcNo: b.race.rcNo, rcName: b.race.rcName }
+        ? {
+            id: b.race.id,
+            meet: b.race.meet,
+            rcDate: b.race.rcDate,
+            rcNo: b.race.rcNo,
+            rcName: b.race.rcName,
+          }
         : null,
     }));
-    return { data, meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) } };
+    return {
+      data,
+      meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
+    };
   }
 
   async getBetById(id: number) {
@@ -82,7 +93,13 @@ export class AdminService {
     return {
       ...bet,
       race: bet.race
-        ? { id: bet.race.id, meet: bet.race.meet, rcDate: bet.race.rcDate, rcNo: bet.race.rcNo, rcName: bet.race.rcName }
+        ? {
+            id: bet.race.id,
+            meet: bet.race.meet,
+            rcDate: bet.race.rcDate,
+            rcNo: bet.race.rcNo,
+            rcName: bet.race.rcName,
+          }
         : null,
       user: bet.user
         ? { id: bet.user.id, email: bet.user.email, name: bet.user.name }
@@ -134,7 +151,9 @@ export class AdminService {
         .select('COALESCE(SUM(b.betAmount), 0)', 'sum')
         .getRawOne<{ sum: string }>()
         .then((r) => parseInt(r?.sum ?? '0', 10)),
-      this.subscriptionRepo.count({ where: { status: SubscriptionStatus.ACTIVE } }),
+      this.subscriptionRepo.count({
+        where: { status: SubscriptionStatus.ACTIVE },
+      }),
       this.betRepo
         .createQueryBuilder('b')
         .select('COALESCE(SUM(b.actualWin), 0)', 'sum')
@@ -187,10 +206,19 @@ export class AdminService {
         map.set(name, cur);
         return map;
       }, new Map<string, { count: number; revenue: number }>()),
-    ).map(([planName, v]) => ({ planName, count: v.count, revenue: v.revenue }));
+    ).map(([planName, v]) => ({
+      planName,
+      count: v.count,
+      revenue: v.revenue,
+    }));
 
     const periodType = period || 'month';
-    const rows: Array<{ period: string; revenue: number; payout: number; profit: number }> = [];
+    const rows: Array<{
+      period: string;
+      revenue: number;
+      payout: number;
+      profit: number;
+    }> = [];
 
     if (periodType === 'day') {
       const today = new Date().toISOString().slice(0, 10);
@@ -212,17 +240,38 @@ export class AdminService {
         .where('s.purchasedAt >= :start', { start: new Date(`${y}-01-01`) })
         .andWhere('s.purchasedAt < :end', { end: new Date(`${y + 1}-01-01`) })
         .getRawOne<{ sum: string }>();
-      const yearRev = monthlyRevenue * 12 + parseInt(yearSingle?.sum ?? '0', 10);
-      rows.push({ period: String(y), revenue: yearRev, payout: 0, profit: yearRev });
+      const yearRev =
+        monthlyRevenue * 12 + parseInt(yearSingle?.sum ?? '0', 10);
+      rows.push({
+        period: String(y),
+        revenue: yearRev,
+        payout: 0,
+        profit: yearRev,
+      });
     } else {
       const now = new Date();
-      const m = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
-      rows.push({ period: m, revenue: totalRevenue, payout: monthlyCost, profit: monthlyProfit });
+      const m =
+        now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+      rows.push({
+        period: m,
+        revenue: totalRevenue,
+        payout: monthlyCost,
+        profit: monthlyProfit,
+      });
       for (let i = 1; i <= 11; i++) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-        const mp = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+        const mp =
+          d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
         const start = new Date(d.getFullYear(), d.getMonth(), 1);
-        const end = new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
+        const end = new Date(
+          d.getFullYear(),
+          d.getMonth() + 1,
+          0,
+          23,
+          59,
+          59,
+          999,
+        );
         const monthSingle = await this.singlePurchaseRepo
           .createQueryBuilder('s')
           .select('COALESCE(SUM(s.totalAmount), 0)', 'sum')
@@ -280,7 +329,9 @@ export class AdminService {
   async getPredictionTicketUsage(page: number, limit: number, userId?: number) {
     const pageNum = Math.max(1, Number(page) || 1);
     const limitNum = Math.min(100, Math.max(1, Number(limit) || 20));
-    const where: { status: TicketStatus; userId?: number } = { status: TicketStatus.USED };
+    const where: { status: TicketStatus; userId?: number } = {
+      status: TicketStatus.USED,
+    };
     if (userId != null) where.userId = userId;
 
     const [tickets, total] = await this.predictionTicketRepo.findAndCount({
@@ -291,7 +342,11 @@ export class AdminService {
       skip: (pageNum - 1) * limitNum,
     });
 
-    const raceIds = [...new Set(tickets.map((t) => t.raceId).filter((id): id is number => id != null))];
+    const raceIds = [
+      ...new Set(
+        tickets.map((t) => t.raceId).filter((id): id is number => id != null),
+      ),
+    ];
     let raceMap = new Map<number, Race>();
     if (raceIds.length > 0) {
       const races = await this.raceRepo.find({
@@ -304,9 +359,16 @@ export class AdminService {
     const items = tickets.map((t) => ({
       id: t.id,
       userId: t.userId,
-      user: t.user ? { id: t.user.id, email: t.user.email, name: t.user.name, nickname: t.user.nickname } : null,
+      user: t.user
+        ? {
+            id: t.user.id,
+            email: t.user.email,
+            name: t.user.name,
+            nickname: t.user.nickname,
+          }
+        : null,
       raceId: t.raceId,
-      race: t.raceId ? raceMap.get(t.raceId) ?? null : null,
+      race: t.raceId ? (raceMap.get(t.raceId) ?? null) : null,
       predictionId: t.predictionId,
       prediction: null,
       type: t.type,
@@ -332,7 +394,9 @@ export class AdminService {
       where: { status: TicketStatus.USED },
       select: ['usedAt'],
     });
-    const filtered = tickets.filter((t) => t.usedAt && new Date(t.usedAt) >= start);
+    const filtered = tickets.filter(
+      (t) => t.usedAt && new Date(t.usedAt) >= start,
+    );
 
     const byDate: Record<string, number> = {};
     for (let i = 0; i < d; i++) {

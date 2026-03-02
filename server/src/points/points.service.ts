@@ -143,6 +143,7 @@ export class PointsService {
       metadata: dto.metadata ?? null,
       status: PointStatus.ACTIVE,
       transactionTime: now,
+      updatedAt: now,
     });
     return this.pointTransactionRepo.save(tx);
   }
@@ -247,6 +248,7 @@ export class PointsService {
           metadata: { quantity: dto.quantity },
           status: PointStatus.ACTIVE,
           transactionTime: now,
+          updatedAt: now,
         }),
       );
       const ticketRepo = manager.getRepository(PredictionTicket);
@@ -283,11 +285,14 @@ export class PointsService {
 
     for (const pick of picks) {
       if (pick.pointsAwarded != null && pick.pointsAwarded > 0) continue;
-      const results = await this.resultRepo.find({
-        where: { raceId },
-        order: { ordInt: 'ASC', ord: 'ASC' },
-        select: ['hrNo', 'ord'],
-      });
+      const results = await this.resultRepo
+        .createQueryBuilder('rr')
+        .select(['rr.hrNo', 'rr.ord'])
+        .where('rr.raceId = :raceId', { raceId })
+        .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+        .orderBy('rr.ordInt', 'ASC')
+        .addOrderBy('rr.ord', 'ASC')
+        .getMany();
       if (results.length === 0) continue;
       const isHit = this.picksService.checkPickHit(
         pick.pickType,

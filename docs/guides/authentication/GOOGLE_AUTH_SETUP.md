@@ -94,7 +94,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=297222267377-husiseemja8abddjujt78g5bhlnne2do.apps.
 
 ## 6. 글로벌 설정 (GlobalConfig)
 
-`prisma/seed.sql`에 `show_google_login` (기본값 `true`)가 포함됨. `db:seed` 실행 시 자동 삽입.
+시드 데이터에 `show_google_login` (기본값 `true`)가 포함됨. DB 시드 실행 시 global_config에 자동 삽입.
 
 구글 로그인 버튼 표시 여부를 서버에서 제어:
 
@@ -113,7 +113,7 @@ Admin API: `PUT /api/config/show_google_login` body: `{ "value": "false" }` (Adm
 ## 7. 테스트 체크리스트
 
 - [ ] Server: `GOOGLE_CLIENT_ID` env 설정
-- [ ] Server: `npm run db:init` (또는 `db push` 후 `db:seed`)
+- [ ] Server: DB 스키마 적용 (`./scripts/setup.sh` 또는 `docs/db/schema.sql`) 후 시드 필요 시 실행
 - [ ] WebApp: `NEXT_PUBLIC_GOOGLE_CLIENT_ID` env 설정 (웹 구글 로그인)
 - [ ] Mobile: `app.config.js`에 `webClientId` 설정
 - [ ] **웹**: `/login` 페이지에서 "Sign in with Google" 버튼 클릭 → 로그인 성공

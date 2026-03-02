@@ -18,9 +18,12 @@ export class AnalysisService {
 
   constructor(
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
-    @InjectRepository(JockeyResult) private readonly jockeyResultRepo: Repository<JockeyResult>,
+    @InjectRepository(RaceEntry)
+    private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(JockeyResult)
+    private readonly jockeyResultRepo: Repository<JockeyResult>,
   ) {}
 
   private runPythonScript(input: object): Promise<unknown> {
@@ -88,7 +91,16 @@ export class AnalysisService {
   }> {
     const race = await this.raceRepo.findOne({
       where: { id: raceId },
-      select: ['id', 'meet', 'meetName', 'rcDate', 'rcNo', 'rcDist', 'weather', 'track'],
+      select: [
+        'id',
+        'meet',
+        'meetName',
+        'rcDate',
+        'rcNo',
+        'rcDist',
+        'weather',
+        'track',
+      ],
     });
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
 
@@ -97,11 +109,14 @@ export class AnalysisService {
       select: ['hrNo', 'hrName', 'jkNo', 'jkName', 'rating'],
     });
 
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      select: ['rcTime', 'ord'],
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.rcTime', 'rr.ord'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
 
     const meetMap: Record<string, string> = {
       서울: '1',
@@ -116,8 +131,16 @@ export class AnalysisService {
     const meet =
       meetMap[String(race.meet)] ??
       (String(race.meet).replace(/[^123]/g, '') || '1');
-    const jockeyNos = [...new Set(entries.map((e) => e.jkNo).filter(Boolean))] as string[];
-    let jockeys: Array<{ meet: string; jkNo: string; winRateTsum: number; quRateTsum: number; rcCntT: number }> = [];
+    const jockeyNos = [
+      ...new Set(entries.map((e) => e.jkNo).filter(Boolean)),
+    ] as string[];
+    let jockeys: Array<{
+      meet: string;
+      jkNo: string;
+      winRateTsum: number;
+      quRateTsum: number;
+      rcCntT: number;
+    }> = [];
     if (jockeyNos.length > 0) {
       const jockeyRows = await this.jockeyResultRepo.find({
         where: { meet, jkNo: In(jockeyNos) },
@@ -132,7 +155,10 @@ export class AnalysisService {
       }));
     }
 
-    const jockeyMap: Record<string, { winRateTsum: number; quRateTsum: number; rcCntT: number }> = {};
+    const jockeyMap: Record<
+      string,
+      { winRateTsum: number; quRateTsum: number; rcCntT: number }
+    > = {};
     for (const j of jockeys) {
       jockeyMap[`${j.meet}_${j.jkNo}`] = {
         winRateTsum: j.winRateTsum,

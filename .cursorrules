@@ -20,7 +20,7 @@
 
 ### 🏗️ 아키텍처 문서 (작업 전 반드시 읽기)
 - `docs/architecture/ARCHITECTURE.md` — 시스템 아키텍처, 데이터 흐름, 인증 플로우, 응답 포맷
-- `docs/architecture/DATABASE_SCHEMA.md` — Prisma 12개 모델, ERD, 필드 설명, Enum 목록
+- `docs/architecture/DATABASE_SCHEMA.md` — TypeORM 엔티티·ERD·필드 설명·Enum. DDL: `docs/db/schema.sql` (전체 SQL: `docs/db/`)
 - `docs/architecture/API_SPECIFICATION.md` — **전체 API 엔드포인트 명세 (서버↔모바일 매핑)**
 - `docs/architecture/BUSINESS_LOGIC.md` — AI 예측, 예측권, 구독, 결제, 알림 비즈니스 규칙
 - `docs/architecture/PROJECT_STRUCTURE.md` — 디렉토리 구조, 모듈별 역할
@@ -36,6 +36,10 @@
 ### ⚖️ 법적 고지
 - `docs/legal/LEGAL_NOTICE.md` — 서비스 법적 고지사항
 
+### 📌 계속 할 일 (TODO — Planning 시 참조)
+- **`docs/TODO_CONTINUE.md`** — 배포·인프라, 모니터링, 기능·콘텐츠, 기술 부채 등 **진행 순서·우선순위·추천 순서** 정리.
+- Planning 또는 "다음에 할 일" 논의 시 이 문서를 먼저 확인하고, 작업 완료/추가 시 해당 문서를 갱신할 것.
+
 ---
 
 ## 📖 작업별 필수 참조 문서
@@ -45,7 +49,7 @@
 | **새 기능 기획/추가** | `FEATURE_ROADMAP.md` + `SERVICE_SPECIFICATION.md` + `BUSINESS_LOGIC.md` |
 | **서버 API 추가/수정** | `API_SPECIFICATION.md` + `ARCHITECTURE.md` |
 | **DB 스키마 변경** | `DATABASE_SCHEMA.md` + `BUSINESS_LOGIC.md` |
-| **DB 레이어/ORM 전환(TypeORM 마이그레이션)** | `TYPEORM_MIGRATION.md` + `DB_SCHEMA_FULL.sql` + `DATABASE_SCHEMA.md` |
+| **DB 레이어/ORM 전환(TypeORM 마이그레이션)** | `TYPEORM_MIGRATION.md` + `docs/db/schema.sql` + `DATABASE_SCHEMA.md` |
 | **모바일 API 호출 추가** | `API_SPECIFICATION.md` + `PROJECT_STRUCTURE.md` |
 | **비즈니스 로직 변경** | `BUSINESS_LOGIC.md` + `ARCHITECTURE.md` |
 | **새 모듈 추가** | `PROJECT_STRUCTURE.md` + `ARCHITECTURE.md` |
@@ -57,6 +61,7 @@
 | **경주·결과 UI 작업** | `RACE_DETAIL_UI_SPEC.md` + `UI_PATTERNS.md` |
 | **출전마/KRA 데이터 적재** | `DATA_LOADING.md` + `ADMIN_GUIDE.md` + `KRA_RACE_PLAN_SPEC.md` + `KRA_ENTRY_SHEET_SPEC.md` |
 | **구글 로그인/OAuth 설정** | `guides/GOOGLE_OAUTH_SETUP.md` + `API_SPECIFICATION.md` |
+| **배포·인프라·모니터링** | `TODO_CONTINUE.md` + `RAILWAY_DEPLOYMENT.md` 또는 `SERVER_DEPLOYMENT_PLAN.md` |
 | **TypeScript/타입 안전성** | `COMPATIBILITY_RULES.md` §6, `WEBAPP_DEVELOPMENT.md` §6 |
 
 ---
@@ -68,7 +73,7 @@
 | **App** | React Native (Expo) — TypeScript |
 | **Backend** | NestJS (Node.js) — API 서버 + Control Tower |
 | **Analysis** | Python (pandas, numpy) — python-shell로 실행 |
-| **Database** | PostgreSQL — pg + PgService(raw SQL), TypeORM 전환 예정 (`TYPEORM_MIGRATION.md`) |
+| **Database** | PostgreSQL — TypeORM (Entity/Repository/QueryBuilder). DDL: `docs/db/schema.sql` (전체 SQL: `docs/db/`) |
 | **AI** | Google Gemini API |
 | **Admin** | Next.js |
 
@@ -79,9 +84,9 @@
 ```
 goldenrace/
 ├── server/                     # NestJS 백엔드 (메인)
-│   ├── src/                    # NestJS 모듈 (12개)
-│   ├── scripts/                # Python 분석 스크립트
-│   └── prisma/                 # Prisma 스키마
+│   ├── src/                    # NestJS 모듈 (database/, auth/, races/, predictions/ 등)
+│   │   └── database/           # TypeORM entities, data-source, db-enums, migrations
+│   └── scripts/                # Python 분석 스크립트
 ├── webapp/                     # Next.js 웹앱 (메인 클라이언트, mobile WebView에서 로드)
 ├── mobile/                     # React Native Expo 앱 (WebView → webapp)
 ├── admin/                      # Next.js 관리자 패널
@@ -91,7 +96,7 @@ goldenrace/
 │   ├── features/               # 기능 명세 (알림 설정, 포인트·승식 등)
 │   ├── specs/                  # 기술 명세
 │   └── legal/                  # 법적 고지
-└── server_legacy_nestjs/       # 이전 NestJS 서버 (참고용)
+└── ...
 ```
 
 ---
@@ -101,7 +106,7 @@ goldenrace/
 1. **NestJS가 Control Tower:** NestJS가 Python 스크립트를 `python-shell`로 실행하고, Gemini API를 호출합니다.
 2. **Python은 순수 계산만:** DB 접근 없이 NestJS가 주는 JSON을 받아 처리 후 반환합니다.
 3. **Server-Side Caching:** 스케줄러(cron)로 Gemini 분석을 미리 실행하고 DB에 저장. 사용자는 DB만 읽습니다.
-4. **Prisma ORM:** DB 스키마는 `prisma/schema.prisma`에서 관리합니다.
+4. **TypeORM:** DB 스키마는 `server/src/database/entities/` 및 `docs/db/schema.sql` 기준. `synchronize: false`, 필요 시 `./scripts/setup.sh` 또는 `migration:run`.
 5. **Global API Prefix:** `main.ts`에서 `app.setGlobalPrefix('api')` 설정. 모든 라우트에 `/api` prefix 적용.
 6. **응답 포맷:** `ResponseInterceptor`가 `{ data, status, message? }` 형태로 래핑합니다.
 7. **사행성 제거:** 베팅/배팅 기능 없음. AI 분석 콘텐츠 제공 서비스입니다.

@@ -20,7 +20,12 @@ export class PointTicketPrice {
   @Column({ name: 'effectiveFrom', type: 'timestamp', precision: 3 })
   effectiveFrom!: Date;
 
-  @Column({ name: 'effectiveTo', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'effectiveTo',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   effectiveTo!: Date | null;
 
   @CreateDateColumn({ name: 'createdAt' })

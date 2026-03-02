@@ -9,7 +9,7 @@
 
 **현재 배포 선택:** 프로덕션은 **Railway**로 배포하며, **DB는 별도** 운영( Railway PostgreSQL add-on 또는 외부 PostgreSQL).  
 → 상세 절차는 **[Railway 배포 가이드](RAILWAY_DEPLOYMENT.md)** 참고.  
-→ Prisma는 dev/prod 동일 사용, `DATABASE_URL`만 개발용 DB / 프로덕션용 DB로 구분.
+→ TypeORM은 dev/prod 동일 사용, `DATABASE_URL`만 개발용 DB / 프로덕션용 DB로 구분.
 
 ---
 
@@ -175,15 +175,14 @@ cd shared && pnpm build && cd ..
 
 # Server setup
 cd server
-# Create .env (run from repo root: ./scripts/setup-env.sh, or copy from secure store)
+# Create .env (run from repo root: ./scripts/setup.sh, or copy from secure store)
 # Set production values: DATABASE_URL, JWT_SECRET, GEMINI_API_KEY, KRA_SERVICE_KEY, etc.
 
-# Generate Prisma client + build
+# Build server
 pnpm build
 
-# Run migrations
-npx prisma db push
-npx prisma db execute --file prisma/seed.sql
+# Apply schema (if needed): ./scripts/setup.sh or psql -f docs/db/schema.sql
+# Seed data: run seed script or execute seed SQL if required
 ```
 
 ### 4.3 PM2 Configuration
@@ -457,8 +456,6 @@ cd shared && pnpm build && cd ..
 
 # Build server
 cd server
-npx prisma generate
-npx prisma db push --accept-data-loss=false
 pnpm build
 cd ..
 
@@ -505,7 +502,7 @@ jobs:
 ```
 Pre-deploy:
   □ Run tests locally (pnpm test)
-  □ Check for Prisma schema changes (migration needed?)
+  □ Check for DB schema changes (migration/DDL needed?)
   □ Verify .env variables are up to date
   □ Check disk space (df -h)
 
@@ -513,7 +510,7 @@ Deploy:
   □ git pull origin master
   □ pnpm install --frozen-lockfile
   □ Build shared → server → webapp → admin
-  □ Prisma db push (if schema changed)
+  □ Run migration:run or apply DDL (if schema changed)
   □ pm2 reload ecosystem.config.js
 
 Post-deploy:
@@ -771,7 +768,7 @@ Server Setup:
   □ Node.js 20, pnpm, PM2, Python 3, Nginx installed
   □ Git clone project
   □ .env configured with production secrets
-  □ Prisma generate + db push + seed
+  □ migration:run or DDL + seed (if schema/seed needed)
   □ Server build successful (pnpm build)
   □ Webapp build successful (pnpm build)
   □ Admin build successful (pnpm build)

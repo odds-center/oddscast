@@ -25,7 +25,11 @@ export class Subscription {
   @Column({ type: 'int' })
   price!: number;
 
-  @Column({ type: 'enum', enum: SubscriptionStatus, default: SubscriptionStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: SubscriptionStatus,
+    default: SubscriptionStatus.PENDING,
+  })
   status!: SubscriptionStatus;
 
   @Column({ name: 'customerKey', type: 'text', nullable: true })
@@ -34,16 +38,31 @@ export class Subscription {
   @Column({ name: 'billingKey', type: 'text', nullable: true })
   billingKey!: string | null;
 
-  @Column({ name: 'nextBillingDate', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'nextBillingDate',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   nextBillingDate!: Date | null;
 
-  @Column({ name: 'lastBilledAt', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'lastBilledAt',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   lastBilledAt!: Date | null;
 
   @Column({ name: 'startedAt', type: 'timestamp', precision: 3 })
   startedAt!: Date;
 
-  @Column({ name: 'cancelledAt', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'cancelledAt',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   cancelledAt!: Date | null;
 
   @Column({ name: 'cancelReason', type: 'text', nullable: true })

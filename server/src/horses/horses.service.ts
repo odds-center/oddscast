@@ -35,8 +35,10 @@ export interface HorseHistoryItemDto {
 @Injectable()
 export class HorsesService {
   constructor(
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
-    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceEntry)
+    private readonly entryRepo: Repository<RaceEntry>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
   ) {}
 
@@ -45,12 +47,14 @@ export class HorsesService {
    * Win = 1st, Place = top 3 (ordInt 1,2,3 with NORMAL type).
    */
   async getProfile(hrNo: string): Promise<HorseProfileDto | null> {
-    const results = await this.resultRepo.find({
-      where: { hrNo },
-      order: { createdAt: 'DESC' },
-      take: 100,
-      select: ['hrName', 'sex', 'age', 'ord', 'ordInt', 'ordType'],
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.hrName', 'rr.sex', 'rr.age', 'rr.ord', 'rr.ordInt', 'rr.ordType'])
+      .where('rr.hrNo = :hrNo', { hrNo })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.createdAt', 'DESC')
+      .take(100)
+      .getMany();
 
     if (results.length === 0) {
       const entry = await this.entryRepo.findOne({
@@ -119,13 +123,15 @@ export class HorsesService {
     total: number;
     totalPages: number;
   }> {
-    const [withRace, total] = await this.resultRepo.findAndCount({
-      where: { hrNo },
-      relations: ['race'],
-      order: { race: { rcDate: 'DESC' } },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const [withRace, total] = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoinAndSelect('rr.race', 'race')
+      .where('rr.hrNo = :hrNo', { hrNo })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('race.rcDate', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     const items: HorseHistoryItemDto[] = withRace.map((rr) => ({
       raceId: rr.raceId,

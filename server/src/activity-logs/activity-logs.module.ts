@@ -7,9 +7,7 @@ import { ActivityLogsController } from './activity-logs.controller';
 
 @Global()
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([AdminActivityLog, UserActivityLog]),
-  ],
+  imports: [TypeOrmModule.forFeature([AdminActivityLog, UserActivityLog])],
   controllers: [ActivityLogsController],
   providers: [ActivityLogsService],
   exports: [ActivityLogsService],

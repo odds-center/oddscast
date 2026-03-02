@@ -52,7 +52,7 @@ API는 크게 **①기본/서비스용**, **②심화 분석용(AI 학습)**, **
 ## 3. 데이터베이스(DB) 저장 구조 (실제 구현)
 
 > **참고:** 전체 스키마는 [DATABASE_SCHEMA.md](../architecture/DATABASE_SCHEMA.md) 참고.  
-> KRA API 데이터는 NestJS Cron → KraService → Prisma로 저장됨.
+> KRA API 데이터는 NestJS Cron → KraService → TypeORM으로 저장됨.
 
 ### 3.1 KRA API → DB 테이블/컬럼 매핑
 

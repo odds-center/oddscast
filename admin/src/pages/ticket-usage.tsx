@@ -41,7 +41,7 @@ export default function TicketUsagePage() {
   const [page, setPage] = useState(1);
   const [userIdFilter, setUserIdFilter] = useState('');
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: usageError, refetch: refetchUsage } = useQuery({
     queryKey: ['admin', 'prediction-tickets', 'usage', page, userIdFilter],
     queryFn: () =>
       adminPredictionTicketsApi.getUsage({
@@ -154,6 +154,20 @@ export default function TicketUsagePage() {
           />
 
           <Card>
+            {usageError && (
+              <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>사용 내역을 불러오는 중 오류가 발생했습니다.</p>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='mt-2'
+                  onClick={() => refetchUsage()}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
             <div className='mb-4'>
               <input
                 type='text'

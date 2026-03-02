@@ -12,7 +12,7 @@ import Button from '@/components/common/Button';
 import PageHeader from '@/components/common/PageHeader';
 import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminRacesApi, adminKraApi } from '@/lib/api/admin';
-import { formatDate, isPastRaceDate } from '@/lib/utils';
+import { formatDate, getDisplayRaceStatus } from '@/lib/utils';
 
 interface RaceData {
   id: string;
@@ -20,6 +20,7 @@ interface RaceData {
   rcName: string;
   rcDate: string;
   rcTime?: string;
+  stTime?: string;
   meet: string;
   rcDist: string;
   rank?: string;
@@ -34,12 +35,17 @@ const MEET_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
+/** Today in KST as YYYY-MM-DD for date input default */
+function getTodayKstDate(): string {
+  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
+}
+
 export default function RacesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [meetFilter, setMeetFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(() => getTodayKstDate());
   const [syncDate, setSyncDate] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
@@ -82,6 +88,8 @@ export default function RacesPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const msg = (res as { result?: { message?: string } })?.result?.message ?? '경주 결과 동기화 완료';
       toast.success(msg);
     },
@@ -108,6 +116,8 @@ export default function RacesPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const msg = (res as { message?: string })?.message ?? '전체 적재 완료';
       toast.success(msg);
     },
@@ -130,6 +140,8 @@ export default function RacesPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const r = res as { processed?: number; totalResults?: number };
       toast.success(`과거 데이터 적재 완료: ${r?.processed ?? 0}일, ${r?.totalResults ?? 0}건 결과`);
     },
@@ -137,7 +149,7 @@ export default function RacesPage() {
     onSettled: () => setSyncProgress(null),
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: racesError, refetch: refetchRaces } = useQuery({
     queryKey: ['admin-races', page, meetFilter, dateFilter],
     queryFn: () =>
       adminRacesApi.getAll({
@@ -210,10 +222,12 @@ export default function RacesPage() {
           COMPLETED: '완료',
           CANCELLED: '취소',
         };
-        const effectiveStatus =
-          race.rcDate != null && isPastRaceDate(race.rcDate) && race.status !== 'CANCELLED'
-            ? 'COMPLETED'
-            : (race.status || '');
+        // Show "완료" only when server says COMPLETED and race end time has passed (same as WebApp).
+        const effectiveStatus = getDisplayRaceStatus(
+          race.status,
+          race.rcDate,
+          race.stTime ?? race.rcTime,
+        ) || 'SCHEDULED';
         const key = effectiveStatus.toUpperCase().replace(/-/g, '_');
         return (
           <span
@@ -361,6 +375,20 @@ export default function RacesPage() {
           </Card>
 
           <Card>
+            {racesError && (
+              <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>경주 목록을 불러오는 중 오류가 발생했습니다.</p>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='mt-2'
+                  onClick={() => refetchRaces()}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
             <Table
               data={(data?.data || []) as RaceData[]}
               columns={columns}

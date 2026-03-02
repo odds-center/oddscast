@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  UpdateDateColumn,
+} from 'typeorm';
 
 @Entity({ name: 'global_config', schema: 'oddscast' })
 export class GlobalConfig {

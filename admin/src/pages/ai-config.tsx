@@ -95,7 +95,7 @@ export default function AIConfigPage() {
   const queryClient = useQueryClient();
 
   // AI 설정 조회
-  const { data: configData, isLoading: configLoading } = useQuery({
+  const { data: configData, isLoading: configLoading, error: configError, refetch: refetchConfig } = useQuery({
     queryKey: ['ai-config'],
     queryFn: () => adminAIConfigApi.getConfig(),
   });
@@ -194,6 +194,28 @@ export default function AIConfigPage() {
         </Head>
         <Layout>
           <PageLoading label='AI 설정을 불러오는 중...' />
+        </Layout>
+      </>
+    );
+  }
+
+  if (configError) {
+    return (
+      <>
+        <Head>
+          <title>AI 설정 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>AI 설정을 불러오는 중 오류가 발생했습니다.</p>
+            <button
+              type='button'
+              onClick={() => refetchConfig()}
+              className='mt-4 inline-flex items-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 shadow-sm hover:bg-amber-50'
+            >
+              다시 시도
+            </button>
+          </div>
         </Layout>
       </>
     );

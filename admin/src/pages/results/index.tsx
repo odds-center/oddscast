@@ -29,6 +29,7 @@ interface RaceResult {
   ord: string;
   hrName: string;
   hrNo: string;
+  chulNo?: string;
   jkName: string;
   trName: string;
   rcTime: string;
@@ -84,7 +85,7 @@ function EditResultModal({
       <div className='bg-white rounded-lg p-6 max-w-md w-full mx-4' onClick={(e) => e.stopPropagation()}>
         <h2 className='text-xl font-bold mb-4'>결과 수정</h2>
         <p className='text-sm text-gray-600 mb-4'>
-          {result.hrName} (#{result.hrNo})
+          {result.hrName} (출전번호 {result.chulNo ?? result.hrNo})
         </p>
         <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
           <div>
@@ -182,7 +183,7 @@ function CreateResultModal({
 
   const onSubmit = (data: CreateResultForm) => {
     if (!data.raceId || !data.hrNo || !data.hrName) {
-      toast.error('경주, 마번, 마명은 필수입니다');
+      toast.error('경주, 출전번호, 마명은 필수입니다');
       return;
     }
     onSave({
@@ -225,12 +226,12 @@ function CreateResultModal({
             {errors.raceId && <p className='text-sm text-red-600 mt-1'>{errors.raceId.message}</p>}
           </div>
           <div>
-            <label className='block text-sm font-medium text-gray-700 mb-1'>마번 *</label>
+            <label className='block text-sm font-medium text-gray-700 mb-1'>출전번호 *</label>
             <input
               type='text'
               className='w-full px-3 py-2 border rounded-md'
-              placeholder='등록번호'
-              {...register('hrNo', { required: '마번을 입력하세요.' })}
+              placeholder='해당 경주의 출전번호 (예: 1, 2, 3)'
+              {...register('hrNo', { required: '출전번호를 입력하세요.' })}
             />
             {errors.hrNo && <p className='text-sm text-red-600 mt-1'>{errors.hrNo.message}</p>}
           </div>
@@ -292,6 +293,7 @@ function normalizeResult(raw: Record<string, unknown>): RaceResult {
     ord: String(raw.ord ?? raw.rcRank ?? ''),
     hrName: String(raw.hrName ?? ''),
     hrNo: String(raw.hrNo ?? ''),
+    chulNo: raw.chulNo != null ? String(raw.chulNo) : undefined,
     jkName: String(raw.jkName ?? ''),
     trName: String(raw.trName ?? ''),
     rcTime: String(raw.rcTime ?? ''),
@@ -357,11 +359,16 @@ const MEET_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
+/** Today in KST as YYYY-MM-DD for date input default */
+function getTodayKstDate(): string {
+  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
+}
+
 export default function ResultsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState(() => getTodayKstDate());
   const [meetFilter, setMeetFilter] = useState('');
   const [selectedResult, setSelectedResult] = useState<RaceResult | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<GroupedRace | null>(null);
@@ -399,7 +406,7 @@ export default function ResultsPage() {
   const raceOptions: RaceOption[] = (racesData?.data ?? []) as RaceOption[];
 
   // Same API shape as 경주 관리: groupByRace + same page/limit/date/meet so race list is identical
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: resultsError, refetch: refetchResults } = useQuery({
     queryKey: ['admin-results', page, dateFilter, meetFilter],
     queryFn: async () => {
       const res = await adminResultsApi.getAllGroupedByRace({
@@ -467,11 +474,11 @@ export default function ResultsPage() {
   function renderRankCell(group: GroupedRace, ord: '1' | '2' | '3') {
     const r = group.results.find((x) => x.ord === ord);
     if (!r) return <span className='text-gray-400'>-</span>;
-    const no = r.hrNo && r.hrNo.length <= 3 ? r.hrNo : '-';
+    const no = r.chulNo ?? (r.hrNo && r.hrNo.length <= 3 ? r.hrNo : '-');
     return (
       <span className='inline-flex items-center gap-1.5'>
         <span className='inline-flex items-center justify-center min-w-[24px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 text-xs font-medium'>
-          {no}번
+          {no}
         </span>
         <span className='font-medium'>{r.hrName}</span>
         <span className='text-gray-500 text-sm'>({r.jkName})</span>
@@ -623,6 +630,20 @@ export default function ResultsPage() {
                 </span>
               </div>
 
+              {resultsError && (
+                <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                  <p>경기 결과를 불러오는 중 오류가 발생했습니다.</p>
+                  <Button
+                    type='button'
+                    variant='secondary'
+                    size='sm'
+                    className='mt-2'
+                    onClick={() => refetchResults()}
+                  >
+                    다시 시도
+                  </Button>
+                </div>
+              )}
               <Table
               data={paginatedGroups}
               columns={columns}
@@ -854,8 +875,8 @@ export default function ResultsPage() {
                       <div className='text-gray-900 font-semibold'>{selectedResult.hrName}</div>
                     </div>
                     <div>
-                      <label className='block text-sm font-medium text-gray-700 mb-1'>마번</label>
-                      <div className='text-gray-900'>{selectedResult.hrNo}번</div>
+                      <label className='block text-sm font-medium text-gray-700 mb-1'>출전번호</label>
+                      <div className='text-gray-900'>{selectedResult.chulNo ?? selectedResult.hrNo ?? '-'}</div>
                     </div>
                     <div>
                       <label className='block text-sm font-medium text-gray-700 mb-1'>기수</label>

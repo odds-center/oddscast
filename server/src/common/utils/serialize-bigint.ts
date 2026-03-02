@@ -1,5 +1,5 @@
 /**
- * API 응답 BigInt 직렬화 — Prisma chaksunT 등 BigInt 필드를 JSON 호환 형태로 변환
+ * API 응답 BigInt 직렬화 (chaksunT 등 BigInt 필드를 JSON 호환 형태로 변환)
  */
 export function serializeBigInt<T>(obj: T): T {
   if (obj === null || obj === undefined) {

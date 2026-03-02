@@ -13,7 +13,7 @@ graph TD
     Admin["🖥️ Next.js Admin"] -->|HTTP/REST| Server
 
     subgraph "Backend System"
-        Server -->|Prisma ORM| DB[("🐘 PostgreSQL")]
+        Server -->|TypeORM| DB[("🐘 PostgreSQL")]
         Server -->|python-shell| Python["🐍 Python Scripts"]
         Server -->|HTTP| KRA["🏇 공공데이터포털 API"]
         Server -->|HTTP| Gemini["🤖 Google Gemini API"]
@@ -34,8 +34,8 @@ graph TD
 ### 요청-응답 흐름 (일반 API)
 
 ```
-Mobile WebView → WebApp 페이지 → axios (Bearer JWT) → NestJS Controller → Service → Prisma → PostgreSQL
-Admin / WebApp → axios (Bearer JWT) → NestJS Controller → Service → Prisma → PostgreSQL
+Mobile WebView → WebApp 페이지 → axios (Bearer JWT) → NestJS Controller → Service → TypeORM → PostgreSQL
+Admin / WebApp → axios (Bearer JWT) → NestJS Controller → Service → TypeORM → PostgreSQL
                                                          ↓
                                                   ResponseInterceptor
                                                          ↓
@@ -95,24 +95,24 @@ graph LR
     end
 
     subgraph "Infrastructure"
-        Prisma["📦 Prisma"]
+        TypeORM["📦 TypeORM"]
         Common["🔧 Common"]
     end
 
-    Auth --> Prisma
-    Races --> Prisma
-    Results --> Prisma
-    Predictions --> Prisma
-    Users --> Prisma
-    Favorites --> Prisma
-    Tickets --> Prisma
-    Picks --> Prisma
-    Points --> Prisma
-    Subscriptions --> Prisma
-    Payments --> Prisma
-    SinglePurchases --> Prisma
-    Notifications --> Prisma
-    Rankings --> Prisma
+    Auth --> TypeORM
+    Races --> TypeORM
+    Results --> TypeORM
+    Predictions --> TypeORM
+    Users --> TypeORM
+    Favorites --> TypeORM
+    Tickets --> TypeORM
+    Picks --> TypeORM
+    Points --> TypeORM
+    Subscriptions --> TypeORM
+    Payments --> TypeORM
+    SinglePurchases --> TypeORM
+    Notifications --> TypeORM
+    Rankings --> TypeORM
 ```
 
 ---
@@ -197,7 +197,7 @@ const handleApiResponse = <T>(response): T => {
 | **NestJS = Control Tower** | 모든 외부 서비스(Python, Gemini, KRA API) 호출은 NestJS가 관리           |
 | **Global API Prefix**      | `main.ts`에서 `app.setGlobalPrefix('api')` → 모든 라우트에 `/api` prefix |
 | **JWT 인증**               | `@UseGuards(JwtAuthGuard)` + `@CurrentUser()` 데코레이터로 사용자 식별   |
-| **Prisma ORM**             | 모든 DB 조작은 `PrismaService`를 통해 처리 (raw SQL 사용 금지)           |
+| **TypeORM**                | 모든 DB 조작은 TypeORM Entity/Repository/QueryBuilder 사용 (DataSource 주입) |
 
 ---
 
@@ -210,7 +210,7 @@ const handleApiResponse = <T>(response): T => {
 | **KRA API26_2**    | 출전표 (출전마)              | `entrySheet_2` — 경주 2~3일 전   |
 | **Google Gemini**  | AI 분석 코멘트 생성          | REST API (@google/generative-ai) |
 | **Python Scripts** | 통계 분석 (Speed Index 등)   | python-shell (stdin/stdout JSON) |
-| **PostgreSQL**     | 데이터 저장소                | Prisma ORM                       |
+| **PostgreSQL**     | 데이터 저장소                | TypeORM                          |
 
 ---
 

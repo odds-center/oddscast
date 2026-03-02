@@ -1,5 +1,5 @@
 /**
- * Placeholder for former Prisma include configs.
+ * Race include / select helpers (TypeORM relations used in services).
  * Race + entries are loaded via TypeORM (RacesService / Repository or QueryBuilder).
  */
 export const RACE_INCLUDE_ENTRIES = {};

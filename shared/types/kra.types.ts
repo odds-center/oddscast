@@ -2,7 +2,7 @@
  * KRA API 기준 enum 및 변환 유틸
  * DB에는 KRA raw 값 저장, API 응답에는 enum으로 치환
  *
- * @see docs/specs/KRA_*.md, docs/legacy/KRA_OFFICIAL_GUIDE.md
+ * @see docs/specs/KRA_*.md
  */
 
 /** API 응답용 경마장 enum (DB: 서울/제주/부산경남 → API: SEOUL/JEJU/BUSAN) */

@@ -76,6 +76,7 @@ export class NotificationsService {
     const type = (dto.type as NotificationType) || NotificationType.SYSTEM;
     const category =
       (dto.category as NotificationCategory) || NotificationCategory.GENERAL;
+    const now = new Date();
     const notification = this.notificationRepo.create({
       userId: dto.userId,
       title: dto.title,
@@ -84,6 +85,7 @@ export class NotificationsService {
       category,
       data: dto.data ?? null,
       isRead: false,
+      updatedAt: now,
     });
     return this.notificationRepo.save(notification);
   }
@@ -133,6 +135,7 @@ export class NotificationsService {
 
   async bulkSend(dto: BulkSendDto) {
     let count = 0;
+    const now = new Date();
     for (const userId of dto.recipients) {
       await this.notificationRepo.save(
         this.notificationRepo.create({
@@ -141,6 +144,7 @@ export class NotificationsService {
           message: JSON.stringify(dto.variables ?? {}),
           type: NotificationType.SYSTEM,
           category: NotificationCategory.GENERAL,
+          updatedAt: now,
         }),
       );
       count++;
@@ -156,7 +160,8 @@ export class NotificationsService {
   async getPreferences(userId: number) {
     let prefs = await this.prefRepo.findOne({ where: { userId } });
     if (!prefs) {
-      prefs = this.prefRepo.create({ userId });
+      const now = new Date();
+      prefs = this.prefRepo.create({ userId, updatedAt: now });
       await this.prefRepo.save(prefs);
     }
     return prefs;
@@ -173,11 +178,13 @@ export class NotificationsService {
       existing.deviceId = dto.deviceId ?? null;
       await this.pushTokenRepo.save(existing);
     } else {
+      const now = new Date();
       await this.pushTokenRepo.save(
         this.pushTokenRepo.create({
           userId,
           token: dto.token,
           deviceId: dto.deviceId ?? null,
+          updatedAt: now,
         }),
       );
     }
@@ -256,6 +263,7 @@ export class NotificationsService {
       return { count: 0, pushSent: 0, message: '발송 대상이 없습니다.' };
     }
 
+    const now = new Date();
     for (const userId of userIds) {
       await this.notificationRepo.save(
         this.notificationRepo.create({
@@ -264,6 +272,7 @@ export class NotificationsService {
           message: data.message,
           type: NotificationType.SYSTEM,
           category: NotificationCategory.GENERAL,
+          updatedAt: now,
         }),
       );
     }

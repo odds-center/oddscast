@@ -3,10 +3,10 @@ export interface EntrySheetItemDto {
   rcDate: string; // 경주일자 (YYYYMMDD)
   rcDay: string; // 경주요일 (e.g., "토요일")
   rcNo: string; // 경주번호
-  chulNo: string; // 출주번호 (마번)
+  chulNo: string; // 출전번호(출주번호)
   hrName: string; // 마명
   hrNameEn: string; // 영문마명
-  hrNo: string; // 마번(고유번호)
+  hrNo: string; // 경주마 고유등록번호 (KRA API용, UI에는 출전번호·마명 사용)
   prd: string; // 산지
   sex: string; // 성별
   age: string; // 연령 (comes as string in XML usually)

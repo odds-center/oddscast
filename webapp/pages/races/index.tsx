@@ -13,7 +13,7 @@ import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
 import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
-import { formatRcDate, isPastRaceDateTime } from '@/lib/utils/format';
+import { formatRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -25,12 +25,8 @@ import { serverGet } from '@/lib/api/serverFetch';
 const REVALIDATE_RACES = 60;
 
 const RACES_PER_PAGE = 20;
-const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
 const LIVE_REFETCH_MS = 5 * 60 * 1000;
-
-function isRaceDay(d: Date): boolean {
-  return RACE_DAYS.includes(d.getDay());
-}
 
 function parseDateFilter(qDate: string | undefined): string {
   if (qDate === 'today' || qDate === 'yesterday') return qDate;
@@ -40,13 +36,9 @@ function parseDateFilter(qDate: string | undefined): string {
   return '';
 }
 
-function dateToParam(dateFilter: string): string | undefined {
-  if (dateFilter === 'today') return new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  if (dateFilter === 'yesterday') {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10).replace(/-/g, '');
-  }
+/** API date param: send 'today'/'yesterday' so server resolves in KST; otherwise YYYYMMDD. */
+function dateToApiParam(dateFilter: string): string | undefined {
+  if (dateFilter === 'today' || dateFilter === 'yesterday') return dateFilter;
   if (dateFilter) return dateFilter.replace(/-/g, '');
   return undefined;
 }
@@ -98,22 +90,14 @@ export default function RacesListPage() {
     router.replace({ pathname: router.pathname, query: next }, undefined, { shallow: true });
   };
 
-  const isTodayRaceDay = dateFilter === 'today' && isRaceDay(new Date());
+  const { weekDay } = getTodayKstDate();
+  const isTodayRaceDay = dateFilter === 'today' && RACE_DAYS.includes(weekDay);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
     queryFn: () => {
-      let date: string | undefined;
-      if (dateFilter === 'today') {
-        date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-      } else if (dateFilter === 'yesterday') {
-        const d = new Date();
-        d.setDate(d.getDate() - 1);
-        date = d.toISOString().slice(0, 10).replace(/-/g, '');
-      } else if (dateFilter) {
-        date = dateFilter.replace(/-/g, '');
-      }
+      const date = dateToApiParam(dateFilter);
       return RaceApi.getRaces({
         limit: RACES_PER_PAGE,
         page,
@@ -128,13 +112,21 @@ export default function RacesListPage() {
     if (!qStatus) return races;
     return races.filter((race) => {
       const s = race.status || (race as RaceDto & { raceStatus?: string }).raceStatus || '';
-      const stTime = race.stTime ?? (race as RaceDto & { rcStartTime?: string }).rcStartTime;
-      const isCompleted = s.toUpperCase() === 'COMPLETED' || isPastRaceDateTime(race.rcDate, stTime);
+      const isCompleted = s.toUpperCase() === 'COMPLETED';
       if (qStatus === 'COMPLETED') return isCompleted;
       if (qStatus === 'SCHEDULED') return !isCompleted;
       return true;
     });
   }, [data?.races, qStatus]);
+
+  const todayRacesAllEnded =
+    dateFilter === 'today' &&
+    (data?.races?.length ?? 0) > 0 &&
+    (data?.races ?? []).every(
+      (race: RaceDto) =>
+        (race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus) === 'COMPLETED' &&
+        isRaceActuallyEnded(race.rcDate, race.stTime),
+    );
 
   return (
     <Layout title='OddsCast'>
@@ -182,6 +174,11 @@ export default function RacesListPage() {
         loadingLabel='경주 정보 준비 중...'
         errorTitle='경주 정보를 확인할 수 없습니다'
       >
+        {todayRacesAllEnded && (
+          <div className='mb-4 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-text-secondary'>
+            오늘의 경주가 모두 종료되었습니다. 아래에서 결과를 확인해 보세요.
+          </div>
+        )}
         <DataTable
           columns={[
             {
@@ -250,6 +247,7 @@ export default function RacesListPage() {
                 <StatusBadge
                   status={race.status || (race as RaceDto & { raceStatus?: string }).raceStatus || '-'}
                   rcDate={race.rcDate}
+                  stTime={race.stTime}
                 />
               ),
             },
@@ -274,7 +272,7 @@ export default function RacesListPage() {
 export const getStaticProps: GetStaticProps = async () => {
   const queryClient = new QueryClient();
   const dateFilter = ''; // default when no query (client: parseDateFilter(undefined) => '')
-  const date = dateToParam(dateFilter);
+  const date = dateToApiParam(dateFilter);
   const page = 1;
   const qMeet = '';
   const qStatus = '';

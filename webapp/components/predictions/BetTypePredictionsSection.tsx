@@ -218,7 +218,7 @@ export default function BetTypePredictionsSection({
   return (
     <div className='space-y-3'>
       <p className='text-text-secondary text-sm font-semibold'>AI 도출 승식</p>
-      <p className='text-text-tertiary text-xs'>승식별로 AI가 도출한 추천 마번·조합과 도출 근거입니다.</p>
+      <p className='text-text-tertiary text-xs'>승식별로 AI가 도출한 추천 출전번호·말과 도출 근거입니다.</p>
 
       {/* Core 3 cards */}
       <div className='grid grid-cols-1 sm:grid-cols-3 gap-2.5'>

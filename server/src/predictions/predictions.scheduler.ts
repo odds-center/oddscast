@@ -40,7 +40,9 @@ export class PredictionsScheduler {
       .createQueryBuilder('r')
       .select(['r.id', 'r.rcNo', 'r.meet'])
       .where('r.rcDate = :today', { today })
-      .andWhere('r.status IN (:...statuses)', { statuses: ['SCHEDULED', 'IN_PROGRESS'] })
+      .andWhere('r.status IN (:...statuses)', {
+        statuses: ['SCHEDULED', 'IN_PROGRESS'],
+      })
       .andWhere(
         `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,
       )
@@ -96,7 +98,7 @@ export class PredictionsScheduler {
       .where('r.rcDate IN (:...dates)', { dates })
       .andWhere('r.status = :status', { status: 'COMPLETED' })
       .andWhere(
-        `EXISTS (SELECT 1 FROM oddscast.race_results rr WHERE rr."raceId" = r.id)`,
+        `EXISTS (SELECT 1 FROM oddscast.race_results rr WHERE rr."raceId" = r.id AND (rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL))`,
       )
       .andWhere(
         `NOT EXISTS (SELECT 1 FROM oddscast.predictions p WHERE p."raceId" = r.id AND p.status = 'COMPLETED')`,

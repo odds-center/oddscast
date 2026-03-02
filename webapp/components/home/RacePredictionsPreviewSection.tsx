@@ -30,7 +30,7 @@ function PickBadge({ no }: { no: string }) {
 
 export default function RacePredictionsPreviewSection() {
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['predictions', 'races', 'preview'],
+    queryKey: ['predictions', 'matrix', 'preview'],
     queryFn: () => PredictionMatrixApi.getMatrix(undefined, undefined),
     placeholderData: keepPreviousData,
   });

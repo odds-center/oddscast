@@ -25,7 +25,8 @@ export class KraController {
 
   constructor(
     private readonly kraService: KraService,
-    @InjectRepository(KraSyncLog) private readonly kraSyncLogRepo: Repository<KraSyncLog>,
+    @InjectRepository(KraSyncLog)
+    private readonly kraSyncLogRepo: Repository<KraSyncLog>,
   ) {}
 
   @Get('sync-logs')

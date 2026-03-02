@@ -16,7 +16,7 @@ npm run dev
 # → http://localhost:3000
 ```
 
-**환경 변수**: `webapp/.env`에 `NEXT_PUBLIC_API_URL` 설정. 루트에서 `./scripts/setup-env.sh` 실행 시 자동 생성됨 (기본: `http://localhost:3001/api`)
+**환경 변수**: `webapp/.env`에 `NEXT_PUBLIC_API_URL` 설정. 루트에서 `./scripts/setup.sh` 실행 시 없으면 자동 생성 (기본: `http://localhost:3001/api`)
 
 ---
 

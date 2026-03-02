@@ -110,10 +110,12 @@ export class ReferralsService {
       );
     }
 
+    const now = new Date();
     await this.referralClaimRepo.save(
       this.referralClaimRepo.create({
         referralCodeId: referral.id,
         referredUserId: userId,
+        createdAt: now,
       }),
     );
     await this.referralCodeRepo.update(referral.id, {

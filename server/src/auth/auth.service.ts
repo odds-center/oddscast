@@ -48,7 +48,8 @@ const SIGNUP_BONUS_EXPIRES_DAYS = 30;
 export class AuthService {
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
-    @InjectRepository(AdminUser) private readonly adminRepo: Repository<AdminUser>,
+    @InjectRepository(AdminUser)
+    private readonly adminRepo: Repository<AdminUser>,
     @InjectRepository(PasswordResetToken)
     private readonly passwordResetRepo: Repository<PasswordResetToken>,
     @InjectRepository(EmailVerificationToken)
@@ -60,15 +61,19 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.userRepo.findOne({ where: { email: dto.email } });
+    const existing = await this.userRepo.findOne({
+      where: { email: dto.email },
+    });
     if (existing) throw new ConflictException('이미 등록된 이메일입니다');
 
     const hashed = await bcrypt.hash(dto.password, 10);
+    const now = new Date();
     const user = this.userRepo.create({
       email: dto.email,
       password: hashed,
       name: dto.name,
       nickname: dto.nickname ?? null,
+      updatedAt: now,
     });
     const saved = await this.userRepo.save(user);
     if (!saved) throw new Error('User insert failed');
@@ -113,7 +118,8 @@ export class AuthService {
     const admin = await this.adminRepo.findOne({ where: { loginId } });
     if (!admin)
       throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
-    if (!admin.isActive) throw new UnauthorizedException('비활성화된 계정입니다');
+    if (!admin.isActive)
+      throw new UnauthorizedException('비활성화된 계정입니다');
 
     const valid = await bcrypt.compare(password, admin.password);
     if (!valid)

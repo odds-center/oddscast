@@ -90,7 +90,7 @@ sequenceDiagram
 - **Subscription**: `billingKey`, `customerKey` 필드 사용. (`customerKey` 컬럼 추가 마이그레이션: `20250225000000_add_subscription_customer_key`)
 - **BillingHistory**: 기존 구조 유지. `pgProvider='TOSSPAYMENTS'`, `pgTransactionId`에 토스 `paymentKey` 또는 `orderId` 저장.
 
-**DB 반영**: `pnpm prisma migrate deploy` 또는 이미 `db push`로 스키마를 맞춘 경우 `prisma migrate resolve --applied 20250225000000_add_subscription_customer_key`
+**DB 반영**: TypeORM 마이그레이션 적용 (`pnpm run migration:run`) 또는 `docs/db/schema.sql`에 맞춰 수동 DDL 적용 (로컬은 `./scripts/setup.sh`). 이미 스키마가 있으면 해당 마이그레이션은 건너뛰거나 `migration:run`으로 적용.
 
 ### 4.1 customerKey 정책
 

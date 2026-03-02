@@ -10,17 +10,20 @@ import { useEffect, useState, useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
 import { getDateHeaderMessage, getNextRaceDayLabel } from '@/lib/utils/dateHeaderMessages';
-import { parseStTimeToDate, isTodayRcDate } from '@/lib/utils/format';
+import { parseStTimeToDate, isTodayRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 
-const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
+const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
 const LIVE_REFETCH_MS = 5 * 60 * 1000; // 5 min on race days
 const COUNTDOWN_TICK_MS = 60 * 1000; // 1 min
 
-function isRaceDay(date: Date): boolean {
-  return RACE_DAYS.includes(date.getDay());
-}
-
-type RaceWithTime = { rcDate?: string; stTime?: string; rcNo?: string };
+type RaceWithTime = {
+  rcDate?: string;
+  stTime?: string;
+  rcNo?: string;
+  status?: string;
+  raceStatus?: string;
+};
 
 function getNextRaceMinutes(races: RaceWithTime[]): number | null {
   const nowMs = Date.now();
@@ -37,13 +40,13 @@ function getNextRaceMinutes(races: RaceWithTime[]): number | null {
 }
 
 export default function DateHeader() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth() + 1;
-  const day = now.getDate();
-  const weekDays = ['일', '월', '화', '수', '목', '금', '토'];
-  const weekDay = weekDays[now.getDay()];
-  const isTodayRaceDay = isRaceDay(now);
+  const kst = getTodayKstDate();
+  const { year, month, day, weekDay } = kst;
+  const weekDayName = WEEK_DAYS[weekDay];
+  const isTodayRaceDay = RACE_DAYS.includes(weekDay);
+  const kstTodayDate = new Date(
+    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00:00+09:00`,
+  );
 
   const { data: todayData } = useQuery({
     queryKey: ['races', 'today', 'stats'],
@@ -56,8 +59,15 @@ export default function DateHeader() {
     [todayData?.races],
   );
   const todayCount = todayData?.total ?? races.length;
-  const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, now);
-  const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel);
+  const todayAllEnded =
+    todayCount > 0 &&
+    races.length > 0 &&
+    races.every(
+      (r) =>
+        (r.status ?? r.raceStatus) === 'COMPLETED' && isRaceActuallyEnded(r.rcDate, r.stTime),
+    );
+  const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, kstTodayDate);
+  const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel, todayAllEnded);
 
   const [countdownMins, setCountdownMins] = useState<number | null>(() =>
     getNextRaceMinutes(races),
@@ -77,7 +87,7 @@ export default function DateHeader() {
       <div className='relative z-10 flex items-center justify-between gap-4'>
         <div>
           <p className='text-stone-400 text-xs mb-1 whitespace-nowrap'>
-            {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDay})
+            {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDayName})
           </p>
           <h1 className='text-base sm:text-lg font-bold text-white mb-1'>
             {msg.title}

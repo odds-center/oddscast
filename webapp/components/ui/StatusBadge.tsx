@@ -1,4 +1,9 @@
-import { isPastRaceDateTime, isTodayRcDate, minutesUntilStart } from '@/lib/utils/format';
+import {
+  isPastRaceDateTime,
+  isTodayRcDate,
+  minutesUntilStart,
+  getDisplayRaceStatus,
+} from '@/lib/utils/format';
 
 interface StatusBadgeProps {
   status: string;
@@ -21,15 +26,25 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
 const DEFAULT = { label: '-', cls: 'bg-stone-50 text-stone-400 border-stone-200' };
 
 export default function StatusBadge({ status, rcDate, stTime, className = '' }: StatusBadgeProps) {
-  const effectiveStatus =
-    rcDate != null && isPastRaceDateTime(rcDate, stTime) && status !== 'CANCELLED' && status !== 'cancelled'
-      ? 'COMPLETED'
-      : status;
+  // Show "종료" only when server says COMPLETED and race end time has passed (client-side guard).
+  const effectiveStatus = getDisplayRaceStatus(status, rcDate, stTime);
   const base = STATUS_MAP[effectiveStatus] ?? DEFAULT;
 
-  // Live mode: show "N분 후" for SCHEDULED today when start is within 2 hours
+  // "진행": start time passed but results not in yet (still SCHEDULED/IN_PROGRESS)
   let label = base.label;
+  let displayCls = base.cls;
   if (
+    (effectiveStatus === 'SCHEDULED' || effectiveStatus === 'scheduled' || effectiveStatus === 'IN_PROGRESS' || effectiveStatus === 'in_progress') &&
+    rcDate != null &&
+    isPastRaceDateTime(rcDate, stTime) &&
+    status !== 'CANCELLED' &&
+    status !== 'cancelled'
+  ) {
+    label = '진행';
+    displayCls = STATUS_MAP.IN_PROGRESS.cls;
+  }
+  // Live mode: show "N분 후" for SCHEDULED today when start is within 2 hours
+  else if (
     (effectiveStatus === 'SCHEDULED' || effectiveStatus === 'scheduled') &&
     isTodayRcDate(rcDate) &&
     stTime
@@ -41,7 +56,7 @@ export default function StatusBadge({ status, rcDate, stTime, className = '' }: 
   }
 
   return (
-    <span className={`inline-flex items-center text-xs px-1.5 py-px rounded border font-medium whitespace-nowrap ${base.cls} ${className}`.trim()}>
+    <span className={`inline-flex items-center text-xs px-1.5 py-px rounded border font-medium whitespace-nowrap ${displayCls} ${className}`.trim()}>
       {label}
     </span>
   );

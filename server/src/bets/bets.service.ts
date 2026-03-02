@@ -44,7 +44,9 @@ export class BetsService {
         : null,
     }));
     return {
-      bets: serializeItemsWithRace(items as Parameters<typeof serializeItemsWithRace>[0]),
+      bets: serializeItemsWithRace(
+        items as Parameters<typeof serializeItemsWithRace>[0],
+      ),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -69,7 +71,11 @@ export class BetsService {
           }
         : null,
     };
-    return serializeItemsWithRace([item] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? item;
+    return (
+      serializeItemsWithRace([item] as Parameters<
+        typeof serializeItemsWithRace
+      >[0])[0] ?? item
+    );
   }
 
   async update(_id: number, _dto: UpdateBetDto) {
@@ -108,7 +114,10 @@ export class BetsService {
       winRate: totalBets > 0 ? (wonBets / totalBets) * 100 : 0,
       totalWinnings,
       totalLosses: totalAmount - totalWinnings,
-      roi: totalAmount > 0 ? ((totalWinnings - totalAmount) / totalAmount) * 100 : 0,
+      roi:
+        totalAmount > 0
+          ? ((totalWinnings - totalAmount) / totalAmount) * 100
+          : 0,
       averageBetAmount: totalBets > 0 ? totalAmount / totalBets : 0,
     };
   }

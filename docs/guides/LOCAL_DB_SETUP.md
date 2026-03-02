@@ -1,8 +1,8 @@
-# 로컬 PostgreSQL + DBeaver + Prisma (스키마 oddscast)
+# 로컬 PostgreSQL + DBeaver (스키마 oddscast)
 
-로컬에서 PostgreSQL로 개발하고, DBeaver로 연결하며, 스키마 이름을 `oddscast`로 두고 Prisma 마이그레이션을 모두 적용하는 방법입니다.
+로컬에서 PostgreSQL로 개발하고, DBeaver로 연결하며, 스키마 이름을 `oddscast`로 두고 TypeORM/DDL로 스키마를 적용하는 방법입니다.
 
-**Last updated:** 2026-03-01
+**Last updated:** 2026-02-24
 
 ---
 
@@ -10,9 +10,9 @@
 
 1. **Docker Desktop** 실행 후 터미널에서:
    ```bash
-   ./scripts/local-setup.sh
+   ./scripts/setup.sh
    ```
-   - PostgreSQL 컨테이너 기동 시도 → DB 마이그레이션 + 시드까지 실행.
+   - PostgreSQL 컨테이너 기동 → DB 스키마 적용(psql)까지 실행.
    - `server/.env` 가 없으면 `.env.example` 기반으로 생성 (로컬용 `DATABASE_URL`).
 2. **로컬에서 서버 실행** 시에도 같은 DB를 쓰려면 `server/.env` 의 `DATABASE_URL` 이 로컬 URL 인지 확인:
    `postgresql://oddscast:oddscast@localhost:5432/oddscast?schema=oddscast`
@@ -36,7 +36,7 @@ docker compose up -d postgres
 - **Port:** `5432`
 - **Database:** `oddscast`
 - **User / Password:** `oddscast` / `oddscast`
-- **스키마:** 최초 기동 시 `oddscast` 스키마가 자동 생성됩니다 (`server/prisma/scripts/docker-init-oddscast.sql`).
+- **스키마:** 최초 기동 시 `oddscast` 스키마가 자동 생성됩니다 (docker-init 스크립트 또는 수동 생성).
 
 `.env` 예시:
 
@@ -89,20 +89,20 @@ CREATE DATABASE oddscast
 
 (이미 `oddscast` DB가 있으면 생략. **Docker**로 띄운 경우 DB와 스키마가 이미 있으므로 이 단계는 건너뛰어도 됩니다.)
 
-### 2.2 oddscast DB에 접속 후 스키마 생성
+### 2.2 oddscast DB에 접속 후 스키마·테이블 적용
 
-**Docker를 쓰지 않고** 직접 PostgreSQL을 설치한 경우, **데이터베이스 `oddscast`에 연결한 뒤** 실행:
+**데이터베이스 `oddscast`에 연결한 뒤** 테이블이 있어야 Admin 회원 조회 등이 동작합니다.
 
-```sql
-CREATE SCHEMA IF NOT EXISTS oddscast;
-```
-
-- 테이블은 Prisma 마이그레이션으로 생성하므로, 여기서는 스키마만 만들면 됩니다.
-- 스크립트 파일: `server/prisma/scripts/init-local-db.sql`
+1. 스키마만 있으면 테이블이 없어 **Admin 회원 조회가 실패**합니다. 다음 중 하나로 전체 DDL을 적용하세요.
+2. **권장 (한 번에 적용):** 터미널에서  
+   `./scripts/setup.sh` (또는 `psql $DATABASE_URL -f docs/db/schema.sql`)  
+   → `docs/db/schema.sql`을 적용해 `oddscast.users` 등 모든 테이블을 생성합니다.
+3. **수동:** DBeaver/psql로 `docs/db/schema.sql` 전체를 실행 (스키마·Enum·테이블 생성). **전체 DB SQL은 `docs/db/`에서 확인.**
+4. TypeORM 마이그레이션에 파일이 있으면 `cd server && pnpm run migration:run`으로 적용. 없으면 `./scripts/setup.sh` 또는 psql로 `docs/db/schema.sql` 실행.
 
 ---
 
-## 4. DBeaver 연결 설정
+## 3. DBeaver 연결 설정
 
 | 항목 | 값 |
 |------|-----|
@@ -116,7 +116,7 @@ CREATE SCHEMA IF NOT EXISTS oddscast;
 
 ---
 
-## 5. Prisma 연결 (스키마 oddscast)
+## 4. 서버 연결 (스키마 oddscast)
 
 `server/.env`에 **반드시 `?schema=oddscast`** 를 붙입니다:
 
@@ -125,31 +125,25 @@ DATABASE_URL="postgresql://USER:PASSWORD@localhost:5432/oddscast?schema=oddscast
 ```
 
 - `USER`, `PASSWORD`는 로컬 PostgreSQL 계정으로 교체합니다.
-- 이렇게 해야 Prisma가 `oddscast` 스키마에 테이블을 만들고, 마이그레이션/쿼리도 해당 스키마만 사용합니다.
+- TypeORM DataSource가 해당 스키마에 연결하고, 엔티티는 `server/src/database/entities/`에 정의됩니다.
 
 ---
 
-## 6. Prisma 마이그레이션 전체 적용
+## 5. 스키마 적용 (데이터 적재는 Admin에서)
 
 ```bash
-cd server
+# 테이블 생성 (Admin 회원 조회 등에 필요). 신규 DB면 반드시 실행.
+./scripts/setup.sh
+# 실패 시: psql "$DATABASE_URL" -f docs/db/schema.sql
 
-# 1) 클라이언트 생성
-pnpm run db:generate
-
-# 2) 마이그레이션 적용 (oddscast 스키마에 테이블 생성)
-pnpm run db:migrate:deploy
-
-# 3) 시드 데이터 삽입
-pnpm run db:seed
+# TypeORM 마이그레이션에 파일이 있으면: cd server && pnpm run migration:run
 ```
 
-- `db:migrate:deploy`가 **모든** 마이그레이션을 순서대로 적용합니다.
-- 첫 번째 마이그레이션에서 `oddscast` 스키마와 전체 테이블이 생성되고, 이후 마이그레이션은 `ADD COLUMN IF NOT EXISTS` 등으로 스키마를 맞춥니다.
+**데이터 적재(KRA 동기화, 샘플 경주 시드 등)**는 스크립트가 아니라 **Admin 화면 버튼**으로 진행합니다.
 
 ---
 
-## 7. 요약
+## 6. 요약
 
 | 단계 | 작업 |
 |------|------|
@@ -157,6 +151,6 @@ pnpm run db:seed
 | 2 | (Docker 아닐 때만) PostgreSQL에서 DB `oddscast` 생성 후, 접속해 스키마 `oddscast` 생성 |
 | 3 | DBeaver로 Host/Port/DB=`oddscast`, Schema=`oddscast` 연결 |
 | 4 | `server/.env`에 `DATABASE_URL=...?schema=oddscast` 설정 |
-| 5 | `pnpm run db:migrate:deploy` → `pnpm run db:seed` |
+| 5 | `./scripts/setup.sh` (스키마만). 데이터 적재는 Admin 버튼 사용 |
 
-이후 로컬에서는 이 DB만 사용하고, Prisma 무료 사용량(Accelerate 등)은 사용하지 않습니다.
+상세 TypeORM·마이그레이션 설정은 [TYPEORM_SETUP.md](TYPEORM_SETUP.md)를 참고하세요.

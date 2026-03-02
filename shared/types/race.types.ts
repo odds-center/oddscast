@@ -27,7 +27,7 @@ export interface Race {
 export interface EntryDetail {
   id: string;
   raceId: string;
-  hrNo: string; // 마번
+  hrNo: string; // 말 식별 (UI에는 출전번호·마명 표기)
   hrName: string;
   hrAge?: string;
   hrGender?: string;
@@ -48,7 +48,7 @@ export interface EntryDetail {
 export interface RaceResult {
   id: string;
   raceId: string;
-  hrNo: string; // 마번
+  hrNo: string; // 말 식별 (UI에는 출전번호·마명 표기)
   hrName: string;
   ord: number; // 순위
   jkName?: string;

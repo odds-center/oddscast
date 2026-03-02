@@ -39,7 +39,8 @@ export class WeeklyPreviewService {
   private readonly logger = new Logger(WeeklyPreviewService.name);
 
   constructor(
-    @InjectRepository(WeeklyPreview) private readonly previewRepo: Repository<WeeklyPreview>,
+    @InjectRepository(WeeklyPreview)
+    private readonly previewRepo: Repository<WeeklyPreview>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
   ) {}
 

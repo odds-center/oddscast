@@ -97,7 +97,7 @@
 - **UI 스타일**: 용산종합지 (전통 경마 예상지) 참고, KRA 다크 헤더
 - **필터**: 날짜(오늘/어제/날짜 선택), 경마장(전체/서울/제주/부산)
 - **탭**: 종합 예상표 | AI 코멘트
-- **종합 예상표**: 모든 경주의 AI 예상을 매트릭스 형태로 표시 (경주정보 + 게이트별 마번 + AI 종합)
+- **종합 예상표**: 모든 경주의 AI 예상을 매트릭스 형태로 표시 (경주정보 + 출전번호·말 이름 + AI 종합)
 - **잠금 모드**: 종합 예측권 미사용 시 3경주 미리보기 + 잠금 오버레이
 - **API**: `GET /api/predictions/matrix`, `GET /api/predictions/commentary`, `GET /api/prediction-tickets/matrix/access`, `POST /api/prediction-tickets/matrix/use`
 
@@ -228,7 +228,7 @@
 | 구분 | 기술 |
 |------|------|
 | **클라이언트** | Next.js (WebApp), React Native Expo (Mobile), Next.js (Admin) |
-| **서버** | NestJS, Prisma, PostgreSQL |
+| **서버** | NestJS, TypeORM, PostgreSQL |
 | **분석** | Python (pandas, numpy), python-shell |
 | **AI** | Google Gemini API |
 | **인증** | JWT, Google OAuth (idToken) |

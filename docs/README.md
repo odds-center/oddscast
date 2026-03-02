@@ -6,13 +6,14 @@
 
 - **[`SERVICE_SPECIFICATION.md`](SERVICE_SPECIFICATION.md)** — **서비스가 무엇인지, 어떤 기능을 제공하는지** 정의. 기능 개발 시 요구사항 파악용.
 - **[`MONTHLY_MAINTENANCE_COST.md`](MONTHLY_MAINTENANCE_COST.md)** — **한 달 유지비** (AI, DB, 호스팅, 결제 수수료) 항목별 명세. 예산 산정용.
+- **[`TODO_CONTINUE.md`](TODO_CONTINUE.md)** — **계속 할 일** (배포·인프라, 모니터링, 기능·콘텐츠, 기술 부채) 진행 순서·우선순위·규칙. Planning 시 참조.
 
 ### 🏗️ Architecture
 
 - [`ARCHITECTURE.md`](architecture/ARCHITECTURE.md) — 시스템 흐름, Mobile WebView → WebApp → Server
 - [`PROJECT_STRUCTURE.md`](architecture/PROJECT_STRUCTURE.md) — Server, WebApp, Mobile, Admin 구조
 - [`API_SPECIFICATION.md`](architecture/API_SPECIFICATION.md) — API 엔드포인트 명세
-- [`DATABASE_SCHEMA.md`](architecture/DATABASE_SCHEMA.md) — Prisma 스키마
+- [`DATABASE_SCHEMA.md`](architecture/DATABASE_SCHEMA.md) — TypeORM 엔티티·DB 스키마. 전체 DDL: [`docs/db/schema.sql`](db/schema.sql) ([`docs/db/README.md`](db/README.md))
 - [`BUSINESS_LOGIC.md`](architecture/BUSINESS_LOGIC.md) — 비즈니스 로직
 
 ### 📦 Features (기능 명세)
@@ -47,17 +48,15 @@
 ### 📖 Guides (개발 가이드)
 
 - [`DATA_LOADING.md`](DATA_LOADING.md) — KRA 데이터 적재 (경주계획표 API72_2 + 출전표 API26_2), Cron·Admin 수동 동기화
-- [`PRISMA_SETUP.md`](guides/PRISMA_SETUP.md) — Prisma 7 설정 (Accelerate, 직접 연결, 포트 구성)
+- [`TYPEORM_SETUP.md`](guides/TYPEORM_SETUP.md) — TypeORM 설정, 마이그레이션, CI/배포
+- [`MONITORING_SETUP.md`](guides/MONITORING_SETUP.md) — Sentry, 업타임 모니터링 설정
+- [`DB_BACKUP.md`](guides/DB_BACKUP.md) — PostgreSQL 백업 (pg_dump, cron)
 - [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp 페이지 컴포넌트, 모바일 최적화, 구독 플로우
 - [`WEBAPP_README.md`](guides/WEBAPP_README.md) — WebApp 요약 (테마, 환경변수, 라우트)
 - [`ADMIN_GUIDE.md`](guides/ADMIN_GUIDE.md) — Admin 대시보드 가이드
 - [`MOBILE_GUIDE.md`](guides/MOBILE_GUIDE.md) — Mobile (WebView) 앱 가이드
 - [`GOOGLE_OAUTH_SETUP.md`](guides/GOOGLE_OAUTH_SETUP.md) — Google OAuth 로그인 설정 (Web + 신규/기존 회원 자동 처리)
 - [`guides/authentication/GOOGLE_AUTH_SETUP.md`](guides/authentication/GOOGLE_AUTH_SETUP.md) — Mobile WebView ↔ Native 구글 로그인 흐름
-
-### 📦 Legacy (참고용)
-
-- [`legacy/README.md`](legacy/README.md) — server_legacy_nestjs 문서 (PostgreSQL, KRA API 등)
 
 ### ⚖️ Legal (법적 고지)
 

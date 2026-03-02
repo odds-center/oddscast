@@ -18,7 +18,7 @@
 | **Backend**  | **NestJS (Node.js)**             | 안정적인 API 서버, Python 스크립트 실행 관리(Control Tower)   |
 | **Analysis** | **Python**                       | `pandas`, `numpy`를 활용한 고성능 통계 연산 및 수치 해석      |
 | **Database** | **PostgreSQL**                   | 경마 데이터(경기-말-기수)의 복잡한 관계형 데이터 처리에 최적  |
-| **ORM**      | **Prisma**                       | DB 스키마 관리 용이, TypeScript와의 완벽한 호환               |
+| **ORM**      | **TypeORM**                      | DB 스키마·엔티티 관리, TypeScript와의 호환                    |
 | **AI**       | **Google Gemini API**            | 분석된 수치를 바탕으로 최종 승부 예측 코멘트 생성 (Reasoning) |
 | **Infra**    | **Railway** or **AWS Lightsail** | Node.js + Python + DB를 저렴하게 한 곳에서 운영 가능          |
 
@@ -65,53 +65,23 @@ server/
 │   ├── prediction/     # 예측 로직 모듈
 │   │   ├── prediction.service.ts  # Python 실행 및 Gemini 호출
 │   │   └── prediction.controller.ts
-│   └── prisma/         # Prisma 서비스
+│   └── database/       # TypeORM 엔티티·DataSource
 ├── scripts/            # 🐍 Python 분석 스크립트 모음
 │   ├── analysis.py     # 메인 분석 로직
 │   └── requirements.txt # pandas, numpy 등 의존성
-├── prisma/
-│   └── schema.prisma   # DB 스키마 정의
 └── package.json
 ```
 
-## 5. 데이터베이스 스키마 (Prisma Schema 초안)
+## 5. 데이터베이스 스키마 (개념)
 
-```prisma
-// schema.prisma
-
-model Race {
-  id          Int         @id @default(autoincrement())
-  raceDate    DateTime    // 경기 날짜
-  location    String      // 서울/부산/제주
-  raceNumber  Int         // 제 1경주, 2경주...
-  distance    Int         // 1200m
-  weather     String?     // 날씨
-  trackState  String?     // 주로 상태 (건조/포화 등)
-
-  horses      RaceEntry[] // 출전마 리스트
-}
-
-model RaceEntry {
-  id          Int     @id @default(autoincrement())
-  raceId      Int
-  horseName   String
-  jockeyName  String
-  weight      Float   // 부담 중량
-  recentRanks Json    // 최근 등수 배열 [1, 5, 2]
-
-  // 분석 결과 (AI 예측 후 저장)
-  aiScore     Float?  // Python이 계산한 점수
-  aiComment   String? // Gemini가 쓴 코멘트
-
-  race        Race    @relation(fields: [raceId], references: [id])
-}
-```
+실제 스키마는 `docs/db/schema.sql` 및 `server/src/database/entities/` (TypeORM) 참고.  
+Race, RaceEntry 등 테이블 구조는 [DATABASE_SCHEMA.md](../architecture/DATABASE_SCHEMA.md)에 정리됨.
 
 ## 6. 개발 로드맵 (Development Roadmap)
 
 ### Phase 1: 기초 공사 (Week 1)
 
-- [ ] NestJS 프로젝트 생성 및 PostgreSQL 연동 (Prisma).
+- [ ] NestJS 프로젝트 생성 및 PostgreSQL 연동 (TypeORM).
 - [ ] 공공데이터포털 API 키 발급 및 `axios`로 데이터 호출 테스트.
 - [ ] `Race`, `RaceEntry` 테이블에 데이터 저장 로직 구현.
 

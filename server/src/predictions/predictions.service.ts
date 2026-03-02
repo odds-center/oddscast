@@ -47,7 +47,7 @@ export class PredictionsService {
     private readonly notificationsService: NotificationsService,
   ) {}
 
-  /** Load race by id with entries for analysis (replaces Prisma race findUnique + include). */
+  /** Load race by id with entries for analysis. Optionally attach winOdds by hrNo from race_results (for score reflection). */
   private async loadRaceWithEntries(
     raceId: number,
   ): Promise<RaceForPython | null> {
@@ -57,7 +57,23 @@ export class PredictionsService {
       where: { raceId },
       order: { id: 'ASC' },
     });
-    return { ...race, entries } as unknown as RaceForPython;
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.hrNo', 'rr.winOdds'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .getMany();
+    const oddsByHrNo: Record<string, number> = {};
+    for (const r of results) {
+      if (r.hrNo && r.winOdds != null && r.winOdds > 0) {
+        oddsByHrNo[String(r.hrNo)] = r.winOdds;
+      }
+    }
+    return {
+      ...race,
+      entries,
+      ...(Object.keys(oddsByHrNo).length > 0 ? { oddsByHrNo } : {}),
+    } as unknown as RaceForPython;
   }
 
   async findAll(filters: PredictionFilterDto) {
@@ -115,11 +131,13 @@ export class PredictionsService {
   }
 
   async create(dto: CreatePredictionDto) {
+    const now = new Date();
     const prediction = this.predictionRepo.create({
       raceId: dto.raceId,
       scores: dto.scores ?? null,
       analysis: dto.analysis ?? null,
       preview: dto.preview ?? null,
+      updatedAt: now,
     });
     const row = await this.predictionRepo.save(prediction);
     const race = await this.raceRepo.findOne({ where: { id: row.raceId } });
@@ -318,11 +336,14 @@ export class PredictionsService {
     const scoresObj = prediction.scores as { horseScores?: unknown[] } | null;
     if (!scoresObj?.horseScores?.length) return;
 
-    const results = await this.resultRepo.find({
-      where: { raceId },
-      select: ['ord', 'ordType', 'hrName', 'hrNo', 'rcTime'],
-      order: { ordInt: 'ASC', ord: 'ASC' },
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select(['rr.ord', 'rr.ordType', 'rr.hrName', 'rr.hrNo', 'rr.rcTime'])
+      .where('rr.raceId = :raceId', { raceId })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ord', 'ASC')
+      .getMany();
     const topResults = results
       .filter((r) => isEligibleForAccuracy(r.ordType))
       .slice(0, 3)
@@ -1366,7 +1387,7 @@ AI 예측 순위: ${predictedTop || '-'}
       race: { rcDate: r.rcDate },
     }));
 
-    // rcDate 내림차순 정렬 후 hrNo별 최근 5경기 착순 (Prisma relation orderBy 비일관 대비)
+    // rcDate 내림차순 정렬 후 hrNo별 최근 5경기 착순
     const sorted = [...results].sort((a, b) => {
       const da = a.race?.rcDate ?? '';
       const db = b.race?.rcDate ?? '';
@@ -1699,24 +1720,63 @@ AI 예측 순위: ${predictedTop || '-'}
       entryMap.set(e.hrNo, e);
     }
 
-    // finalScore(말+기수 통합) 산출 → softmax 승률 확률
+    // finalScore(말+기수 통합) 산출 → optional blend with odds-implied probability → softmax 승률
     const compactEntries: Array<Record<string, unknown>> = [];
     const finalScores: number[] = [];
+    const oddsByHrNo = (
+      race as RaceForPython & { oddsByHrNo?: Record<string, number> }
+    ).oddsByHrNo;
+    const ODDS_WEIGHT = 0.2; // 20% weight to market odds when reflecting in score
 
     for (const hs of horseScores) {
       const hrNo = String(hs.hrNo);
-      const entry = entryMap.get(hrNo);
       const jScore = jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
       const hScore = hs.score ?? 50;
       const finalScore = Math.round((hScore * wH + jScore * wJ) * 100) / 100;
       finalScores.push(finalScore);
+    }
 
+    // Reflect odds in score when available (blend model score with market-implied probability; only for horses with odds)
+    if (oddsByHrNo && Object.keys(oddsByHrNo).length > 0) {
+      const implied: number[] = [];
+      let sumInv = 0;
+      for (const hs of horseScores) {
+        const hrNo = String(hs.hrNo);
+        const w = oddsByHrNo[hrNo];
+        if (w != null && w > 0) {
+          const inv = 1 / w;
+          implied.push(inv);
+          sumInv += inv;
+        } else {
+          implied.push(0);
+        }
+      }
+      if (sumInv > 0) {
+        for (let i = 0; i < finalScores.length; i++) {
+          if (implied[i]! <= 0) continue;
+          const impliedProbScaled = (implied[i]! / sumInv) * 100;
+          finalScores[i] =
+            Math.round(
+              ((1 - ODDS_WEIGHT) * finalScores[i]! +
+                ODDS_WEIGHT * impliedProbScaled) *
+                100,
+            ) / 100;
+        }
+      }
+    }
+
+    for (let i = 0; i < horseScores.length; i++) {
+      const hs = horseScores[i]!;
+      const hrNo = String(hs.hrNo);
+      const entry = entryMap.get(hrNo);
+      const jScore = jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
+      const finalScore = finalScores[i] ?? 50;
       const compact: Record<string, unknown> = {
         n: hs.chulNo ?? hrNo,
         h: hs.hrName ?? entry?.hrName ?? '',
         j: entry?.jkName ?? '',
         fs: finalScore,
-        hs: hScore,
+        hs: hs.score ?? 50,
         js: Math.round(jScore * 100) / 100,
       };
 
@@ -1813,10 +1873,16 @@ ${JSON.stringify(compactEntries)}
   }
 
   /**
-   * horseScores에서 승식별 기본 조합 유도 (2마리/3마리 승식은 3개 조합)
+   * horseScores에서 승식별 기본 조합 유도 (2마리/3마리 승식은 3개 조합).
+   * 정렬은 score 기준만 사용. 점수 반영(배당 등)은 상단 finalScore/blend 로직에서 처리.
    */
   private deriveBetTypePredictionsFromHorseScores(
-    horseScores: Array<{ hrNo?: string; chulNo?: string; score?: number }>,
+    horseScores: Array<{
+      hrNo?: string;
+      chulNo?: string;
+      score?: number;
+      winProb?: number;
+    }>,
   ): BetTypePredictions {
     const id = (h: { hrNo?: string; chulNo?: string }) =>
       (h?.hrNo ?? h?.chulNo ?? '').toString().trim();
@@ -1922,7 +1988,7 @@ ${JSON.stringify(compactEntries)}
   }
 
   /**
-   * chulNo(출주번호) 또는 hrNo → hrNo(마번) 정규화
+   * chulNo(출전번호) 또는 hrNo → hrNo 정규화 (내부 식별용)
    * 정확도 계산·일관된 표시를 위해 entries 기반 매핑
    */
   private resolveToHrNo(

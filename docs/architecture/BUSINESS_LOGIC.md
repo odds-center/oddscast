@@ -106,6 +106,7 @@ flowchart TD
 - `horseScores`: Gemini 결과 (API/UI 호환). reason, strengths, weaknesses 포함
 - `horseScoreResult`: Python calculate_score v2 원본 (sub 6요소, risk, winProb, tags)
 - `analysisData`: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md), [KRA_ANALYSIS_STRATEGY.md](../specs/KRA_ANALYSIS_STRATEGY.md) 참고
+- 점수에 배당 반영(배당 있으면 finalScore 블렌딩). 배당·승식 원칙: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) 참고
 
 ### 1.7 예측 정확도 자동 업데이트
 
@@ -114,6 +115,11 @@ flowchart TD
 1. 해당 경주의 `Prediction`(COMPLETED) 조회
 2. 예측 상위 3마리 vs 실제 결과 상위 3마리 비교 (hrNo 기준)
 3. 일치 비율로 `Prediction.accuracy`(%) 계산 후 저장
+
+### 1.8 경주 상태 (종료/예정)
+
+- **종료(COMPLETED)** 는 KRA 결과 API로 결과가 DB에 적재된 경주에만 설정된다. 날짜가 지났다고 해서 COMPLETED로 바꾸지 않는다.
+- 클라이언트·API는 **DB의 `race.status`만**으로 종료/예정을 판단한다. 상세: [RACE_STATUS_AND_KRA.md](../features/RACE_STATUS_AND_KRA.md).
 
 ---
 

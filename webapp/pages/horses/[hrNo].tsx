@@ -67,7 +67,7 @@ export default function HorseProfilePage() {
         isEmpty={isEmpty}
         emptyIcon='User'
         emptyTitle='마필 정보가 없습니다'
-        emptyDescription='해당 마번의 경주 이력이 없습니다.'
+        emptyDescription='해당 말의 경주 이력이 없습니다.'
         loadingLabel='마필 정보 불러오는 중...'
       >
         {profile && (

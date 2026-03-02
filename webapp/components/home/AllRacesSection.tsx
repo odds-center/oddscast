@@ -165,7 +165,13 @@ export default function AllRacesSection() {
               header: '상태',
               headerClassName: 'w-20 cell-center',
               align: 'center',
-              render: (row) => <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} />,
+              render: (row) => (
+                <StatusBadge
+                  status={row.status ?? row.raceStatus ?? ''}
+                  rcDate={row.rcDate}
+                  stTime={row.stTime}
+                />
+              ),
             },
             {
               key: 'detail',

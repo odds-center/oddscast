@@ -22,6 +22,11 @@ function toYyyyMmDd(s: string): string {
   return s.replace(/-/g, '').slice(0, 8);
 }
 
+/** Today in KST as YYYY-MM-DD for date input default */
+function getTodayKstDate(): string {
+  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
+}
+
 function getErrorMessage(err: unknown): string {
   if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
     return (err as { message: string }).message;
@@ -62,10 +67,7 @@ export default function KraPage() {
   const queryClient = useQueryClient();
   const dateFromQuery = router.query.date as string | undefined;
 
-  const [syncDate, setSyncDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
+  const [syncDate, setSyncDate] = useState(() => getTodayKstDate());
 
   useEffect(() => {
     if (dateFromQuery && /^\d{8}$/.test(dateFromQuery)) {
@@ -99,6 +101,8 @@ export default function KraPage() {
       ),
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const msg = (res as { message?: string })?.message;
       const data = res as { races?: number; monthsProcessed?: number };
       if (data?.monthsProcessed != null) {
@@ -121,6 +125,9 @@ export default function KraPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const msg = (res as { message?: string })?.message ?? '경주 결과 동기화 완료';
       toast.success(msg);
     },
@@ -132,6 +139,8 @@ export default function KraPage() {
     mutationFn: (date: string) => adminKraApi.syncDetails(toYyyyMmDd(date)),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       toast.success('상세정보(훈련·장구 등) 동기화 완료');
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
@@ -156,6 +165,9 @@ export default function KraPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       toast.success((res as { message?: string })?.message ?? '전체 적재 완료');
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
@@ -166,6 +178,8 @@ export default function KraPage() {
     mutationFn: (date?: string) => adminKraApi.seedSample(date ? toYyyyMmDd(date) : undefined),
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       const r = res as { races?: number; entries?: number };
       toast.success(`샘플 데이터 적재: ${r?.races ?? 0}경주, ${r?.entries ?? 0}출마`);
     },
@@ -182,6 +196,9 @@ export default function KraPage() {
     },
     onSuccess: (res: unknown) => {
       queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
       toast.success(`과거 데이터 적재 완료: ${(res as { processed?: number })?.processed ?? 0}일`);
     },
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
@@ -193,7 +210,7 @@ export default function KraPage() {
     queryFn: () => adminKraApi.getStatus(),
   });
 
-  const { data: logsData, isLoading: logsLoading } = useQuery({
+  const { data: logsData, isLoading: logsLoading, error: logsError, refetch: refetchLogs } = useQuery({
     queryKey: ['kra-sync-logs', logEndpointFilter, syncDate],
     queryFn: () =>
       adminKraApi.getSyncLogs({
@@ -601,7 +618,20 @@ export default function KraPage() {
                 기준일: {syncDate}
               </span>
             </div>
-            {logsLoading ? (
+            {logsError ? (
+              <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>동기화 로그를 불러오는 중 오류가 발생했습니다.</p>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='mt-2'
+                  onClick={() => refetchLogs()}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            ) : logsLoading ? (
               <div className='py-8 flex justify-center'>
                 <LoadingSpinner size='md' label='동기화 로그 불러오는 중...' />
               </div>

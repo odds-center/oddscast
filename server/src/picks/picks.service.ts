@@ -15,9 +15,11 @@ import { serializeItemsWithRace } from '../common/serializers/kra.serializer';
 @Injectable()
 export class PicksService {
   constructor(
-    @InjectRepository(UserPick) private readonly userPickRepo: Repository<UserPick>,
+    @InjectRepository(UserPick)
+    private readonly userPickRepo: Repository<UserPick>,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
   ) {}
 
   async create(userId: number, dto: CreatePickDto) {
@@ -60,7 +62,7 @@ export class PicksService {
               : null,
           }
         : null;
-      return item ? serializeItemsWithRace([item])[0] ?? item : null;
+      return item ? (serializeItemsWithRace([item])[0] ?? item) : null;
     }
 
     const created = await this.userPickRepo.save({
@@ -88,7 +90,7 @@ export class PicksService {
             : null,
         }
       : null;
-    return item ? serializeItemsWithRace([item])[0] ?? item : null;
+    return item ? (serializeItemsWithRace([item])[0] ?? item) : null;
   }
 
   async findByUser(userId: number, page = 1, limit = 20) {
@@ -112,7 +114,9 @@ export class PicksService {
         : null,
     }));
     return {
-      picks: serializeItemsWithRace(items as Parameters<typeof serializeItemsWithRace>[0]),
+      picks: serializeItemsWithRace(
+        items as Parameters<typeof serializeItemsWithRace>[0],
+      ),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -139,7 +143,11 @@ export class PicksService {
           }
         : null,
     };
-    return serializeItemsWithRace([item] as Parameters<typeof serializeItemsWithRace>[0])[0] ?? item;
+    return (
+      serializeItemsWithRace([item] as Parameters<
+        typeof serializeItemsWithRace
+      >[0])[0] ?? item
+    );
   }
 
   async delete(userId: number, raceId: number) {
@@ -159,11 +167,14 @@ export class PicksService {
 
     let correct = 0;
     for (const pick of picks) {
-      const results = await this.resultRepo.find({
-        where: { raceId: pick.raceId },
-        order: { ordInt: 'ASC', ord: 'ASC' },
-        select: ['hrNo', 'ord'],
-      });
+      const results = await this.resultRepo
+        .createQueryBuilder('rr')
+        .select(['rr.hrNo', 'rr.ord'])
+        .where('rr.raceId = :raceId', { raceId: pick.raceId })
+        .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+        .orderBy('rr.ordInt', 'ASC')
+        .addOrderBy('rr.ord', 'ASC')
+        .getMany();
       if (results.length === 0) continue;
       const isHit = this.checkPickHit(
         pick.pickType,
@@ -182,11 +193,14 @@ export class PicksService {
 
     const map = new Map<number, number>();
     for (const pick of picks) {
-      const results = await this.resultRepo.find({
-        where: { raceId: pick.raceId },
-        order: { ordInt: 'ASC', ord: 'ASC' },
-        select: ['hrNo', 'ord'],
-      });
+      const results = await this.resultRepo
+        .createQueryBuilder('rr')
+        .select(['rr.hrNo', 'rr.ord'])
+        .where('rr.raceId = :raceId', { raceId: pick.raceId })
+        .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+        .orderBy('rr.ordInt', 'ASC')
+        .addOrderBy('rr.ord', 'ASC')
+        .getMany();
       if (results.length === 0) continue;
       const isHit = this.checkPickHit(
         pick.pickType,
@@ -219,7 +233,11 @@ export class PicksService {
         if (!rank1 || !rank2) return false;
         const set12 = new Set([rank1.hrNo, rank2.hrNo]);
         const setPickQ = new Set(hrNos);
-        return set12.size === 2 && setPickQ.size === 2 && [...set12].every((h) => setPickQ.has(h));
+        return (
+          set12.size === 2 &&
+          setPickQ.size === 2 &&
+          [...set12].every((h) => setPickQ.has(h))
+        );
       }
       case 'EXACTA':
         return (
@@ -234,7 +252,11 @@ export class PicksService {
         if (!rank1 || !rank2 || !rank3) return false;
         const set123 = new Set([rank1.hrNo, rank2.hrNo, rank3.hrNo]);
         const setPick = new Set(hrNos);
-        return set123.size === 3 && setPick.size === 3 && [...set123].every((h) => setPick.has(h));
+        return (
+          set123.size === 3 &&
+          setPick.size === 3 &&
+          [...set123].every((h) => setPick.has(h))
+        );
       }
       case 'TRIPLE':
         return (

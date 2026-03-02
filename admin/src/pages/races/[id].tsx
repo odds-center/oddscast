@@ -10,6 +10,7 @@ import Card from '@/components/common/Card';
 import PageLoading from '@/components/common/PageLoading';
 import Button from '@/components/common/Button';
 import { adminRacesApi, adminKraApi, AdminAIApi } from '@/lib/api/admin';
+import { isRaceActuallyEnded, getDisplayRaceStatus } from '@/lib/utils';
 
 type EditRaceForm = {
   rcName?: string;
@@ -117,7 +118,7 @@ function BetTypePredictionsTable({
   return (
     <div className='mt-4 pt-4 border-t border-gray-200'>
       <label className='block text-sm font-medium text-gray-700 mb-2'>예측 승식 (AI 도출 결과)</label>
-      <p className='text-xs text-gray-500 mb-2'>승식별로 AI가 도출한 추천 마번·조합과 도출 근거입니다.</p>
+      <p className='text-xs text-gray-500 mb-2'>승식별로 AI가 도출한 추천 출전번호·조합과 도출 근거입니다.</p>
       <div className='overflow-x-auto'>
         <table className='w-full min-w-[400px] text-sm border-collapse border border-gray-200 rounded-lg'>
           <thead>
@@ -162,6 +163,7 @@ interface RaceDetail {
   rcName?: string;
   rcDate?: string;
   rcTime?: string;
+  stTime?: string;
   meet?: string;
   meetName?: string;
   rcDist?: string;
@@ -180,7 +182,7 @@ export default function RaceDetailPage() {
   const queryClient = useQueryClient();
   const [showEditModal, setShowEditModal] = useState(false);
 
-  const { data: raceData, isLoading } = useQuery({
+  const { data: raceData, isLoading, error: raceError, refetch: refetchRace } = useQuery({
     queryKey: ['race', id],
     queryFn: () => adminRacesApi.getOne(id as string),
     enabled: !!id,
@@ -253,6 +255,7 @@ export default function RaceDetailPage() {
     mutationFn: (date: string) => adminKraApi.syncResults(date),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['race', id] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
       toast.success('경기 결과 적재 요청이 완료되었습니다.');
     },
     onError: (err: unknown) => {
@@ -290,6 +293,29 @@ export default function RaceDetailPage() {
     );
   }
 
+  if (raceError) {
+    return (
+      <>
+        <Head>
+          <title>경주 상세 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>경주 정보를 불러오는 중 오류가 발생했습니다.</p>
+            <div className='mt-4 flex justify-center gap-2'>
+              <Button variant='secondary' size='sm' onClick={() => refetchRace()}>
+                다시 시도
+              </Button>
+              <Button variant='ghost' size='sm' onClick={() => router.back()}>
+                돌아가기
+              </Button>
+            </div>
+          </div>
+        </Layout>
+      </>
+    );
+  }
+
   if (!race) {
     return (
       <Layout>
@@ -312,7 +338,18 @@ export default function RaceDetailPage() {
         <div className='space-y-4'>
           <div className='flex items-center justify-between'>
             <div>
-              <h1 className='text-xl font-bold text-gray-900'>{race.rcName}</h1>
+              <div className='flex items-center gap-2'>
+                <h1 className='text-xl font-bold text-gray-900'>{race.rcName}</h1>
+                <span
+                  className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${
+                    (getDisplayRaceStatus(race.status, race.rcDate, race.stTime ?? race.rcTime) || '').toUpperCase() === 'COMPLETED'
+                      ? 'bg-green-100 text-green-800'
+                      : 'bg-blue-100 text-blue-800'
+                  }`}
+                >
+                  {(getDisplayRaceStatus(race.status, race.rcDate, race.stTime ?? race.rcTime) || '').toUpperCase() === 'COMPLETED' ? '완료' : '예정'}
+                </span>
+              </div>
               <p className='mt-2 text-sm text-gray-600'>경주 상세 정보</p>
             </div>
             <div className='flex gap-2'>
@@ -410,7 +447,8 @@ export default function RaceDetailPage() {
                         <table className='w-full min-w-[280px] text-sm border-collapse'>
                           <thead>
                             <tr className='border-b border-gray-200 bg-gray-50 text-left'>
-                              <th className='py-2 px-2 font-semibold text-gray-700'>마번</th>
+                              <th className='py-2 px-2 font-semibold text-gray-700'>출전번호</th>
+                              <th className='py-2 px-2 font-semibold text-gray-700'>마명</th>
                               <th className='py-2 px-2 font-semibold text-gray-700'>점수</th>
                               <th className='py-2 px-2 font-semibold text-gray-700'>순위</th>
                             </tr>
@@ -420,6 +458,7 @@ export default function RaceDetailPage() {
                               (prediction.scores?.horseScores ?? prediction.horseScores) as Array<{
                                 horseNo?: string;
                                 hrNo?: string;
+                                hrName?: string;
                                 chulNo?: string;
                                 score?: number;
                                 rank?: number;
@@ -429,7 +468,8 @@ export default function RaceDetailPage() {
                               .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
                               .map((h, i) => (
                                 <tr key={i} className='border-b border-gray-100'>
-                                  <td className='py-1.5 px-2'>{h.horseNo ?? h.chulNo ?? h.hrNo ?? '-'}</td>
+                                  <td className='py-1.5 px-2'>{h.chulNo ?? h.horseNo ?? '-'}</td>
+                                  <td className='py-1.5 px-2'>{h.hrName ?? '-'}</td>
                                   <td className='py-1.5 px-2'>{h.score != null ? h.score : '-'}</td>
                                   <td className='py-1.5 px-2'>{h.rank != null ? h.rank : '-'}</td>
                                 </tr>
@@ -474,8 +514,7 @@ export default function RaceDetailPage() {
                   <table className='w-full min-w-[640px] text-sm border-collapse'>
                     <thead>
                       <tr className='border-b border-gray-200 bg-gray-50 text-left'>
-                        <th className='py-2 px-2 font-semibold text-gray-700'>출주번호</th>
-                        <th className='py-2 px-2 font-semibold text-gray-700'>마번</th>
+                        <th className='py-2 px-2 font-semibold text-gray-700'>출전번호</th>
                         <th className='py-2 px-2 font-semibold text-gray-700'>마명</th>
                         <th className='py-2 px-2 font-semibold text-gray-700'>기수</th>
                         <th className='py-2 px-2 font-semibold text-gray-700'>조교사</th>
@@ -492,7 +531,6 @@ export default function RaceDetailPage() {
                       {race.entries.map((e, i) => (
                         <tr key={e.id ?? i} className='border-b border-gray-100 hover:bg-gray-50/50'>
                           <td className='py-1.5 px-2'>{e.chulNo ?? '-'}</td>
-                          <td className='py-1.5 px-2 font-medium'>{e.hrNo ?? '-'}</td>
                           <td className='py-1.5 px-2'>{e.hrName ?? '-'}</td>
                           <td className='py-1.5 px-2 text-gray-600'>{e.jkName ?? '-'}</td>
                           <td className='py-1.5 px-2 text-gray-600'>{e.trName ?? '-'}</td>
@@ -523,7 +561,9 @@ export default function RaceDetailPage() {
               )}
             </Card>
 
-            {race.results && race.results.length > 0 && (
+            {isRaceActuallyEnded(race.rcDate, race.stTime ?? race.rcTime) &&
+              race.results &&
+              race.results.length > 0 && (
               <Card title='경주 결과' description='KRA 결과(API4_3) 적재분' className='lg:col-span-2'>
                 <div className='overflow-x-auto'>
                   <table className='w-full min-w-[520px] text-sm border-collapse'>

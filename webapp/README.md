@@ -6,7 +6,7 @@ Next.js 반응형 웹앱 (port 3000)
 
 ```bash
 pnpm install
-# 루트에서 env 생성: ./scripts/setup-env.sh (webapp/.env 생성)
+# 루트에서 셋업: ./scripts/setup.sh (webapp/.env 포함 생성)
 pnpm run dev
 ```
 

@@ -19,7 +19,7 @@
 | **WebApp**   | Next.js               | 반응형 웹 (Desktop/Mobile 자동 전환) |
 | **Backend**  | NestJS (Node.js)      | API 서버 + Control Tower        |
 | **Admin**    | Next.js               | 관리자 대시보드                 |
-| **Database** | PostgreSQL (Prisma) | 관계형 데이터 관리              |
+| **Database** | PostgreSQL (TypeORM) | 관계형 데이터 관리              |
 | **AI**       | Google Gemini API     | 분석 기반 승부 예측 코멘트      |
 
 ---
@@ -44,16 +44,14 @@ goldenrace/
 # 루트에서 의존성 설치
 pnpm install
 
-# env 파일 생성 (server, webapp, admin, mobile 각 .env) + Prisma Client 생성
-./scripts/setup-env.sh
-# 덮어쓰기: ./scripts/setup-env.sh --force
+# 로컬 셋업 (env 생성, Docker Postgres, DB 스키마 적용)
+./scripts/setup.sh
 ```
 
 ### 1. Server (NestJS)
 
 ```bash
 cd server
-pnpm run db:init     # 스키마 반영 + seed.sql 초기 데이터
 pnpm run dev
 # → http://localhost:3001
 # Swagger: http://localhost:3001/docs
@@ -86,7 +84,7 @@ pnpm run start
 
 ```bash
 pnpm run build        # server + webapp + admin 전체 빌드
-pnpm run build:server # server만 (prisma generate 자동 실행)
+pnpm run build:server # NestJS 서버만
 ```
 
 ---

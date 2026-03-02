@@ -1,6 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { User } from '../database/entities/user.entity';
 import { UserDailyFortune } from '../database/entities/user-daily-fortune.entity';
 import {
   MESSAGE_OVERALL_POOL,
@@ -34,7 +35,10 @@ function pickRandomN<T>(arr: T[], n: number): T[] {
 @Injectable()
 export class FortuneService {
   constructor(
-    @InjectRepository(UserDailyFortune) private readonly fortuneRepo: Repository<UserDailyFortune>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
+    @InjectRepository(UserDailyFortune)
+    private readonly fortuneRepo: Repository<UserDailyFortune>,
   ) {}
 
   private getTodayDate(): string {
@@ -46,6 +50,10 @@ export class FortuneService {
   }
 
   async getOrCreateToday(userId: number): Promise<TodaysFortuneDto> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
     const date = this.getTodayDate();
     const existing = await this.fortuneRepo.findOne({
       where: { userId, date },

@@ -11,7 +11,12 @@ import { Subscription } from '../database/entities/subscription.entity';
 import { SubscriptionPlan } from '../database/entities/subscription-plan.entity';
 import { BillingHistory } from '../database/entities/billing-history.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
-import { SubscriptionStatus, PaymentStatus, TicketType, TicketStatus } from '../database/db-enums';
+import {
+  SubscriptionStatus,
+  PaymentStatus,
+  TicketType,
+  TicketStatus,
+} from '../database/db-enums';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 import {
   PaymentSubscribeDto,
@@ -30,10 +35,14 @@ export class PaymentsService {
   private tossClient: TossPaymentsBillingClient | null = null;
 
   constructor(
-    @InjectRepository(Subscription) private readonly subscriptionRepo: Repository<Subscription>,
-    @InjectRepository(SubscriptionPlan) private readonly planRepo: Repository<SubscriptionPlan>,
-    @InjectRepository(BillingHistory) private readonly billingHistoryRepo: Repository<BillingHistory>,
-    @InjectRepository(PredictionTicket) private readonly predictionTicketRepo: Repository<PredictionTicket>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(SubscriptionPlan)
+    private readonly planRepo: Repository<SubscriptionPlan>,
+    @InjectRepository(BillingHistory)
+    private readonly billingHistoryRepo: Repository<BillingHistory>,
+    @InjectRepository(PredictionTicket)
+    private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private config: ConfigService,
     private subscriptionsService: SubscriptionsService,
   ) {

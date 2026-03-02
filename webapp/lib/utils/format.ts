@@ -6,18 +6,31 @@
 const LOCALE = 'ko-KR';
 const TZ = 'Asia/Seoul';
 
+/** Today as YYYYMMDD in KST (for race date comparison). */
+function getTodayKstYyyymmdd(): string {
+  const s = new Date().toLocaleString('en-CA', { timeZone: TZ }).slice(0, 10);
+  return s.replace(/-/g, '');
+}
+
+/** Today's calendar date in KST (for header display and race-day check). */
+export function getTodayKstDate(): { year: number; month: number; day: number; weekDay: number } {
+  const ymd = getTodayKstYyyymmdd();
+  const year = parseInt(ymd.slice(0, 4), 10);
+  const month = parseInt(ymd.slice(4, 6), 10);
+  const day = parseInt(ymd.slice(6, 8), 10);
+  const noonKst = new Date(`${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T12:00:00+09:00`);
+  const weekDay = noonKst.getUTCDay();
+  return { year, month, day, weekDay };
+}
+
 // ─── Date ───
 
-/** Returns true if rcDate(YYYYMMDD) is before today — date-only check (no time). Prefer isPastRaceDateTime when stTime is available. */
+/** Returns true if rcDate(YYYYMMDD) is before today (KST). Prefer isPastRaceDateTime when stTime is available. */
 export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
   if (norm.length < 8) return false;
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth() + 1).padStart(2, '0');
-  const d = String(today.getDate()).padStart(2, '0');
-  return norm < `${y}${m}${d}`;
+  return norm < getTodayKstYyyymmdd();
 }
 
 /**
@@ -38,16 +51,12 @@ export function isPastRaceDateTime(
   return isPastRaceDate(rcDate);
 }
 
-/** Returns true if rcDate(YYYYMMDD) is today */
+/** Returns true if rcDate(YYYYMMDD) is today (KST). */
 export function isTodayRcDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
   if (norm.length < 8) return false;
-  const today = new Date();
-  const y = today.getFullYear();
-  const m = String(today.getMonth() + 1).padStart(2, '0');
-  const d = String(today.getDate()).padStart(2, '0');
-  return norm === `${y}${m}${d}`;
+  return norm === getTodayKstYyyymmdd();
 }
 
 /** YYYYMMDD or YYYY-MM-DD → "2025.02.15" */
@@ -59,8 +68,8 @@ export function formatRcDate(rcDate: string | undefined): string {
 }
 
 /**
- * Parse KRA stTime ("14:00" or "1400") with rcDate (YYYYMMDD) to Date in local time.
- * Returns null if invalid.
+ * Parse KRA stTime ("14:00" or "1400") with rcDate (YYYYMMDD) as KST.
+ * Returns Date (UTC ms) so comparison with Date.now() is correct.
  */
 export function parseStTimeToDate(
   stTime: string | null | undefined,
@@ -74,10 +83,11 @@ export function parseStTimeToDate(
     timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
   const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
   if (Number.isNaN(hour) || hour < 0 || hour > 23) return null;
-  const y = parseInt(norm.slice(0, 4), 10);
-  const m = parseInt(norm.slice(4, 6), 10) - 1;
-  const d = parseInt(norm.slice(6, 8), 10);
-  const date = new Date(y, m, d, hour, minute, 0, 0);
+  const y = norm.slice(0, 4);
+  const m = norm.slice(4, 6);
+  const d = norm.slice(6, 8);
+  const iso = `${y}-${m}-${d}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+09:00`;
+  const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
@@ -92,6 +102,61 @@ export function minutesUntilStart(
   const start = parseStTimeToDate(stTime, rcDate);
   if (!start) return null;
   return Math.floor((start.getTime() - Date.now()) / 60_000);
+}
+
+/** Default buffer (minutes) after race start to consider race "ended" for display/KRA sync. */
+const RACE_END_BUFFER_MINUTES = 20;
+
+/**
+ * Race end time (start + buffer). Used to decide "실제 종료" on frontend and when to sync results.
+ * If no stTime, returns end of rcDate day in KST (23:59) so we don't treat as ended before the day is over.
+ */
+export function getRaceEndTime(
+  rcDate: string | null | undefined,
+  stTime: string | null | undefined,
+  bufferMinutes: number = RACE_END_BUFFER_MINUTES,
+): Date | null {
+  if (!rcDate || typeof rcDate !== 'string') return null;
+  const norm = rcDate.replace(/-/g, '').slice(0, 8);
+  if (norm.length < 8) return null;
+  const start = parseStTimeToDate(stTime, rcDate);
+  if (start) {
+    const end = new Date(start.getTime() + bufferMinutes * 60 * 1000);
+    return end;
+  }
+  const endOfDayKst = new Date(
+    `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
+  );
+  return endOfDayKst;
+}
+
+/**
+ * True when race end time (start + buffer) is in the past. Use for client-side "종료" vs "예정".
+ * Even if server returns COMPLETED, show as 예정/진행 until race end time has passed.
+ */
+export function isRaceActuallyEnded(
+  rcDate: string | null | undefined,
+  stTime?: string | null,
+  bufferMinutes: number = RACE_END_BUFFER_MINUTES,
+): boolean {
+  const end = getRaceEndTime(rcDate, stTime, bufferMinutes);
+  if (!end) return false;
+  return end.getTime() < Date.now();
+}
+
+/**
+ * Display status: "종료" only when server says COMPLETED and race end time has passed.
+ * Use this for UI so we don't show "종료" or results for races that haven't actually finished.
+ */
+export function getDisplayRaceStatus(
+  serverStatus: string | null | undefined,
+  rcDate: string | null | undefined,
+  stTime?: string | null,
+): string {
+  const s = (serverStatus ?? '').trim();
+  if (s.toUpperCase() !== 'COMPLETED') return s || '';
+  if (!isRaceActuallyEnded(rcDate, stTime)) return 'SCHEDULED';
+  return s;
 }
 
 /** YYYYMMDD → "February 15" (month and day in Korean) */

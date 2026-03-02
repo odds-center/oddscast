@@ -6,7 +6,8 @@ import { GlobalConfig } from '../database/entities/global-config.entity';
 @Injectable()
 export class GlobalConfigService {
   constructor(
-    @InjectRepository(GlobalConfig) private readonly configRepo: Repository<GlobalConfig>,
+    @InjectRepository(GlobalConfig)
+    private readonly configRepo: Repository<GlobalConfig>,
   ) {}
 
   async getAll(): Promise<Record<string, string>> {

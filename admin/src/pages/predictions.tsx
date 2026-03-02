@@ -44,7 +44,7 @@ export default function PredictionsListPage() {
     retryAfter?: number;
   } | null>(null);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: listError, refetch: refetchList } = useQuery({
     queryKey: ['admin', 'predictions', 'list', page, statusFilter],
     queryFn: () =>
       AdminAIApi.getPredictionsList({
@@ -241,6 +241,20 @@ export default function PredictionsListPage() {
           </Card>
 
           <Card>
+            {listError && (
+              <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>예측 목록을 불러오는 중 오류가 발생했습니다.</p>
+                <Button
+                  type='button'
+                  variant='secondary'
+                  size='sm'
+                  className='mt-2'
+                  onClick={() => refetchList()}
+                >
+                  다시 시도
+                </Button>
+              </div>
+            )}
             <div className='mb-4 flex flex-wrap items-center gap-4'>
               <div className='flex items-center gap-2'>
                 <label className='text-sm font-medium text-gray-700'>상태 필터</label>

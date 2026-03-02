@@ -16,7 +16,10 @@ import {
   ActivateSubscriptionDto,
   CancelSubscriptionDto,
 } from './dto/subscription.dto';
-import type { SubscriptionPlanRow, SubscriptionRow } from '../database/db-enums';
+import type {
+  SubscriptionPlanRow,
+  SubscriptionRow,
+} from '../database/db-enums';
 
 const BILLING_PERIOD_DAYS = 30;
 
@@ -33,14 +36,18 @@ export interface SubscriptionStatusResult {
 @Injectable()
 export class SubscriptionsService {
   constructor(
-    @InjectRepository(Subscription) private readonly subscriptionRepo: Repository<Subscription>,
-    @InjectRepository(SubscriptionPlan) private readonly planRepo: Repository<SubscriptionPlan>,
+    @InjectRepository(Subscription)
+    private readonly subscriptionRepo: Repository<Subscription>,
+    @InjectRepository(SubscriptionPlan)
+    private readonly planRepo: Repository<SubscriptionPlan>,
     @InjectRepository(PredictionTicket)
     private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private readonly dataSource: DataSource,
   ) {}
 
-  private async resolvePlan(planId?: string | number): Promise<SubscriptionPlan> {
+  private async resolvePlan(
+    planId?: string | number,
+  ): Promise<SubscriptionPlan> {
     if (planId != null && planId !== '') {
       const plan = await this.planRepo.findOne({
         where: { id: Number(planId) },
@@ -103,6 +110,7 @@ export class SubscriptionsService {
         billingKey: dto.billingKey ?? null,
         status: SubscriptionStatus.PENDING,
         startedAt: now,
+        updatedAt: now,
       }),
     );
     const withPlan = await this.subscriptionRepo.findOne({
@@ -325,7 +333,8 @@ export class SubscriptionsService {
     if (!plan) throw new NotFoundException('플랜을 찾을 수 없습니다.');
     if (data.displayName !== undefined) plan.displayName = data.displayName;
     if (data.description !== undefined) plan.description = data.description;
-    if (data.originalPrice !== undefined) plan.originalPrice = data.originalPrice;
+    if (data.originalPrice !== undefined)
+      plan.originalPrice = data.originalPrice;
     if (data.vat !== undefined) plan.vat = data.vat;
     if (data.totalPrice !== undefined) plan.totalPrice = data.totalPrice;
     if (data.baseTickets !== undefined) plan.baseTickets = data.baseTickets;
@@ -358,6 +367,7 @@ export class SubscriptionsService {
         `플랜 코드 '${data.planName}'가 이미 존재합니다.`,
       );
     }
+    const now = new Date();
     const plan = this.planRepo.create({
       planName: data.planName,
       displayName: data.displayName,
@@ -371,6 +381,7 @@ export class SubscriptionsService {
       matrixTickets: 0,
       isActive: data.isActive !== false,
       sortOrder: data.sortOrder ?? 0,
+      updatedAt: now,
     });
     return this.planRepo.save(plan);
   }

@@ -7,9 +7,7 @@ import { HorsesController } from './horses.controller';
 import { HorsesService } from './horses.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([RaceResult, RaceEntry, Race]),
-  ],
+  imports: [TypeOrmModule.forFeature([RaceResult, RaceEntry, Race])],
   controllers: [HorsesController],
   providers: [HorsesService],
   exports: [HorsesService],

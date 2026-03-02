@@ -31,16 +31,19 @@ export interface JockeyHistoryItemDto {
 @Injectable()
 export class JockeysService {
   constructor(
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
   ) {}
 
   async getProfile(jkNo: string): Promise<JockeyProfileDto | null> {
-    const results = await this.resultRepo.find({
-      where: { jkNo },
-      relations: ['race'],
-      order: { createdAt: 'DESC' },
-      take: 200,
-    });
+    const results = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoinAndSelect('rr.race', 'race')
+      .where('rr.jkNo = :jkNo', { jkNo })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('rr.createdAt', 'DESC')
+      .take(200)
+      .getMany();
     if (results.length === 0) return null;
 
     const normalResults = results.filter((r) => {
@@ -108,13 +111,15 @@ export class JockeysService {
     total: number;
     totalPages: number;
   }> {
-    const [withRace, total] = await this.resultRepo.findAndCount({
-      where: { jkNo },
-      relations: ['race'],
-      order: { race: { rcDate: 'DESC' } },
-      skip: (page - 1) * limit,
-      take: limit,
-    });
+    const [withRace, total] = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoinAndSelect('rr.race', 'race')
+      .where('rr.jkNo = :jkNo', { jkNo })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .orderBy('race.rcDate', 'DESC')
+      .skip((page - 1) * limit)
+      .take(limit)
+      .getManyAndCount();
 
     const items: JockeyHistoryItemDto[] = withRace.map((rr) => ({
       raceId: rr.raceId,

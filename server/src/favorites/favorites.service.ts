@@ -43,6 +43,7 @@ export class FavoritesService {
   }
 
   async create(userId: number, dto: CreateFavoriteDto) {
+    const now = new Date();
     const favorite = this.favoriteRepo.create({
       userId,
       type: dto.type as FavoriteType,
@@ -52,6 +53,7 @@ export class FavoritesService {
       memo: dto.memo ?? null,
       priority: (dto.priority as FavoritePriority) ?? FavoritePriority.MEDIUM,
       tags: dto.tags ?? [],
+      updatedAt: now,
     });
     return this.favoriteRepo.save(favorite);
   }
@@ -152,6 +154,7 @@ export class FavoritesService {
         },
       });
       if (existing) continue;
+      const now = new Date();
       await this.favoriteRepo.save(
         this.favoriteRepo.create({
           userId,
@@ -160,8 +163,10 @@ export class FavoritesService {
           targetName: item.targetName ?? '',
           targetData: item.targetData ?? null,
           memo: item.memo ?? null,
-          priority: (item.priority as FavoritePriority) ?? FavoritePriority.MEDIUM,
+          priority:
+            (item.priority as FavoritePriority) ?? FavoritePriority.MEDIUM,
           tags: item.tags ?? [],
+          updatedAt: now,
         }),
       );
       inserted++;

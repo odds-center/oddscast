@@ -14,7 +14,13 @@ import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Prediction, Race, RaceEntry, RaceResult, TrainerResult]),
+    TypeOrmModule.forFeature([
+      Prediction,
+      Race,
+      RaceEntry,
+      RaceResult,
+      TrainerResult,
+    ]),
     AnalysisModule,
     GlobalConfigModule,
     NotificationsModule,

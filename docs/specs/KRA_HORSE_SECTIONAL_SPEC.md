@@ -56,10 +56,10 @@
 
 ## 5. 실제 API 호출 샘플
 
-`server/scripts/fetch-kra-sample.mjs`에서 `horseSectional` 엔드포인트 호출 후  
+KRA API `horseSectional` 엔드포인트 호출  
 `kra-sample-responses/horseSectional-{rcDate}.json`에 저장됩니다.
 
-**실행**: `KRA_SERVICE_KEY=xxx node scripts/fetch-kra-sample.mjs [YYYYMMDD]`
+**호출**: Admin KRA 동기화 또는 서버 KRA 서비스.
 
 ---
 

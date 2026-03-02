@@ -59,10 +59,10 @@
 
 ## 5. 실제 API 호출 샘플
 
-`server/scripts/fetch-kra-sample.mjs`에서 `trainerInfo` 엔드포인트 호출 후  
+KRA API `trainerInfo` 엔드포인트 호출 (Admin 또는 curl 등)  
 `kra-sample-responses/trainerInfo-{rcDate}.json`에 저장됩니다.
 
-**실행**: `KRA_SERVICE_KEY=xxx node scripts/fetch-kra-sample.mjs [YYYYMMDD]`
+**호출**: Admin KRA 동기화 또는 서버에서 동일 엔드포인트 사용.
 
 ### response.body.items.item 구조
 

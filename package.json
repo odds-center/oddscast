@@ -4,10 +4,7 @@
   "packageManager": "pnpm@10.29.3",
   "scripts": {
     "dev": "pnpm run --parallel dev:server dev:webapp",
-    "setup-env": "node scripts/setup-env.mjs",
-    "setup-env:force": "node scripts/setup-env.mjs --force",
-    "setup-env:generate": "node scripts/setup-env.mjs --generate",
-    "setup-env:interactive": "node scripts/setup-env.mjs --interactive",
+    "setup": "bash scripts/setup.sh",
     "dev:server": "pnpm --filter server dev",
     "dev:webapp": "pnpm --filter webapp dev",
     "dev:admin": "pnpm --filter oddscast-admin dev",

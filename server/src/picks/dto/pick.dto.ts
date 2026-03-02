@@ -47,7 +47,7 @@ export class CreatePickDto {
   ])
   pickType: PickType;
 
-  @ApiProperty({ description: '고른 마번 배열', example: ['1', '5'] })
+  @ApiProperty({ description: '고른 출전번호(또는 말 식별) 배열', example: ['1', '5'] })
   @IsArray()
   @IsString({ each: true })
   hrNos: string[];

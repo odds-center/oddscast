@@ -78,8 +78,7 @@ export class SinglePurchasesService {
         if (cfg.originalPrice != null) {
           const originalPrice = Number(cfg.originalPrice);
           const vat = (cfg.vat as number) ?? Math.round(originalPrice * 0.1);
-          const total =
-            (cfg.totalPrice as number) ?? originalPrice + vat;
+          const total = (cfg.totalPrice as number) ?? originalPrice + vat;
           return {
             id: (cfg.id as string) ?? 'default',
             configName: (cfg.configName as string) ?? 'single_purchase',

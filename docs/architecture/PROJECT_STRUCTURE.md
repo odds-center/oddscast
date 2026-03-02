@@ -18,7 +18,6 @@ goldenrace/
 │   ├── architecture/           # 아키텍처 문서 (이 파일들)
 │   ├── specs/                  # 기술 명세
 │   └── legal/                  # 법적 고지
-├── server_legacy_nestjs/       # 🗂️ 레거시 서버 (참고용)
 ├── .cursorrules                # 🤖 AI 에이전트 규칙
 └── README.md                   # 프로젝트 README
 ```
@@ -37,7 +36,7 @@ WebApp          →  Server (/api)
 
 ## Server (`server/`)
 
-> NestJS + Prisma + PostgreSQL 백엔드
+> NestJS + TypeORM + PostgreSQL 백엔드
 
 ```
 server/
@@ -55,9 +54,11 @@ server/
 │   │   └── interceptors/
 │   │       └── response.interceptor.ts    # 응답 래핑 { data, status }
 │   │
-│   ├── prisma/                          # 📦 Prisma 서비스
-│   │   ├── prisma.module.ts
-│   │   └── prisma.service.ts
+│   ├── database/                        # 📦 TypeORM 엔티티·DataSource
+│   │   ├── data-source.ts               # TypeORM DataSource 설정
+│   │   ├── db-enums.ts                  # DB Enum 상수
+│   │   ├── entities/                    # 엔티티 정의 (User, Race, Prediction 등)
+│   │   └── migrations/                  # 마이그레이션 (선택)
 │   │
 │   ├── auth/                            # 🔐 인증 모듈
 │   │   ├── auth.module.ts
@@ -146,9 +147,6 @@ server/
 │       ├── single-purchases.module.ts
 │       ├── single-purchases.controller.ts
 │       └── single-purchases.service.ts
-│
-├── prisma/
-│   └── schema.prisma                    # DB 스키마 정의 (12 모델)
 │
 ├── scripts/                             # 🐍 Python 분석 스크립트 (예정)
 │   ├── analysis.py                      # 메인 분석 로직
@@ -307,7 +305,7 @@ admin/
 │       ├── races/
 │       ├── users/
 │       └── ...
-└── .env                        # NEXT_PUBLIC_* (./scripts/setup-env.sh 로 생성)
+└── .env                        # NEXT_PUBLIC_* (./scripts/setup.sh 로 생성)
 ```
 
 ---

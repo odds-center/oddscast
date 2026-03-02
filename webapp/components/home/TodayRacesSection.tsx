@@ -9,18 +9,16 @@ import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 import { StatusBadge, LinkBadge } from '@/components/ui';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@oddscast/shared';
 
-const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun
+const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
 const LIVE_REFETCH_MS = 5 * 60 * 1000;
 
-function isRaceDay(d: Date): boolean {
-  return RACE_DAYS.includes(d.getDay());
-}
-
 export default function TodayRacesSection() {
-  const isTodayRaceDay = isRaceDay(new Date());
+  const { weekDay } = getTodayKstDate();
+  const isTodayRaceDay = RACE_DAYS.includes(weekDay);
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['races', 'today'],
     placeholderData: keepPreviousData,
@@ -32,6 +30,13 @@ export default function TodayRacesSection() {
   });
 
   const races = (data ?? []) as RaceDto[];
+  const allEnded =
+    races.length > 0 &&
+    races.every(
+      (r) =>
+        (r.status ?? (r as RaceDto & { raceStatus?: string }).raceStatus) === 'COMPLETED' &&
+        isRaceActuallyEnded(r.rcDate, r.stTime),
+    );
 
   return (
     <HomeSection
@@ -55,7 +60,13 @@ export default function TodayRacesSection() {
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>
       ) : (
-        <DataTable
+        <>
+          {allEnded && (
+            <p className='mb-3 text-center text-sm text-text-secondary'>
+              오늘의 경주가 모두 종료되었습니다. 결과를 확인해 보세요.
+            </p>
+          )}
+          <DataTable
           className='data-table-kra'
           columns={[
             {
@@ -104,6 +115,7 @@ export default function TodayRacesSection() {
           getRowHref={(row) => routes.races.detail(row.id)}
           compact
         />
+        </>
       )}
     </HomeSection>
   );

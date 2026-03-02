@@ -53,7 +53,7 @@ export class ResultsController {
   }
 
   @Get('search')
-  @ApiOperation({ summary: '결과 검색 (q: 마명/마번/기수명)' })
+  @ApiOperation({ summary: '결과 검색 (q: 마명/출전번호/기수명)' })
   search(@Query() filters: ResultSearchDto) {
     return this.resultsService.search(filters);
   }

@@ -53,8 +53,8 @@ interface ApiResponse<T> {
 
 - **Shared Types**: When updating a DTO on the Server, the corresponding Type definition in the
   Mobile App MUST be updated immediately.
-- **Enums**: Ensure Enums (e.g., `RaceStatus`, `UserRole`) are identical in both `schema.prisma`
-  (Server) and `types/<entity>.ts` (Mobile).
+- **Enums**: Ensure Enums (e.g., `RaceStatus`, `UserRole`) are identical in both Server
+  (`server/src/database/db-enums.ts` or TypeORM entities) and `types/<entity>.ts` (Mobile).
 
 ## 4. Mobile App Refactoring (Specifics)
 

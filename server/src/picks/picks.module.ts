@@ -7,9 +7,7 @@ import { PicksController } from './picks.controller';
 import { PicksService } from './picks.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([UserPick, Race, RaceResult]),
-  ],
+  imports: [TypeOrmModule.forFeature([UserPick, Race, RaceResult])],
   controllers: [PicksController],
   providers: [PicksService],
   exports: [PicksService],

@@ -1,0 +1,24 @@
+# Deploy to Railway on push to main. Requires repo secrets: RAILWAY_TOKEN.
+# Optional: RAILWAY_SERVICE_ID (or use --service <name> in run).
+# See: docs/RAILWAY_DEPLOYMENT.md, docs/TODO_CONTINUE.md
+
+name: Deploy
+
+on:
+  push:
+    branches: [master, main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    container: ghcr.io/railwayapp/cli:latest
+    env:
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy server to Railway
+        run: railway up --service server
+        continue-on-error: true

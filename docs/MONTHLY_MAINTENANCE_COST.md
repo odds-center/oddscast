@@ -9,7 +9,7 @@
 
 ### 시나리오별 월 예상 비용 (2025년 기준)
 
-> **Railway 통합 구성**: Server(NestJS), WebApp(Next.js), Admin(Next.js), DB(PostgreSQL) 모두 Railway에서 운영. Prisma ORM으로 DB 연결.
+> **Railway 통합 구성**: Server(NestJS), WebApp(Next.js), Admin(Next.js), DB(PostgreSQL) 모두 Railway에서 운영. TypeORM으로 DB 연결.
 
 | 시나리오 | 월 비용 (KRW) | 비고 |
 |---------|---------------|------|
@@ -48,18 +48,18 @@
 
 ---
 
-### 2.2 데이터베이스 (PostgreSQL + Prisma)
+### 2.2 데이터베이스 (PostgreSQL + TypeORM)
 
-> Prisma ORM으로 PostgreSQL 연결. DB 호스팅은 **Railway PostgreSQL** add-on 사용 (Railway에서 통합 관리).
+> TypeORM으로 PostgreSQL 연결. DB 호스팅은 **Railway PostgreSQL** add-on 사용 (Railway에서 통합 관리).
 
 | 구분 | 월 비용 | 비고 |
 |------|---------|------|
 | **Railway PostgreSQL** | 사용량 기반 | CPU·메모리·스토리지·egress 종량제 |
 | **idle 기준** | 약 **$0.40** (~500원) | 거의 유휴 시 최소 비용 |
 | **일반 사용** | **$2~5** (~2.5~6.5천원) | 소규모 트래픽 기준 |
-| **Prisma** | **$0** | ORM 라이브러리, 추가 비용 없음 |
+| **TypeORM** | **$0** | ORM 라이브러리, 추가 비용 없음 |
 
-- **연결**: `DATABASE_URL` (PostgreSQL connection string)로 Prisma 설정
+- **연결**: `DATABASE_URL` (PostgreSQL connection string)로 TypeORM DataSource 설정
 - **과금**: Railway 서비스와 동일하게 프로젝트 총 사용량에 합산
 
 ---
@@ -73,7 +73,7 @@
 | **NestJS Server** | API 서버 (port 3001) | Hobby $5 크레딧 내 |
 | **Next.js WebApp** | 메인 클라이언트 (port 3000) | 동일 프로젝트 |
 | **Next.js Admin** | 관리자 패널 (port 3002) | 동일 프로젝트 |
-| **PostgreSQL** | DB (Prisma 연결) | add-on, 사용량 기반 |
+| **PostgreSQL** | DB (TypeORM 연결) | add-on, 사용량 기반 |
 
 | Railway 플랜 | 월 비용 | 포함 크레딧 |
 |-------------|---------|-------------|

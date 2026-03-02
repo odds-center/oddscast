@@ -43,10 +43,20 @@ export class Bet {
   @Column({ type: 'jsonb' })
   selections!: Record<string, unknown>;
 
-  @Column({ name: 'betStatus', type: 'enum', enum: BetStatus, default: BetStatus.PENDING })
+  @Column({
+    name: 'betStatus',
+    type: 'enum',
+    enum: BetStatus,
+    default: BetStatus.PENDING,
+  })
   betStatus!: BetStatus;
 
-  @Column({ name: 'betResult', type: 'enum', enum: BetResult, default: BetResult.PENDING })
+  @Column({
+    name: 'betResult',
+    type: 'enum',
+    enum: BetResult,
+    default: BetResult.PENDING,
+  })
   betResult!: BetResult;
 
   @Column({ name: 'betTime', type: 'timestamp', precision: 3 })
@@ -55,7 +65,12 @@ export class Bet {
   @Column({ name: 'raceTime', type: 'timestamp', precision: 3, nullable: true })
   raceTime!: Date | null;
 
-  @Column({ name: 'resultTime', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'resultTime',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   resultTime!: Date | null;
 
   @Column({ name: 'actualWin', type: 'int', nullable: true })

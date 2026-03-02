@@ -164,7 +164,7 @@ async getTrackInfo(params: {
 
 ### DB 매핑 (Race 모델)
 
-| API 필드   | Prisma 필드   |
+| API 필드   | DB/엔티티 필드 |
 | ---------- | ------------- |
 | meet       | meet, meetName |
 | rcDate     | rcDate        |

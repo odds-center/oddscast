@@ -7,15 +7,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, IsNull, Not, Repository } from 'typeorm';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { Prediction } from '../database/entities/prediction.entity';
-import { TicketStatus, TicketType, PredictionStatus } from '../database/db-enums';
+import {
+  TicketStatus,
+  TicketType,
+  PredictionStatus,
+} from '../database/db-enums';
 import { PredictionsService } from '../predictions/predictions.service';
 import { UseTicketDto } from '../common/dto/payment.dto';
 
 @Injectable()
 export class PredictionTicketsService {
   constructor(
-    @InjectRepository(PredictionTicket) private readonly ticketRepo: Repository<PredictionTicket>,
-    @InjectRepository(Prediction) private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(PredictionTicket)
+    private readonly ticketRepo: Repository<PredictionTicket>,
+    @InjectRepository(Prediction)
+    private readonly predictionRepo: Repository<Prediction>,
     private readonly dataSource: DataSource,
     private readonly predictionsService: PredictionsService,
   ) {}
@@ -45,7 +51,8 @@ export class PredictionTicketsService {
       .orderBy('t.expiresAt', 'ASC')
       .limit(1)
       .getOne();
-    if (!ticketToUse) throw new BadRequestException('사용 가능한 예측권이 없습니다');
+    if (!ticketToUse)
+      throw new BadRequestException('사용 가능한 예측권이 없습니다');
 
     let pred = await this.predictionRepo.findOne({
       where: { raceId, status: PredictionStatus.COMPLETED },
@@ -58,7 +65,11 @@ export class PredictionTicketsService {
         pred = await this.predictionsService.generatePrediction(raceId);
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        if (msg.includes('429') || msg.includes('quota') || msg.includes('Too Many Requests')) {
+        if (
+          msg.includes('429') ||
+          msg.includes('quota') ||
+          msg.includes('Too Many Requests')
+        ) {
           throw new BadRequestException(
             'AI 예측 생성 한도가 초과되었습니다. 잠시 후 다시 시도해 주세요.',
           );
@@ -98,11 +109,14 @@ export class PredictionTicketsService {
       this.ticketRepo
         .createQueryBuilder('t')
         .where('t.userId = :userId', { userId })
-        .andWhere('(t.status = :expired OR (t.status = :avail AND t.expiresAt < :now))', {
-          expired: TicketStatus.EXPIRED,
-          avail: TicketStatus.AVAILABLE,
-          now,
-        })
+        .andWhere(
+          '(t.status = :expired OR (t.status = :avail AND t.expiresAt < :now))',
+          {
+            expired: TicketStatus.EXPIRED,
+            avail: TicketStatus.AVAILABLE,
+            now,
+          },
+        )
         .getCount(),
     ]);
     return {
@@ -159,7 +173,13 @@ export class PredictionTicketsService {
         predictionId: t.predictionId,
         accuracy: t.prediction?.accuracy ?? null,
         race: race
-          ? { id: race.id, meet: race.meet, rcDate: race.rcDate, rcNo: race.rcNo, rcName: race.rcName }
+          ? {
+              id: race.id,
+              meet: race.meet,
+              rcDate: race.rcDate,
+              rcNo: race.rcNo,
+              rcName: race.rcName,
+            }
           : undefined,
       };
     });
@@ -196,7 +216,12 @@ export class PredictionTicketsService {
     const normalized = date.replace(/-/g, '').slice(0, 8);
     const now = new Date();
     const existing = await this.ticketRepo.findOne({
-      where: { userId, type: TicketType.MATRIX, status: TicketStatus.USED, matrixDate: normalized },
+      where: {
+        userId,
+        type: TicketType.MATRIX,
+        status: TicketStatus.USED,
+        matrixDate: normalized,
+      },
     });
     if (existing && existing.expiresAt >= now) {
       const t = await this.ticketRepo.findOne({ where: { id: existing.id } });
@@ -212,14 +237,17 @@ export class PredictionTicketsService {
       .orderBy('t.expiresAt', 'ASC')
       .limit(1);
     const ticketEntity = await availQb.getOne();
-    if (!ticketEntity) throw new BadRequestException('사용 가능한 종합 예측권이 없습니다');
+    if (!ticketEntity)
+      throw new BadRequestException('사용 가능한 종합 예측권이 없습니다');
 
     await this.ticketRepo.update(ticketEntity.id, {
       status: TicketStatus.USED,
       usedAt: now,
       matrixDate: normalized,
     });
-    const updated = await this.ticketRepo.findOne({ where: { id: ticketEntity.id } });
+    const updated = await this.ticketRepo.findOne({
+      where: { id: ticketEntity.id },
+    });
     return { ticket: updated, alreadyUsed: false };
   }
 
@@ -237,7 +265,11 @@ export class PredictionTicketsService {
         where: { userId, type: TicketType.MATRIX, status: TicketStatus.USED },
       }),
     ]);
-    return { available: availCount, used: usedCount, total: availCount + usedCount };
+    return {
+      available: availCount,
+      used: usedCount,
+      total: availCount + usedCount,
+    };
   }
 
   async purchaseMatrixTickets(userId: number, count: number) {
@@ -303,6 +335,10 @@ export class PredictionTicketsService {
       );
       tickets.push(t);
     }
-    return { granted: tickets.length, type, tickets: tickets.map((t) => ({ id: t.id })) };
+    return {
+      granted: tickets.length,
+      type,
+      tickets: tickets.map((t) => ({ id: t.id })),
+    };
   }
 }

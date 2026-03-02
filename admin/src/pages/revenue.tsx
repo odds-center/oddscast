@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import Button from '@/components/common/Button';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { formatCurrency, formatNumber } from '@/lib/utils';
 import { TrendingUp, TrendingDown, DollarSign, Users, CreditCard, Ticket, Zap } from 'lucide-react';
@@ -14,7 +15,7 @@ export default function RevenuePage() {
   const [period, setPeriod] = useState('month');
 
   // 수익 통계 (카드 + 테이블)
-  const { data: revenueData, isLoading } = useQuery({
+  const { data: revenueData, isLoading, error: revenueError, refetch: refetchRevenue } = useQuery({
     queryKey: ['revenue-stats', period],
     queryFn: () => adminStatisticsApi.getRevenue(period),
   });
@@ -41,6 +42,24 @@ export default function RevenuePage() {
         </Head>
         <Layout>
           <PageLoading label='수익 데이터를 불러오는 중...' />
+        </Layout>
+      </>
+    );
+  }
+
+  if (revenueError) {
+    return (
+      <>
+        <Head>
+          <title>수익 대시보드 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>수익 데이터를 불러오는 중 오류가 발생했습니다.</p>
+            <Button variant='secondary' size='sm' className='mt-4' onClick={() => refetchRevenue()}>
+              다시 시도
+            </Button>
+          </div>
         </Layout>
       </>
     );

@@ -36,7 +36,11 @@ export class Prediction {
   @Column({ name: 'postRaceSummary', type: 'text', nullable: true })
   postRaceSummary!: string | null;
 
-  @Column({ type: 'enum', enum: PredictionStatus, default: PredictionStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: PredictionStatus,
+    default: PredictionStatus.PENDING,
+  })
   status!: PredictionStatus;
 
   @CreateDateColumn({ name: 'createdAt' })

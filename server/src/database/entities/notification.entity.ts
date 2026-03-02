@@ -24,10 +24,18 @@ export class Notification {
   @Column({ type: 'text' })
   message!: string;
 
-  @Column({ type: 'enum', enum: NotificationType, default: NotificationType.SYSTEM })
+  @Column({
+    type: 'enum',
+    enum: NotificationType,
+    default: NotificationType.SYSTEM,
+  })
   type!: NotificationType;
 
-  @Column({ type: 'enum', enum: NotificationCategory, default: NotificationCategory.GENERAL })
+  @Column({
+    type: 'enum',
+    enum: NotificationCategory,
+    default: NotificationCategory.GENERAL,
+  })
   category!: NotificationCategory;
 
   @Column({ type: 'boolean', default: false })

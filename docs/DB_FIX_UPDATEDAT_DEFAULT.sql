@@ -1,0 +1,1 @@
+-- Moved to: docs/db/patches/updated_at_default.sql (all DB SQL in docs/db/)

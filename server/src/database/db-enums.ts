@@ -1,5 +1,5 @@
 /**
- * DB enums (previously from @prisma/client). Use for guards, DTOs, and type safety.
+ * DB enums and shared types. Use for guards, DTOs, entities, and type safety.
  */
 
 export enum UserRole {
@@ -139,7 +139,7 @@ export enum PickType {
   TRIPLE = 'TRIPLE',
 }
 
-/** JSON column type when using raw SQL (replaces Prisma.InputJsonValue). */
+/** JSON column type for API/DB (e.g. metadata, data fields). */
 export type InputJsonValue =
   | string
   | number
@@ -148,29 +148,7 @@ export type InputJsonValue =
   | Record<string, unknown>
   | unknown[];
 
-/** Compatibility namespace for code still referencing Prisma.* types (no runtime Prisma). */
-// eslint-disable-next-line @typescript-eslint/no-namespace -- backward compatibility for Prisma.* type references
-export namespace Prisma {
-  export type InputJsonValue =
-    | string
-    | number
-    | boolean
-    | null
-    | Record<string, unknown>
-    | unknown[];
-  export type RaceUpdateInput = Record<string, unknown>;
-  export type DbNull = null;
-  export type PredictionWhereInput = Record<string, unknown>;
-  export type PredictionUpdateInput = Record<string, unknown>;
-  export type EnumPredictionStatusFilter = string;
-  export type EnumPredictionStatusFieldUpdateOperationsInput = { set?: string };
-  export type RaceWhereInput = Record<string, unknown>;
-  export type EnumRaceStatusFilter = string;
-  export type RaceResultWhereInput = Record<string, unknown>;
-  export type RaceResultUpdateInput = Record<string, unknown>;
-}
-
-/** Stub types (previously from Prisma generated client). Define row shapes when using raw SQL. */
+/** Stub row types for raw SQL or DTO mapping. */
 export interface SubscriptionPlanRow {
   id: number;
   planName: string;

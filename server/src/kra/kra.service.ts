@@ -1,10 +1,15 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  Inject,
+} from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { HttpService } from '@nestjs/axios';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
@@ -40,12 +45,18 @@ export class KraService {
     private configService: ConfigService,
     private globalConfigService: GlobalConfigService,
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
-    @InjectRepository(RaceEntry) private readonly entryRepo: Repository<RaceEntry>,
-    @InjectRepository(RaceResult) private readonly resultRepo: Repository<RaceResult>,
-    @InjectRepository(Training) private readonly trainingRepo: Repository<Training>,
-    @InjectRepository(JockeyResult) private readonly jockeyResultRepo: Repository<JockeyResult>,
-    @InjectRepository(TrainerResult) private readonly trainerResultRepo: Repository<TrainerResult>,
-    @InjectRepository(KraSyncLog) private readonly kraSyncLogRepo: Repository<KraSyncLog>,
+    @InjectRepository(RaceEntry)
+    private readonly entryRepo: Repository<RaceEntry>,
+    @InjectRepository(RaceResult)
+    private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(Training)
+    private readonly trainingRepo: Repository<Training>,
+    @InjectRepository(JockeyResult)
+    private readonly jockeyResultRepo: Repository<JockeyResult>,
+    @InjectRepository(TrainerResult)
+    private readonly trainerResultRepo: Repository<TrainerResult>,
+    @InjectRepository(KraSyncLog)
+    private readonly kraSyncLogRepo: Repository<KraSyncLog>,
     private resultsService: ResultsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
@@ -148,53 +159,140 @@ export class KraService {
    * 2. Race day morning finalization (Fri, Sat, Sun 08:00)
    * Final sync before races start. Updates jockeys, weights, and ratings.
    */
-  @Cron('0 8 * * 5,6,0') // Fri, Sat, Sun at 08:00
+  @Cron('0 8 * * 5,6,0', { timeZone: 'Asia/Seoul' }) // Fri, Sat, Sun 08:00 KST
   async syncRaceDayMorning() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Race Day Morning Sync (Finalization)');
-    const today = this.getTodayDateString();
+    const today = this.getTodayKstYyyymmdd();
 
     await this.syncEntrySheet(today);
     await this.syncAnalysisData(today);
   }
 
+  /** Buffer (minutes) after race start to consider race "ended" for result sync. */
+  private static readonly RACE_END_BUFFER_MINUTES = 20;
+
   /**
-   * 3. Real-time results (Fri, Sat, Sun 10:30-19:00, every 30 mins)
-   * Fetches race results as they happen and updates analysis data.
+   * Parse race end time (rcDate + stTime + buffer) as UTC ms. KST assumed for rcDate/stTime.
+   * stTime: "10:30" or "1030". If missing, use end of rcDate day (23:59 KST).
    */
-  @Cron('0,30 10-19 * * 5,6,0')
+  private getRaceEndTimeMs(
+    rcDate: string,
+    stTime: string | null,
+    bufferMin = 20,
+  ): number {
+    const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
+    if (norm.length < 8) return 0;
+    if (stTime && String(stTime).trim()) {
+      const t = String(stTime).trim().replace(':', '');
+      const hour =
+        t.length >= 2 ? parseInt(t.slice(0, 2), 10) : parseInt(t, 10);
+      const min = t.length >= 4 ? parseInt(t.slice(2, 4), 10) : 0;
+      if (!Number.isNaN(hour) && hour >= 0 && hour <= 23) {
+        const iso = `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T${String(hour).padStart(2, '0')}:${String(min).padStart(2, '0')}:00+09:00`;
+        const start = new Date(iso).getTime();
+        if (!Number.isNaN(start)) return start + bufferMin * 60 * 1000;
+      }
+    }
+    const endOfDay = new Date(
+      `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
+    ).getTime();
+    return endOfDay;
+  }
+
+  /**
+   * Returns rcDates that have at least one race whose end time (stTime + buffer) has passed and status is not COMPLETED.
+   * Used to trigger result sync only when races have actually finished.
+   */
+  private async getRacesThatShouldHaveEnded(): Promise<string[]> {
+    const today = this.getTodayKstYyyymmdd();
+    const yesterday = this.getYesterdayKstYyyymmdd();
+    const now = Date.now();
+    const bufferMin = KraService.RACE_END_BUFFER_MINUTES;
+
+    const races = await this.raceRepo.find({
+      where: [{ rcDate: today }, { rcDate: yesterday }],
+      select: ['id', 'rcDate', 'stTime', 'status'],
+    });
+    const dates = new Set<string>();
+    for (const r of races) {
+      if (r.status === RaceStatus.COMPLETED) continue;
+      const endMs = this.getRaceEndTimeMs(r.rcDate, r.stTime, bufferMin);
+      if (endMs > 0 && endMs < now) dates.add(r.rcDate);
+    }
+    return Array.from(dates);
+  }
+
+  /** Last sync time per rcDate (ms) to avoid hammering KRA. Cooldown 10 min. */
+  private lastResultSyncByDate: Record<string, number> = {};
+  private static readonly RESULT_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
+
+  /**
+   * 3a. Race-end–aware result sync (every 5 min on Fri/Sat/Sun KST).
+   * Only syncs dates that have races whose end time has passed and are not yet COMPLETED.
+   */
+  @Cron('*/5 10-20 * * 5,6,0', { timeZone: 'Asia/Seoul' })
+  async syncResultsWhenRacesEnded() {
+    if (!this.ensureServiceKey()) return;
+    const dates = await this.getRacesThatShouldHaveEnded();
+    if (dates.length === 0) return;
+
+    const now = Date.now();
+    for (const rcDate of dates) {
+      const last = this.lastResultSyncByDate[rcDate] ?? 0;
+      if (now - last < KraService.RESULT_SYNC_COOLDOWN_MS) continue;
+      this.logger.log(
+        `[Race-end sync] Fetching results for ${rcDate} (race end time passed)`,
+      );
+      try {
+        await this.fetchRaceResults(rcDate, true);
+        this.lastResultSyncByDate[rcDate] = now;
+        await this.syncAnalysisData(rcDate);
+      } catch (err) {
+        this.logger.warn(`[Race-end sync] Failed for ${rcDate}`, err);
+      }
+    }
+  }
+
+  /**
+   * 3b. Real-time results fallback: every 15 min on race days (backup if race-end sync missed).
+   */
+  @Cron('*/15 10-20 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async syncRealtimeResults() {
     if (!this.ensureServiceKey()) return;
-    this.logger.log('Running Real-time Result Sync');
-    const today = this.getTodayDateString();
-
+    this.logger.log(
+      'Running Real-time Result Sync (KST race-day batch fallback)',
+    );
+    const today = this.getTodayKstYyyymmdd();
     await this.fetchRaceResults(today, true);
     await this.syncAnalysisData(today);
   }
 
   /**
-   * 4. Previous day results post-sync (daily 06:00)
+   * 4. Previous day results post-sync (daily 06:00 KST)
    * Only runs if yesterday was a race day (Fri/Sat/Sun).
    * Ensures results are cached in DB for immediate user access.
    */
-  @Cron('0 6 * * *') // Daily 06:00
+  @Cron('0 6 * * *', { timeZone: 'Asia/Seoul' })
   async syncPreviousDayResults() {
     if (!this.ensureServiceKey()) return;
-    const yesterday = dayjs().subtract(1, 'day');
-    const day = yesterday.day();
-    if (day !== 0 && day !== 5 && day !== 6) return;
-    const dateStr = this.formatYyyyMmDd(yesterday);
-    this.logger.log(`Running Previous Day Result Sync: ${dateStr}`);
-    await this.fetchRaceResults(dateStr, true);
+    const yesterdayStr = this.getYesterdayKstYyyymmdd();
+    const y = parseInt(yesterdayStr.slice(0, 4), 10);
+    const m = parseInt(yesterdayStr.slice(4, 6), 10) - 1;
+    const day = parseInt(yesterdayStr.slice(6, 8), 10);
+    const weekday = new Date(y, m, day).getDay();
+    if (weekday !== 0 && weekday !== 5 && weekday !== 6) return;
+    this.logger.log(`Running Previous Day Result Sync: ${yesterdayStr}`);
+    await this.fetchRaceResults(yesterdayStr, true);
   }
 
   /**
-   * 5. Data consistency check (daily 05:30)
+   * 5. Data consistency check (daily 05:30 KST)
    * Finds past races that have plans but no results (orphaned),
    * and attempts to backfill their results from KRA API.
    * Scans the last 14 days to catch any missed results.
    */
-  @Cron('0 30 5 * * *') // Daily 05:30
+  @Cron('0 30 5 * * *', { timeZone: 'Asia/Seoul' })
   async syncOrphanedRaceResults() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running orphaned race results check (last 14 days)');
@@ -217,7 +315,9 @@ export class KraService {
       .andWhere('r.status = :status', { status: RaceStatus.COMPLETED })
       .orderBy('r.rcDate', 'ASC')
       .getMany();
-    const orphanedRaces = allInRange.filter((r) => !raceIdsWithResults.includes(r.id));
+    const orphanedRaces = allInRange.filter(
+      (r) => !raceIdsWithResults.includes(r.id),
+    );
 
     if (orphanedRaces.length === 0) {
       this.logger.log('No orphaned races found — data is consistent');
@@ -256,6 +356,27 @@ export class KraService {
     return this.formatYyyyMmDd(dayjs());
   }
 
+  /** Today as YYYYMMDD in KST (for "past date" completion check). */
+  private getTodayKstYyyymmdd(): string {
+    const s = new Date()
+      .toLocaleString('en-CA', { timeZone: 'Asia/Seoul' })
+      .slice(0, 10);
+    return s.replace(/-/g, '');
+  }
+
+  /** Yesterday in KST as YYYYMMDD (for previous-day result sync). */
+  private getYesterdayKstYyyymmdd(): string {
+    const today = this.getTodayKstYyyymmdd();
+    const d = new Date(
+      `${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6, 8)}T12:00:00+09:00`,
+    );
+    d.setUTCDate(d.getUTCDate() - 1);
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(d.getUTCDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
+  }
+
   private getUpcomingWeekendDates(): string[] {
     const today = dayjs();
     const day = today.day(); // 0=Sun, 1=Mon, ..., 3=Wed, 4=Thu
@@ -282,6 +403,15 @@ export class KraService {
       return false;
     }
     return true;
+  }
+
+  /** Throws so Admin/API callers get a clear error instead of "0건 적재" */
+  private ensureServiceKeyOrThrow(): void {
+    if (!this.ensureServiceKey()) {
+      throw new BadRequestException(
+        'KRA_SERVICE_KEY not configured. Set KRA_SERVICE_KEY in server .env (공공데이터포털 인코딩 키).',
+      );
+    }
   }
 
   private async logKraSync(
@@ -319,13 +449,7 @@ export class KraService {
    * Uses KRA API: /API26_2/entrySheet_2
    */
   async syncEntrySheet(date: string, opts?: KraSyncProgressOptions) {
-    if (!this.ensureServiceKey()) {
-      return {
-        message: 'KRA_SERVICE_KEY not configured. Add API key to .env.',
-        races: 0,
-        entries: 0,
-      };
-    }
+    this.ensureServiceKeyOrThrow();
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     this.logger.log(`Syncing Entry Sheet for date: ${normalizedDate}`);
     const endpoint = 'entrySheet';
@@ -640,13 +764,7 @@ export class KraService {
     races: number;
     entries: number;
   }> {
-    if (!this.ensureServiceKey()) {
-      return {
-        message: 'KRA_SERVICE_KEY not configured.',
-        races: 0,
-        entries: 0,
-      };
-    }
+    this.ensureServiceKeyOrThrow();
     const d = this.normalizeToYyyyMmDd(date);
     opts?.onProgress?.(10, '경주계획표 조회 중…');
     const planRes = await this.fetchRacePlanSchedule(d);
@@ -674,9 +792,7 @@ export class KraService {
     details?: string;
     jockeys?: string;
   }> {
-    if (!this.ensureServiceKey()) {
-      return { message: 'KRA_SERVICE_KEY not configured.' };
-    }
+    this.ensureServiceKeyOrThrow();
     const d = this.normalizeToYyyyMmDd(date);
     this.logger.log(`[syncAll] Starting full sync for ${d}`);
 
@@ -725,7 +841,7 @@ export class KraService {
     dateTo: string,
     opts?: KraSyncProgressOptions,
   ) {
-    if (!this.ensureServiceKey()) return;
+    this.ensureServiceKeyOrThrow();
     this.logger.log(
       `Starting historical backfill (race days only) from ${dateFrom} to ${dateTo}`,
     );
@@ -1044,9 +1160,7 @@ export class KraService {
     races: number;
     monthsProcessed: number;
   }> {
-    if (!this.ensureServiceKey()) {
-      return { races: 0, monthsProcessed: 0 };
-    }
+    this.ensureServiceKeyOrThrow();
     let totalRaces = 0;
     for (let month = 1; month <= 12; month++) {
       const result = await this.fetchRacePlanScheduleByYearMonth(year, month);
@@ -1067,14 +1181,7 @@ export class KraService {
     entries: number;
     datesProcessed: number;
   }> {
-    if (!this.ensureServiceKey()) {
-      return {
-        message: 'KRA_SERVICE_KEY not configured.',
-        races: 0,
-        entries: 0,
-        datesProcessed: 0,
-      };
-    }
+    this.ensureServiceKeyOrThrow();
     const today = this.formatYyyyMmDd(dayjs());
     const threeMonthsLater = this.formatYyyyMmDd(dayjs().add(3, 'month'));
     const dates = this.getRaceDateRange(today, threeMonthsLater);
@@ -1117,9 +1224,7 @@ export class KraService {
     createRaceIfMissing = false,
     opts?: KraSyncProgressOptions,
   ): Promise<{ message: string; totalResults?: number }> {
-    if (!this.ensureServiceKey()) {
-      return { message: 'KRA_SERVICE_KEY not configured.', totalResults: 0 };
-    }
+    this.ensureServiceKeyOrThrow();
     this.logger.log(`Fetching race results for date: ${date}`);
     const endpoint = 'raceResult';
     const baseUrl = await this.resolveBaseUrl();
@@ -1137,7 +1242,7 @@ export class KraService {
       const start = Date.now();
       try {
         const normalizedDate = this.normalizeToYyyyMmDd(date);
-        // KRA official: API4_3/raceResult_3 (docs/legacy/KRA_OFFICIAL_GUIDE.md)
+        // KRA official: API4_3/raceResult_3 (docs/specs/KRA_RACE_RESULT_SPEC.md)
         const url = `${baseUrl}/API4_3/raceResult_3`;
         const params = {
           serviceKey: decodeURIComponent(this.serviceKey),
@@ -1210,7 +1315,11 @@ export class KraService {
 
         for (const item of items as KraApiItem[]) {
           const rcNo = String(item.rcNo ?? item.rc_no ?? '');
-          let race = await this.findRaceByMeetDateNo(meet.name, normalizedDate, rcNo);
+          let race = await this.findRaceByMeetDateNo(
+            meet.name,
+            normalizedDate,
+            rcNo,
+          );
 
           const rcNameVal = getRcName(item);
           const rcNameToSave = rcNameVal ?? rcNameFallback(rcNo);
@@ -1227,6 +1336,7 @@ export class KraService {
                 ? String(item.meet)
                 : meet.name;
             const nowRace = new Date();
+            // Create as SCHEDULED; set COMPLETED only when we have result rows with ord (below)
             await this.raceRepo.upsert(
               {
                 meet: meetName,
@@ -1238,13 +1348,17 @@ export class KraService {
                 rank: rankVal != null ? String(rankVal) : null,
                 weather: weatherVal != null ? String(weatherVal) : null,
                 track: trackVal != null ? String(trackVal) : null,
-                status: RaceStatus.COMPLETED,
+                status: RaceStatus.SCHEDULED,
                 createdAt: nowRace,
                 updatedAt: nowRace,
               },
               { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
             );
-            race = await this.findRaceByMeetDateNo(meetName, normalizedDate, rcNo);
+            race = await this.findRaceByMeetDateNo(
+              meetName,
+              normalizedDate,
+              rcNo,
+            );
           } else if (race) {
             await this.raceRepo.update(race.id, {
               rcName: rcNameToSave,
@@ -1366,7 +1480,10 @@ export class KraService {
           if (sectionalTimes) resultData.sectionalTimes = sectionalTimes;
 
           const data = resultData;
-          const sectional = (data as Record<string, unknown>).sectionalTimes as Record<string, unknown> | null | undefined;
+          const sectional = (data as Record<string, unknown>).sectionalTimes as
+            | Record<string, unknown>
+            | null
+            | undefined;
           const resultPayload = {
             ord: (data.ord ?? null) as string | null,
             ordInt: (data.ordInt ?? null) as number | null,
@@ -1388,7 +1505,10 @@ export class KraService {
             track: (data.track ?? null) as string | null,
             weather: (data.weather ?? null) as string | null,
             chaksun1: (data.chaksun1 ?? null) as number | null,
-            sectionalTimes: (sectional ?? null) as Record<string, unknown> | null,
+            sectionalTimes: (sectional ?? null) as Record<
+              string,
+              unknown
+            > | null,
           };
           if (existingResult) {
             await this.resultRepo.update(
@@ -1406,7 +1526,10 @@ export class KraService {
             );
           }
 
-          racesToUpdate.add(race.id);
+          // Only mark race COMPLETED when we have actual finish data (ord = position or fall/dq/withdrawn)
+          if (ordIntVal != null || ordTypeVal != null) {
+            racesToUpdate.add(race.id);
+          }
           totalResults++;
         }
 
@@ -1458,31 +1581,7 @@ export class KraService {
       );
     }
 
-    // If date has passed, update races for that date to COMPLETED regardless of whether results data was received
-    // (Mark as completed even if KRA API fails or data is not received)
-    const normalizedDate = this.normalizeToYyyyMmDd(date);
-    const today = dayjs().format('YYYYMMDD');
-    if (normalizedDate < today) {
-      await this.raceRepo.update(
-        {
-          rcDate: normalizedDate,
-          status: In([RaceStatus.SCHEDULED, RaceStatus.IN_PROGRESS]),
-        },
-        { status: RaceStatus.COMPLETED, updatedAt: new Date() },
-      );
-      const races = await this.raceRepo.find({
-        where: { rcDate: normalizedDate },
-        select: ['id'],
-      });
-      if (races.length > 0) {
-        this.logger.log(
-          `Marked ${races.length} past-date races as COMPLETED (rcDate=${normalizedDate})`,
-        );
-        for (const r of races) {
-          await this.cache.del(`race:${r.id}`);
-        }
-      }
-    }
+    // COMPLETED is set only when result rows are saved (above). Do not mark by date alone.
 
     return {
       message: `Synced ${totalResults} results for ${date}`,
@@ -1540,7 +1639,11 @@ export class KraService {
       );
       if (filtered.length === 0) return { message: 'No entries for race' };
 
-      const race = await this.findRaceByMeetDateNo(meet, normalizedDate, raceNo);
+      const race = await this.findRaceByMeetDateNo(
+        meet,
+        normalizedDate,
+        raceNo,
+      );
       if (!race) {
         this.logger.warn(`Race not found: ${meet} ${date} R${raceNo}`);
         return { message: 'Race not found' };
@@ -1767,12 +1870,17 @@ export class KraService {
           const trContent = String(item.trContent ?? item.tr_content ?? '');
           const place = String(item.place ?? '');
           const intensity = trType || trContent || '';
-          const trEndTime = String(item.trEndTime ?? item.tr_end_time ?? '') || null;
-          const trDuration = String(item.trDuration ?? item.tr_duration ?? '') || null;
-          const managerType = String(item.managerType ?? item.manager_type ?? '') || null;
-          const managerName = String(item.managerName ?? item.manager_name ?? '') || null;
+          const trEndTime =
+            String(item.trEndTime ?? item.tr_end_time ?? '') || null;
+          const trDuration =
+            String(item.trDuration ?? item.tr_duration ?? '') || null;
+          const managerType =
+            String(item.managerType ?? item.manager_type ?? '') || null;
+          const managerName =
+            String(item.managerName ?? item.manager_name ?? '') || null;
           const weather = String(item.weather ?? '') || null;
-          const trackCondition = String(item.trackCondition ?? item.track_condition ?? '') || null;
+          const trackCondition =
+            String(item.trackCondition ?? item.track_condition ?? '') || null;
 
           await this.trainingRepo.save(
             this.trainingRepo.create({
@@ -1819,6 +1927,7 @@ export class KraService {
   // --- Group C: Jockey Data ---
 
   async fetchJockeyTotalResults(meet?: string) {
+    this.ensureServiceKeyOrThrow();
     this.logger.log(
       `Fetching jockey total results${meet ? ` for meet ${meet}` : ''}`,
     );
@@ -2163,7 +2272,7 @@ export class KraService {
           if (race) {
             const weather = item.weather ?? race.weather;
             const track =
-              item.track ?? item.moisture
+              (item.track ?? item.moisture)
                 ? `${item.track ?? ''} (moisture ${item.moisture ?? '-'}%)`
                 : race.track;
             await this.raceRepo.update(race.id, {
@@ -2436,7 +2545,10 @@ export class KraService {
               Object.keys(stats).length > 0 ? JSON.stringify(stats) : null;
 
             if (sectionalStats) {
-              const sectionalStatsObj = JSON.parse(sectionalStats) as Record<string, unknown>;
+              const sectionalStatsObj = JSON.parse(sectionalStats) as Record<
+                string,
+                unknown
+              >;
               await this.entryRepo.update(entry.id, {
                 sectionalStats: sectionalStatsObj,
               } as Parameters<Repository<RaceEntry>['update']>[1]);
@@ -2515,7 +2627,11 @@ export class KraService {
         for (const item of items) {
           const rcNo = String(item.rcNo ?? item.rc_no ?? '');
           const hrNo = String(item.hrNo ?? item.hr_no ?? '');
-          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          const raceRow = await this.findRaceByMeetDateNo(
+            meet.name,
+            date,
+            rcNo,
+          );
           if (!raceRow) continue;
 
           const entry = await this.entryRepo.findOne({
@@ -2525,7 +2641,11 @@ export class KraService {
           if (entry) {
             const raw = item.wgHr ?? item.wg_hr ?? null;
             const horseWeight =
-              raw == null ? null : typeof raw === 'number' ? String(raw) : String(raw);
+              raw == null
+                ? null
+                : typeof raw === 'number'
+                  ? String(raw)
+                  : String(raw);
             await this.entryRepo.update(entry.id, { horseWeight });
           }
         }
@@ -2584,7 +2704,11 @@ export class KraService {
         for (const item of items) {
           const rcNo = String(item.rcNo ?? item.rc_no ?? '');
           const hrNo = String(item.hrNo ?? item.hr_no ?? '');
-          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          const raceRow = await this.findRaceByMeetDateNo(
+            meet.name,
+            date,
+            rcNo,
+          );
           if (!raceRow) continue;
 
           const entry = await this.entryRepo.findOne({
@@ -2592,11 +2716,19 @@ export class KraService {
             select: ['id'],
           });
           if (entry) {
-            const equipmentRaw = item.hrTool ?? item.equipment ?? item.equipChange ?? null;
-            const equipment = equipmentRaw != null ? String(equipmentRaw) : null;
+            const equipmentRaw =
+              item.hrTool ?? item.equipment ?? item.equipChange ?? null;
+            const equipment =
+              equipmentRaw != null ? String(equipmentRaw) : null;
             const bleedingInfoObj =
-              item.bleCnt != null || item.bleDate != null || item.medicalInfo != null
-                ? ({ bleCnt: item.bleCnt, bleDate: item.bleDate, medicalInfo: item.medicalInfo } as Record<string, unknown>)
+              item.bleCnt != null ||
+              item.bleDate != null ||
+              item.medicalInfo != null
+                ? ({
+                    bleCnt: item.bleCnt,
+                    bleDate: item.bleDate,
+                    medicalInfo: item.medicalInfo,
+                  } as Record<string, unknown>)
                 : null;
             await this.entryRepo.update(entry.id, {
               equipment,
@@ -2659,7 +2791,11 @@ export class KraService {
         for (const item of items) {
           const hrNo = String(item.hrNo ?? item.hr_no ?? '');
           const rcNo = String(item.rcNo ?? item.rc_no ?? '');
-          const raceRow = await this.findRaceByMeetDateNo(meet.name, date, rcNo);
+          const raceRow = await this.findRaceByMeetDateNo(
+            meet.name,
+            date,
+            rcNo,
+          );
           if (!raceRow) continue;
 
           const entry = await this.entryRepo.findOne({
@@ -2695,9 +2831,7 @@ export class KraService {
   }
 
   async syncAnalysisData(date: string) {
-    if (!this.ensureServiceKey()) {
-      return { message: 'KRA_SERVICE_KEY not configured.' };
-    }
+    this.ensureServiceKeyOrThrow();
     this.logger.log(
       `Syncing analysis data (Training, Equipment, etc.) for date: ${date}`,
     );

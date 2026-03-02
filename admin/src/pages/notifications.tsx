@@ -56,7 +56,7 @@ export default function NotificationsPage() {
     mode: 'onChange',
   });
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: listError, refetch: refetchList } = useQuery({
     queryKey: ['admin-notifications', page],
     queryFn: () => adminNotificationsApi.getAll({ page, limit: 20 }),
   });
@@ -143,6 +143,15 @@ export default function NotificationsPage() {
             title='알림 관리'
             description='모바일 앱 사용자에게 푸시 알림을 전송합니다. 전체/활성/구독자 대상으로 구분 전송이 가능합니다.'
           />
+
+          {listError && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>알림 목록을 불러오는 중 오류가 발생했습니다.</p>
+              <Button type='button' variant='secondary' size='sm' className='mt-2' onClick={() => refetchList()}>
+                다시 시도
+              </Button>
+            </div>
+          )}
 
           <Card title='알림 전송' description='모바일 앱 사용자들에게 푸시 알림을 전송합니다.'>
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>

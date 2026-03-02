@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import PageLoading from '@/components/common/PageLoading';
+import Button from '@/components/common/Button';
 import { adminSinglePurchaseApi } from '@/lib/api/admin';
 
 // Zod 스키마
@@ -40,7 +41,7 @@ export default function SinglePurchaseConfigPage() {
   });
 
   // 설정 조회
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error: configError, refetch: refetchConfig } = useQuery({
     queryKey: ['single-purchase-config'],
     queryFn: () => adminSinglePurchaseApi.getConfig(),
   });
@@ -90,6 +91,24 @@ export default function SinglePurchaseConfigPage() {
         </Head>
         <Layout>
           <PageLoading label='설정을 불러오는 중...' />
+        </Layout>
+      </>
+    );
+  }
+
+  if (configError) {
+    return (
+      <>
+        <Head>
+          <title>개별 구매 설정 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>설정을 불러오는 중 오류가 발생했습니다.</p>
+            <Button variant='secondary' size='sm' className='mt-4' onClick={() => refetchConfig()}>
+              다시 시도
+            </Button>
+          </div>
         </Layout>
       </>
     );

@@ -55,7 +55,7 @@ export interface CreateSubscriptionRequest {
 }
 
 /**
- * 예측권 (서버 Prisma/API 응답 형식)
+ * 예측권 (서버 API 응답 형식)
  */
 export interface PredictionTicket {
   id: string;

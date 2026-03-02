@@ -26,7 +26,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: systemConfig, isLoading } = useQuery({
+  const { data: systemConfig, isLoading, error: configError, refetch: refetchConfig } = useQuery({
     queryKey: ['system-config'],
     queryFn: () => adminSystemConfigApi.getConfig(),
   });
@@ -76,6 +76,15 @@ export default function SettingsPage() {
       <Layout>
         <div className='space-y-4'>
           <PageHeader title='설정' description='시스템 설정, AI, KRA 등 모든 Config를 Admin에서 관리합니다.' />
+
+          {configError && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>설정을 불러오는 중 오류가 발생했습니다.</p>
+              <Button type='button' variant='secondary' size='sm' className='mt-2' onClick={() => refetchConfig()}>
+                다시 시도
+              </Button>
+            </div>
+          )}
 
           <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
             <Card title='관리자 정보'>

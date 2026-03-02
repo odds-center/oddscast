@@ -98,57 +98,16 @@ TRIPLE:    1등 === hrNos[0] && 2등 === hrNos[1] && 3등 === hrNos[2]
 
 ### 5.1 UserPick
 
-```prisma
-model UserPick {
-  id        String   @id @default(uuid())
-  userId    String
-  raceId    String
-  pickType  PickType @default(SINGLE)  // 신규
-  hrNos     String[] // [1, 5] or [1, 5, 7] — 신규 (기존 hrNo 대체)
-  hrNames   String[]? // 표시용 — 신규
-  pointsAwarded Int? @default(0)  // 적중 시 지급된 포인트 — 신규
-  createdAt DateTime @default(now())
-
-  @@unique([userId, raceId])
-}
-
-enum PickType {
-  SINGLE
-  PLACE
-  QUINELLA
-  EXACTA
-  QUINELLA_PLACE
-  TRIFECTA
-  TRIPLE
-}
-```
+실제 스키마는 TypeORM 엔티티 `server/src/database/entities/` 및 `docs/db/schema.sql` 참고.  
+개념: `userId`, `raceId`, `pickType`, `hrNos`, `hrNames`, `pointsAwarded`, unique(userId, raceId). Enum PickType: SINGLE, PLACE, QUINELLA, EXACTA, QUINELLA_PLACE, TRIFECTA, TRIPLE.
 
 ### 5.2 PointConfig (포인트 지급 설정)
 
-```prisma
-model PointConfig {
-  id          String   @id @default(uuid())
-  configKey   String   @unique  // "BASE_POINTS", "SINGLE_MULTIPLIER" 등
-  configValue String   // "100", "1", "6" 등
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
+개념: configKey (unique), configValue, description. 실제는 엔티티·DDL 참고.
 
 ### 5.3 PointTicketPrice (포인트 예측권 가격)
 
-```prisma
-model PointTicketPrice {
-  id          String   @id @default(uuid())
-  pointsPerTicket Int   // 1장당 포인트 (예: 1200)
-  isActive    Boolean  @default(true)
-  effectiveFrom DateTime @default(now())
-  effectiveTo  DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-```
+개념: pointsPerTicket, isActive, effectiveFrom, effectiveTo. 실제는 엔티티·DDL 참고.
 
 ---
 
@@ -214,7 +173,7 @@ model PointTicketPrice {
 ## 9. 구현 완료 (2025-02-12)
 
 - [x] 기획안 문서
-- [x] DB 스키마 (schema.prisma) — 마이그레이션 없이 설계 단계
+- [x] DB 스키마 (TypeORM 엔티티 / DDL) — 설계·구현 반영
 - [x] PicksService: pickType, hrNos 지원
 - [x] 포인트 적중 지급 로직 (awardPickPointsForRace)
 - [x] PointsService: purchaseTicket
@@ -222,15 +181,11 @@ model PointTicketPrice {
 - [x] WebApp: 승식 선택 UI (경주 상세)
 - [x] WebApp: 포인트 표시 및 예측권 구매 (프로필)
 
-### DB 동기화 (초기 설계 단계 — migrate 없음)
+### DB 동기화
 
 ```bash
-cd server && npx prisma db push
+cd server && pnpm run migration:run
+# 또는 docs/db/schema.sql 을 DB에 적용 (또는 ./scripts/setup.sh)
 ```
 
-시드 데이터 (PointConfig, PointTicketPrice):
-
-```bash
-# PostgreSQL 직접 실행 시
-npm run db:seed  # 또는 prisma db execute --file prisma/seed.sql
-```
+시드 데이터 (PointConfig, PointTicketPrice): 별도 시드 스크립트 또는 SQL 실행.

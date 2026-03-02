@@ -170,7 +170,7 @@ async getEntryHorseWeightInfo(params: {
 
 ### DB 매핑
 
-| API 필드   | Prisma 필드   |
+| API 필드   | DB/엔티티 필드 |
 | ---------- | ------------- |
 | wgHr       | RaceResult.wgHr (e.g. `502(-2)`) |
 | wgDiff     | 별도 weightDiff 파싱 또는 JSON   |

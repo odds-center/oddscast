@@ -29,7 +29,7 @@ import { routes } from '@/lib/routes';
 import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatTime, isPastRaceDateTime } from '@/lib/utils/format';
+import { formatTime, isRaceActuallyEnded } from '@/lib/utils/format';
 import { pushRecentRaceId } from '@/lib/utils/recentRaces';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
@@ -139,8 +139,8 @@ export default function RaceDetailPage() {
     (race as { status?: string; raceStatus?: string })?.raceStatus;
   const rcDate = (race as { rcDate?: string })?.rcDate;
   const stTime = (race as { stTime?: string })?.stTime;
-  const isRaceCompleted =
-    raceStatus === 'COMPLETED' || (!!rcDate && isPastRaceDateTime(rcDate, stTime));
+  // Show as completed (results, 종료) only when server says COMPLETED and race end time has passed.
+  const isRaceCompleted = raceStatus === 'COMPLETED' && isRaceActuallyEnded(rcDate, stTime);
 
   const { data: myPick } = useQuery({
     queryKey: ['picks', 'race', id],

@@ -7,9 +7,7 @@ import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, Favorite, PredictionTicket]),
-  ],
+  imports: [TypeOrmModule.forFeature([User, Favorite, PredictionTicket])],
   controllers: [UsersController],
   providers: [UsersService],
   exports: [UsersService],

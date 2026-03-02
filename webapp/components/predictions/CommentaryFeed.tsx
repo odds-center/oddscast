@@ -34,7 +34,8 @@ export default function CommentaryFeed({ comments }: CommentaryFeedProps) {
   return (
     <div className='space-y-4'>
       {comments.map((c) => {
-        const gateNo = parseInt(c.hrNo, 10) || 0;
+        const no = c.chulNo ?? c.hrNo;
+        const gateNo = parseInt(no ?? '0', 10) || 0;
         const bgColor = getGateBgColor(gateNo);
         const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bgColor);
 
@@ -53,7 +54,7 @@ export default function CommentaryFeed({ comments }: CommentaryFeedProps) {
                   border: isLight ? '1px solid #e5e7eb' : 'none',
                 }}
               >
-                {c.hrNo}
+                {no ?? '-'}
               </span>
               <div className='flex-1 min-w-0'>
                 <div className='flex flex-wrap items-center gap-2 mb-1'>
@@ -63,7 +64,7 @@ export default function CommentaryFeed({ comments }: CommentaryFeedProps) {
                   </span>
                 </div>
                 <p className='text-sm text-foreground mb-1'>
-                  <span className='font-medium text-stone-700'>{c.hrNo}번 {c.hrName}</span>
+                  <span className='font-medium text-stone-700'>출전 {no ?? '-'} {c.hrName || ''}</span>
                 </p>
                 <p className='text-text-secondary text-sm'>
                   {highlightKeywords(c.comment, c.keywords)}

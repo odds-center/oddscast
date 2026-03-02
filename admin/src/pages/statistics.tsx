@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import Card from '@/components/common/Card';
+import Button from '@/components/common/Button';
 import { adminStatisticsApi } from '@/lib/api/admin';
 import { BarChart3, Users } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
@@ -14,13 +15,13 @@ export default function StatisticsPage() {
   const [ticketDays, setTicketDays] = useState(30);
 
   // 사용자 증가 추이
-  const { data: usersGrowth, isLoading: usersLoading } = useQuery({
+  const { data: usersGrowth, isLoading: usersLoading, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['users-growth', usersDays],
     queryFn: () => adminStatisticsApi.getUsersGrowth(usersDays),
   });
 
   // 예측권 사용량 추이
-  const { data: ticketUsageTrend, isLoading: ticketLoading } = useQuery({
+  const { data: ticketUsageTrend, isLoading: ticketLoading, error: ticketError, refetch: refetchTickets } = useQuery({
     queryKey: ['ticket-usage-trend', ticketDays],
     queryFn: () => adminStatisticsApi.getTicketUsageTrend(ticketDays),
   });
@@ -36,6 +37,24 @@ export default function StatisticsPage() {
             title='통계'
             description='사용자 증가 추이, 예측권 사용량 등 플랫폼 핵심 지표를 기간별로 확인합니다.'
           />
+
+          {(usersError || ticketError) && (
+            <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>통계를 불러오는 중 오류가 발생했습니다.</p>
+              <div className='mt-2 flex gap-2'>
+                {usersError && (
+                  <Button type='button' variant='secondary' size='sm' onClick={() => refetchUsers()}>
+                    사용자 추이 다시 시도
+                  </Button>
+                )}
+                {ticketError && (
+                  <Button type='button' variant='secondary' size='sm' onClick={() => refetchTickets()}>
+                    티켓 추이 다시 시도
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className='grid grid-cols-1 gap-4 lg:grid-cols-2'>
             {/* 사용자 증가 추이 */}

@@ -61,7 +61,7 @@ export default function SubscriptionPlansPage() {
   });
 
   // 플랜 목록 조회
-  const { data: plans, isLoading } = useQuery({
+  const { data: plans, isLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['subscription-plans'],
     queryFn: () => adminSubscriptionsApi.getPlans(),
   });
@@ -131,6 +131,28 @@ export default function SubscriptionPlansPage() {
         </Head>
         <Layout>
           <PageLoading label='구독 플랜을 불러오는 중...' />
+        </Layout>
+      </>
+    );
+  }
+
+  if (plansError) {
+    return (
+      <>
+        <Head>
+          <title>구독 플랜 관리 | OddsCast Admin</title>
+        </Head>
+        <Layout>
+          <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-6 text-center'>
+            <p className='text-amber-800 font-medium'>구독 플랜을 불러오는 중 오류가 발생했습니다.</p>
+            <button
+              type='button'
+              onClick={() => refetchPlans()}
+              className='mt-4 inline-flex items-center rounded-md border border-amber-300 bg-white px-4 py-2 text-sm font-medium text-amber-800 shadow-sm hover:bg-amber-50'
+            >
+              다시 시도
+            </button>
+          </div>
         </Layout>
       </>
     );

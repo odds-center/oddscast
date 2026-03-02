@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
+import Button from '@/components/common/Button';
 import { adminDashboardApi } from '@/lib/api/admin';
 import {
   Users, CalendarDays, DollarSign, TrendingUp, Database,
@@ -28,7 +29,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading, error: statsError, refetch: refetchStats } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: () => adminDashboardApi.getStats(),
     refetchInterval: 30000,
@@ -94,6 +95,20 @@ export default function DashboardPage() {
             description='OddsCast 관리자 대시보드. 주요 지표를 한눈에 확인하세요.'
           />
 
+          {statsError && (
+            <div className='mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+              <p>대시보드 통계를 불러오는 중 오류가 발생했습니다.</p>
+              <Button
+                type='button'
+                variant='secondary'
+                size='sm'
+                className='mt-2'
+                onClick={() => refetchStats()}
+              >
+                다시 시도
+              </Button>
+            </div>
+          )}
           {/* 통계 카드 */}
           {isLoading ? (
             <div className='grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4'>

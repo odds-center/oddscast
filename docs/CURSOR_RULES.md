@@ -17,7 +17,7 @@
 | ------------ | ---------------------------------------- | ------------------------------------------------------- |
 | 서비스 명세  | `docs/SERVICE_SPECIFICATION.md`          | 서비스 개요, 기능 총괄, 플로우, 체크리스트              |
 | 아키텍처     | `docs/architecture/ARCHITECTURE.md`      | 시스템 아키텍처, 데이터 흐름, 인증 플로우               |
-| 아키텍처     | `docs/architecture/DATABASE_SCHEMA.md`   | Prisma 12개 모델, ERD, Enum                             |
+| 아키텍처     | `docs/architecture/DATABASE_SCHEMA.md`   | TypeORM 엔티티·ERD·Enum. DDL: `docs/db/schema.sql`      |
 | 아키텍처     | `docs/architecture/API_SPECIFICATION.md` | 전체 API 엔드포인트 명세                                |
 | 아키텍처     | `docs/architecture/BUSINESS_LOGIC.md`    | AI 예측, 예측권, 구독, 결제, 알림 규칙                  |
 | 아키텍처     | `docs/architecture/PROJECT_STRUCTURE.md` | 디렉토리 구조, 모듈별 역할                              |
@@ -27,6 +27,7 @@
 | 경주 상세 UI | `docs/features/RACE_DETAIL_UI_SPEC.md`   | 경주 헤더, 결과 테이블, 배당, TabBar                    |
 | 데이터 적재  | `docs/DATA_LOADING.md`                   | KRA 동기화, 출전마, Admin 수동 적재                     |
 | 법적         | `docs/legal/LEGAL_NOTICE.md`             | 서비스 법적 고지 (약관·개인정보·환불정책 링크)          |
+| **계속 할 일** | `docs/TODO_CONTINUE.md`                 | 배포·인프라, 모니터링, 기능·콘텐츠, 기술 부채 — 진행 순서·우선순위·추천 순서 |
 
 ---
 
@@ -46,6 +47,7 @@
 | 알림 설정 관련         | `features/NOTIFICATION_SETTINGS.md` + `API_SPECIFICATION.md`                         |
 | 즐겨찾기 관련          | `BUSINESS_LOGIC.md` + `API_SPECIFICATION.md`                                         |
 | 출전마/KRA 데이터 적재 | `DATA_LOADING.md` + `guides/ADMIN_GUIDE.md`                                          |
+| 배포·인프라·모니터링   | `TODO_CONTINUE.md` + `RAILWAY_DEPLOYMENT.md` 또는 `SERVER_DEPLOYMENT_PLAN.md`        |
 | TypeScript/타입 안전성 | `COMPATIBILITY_RULES.md` §6 + `WEBAPP_DEVELOPMENT.md` §6                             |
 
 ---
@@ -57,7 +59,7 @@
 | App      | React Native (Expo) — TypeScript             |
 | Backend  | NestJS (Node.js) — API 서버 + Control Tower  |
 | Analysis | Python (pandas, numpy) — python-shell로 실행 |
-| Database | PostgreSQL — Prisma ORM                      |
+| Database | PostgreSQL — TypeORM                         |
 | AI       | Google Gemini API                            |
 | Admin    | Next.js                                      |
 | WebApp   | Next.js — 메인 클라이언트                    |
@@ -78,7 +80,7 @@ goldenrace/
 │   ├── features/
 │   ├── specs/
 │   └── legal/
-└── server_legacy_nestjs/       # 참고용
+└── ...
 ```
 
 ---
@@ -88,7 +90,7 @@ goldenrace/
 1. **NestJS가 Control Tower** — Python 스크립트는 `python-shell`로 실행
 2. **Python은 순수 계산만** — DB 접근 없음
 3. **Server-Side Caching** — 스케줄러로 Gemini 분석 미리 실행, DB 저장
-4. **Prisma ORM** — `prisma/schema.prisma` 관리
+4. **TypeORM** — `server/src/database/entities/`, DDL은 `docs/db/schema.sql` 참고 (전체 SQL: `docs/db/`)
 5. **Global API Prefix** — 모든 라우트 `/api` prefix
 6. **응답 포맷** — `{ data, status, message? }`
 7. **사행성 제거** — 베팅/배팅 없음, AI 콘텐츠 제공만
@@ -183,6 +185,14 @@ goldenrace/
 - **page/**: PageHeader, SectionCard, DataFetchState, FormInput, BackLink, FilterDateBar,
   FilterChips, Pagination, LegalFooter
 - **ui/**: Card, Badge, TabBar, LinkBadge, StatusBadge, RankBadge, Toggle, Dropdown, SectionTitle
+
+---
+
+## 계속 할 일 (TODO) — 규칙
+
+- **Planning 또는 "다음에 할 일" 논의 시** `docs/TODO_CONTINUE.md`를 먼저 확인할 것.
+- **작업 완료 시** 해당 항목 상태를 문서에서 갱신 (예: 미진행 → 완료).
+- **새 작업 추가 시** `TODO_CONTINUE.md`의 해당 섹션(배포·품질·기능·기술)에 항목을 추가하고, 필요하면 `NEXT_TASKS.md` 또는 `FEATURE_ROADMAP.md`와 맞출 것.
 
 ---
 

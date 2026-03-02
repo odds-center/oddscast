@@ -1,12 +1,24 @@
 # 아키텍처 변경 이력 (Changelog)
 
-> 2026-02-19 작업 내역  
+> 2026-02-24 누락 보완 반영  
 > **참고:** 2026년 초 서버 DB 레이어가 Prisma에서 **TypeORM**으로 전환됨. 아래 과거 항목 중 `prisma`/`schema.prisma` 언급은 당시 기준이며, **현재는 아래만 사용함.**
 
 **현재 DB 스키마 적용 (유일한 방법):**
 - DDL: `docs/db/schema.sql` — `./scripts/setup.sh` 또는 `psql $DATABASE_URL -f docs/db/schema.sql`
 - 패치: `docs/db/patches/` (updated_at_default.sql, drop_prisma_migrations.sql, login_bonus_columns.sql)
 - 엔티티: `server/src/database/entities/` — Prisma/seed 명령은 사용하지 않음.
+
+---
+
+## 2026-02-24 — 문서·API 명세 누락 보완
+
+- **API_SPECIFICATION.md**: Horses(§4-4), Fortune(§4-5), Referrals(§13-1), Weekly Preview(§13-2), Activity(§13-3) 섹션 추가. 서버 구현과 명세 일치.
+- **SERVER_COMPLETENESS.md**: 신규 작성 — 빌드·모듈·API 명세 대응표, 문서 정합성, 배포 전 점검 항목 정리. Referrals/WeeklyPreview/Activity 명세 번호 반영.
+- **WEBAPP_COMPLETENESS.md**: 경주 상세·404·홈 섹션 현황을 "적용됨"으로 갱신 (다시 시도 버튼, 경주 목록 링크).
+- **WEBAPP_ADMIN_GAPS.md**: Last updated 갱신.
+- **PROJECT_STRUCTURE.md**: 서버 — analysis, horses, jockeys, trainers, fortune, referrals, weekly-preview, activity-logs, config, health, cache, admin 모듈 추가. WebApp — index(홈), races 목록/상세/시뮬레이터/schedule, results, predictions/accuracy, weekly-preview, horses/jockeys/trainers 프로필, mypage(구독 성공/실패, 종합 예측권 구매, 예측 이력), legal/refund 보완.
+- **docs/README.md**: SERVER_COMPLETENESS, FEATURE_ROADMAP, WEBAPP_ADMIN_GAPS, WEBAPP_COMPLETENESS 링크 추가.
+- **TODO_CONTINUE.md**, **NEXT_TASKS.md**: Last updated 및 문서 동기화 항목에 최근 보완 반영.
 
 ---
 

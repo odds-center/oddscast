@@ -2,7 +2,7 @@
 
 > 로드맵·인프라·웹앱 계획 기준 정리. 우선순위는 팀 상황에 맞게 조정.
 
-**Last updated:** 2026-02-24
+**Last updated:** 2026-02-24 (문서 보완: API 명세·SERVER_COMPLETENESS·PROJECT_STRUCTURE·완성도 갱신)
 
 ---
 

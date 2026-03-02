@@ -78,10 +78,12 @@ export default function SubscriptionCheckoutSuccessPage() {
         <div className='max-w-md mx-auto'>
           <CompactPageTitle title='결제 실패' backHref={routes.mypage.subscriptions} />
           <EmptyState icon='AlertCircle' title='결제 확인 실패' description={errorMsg} />
-          <Link href={routes.mypage.subscriptions} className='btn-primary block text-center mt-4'>
-            구독 플랜으로
-          </Link>
-          <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block' />
+          <div className='flex flex-col gap-2 mt-4'>
+            <Link href={routes.mypage.subscriptions} className='btn-primary block text-center py-2.5'>
+              구독 플랜에서 다시 시도
+            </Link>
+            <BackLink href={routes.profile.index} label='정보로' className='block' />
+          </div>
         </div>
       </Layout>
     );

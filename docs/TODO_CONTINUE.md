@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
 
-**Last updated:** 2026-02-24 (Health API 명세·테스트, CI 서버 테스트 단계)
+**Last updated:** 2026-02-24 (문서·API 명세 누락 보완, PROJECT_STRUCTURE·docs/README 갱신)
 
 ---
 
@@ -84,7 +84,7 @@
 |------|------|------|
 | **TypeORM 마이그레이션 CLI 정비** | 선택 | 스키마 변경 시 `migration:generate` / `migration:run` 워크플로 정리. [TYPEORM_SETUP.md](guides/TYPEORM_SETUP.md) |
 | **시드 스크립트 통일** | 선택 | PointConfig, SubscriptionPlan 등 초기 데이터 삽입 스크립트/SQL 한곳에서 관리 |
-| **문서 동기화** | 진행 중 | 기능 추가/변경 시 FEATURE_ROADMAP, API_SPECIFICATION, DATABASE_SCHEMA 등 해당 문서 갱신. 프로젝트/저장소·디렉터리명은 **oddscast** 통일. 최근: 경주 상태·출전번호·로그인 보너스 반영 |
+| **문서 동기화** | 진행 중 | 기능 추가/변경 시 FEATURE_ROADMAP, API_SPECIFICATION, DATABASE_SCHEMA 등 해당 문서 갱신. 프로젝트/저장소·디렉터리명은 **oddscast** 통일. 최근: API 명세(Horses·Fortune·Referrals·WeeklyPreview·Activity), SERVER_COMPLETENESS, PROJECT_STRUCTURE 서버/웹앱 구조 보완, WEBAPP_COMPLETENESS·GAPS 갱신 |
 
 ---
 

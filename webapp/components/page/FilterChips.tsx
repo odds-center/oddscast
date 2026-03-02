@@ -21,7 +21,7 @@ export default function FilterChips({ options, value, onChange, className = '' }
             onClick={() => onChange(opt.value)}
             type='button'
             aria-pressed={isActive}
-            className={`px-2.5 py-0.5 rounded text-xs font-medium transition-colors touch-manipulation whitespace-nowrap ${
+            className={`min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-0.5 rounded text-xs font-medium transition-colors touch-manipulation whitespace-nowrap ${
               isActive
                 ? 'bg-[#292524] text-white'
                 : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-800 hover:border-stone-300'

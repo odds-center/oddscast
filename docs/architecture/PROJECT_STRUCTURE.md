@@ -143,10 +143,24 @@ server/
 │   │   ├── rankings.controller.ts
 │   │   └── rankings.service.ts
 │   │
-│   └── single-purchases/               # 🛒 개별 구매 모듈
-│       ├── single-purchases.module.ts
-│       ├── single-purchases.controller.ts
-│       └── single-purchases.service.ts
+│   ├── single-purchases/               # 🛒 개별 구매 모듈
+│   │   ├── single-purchases.module.ts
+│   │   ├── single-purchases.controller.ts
+│   │   └── single-purchases.service.ts
+│   │
+│   ├── bets/                            # (미사용) 베팅 — 사행성 제거로 Picks로 대체
+│   ├── analysis/                        # KRA 통계·마칠기삼 분석 — /analysis/race/:raceId/jockey
+│   ├── horses/                          # 마필 프로필·경주 이력 — /horses/:hrNo/profile, history
+│   ├── jockeys/                         # 기수 프로필·이력 — /jockeys/:jkNo/profile, history
+│   ├── trainers/                        # 조교사 프로필·이력 — /trainers/:trName/profile, history
+│   ├── fortune/                         # 오늘의 경마운세 — /fortune/today (로그인 시)
+│   ├── referrals/                       # 추천 코드 — /referrals/me, claim
+│   ├── weekly-preview/                  # 주간 프리뷰 — /weekly-preview (Cron 목 20:00 KST)
+│   ├── activity-logs/                   # 활동 로그 — /activity/track, track/batch
+│   ├── config/                          # 글로벌 설정 — /config (GET/PUT :key)
+│   ├── health/                          # 헬스체크 — /health, /health/detailed (prefix 제외)
+│   ├── cache/                           # Redis/인메모리 캐시 (서비스)
+│   └── admin/                           # Admin 전용 — /admin/* (users, predictions, kra, statistics 등)
 │
 ├── scripts/                             # 🐍 Python 분석 스크립트 (예정)
 │   ├── analysis.py                      # 메인 분석 로직
@@ -166,7 +180,7 @@ server/
 ```
 webapp/
 ├── pages/
-│   ├── index.tsx                     # 경주 목록
+│   ├── index.tsx                     # 홈 (오늘 경기, 종합 프리뷰, 운세 등)
 │   ├── auth/
 │   │   ├── login.tsx
 │   │   ├── register.tsx
@@ -175,28 +189,43 @@ webapp/
 │   ├── 404.tsx                       # 맞춤 NotFound
 │   ├── legal/
 │   │   ├── terms.tsx                 # 서비스 이용 약관
-│   │   └── privacy.tsx               # 개인정보 처리방침
+│   │   ├── privacy.tsx               # 개인정보 처리방침
+│   │   └── refund.tsx                # 환불 정책
 │   ├── profile/
 │   │   ├── index.tsx                 # 포인트, 예측권, 구독 요약
 │   │   └── edit.tsx
-│   ├── ranking.tsx
-│   ├── results.tsx               # 경주 결과 (같은 경기 1·2·3위 행 묶음)
+│   ├── ranking.tsx                   # 랭킹
 │   ├── settings.tsx
 │   ├── settings/
 │   │   └── notifications.tsx         # 알림 설정 (푸시는 mobile만)
 │   ├── races/
-│   │   └── [id].tsx                  # 경주 상세, 승식 선택
+│   │   ├── index.tsx                 # 경주 목록 (필터·URL 동기화)
+│   │   ├── schedule.tsx              # 경마 시행일 달력
+│   │   ├── [id]/
+│   │   │   ├── index.tsx             # 경주 상세 (예측·결과·출전마)
+│   │   │   └── simulator.tsx        # 커스텀 예측 시뮬레이터
+│   ├── results.tsx                   # 경주 결과 (1·2·3위 행 묶음)
 │   ├── predictions/
-│   │   └── matrix.tsx                 # 종합예상표, AI/전문가 코멘트
-│   ├── picks.tsx                     # (제외) 내부 리다이렉트 — 서비스에서 제외
+│   │   ├── matrix.tsx                # 종합예상표, AI 코멘트
+│   │   └── accuracy.tsx              # 예측 정확도 대시보드
+│   ├── weekly-preview.tsx            # 주간 프리뷰
+│   ├── horses/[hrNo].tsx             # 마필 프로필
+│   ├── jockeys/[jkNo].tsx            # 기수 프로필
+│   ├── trainers/[trName].tsx         # 조교사 프로필
+│   ├── picks.tsx                     # (제외) 서비스에서 제외
 │   └── mypage/
 │       ├── index.tsx                 # 마이페이지 메뉴 허브
 │       ├── picks.tsx                 # (제외) 내가 고른 말 — 메뉴 미노출
 │       ├── subscriptions.tsx         # 구독 플랜
-│       ├── subscription-checkout.tsx  # ?planId= 쿼리로 결제
+│       ├── subscription-checkout.tsx # ?planId= 결제창
+│       ├── subscription-checkout/
+│       │   ├── success.tsx           # 구독 결제 성공 리다이렉트
+│       │   └── fail.tsx              # 구독 결제 실패 리다이렉트
+│       ├── matrix-ticket-purchase.tsx # 종합 예측권 구매
 │       ├── ticket-history.tsx        # 예측권 이력
+│       ├── prediction-history.tsx    # 열람한 예측 목록
 │       ├── point-transactions.tsx    # 포인트 거래 내역
-│       └── notifications.tsx
+│       └── notifications.tsx         # 알림 목록
 ├── components/
 │   ├── Layout.tsx                    # 레이아웃 + FloatingAppBar (앱 바, _app.tsx에서 렌더)
 │   ├── RaceCard.tsx                  # 반응형

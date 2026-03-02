@@ -10,6 +10,7 @@ import { routes } from '@/lib/routes';
 import { StatusBadge, LinkBadge } from '@/components/ui';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import { getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
+import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@oddscast/shared';
 
@@ -63,7 +64,7 @@ export default function TodayRacesSection() {
         <>
           {allEnded && (
             <p className='mb-3 text-center text-sm text-text-secondary'>
-              오늘의 경주가 모두 종료되었습니다. 결과를 확인해 보세요.
+              {TODAY_ALL_ENDED_MESSAGE}
             </p>
           )}
           <DataTable

@@ -13,6 +13,7 @@ import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
 import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
+import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
 import { formatRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
@@ -176,7 +177,7 @@ export default function RacesListPage() {
       >
         {todayRacesAllEnded && (
           <div className='mb-4 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-text-secondary'>
-            오늘의 경주가 모두 종료되었습니다. 아래에서 결과를 확인해 보세요.
+            {TODAY_ALL_ENDED_MESSAGE}
           </div>
         )}
         <DataTable

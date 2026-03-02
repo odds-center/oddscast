@@ -7,6 +7,9 @@
 - **[`SERVICE_SPECIFICATION.md`](SERVICE_SPECIFICATION.md)** — **서비스가 무엇인지, 어떤 기능을 제공하는지** 정의. 기능 개발 시 요구사항 파악용.
 - **[`MONTHLY_MAINTENANCE_COST.md`](MONTHLY_MAINTENANCE_COST.md)** — **한 달 유지비** (AI, DB, 호스팅, 결제 수수료) 항목별 명세. 예산 산정용.
 - **[`TODO_CONTINUE.md`](TODO_CONTINUE.md)** — **계속 할 일** (배포·인프라, 모니터링, 기능·콘텐츠, 기술 부채) 진행 순서·우선순위·규칙. Planning 시 참조.
+- **[`FEATURE_ROADMAP.md`](FEATURE_ROADMAP.md)** — 기능 로드맵·구현 상태·단기/중기/장기 계획.
+- **[`WEBAPP_ADMIN_GAPS.md`](WEBAPP_ADMIN_GAPS.md)** — WebApp·Admin 보완 항목 정리 (적용됨/선택).
+- **[`WEBAPP_COMPLETENESS.md`](features/WEBAPP_COMPLETENESS.md)** — WebApp 완성도 체크리스트 (로딩/에러/빈 상태).
 
 ### 🏗️ Architecture
 
@@ -15,6 +18,7 @@
 - [`API_SPECIFICATION.md`](architecture/API_SPECIFICATION.md) — API 엔드포인트 명세
 - [`DATABASE_SCHEMA.md`](architecture/DATABASE_SCHEMA.md) — TypeORM 엔티티·DB 스키마. 전체 DDL: [`docs/db/schema.sql`](db/schema.sql) ([`docs/db/README.md`](db/README.md))
 - [`BUSINESS_LOGIC.md`](architecture/BUSINESS_LOGIC.md) — 비즈니스 로직
+- [`SERVER_COMPLETENESS.md`](SERVER_COMPLETENESS.md) — 서버 작업 완료 점검 (빌드·모듈·API 명세 대응)
 
 ### 📦 Features (기능 명세)
 

@@ -147,6 +147,14 @@ import { DataTable } from '@/components/ui';
   - 2·3위: diffUnit (착차, 예: `0.3`, `0.8`)
 - **컬럼 너비**: 경주 `w-24`, 날짜 `w-20`, 1·2·3위 `min-w-[100px]`
 
+### 빈 상태·에러 문구 톤앤매너
+
+- **빈 상태 (Empty)**: `emptyTitle`은 "~가/이 없습니다" 형식 (예: 경주가 없습니다, 결과가 없습니다). `emptyDescription`은 다음 행동 안내 (예: "다른 날짜나 조건을 선택해보세요.").
+- **에러 (Error)**: `errorTitle`은 "~를/을 확인할 수 없습니다" 또는 "~를/을 불러올 수 없습니다" 형식. 에러 시 **다시 시도** 버튼 제공 (`onRetry`).
+- **로딩**: `loadingLabel`은 "~ 준비 중..." (예: 경주 정보 준비 중..., 결과 준비 중...).
+
+DataFetchState 사용 시 위 패턴으로 `emptyTitle`, `emptyDescription`, `errorTitle`, `loadingLabel`을 페이지별로 설정합니다.
+
 ### 테이블 내 링크
 
 경주/결과 링크는 `LinkBadge` 사용:

@@ -12,6 +12,10 @@ export interface DateHeaderMessage {
 
 const WEEKDAY_NAMES = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
+/** Shared copy when all today's races have ended (DateHeader, TodayRacesSection, races list). */
+export const TODAY_ALL_ENDED_MESSAGE =
+  '오늘 경기가 모두 종료되었습니다. 결과에서 순위와 배당을 확인하세요.';
+
 /** Next race day label for subtitle, e.g. "금요일 (2/28)" → "금요일에 만나요" */
 export function formatNextRaceSubline(weekdayName: string, datePart: string): string {
   const dayOnly = weekdayName.replace('요일', '').trim();

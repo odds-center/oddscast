@@ -328,9 +328,9 @@ export default function PredictionMatrixPage() {
                 isEmpty={!matrixData?.raceMatrix?.length}
                 emptyIcon='BarChart2'
                 emptyTitle='예상 정보가 없습니다'
-                emptyDescription='다른 날짜를 선택해보세요.'
+                emptyDescription='선택한 날짜에 경주가 없거나 아직 생성되지 않았습니다. 다른 날짜를 선택해보세요.'
                 loadingLabel='예상표 준비 중...'
-                errorTitle='일시적인 오류가 발생했습니다'
+                errorTitle='종합 예상표를 불러올 수 없습니다'
               >
                 {matrixData && (
                   <div className='space-y-3'>
@@ -355,8 +355,9 @@ export default function PredictionMatrixPage() {
               isEmpty={!commentaryData?.comments?.length}
               emptyIcon='Sparkles'
               emptyTitle='코멘트가 없습니다'
-              emptyDescription='해당 날짜에 AI 예측 코멘트가 없습니다.'
+              emptyDescription='해당 날짜에 AI 예측 코멘트가 없습니다. 다른 날짜를 선택해보세요.'
               loadingLabel='코멘트 준비 중...'
+              errorTitle='코멘트를 불러올 수 없습니다'
             >
               {commentaryData?.comments && commentaryData.comments.length > 0 ? (
                 <CommentaryFeed comments={commentaryData.comments} />

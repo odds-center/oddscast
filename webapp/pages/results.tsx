@@ -161,8 +161,9 @@ export default function Results() {
         isEmpty={!groupedRaces.length}
         emptyIcon='TrendingUp'
         emptyTitle='경주 결과가 없습니다'
-        emptyDescription='해당 조건에 맞는 경주 결과가 없습니다.'
+        emptyDescription='해당 조건에 맞는 경주 결과가 없습니다. 다른 날짜나 경마장을 선택해보세요.'
         loadingLabel='결과 준비 중...'
+        errorTitle='경주 결과를 확인할 수 없습니다'
       >
         {/* Mobile: compact card */}
         <div className='block lg:hidden space-y-2'>

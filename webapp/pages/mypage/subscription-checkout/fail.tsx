@@ -32,10 +32,13 @@ export default function SubscriptionCheckoutFailPage() {
           title='결제 등록 실패'
           description={msg}
         />
-        <Link href={routes.mypage.subscriptions} className='btn-primary block text-center mt-4'>
-          구독 플랜으로
-        </Link>
-        <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block' />
+        <p className='text-text-secondary text-sm mt-2'>카드를 다시 등록하거나 다른 결제 수단을 이용해 주세요.</p>
+        <div className='flex flex-col gap-2 mt-4'>
+          <Link href={routes.mypage.subscriptions} className='btn-primary block text-center py-2.5'>
+            구독 플랜으로
+          </Link>
+          <BackLink href={routes.profile.index} label='정보로' className='block' />
+        </div>
       </div>
     </Layout>
   );

@@ -91,9 +91,10 @@ pnpm run build:server # NestJS 서버만
 
 ## 📚 문서
 
-- **[문서 인덱스](docs/README.md)** — 전체 문서 목록
+- **[문서 인덱스](docs/README.md)** — 전체 문서 목록 (아키텍처·기능 명세·가이드)
 - **[기술 명세](docs/specs/HORSE_RACING_SPEC.md)** — NestJS + Python + PostgreSQL 명세
 - **[비용 분석](docs/specs/COST_ANALYSIS.md)** — Gemini API 비용 & 서버 캐싱 전략
+- **[배포](docs/RAILWAY_DEPLOYMENT.md)** — Railway 배포 가이드 (프로덕션 선택 시)
 - **[법적 고지](docs/legal/LEGAL_NOTICE.md)** — 서비스 법적 고지사항
 
 ---

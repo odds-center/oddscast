@@ -277,6 +277,28 @@ RaceResultDto[] {
 
 ---
 
+## 4-4. Horses (마필) — `/api/horses`
+
+> Server: `server/src/horses/horses.controller.ts` WebApp: `webapp/lib/api/horseApi.ts`
+
+| Method | Route                       | 설명                           | Auth |
+| ------ | --------------------------- | ------------------------------ | ---- |
+| `GET`  | `/horses/:hrNo/profile`      | 마필 프로필 (통산 성적, 최근 폼) | 🔓   |
+| `GET`  | `/horses/:hrNo/history`      | 마필 경주 이력 (페이지네이션)   | 🔓   | page, limit |
+
+---
+
+## 4-5. Fortune (오늘의 경마운세) — `/api/fortune`
+
+> Server: `server/src/fortune/fortune.controller.ts` WebApp: `webapp/lib/api/fortuneApi.ts`  
+> 로그인 사용자·날짜별 1건. 참고용·오락 목적.
+
+| Method | Route           | 설명                     | Auth |
+| ------ | --------------- | ------------------------ | ---- |
+| `GET`  | `/fortune/today` | 오늘의 경마운세 조회/생성 | 🔐   |
+
+---
+
 ## 5. Users (사용자) — `/api/users`
 
 > Server: `server/src/users/users.controller.ts` WebApp: `webapp/lib/api/userApi.ts`
@@ -510,6 +532,40 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `POST` | `/points/transfer`         | 포인트 이체           | 🔐   |
 | `GET`  | `/points/:userId/balance`  | 포인트 잔액 (특정 유저)| 🔐   |
 | `GET`  | `/points/:userId/transactions` | 포인트 거래 내역 | 🔐   |
+
+---
+
+## 13-1. Referrals (추천) — `/api/referrals`
+
+> Server: `server/src/referrals/referrals.controller.ts`
+
+| Method | Route           | 설명                     | Auth |
+| ------ | --------------- | ------------------------ | ---- |
+| `GET`  | `/referrals/me` | 내 추천 코드 조회/생성   | 🔐   |
+| `POST` | `/referrals/claim` | 추천 코드 입력 (가입 시) | 🔐   | body: `{ code: string }` |
+
+---
+
+## 13-2. Weekly Preview (주간 프리뷰) — `/api/weekly-preview`
+
+> Server: `server/src/weekly-preview/weekly-preview.controller.ts`  
+> Cron(목 20:00 KST)으로 생성. 금·토·일 경주 하이라이트·주목할 말·트랙 조건 등.
+
+| Method | Route                | 설명                     | Auth |
+| ------ | -------------------- | ------------------------ | ---- |
+| `GET`  | `/weekly-preview`    | 최신 주간 프리뷰 조회    | 🔓   | `?week=` 지정 시 해당 주차 |
+
+---
+
+## 13-3. Activity (활동 로그) — `/api/activity`
+
+> Server: `server/src/activity-logs/activity-logs.controller.ts`  
+> 클라이언트 이벤트 수집용. 인증 없이 호출 가능(미로그인 시 userId 없음).
+
+| Method | Route             | 설명                 | Auth |
+| ------ | ----------------- | -------------------- | ---- |
+| `POST` | `/activity/track` | 단일 이벤트 기록     | 🔓   | body: `{ event, page?, target?, metadata?, sessionId? }` |
+| `POST` | `/activity/track/batch` | 이벤트 일괄 기록 | 🔓   | body: `{ events: TrackEventDto[] }` |
 
 ---
 

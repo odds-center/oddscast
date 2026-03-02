@@ -35,6 +35,12 @@ const MEET_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
+const STATUS_OPTIONS = [
+  { value: '', label: '전체' },
+  { value: 'SCHEDULED', label: '예정' },
+  { value: 'COMPLETED', label: '종료' },
+] as const;
+
 /** Today in KST as YYYY-MM-DD for date input default */
 function getTodayKstDate(): string {
   return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
@@ -45,6 +51,7 @@ export default function RacesPage() {
   const queryClient = useQueryClient();
   const [page, setPage] = useState(1);
   const [meetFilter, setMeetFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState(() => getTodayKstDate());
   const [syncDate, setSyncDate] = useState(() => {
     const d = new Date();
@@ -150,7 +157,7 @@ export default function RacesPage() {
   });
 
   const { data, isLoading, error: racesError, refetch: refetchRaces } = useQuery({
-    queryKey: ['admin-races', page, meetFilter, dateFilter],
+    queryKey: ['admin-races', page, meetFilter, statusFilter, dateFilter],
     queryFn: () =>
       adminRacesApi.getAll({
         page,
@@ -161,6 +168,22 @@ export default function RacesPage() {
     placeholderData: (previousData) => previousData,
     staleTime: 2 * 60 * 1000,
   });
+
+  const allRaces = (data?.data || []) as RaceData[];
+  const filteredRaces = statusFilter
+    ? allRaces.filter((race: RaceData) => {
+        const effectiveStatus = getDisplayRaceStatus(
+          race.status,
+          race.rcDate,
+          race.stTime ?? race.rcTime,
+        ) || 'SCHEDULED';
+        const key = effectiveStatus.toUpperCase().replace(/-/g, '_');
+        if (statusFilter === 'COMPLETED') return key === 'COMPLETED';
+        if (statusFilter === 'SCHEDULED') return key !== 'COMPLETED';
+        return true;
+      })
+    : allRaces;
+  const hasActiveFilters = !!(meetFilter || statusFilter || dateFilter);
 
   const columns = [
     {
@@ -266,6 +289,23 @@ export default function RacesPage() {
                   className='h-9 min-w-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
                 >
                   {MEET_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className='flex flex-col'>
+                <label className='mb-1 block text-xs font-medium text-gray-500'>상태</label>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value);
+                    setPage(1);
+                  }}
+                  className='h-9 min-w-[120px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                >
+                  {STATUS_OPTIONS.map((o) => (
                     <option key={o.value} value={o.value}>
                       {o.label}
                     </option>
@@ -390,10 +430,10 @@ export default function RacesPage() {
               </div>
             )}
             <Table
-              data={(data?.data || []) as RaceData[]}
+              data={filteredRaces}
               columns={columns}
               isLoading={isLoading}
-              emptyMessage='경주가 없습니다.'
+              emptyMessage={hasActiveFilters ? '선택한 조건에 맞는 경주가 없습니다. 필터를 바꿔 보세요.' : '경주가 없습니다. 날짜를 선택하거나 KRA 동기화를 실행하세요.'}
               onRowClick={(race) => router.push(`/races/${race.id}`)}
             />
 

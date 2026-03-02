@@ -96,6 +96,9 @@ export default function TicketHistoryPage() {
             size='sm'
             className='mb-4'
           />
+          {statusFilter === 'EXPIRED' && (
+            <p className='text-text-tertiary text-sm mb-3'>유효기간이 지난 예측권입니다. 사용할 수 없습니다.</p>
+          )}
           <DataTable<PredictionTicket>
               className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
               columns={[

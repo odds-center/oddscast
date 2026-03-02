@@ -145,18 +145,18 @@ export function isRaceActuallyEnded(
 }
 
 /**
- * Display status: "종료" only when server says COMPLETED and race end time has passed.
- * Use this for UI so we don't show "종료" or results for races that haven't actually finished.
+ * Display status: show "종료" when race end time has passed (so ended races always show as 종료).
+ * If server says COMPLETED but end time not yet passed, show 예정. Otherwise use server status.
  */
 export function getDisplayRaceStatus(
   serverStatus: string | null | undefined,
   rcDate: string | null | undefined,
   stTime?: string | null,
 ): string {
-  const s = (serverStatus ?? '').trim();
-  if (s.toUpperCase() !== 'COMPLETED') return s || '';
-  if (!isRaceActuallyEnded(rcDate, stTime)) return 'SCHEDULED';
-  return s;
+  const s = (serverStatus ?? '').trim().toUpperCase();
+  if (isRaceActuallyEnded(rcDate, stTime)) return 'COMPLETED';
+  if (s === 'COMPLETED') return 'SCHEDULED';
+  return s || '';
 }
 
 /** YYYYMMDD → "February 15" (month and day in Korean) */

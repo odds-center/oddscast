@@ -43,7 +43,8 @@
 
 ## 3. 클라이언트(WebApp/Admin) 동작
 
-- **표시용 종료**: 서버가 COMPLETED여도 경주 종료 시각(rcDate+stTime+20분)이 지나기 전이면 "예정"으로 표시. `getDisplayRaceStatus` / `isRaceActuallyEnded` 사용. 결과·배당 노출·"오늘 경기 모두 종료" 문구는 이 기준 적용.
+- **표시용 종료**: 경주 종료 시각(rcDate+stTime+20분, stTime 없으면 해당일 23:59 KST)이 지나면 **무조건 "종료"**로 표시. `getDisplayRaceStatus`는 `isRaceActuallyEnded`가 true이면 COMPLETED 반환. (이미 끝난 경기는 예정이 아닌 종료로 표시.)
+- **결과·배당 노출**: 서버가 COMPLETED(실제 결과 적재됨)이고 `isRaceActuallyEnded`일 때만 결과/배당 블록 노출.
 - **종료 여부 (API 필터 등)**: `race.status === 'COMPLETED'` (또는 API가 내려준 `status`/`raceStatus`)만 사용한다.
 - **`isPastRaceDate` / `isPastRaceDateTime`**  
   - “이 경주가 종료인가?”를 판단하는 데에는 **사용하지 않는다.**  

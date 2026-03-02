@@ -69,16 +69,18 @@ export function isRaceActuallyEnded(
 }
 
 /**
- * Display status: "COMPLETED" only when server says COMPLETED and race end time has passed. Otherwise treat as SCHEDULED for UI.
+ * Display status: show "COMPLETED" (종료) when race end time has passed so ended races always show as 종료.
+ * If server says COMPLETED but end time not yet passed, show SCHEDULED. Otherwise use server status.
  */
 export function getDisplayRaceStatus(
   serverStatus: string | null | undefined,
   rcDate: string | null | undefined,
   stTime?: string | null,
 ): string {
-  const s = (serverStatus ?? '').trim();
-  if (s.toUpperCase() !== 'COMPLETED') return s || '';
-  return isRaceActuallyEnded(rcDate, stTime) ? s : 'SCHEDULED';
+  const s = (serverStatus ?? '').trim().toUpperCase();
+  if (isRaceActuallyEnded(rcDate, stTime)) return 'COMPLETED';
+  if (s === 'COMPLETED') return 'SCHEDULED';
+  return s || '';
 }
 
 /** YYYYMMDD → YYYY-MM-DD */

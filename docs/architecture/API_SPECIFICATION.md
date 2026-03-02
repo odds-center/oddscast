@@ -41,6 +41,21 @@ Admin은 `/api/admin` prefix로 별도 base URL 사용:
 
 ---
 
+## 0. Health (헬스체크) — prefix 제외
+
+> 서버: `server/src/health/health.controller.ts`  
+> **Global prefix 제외:** `main.ts`에서 `api` prefix를 적용하지 않음. LB/모니터링(UptimeRobot 등)에서 사용.
+
+| Method | Route              | 설명                    | Auth |
+| ------ | ------------------ | ----------------------- | ---- |
+| `GET`  | `/health`          | 간단 헬스 (status, timestamp, service, version) | 🔓   |
+| `GET`  | `/health/detailed` | 상세 (uptime, memory, nodeVersion, platform 등) | 🔓   |
+
+- 응답은 `{ data }` 래핑 없이 JSON 객체 직접 반환.
+- **업타임 모니터링:** [guides/MONITORING_SETUP.md](../guides/MONITORING_SETUP.md) §2 참고.
+
+---
+
 ## 1. Auth (인증) — `/api/auth`
 
 > Server: `server/src/auth/auth.controller.ts` WebApp: `webapp/lib/api/authApi.ts`

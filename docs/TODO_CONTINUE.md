@@ -41,7 +41,7 @@
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
 | 1 | **에러 모니터링** | 준비됨 | 서버 `main.ts`에 Sentry 조건부 초기화 적용. `SENTRY_DSN` 설정 시 동작. [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) |
-| 2 | **업타임/지연 모니터링** | 가이드 추가 | [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) — /api/health + UptimeRobot 등 |
+| 2 | **업타임/지연 모니터링** | 가이드 추가 | [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) — GET /health, GET /health/detailed (prefix 제외). [API_SPECIFICATION.md](architecture/API_SPECIFICATION.md) §0 Health 명세 |
 | 3 | **E2E/통합 테스트 보강** | 선택 | 중요 플로우(로그인, 경주 조회, 예측권) E2E 또는 API 통합 테스트 추가 |
 | 4 | **부하 테스트** | 선택 | 경주일 트래픽 스파이크 시뮬레이션 |
 | 5 | **정적 자산 CDN** | 선택 | CloudFront / Vercel Edge 등 (웹앱 정적 리소스) |

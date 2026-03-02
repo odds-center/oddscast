@@ -317,6 +317,7 @@ SinglePurchase[]
 | **PointTransaction** | `point_transactions` | 포인트 적립/사용 이력                                                |
 | **GlobalConfig**     | `global_config`      | 글로벌 설정 (key-value, NoSQL 스타일). show_google_login 등          |
 | **KraSyncLog**       | `kra_sync_logs`      | KRA API 동기화 로그 (endpoint, meet, rcDate, status, recordCount 등)  |
+| **BatchSchedule**    | `batch_schedules`    | 배치 작업 스케줄 (jobType, targetRcDate, scheduledAt, status — 예정/완료/실패) |
 
 ---
 
@@ -357,6 +358,24 @@ SinglePurchase[]
 | `durationMs`  | Int?    | 소요 시간 (ms)        |
 | `createdAt`   | DateTime| 생성일                |
 
+### BatchSchedule (배치 스케줄)
+
+> 테이블명: `batch_schedules` — 경주 결과 조회 등 예정 작업을 DB로 관리. Cron이 due 작업 실행 후 상태 갱신.
+
+| 필드           | 타입          | 설명 |
+| -------------- | ------------- | ---- |
+| `id`           | Int           | PK   |
+| `jobType`      | Text          | 예: KRA_RESULT_FETCH |
+| `targetRcDate` | Text          | 대상 일자 YYYYMMDD   |
+| `scheduledAt`  | DateTime      | 실행 예정 시각       |
+| `status`       | BatchScheduleStatus | PENDING, RUNNING, COMPLETED, FAILED, CANCELLED |
+| `startedAt`    | DateTime?     | 실행 시작 시각       |
+| `completedAt` | DateTime?     | 완료/실패 시각       |
+| `errorMessage` | Text?         | 실패 시 메시지       |
+| `metadata`     | JSONB?        | 부가 정보            |
+| `createdAt`    | DateTime      | 생성일               |
+| `updatedAt`    | DateTime      | 수정일               |
+
 ---
 
 ### GlobalConfig (글로벌 설정)
@@ -387,3 +406,4 @@ SinglePurchase[]
 | `FavoriteType`         | HORSE, JOCKEY, TRAINER, RACE                      | Favorite         |
 | `PaymentStatus`        | SUCCESS, FAILED, REFUNDED                         | BillingHistory   |
 | `PickType`             | SINGLE, PLACE, QUINELLA, EXACTA, QUINELLA_PLACE, TRIFECTA, TRIPLE | UserPick |
+| `BatchScheduleStatus` | PENDING, RUNNING, COMPLETED, FAILED, CANCELLED   | BatchSchedule    |

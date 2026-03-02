@@ -33,6 +33,7 @@ DO $$ BEGIN CREATE TYPE "BetStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED'
 DO $$ BEGIN CREATE TYPE "BetResult" AS ENUM ('PENDING', 'WIN', 'LOSE', 'PARTIAL_WIN', 'VOID'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "BetSlipStatus" AS ENUM ('DRAFT', 'CONFIRMED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PickType" AS ENUM ('SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+DO $$ BEGIN CREATE TYPE "BatchScheduleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- CreateTable (idempotent)
 CREATE TABLE IF NOT EXISTS "users" (
@@ -565,6 +566,21 @@ CREATE TABLE IF NOT EXISTS "kra_sync_logs" (
     CONSTRAINT "kra_sync_logs_pkey" PRIMARY KEY ("id")
 );
 
+CREATE TABLE IF NOT EXISTS "batch_schedules" (
+    "id" SERIAL NOT NULL,
+    "jobType" TEXT NOT NULL,
+    "targetRcDate" TEXT NOT NULL,
+    "scheduledAt" TIMESTAMP(3) NOT NULL,
+    "status" "BatchScheduleStatus" NOT NULL DEFAULT 'PENDING',
+    "startedAt" TIMESTAMP(3),
+    "completedAt" TIMESTAMP(3),
+    "errorMessage" TEXT,
+    "metadata" JSONB,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "batch_schedules_pkey" PRIMARY KEY ("id")
+);
+
 CREATE TABLE IF NOT EXISTS "admin_activity_logs" (
     "id" SERIAL NOT NULL,
     "adminUserId" INTEGER,
@@ -606,6 +622,8 @@ CREATE INDEX IF NOT EXISTS "trainings_horseNo_idx" ON "trainings"("horseNo");
 CREATE INDEX IF NOT EXISTS "trainings_trDate_idx" ON "trainings"("trDate");
 CREATE INDEX IF NOT EXISTS "kra_sync_logs_endpoint_rcDate_idx" ON "kra_sync_logs"("endpoint", "rcDate");
 CREATE INDEX IF NOT EXISTS "kra_sync_logs_createdAt_idx" ON "kra_sync_logs"("createdAt");
+CREATE INDEX IF NOT EXISTS "batch_schedules_status_scheduledAt_idx" ON "batch_schedules"("status", "scheduledAt");
+CREATE INDEX IF NOT EXISTS "batch_schedules_jobType_targetRcDate_idx" ON "batch_schedules"("jobType", "targetRcDate");
 CREATE INDEX IF NOT EXISTS "admin_activity_logs_adminUserId_idx" ON "admin_activity_logs"("adminUserId");
 CREATE INDEX IF NOT EXISTS "admin_activity_logs_action_idx" ON "admin_activity_logs"("action");
 CREATE INDEX IF NOT EXISTS "admin_activity_logs_createdAt_idx" ON "admin_activity_logs"("createdAt");

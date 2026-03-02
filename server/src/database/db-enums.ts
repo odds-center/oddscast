@@ -139,6 +139,15 @@ export enum PickType {
   TRIPLE = 'TRIPLE',
 }
 
+/** Batch job schedule status (DB table batch_schedules). */
+export enum BatchScheduleStatus {
+  PENDING = 'PENDING',
+  RUNNING = 'RUNNING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
 /** JSON column type for API/DB (e.g. metadata, data fields). */
 export type InputJsonValue =
   | string

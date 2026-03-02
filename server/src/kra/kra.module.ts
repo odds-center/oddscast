@@ -9,6 +9,7 @@ import { Training } from '../database/entities/training.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
+import { BatchSchedule } from '../database/entities/batch-schedule.entity';
 import { KraService } from './kra.service';
 import { KraController } from './kra.controller';
 import { ConfigModule } from '@nestjs/config';
@@ -26,6 +27,7 @@ import { ResultsModule } from '../results/results.module';
       JockeyResult,
       TrainerResult,
       KraSyncLog,
+      BatchSchedule,
     ]),
     HttpModule,
     ScheduleModule.forRoot(),

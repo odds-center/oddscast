@@ -10,6 +10,7 @@
 | **patches/updated_at_default.sql** | 기존 DB에 `updatedAt` DEFAULT 추가 (필요 시 1회 실행). |
 | **patches/drop_prisma_migrations.sql** | Prisma 제거 후 `_prisma_migrations` 테이블 삭제 (필요 시 1회 실행). |
 | **patches/login_bonus_columns.sql** | 일일/연속 로그인 보너스용 `users` 컬럼 추가 (필요 시 1회 실행). |
+| **patches/batch_schedules.sql** | 배치 스케줄 테이블 (경주 결과 조회 예정/완료 관리, 필요 시 1회 실행). |
 
 ## 스키마 적용 방법
 

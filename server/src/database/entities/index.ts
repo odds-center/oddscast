@@ -18,6 +18,7 @@ export { Training } from './training.entity';
 export { JockeyResult } from './jockey-result.entity';
 export { TrainerResult } from './trainer-result.entity';
 export { KraSyncLog } from './kra-sync-log.entity';
+export { BatchSchedule } from './batch-schedule.entity';
 export { GlobalConfig } from './global-config.entity';
 export { WeeklyPreview } from './weekly-preview.entity';
 export { UserDailyFortune } from './user-daily-fortune.entity';

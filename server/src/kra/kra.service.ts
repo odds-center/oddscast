@@ -18,6 +18,11 @@ import { Training } from '../database/entities/training.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
+import {
+  BatchSchedule,
+  BATCH_JOB_KRA_RESULT_FETCH,
+} from '../database/entities/batch-schedule.entity';
+import { BatchScheduleStatus } from '../database/db-enums';
 import { GlobalConfigService } from '../config/config.service';
 import { ResultsService } from '../results/results.service';
 import { Cron } from '@nestjs/schedule';
@@ -57,6 +62,8 @@ export class KraService {
     private readonly trainerResultRepo: Repository<TrainerResult>,
     @InjectRepository(KraSyncLog)
     private readonly kraSyncLogRepo: Repository<KraSyncLog>,
+    @InjectRepository(BatchSchedule)
+    private readonly batchScheduleRepo: Repository<BatchSchedule>,
     private resultsService: ResultsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
@@ -223,6 +230,103 @@ export class KraService {
     return Array.from(dates);
   }
 
+  /**
+   * Latest race end time (start + buffer) for the given rcDate. Used to schedule result fetch.
+   * Returns end of rcDate day (23:59 KST) if no races or no stTime.
+   */
+  private async getLastRaceEndTimeForRcDate(rcDate: string): Promise<Date> {
+    const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
+    if (norm.length < 8) {
+      return new Date(
+        `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
+      );
+    }
+    const races = await this.raceRepo.find({
+      where: { rcDate: norm },
+      select: ['stTime'],
+    });
+    const bufferMin = KraService.RACE_END_BUFFER_MINUTES;
+    let maxMs = new Date(
+      `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
+    ).getTime();
+    for (const r of races) {
+      const endMs = this.getRaceEndTimeMs(norm, r.stTime, bufferMin);
+      if (endMs > 0 && endMs > maxMs) maxMs = endMs;
+    }
+    return new Date(maxMs);
+  }
+
+  /**
+   * Enqueue a KRA result fetch job for rcDate at (last race end time for that date).
+   * Skips if a PENDING job for the same jobType+targetRcDate already exists.
+   */
+  async scheduleResultFetchForRcDate(rcDate: string): Promise<void> {
+    const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
+    if (norm.length < 8) return;
+    const existing = await this.batchScheduleRepo.findOne({
+      where: {
+        jobType: BATCH_JOB_KRA_RESULT_FETCH,
+        targetRcDate: norm,
+        status: BatchScheduleStatus.PENDING,
+      },
+    });
+    if (existing) return;
+    const scheduledAt = await this.getLastRaceEndTimeForRcDate(norm);
+    if (scheduledAt.getTime() < Date.now()) return;
+    await this.batchScheduleRepo.save(
+      this.batchScheduleRepo.create({
+        jobType: BATCH_JOB_KRA_RESULT_FETCH,
+        targetRcDate: norm,
+        scheduledAt,
+        status: BatchScheduleStatus.PENDING,
+      }),
+    );
+    this.logger.log(
+      `[BatchSchedule] Enqueued KRA_RESULT_FETCH for ${norm} at ${scheduledAt.toISOString()}`,
+    );
+  }
+
+  /** Process due batch jobs (scheduledAt <= now, status = PENDING). */
+  async processDueBatchSchedules(): Promise<void> {
+    const now = new Date();
+    const due = await this.batchScheduleRepo
+      .createQueryBuilder('b')
+      .where('b.status = :status', { status: BatchScheduleStatus.PENDING })
+      .andWhere('b.scheduledAt <= :now', { now })
+      .orderBy('b.scheduledAt', 'ASC')
+      .take(20)
+      .getMany();
+    for (const job of due) {
+      if (job.jobType !== BATCH_JOB_KRA_RESULT_FETCH) continue;
+      const rcDate = job.targetRcDate;
+      await this.batchScheduleRepo.update(job.id, {
+        status: BatchScheduleStatus.RUNNING,
+        startedAt: now,
+        updatedAt: now,
+      });
+      try {
+        await this.fetchRaceResults(rcDate, true);
+        await this.syncAnalysisData(rcDate);
+        await this.batchScheduleRepo.update(job.id, {
+          status: BatchScheduleStatus.COMPLETED,
+          completedAt: new Date(),
+          errorMessage: null,
+          updatedAt: new Date(),
+        });
+        this.logger.log(`[BatchSchedule] COMPLETED KRA_RESULT_FETCH ${rcDate}`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        await this.batchScheduleRepo.update(job.id, {
+          status: BatchScheduleStatus.FAILED,
+          completedAt: new Date(),
+          errorMessage: msg.slice(0, 1000),
+          updatedAt: new Date(),
+        });
+        this.logger.warn(`[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`, err);
+      }
+    }
+  }
+
   /** Last sync time per rcDate (ms) to avoid hammering KRA. Cooldown 10 min. */
   private lastResultSyncByDate: Record<string, number> = {};
   private static readonly RESULT_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
@@ -231,6 +335,16 @@ export class KraService {
    * 3a. Race-end–aware result sync (every 5 min on Fri/Sat/Sun KST).
    * Only syncs dates that have races whose end time has passed and are not yet COMPLETED.
    */
+  /**
+   * Process batch_schedules: run due jobs (scheduledAt <= now) every 5 min.
+   * Jobs are enqueued when race plans are loaded (scheduleResultFetchForRcDate).
+   */
+  @Cron('*/5 * * * *', { timeZone: 'Asia/Seoul' })
+  async processDueBatchSchedulesCron() {
+    if (!this.ensureServiceKey()) return;
+    await this.processDueBatchSchedules();
+  }
+
   @Cron('*/5 10-20 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async syncResultsWhenRacesEnded() {
     if (!this.ensureServiceKey()) return;
@@ -1023,6 +1137,9 @@ export class KraService {
       }
     }
 
+    if (totalRaces > 0) {
+      await this.scheduleResultFetchForRcDate(d);
+    }
     return { races: totalRaces };
   }
 

@@ -39,6 +39,13 @@
 - **syncResultsWhenRacesEnded**: 매 5분(금/토/일 10:00–20:59 KST) 실행. 오늘/어제 경주 중 종료 시각(rcDate+stTime+20분)이 지난 경주가 있고 status가 아직 COMPLETED가 아닌 rcDate만 대상으로 fetchRaceResults(rcDate) 호출. 같은 rcDate는 10분 쿨다운.
 - **syncRealtimeResults**: 15분 주기 폴백. 당일 전체 결과 재적재로 누락 보완.
 
+### 2.5 배치 스케줄 테이블 (batch_schedules)
+
+- **경기(계획) 적재 시** 해당 일자(rcDate)에 대해 **경주 결과 조회 작업**을 DB에 등록한다. `scheduledAt` = 해당 일자의 마지막 경주 종료 시각(시작+20분, stTime 없으면 23:59 KST).
+- **Cron (매 5분)**: `processDueBatchSchedules` — `status = PENDING` 이고 `scheduledAt <= now` 인 작업을 실행하고, 완료 시 `COMPLETED` 또는 실패 시 `FAILED` 로 갱신.
+- **작업 예정/완료 구분**: Admin 또는 `GET /api/kra/batch-schedules` 로 조회. `status`: PENDING(예정), RUNNING, COMPLETED(완료), FAILED, CANCELLED.
+- 테이블: `batch_schedules` (jobType, targetRcDate, scheduledAt, status, startedAt, completedAt, errorMessage 등). 패치: `docs/db/patches/batch_schedules.sql`.
+
 ---
 
 ## 3. 클라이언트(WebApp/Admin) 동작

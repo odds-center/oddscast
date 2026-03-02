@@ -38,6 +38,9 @@ jobs:
       - name: Build shared
         run: pnpm --filter @oddscast/shared build
 
+      - name: Test server
+        run: pnpm --filter server test
+
       - name: Build server
         run: pnpm --filter server build
 

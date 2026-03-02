@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
 
-**Last updated:** 2026-02-24 (Admin 배치 스케줄 UI 추가)
+**Last updated:** 2026-02-24 (Health API 명세·테스트, CI 서버 테스트 단계)
 
 ---
 
@@ -16,7 +16,7 @@
 | 문서 정리 | ✅ 완료 | ARCHITECTURE, DATABASE_SCHEMA, 배포·가이드, CURSOR_RULES 등 Prisma → TypeORM 반영 |
 | WebApp Phase A~E | ✅ 완료 | 페이지 점검(시뮬레이터, 구독·결제, 설정·법적·인증 포함) |
 | Rate limiting | ✅ 완료 | @nestjs/throttler (120 req/min, 2000 req/hour) |
-| CI (lint + build) | ✅ 완료 | .github/workflows/ci.yml — push/PR 시 server + webapp 빌드 |
+| CI (lint + build) | ✅ 완료 | .github/workflows/ci.yml — push/PR 시 server 테스트 + server/webapp/admin 빌드 |
 | 구독 PG (토스페이먼츠) | ✅ 완료 | 빌링키·첫 결제·정기 결제 크론, 결제창 연동 |
 | **종료/예정·KRA 정책** | ✅ 완료 | COMPLETED는 KRA 결과 적재 시에만 설정. 날짜 기반 COMPLETED 제거. WebApp/서버는 status만 사용. [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
 | **배치 스케줄(결과 조회)** | ✅ 완료 | batch_schedules 테이블·Cron 5분마다 due 작업 실행. Admin KRA 페이지에 예정/완료/실패 테이블·집계 표시. |

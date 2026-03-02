@@ -13,6 +13,8 @@ export interface User {
   role: string;
   /** Saved meet filter for races list (FEATURE_ROADMAP 5.2): 서울|제주|부산경남 */
   favoriteMeet?: string | null;
+  /** Consecutive login days (for 7-day reward display) */
+  consecutiveLoginDays?: number;
   preferences?: {
     theme?: string;
     language?: string;

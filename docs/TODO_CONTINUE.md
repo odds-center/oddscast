@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
 
-**Last updated:** 2026-02-24 (Admin 전 페이지 에러·재시도 적용: ai-config, settings, single-purchase, 구독/플랜, 통계, 수익, 알림, 결제내역, analytics)
+**Last updated:** 2026-02-24 (일일/연속 로그인 보너스 구현, Sentry 서버 초기화 준비)
 
 ---
 
@@ -39,7 +39,7 @@
 
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
-| 1 | **에러 모니터링** | 가이드 추가 | [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) — Sentry DSN 설정·초기화 절차. 적용 후 상태 갱신 |
+| 1 | **에러 모니터링** | 준비됨 | 서버 `main.ts`에 Sentry 조건부 초기화 적용. `SENTRY_DSN` 설정 시 동작. [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) |
 | 2 | **업타임/지연 모니터링** | 가이드 추가 | [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) — /api/health + UptimeRobot 등 |
 | 3 | **E2E/통합 테스트 보강** | 선택 | 중요 플로우(로그인, 경주 조회, 예측권) E2E 또는 API 통합 테스트 추가 |
 | 4 | **부하 테스트** | 선택 | 경주일 트래픽 스파이크 시뮬레이션 |
@@ -55,8 +55,8 @@
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| **일일 로그인 보너스** | 미진행 | 소량 포인트 지급 |
-| **연속 로그인 보상** | 미진행 | 7일 연속 시 RACE 티켓 1장 등 |
+| **일일 로그인 보너스** | ✅ 완료 | `DAILY_LOGIN_BONUS_POINTS`(기본 10pt), 로그인 시 1일 1회 지급 |
+| **연속 로그인 보상** | ✅ 완료 | 7일 연속 시 RACE 예측권 1장 지급. 프로필/로그인 응답에 연속 일수 노출 |
 | **푸시 타이밍 개선** | 선택 | 첫 경주 30분 전 알림 등 |
 | **AI 신뢰도 표시** | 선택 | 예측별 confidence(low/medium/high), 모델 버전·방법론 노출 |
 | **이미지 최적화** | 선택 | 경주/말 사진 추가 시 next/image + alt 적용 ([FEATURE_ROADMAP.md](FEATURE_ROADMAP.md) §5.4) |

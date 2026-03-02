@@ -15,7 +15,15 @@ import { AdminUser } from '../database/entities/admin-user.entity';
 import { PasswordResetToken } from '../database/entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
+import { PointsService } from '../points/points.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
+
+export interface LoginBonusResult {
+  dailyBonusGranted: boolean;
+  dailyBonusPoints: number;
+  consecutiveDays: number;
+  consecutiveRewardGranted: boolean;
+}
 
 export interface SanitizedUser {
   id: number;
@@ -26,6 +34,8 @@ export interface SanitizedUser {
   role: string;
   isActive: boolean;
   favoriteMeet: string | null;
+  /** Consecutive login days (for 7-day reward display) */
+  consecutiveLoginDays?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -58,6 +68,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly predictionTicketsService: PredictionTicketsService,
+    private readonly pointsService: PointsService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -110,8 +121,121 @@ export class AuthService {
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
 
+    let loginBonus: LoginBonusResult | undefined;
+    try {
+      loginBonus = await this.processLoginBonuses(user.id);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (this.config.get('NODE_ENV') !== 'test') {
+        console.warn(`[Auth] Login bonus failed for user ${user.id}: ${msg}`);
+      }
+    }
+
     const token = this.generateToken(user.id, user.email, user.role);
-    return { user: this.sanitize(user), ...token };
+    const result: {
+      user: SanitizedUser;
+      accessToken: string;
+      refreshToken?: string;
+      loginBonus?: LoginBonusResult;
+    } = { user: this.sanitize(user), ...token };
+    if (loginBonus) result.loginBonus = loginBonus;
+    return result;
+  }
+
+  /** KST date string YYYY-MM-DD */
+  private getDateKST(d: Date): string {
+    return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+  }
+
+  /**
+   * Process daily login bonus (points) and consecutive login reward (7-day ticket).
+   * Call after lastLoginAt has been updated.
+   */
+  async processLoginBonuses(userId: number): Promise<LoginBonusResult> {
+    const user = await this.userRepo.findOne({
+      where: { id: userId },
+      select: [
+        'id',
+        'lastDailyBonusAt',
+        'lastConsecutiveLoginDate',
+        'consecutiveLoginDays',
+      ],
+    });
+    if (!user) return this.emptyLoginBonus();
+
+    const now = new Date();
+    const todayKST = this.getDateKST(now);
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayKST = this.getDateKST(yesterday);
+
+    let dailyBonusGranted = false;
+    let dailyBonusPoints = 0;
+    let lastDailyBonusAt: Date | null = user.lastDailyBonusAt;
+    const lastDailyDate = user.lastDailyBonusAt
+      ? this.getDateKST(user.lastDailyBonusAt)
+      : null;
+    if (lastDailyDate !== todayKST) {
+      const { points } = await this.pointsService.grantDailyLoginBonus(userId);
+      dailyBonusPoints = points;
+      dailyBonusGranted = points > 0;
+      lastDailyBonusAt = now;
+    }
+
+    let lastConsecutive = user.lastConsecutiveLoginDate ?? null;
+    let streak = user.consecutiveLoginDays ?? 0;
+    if (lastConsecutive !== todayKST) {
+      if (lastConsecutive === yesterdayKST) {
+        streak += 1;
+      } else {
+        streak = 1;
+      }
+      lastConsecutive = todayKST;
+    }
+
+    let consecutiveRewardGranted = false;
+    if (streak >= 7) {
+      try {
+        await this.predictionTicketsService.grantTickets(
+          userId,
+          1,
+          SIGNUP_BONUS_EXPIRES_DAYS,
+          'RACE',
+        );
+        consecutiveRewardGranted = true;
+        streak = 0;
+      } catch (err: unknown) {
+        if (this.config.get('NODE_ENV') !== 'test') {
+          console.warn(
+            `[Auth] Consecutive 7-day ticket grant failed for user ${userId}:`,
+            err instanceof Error ? err.message : String(err),
+          );
+        }
+      }
+    }
+
+    await this.userRepo.update(userId, {
+      lastDailyBonusAt: lastDailyBonusAt ?? undefined,
+      lastConsecutiveLoginDate: lastConsecutive,
+      consecutiveLoginDays: streak,
+      updatedAt: now,
+    });
+
+    return {
+      dailyBonusGranted,
+      dailyBonusPoints,
+      consecutiveDays: streak,
+      consecutiveRewardGranted,
+    };
+  }
+
+  private emptyLoginBonus(): LoginBonusResult {
+    return {
+      dailyBonusGranted: false,
+      dailyBonusPoints: 0,
+      consecutiveDays: 0,
+      consecutiveRewardGranted: false,
+    };
   }
 
   async adminLogin(loginId: string, password: string) {
@@ -155,6 +279,7 @@ export class AuthService {
         'role',
         'isActive',
         'favoriteMeet',
+        'consecutiveLoginDays',
         'createdAt',
         'updatedAt',
       ],
@@ -367,6 +492,7 @@ export class AuthService {
       role: user.role,
       isActive: user.isActive,
       favoriteMeet: user.favoriteMeet ?? null,
+      consecutiveLoginDays: user.consecutiveLoginDays ?? 0,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

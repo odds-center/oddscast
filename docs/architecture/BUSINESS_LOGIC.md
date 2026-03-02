@@ -220,6 +220,12 @@ sequenceDiagram
 | **포인트 구매**| RACE | 1장=1200pt                 | 30일 후 만료 |
 | **종합 예측권 구매** | MATRIX | 1장=1,000원 (1~10장) | 30일 후 만료 |
 
+### 2.7 일일/연속 로그인 보너스
+
+- **일일 로그인 보너스**: 로그인 시 **해당일(KST) 최초 1회** 포인트 지급. `point_configs`의 `DAILY_LOGIN_BONUS_POINTS`(기본 10) 사용. `users.lastDailyBonusAt`으로 중복 방지.
+- **연속 로그인 보상**: 매일 로그인 시 `users.lastConsecutiveLoginDate`(KST YYYY-MM-DD), `consecutiveLoginDays` 갱신. **7일 연속** 달성 시 RACE 예측권 1장 지급(30일 만료), 이후 streak 0으로 리셋. 7일 미만이면 다음 로그인 시 streak 유지/증가.
+- 로그인 API 응답에 `loginBonus: { dailyBonusGranted, dailyBonusPoints, consecutiveDays, consecutiveRewardGranted }` 포함. 프로필/내 정보에 `consecutiveLoginDays` 노출.
+
 ---
 
 ## 3. 구독 시스템 (Subscription)

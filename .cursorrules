@@ -275,6 +275,7 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 
 ### 커밋 (Commits)
 
+- **작업 완료 시 항상 커밋 후 `git push`까지 수행.** (서명 커밋을 원하면 로컬에서 `commit.gpgsign = true` 및 GPG 설정 후 `git commit -S` 사용. Cursor 환경에 `gpg`가 없으면 `gpgsign = false`로 커밋 후 push하고, 필요 시 로컬에서 `git commit --amend -S --no-edit && git push --force-with-lease`로 서명 추가.)
 - **커밋 메시지는 영어로 작성.** 한글 커밋 메시지 금지.
 - 형식: `type: short description` (예: `feat: add mobile table scroll`, `fix: resolve app bar flicker`)
 - 변경 내용을 1~2줄로 간결하게 설명.

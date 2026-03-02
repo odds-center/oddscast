@@ -31,12 +31,12 @@ export default function Profile() {
     enabled: isLoggedIn,
     placeholderData: keepPreviousData,
   });
+  const userObj = (currentUser ?? storeUser) as { nickname?: string; name?: string; consecutiveLoginDays?: number } | undefined;
   const displayName =
-    (currentUser ?? storeUser) && typeof (currentUser ?? storeUser) === 'object'
-      ? ((currentUser ?? storeUser) as { nickname?: string; name?: string }).nickname ||
-        ((currentUser ?? storeUser) as { nickname?: string; name?: string }).name ||
-        '회원'
+    userObj && typeof userObj === 'object'
+      ? userObj.nickname || userObj.name || '회원'
       : '회원';
+  const consecutiveDays = userObj?.consecutiveLoginDays ?? 0;
 
   const { data: balance, isLoading: balanceLoading } = useQuery({
     queryKey: ['points', 'balance'],
@@ -139,6 +139,12 @@ export default function Profile() {
             <div className='rounded-xl bg-white border border-stone-200 p-5'>
               <p className='text-stone-500 text-sm'>안녕하세요</p>
               <p className='text-lg font-bold text-foreground mt-1'>{displayName}님</p>
+              {consecutiveDays > 0 && (
+                <p className='text-text-secondary text-sm mt-1'>
+                  {consecutiveDays}일 연속 로그인
+                  {consecutiveDays < 7 && ' · 7일 연속 시 예측권 1장'}
+                </p>
+              )}
               <div className='grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-stone-100'>
                 <div className='text-center'>
                   <p className='text-stone-400 text-xs mb-1'>예측권</p>

@@ -3,7 +3,7 @@
 > 웹앱(유저 사이트)과 관리자(Admin)에서 보완이 필요한 항목을 한곳에 정리합니다.  
 > **Planning 시 참고:** [TODO_CONTINUE.md](TODO_CONTINUE.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)
 
-**Last updated:** 2026-02-24 (Admin 전 페이지 에러·재시도 적용 완료)
+**Last updated:** 2026-02-24 (일일/연속 로그인 보너스 WebApp 반영)
 
 ---
 
@@ -21,8 +21,8 @@
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| 일일 로그인 보너스 | 미진행 | 소량 포인트 지급 (FEATURE_ROADMAP 단기) |
-| 연속 로그인 보상 (7일 연속 등) | 미진행 | RACE 티켓 1장 등 |
+| 일일 로그인 보너스 | 적용됨 | 로그인 시 1일 1회 포인트 지급, 로그인 페이지에서 안내 메시지 |
+| 연속 로그인 보상 (7일 연속 등) | 적용됨 | 7일 연속 시 RACE 티켓 1장, 프로필에 연속 일수 표시 |
 | AI 신뢰도 표시 | 선택 | 예측별 confidence(low/medium/high), 모델 버전·방법론 노출 |
 | 푸시 타이밍 개선 | 선택 | 첫 경주 30분 전 알림 등 |
 | 이미지 최적화 | 선택 | 경주/말 사진 추가 시 next/image + alt (FEATURE_ROADMAP §5.4) |

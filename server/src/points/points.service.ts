@@ -315,6 +315,24 @@ export class PointsService {
     return { awarded: awardedCount };
   }
 
+  /** Grant daily login bonus points. Caller must ensure at most once per calendar day (KST). */
+  async grantDailyLoginBonus(userId: number): Promise<{ points: number }> {
+    const configMap = await this.getPointConfigMap();
+    const points = parseInt(
+      configMap['DAILY_LOGIN_BONUS_POINTS'] ?? '10',
+      10,
+    );
+    if (points > 0) {
+      await this.createTransaction(userId, {
+        type: PointTransactionType.BONUS,
+        amount: points,
+        description: '일일 로그인 보너스',
+        metadata: { source: 'daily_login' },
+      });
+    }
+    return { points };
+  }
+
   private async getPointConfigMap(): Promise<Record<string, string>> {
     const rows = await this.pointConfigRepo.find({
       select: ['configKey', 'configValue'],

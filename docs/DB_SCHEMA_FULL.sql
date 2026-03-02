@@ -1,3 +1,0 @@
--- Canonical location for full DB DDL: docs/db/schema.sql
--- All schema SQL is maintained in docs/db/ (see docs/db/README.md).
--- Apply: ./scripts/setup.sh or psql $DATABASE_URL -f docs/db/schema.sql

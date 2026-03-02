@@ -20,7 +20,7 @@
 | 구독 PG (토스페이먼츠) | ✅ 완료 | 빌링키·첫 결제·정기 결제 크론, 결제창 연동 |
 | **종료/예정·KRA 정책** | ✅ 완료 | COMPLETED는 KRA 결과 적재 시에만 설정. 날짜 기반 COMPLETED 제거. WebApp/서버는 status만 사용. [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
 
-**관련 문서:** [PRISMA_REMOVAL.md](PRISMA_REMOVAL.md), [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [NEXT_TASKS.md](NEXT_TASKS.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
+**관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [NEXT_TASKS.md](NEXT_TASKS.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
 ---
 
@@ -107,7 +107,6 @@
 | [TYPEORM_SETUP.md](guides/TYPEORM_SETUP.md) | TypeORM·마이그레이션·CI/배포 |
 | [MONITORING_SETUP.md](guides/MONITORING_SETUP.md) | Sentry·업타임 모니터링 설정 |
 | [DB_BACKUP.md](guides/DB_BACKUP.md) | PostgreSQL 백업·pg_dump·cron |
-| [PRISMA_REMOVAL.md](PRISMA_REMOVAL.md) | Prisma 제거 완료 요약 (참고) |
 | [WEBAPP_COMPLETENESS.md](features/WEBAPP_COMPLETENESS.md) | WebApp 완성도·배포 전 점검 |
 | [WEBAPP_PAGES_PLAN.md](features/WEBAPP_PAGES_PLAN.md) | WebApp 전체 페이지 계획·실행 순서 |
 | [RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) | 경주 종료/예정 표시 정책·KRA 결과 적재와 COMPLETED 설정 |

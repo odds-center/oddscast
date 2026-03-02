@@ -1,4 +1,0 @@
--- OddsCast DB schema reference for Railway (or any PostgreSQL).
--- Full DDL: docs/db/schema.sql (모든 SQL은 docs/db/ 에서 확인).
--- 적용: ./scripts/setup.sh 또는 psql $DATABASE_URL -f docs/db/schema.sql
--- Patches: docs/db/patches/ (updated_at_default.sql, drop_prisma_migrations.sql).

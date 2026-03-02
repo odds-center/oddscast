@@ -1,1 +1,0 @@
--- Moved to: docs/db/patches/drop_prisma_migrations.sql (all DB SQL in docs/db/)

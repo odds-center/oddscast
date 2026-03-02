@@ -97,6 +97,30 @@
 
 ---
 
+## 5.1 Plan → Todos 매핑 (작업 이어가기용)
+
+| ID | 항목 | 출처 |
+|----|------|------|
+| infra-1 | Railway 배포 | §1 배포·인프라 |
+| infra-2 | CD (RAILWAY_TOKEN) | §1 |
+| infra-3 | DB 백업 자동화 | §1 |
+| ops-1 | SENTRY_DSN 에러 모니터링 | §2 품질·운영 |
+| ops-2 | 업타임 모니터링 (/health) | §2 |
+| ops-3 | E2E/통합 테스트 (선택) | §2 |
+| feat-1 | 푸시 타이밍 개선 (선택) | §3 단기 |
+| feat-2 | AI 신뢰도 표시 (선택) | §3 |
+| feat-3 | Push Deep Link (Mobile) | §3 중기 |
+| feat-4 | 이미지 최적화 (선택) | §3 |
+| tech-1 | TypeORM 마이그레이션 CLI (선택) | §4 |
+| tech-2 | 시드 스크립트 통일 (선택) | §4 |
+| gap-1 | Admin 페이지별 권한/가드 점검 | WEBAPP_ADMIN_GAPS §2.1 — ✅ Layout useRequireAuth 적용 |
+| gap-2 | WebApp 터치 영역·44px 점검 | WEBAPP_ADMIN_GAPS §1.3 |
+| doc-1 | 문서 동기화 유지 | §4 |
+
+작업 시 Cursor Todos에서 해당 ID로 진행·완료 표시하고, 완료 시 이 문서와 WEBAPP_ADMIN_GAPS 등 해당 섹션 상태를 갱신한다.
+
+---
+
 ## 6. 참고 문서 요약
 
 | 문서 | 용도 |

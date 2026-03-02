@@ -286,6 +286,28 @@ export class KraService {
     );
   }
 
+  /** List batch schedules (for Admin / KRA controller). */
+  async getBatchSchedules(params?: {
+    status?: string;
+    limit?: number;
+  }): Promise<{ items: BatchSchedule[]; byStatus: Record<string, number> }> {
+    const take = Math.min(Number(params?.limit) || 50, 200);
+    const qb = this.batchScheduleRepo
+      .createQueryBuilder('b')
+      .orderBy('b.scheduledAt', 'DESC')
+      .addOrderBy('b.id', 'DESC')
+      .take(take);
+    if (params?.status != null && params.status !== '') {
+      qb.andWhere('b.status = :status', { status: params.status });
+    }
+    const items = await qb.getMany();
+    const byStatus = items.reduce<Record<string, number>>((acc, i) => {
+      acc[i.status] = (acc[i.status] ?? 0) + 1;
+      return acc;
+    }, {});
+    return { items, byStatus };
+  }
+
   /** Process due batch jobs (scheduledAt <= now, status = PENDING). */
   async processDueBatchSchedules(): Promise<void> {
     const now = new Date();
@@ -322,7 +344,10 @@ export class KraService {
           errorMessage: msg.slice(0, 1000),
           updatedAt: new Date(),
         });
-        this.logger.warn(`[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`, err);
+        this.logger.warn(
+          `[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`,
+          err,
+        );
       }
     }
   }

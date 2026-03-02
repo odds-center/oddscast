@@ -881,6 +881,37 @@ export class AdminKraApi {
       throw handleApiError(error);
     }
   }
+
+  /** Batch schedules (KRA result fetch jobs: PENDING/COMPLETED/FAILED). */
+  static async getBatchSchedules(params?: {
+    status?: string;
+    limit?: number;
+  }): Promise<{
+    items: Array<{
+      id: number;
+      jobType: string;
+      targetRcDate: string;
+      scheduledAt: string;
+      status: string;
+      startedAt: string | null;
+      completedAt: string | null;
+      errorMessage: string | null;
+      createdAt: string;
+      updatedAt: string;
+    }>;
+    byStatus: Record<string, number>;
+  }> {
+    try {
+      const searchParams = new URLSearchParams();
+      if (params?.status) searchParams.set('status', params.status);
+      if (params?.limit) searchParams.set('limit', String(params.limit));
+      const qs = searchParams.toString();
+      const response = await axiosInstance.get(`/kra/batch-schedules${qs ? `?${qs}` : ''}`);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
+  }
 }
 
 /**

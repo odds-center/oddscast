@@ -281,6 +281,15 @@ export class AdminController {
     return this.adminService.getKraSyncLogs(endpoint, rcDate, Number(limit));
   }
 
+  @Get('kra/batch-schedules')
+  @ApiOperation({ summary: '[Admin] 배치 스케줄 목록 (예정/완료/실패)' })
+  async getKraBatchSchedules(
+    @Query('status') status?: string,
+    @Query('limit') limit?: number,
+  ) {
+    return this.kraService.getBatchSchedules({ status, limit });
+  }
+
   @Post('kra/seed-sample')
   @ApiOperation({
     summary: '[Admin] 샘플 경주 데이터 적재 (KRA 키 없이 개발용)',

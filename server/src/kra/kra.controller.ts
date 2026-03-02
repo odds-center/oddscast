@@ -9,7 +9,6 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
-import { BatchSchedule } from '../database/entities/batch-schedule.entity';
 import { KraService } from './kra.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -28,8 +27,6 @@ export class KraController {
     private readonly kraService: KraService,
     @InjectRepository(KraSyncLog)
     private readonly kraSyncLogRepo: Repository<KraSyncLog>,
-    @InjectRepository(BatchSchedule)
-    private readonly batchScheduleRepo: Repository<BatchSchedule>,
   ) {}
 
   @Get('batch-schedules')
@@ -39,24 +36,7 @@ export class KraController {
     @Query('status') status?: string,
     @Query('limit') limit?: number,
   ) {
-    const take = Math.min(Number(limit) || 50, 200);
-    const qb = this.batchScheduleRepo
-      .createQueryBuilder('b')
-      .orderBy('b.scheduledAt', 'DESC')
-      .addOrderBy('b.id', 'DESC')
-      .take(take);
-    if (status != null && status !== '') {
-      qb.andWhere('b.status = :status', { status });
-    }
-    const items = await qb.getMany();
-    const byStatus = items.reduce(
-      (acc, i) => {
-        acc[i.status] = (acc[i.status] ?? 0) + 1;
-        return acc;
-      },
-      {} as Record<string, number>,
-    );
-    return { items, byStatus };
+    return this.kraService.getBatchSchedules({ status, limit });
   }
 
   @Get('sync-logs')

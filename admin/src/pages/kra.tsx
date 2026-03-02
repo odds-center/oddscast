@@ -221,6 +221,17 @@ export default function KraPage() {
     refetchInterval: 10000,
   });
 
+  const {
+    data: batchSchedulesData,
+    isLoading: batchSchedulesLoading,
+    error: batchSchedulesError,
+    refetch: refetchBatchSchedules,
+  } = useQuery({
+    queryKey: ['kra-batch-schedules'],
+    queryFn: () => adminKraApi.getBatchSchedules({ limit: 50 }),
+    refetchInterval: 15000,
+  });
+
   const isAnyPending =
     syncScheduleMutation.isPending ||
     syncResultsMutation.isPending ||
@@ -592,6 +603,133 @@ export default function KraPage() {
               </Card>
             </div>
           </details>
+
+          {/* 배치 스케줄 (결과 조회 예정/완료) */}
+          <Card
+            title='배치 스케줄 (결과 조회)'
+            description='경주 일정 적재 후 해당 일자 결과 조회가 예약됩니다. Cron이 예정 시각(KST)에 실행해 완료/실패로 갱신합니다. 15초마다 자동 갱신.'
+          >
+            <div className='flex flex-wrap items-center gap-3 mb-4'>
+              {batchSchedulesData?.byStatus && (
+                <div className='flex flex-wrap gap-2'>
+                  {(['PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] as const).map((s) => {
+                    const count = batchSchedulesData.byStatus[s] ?? 0;
+                    const label =
+                      s === 'PENDING'
+                        ? '예정'
+                        : s === 'RUNNING'
+                          ? '실행 중'
+                          : s === 'COMPLETED'
+                            ? '완료'
+                            : '실패';
+                    const style =
+                      s === 'PENDING'
+                        ? 'bg-amber-100 text-amber-800'
+                        : s === 'RUNNING'
+                          ? 'bg-blue-100 text-blue-800'
+                          : s === 'COMPLETED'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800';
+                    return (
+                      <span key={s} className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium ${style}`}>
+                        {label} {count}
+                      </span>
+                    );
+                  })}
+                </div>
+              )}
+              <Button type='button' variant='ghost' size='sm' onClick={() => refetchBatchSchedules()}>
+                새로고침
+              </Button>
+            </div>
+            {batchSchedulesError ? (
+              <div className='rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800'>
+                <p>배치 스케줄을 불러오는 중 오류가 발생했습니다.</p>
+                <Button type='button' variant='secondary' size='sm' className='mt-2' onClick={() => refetchBatchSchedules()}>
+                  다시 시도
+                </Button>
+              </div>
+            ) : batchSchedulesLoading ? (
+              <div className='py-8 flex justify-center'>
+                <LoadingSpinner size='md' label='배치 스케줄 불러오는 중...' />
+              </div>
+            ) : !batchSchedulesData?.items?.length ? (
+              <div className='py-12 text-center'>
+                <AdminIcon icon={Clock} className='w-8 h-8 text-gray-300 mx-auto mb-2' />
+                <p className='text-gray-500 text-sm'>등록된 배치 스케줄이 없습니다</p>
+                <p className='text-gray-400 text-xs mt-1'>경주 일정 동기화 시 해당 일자 결과 조회가 자동 예약됩니다</p>
+              </div>
+            ) : (
+              <div className='overflow-x-auto'>
+                <table className='min-w-full divide-y divide-gray-200 text-sm'>
+                  <thead>
+                    <tr className='bg-gray-50'>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>대상일</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>작업</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>예정 시각 (KST)</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>상태</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>시작</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>완료</th>
+                      <th className='py-2.5 px-3 text-left font-medium text-gray-700'>오류</th>
+                    </tr>
+                  </thead>
+                  <tbody className='divide-y divide-gray-100'>
+                    {batchSchedulesData.items.map((b) => (
+                      <tr key={b.id} className='hover:bg-gray-50/50 transition-colors'>
+                        <td className='py-2.5 px-3'>
+                          {b.targetRcDate ? formatYyyyMmDd(b.targetRcDate) : '-'}
+                        </td>
+                        <td className='py-2.5 px-3'>
+                          <span className='font-mono text-xs bg-gray-100 px-2 py-0.5 rounded'>{b.jobType}</span>
+                        </td>
+                        <td className='py-2.5 px-3 text-gray-600'>
+                          {b.scheduledAt
+                            ? new Date(b.scheduledAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+                            : '-'}
+                        </td>
+                        <td className='py-2.5 px-3'>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                              b.status === 'COMPLETED'
+                                ? 'bg-green-100 text-green-800'
+                                : b.status === 'FAILED'
+                                  ? 'bg-red-100 text-red-800'
+                                  : b.status === 'RUNNING'
+                                    ? 'bg-blue-100 text-blue-800'
+                                    : 'bg-amber-100 text-amber-800'
+                            }`}
+                          >
+                            {b.status === 'PENDING'
+                              ? '예정'
+                              : b.status === 'RUNNING'
+                                ? '실행 중'
+                                : b.status === 'COMPLETED'
+                                  ? '완료'
+                                  : b.status === 'FAILED'
+                                    ? '실패'
+                                    : b.status}
+                          </span>
+                        </td>
+                        <td className='py-2.5 px-3 text-gray-500 text-xs'>
+                          {b.startedAt
+                            ? new Date(b.startedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+                            : '-'}
+                        </td>
+                        <td className='py-2.5 px-3 text-gray-500 text-xs'>
+                          {b.completedAt
+                            ? new Date(b.completedAt).toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })
+                            : '-'}
+                        </td>
+                        <td className='py-2.5 px-3 text-red-600 text-xs max-w-[200px] truncate' title={b.errorMessage ?? undefined}>
+                          {b.errorMessage ?? '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </Card>
 
           {/* 동기화 로그 */}
           <Card title='동기화 로그' description='최근 KRA API 호출 이력. 10초마다 자동 갱신됩니다.'>

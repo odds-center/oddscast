@@ -69,7 +69,7 @@
 ## 디렉토리 구조
 
 ```
-goldenrace/
+oddscast/
 ├── server/                     # NestJS 백엔드
 ├── webapp/                     # Next.js 웹앱 (메인 클라이언트)
 ├── mobile/                     # React Native Expo (WebView → webapp)

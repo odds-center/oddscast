@@ -7,7 +7,7 @@
 ## 전체 구조
 
 ```
-goldenrace/
+oddscast/
 ├── server/                     # 🖥️ NestJS 백엔드 (메인 서버, port 3001)
 ├── webapp/                     # 🌐 Next.js 웹앱 (메인 클라이언트, Desktop/Mobile 반응형, port 3000)
 ├── mobile/                     # 📱 React Native Expo 앱 (WebView → WebApp 로드, Metro port 3006)

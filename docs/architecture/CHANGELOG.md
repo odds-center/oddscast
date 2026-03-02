@@ -1,7 +1,12 @@
 # 아키텍처 변경 이력 (Changelog)
 
 > 2026-02-19 작업 내역  
-> **참고:** 2026년 초 서버 DB 레이어가 Prisma에서 **TypeORM**으로 전환됨. 아래 과거 항목 중 `prisma`/`schema.prisma` 언급은 당시 기준이며, 현재는 `server/src/database/entities/`, `docs/db/schema.sql`, `./scripts/setup.sh` 기준으로 적용함.
+> **참고:** 2026년 초 서버 DB 레이어가 Prisma에서 **TypeORM**으로 전환됨. 아래 과거 항목 중 `prisma`/`schema.prisma` 언급은 당시 기준이며, **현재는 아래만 사용함.**
+
+**현재 DB 스키마 적용 (유일한 방법):**
+- DDL: `docs/db/schema.sql` — `./scripts/setup.sh` 또는 `psql $DATABASE_URL -f docs/db/schema.sql`
+- 패치: `docs/db/patches/` (updated_at_default.sql, drop_prisma_migrations.sql, login_bonus_columns.sql)
+- 엔티티: `server/src/database/entities/` — Prisma/seed 명령은 사용하지 않음.
 
 ---
 

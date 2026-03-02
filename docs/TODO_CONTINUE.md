@@ -83,7 +83,7 @@
 |------|------|------|
 | **TypeORM 마이그레이션 CLI 정비** | 선택 | 스키마 변경 시 `migration:generate` / `migration:run` 워크플로 정리. [TYPEORM_SETUP.md](guides/TYPEORM_SETUP.md) |
 | **시드 스크립트 통일** | 선택 | PointConfig, SubscriptionPlan 등 초기 데이터 삽입 스크립트/SQL 한곳에서 관리 |
-| **문서 동기화** | 진행 중 | 기능 추가/변경 시 FEATURE_ROADMAP, API_SPECIFICATION, DATABASE_SCHEMA 등 해당 문서 갱신. 최근: 경주 상태·출전번호 정책 반영, Admin 경주 날짜 기본값(KST) 적용 |
+| **문서 동기화** | 진행 중 | 기능 추가/변경 시 FEATURE_ROADMAP, API_SPECIFICATION, DATABASE_SCHEMA 등 해당 문서 갱신. 프로젝트/저장소·디렉터리명은 **oddscast** 통일. 최근: 경주 상태·출전번호·로그인 보너스 반영 |
 
 ---
 

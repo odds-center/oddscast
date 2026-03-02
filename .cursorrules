@@ -87,7 +87,7 @@
 ## 📂 디렉토리 구조
 
 ```
-goldenrace/
+oddscast/
 ├── server/                     # NestJS 백엔드 (메인)
 │   ├── src/                    # NestJS 모듈 (database/, auth/, races/, predictions/ 등)
 │   │   └── database/           # TypeORM entities, data-source, db-enums, migrations

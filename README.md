@@ -1,4 +1,4 @@
-# 🏇 Golden Race — AI 경마 승부예측 서비스
+# 🏇 OddsCast — AI 경마 승부예측 서비스
 
 **NestJS + Python + PostgreSQL + React Native (WebView)** 기반의 경마 AI 예측 플랫폼
 
@@ -27,7 +27,7 @@
 ## 📂 프로젝트 구조
 
 ```
-goldenrace/
+oddscast/
 ├── server/     # NestJS 백엔드 (port 3001)
 ├── webapp/     # Next.js 웹앱 - Desktop/Mobile (port 3000)
 ├── mobile/     # React Native Expo - WebView → WebApp (port 3006)

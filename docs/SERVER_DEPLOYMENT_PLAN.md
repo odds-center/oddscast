@@ -164,8 +164,8 @@ sudo yum install -y git
 ```bash
 # Clone repository
 cd /home/ec2-user
-git clone https://github.com/your-repo/goldenrace.git
-cd goldenrace
+git clone https://github.com/your-repo/oddscast.git
+cd oddscast
 
 # Install dependencies
 pnpm install
@@ -443,7 +443,7 @@ Create `deploy.sh` at project root:
 set -e
 
 echo "=== OddsCast Deploy ==="
-cd /home/ec2-user/goldenrace
+cd /home/ec2-user/oddscast
 
 # Pull latest code
 git pull origin master
@@ -493,7 +493,7 @@ jobs:
           username: ec2-user
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            cd /home/ec2-user/goldenrace
+            cd /home/ec2-user/oddscast
             bash deploy.sh
 ```
 

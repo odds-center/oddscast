@@ -6,13 +6,11 @@ import { Race } from '../database/entities/race.entity';
 import { RaceStatus } from '../database/db-enums';
 import { NotificationsService } from './notifications.service';
 import { GlobalConfigService } from '../config/config.service';
-
-const KST = 'Asia/Seoul';
+import { kst, todayKstYyyymmdd, KST } from '../common/utils/kst';
 
 /** Today YYYYMMDD in KST */
 function todayRcDate(): string {
-  const s = new Date().toLocaleString('en-CA', { timeZone: KST }).slice(0, 10);
-  return s.replace(/-/g, '');
+  return todayKstYyyymmdd();
 }
 
 /** Parse stTime "HH:mm" or "HH:mm:ss" to minutes since midnight */
@@ -23,16 +21,18 @@ function parseStTimeMinutes(stTime: string | null): number | null {
   return h * 60 + m;
 }
 
-/** Race start as Date (today KST date + stTime) */
+/** Race start as Date (rcDate YYYYMMDD + stTime in KST) */
 function raceStartKst(rcDate: string, stTime: string | null): Date | null {
   const mins = parseStTimeMinutes(stTime);
   if (mins === null) return null;
-  const y = Number(rcDate.slice(0, 4));
-  const m = Number(rcDate.slice(4, 6)) - 1;
-  const d = Number(rcDate.slice(6, 8));
   const hour = Math.floor(mins / 60);
   const min = mins % 60;
-  return new Date(Date.UTC(y, m, d, hour - 9, min, 0)); // KST = UTC+9
+  return kst(`${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}`)
+    .hour(hour)
+    .minute(min)
+    .second(0)
+    .millisecond(0)
+    .toDate();
 }
 
 @Injectable()

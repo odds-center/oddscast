@@ -17,7 +17,7 @@ export class ReferralClaim {
   @Column({ name: 'referralCodeId', type: 'int' })
   referralCodeId!: number;
 
-  @Column({ name: 'referredUserId', type: 'int' })
+  @Column({ name: 'referredUserId', type: 'int', unique: true })
   referredUserId!: number;
 
   @CreateDateColumn({ name: 'createdAt' })

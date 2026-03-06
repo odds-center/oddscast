@@ -10,7 +10,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminKraApi } from '@/lib/api/admin';
-import { formatYyyyMmDd, getErrorMessage, getTodayKstDate } from '@/lib/utils';
+import { formatYyyyMmDd, getErrorMessage, getTodayKstDate, getKstDateOffset } from '@/lib/utils';
 import {
   Database, RefreshCw, FileText, Trophy, User, Zap, History,
   Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server,
@@ -75,7 +75,7 @@ export default function KraPage() {
   });
   const [meetFilter, setMeetFilter] = useState('');
   const [logEndpointFilter, setLogEndpointFilter] = useState('');
-  const [scheduleYear, setScheduleYear] = useState(() => new Date().getFullYear());
+  const [scheduleYear, setScheduleYear] = useState(() => parseInt(getTodayKstDate().slice(0, 4), 10));
   const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
   const syncScheduleMutation = useMutation({
@@ -382,7 +382,7 @@ export default function KraPage() {
                   min={2020}
                   max={2030}
                   value={scheduleYear}
-                  onChange={(e) => setScheduleYear(parseInt(e.target.value, 10) || new Date().getFullYear())}
+                  onChange={(e) => setScheduleYear(parseInt(e.target.value, 10) || parseInt(getTodayKstDate().slice(0, 4), 10))}
                   className='w-20 px-2 py-1.5 border border-gray-300 rounded text-sm'
                 />
                 <Button

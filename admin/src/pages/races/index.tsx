@@ -318,7 +318,7 @@ export default function RacesPage() {
                   onClick={() =>
                     syncScheduleMutation.mutate(
                       syncDate ||
-                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                        getTodayKstDate().replace(/-/g, '')
                     )
                   }
                   disabled={syncScheduleMutation.isPending}
@@ -331,7 +331,7 @@ export default function RacesPage() {
                   onClick={() =>
                     syncResultsMutation.mutate(
                       syncDate ||
-                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                        getTodayKstDate().replace(/-/g, '')
                     )
                   }
                   disabled={syncResultsMutation.isPending}
@@ -344,7 +344,7 @@ export default function RacesPage() {
                   onClick={() =>
                     syncDetailsMutation.mutate(
                       syncDate ||
-                        `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                        getTodayKstDate().replace(/-/g, '')
                     )
                   }
                   disabled={syncDetailsMutation.isPending}
@@ -358,7 +358,7 @@ export default function RacesPage() {
                     onClick={() =>
                       syncAllMutation.mutate(
                         syncDate ||
-                          `${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}${String(new Date().getDate()).padStart(2, '0')}`
+                          getTodayKstDate().replace(/-/g, '')
                       )
                     }
                     disabled={syncAllMutation.isPending}

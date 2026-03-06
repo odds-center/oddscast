@@ -3,8 +3,8 @@ import {
   BadRequestException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, Repository } from 'typeorm';
 import * as crypto from 'crypto';
 import { ReferralCode } from '../database/entities/referral-code.entity';
 import { ReferralClaim } from '../database/entities/referral-claim.entity';
@@ -32,6 +32,8 @@ export class ReferralsService {
     @InjectRepository(ReferralClaim)
     private readonly referralClaimRepo: Repository<ReferralClaim>,
     private readonly predictionTickets: PredictionTicketsService,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
   ) {}
 
   async getOrCreateMyCode(
@@ -110,17 +112,23 @@ export class ReferralsService {
       );
     }
 
-    const now = new Date();
-    await this.referralClaimRepo.save(
-      this.referralClaimRepo.create({
-        referralCodeId: referral.id,
-        referredUserId: userId,
-        createdAt: now,
-      }),
-    );
-    await this.referralCodeRepo.update(referral.id, {
-      usedCount: referral.usedCount + 1,
-      updatedAt: new Date(),
+    // Transaction + unique constraint on referredUserId prevents race conditions
+    await this.dataSource.transaction(async (manager) => {
+      await manager.save(
+        ReferralClaim,
+        manager.create(ReferralClaim, {
+          referralCodeId: referral.id,
+          referredUserId: userId,
+        }),
+      );
+
+      // Atomic increment prevents lost updates from concurrent claims
+      await manager
+        .createQueryBuilder()
+        .update(ReferralCode)
+        .set({ usedCount: () => '"usedCount" + 1' })
+        .where('id = :id AND "usedCount" < "maxUses"', { id: referral.id })
+        .execute();
     });
 
     await this.predictionTickets.grantTickets(

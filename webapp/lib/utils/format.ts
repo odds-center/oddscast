@@ -68,6 +68,12 @@ export function formatRcDate(rcDate: string | undefined): string {
   return `${norm.slice(0, 4)}.${norm.slice(4, 6)}.${norm.slice(6, 8)}`;
 }
 
+/** Korean racecourse name → display label */
+export function formatMeet(meet: string): string {
+  const map: Record<string, string> = { 서울: '서울', 제주: '제주', 부산경남: '부산·경남' };
+  return map[meet] ?? meet;
+}
+
 // ─── Time parsing ───
 
 /**

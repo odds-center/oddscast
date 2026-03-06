@@ -10,19 +10,11 @@ import PredictionApi from '@/lib/api/predictionApi';
 import type { AccuracyStatsResponse } from '@/lib/api/predictionApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
+import { formatMeet } from '@/lib/utils/format';
 
 function formatMonth(month: string): string {
   const [y, m] = month.split('-');
   return `${y}년 ${m}월`;
-}
-
-function formatMeet(meet: string): string {
-  const map: Record<string, string> = {
-    서울: '서울',
-    제주: '제주',
-    부산경남: '부산·경남',
-  };
-  return map[meet] ?? meet;
 }
 
 export default function PredictionAccuracyPage() {

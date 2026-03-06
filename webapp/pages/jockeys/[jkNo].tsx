@@ -12,17 +12,8 @@ import JockeyApi from '@/lib/api/jockeyApi';
 import type { JockeyHistoryItem } from '@/lib/api/jockeyApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
-import { formatRcDate } from '@/lib/utils/format';
+import { formatRcDate, formatMeet } from '@/lib/utils/format';
 import { useState } from 'react';
-
-function formatMeet(meet: string): string {
-  const map: Record<string, string> = {
-    서울: '서울',
-    제주: '제주',
-    부산경남: '부산·경남',
-  };
-  return map[meet] ?? meet;
-}
 
 export default function JockeyProfilePage() {
   const router = useRouter();

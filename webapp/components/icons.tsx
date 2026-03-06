@@ -57,6 +57,7 @@ import {
   Grip,
   Wifi,
   WifiOff,
+  Copy,
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -118,6 +119,7 @@ export const Icons = {
   ShieldCheck,
   ReceiptText,
   Smartphone,
+  Copy,
 } as const;
 
 export type IconName = keyof typeof Icons;

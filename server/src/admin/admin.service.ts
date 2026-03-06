@@ -305,9 +305,8 @@ export class AdminService {
 
   async getUsersGrowth(days: number) {
     const d = Math.min(90, Math.max(7, Number(days) || 30));
-    const start = new Date();
-    start.setDate(start.getDate() - d);
-    start.setHours(0, 0, 0, 0);
+    const startKst = kst().subtract(d, 'day').startOf('day');
+    const start = startKst.toDate();
 
     const users = await this.userRepo.find({
       where: { createdAt: Between(start, new Date()) },
@@ -316,9 +315,7 @@ export class AdminService {
 
     const byDate: Record<string, number> = {};
     for (let i = 0; i < d; i++) {
-      const dt = new Date(start);
-      dt.setDate(dt.getDate() + i);
-      const key = dateToKstDash(dt);
+      const key = startKst.add(i, 'day').format('YYYY-MM-DD');
       byDate[key] = 0;
     }
     users.forEach((u) => {
@@ -391,9 +388,8 @@ export class AdminService {
 
   async getTicketUsageTrend(days: number) {
     const d = Math.min(90, Math.max(7, Number(days) || 30));
-    const start = new Date();
-    start.setDate(start.getDate() - d);
-    start.setHours(0, 0, 0, 0);
+    const startKst = kst().subtract(d, 'day').startOf('day');
+    const start = startKst.toDate();
 
     const tickets = await this.predictionTicketRepo.find({
       where: { status: TicketStatus.USED },
@@ -405,9 +401,7 @@ export class AdminService {
 
     const byDate: Record<string, number> = {};
     for (let i = 0; i < d; i++) {
-      const dt = new Date(start);
-      dt.setDate(dt.getDate() + i);
-      const key = dateToKstDash(dt);
+      const key = startKst.add(i, 'day').format('YYYY-MM-DD');
       byDate[key] = 0;
     }
     filtered.forEach((t) => {

@@ -244,12 +244,10 @@ export class PredictionsService {
     const results: Array<{ date: string; accuracy: number; count: number }> =
       [];
     for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const start = new Date(d);
-      start.setHours(0, 0, 0, 0);
-      const end = new Date(d);
-      end.setHours(23, 59, 59, 999);
+      const day = kst().subtract(i, 'day');
+      const start = day.startOf('day').toDate();
+      const end = day.endOf('day').toDate();
+      const d = day.toDate();
       const dayPreds = await this.predictionRepo.find({
         where: { status: PredictionStatus.COMPLETED },
         select: ['accuracy', 'createdAt'],

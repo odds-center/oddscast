@@ -12,15 +12,8 @@ import JockeyApi from '@/lib/api/jockeyApi';
 import type { JockeyHistoryItem } from '@/lib/api/jockeyApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
+import { formatRcDate } from '@/lib/utils/format';
 import { useState } from 'react';
-
-function formatRcDate(rcDate: string): string {
-  if (!rcDate || rcDate.length < 8) return rcDate;
-  const y = rcDate.slice(0, 4);
-  const m = rcDate.slice(4, 6);
-  const d = rcDate.slice(6, 8);
-  return `${y}.${m}.${d}`;
-}
 
 function formatMeet(meet: string): string {
   const map: Record<string, string> = {

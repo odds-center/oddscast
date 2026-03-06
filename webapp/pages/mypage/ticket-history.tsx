@@ -35,12 +35,16 @@ export default function TicketHistoryPage() {
   }, [allTickets, statusFilter]);
   const totalPages = data?.totalPages ?? 1;
 
-  const soonExpiringCount = useMemo(() => {
-    const inSevenDays = Date.now() + 7 * 24 * 60 * 60 * 1000;
-    return allTickets.filter(
-      (t: PredictionTicket) => t.status === 'AVAILABLE' && t.expiresAt && new Date(t.expiresAt).getTime() < inSevenDays,
-    ).length;
-  }, [allTickets]);
+  const sevenDaysFromNow = Date.now() + 7 * 24 * 60 * 60 * 1000;
+  const soonExpiringCount = useMemo(
+    () =>
+      allTickets.filter(
+        (t: PredictionTicket) =>
+          t.status === 'AVAILABLE' && t.expiresAt && new Date(t.expiresAt).getTime() < sevenDaysFromNow,
+      ).length,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [allTickets],
+  );
 
   const getStatusLabel = (status: string) => {
     switch (status) {

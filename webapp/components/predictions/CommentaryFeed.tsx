@@ -1,10 +1,9 @@
 /**
  * Expert commentary feed — Yongsan comprehensive style
- * Speech bubble/card format, keyword highlighting, gate badge
+ * Speech bubble/card format, keyword highlighting
  */
 import Link from 'next/link';
 import type { CommentaryDto } from '@/lib/api/predictionMatrixApi';
-import { getGateBgColor } from '@/components/race/RaceHeaderCard';
 import { routes } from '@/lib/routes';
 
 function highlightKeywords(text: string, keywords?: string[]): React.ReactNode {
@@ -33,47 +32,28 @@ export interface CommentaryFeedProps {
 export default function CommentaryFeed({ comments }: CommentaryFeedProps) {
   return (
     <div className='space-y-4'>
-      {comments.map((c) => {
-        const no = c.chulNo ?? c.hrNo;
-        const gateNo = parseInt(no ?? '0', 10) || 0;
-        const bgColor = getGateBgColor(gateNo);
-        const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bgColor);
-
-        return (
+      {comments.map((c) => (
           <Link
             key={c.id}
             href={routes.races.detail(c.raceId)}
             className='block rounded-xl border border-border bg-card p-4 hover:bg-muted/30 transition-colors'
           >
-            <div className='flex items-start gap-3'>
-              <span
-                className='shrink-0 w-9 h-9 rounded-full flex items-center justify-center font-bold text-sm'
-                style={{
-                  backgroundColor: bgColor,
-                  color: isLight ? '#171717' : '#fff',
-                  border: isLight ? '1px solid #e5e7eb' : 'none',
-                }}
-              >
-                {no ?? '-'}
+            <div className='flex flex-wrap items-center gap-2 mb-1'>
+              <span className='font-semibold text-foreground'>{c.expertName}</span>
+              <span className='text-text-tertiary text-sm'>
+                {c.meet} {/^\d+$/.test(c.rcNo ?? '') ? `${c.rcNo}R` : c.rcNo ?? ''}
               </span>
-              <div className='flex-1 min-w-0'>
-                <div className='flex flex-wrap items-center gap-2 mb-1'>
-                  <span className='font-semibold text-foreground'>{c.expertName}</span>
-                  <span className='text-text-tertiary text-sm'>
-                    {c.meet} {/^\d+$/.test(c.rcNo ?? '') ? `${c.rcNo}R` : c.rcNo ?? ''}
-                  </span>
-                </div>
-                <p className='text-sm text-foreground mb-1'>
-                  <span className='font-medium text-stone-700'>출전 {no ?? '-'} {c.hrName || ''}</span>
-                </p>
-                <p className='text-text-secondary text-sm'>
-                  {highlightKeywords(c.comment, c.keywords)}
-                </p>
-              </div>
             </div>
+            {c.hrName && (
+              <p className='text-sm text-foreground mb-1'>
+                <span className='font-medium text-stone-700'>출전 {c.hrName}</span>
+              </p>
+            )}
+            <p className='text-text-secondary text-sm'>
+              {highlightKeywords(c.comment, c.keywords)}
+            </p>
           </Link>
-        );
-      })}
+        ))}
       {comments.length === 0 && (
         <p className='text-text-secondary text-sm text-center py-12'>코멘트가 없습니다.</p>
       )}

@@ -29,7 +29,9 @@ function raceStartKst(rcDate: string, stTime: string | null): Date | null {
   if (mins === null) return null;
   const hour = Math.floor(mins / 60);
   const min = mins % 60;
-  return kst(`${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}`)
+  return kst(
+    `${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}`,
+  )
     .hour(hour)
     .minute(min)
     .second(0)

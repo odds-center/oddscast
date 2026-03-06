@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import Icon from '../icons';
-import { formatRcDate } from '@/lib/utils/format';
+import { formatRcDate, formatRaceTime } from '@/lib/utils/format';
 import { routes } from '@/lib/routes';
 
 export interface Top3Item {
@@ -51,7 +51,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
             {(rcDist || winTime) && (
               <span className='text-text-tertiary text-xs flex items-center gap-2'>
                 {rcDist && <span>{rcDist}m</span>}
-                {winTime && <span className='font-mono'>{winTime}</span>}
+                {winTime && <span className='font-mono'>{formatRaceTime(winTime)}</span>}
               </span>
             )}
           </div>
@@ -64,7 +64,6 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
               <thead>
                 <tr>
                   <th className='cell-center w-10'>순위</th>
-                  <th className='cell-center w-8'>No</th>
                   <th className='min-w-[60px]'>마명</th>
                   <th>기수</th>
                 </tr>
@@ -72,11 +71,9 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
               <tbody>
                 {top3.map((p) => {
                   const style = RANK_STYLES[p.ord] ?? { bg: 'bg-card', text: 'text-text-secondary', border: 'border-border' };
-                  const no = p.chulNo ?? (p.hrNo && p.hrNo.length <= 2 ? p.hrNo : '-');
                   return (
                     <tr key={`${p.ord}-${p.hrNo}`} className={`border-b border-border last:border-0 ${style.bg} ${style.text}`}>
                       <td className='cell-center font-bold'>{p.ord}</td>
-                      <td className='cell-center'>{no}</td>
                       <td className='font-medium'>{p.hrName}</td>
                       <td className='text-text-tertiary'>{p.jkName}</td>
                     </tr>

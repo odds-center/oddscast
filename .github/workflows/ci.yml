@@ -35,6 +35,9 @@ jobs:
       - name: Lint webapp
         run: pnpm --filter webapp lint
 
+      - name: Lint admin
+        run: pnpm --filter oddscast-admin lint
+
       - name: Build shared
         run: pnpm --filter @oddscast/shared build
 

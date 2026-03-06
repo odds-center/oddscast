@@ -86,9 +86,11 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
             refetchOnWindowFocus: false,
             refetchOnReconnect: true,
             retry: (failureCount, error) => {
-              const axiosErr = error as { code?: string; response?: { status?: number } };
-              const isNetwork = !axiosErr.response || axiosErr.code === 'ERR_NETWORK';
-              const isServerDown = [502, 503, 504].includes(axiosErr.response?.status ?? 0);
+              const axiosErr = error as { code?: string; response?: { status?: number }; status?: number };
+              // handleApiError throws { status, message } (no response wrapper), so check both locations
+              const httpStatus = axiosErr.response?.status ?? axiosErr.status;
+              const isNetwork = !httpStatus || axiosErr.code === 'ERR_NETWORK';
+              const isServerDown = [502, 503, 504].includes(httpStatus ?? 0);
               if (isNetwork || isServerDown) return failureCount < 5;
               return failureCount < 1;
             },
@@ -151,7 +153,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
         <OnboardingTutorial onComplete={() => setShowOnboarding(false)} />
       )}
       {clientMounted && <NetworkStatusBanner />}
-      {clientMounted && <FloatingAppBar pathname={pathname} isMobile={isMobile} />}
+      {clientMounted && <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />}
     </>
   );
 }

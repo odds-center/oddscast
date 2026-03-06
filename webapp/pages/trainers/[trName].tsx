@@ -12,7 +12,7 @@ import TrainerApi from '@/lib/api/trainerApi';
 import type { TrainerHistoryItem } from '@/lib/api/trainerApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
-import { formatRcDate, formatMeet } from '@/lib/utils/format';
+import { formatRcDate, formatMeet, formatRaceTime } from '@/lib/utils/format';
 import { useState } from 'react';
 
 export default function TrainerProfilePage() {
@@ -161,7 +161,7 @@ export default function TrainerProfilePage() {
                           header: '기록',
                           align: 'center',
                           headerClassName: 'w-16',
-                          render: (r) => r.rcTime ?? '-',
+                          render: (r) => <span className='font-mono'>{formatRaceTime(r.rcTime)}</span>,
                         },
                       ]}
                       data={historyItems}

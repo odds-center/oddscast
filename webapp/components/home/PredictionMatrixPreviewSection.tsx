@@ -7,28 +7,10 @@ import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
-import { getGateBgColor } from '@/components/race/RaceHeaderCard';
-
 function HorseBadge({ no, name }: { no: string; name?: string }) {
-  if (!no || no === '-') return <span className='text-stone-400'>-</span>;
-  const n = parseInt(no, 10) || 0;
-  const bg = getGateBgColor(n);
-  const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
-  return (
-    <span className='inline-flex items-center gap-0.5 whitespace-nowrap'>
-      <span
-        className='inline-flex items-center justify-center w-4 h-4 text-[9px] font-bold rounded-sm shrink-0'
-        style={{
-          backgroundColor: bg,
-          color: isLight ? '#1c1917' : '#fff',
-          border: isLight ? '1px solid #d6d3d1' : 'none',
-        }}
-      >
-        {no}
-      </span>
-      {name && <span className='text-[11px] text-foreground'>{name}</span>}
-    </span>
-  );
+  const display = name || no;
+  if (!display || display === '-') return <span className='text-stone-400'>-</span>;
+  return <span className='text-[11px] text-foreground font-medium whitespace-nowrap'>{display}</span>;
 }
 
 export default function PredictionMatrixPreviewSection() {

@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-06 (stTime 파싱 버그 수정, 홈 DateHeader 경주 종료/다음 경주 표시 개선, Matrix 예측표 잠금 UX 개선, KRA 동기화 시 AI 예측 자동 생성 통합)
+**Last updated:** 2026-03-06 (서버 단위 테스트 352개 완료 — 30 suites; webapp tsconfig PagesPageConfig 중복 오류 수정)
 
 ---
 
@@ -27,7 +27,7 @@
 | **bulkCreate 배치 저장** | ✅ 완료 | 결과 1건씩 save→배열 save(chunk:100)로 변경. |
 | **results.tsx KST 날짜 버그** | ✅ 완료 | 'today'/'yesterday' 필터 시 UTC 기준 날짜→KST 기준(getTodayKstDate) 날짜 계산으로 수정. |
 | **홈페이지 JSX 중복** | ✅ 완료 | isLoggedIn 분기로 4개 섹션 중복 제거. TodaysFortuneCard만 조건부 렌더, 나머지 공통화. |
-| **서버 단위 테스트 107개** | ✅ 완료 | auth/races/results/points/subscriptions/prediction-tickets/predictions/kra 서비스 테스트 완료. ts-jest moduleNameMapper로 경고 제거. |
+| **서버 단위 테스트 352개** | ✅ 완료 | 전체 서비스 테스트 완료 (30 suites). referrals/analysis/payments/admin/notifications-scheduler 추가. webapp tsconfig duplicate PagesPageConfig 오류 수정. |
 | **모바일 첫 화면** | ✅ 완료 | WebApp에서 네이티브 앱일 때 비로그인 → 로그인 페이지, 로그인 시 홈. AUTH_LOGOUT 연동. |
 | **WebApp/Admin 에러·타입** | ✅ 완료 | API catch (err: unknown), Admin any 제거·getErrorMessage, 서버 admin body 타입 정리. |
 | **Admin util 중복 제거** | ✅ 완료 | admin/utils.ts에 getTodayKstDate 추가. kra/races/predictions/subscriptions/users 페이지 로컬 함수·instanceof Error 패턴 제거. |
@@ -37,6 +37,8 @@
 | **홈 DateHeader 개선** | ✅ 완료 | 경주 종료 후 "오늘의 경주가 열렸습니다" 오류 메시지 제거. DB 기반 다음 경주일 조회로 하드코딩(금/토/일) 대체. `todayAllEnded`를 시간 기반 `isRaceActuallyEnded()`만 사용. |
 | **Matrix 예측표 잠금 UX** | ✅ 완료 | 경주 정보(rcNo, meet, 출전 등)는 항상 공개. AI 예측 셀만 잠금(LockedCell 플레이스홀더). 미리보기 2행 허용. |
 | **KRA 동기화 시 AI 예측 자동 생성** | ✅ 완료 | `kra.service.ts`에 `generatePredictionsForDate()` 추가. `syncAll()` 최종 단계에서 예측 생성. `processDueBatchSchedules()` 결과 적재 후 fire-and-forget 예측 생성. Admin KRA 페이지에 Step 4 "AI 예측 생성" 카드 추가. |
+| **레퍼럴(추천인) 시스템** | ✅ 완료 | DB 스키마 이미 있었으나 코드 미구현. ReferralCode/Claim 엔티티·ReferralsModule(서버) + referralsApi·프로필 UI(웹앱) 전체 구현. 추천인 3장·피추천인 2장 RACE 예측권 30일. |
+| **races + results 탭 통합** | ✅ 완료 | `/races?view=results` 탭으로 합침. `/results` 301 redirect. routes.ts·Layout AppBar 활성 상태·e2e 픽스처 URL/응답 구조 버그 수정. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

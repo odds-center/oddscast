@@ -157,9 +157,7 @@ const BET_COLORS: Record<string, { bg: string; border: string; badge: string }> 
 function NumberBadge({ num, ordered, isLast }: { num: string; ordered: boolean; isLast: boolean }) {
   return (
     <span className='inline-flex items-center gap-1'>
-          <span className='inline-flex items-center justify-center min-w-7 h-7 px-1.5 rounded bg-white border border-stone-200 text-foreground font-bold text-sm'>
-        {num}
-      </span>
+      <span className='font-medium text-foreground text-sm'>{num}</span>
       {!isLast && (
         ordered
           ? <ArrowRight size={12} className='text-stone-400 shrink-0' strokeWidth={2.5} />
@@ -197,10 +195,9 @@ export default function BetTypePredictionsSection({
       <div className='py-2'>
         <div className='flex items-center gap-3 p-3 rounded border border-[rgba(22,163,74,0.15)] bg-[rgba(22,163,74,0.04)]'>
           <span className='text-sm font-semibold px-2 py-0.5 rounded bg-[#16a34a] text-white'>단승</span>
-          {nodesList[0] && (
-            <span className='font-bold text-foreground text-base'>{nodesList[0].numbers[0]}번</span>
+          {(name || nodesList[0]) && (
+            <span className='font-bold text-foreground text-base'>{name || nodesList[0]?.numbers[0]}</span>
           )}
-          {name && <span className='text-stone-500 text-sm'>{name}</span>}
         </div>
       </div>
     );
@@ -238,7 +235,7 @@ export default function BetTypePredictionsSection({
                 {item.nodesList.map((nodes, ci) => (
                   <div key={ci} className='flex items-center gap-1'>
                     {nodes.numbers.map((num, i) => (
-                      <NumberBadge key={i} num={num} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
+                      <NumberBadge key={i} num={toHorseName(num, entries) || num} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
                     ))}
                   </div>
                 ))}
@@ -284,8 +281,8 @@ export default function BetTypePredictionsSection({
                           <span key={ci} className='inline-flex items-center gap-0.5'>
                             {nodes.numbers.map((num, i) => (
                               <span key={i} className='flex items-center gap-0.5'>
-                                <span className='inline-flex items-center justify-center min-w-6 h-6 px-1 rounded bg-stone-100 text-stone-700 font-bold text-sm'>
-                                  {num}
+                                <span className='font-medium text-foreground text-sm'>
+                                  {toHorseName(num, entries) || num}
                                 </span>
                                 {i < nodes.numbers.length - 1 && (
                                   nodes.ordered

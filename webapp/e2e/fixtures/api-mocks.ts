@@ -4,7 +4,8 @@
  */
 import type { Page } from '@playwright/test';
 
-const API = '/api';
+// Use **/api to match requests regardless of host (http://localhost:3001/api/...)
+const API = '**/api';
 
 // ------------------------------------------------------------------
 // Stub data
@@ -12,7 +13,7 @@ const API = '/api';
 
 export const stubUser = {
   id: 1,
-  email: 'test@example.com',
+  email: 'test@test.com',
   name: 'Test User',
   nickname: null,
   role: 'USER',
@@ -192,13 +193,16 @@ export async function mockNotificationPrefs(page: Page) {
   });
 }
 
-/** Mock prediction ticket balance. */
+/** Mock prediction ticket balance.
+ *  Returns shape matching PredictionTicketApi.getBalance() normalization:
+ *  { available, used, expired, total } → maps to availableTickets = 2
+ */
 export async function mockTicketBalance(page: Page) {
   await page.route(`${API}/prediction-tickets/balance**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ race: 2, matrix: 0 })),
+      body: JSON.stringify(apiResponse({ available: 2, used: 0, expired: 0, total: 2 })),
     });
   });
 }
@@ -244,7 +248,8 @@ export async function mockRacePredictionUnlocked(page: Page, raceId = '1') {
 // Additional stubs
 // ------------------------------------------------------------------
 
-export const stubPointBalance = { balance: 1200, pointBalance: 1200 };
+// Matches PointApi.getMyBalance() response shape (GET /points/me/balance)
+export const stubPointBalance = { currentPoints: 1200, totalPointsEarned: 1200, totalPointsSpent: 0 };
 
 export const stubPointTicketPrice = { pointsPerTicket: 1200 };
 
@@ -276,51 +281,73 @@ export const stubNotification = {
   createdAt: '2025-03-01T10:30:00.000Z',
 };
 
+// HorseProfile shape (matches HorseApi.getProfile response)
 export const stubHorse = {
   hrNo: 'H001',
   hrName: '천리마',
-  hrNameEn: 'Thunder',
-  age: 4,
   sex: '수말',
-  trName: '박감독',
-  owName: '이오너',
+  age: '4',
+  totalRaces: 5,
+  winCount: 2,
+  placeCount: 4,
+  winRate: 40,
+  placeRate: 80,
+  recentForm: [1, 2, 1, 3, 4],
 };
 
+// HorseHistoryItem shape (matches HorseApi.getHistory response items)
 export const stubHorseHistory = {
-  id: 'entry-h1',
   raceId: 1,
   rcDate: '20250301',
   meet: '서울',
+  meetName: '서울',
   rcNo: '1',
-  rcName: '봄 개막 특별경주',
-  chulNo: '1',
+  rcDist: '1200',
   ord: '1',
-  wgBudam: 57,
+  ordInt: 1,
+  chulNo: '1',
+  jkName: '김철수',
   rcTime: '72.3',
-  winOdds: 3.5,
 };
 
+// JockeyProfile shape (matches JockeyApi.getProfile response)
 export const stubJockey = {
   jkNo: 'J001',
   jkName: '김철수',
-  jkNameEn: 'Kim',
+  totalRaces: 10,
+  winCount: 3,
+  placeCount: 7,
+  winRate: 30,
+  placeRate: 70,
+  recentForm: [1, 2, 3, 1, 2],
+  byMeet: [],
 };
 
+// TrainerProfile shape (matches TrainerApi.getProfile response)
 export const stubTrainer = {
   trName: '박감독',
+  totalRaces: 8,
+  winCount: 2,
+  placeCount: 5,
+  winRate: 25,
+  placeRate: 62.5,
+  recentForm: [1, 2, 3],
+  byMeet: [],
 };
 
 export const stubPredictionHistoryItem = {
-  id: 1,
+  ticketId: 1,
   raceId: 1,
+  predictionId: null,
+  accuracy: null,
+  usedAt: '2025-03-01T11:00:00.000Z',
   race: {
-    meetName: '서울',
+    id: 1,
+    meet: '서울',
     rcNo: '1',
     rcDate: '20250301',
     rcName: '봄 개막 특별경주',
-    status: 'COMPLETED',
   },
-  viewedAt: '2025-03-01T11:00:00.000Z',
 };
 
 export const stubMatrixPrediction = {
@@ -343,10 +370,11 @@ export const stubMatrixPrediction = {
   previewApproved: true,
 };
 
+// Matches server's AccuracyStatsResponse shape
 export const stubAccuracyStats = {
-  overall: { totalRaces: 100, matchedTop1: 40, matchedTop3: 72, accuracy1: 40, accuracy3: 72 },
-  byMonth: [{ month: '2025-02', totalRaces: 50, matchedTop3: 36, accuracy3: 72 }],
-  byMeet: [{ meet: '서울', totalRaces: 60, matchedTop3: 45, accuracy3: 75 }],
+  overall: { totalCount: 100, hitCount: 72, averageAccuracy: 72 },
+  byMonth: [{ month: '2025-02', count: 50, averageAccuracy: 72 }],
+  byMeet: [{ meet: '서울', count: 60, averageAccuracy: 75 }],
 };
 
 export const stubWeeklyPreview = {
@@ -354,7 +382,7 @@ export const stubWeeklyPreview = {
   weekLabel: '2025-03-01',
   content: {
     highlights: '이번 주말 서울 경마장에서 특별경주가 열립니다.',
-    horsesToWatch: [{ hrName: '천리마', reason: '최근 3연승' }],
+    horsesToWatch: ['천리마 — 최근 3연승'],
     trackConditions: '良馬場(양마장) 예상',
   },
 };
@@ -364,6 +392,7 @@ export const stubRanking = [
   { rank: 2, userId: 2, name: 'User B', correctCount: 20, totalPredictions: 38 },
 ];
 
+// Flat shape used in tests; mockGroupedResults converts to server's raceGroups format
 export const stubGroupedResult = {
   raceId: '1',
   meetName: '서울',
@@ -382,7 +411,8 @@ export const stubGroupedResult = {
 // ------------------------------------------------------------------
 
 export async function mockPointBalance(page: Page) {
-  await page.route(`${API}/points/my-balance**`, async (route) => {
+  // Matches PointApi.getMyBalance() → GET /points/me/balance
+  await page.route(`${API}/points/me/balance**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -409,7 +439,8 @@ export async function mockTicketHistory(page: Page, tickets = [stubTicket]) {
 }
 
 export async function mockPointTransactions(page: Page, transactions = [stubPointTransaction]) {
-  await page.route(`${API}/points/transactions**`, async (route) => {
+  // Matches PointApi.getMyTransactions() → GET /points/me/transactions
+  await page.route(`${API}/points/me/transactions**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
@@ -437,18 +468,12 @@ export async function mockNotifications(page: Page, notifications = [stubNotific
 }
 
 export async function mockPredictionHistory(page: Page, items = [stubPredictionHistoryItem]) {
-  await page.route(`${API}/prediction-tickets/history**`, async (route) => {
+  // Matches PredictionTicketApi.getMyPredictionsHistory → GET /prediction-tickets/my-predictions
+  await page.route(`${API}/prediction-tickets/my-predictions**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ tickets: [], total: 0, totalPages: 1 })),
-    });
-  });
-  await page.route(`${API}/predictions/history**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ items, total: items.length, totalPages: 1 })),
+      body: JSON.stringify(apiResponse({ list: items, total: items.length, page: 1, totalPages: 1 })),
     });
   });
 }
@@ -458,19 +483,35 @@ export async function mockMatrixPredictions(
   predictions = [stubMatrixPrediction],
   unlocked = true,
 ) {
-  await page.route(`${API}/predictions/matrix**`, async (route) => {
-    if (!unlocked) {
-      await route.fulfill({
-        status: 403,
-        contentType: 'application/json',
-        body: JSON.stringify({ message: '매트릭스 티켓이 필요합니다.' }),
-      });
-      return;
-    }
+  // Mock checkMatrixAccess endpoint
+  await page.route(`${API}/prediction-tickets/matrix/access**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ predictions, date: '20250301', unlocked: true })),
+      body: JSON.stringify(apiResponse({ hasAccess: unlocked })),
+    });
+  });
+
+  await page.route(`${API}/predictions/matrix**`, async (route) => {
+    // Build correct MatrixResponseDto format from stubMatrixPrediction shape
+    const raceMatrix = predictions.map((p) => ({
+      raceId: String(p.raceId ?? p.id),
+      meet: (p.race as { meet?: string })?.meet ?? 'SEOUL',
+      meetName: p.race?.meetName ?? '서울',
+      rcNo: p.race?.rcNo ?? '1',
+      stTime: p.race?.stTime,
+      predictions: {
+        ai_consensus: (p.scores?.horseScores ?? []).slice(0, 2).map((h: { hrNo: string }) => h.hrNo),
+      },
+      horseNames: Object.fromEntries(
+        (p.scores?.horseScores ?? []).map((h: { hrNo: string; hrName: string }) => [h.hrNo, h.hrName]),
+      ),
+      aiConsensus: p.scores?.horseScores?.[0]?.hrNo ?? '-',
+    }));
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse({ raceMatrix, experts: [{ id: 'ai_consensus', name: 'AI 종합' }] })),
     });
   });
 }
@@ -487,31 +528,62 @@ export async function mockAccuracyStats(page: Page) {
 
 export async function mockHorseProfile(page: Page, hrNo = 'H001') {
   await page.route(`${API}/horses/${hrNo}**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ horse: stubHorse, history: [stubHorseHistory], totalPages: 1 })),
-    });
+    const url = route.request().url();
+    if (url.includes('/history')) {
+      // HorseHistoryResponse shape
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({ items: [stubHorseHistory], total: 1, totalPages: 1 })),
+      });
+    } else {
+      // HorseProfile shape (direct — no wrapper object)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse(stubHorse)),
+      });
+    }
   });
 }
 
 export async function mockJockeyProfile(page: Page, jkNo = 'J001') {
   await page.route(`${API}/jockeys/${jkNo}**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ jockey: stubJockey, history: [], totalPages: 1 })),
-    });
+    const url = route.request().url();
+    if (url.includes('/history')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({ items: [], total: 0, totalPages: 1 })),
+      });
+    } else {
+      // JockeyProfile shape (direct)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse(stubJockey)),
+      });
+    }
   });
 }
 
 export async function mockTrainerProfile(page: Page, trName = '박감독') {
   await page.route(`${API}/trainers/${encodeURIComponent(trName)}**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ trainer: stubTrainer, history: [], totalPages: 1 })),
-    });
+    const url = route.request().url();
+    if (url.includes('/history')) {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse({ items: [], total: 0, totalPages: 1 })),
+      });
+    } else {
+      // TrainerProfile shape (direct)
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(apiResponse(stubTrainer)),
+      });
+    }
   });
 }
 
@@ -527,10 +599,12 @@ export async function mockWeeklyPreview(page: Page) {
 
 export async function mockRankings(page: Page) {
   await page.route(`${API}/rankings**`, async (route) => {
+    // RankingApi.getRankings() expects the array directly as data
+    // (Array.isArray check in the client — see rankingApi.ts)
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ rankings: stubRanking, total: 2, myRank: null })),
+      body: JSON.stringify(apiResponse(stubRanking)),
     });
   });
 }
@@ -539,13 +613,64 @@ export async function mockGroupedResults(
   page: Page,
   grouped = [stubGroupedResult],
 ) {
-  await page.route(`${API}/results/grouped**`, async (route) => {
+  // Matches GET /api/results?groupByRace=true (server's actual endpoint)
+  await page.route('**/api/results**', async (route) => {
+    const url = new URL(route.request().url());
+    if (!url.searchParams.has('groupByRace')) {
+      await route.continue();
+      return;
+    }
+    // Convert flat stub to server's raceGroups response format
+    const raceGroups = grouped.map((g) => ({
+      race: { id: g.raceId, meetName: g.meetName, rcDate: g.rcDate, rcNo: g.rcNo, rcDist: g.rcDist },
+      results: g.results,
+    }));
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(
-        apiResponse({ results: grouped, total: grouped.length, page: 1, totalPages: 1 }),
+        apiResponse({ raceGroups, total: grouped.length, page: 1, totalPages: 1 }),
       ),
+    });
+  });
+}
+
+export const stubReferral = {
+  code: 'ABCD1234',
+  usedCount: 2,
+  maxUses: 10,
+  remainingUses: 8,
+};
+
+/** Mock GET /api/prediction-tickets/matrix/balance. */
+export async function mockMatrixBalance(page: Page) {
+  await page.route(`${API}/prediction-tickets/matrix/balance**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse({ available: 1, used: 0, total: 1 })),
+    });
+  });
+}
+
+/** Mock GET /api/predictions/hit-record. */
+export async function mockHitRecords(page: Page) {
+  await page.route(`${API}/predictions/hit-record**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse([])),
+    });
+  });
+}
+
+/** Mock GET /api/referrals/me — returns user's referral code info. */
+export async function mockMyReferral(page: Page, referral = stubReferral) {
+  await page.route(`${API}/referrals/me**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(referral)),
     });
   });
 }

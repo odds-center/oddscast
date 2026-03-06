@@ -17,6 +17,7 @@ import {
 } from '../database/entities/batch-schedule.entity';
 import { BatchScheduleStatus, RaceStatus } from '../database/db-enums';
 import { ResultsService } from '../results/results.service';
+import { PredictionsService } from '../predictions/predictions.service';
 import { GlobalConfigService } from '../config/config.service';
 import {
   createMockRepository,
@@ -46,6 +47,9 @@ describe('KraService', () => {
   const mockResultsService = {
     bulkCreate: jest.fn().mockResolvedValue({}),
   };
+  const mockPredictionsService = {
+    generatePrediction: jest.fn().mockResolvedValue({}),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -74,6 +78,7 @@ describe('KraService', () => {
           useValue: batchScheduleRepo,
         },
         { provide: ResultsService, useValue: mockResultsService },
+        { provide: PredictionsService, useValue: mockPredictionsService },
         { provide: CACHE_MANAGER, useValue: cache },
       ],
     }).compile();
@@ -218,6 +223,7 @@ describe('KraService', () => {
             useValue: batchScheduleRepo,
           },
           { provide: ResultsService, useValue: mockResultsService },
+          { provide: PredictionsService, useValue: mockPredictionsService },
           { provide: CACHE_MANAGER, useValue: cache },
         ],
       }).compile();

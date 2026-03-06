@@ -10,12 +10,19 @@ import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
+import ReferralsApi from '@/lib/api/referralsApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useState } from 'react';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const storeUser = useAuthStore((s) => s.user);
+  const queryClient = useQueryClient();
+  const [claimInput, setClaimInput] = useState('');
+  const [claimError, setClaimError] = useState('');
+  const [claimSuccess, setClaimSuccess] = useState('');
 
   const { data: currentUser } = useQuery({
     queryKey: ['auth', 'me'],
@@ -49,6 +56,26 @@ export default function Profile() {
     queryFn: () => SubscriptionApi.getStatus(),
     enabled: isLoggedIn,
     placeholderData: keepPreviousData,
+  });
+
+  const { data: referral } = useQuery({
+    queryKey: ['referrals', 'me'],
+    queryFn: () => ReferralsApi.getMyReferral(),
+    enabled: isLoggedIn,
+  });
+
+  const claimMutation = useMutation({
+    mutationFn: (code: string) => ReferralsApi.claimCode(code),
+    onSuccess: (data) => {
+      setClaimError('');
+      setClaimInput('');
+      setClaimSuccess(`추천 코드 적용 완료! 예측권 ${data.ticketsGranted}장이 지급되었습니다.`);
+      void queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
+    },
+    onError: (err: unknown) => {
+      setClaimSuccess('');
+      setClaimError(getErrorMessage(err));
+    },
   });
 
   if (!isLoggedIn) {
@@ -149,6 +176,67 @@ export default function Profile() {
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />
+
+            {/* Referral section */}
+            <div className='rounded-xl bg-white border border-stone-200 p-4 space-y-4'>
+              <p className='text-sm font-semibold text-foreground'>친구 초대</p>
+
+              {/* My code */}
+              <div>
+                <p className='text-xs text-text-secondary mb-1'>내 추천 코드</p>
+                <div className='flex items-center gap-2'>
+                  <span className='flex-1 rounded-lg bg-stone-100 px-3 py-2 text-sm font-mono font-bold tracking-widest text-foreground select-all'>
+                    {referral?.code ?? '—'}
+                  </span>
+                  {referral?.code && (
+                    <button
+                      type='button'
+                      className='btn-secondary text-xs px-3 py-2'
+                      onClick={() => {
+                        void navigator.clipboard.writeText(referral.code);
+                      }}
+                    >
+                      복사
+                    </button>
+                  )}
+                </div>
+                {referral && (
+                  <p className='text-xs text-text-tertiary mt-1'>
+                    사용 {referral.usedCount} / {referral.maxUses}회 · 친구가 코드 사용 시 예측권 3장 지급
+                  </p>
+                )}
+              </div>
+
+              {/* Claim code */}
+              {!claimSuccess && (
+                <div>
+                  <p className='text-xs text-text-secondary mb-1'>추천 코드 사용</p>
+                  <div className='flex items-center gap-2'>
+                    <input
+                      type='text'
+                      value={claimInput}
+                      onChange={(e) => setClaimInput(e.target.value.toUpperCase())}
+                      placeholder='코드 입력'
+                      maxLength={20}
+                      className='flex-1 rounded-lg border border-stone-200 bg-white px-3 py-2 text-sm font-mono uppercase outline-none focus:border-primary'
+                    />
+                    <button
+                      type='button'
+                      className='btn-primary text-xs px-3 py-2'
+                      disabled={!claimInput.trim() || claimMutation.isPending}
+                      onClick={() => claimMutation.mutate(claimInput.trim())}
+                    >
+                      {claimMutation.isPending ? '처리 중...' : '사용'}
+                    </button>
+                  </div>
+                  {claimError && <p className='msg-error mt-1'>{claimError}</p>}
+                  <p className='text-xs text-text-tertiary mt-1'>친구 코드 입력 시 예측권 2장 지급</p>
+                </div>
+              )}
+              {claimSuccess && (
+                <p className='text-sm text-success font-medium'>{claimSuccess}</p>
+              )}
+            </div>
 
             <LegalFooter />
           </div>

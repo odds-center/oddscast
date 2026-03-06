@@ -81,13 +81,16 @@ describe('ActivityLogsService', () => {
       adminLogRepo.save.mockRejectedValue(
         new Error('relation "admin_activity_logs" does not exist'),
       );
-      const warnSpy = jest.spyOn((service as unknown as { logger: { warn: jest.Mock } }).logger, 'warn').mockImplementation();
+      const warnSpy = jest
+        .spyOn(
+          (service as unknown as { logger: { warn: jest.Mock } }).logger,
+          'warn',
+        )
+        .mockImplementation();
 
       await service.logAdminActivity({ action: 'TEST' });
 
-      expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('setup.sh'),
-      );
+      expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('setup.sh'));
     });
   });
 
@@ -199,7 +202,11 @@ describe('ActivityLogsService', () => {
       const logs = [{ id: 1, event: 'PAGE_VIEW' }];
       userLogRepo._qb.getManyAndCount.mockResolvedValue([logs, 1]);
 
-      const result = await service.getUserLogs({ userId: 10, page: 1, limit: 20 });
+      const result = await service.getUserLogs({
+        userId: 10,
+        page: 1,
+        limit: 20,
+      });
 
       expect(result.data).toHaveLength(1);
       expect(result.meta.page).toBe(1);
@@ -208,7 +215,12 @@ describe('ActivityLogsService', () => {
     it('applies userId and event filters', async () => {
       userLogRepo._qb.getManyAndCount.mockResolvedValue([[], 0]);
 
-      await service.getUserLogs({ userId: 5, event: 'RACE_VIEW', page: 1, limit: 10 });
+      await service.getUserLogs({
+        userId: 5,
+        event: 'RACE_VIEW',
+        page: 1,
+        limit: 10,
+      });
 
       expect(userLogRepo._qb.andWhere).toHaveBeenCalledWith(
         'u.userId = :userId',

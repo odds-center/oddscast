@@ -35,7 +35,11 @@
       "Bash(docker compose exec -T postgres psql -U oddscast -d oddscast -c \"INSERT INTO oddscast.admin_users \\(\"\"loginId\"\",password,name\\) VALUES \\(''admin'',''$2b$10$W758e6SSlEFec.GsYHILtOW3D.OvgjwtyyEAQFQttwa3ly1JIQCXO'',''Administrator''\\) ON CONFLICT DO NOTHING;\")",
       "Read(//Users/risingcore/Desktop/work/goldenrace/server/**)",
       "Read(//Users/risingcore/Desktop/work/goldenrace//**)",
-      "Read(//Users/risingcore/Desktop/work/**)"
+      "Read(//Users/risingcore/Desktop/work/**)",
+      "Bash(python3:*)",
+      "Bash(./node_modules/.bin/tsc:*)",
+      "Bash(./node_modules/.bin/nest build:*)",
+      "Bash(./node_modules/.bin/jest:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

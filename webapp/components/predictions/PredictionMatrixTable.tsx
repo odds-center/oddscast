@@ -7,30 +7,13 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import type { MatrixResponseDto, MatrixRowDto } from '@/lib/api/predictionMatrixApi';
-import { getGateBgColor } from '@/components/race/RaceHeaderCard';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 
 function HorseBadge({ no, name }: { no: string; name?: string }) {
-  if (!no || no === '-') return <span className='text-stone-400 text-xs'>-</span>;
-  const n = parseInt(no, 10) || 0;
-  const bg = getGateBgColor(n);
-  const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
-  return (
-    <span className='inline-flex items-center gap-1 whitespace-nowrap'>
-      <span
-        className='inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded-sm shrink-0'
-        style={{
-          backgroundColor: bg,
-          color: isLight ? '#1c1917' : '#fff',
-          border: isLight ? '1px solid #d6d3d1' : 'none',
-        }}
-      >
-        {no}
-      </span>
-      {name && <span className='text-xs text-foreground font-medium'>{name}</span>}
-    </span>
-  );
+  const display = name || no;
+  if (!display || display === '-') return <span className='text-stone-400 text-xs'>-</span>;
+  return <span className='text-xs text-foreground font-medium whitespace-nowrap'>{display}</span>;
 }
 
 function PredictionCell({ val, horseNames }: { val: string[] | string; horseNames?: Record<string, string> }) {
@@ -39,16 +22,6 @@ function PredictionCell({ val, horseNames }: { val: string[] | string; horseName
     <div className='flex items-center justify-center gap-1.5 flex-nowrap'>
       {arr.map((v, i) => <HorseBadge key={i} no={v} name={horseNames?.[v]} />)}
       {arr.length === 0 && <span className='text-stone-400 text-xs'>-</span>}
-    </div>
-  );
-}
-
-/** Blurred placeholder for locked prediction cells */
-function LockedCell() {
-  return (
-    <div className='flex items-center justify-center gap-1.5'>
-      <span className='inline-block w-5 h-5 rounded-sm bg-stone-200 animate-pulse' />
-      <span className='inline-block w-5 h-5 rounded-sm bg-stone-150 animate-pulse opacity-60' />
     </div>
   );
 }
@@ -83,7 +56,6 @@ export interface PredictionMatrixTableProps {
   data: MatrixResponseDto;
   date?: string;
   locked?: boolean;
-  previewCount?: number;
 }
 
 const LAZY_INITIAL_ROWS = 12;
@@ -92,7 +64,6 @@ const LAZY_PAGE_SIZE = 12;
 export default function PredictionMatrixTable({
   data,
   locked = false,
-  previewCount = 2,
 }: PredictionMatrixTableProps) {
   const { raceMatrix, experts } = data;
   const aiExpert = experts.find((e) => e.id === 'ai_consensus');
@@ -166,8 +137,7 @@ export default function PredictionMatrixTable({
           </thead>
           <tbody>
             {visibleRows.map((row, idx) => {
-              // First N rows show predictions as preview, rest are locked
-              const isRowLocked = locked && idx >= previewCount;
+              const isRowLocked = locked;
               return (
                 <tr
                   key={row.raceId}
@@ -177,11 +147,11 @@ export default function PredictionMatrixTable({
                   <td className='sticky left-0 z-10 bg-inherit py-1.5 px-3 whitespace-nowrap'>
                     <RaceInfoCell row={row} />
                   </td>
-                  {/* Prediction columns — blurred when locked */}
+                  {/* Prediction columns — empty when locked */}
                   {expertList.length > 0 && expertList.map((ex) => (
                     <td key={ex.id} className='text-center py-1.5 px-2 whitespace-nowrap'>
                       {isRowLocked ? (
-                        <LockedCell />
+                        <span className='text-stone-300 text-xs'>-</span>
                       ) : (
                         <PredictionCell val={row.predictions[ex.id] ?? '-'} horseNames={row.horseNames} />
                       )}
@@ -189,7 +159,7 @@ export default function PredictionMatrixTable({
                   ))}
                   <td className='text-center py-1.5 px-2 bg-[rgba(22,163,74,0.04)] whitespace-nowrap'>
                     {isRowLocked ? (
-                      <LockedCell />
+                      <span className='text-stone-300 text-xs'>-</span>
                     ) : (
                       <div className='flex items-center justify-center gap-1'>
                         <PredictionCell
@@ -222,7 +192,7 @@ export default function PredictionMatrixTable({
       </div>
 
       {/* Lock info banner */}
-      {locked && raceMatrix.length > previewCount && (
+      {locked && raceMatrix.length > 0 && (
         <div className='mt-2 rounded border border-stone-200 bg-stone-50 py-4 px-4 text-center'>
           <div className='flex items-center justify-center gap-1.5 text-stone-500 text-sm mb-1'>
             <Icon name='Lock' size={14} />

@@ -35,3 +35,5 @@ export { PointPromotion } from './point-promotion.entity';
 export { PointTicketPrice } from './point-ticket-price.entity';
 export { SubscriptionPlan } from './subscription-plan.entity';
 export { BillingHistory } from './billing-history.entity';
+export { ReferralCode } from './referral-code.entity';
+export { ReferralClaim } from './referral-claim.entity';

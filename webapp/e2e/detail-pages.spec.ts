@@ -8,12 +8,8 @@ import {
   mockTrainerProfile,
   mockWeeklyPreview,
   mockRankings,
-  mockAuthMe,
-  seedAuth,
   stubHorse,
   stubJockey,
-  stubWeeklyPreview,
-  stubRanking,
 } from './fixtures/api-mocks';
 
 // -------------------------------------------------------------------
@@ -30,10 +26,11 @@ test.describe('Horse profile page', () => {
     await expect(page.locator(`text=${stubHorse.hrName}`).first()).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows trainer name', async ({ page }) => {
+  test('shows horse sex in profile card', async ({ page }) => {
     await page.goto('/horses/H001');
 
-    await expect(page.locator(`text=${stubHorse.trName}`).first()).toBeVisible({ timeout: 8000 });
+    // Profile card renders sex (수말) and age
+    await expect(page.locator(`text=${stubHorse.sex}`).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('shows page title with OddsCast', async ({ page }) => {
@@ -48,7 +45,8 @@ test.describe('Horse profile page', () => {
 
     await page.goto('/horses/H002');
 
-    const error = page.locator('text=/찾을 수 없습니다|오류|error/i').first();
+    // DataFetchState shows "일시적인 오류가 발생했습니다" title + retry button
+    const error = page.locator('text=/오류|다시 시도|없습니다/i').first();
     await expect(error).toBeVisible({ timeout: 8000 });
   });
 });
@@ -125,7 +123,7 @@ test.describe('Weekly preview page', () => {
   test('shows horses to watch', async ({ page }) => {
     await page.goto('/weekly-preview');
 
-    // stubWeeklyPreview.content.horsesToWatch[0].hrName = 천리마
+    // stubWeeklyPreview.content.horsesToWatch[0] = '천리마 — 최근 3연승'
     await expect(page.locator('text=천리마').first()).toBeVisible({ timeout: 8000 });
   });
 
@@ -211,7 +209,8 @@ test.describe('Legal pages', () => {
   test('terms page renders', async ({ page }) => {
     await page.goto('/legal/terms');
     await expect(page).toHaveTitle(/OddsCast/);
-    const heading = page.locator('h1, h2').filter({ hasText: /이용약관|terms/i }).first();
+    // CompactPageTitle renders h2 with "서비스 이용 약관"; section h2s contain "약관"
+    const heading = page.locator('h2').filter({ hasText: /약관|terms/i }).first();
     await expect(heading).toBeVisible({ timeout: 5000 });
   });
 

@@ -3,7 +3,6 @@
  * No (gate), horse name, jockey/trainer, age/origin, weight carried, horse weight, rating, career record, recent ranks
  */
 import Link from 'next/link';
-import { getGateBgColor } from './RaceHeaderCard';
 import Icon from '@/components/icons';
 import { Tooltip } from '@/components/ui';
 import { routes } from '@/lib/routes';
@@ -86,9 +85,6 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
       {/* Mobile: card layout */}
       <div className='block sm:hidden space-y-2'>
         {entries.map((e) => {
-          const gateNo = parseInt(e.chulNo ?? '0', 10) || 0;
-          const bgColor = getGateBgColor(gateNo);
-          const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(bgColor);
           const { base: hwBase, delta: hwDelta } = parseHorseWeight(e.horseWeight);
           const ageSex = formatAgeSexOrigin(e.prd, e.age ?? undefined, e.sex);
           const record = formatRecord(e.rcCntT, e.ord1CntT);
@@ -107,18 +103,8 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                 ${isSelected?.(e.hrNo) ? 'ring-2 ring-primary-500 border-primary-400 bg-primary-50/30' : 'border-border bg-card hover:border-stone-300'}
               `}
             >
-              <div className='flex items-start gap-3 p-4'>
-                <span
-                  className='shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-lg font-bold text-sm shadow-sm'
-                  style={{
-                    backgroundColor: bgColor,
-                    color: isLight ? '#171717' : '#fff',
-                    border: isLight ? '1px solid #e5e7eb' : 'none',
-                  }}
-                >
-                  {e.chulNo ?? '-'}
-                </span>
-                <div className='flex-1 min-w-0'>
+              <div className='p-4'>
+                <div className='min-w-0'>
                   <div className='flex items-center gap-2 flex-wrap'>
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}
@@ -170,7 +156,6 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
         <table className='data-table data-table-compact w-full'>
           <thead>
             <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-              <th className='cell-center w-10 py-3 font-semibold'>번호</th>
               <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
               <th className='text-left py-3 font-semibold'>기수/조교사</th>
               <th className='text-left py-3 w-20 font-semibold'>마주</th>
@@ -199,9 +184,6 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
           </thead>
           <tbody className='divide-y divide-border'>
             {entries.map((e) => {
-              const gateNo = parseInt(e.chulNo ?? '0', 10) || 0;
-              const bgColor = getGateBgColor(gateNo);
-              const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(bgColor);
               const { base: hwBase, delta: hwDelta } = parseHorseWeight(e.horseWeight);
 
               return (
@@ -214,18 +196,6 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     ${isSelected?.(e.hrNo) ? 'bg-primary-50/50' : ''}
                   `}
                 >
-                  <td className='cell-center py-2.5'>
-                    <span
-                      className='inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm'
-                      style={{
-                        backgroundColor: bgColor,
-                        color: isLight ? '#171717' : '#fff',
-                        border: isLight ? '1px solid #e5e7eb' : 'none',
-                      }}
-                    >
-                      {e.chulNo ?? '-'}
-                    </span>
-                  </td>
                   <td className='py-2.5'>
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}

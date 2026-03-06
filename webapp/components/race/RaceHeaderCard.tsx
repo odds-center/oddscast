@@ -14,11 +14,6 @@ import {
   getTrackTerm,
 } from '@/lib/utils/raceTerms';
 
-const GATE_COLORS: Record<number, string> = {
-  1: '#ffffff', 2: '#facc15', 3: '#ef4444', 4: '#171717', 5: '#3b82f6',
-  6: '#22c55e', 7: '#a855f7', 8: '#ec4899', 9: '#a3a3a3', 10: '#0ea5e9',
-  11: '#84cc16', 12: '#f97316', 13: '#38bdf8', 14: '#fde047',
-};
 
 export interface RaceHeaderProps {
   meetName?: string;
@@ -131,6 +126,3 @@ export default function RaceHeaderCard({
   );
 }
 
-export function getGateBgColor(gateNo: number): string {
-  return GATE_COLORS[gateNo] ?? '#6b7280';
-}

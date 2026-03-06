@@ -17,6 +17,8 @@ export default function RecentRacesSection() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
 
   useEffect(() => {
+    // Read localStorage after mount to avoid SSR hydration mismatch
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setRecentIds(getRecentRaceIds().slice(0, MAX_DISPLAY));
   }, []);
 

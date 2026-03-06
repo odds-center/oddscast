@@ -21,7 +21,7 @@ import {
 } from '../common/serializers/kra.serializer';
 import { toKraMeetForDb } from '@oddscast/shared';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
-import { kst, todayKstYyyymmdd, yesterdayKstYyyymmdd } from '../common/utils/kst';
+import { todayKstYyyymmdd, yesterdayKstYyyymmdd } from '../common/utils/kst';
 
 type RaceRow = Record<string, unknown> & {
   id: number;

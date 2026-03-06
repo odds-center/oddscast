@@ -13,7 +13,6 @@ import { getDateHeaderMessage } from '@/lib/utils/dateHeaderMessages';
 import { parseStTimeToDate, isTodayRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 
 const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-const LIVE_REFETCH_MS = 5 * 60 * 1000; // 5 min when today has races
 const COUNTDOWN_TICK_MS = 60 * 1000; // 1 min
 
 type RaceWithTime = {

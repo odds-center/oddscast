@@ -5,7 +5,7 @@
 
 export const routes = {
   home: '/',
-  results: '/results',
+  results: '/races',
   resultsDetail: (id: string) => `/races/${id}?view=result`,
   ranking: '/ranking',
   settings: '/settings',

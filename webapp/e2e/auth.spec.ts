@@ -106,11 +106,10 @@ test.describe('Register page', () => {
 });
 
 test.describe('Protected page redirect', () => {
-  test('unauthenticated user visiting /profile is redirected to login', async ({ page }) => {
-    // No auth token set — localStorage is empty
+  test('unauthenticated user visiting /profile shows login prompt', async ({ page }) => {
+    // No auth token set — profile page shows RequireLogin (not a hard redirect)
     await page.goto('/profile');
 
-    // Should redirect to login
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole('link', { name: '로그인' }).first()).toBeVisible({ timeout: 5000 });
   });
 });

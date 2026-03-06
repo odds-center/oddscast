@@ -47,7 +47,7 @@ function getSafeAreaBottomPx(): number {
 }
 
 /** Client-only mount. Reads initial position from localStorage to avoid flicker. Fixed bottom bar on mobile, no drag. */
-function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: boolean }) {
+function FloatingAppBar({ pathname, asPath, isMobile }: { pathname: string; asPath: string; isMobile: boolean }) {
   const [navPosition, setNavPosition] = useState<NavPosition>(readStoredPosition);
   const [navOrientation, setNavOrientation] = useState<'horizontal' | 'vertical'>(
     readStoredOrientation,
@@ -183,11 +183,15 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
     (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
   };
 
-  const navLinks: { href: string; icon: IconName; label: string }[] = [
+  const navLinks: { href: string; icon: IconName; label: string; isActive?: (p: string, a: string) => boolean }[] = [
     { href: routes.home, icon: 'Flag', label: '홈' },
-    { href: routes.races.list, icon: 'ClipboardList', label: '경주' },
+    {
+      href: routes.races.list,
+      icon: 'ClipboardList',
+      label: '경주',
+      isActive: (p) => p === '/races' || p.startsWith('/races/'),
+    },
     { href: routes.predictions.matrix, icon: 'BarChart2', label: '종합' },
-    { href: routes.results, icon: 'TrendingUp', label: '결과' },
     { href: routes.profile.index, icon: 'User', label: '정보' },
   ];
 
@@ -200,13 +204,15 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
         style={{ paddingBottom: `max(0.25rem, env(safe-area-inset-bottom))` }}
       >
         <div className='flex flex-row justify-between w-full px-4'>
-          {navLinks.map(({ href, icon, label }) => {
+          {navLinks.map(({ href, icon, label, isActive }) => {
             const isProfile = href === routes.profile.index;
-            const active = isProfile
-              ? pathname === href ||
-                pathname.startsWith('/profile') ||
-                pathname.startsWith('/mypage')
-              : pathname === href;
+            const active = isActive
+              ? isActive(pathname, asPath)
+              : isProfile
+                ? pathname === href ||
+                  pathname.startsWith('/profile') ||
+                  pathname.startsWith('/mypage')
+                : pathname === href;
             return (
               <Link
                 key={href}
@@ -272,13 +278,15 @@ function FloatingAppBar({ pathname, isMobile }: { pathname: string; isMobile: bo
                 : 'flex flex-col gap-0 py-1.5'
             }
           >
-            {navLinks.map(({ href, icon, label }) => {
+            {navLinks.map(({ href, icon, label, isActive }) => {
               const isProfile = href === routes.profile.index;
-              const active = isProfile
-                ? pathname === href ||
-                  pathname.startsWith('/profile') ||
-                  pathname.startsWith('/mypage')
-                : pathname === href;
+              const active = isActive
+                ? isActive(pathname, asPath)
+                : isProfile
+                  ? pathname === href ||
+                    pathname.startsWith('/profile') ||
+                    pathname.startsWith('/mypage')
+                  : pathname === href;
               const vertical = navOrientation === 'vertical';
               return (
                 <Link

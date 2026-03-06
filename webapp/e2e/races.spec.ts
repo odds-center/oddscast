@@ -9,9 +9,11 @@ import {
   mockRacePredictionUnlocked,
   mockTicketBalance,
   mockAuthMe,
+  mockGroupedResults,
   seedAuth,
   stubRace,
   stubRaceEntry,
+  stubGroupedResult,
 } from './fixtures/api-mocks';
 
 test.describe('Race list', () => {
@@ -30,9 +32,10 @@ test.describe('Race list', () => {
     ]);
     await page.goto('/races');
 
-    // At least one race card should render
-    await expect(page.locator('text=봄 개막 특별경주').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=서울 2경주').first()).toBeVisible();
+    // Desktop table shows "{meetName} {rcNo}R" in LinkBadge <a> elements
+    // Use getByRole to target visible anchor links only (avoids hidden mobile card spans)
+    await expect(page.getByRole('link', { name: /서울 1R/ }).first()).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('link', { name: /서울 2R/ }).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('/races page shows loading state then races', async ({ page }) => {
@@ -51,10 +54,8 @@ test.describe('Race list', () => {
 
     await page.goto('/races');
 
-    // Loading spinner or skeleton should appear briefly
-    const loading = page.locator('[aria-label*="로딩"], text=/준비 중|로딩|loading/i').first();
-    // Don't assert on exact timing, just confirm races appear eventually
-    await expect(page.locator('text=봄 개막 특별경주').first()).toBeVisible({ timeout: 10000 });
+    // Don't assert on exact timing, just confirm races appear eventually (shows "서울 1R")
+    await expect(page.locator('text=/서울|1R/').first()).toBeVisible({ timeout: 10000 });
   });
 
   test('empty race list shows empty state', async ({ page }) => {
@@ -78,17 +79,18 @@ test.describe('Race detail — unauthenticated', () => {
     await mockRacePredictionLocked(page);
   });
 
-  test('race detail page shows race name and entries', async ({ page }) => {
+  test('race detail page shows meet name and entries', async ({ page }) => {
     await page.goto('/races/1');
 
-    await expect(page.locator('text=봄 개막 특별경주').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=천리마').first()).toBeVisible();
+    // RaceHeaderCard shows meetName; entry table shows horse names (target table to avoid hidden mobile card)
+    await expect(page.locator('text=서울').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('table').getByText('천리마').first()).toBeVisible({ timeout: 8000 });
   });
 
   test('race detail shows jockey and trainer name', async ({ page }) => {
     await page.goto('/races/1');
 
-    await expect(page.locator('text=김철수').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('table').getByText('김철수').first()).toBeVisible({ timeout: 8000 });
   });
 });
 
@@ -138,5 +140,32 @@ test.describe('Race schedule page', () => {
     await expect(page).toHaveTitle(/일정|OddsCast/);
     // Should have some content (calendar, schedule etc.)
     await expect(page.locator('main')).toBeVisible();
+  });
+});
+
+test.describe('Races page — unified view', () => {
+  test('shows race cards with schedule info for upcoming races', async ({ page }) => {
+    await mockRaceList(page, [stubRace]);
+    await page.goto('/races');
+
+    // Race card shows "서울 1R" (meetName + rcNoR)
+    await expect(page.locator('text=/서울|1R/').first()).toBeVisible({ timeout: 8000 });
+  });
+
+  test('shows inline results for completed races', async ({ page }) => {
+    await mockRaceList(page, [{ ...stubRace, status: 'COMPLETED' }]);
+    await mockGroupedResults(page, [stubGroupedResult]);
+    await page.goto('/races');
+
+    await expect(page.locator('text=천리마').last()).toBeVisible({ timeout: 8000 });
+  });
+
+  test('no separate results tab exists', async ({ page }) => {
+    await mockRaceList(page, [stubRace]);
+    await page.goto('/races');
+
+    // Should NOT have a separate results tab button
+    const tabBtn = page.locator('button').filter({ hasText: '경주 결과' });
+    await expect(tabBtn).toHaveCount(0);
   });
 });

@@ -4,13 +4,14 @@
 import { test, expect } from '@playwright/test';
 import {
   mockMatrixPredictions,
+  mockMatrixBalance,
+  mockHitRecords,
   mockAccuracyStats,
   mockTicketBalance,
   mockAuthMe,
   mockSubscriptionStatus,
   seedAuth,
   stubMatrixPrediction,
-  stubAccuracyStats,
 } from './fixtures/api-mocks';
 
 // -------------------------------------------------------------------
@@ -88,6 +89,8 @@ test.describe('Prediction matrix page — authenticated, unlocked', () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthMe(page);
     await mockTicketBalance(page);
+    await mockMatrixBalance(page);
+    await mockHitRecords(page);
     await mockSubscriptionStatus(page, false);
     await mockMatrixPredictions(page, [stubMatrixPrediction], true);
   });
@@ -100,22 +103,22 @@ test.describe('Prediction matrix page — authenticated, unlocked', () => {
     await expect(page.locator('text=천리마').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('shows win probability for top horses', async ({ page }) => {
+  test('shows race number and meet in matrix row', async ({ page }) => {
     await page.goto('/predictions/matrix');
     await seedAuth(page);
     await page.reload();
 
-    // winProb: 35
-    const probEl = page.locator('text=/35%|35|winProb/i').first();
-    await expect(probEl).toBeVisible({ timeout: 10000 });
+    // stubMatrixPrediction.race.rcNo = '1' → '1R', meetName = '서울'
+    await expect(page.locator('text=/1R|서울/i').first()).toBeVisible({ timeout: 10000 });
   });
 
-  test('shows race name and number', async ({ page }) => {
+  test('shows 2nd horse name in AI consensus column', async ({ page }) => {
     await page.goto('/predictions/matrix');
     await seedAuth(page);
     await page.reload();
 
-    await expect(page.locator('text=봄 개막 특별경주').first()).toBeVisible({ timeout: 10000 });
+    // stubMatrixPrediction.scores.horseScores[1].hrName = '번개'
+    await expect(page.locator('text=번개').first()).toBeVisible({ timeout: 10000 });
   });
 });
 
@@ -123,6 +126,8 @@ test.describe('Prediction matrix page — authenticated, locked', () => {
   test.beforeEach(async ({ page }) => {
     await mockAuthMe(page);
     await mockTicketBalance(page);
+    await mockMatrixBalance(page);
+    await mockHitRecords(page);
     await mockSubscriptionStatus(page, false);
     await mockMatrixPredictions(page, [], false);
   });

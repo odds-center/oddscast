@@ -32,12 +32,11 @@ export default function HorseScoresBarChart({
         const score = h.score ?? 0;
         const pct = scaleMax > 0 ? Math.min(100, (score / scaleMax) * 100) : 0;
         const label = h.hrName ?? h.horseName ?? '-';
-        const no = h.chulNo ?? (h.hrNo != null ? String(h.hrNo) : '');
 
         return (
           <div key={i} className='flex items-center gap-2 text-sm'>
-            <span className='w-8 shrink-0 text-right text-text-tertiary font-medium' title={label}>
-              {no || i + 1}
+            <span className='w-16 shrink-0 text-right text-text-tertiary font-medium truncate' title={label}>
+              {label}
             </span>
             <div className='min-w-0 flex-1'>
               <div className='h-5 overflow-hidden rounded bg-stone-100'>

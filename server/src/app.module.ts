@@ -39,6 +39,8 @@ import {
   PointTicketPrice,
   SubscriptionPlan,
   BillingHistory,
+  ReferralCode,
+  ReferralClaim,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
@@ -71,6 +73,7 @@ import { GlobalConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { CacheModule } from './cache/cache.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
+import { ReferralsModule } from './referrals/referrals.module';
 
 @Module({
   imports: [
@@ -119,6 +122,8 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
           PointTicketPrice,
           SubscriptionPlan,
           BillingHistory,
+          ReferralCode,
+          ReferralClaim,
         ],
         logging: config.get<string>('NODE_ENV') === 'development',
         synchronize: false,
@@ -158,6 +163,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     AdminModule,
     GlobalConfigModule,
     ActivityLogsModule,
+    ReferralsModule,
   ],
   providers: [
     {

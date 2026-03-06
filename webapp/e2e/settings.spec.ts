@@ -40,10 +40,10 @@ test.describe('Notification settings', () => {
     });
   });
 
-  test('redirects to login when not authenticated', async ({ page }) => {
+  test('shows login prompt when not authenticated', async ({ page }) => {
     await page.goto('/settings/notifications');
 
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole('link', { name: '로그인' }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows notification preference toggles when logged in', async ({ page }) => {
@@ -86,7 +86,8 @@ test.describe('Settings menu', () => {
     await seedAuth(page);
     await page.reload();
 
-    const deleteLink = page.locator('a[href*="delete-account"], text=/계정 삭제/i').first();
+    // Settings page uses "회원탈퇴" (not "계정 삭제")
+    const deleteLink = page.locator('a[href*="delete-account"]').or(page.getByText('회원탈퇴')).first();
     await expect(deleteLink).toBeVisible({ timeout: 8000 });
   });
 });

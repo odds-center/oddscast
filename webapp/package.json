@@ -11,7 +11,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:headed": "playwright test --headed",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "test:e2e:integration": "node --env-file=.env.test ./node_modules/.bin/playwright test --config=playwright.integration.config.ts",
+    "test:e2e:integration:ui": "node --env-file=.env.test ./node_modules/.bin/playwright test --config=playwright.integration.config.ts --ui"
   },
   "dependencies": {
     "@oddscast/shared": "file:../shared",

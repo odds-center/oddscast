@@ -23,9 +23,9 @@ test.describe('FloatingAppBar (mobile)', () => {
   test('all 5 nav items are visible on mobile', async ({ page }) => {
     await page.goto('/');
 
-    // 5 nav items: Home, Races, Matrix, Results, Profile
+    // 4 nav items: Home, Races, Matrix, Profile (Results merged into Races tab)
     const navItems = page.locator('.nav-mobile-item');
-    await expect(navItems).toHaveCount(5, { timeout: 8000 });
+    await expect(navItems).toHaveCount(4, { timeout: 8000 });
   });
 
   test('clicking Races nav item navigates to /races', async ({ page }) => {

@@ -23,6 +23,7 @@ export default defineConfig({
 
   use: {
     baseURL,
+    storageState: './playwright/.auth/base.json', // dismisses onboarding tutorial for all tests
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
     locale: 'ko-KR',

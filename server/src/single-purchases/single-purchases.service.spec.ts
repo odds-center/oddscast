@@ -62,7 +62,11 @@ describe('SinglePurchasesService', () => {
     });
 
     it('defaults quantity to 1 when not provided', async () => {
-      singlePurchaseRepo.save.mockResolvedValue({ id: 'p1', userId: 1, quantity: 1 });
+      singlePurchaseRepo.save.mockResolvedValue({
+        id: 'p1',
+        userId: 1,
+        quantity: 1,
+      });
       predictionTicketRepo.save.mockResolvedValue({ id: 't1' });
 
       const result = await service.purchase(1, {});
@@ -86,9 +90,7 @@ describe('SinglePurchasesService', () => {
     });
 
     it('uses totalPrice from config if originalPrice not set', async () => {
-      configService.get.mockResolvedValue(
-        JSON.stringify({ totalPrice: 600 }),
-      );
+      configService.get.mockResolvedValue(JSON.stringify({ totalPrice: 600 }));
       singlePurchaseRepo.save.mockResolvedValue({ id: 'p1' });
       predictionTicketRepo.save.mockResolvedValue({ id: 't1' });
 

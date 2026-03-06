@@ -223,6 +223,51 @@ export function formatDateOnly(date: string | Date | null | undefined): string {
   }
 }
 
+// ─── Race record formatting ───
+
+/**
+ * Format KRA race time (seconds as string or number) to M:SS.s display.
+ * e.g. 72.3 → "1:12.3", "65" → "1:05.0"
+ */
+export function formatRaceTime(rcTime: string | number | null | undefined): string {
+  if (rcTime == null || rcTime === '') return '-';
+  const secs = typeof rcTime === 'number' ? rcTime : parseFloat(String(rcTime));
+  if (!Number.isFinite(secs) || secs <= 0) return '-';
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${m}:${s.toFixed(1).padStart(4, '0')}`;
+}
+
+/**
+ * Convert KRA diffUnit gap text to a numeric decimal string.
+ * Korean gap terms (목/머리/코) and fractions (1¼, 1/2) → numeric.
+ * e.g. "목" → "0.3", "1¼" → "1.25", "1/2" → "0.5"
+ */
+export function formatDiffUnit(diff: string | null | undefined): string {
+  if (!diff) return '-';
+  const trimmed = diff.trim();
+  if (!trimmed) return '-';
+  if (/^\d+(\.\d+)?$/.test(trimmed)) return trimmed;
+
+  const koreanGaps: Record<string, string> = { 코: '0.05', 머리: '0.2', 목: '0.3', 대: '10+' };
+  if (koreanGaps[trimmed]) return koreanGaps[trimmed];
+
+  const fractions: Record<string, number> = { '¼': 0.25, '½': 0.5, '¾': 0.75 };
+  if (fractions[trimmed] != null) return String(fractions[trimmed]);
+
+  const mixed = trimmed.match(/^(\d+)([¼½¾])$/);
+  if (mixed) return String(parseInt(mixed[1], 10) + (fractions[mixed[2]] ?? 0));
+
+  // slash fractions: "1/2", "3/4"
+  const slashFrac = trimmed.match(/^(\d+)\/(\d+)$/);
+  if (slashFrac) {
+    const den = parseInt(slashFrac[2], 10);
+    if (den > 0) return String(parseInt(slashFrac[1], 10) / den);
+  }
+
+  return trimmed;
+}
+
 // ─── Numbers ───
 
 /** Number → "1,234" (ko-KR thousand separator) */

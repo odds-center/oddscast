@@ -7,25 +7,10 @@ import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
-import { getGateBgColor } from '@/components/race/RaceHeaderCard';
-
-function PickBadge({ no }: { no: string }) {
-  if (!no || no === '-') return <span className='text-text-tertiary text-sm'>-</span>;
-  const n = parseInt(no, 10) || 0;
-  const bg = getGateBgColor(n);
-  const isLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16'].includes(bg);
-  return (
-    <span
-      className='inline-flex items-center justify-center w-6 h-6 text-xs font-bold rounded'
-      style={{
-        backgroundColor: bg,
-        color: isLight ? '#171717' : '#fff',
-        border: isLight ? '1px solid #e5e7eb' : 'none',
-      }}
-    >
-      {no}
-    </span>
-  );
+function PickBadge({ no, name }: { no: string; name?: string }) {
+  const display = name || no;
+  if (!display || display === '-') return <span className='text-text-tertiary text-sm'>-</span>;
+  return <span className='text-sm font-medium text-foreground'>{display}</span>;
 }
 
 export default function RacePredictionsPreviewSection() {
@@ -80,10 +65,10 @@ export default function RacePredictionsPreviewSection() {
                   <span className='flex items-center gap-1'>
                     {Array.isArray(row.predictions?.ai_consensus)
                       ? (row.predictions.ai_consensus as string[]).map((no, i) => (
-                          <PickBadge key={i} no={no} />
+                          <PickBadge key={i} no={no} name={row.horseNames?.[no]} />
                         ))
                       : (
-                          <PickBadge no={row.aiConsensus ?? '-'} />
+                          <PickBadge no={row.aiConsensus ?? '-'} name={row.horseNames?.[row.aiConsensus ?? '']} />
                         )}
                   </span>
                 </span>

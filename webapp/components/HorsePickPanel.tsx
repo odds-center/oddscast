@@ -161,7 +161,6 @@ export default function HorsePickPanel({
                 }`}
               >
                 <div className='flex items-center gap-2 flex-1 min-w-0'>
-                  <span className='text-stone-700 font-bold w-7 shrink-0'>{entry.chulNo ?? '-'}</span>
                   <span className='font-medium flex-1 truncate'>{entry.hrName}</span>
                   {selected && <Icon name='Check' size={14} className='shrink-0' />}
                 </div>

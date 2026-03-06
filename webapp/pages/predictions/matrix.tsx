@@ -293,7 +293,7 @@ export default function PredictionMatrixPage() {
                     <div className='flex-1 min-w-0'>
                       <h3 className='text-sm font-bold text-foreground'>AI 예측 열람하기</h3>
                       <p className='text-xs text-stone-500 mt-0.5'>
-                        경주 정보는 무료 공개 · AI 예측은 종합 예측권 필요 (1일 1장 · 1,000원)
+                        종합 예측권 1장으로 해당 날짜 전체 AI 예측을 열람할 수 있습니다 (1일 1장 · 1,000원)
                       </p>
                     </div>
                     <div className='flex flex-col items-end gap-1 shrink-0'>
@@ -336,7 +336,6 @@ export default function PredictionMatrixPage() {
                       data={matrixData}
                       date={dateFilter}
                       locked={!hasAccess}
-                      previewCount={3}
                     />
 
                   </div>

@@ -10,7 +10,7 @@ import { Badge, SectionTitle } from '@/components/ui';
 import Tooltip from '@/components/ui/Tooltip';
 import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
-import RaceHeaderCard, { getGateBgColor } from '@/components/race/RaceHeaderCard';
+import RaceHeaderCard from '@/components/race/RaceHeaderCard';
 import HorseEntryTable from '@/components/race/HorseEntryTable';
 import PredictionSymbol, { scoreToSymbol } from '@/components/race/PredictionSymbol';
 import RaceApi from '@/lib/api/raceApi';
@@ -27,7 +27,7 @@ import { routes } from '@/lib/routes';
 import { trackCTA } from '@/lib/analytics';
 import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
-import { formatTime, isRaceActuallyEnded } from '@/lib/utils/format';
+import { formatTime, isRaceActuallyEnded, formatRaceTime, formatDiffUnit } from '@/lib/utils/format';
 import { pushRecentRaceId } from '@/lib/utils/recentRaces';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
@@ -37,12 +37,6 @@ function formatOrdTypeLabel(ordType: string | null | undefined): string {
   return map[ordType] ?? '';
 }
 
-/** Format race time in seconds as M:SS.s (e.g. 75.9 → "1:15.9", 300 → "5:00.0") */
-function formatRaceTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toFixed(1).padStart(3, '0')}`;
-}
 
 function getFirstPlaceTimeSec(
   results: Array<{ ord?: unknown; ordType?: string | null; rcTime?: string | null }>
@@ -59,23 +53,6 @@ function getFirstPlaceTimeSec(
   return Number.isFinite(val) ? val : null;
 }
 
-/** Convert KRA diffUnit text (e.g. "1¼", "목", "머리") to decimal number string */
-function formatDiffUnit(diff: string): string {
-  if (!diff) return '';
-  const trimmed = diff.trim();
-  if (/^\d+(\.\d+)?$/.test(trimmed)) return trimmed;
-
-  const koreanGaps: Record<string, string> = { 코: '0.05', 머리: '0.2', 목: '0.3', 대: '10+' };
-  if (koreanGaps[trimmed]) return koreanGaps[trimmed];
-
-  const fractions: Record<string, number> = { '¼': 0.25, '½': 0.5, '¾': 0.75 };
-  if (fractions[trimmed] != null) return String(fractions[trimmed]);
-
-  const mixed = trimmed.match(/^(\d+)([¼½¾])$/);
-  if (mixed) return String(parseInt(mixed[1], 10) + (fractions[mixed[2]] ?? 0));
-
-  return trimmed;
-}
 
 /** 1-minute cooldown countdown hook */
 function useCooldown(lastUsedAt: string | null | undefined) {
@@ -546,7 +523,6 @@ export default function RaceDetailPage() {
                   <thead>
                     <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
                       <th className='cell-center w-10 py-3 font-semibold'>순위</th>
-                      <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                       <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
                       <th className='cell-center py-3 w-12 font-semibold'>성별</th>
                       <th className='cell-center py-3 w-12 font-semibold'>연령</th>
@@ -596,7 +572,6 @@ export default function RaceDetailPage() {
                         const isAbnormalOrd = !row.ordType && ordN >= 90;
                         const displayOrdType = row.ordType ?? (isAbnormalOrd ? 'DQ' : null);
                         const ordTypeLabel = formatOrdTypeLabel(displayOrdType);
-                        const no = res.chulNo ?? (res.hrNo && res.hrNo.length <= 2 ? res.hrNo : '-');
                         const rankCls =
                           !displayOrdType && ordN === 1
                             ? 'text-foreground font-bold'
@@ -617,7 +592,7 @@ export default function RaceDetailPage() {
                               : firstPlaceTimeSec != null
                                 ? `${formatRaceTime(rcTimeSec)} (${rcTimeSec >= firstPlaceTimeSec ? '+' : ''}${(rcTimeSec - firstPlaceTimeSec).toFixed(1)}초)`
                                 : formatRaceTime(rcTimeSec)
-                            : formatDiffUnit(row.diffUnit ?? '') || '-';
+                            : formatDiffUnit(row.diffUnit);
                         const rawOrd = String(res.ord ?? '').trim();
                         const hasReason = rawOrd && !/^\d{1,2}$/.test(rawOrd);
                         const remarkTooltip = hasReason
@@ -627,9 +602,6 @@ export default function RaceDetailPage() {
                             : displayOrdType === 'FALL'
                               ? '낙마'
                               : '기권';
-                        const gateNo = parseInt(String(res.chulNo ?? '0'), 10) || 0;
-                        const gateBg = getGateBgColor(gateNo);
-                        const gateLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(gateBg);
                       return (
                         <tr
                           key={typeof res.id !== 'undefined' ? String(res.id) : `result-${i}`}
@@ -637,18 +609,6 @@ export default function RaceDetailPage() {
                         >
                           <td className={`cell-center py-2.5 ${rankCls}`}>
                             {displayOrdType ? '-' : ordStr}
-                          </td>
-                          <td className='cell-center py-2.5'>
-                            <span
-                              className='inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0 whitespace-nowrap'
-                              style={{
-                                backgroundColor: gateBg,
-                                color: gateLight ? '#171717' : '#fff',
-                                border: gateLight ? '1px solid #e5e7eb' : 'none',
-                              }}
-                            >
-                              {no}
-                            </span>
                           </td>
                           <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
                             {res.hrNo ? (
@@ -851,7 +811,6 @@ export default function RaceDetailPage() {
                   <table className='data-table data-table-compact w-full min-w-[200px]'>
                     <thead>
                       <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                        <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                         <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
                         <th className='text-left py-3 w-20 font-semibold'>기수</th>
                       </tr>
@@ -859,9 +818,6 @@ export default function RaceDetailPage() {
                     <tbody>
                       {displayEntries.map((e, i) => (
                         <tr key={e.hrNo ?? i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
-                          <td className='cell-center py-2.5 font-semibold text-stone-700'>
-                            {e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '-')}
-                          </td>
                           <td className='py-2.5 font-medium text-foreground'>{e.hrName}</td>
                           <td className='py-2.5 text-text-secondary'>{e.jkName ?? '-'}</td>
                         </tr>
@@ -922,7 +878,6 @@ export default function RaceDetailPage() {
                     <thead>
                       <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
                         <th className='cell-center w-10 py-3 font-semibold'>순위</th>
-                        <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                         <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
                         <th className='text-left py-3 w-20 font-semibold'>기수</th>
                         <th className='cell-right py-3 w-14 font-semibold'>말점수</th>
@@ -946,12 +901,6 @@ export default function RaceDetailPage() {
                             },
                             i
                           ) => {
-                            const entryChulNo = displayEntries.find((x) => x.hrNo === e.hrNo)?.chulNo;
-                            const no =
-                              (entryChulNo ?? e.chulNo ?? (e.hrNo && String(e.hrNo).length <= 2 ? e.hrNo : '')) || '-';
-                            const gateNo = parseInt(String(no === '-' ? '0' : no), 10) || 0;
-                            const gateBg = getGateBgColor(gateNo);
-                            const gateLight = ['#ffffff', '#fde047', '#facc15', '#38bdf8', '#84cc16', '#fde047'].includes(gateBg);
                             const rankCls =
                               i === 0
                                 ? 'text-foreground font-bold'
@@ -967,18 +916,6 @@ export default function RaceDetailPage() {
                               >
                                 <td className='cell-center py-2.5'>
                                   <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                                </td>
-                                <td className='cell-center py-2.5'>
-                                  <span
-                                    className='inline-flex items-center justify-center w-8 h-8 rounded-lg font-bold text-sm shrink-0 whitespace-nowrap'
-                                    style={{
-                                      backgroundColor: gateBg,
-                                      color: gateLight ? '#171717' : '#fff',
-                                      border: gateLight ? '1px solid #e5e7eb' : 'none',
-                                    }}
-                                  >
-                                    {no}
-                                  </span>
                                 </td>
                                 <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
                                   {e.hrName ?? '-'}
@@ -1199,14 +1136,12 @@ function PredictionFullView({
                 <thead>
                   <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
                     <th className='cell-center py-3 w-10 font-semibold'>순위</th>
-                    <th className='cell-center py-3 w-10 font-semibold'>번호</th>
                     <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
                     <th className='cell-right py-3 w-14 font-semibold'>점수</th>
                   </tr>
                 </thead>
                 <tbody>
                   {prediction.scores!.horseScores!.map((h, i) => {
-                    const no = h.chulNo ?? (h.hrNo && String(h.hrNo).length <= 2 ? h.hrNo : '');
                     const rankCls =
                       i === 0
                         ? 'text-foreground font-bold'
@@ -1219,9 +1154,6 @@ function PredictionFullView({
                       <tr key={i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
                         <td className='cell-center py-2.5'>
                           <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                        </td>
-                        <td className='cell-center py-2.5 font-semibold text-stone-700'>
-                          {no}
                         </td>
                         <td className='py-2.5'>
                           <span className='font-medium text-foreground'>

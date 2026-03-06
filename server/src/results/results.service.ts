@@ -10,7 +10,6 @@ import { PredictionsService } from '../predictions/predictions.service';
 import { toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
 import { serializeRaceResults } from '../common/serializers/kra.serializer';
-import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import {
   CreateResultDto,
   UpdateResultDto,
@@ -123,42 +122,38 @@ export class ResultsService {
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
     const { date, meet } = filters;
 
-    const subQb = this.raceRepo.createQueryBuilder('r');
-    const hasResultSubQuery = subQb
+    const qb = this.raceRepo.createQueryBuilder('r');
+    const hasResultSubQuery = qb
       .subQuery()
       .select('1')
       .from(RaceResult, 'rr2')
       .where('rr2.raceId = r.id')
       .andWhere(
-        new Brackets((qb) => {
-          qb.where('rr2.ordInt IS NOT NULL').orWhere('rr2.ordType IS NOT NULL');
+        new Brackets((b) => {
+          b.where('rr2.ordInt IS NOT NULL').orWhere('rr2.ordType IS NOT NULL');
         }),
       )
       .getQuery();
-    subQb.where(`EXISTS ${hasResultSubQuery}`);
+    qb.where(`EXISTS ${hasResultSubQuery}`);
 
     if (date) {
-      subQb.andWhere('r.rcDate = :date', {
+      qb.andWhere('r.rcDate = :date', {
         date: String(date).replace(/-/g, '').slice(0, 8),
       });
     }
     if (meet) {
-      subQb.andWhere('r.meet = :meet', { meet: toKraMeetName(meet) });
+      qb.andWhere('r.meet = :meet', { meet: toKraMeetName(meet) });
     }
 
-    const [allRaces, total] = await subQb
+    // DB-level numeric rcNo ordering — avoids fetching 5000 rows for in-memory sort
+    const [races, total] = await qb
       .orderBy('r.rcDate', 'DESC')
-      .take(5000)
+      .addOrderBy('r.meet', 'ASC')
+      .addOrderBy("COALESCE(NULLIF(r.rcNo, '')::INTEGER, 0)", 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit)
       .getManyAndCount();
 
-    const sorted = sortRacesByNumericRcNo(allRaces, {
-      getRcDate: (r) => r.rcDate ?? '',
-      getMeet: (r) => r.meet ?? '',
-      getRcNo: (r) => r.rcNo ?? '',
-      rcDateOrder: 'desc',
-    });
-    const start = (page - 1) * limit;
-    const races = sorted.slice(start, start + limit);
     const raceIds = races.map((r) => r.id);
 
     let results: RaceResult[] = [];

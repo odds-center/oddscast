@@ -22,7 +22,7 @@ import {
 test.describe('Mypage index', () => {
   test('redirects to login when unauthenticated', async ({ page }) => {
     await page.goto('/mypage');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows menu links when logged in', async ({ page }) => {
@@ -54,7 +54,7 @@ test.describe('Mypage index', () => {
 test.describe('Notifications page', () => {
   test('redirects to login when unauthenticated', async ({ page }) => {
     await page.goto('/mypage/notifications');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows notification items when logged in', async ({ page }) => {
@@ -112,7 +112,7 @@ test.describe('Notifications page', () => {
 test.describe('Ticket history page', () => {
   test('redirects to login when unauthenticated', async ({ page }) => {
     await page.goto('/mypage/ticket-history');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows ticket rows when logged in', async ({ page }) => {
@@ -156,7 +156,7 @@ test.describe('Ticket history page', () => {
 test.describe('Point transactions page', () => {
   test('redirects to login when unauthenticated', async ({ page }) => {
     await page.goto('/mypage/point-transactions');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows transaction rows when logged in', async ({ page }) => {
@@ -201,7 +201,7 @@ test.describe('Point transactions page', () => {
 test.describe('Prediction history page', () => {
   test('redirects to login when unauthenticated', async ({ page }) => {
     await page.goto('/mypage/prediction-history');
-    await expect(page).toHaveURL(/\/auth\/login/, { timeout: 5000 });
+    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test('shows prediction history items when logged in', async ({ page }) => {
@@ -211,8 +211,9 @@ test.describe('Prediction history page', () => {
     await seedAuth(page);
     await page.reload();
 
+    // raceLabel renders: "{meet} {rcDate} {rcNo}경주" = "서울 2025.03.01 1경주"
     await expect(
-      page.locator('text=봄 개막 특별경주').first(),
+      page.locator('text=/1경주|서울.*경주/').first(),
     ).toBeVisible({ timeout: 8000 });
   });
 

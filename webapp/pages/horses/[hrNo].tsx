@@ -12,7 +12,7 @@ import HorseApi from '@/lib/api/horseApi';
 import type { HorseHistoryItem } from '@/lib/api/horseApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
-import { formatRcDate, formatMeet } from '@/lib/utils/format';
+import { formatRcDate, formatMeet, formatRaceTime } from '@/lib/utils/format';
 import { useState } from 'react';
 
 export default function HorseProfilePage() {
@@ -146,13 +146,6 @@ export default function HorseProfilePage() {
                           render: (r) => (r.ord != null ? r.ord : '-'),
                         },
                         {
-                          key: 'chulNo',
-                          header: '번',
-                          align: 'center',
-                          headerClassName: 'w-12',
-                          render: (r) => r.chulNo ?? '-',
-                        },
-                        {
                           key: 'jkName',
                           header: '기수',
                           headerClassName: 'min-w-[60px]',
@@ -163,7 +156,7 @@ export default function HorseProfilePage() {
                           header: '기록',
                           align: 'center',
                           headerClassName: 'w-16',
-                          render: (r) => r.rcTime ?? '-',
+                          render: (r) => <span className='font-mono'>{formatRaceTime(r.rcTime)}</span>,
                         },
                       ]}
                       data={historyItems}

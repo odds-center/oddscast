@@ -76,7 +76,7 @@ export default function StatisticsPage() {
                 </div>
               ) : usersGrowth && usersGrowth.length > 0 ? (
                 <div className='space-y-2'>
-                  {usersGrowth.slice(0, 10).map((day, idx) => (
+                  {usersGrowth.map((day, idx) => (
                     <div key={idx} className='flex items-center gap-4'>
                       <div className='w-24 text-sm text-gray-600'>{day.date}</div>
                       <div className='flex-1'>
@@ -123,7 +123,7 @@ export default function StatisticsPage() {
                 </div>
               ) : ticketUsageTrend && ticketUsageTrend.length > 0 ? (
                 <div className='space-y-2'>
-                  {ticketUsageTrend.slice(0, 10).map((day, idx) => (
+                  {ticketUsageTrend.map((day, idx) => (
                     <div key={idx} className='flex items-center gap-4'>
                       <div className='w-24 text-sm text-gray-600'>{day.date}</div>
                       <div className='flex-1'>

@@ -8,15 +8,15 @@ import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
+import { getTodayKstDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 
 function getWeekDates(): string[] {
+  const kst = getTodayKstDate();
   const dates: string[] = [];
-  const today = new Date();
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    dates.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day + i));
+    dates.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`);
   }
   return dates;
 }

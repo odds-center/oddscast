@@ -18,7 +18,8 @@ oddscast/
 │   ├── architecture/           # 아키텍처 문서 (이 파일들)
 │   ├── specs/                  # 기술 명세
 │   └── legal/                  # 법적 고지
-├── .cursorrules                # 🤖 AI 에이전트 규칙
+├── CLAUDE.md                   # 🤖 Claude Code AI 규칙
+├── .claude/rules/              # 🤖 상세 규칙 (server, webapp, database, testing, workflow)
 └── README.md                   # 프로젝트 README
 ```
 

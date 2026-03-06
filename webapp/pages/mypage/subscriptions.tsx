@@ -1,8 +1,8 @@
+import React from 'react';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import BackLink from '@/components/page/BackLink';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import EmptyState from '@/components/EmptyState';
+import DataFetchState from '@/components/page/DataFetchState';
 import Link from 'next/link';
 import SectionCard from '@/components/page/SectionCard';
 import { routes } from '@/lib/routes';
@@ -12,10 +12,12 @@ import SubscriptionApi from '@/lib/api/subscriptionApi';
 import type { SubscriptionHistoryItem } from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import Icon from '@/components/icons';
 
 export default function SubscriptionsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const queryClient = useQueryClient();
+  const [confirmCancel, setConfirmCancel] = React.useState(false);
 
   const { data: plans, isLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['subscriptions', 'plans'],
@@ -40,13 +42,14 @@ export default function SubscriptionsPage() {
   const cancelMutation = useMutation({
     mutationFn: () => SubscriptionApi.cancel(),
     onSuccess: () => {
+      setConfirmCancel(false);
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
       queryClient.invalidateQueries({ queryKey: ['subscription', 'history'] });
     },
   });
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='구독 플랜 | OddsCast'>
       <CompactPageTitle title='구독 플랜' backHref={routes.profile.index} />
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm mb-6'>
@@ -88,36 +91,61 @@ export default function SubscriptionsPage() {
               {status.planId} · 월 {status.monthlyTickets}장
             </p>
             {status.daysUntilRenewal != null && (
-              <p className='text-text-secondary text-xs mt-1'>
+              <p className={`text-sm mt-1 font-medium ${status.daysUntilRenewal <= 3 ? 'text-warning' : 'text-text-secondary'}`}>
+                {status.daysUntilRenewal <= 3 && (
+                  <Icon name='AlertCircle' size={13} className='inline mr-1 mb-0.5' />
+                )}
                 {status.daysUntilRenewal}일 후 갱신
               </p>
             )}
-            <button
-              onClick={() => cancelMutation.mutate()}
-              disabled={cancelMutation.isPending}
-              className='btn-secondary mt-3 text-sm px-3 py-1.5'
-            >
-              {cancelMutation.isPending ? '처리 중...' : '구독 취소'}
-            </button>
+            {!confirmCancel ? (
+              <button
+                onClick={() => setConfirmCancel(true)}
+                disabled={cancelMutation.isPending}
+                className='btn-secondary mt-3 text-sm px-3 py-1.5'
+              >
+                구독 취소
+              </button>
+            ) : (
+              <div className='mt-3 p-3 rounded-lg bg-stone-50 border border-stone-200'>
+                <p className='text-sm text-foreground font-medium mb-2'>
+                  구독을 취소하시겠습니까?
+                </p>
+                <p className='text-text-secondary text-sm mb-3'>
+                  취소 후에도 현재 기간 만료일까지 이용 가능합니다.
+                </p>
+                <div className='flex gap-2'>
+                  <button
+                    onClick={() => cancelMutation.mutate()}
+                    disabled={cancelMutation.isPending}
+                    className='btn-secondary text-sm px-3 py-1.5 text-error border-error/40 hover:bg-error/5'
+                  >
+                    {cancelMutation.isPending ? '처리 중...' : '네, 취소합니다'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmCancel(false)}
+                    disabled={cancelMutation.isPending}
+                    className='btn-secondary text-sm px-3 py-1.5'
+                  >
+                    아니요
+                  </button>
+                </div>
+              </div>
+            )}
           </SectionCard>
         )}
 
-        {isLoading ? (
-          <div className='py-16'>
-            <LoadingSpinner size={24} label='구독 플랜 준비 중...' />
-          </div>
-        ) : plansError ? (
-          <EmptyState
-            icon='AlertCircle'
-            title='구독 플랜을 확인할 수 없습니다'
-            description={(plansError as Error)?.message}
-            action={
-              <button onClick={() => refetchPlans()} className='btn-secondary px-3 py-1.5 text-sm'>
-                다시 시도
-              </button>
-            }
-          />
-        ) : (
+        <DataFetchState
+          isLoading={isLoading}
+          error={plansError as Error | null}
+          onRetry={() => refetchPlans()}
+          isEmpty={!plans?.length}
+          emptyIcon='Crown'
+          emptyTitle='구독 플랜이 없습니다'
+          emptyDescription='현재 제공 중인 구독 플랜이 없습니다.'
+          loadingLabel='구독 플랜 준비 중...'
+          errorTitle='구독 플랜을 확인할 수 없습니다'
+        >
           <div className='space-y-4'>
             {(plans ?? []).map((plan: SubscriptionPlan) => (
               <SectionCard key={plan.id}>
@@ -148,16 +176,9 @@ export default function SubscriptionsPage() {
                 </div>
               </SectionCard>
             ))}
-            {(!plans || plans.length === 0) && (
-              <EmptyState
-                icon='Crown'
-                title='구독 플랜이 없습니다'
-                description='현재 제공 중인 구독 플랜이 없습니다.'
-              />
-            )}
           </div>
-        )}
-        <BackLink href={routes.profile.index} label='정보로' className='mt-6 block' />
+        </DataFetchState>
+        <BackLink href={routes.profile.index} label='내 정보로' className='mt-6 block' />
     </Layout>
   );
 }

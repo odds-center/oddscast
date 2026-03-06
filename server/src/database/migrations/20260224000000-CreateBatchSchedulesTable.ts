@@ -44,9 +44,15 @@ export class CreateBatchSchedulesTable20260224000000 implements MigrationInterfa
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`DROP INDEX IF EXISTS oddscast."batch_schedules_jobType_targetRcDate_idx";`);
-    await queryRunner.query(`DROP INDEX IF EXISTS oddscast."batch_schedules_status_scheduledAt_idx";`);
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS oddscast."batch_schedules_jobType_targetRcDate_idx";`,
+    );
+    await queryRunner.query(
+      `DROP INDEX IF EXISTS oddscast."batch_schedules_status_scheduledAt_idx";`,
+    );
     await queryRunner.query(`DROP TABLE IF EXISTS oddscast.batch_schedules;`);
-    await queryRunner.query(`DROP TYPE IF EXISTS oddscast."BatchScheduleStatus";`);
+    await queryRunner.query(
+      `DROP TYPE IF EXISTS oddscast."BatchScheduleStatus";`,
+    );
   }
 }

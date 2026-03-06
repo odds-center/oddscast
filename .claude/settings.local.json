@@ -1,0 +1,37 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(pnpm run:*)",
+      "Bash(pnpm test:*)",
+      "Bash(wc:*)",
+      "Bash(for dir in */)",
+      "Bash(do echo \"=== $dir ===\")",
+      "Read(//Users/risingcore/Desktop/work/oddscast/server/**)",
+      "Bash(done)",
+      "Bash(xargs:*)",
+      "Bash(npx jest:*)",
+      "Bash(pnpm tsc:*)",
+      "Read(//Users/risingcore/.docker/**)",
+      "Bash(docker info)",
+      "Bash(docker compose up -d postgres redis)",
+      "Bash(docker compose exec -T postgres pg_isready -U oddscast -d oddscast)",
+      "Bash(docker compose exec -T postgres psql -U oddscast -d oddscast -tAc \"SELECT 1 FROM information_schema.tables WHERE table_schema=''oddscast'' AND table_name=''users'' LIMIT 1\")",
+      "Bash(chmod +x /Users/risingcore/Desktop/work/oddscast/scripts/dev.sh)",
+      "Bash(grep:*)",
+      "Bash(pnpm add:*)",
+      "Bash(npx playwright:*)",
+      "Bash(printf:*)",
+      "Bash(head:*)",
+      "Bash(pnpm:*)",
+      "Bash(node:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
+    ],
+    "additionalDirectories": [
+      "/Users/risingcore/.docker"
+    ]
+  }
+}

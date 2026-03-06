@@ -79,7 +79,9 @@ export class NotificationsSchedulerService {
         stTime: first.stTime,
       });
       await this.config.set(sentKey, '1');
-      this.logger.log(`[FirstRaceReminder] sent for ${rcDate} race ${first.id}`);
+      this.logger.log(
+        `[FirstRaceReminder] sent for ${rcDate} race ${first.id}`,
+      );
     } catch (err) {
       this.logger.warn(
         '[FirstRaceReminder] failed:',

@@ -73,7 +73,10 @@ export class BulkSendDto {
 }
 
 export class PushSubscribeDto {
-  @ApiProperty({ description: 'FCM registration token (from @react-native-firebase/messaging)' })
+  @ApiProperty({
+    description:
+      'FCM registration token (from @react-native-firebase/messaging)',
+  })
   @IsString()
   token: string;
 

@@ -14,8 +14,6 @@ import RaceHeaderCard, { getGateBgColor } from '@/components/race/RaceHeaderCard
 import HorseEntryTable from '@/components/race/HorseEntryTable';
 import PredictionSymbol, { scoreToSymbol } from '@/components/race/PredictionSymbol';
 import RaceApi from '@/lib/api/raceApi';
-import PicksApi, { PICK_TYPE_HORSE_COUNTS } from '@/lib/api/picksApi';
-import HorsePickPanel from '@/components/HorsePickPanel';
 import BetTypePredictionsSection from '@/components/predictions/BetTypePredictionsSection';
 import HorseScoresBarChart from '@/components/predictions/HorseScoresBarChart';
 import PredictionResultComparison from '@/components/predictions/PredictionResultComparison';
@@ -118,10 +116,6 @@ export default function RaceDetailPage() {
   const isResultView = view === 'result';
   const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const [pickType, setPickType] = useState<string>('SINGLE');
-  const [selectedHorses, setSelectedHorses] = useState<{ hrNo: string; hrName: string }[]>([]);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-
   const {
     data: race,
     isLoading,
@@ -141,13 +135,6 @@ export default function RaceDetailPage() {
   const stTime = (race as { stTime?: string })?.stTime;
   // Show as completed (results, 종료) only when server says COMPLETED and race end time has passed.
   const isRaceCompleted = raceStatus === 'COMPLETED' && isRaceActuallyEnded(rcDate, stTime);
-
-  const { data: myPick } = useQuery({
-    queryKey: ['picks', 'race', id],
-    queryFn: () => PicksApi.getByRace(id as string),
-    enabled: !!id && isLoggedIn && CONFIG.picksEnabled,
-    placeholderData: keepPreviousData,
-  });
 
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
@@ -243,86 +230,9 @@ export default function RaceDetailPage() {
   });
 
   useEffect(() => {
-    const sync = () => {
-      if (myPick) {
-        setPickType(myPick.pickType);
-        setSelectedHorses(
-          (myPick.hrNos || []).map((hrNo, i) => ({
-            hrNo,
-            hrName: myPick.hrNames?.[i] ?? '',
-          })),
-        );
-      } else {
-        setSelectedHorses([]);
-      }
-    };
-    queueMicrotask(sync);
-  }, [myPick]);
-
-  useEffect(() => {
-    queueMicrotask(() => setSelectedHorses([]));
-  }, [pickType]);
-
-  useEffect(() => {
     if (id && typeof id === 'string') pushRecentRaceId(id);
   }, [id]);
 
-  const pickMutation = useMutation({
-    mutationFn: (dto: { raceId: string; pickType: string; hrNos: string[]; hrNames: string[] }) =>
-      PicksApi.create({ ...dto, raceId: parseInt(dto.raceId, 10) }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['picks', 'race', id] });
-      queryClient.invalidateQueries({ queryKey: ['picks'] });
-      setDrawerOpen(false);
-    },
-  });
-
-  const deleteMutation = useMutation({
-    mutationFn: (raceId: string) => PicksApi.delete(raceId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['picks', 'race', id] });
-      queryClient.invalidateQueries({ queryKey: ['picks'] });
-      setSelectedHorses([]);
-      setDrawerOpen(false);
-    },
-  });
-
-  const requiredCount = PICK_TYPE_HORSE_COUNTS[pickType] ?? 1;
-
-  const handleSelectHorse = (hrNo: string, hrName: string) => {
-    const idx = selectedHorses.findIndex((h) => h.hrNo === hrNo);
-    if (idx >= 0) {
-      setSelectedHorses(selectedHorses.filter((_, i) => i !== idx));
-      return;
-    }
-    if (selectedHorses.length >= requiredCount) {
-      setSelectedHorses((prev) => {
-        const next = [...prev];
-        next[requiredCount - 1] = { hrNo, hrName };
-        return next;
-      });
-    } else {
-      setSelectedHorses((prev) => [...prev, { hrNo, hrName }]);
-    }
-  };
-
-  const handleSave = () => {
-    if (!id || typeof id !== 'string') return;
-    if (selectedHorses.length !== requiredCount) return;
-    pickMutation.mutate({
-      raceId: id,
-      pickType,
-      hrNos: selectedHorses.map((h) => h.hrNo),
-      hrNames: selectedHorses.map((h) => h.hrName),
-    });
-  };
-
-  const handleDelete = () => {
-    if (!id || typeof id !== 'string') return;
-    deleteMutation.mutate(id);
-  };
-
-  const isHorseSelected = (hrNo: string) => selectedHorses.some((h) => h.hrNo === hrNo);
 
   if (isLoading) {
     return (
@@ -475,14 +385,12 @@ export default function RaceDetailPage() {
     : [];
   const displayEntries = entries.length > 0 ? entries : entriesFromResults;
   const showEntriesSection = displayEntries.length > 0;
-  const showPickPanel = !isRaceCompleted && isLoggedIn && CONFIG.picksEnabled && entries.length > 0;
-
   const lastUsedTicket = ticketHistory?.tickets
     ?.filter((t) => String(t.raceId) === String(id) && t.status === 'USED')
     .sort((a, b) => new Date(b.usedAt ?? 0).getTime() - new Date(a.usedAt ?? 0).getTime())[0];
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='경주 상세 | OddsCast'>
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         <div className='flex-1 min-w-0 w-full space-y-4'>
           <BackLink
@@ -936,8 +844,6 @@ export default function RaceDetailPage() {
               {entries.length > 0 ? (
                 <HorseEntryTable
                   entries={entries}
-                  onSelectHorse={showPickPanel ? handleSelectHorse : undefined}
-                  isSelected={isHorseSelected}
                   raceId={typeof id === 'string' ? id : undefined}
                 />
               ) : displayEntries.length > 0 ? (
@@ -1123,87 +1029,6 @@ export default function RaceDetailPage() {
           </section>
         </div>
 
-        {/* Desktop sidebar */}
-        {showPickPanel && (
-          <aside className='hidden lg:block w-80 shrink-0'>
-            <div className='lg:sticky lg:top-24 rounded-2xl border border-border bg-card p-4'>
-              <HorsePickPanel
-                pickType={pickType}
-                setPickType={setPickType}
-                selectedHorses={selectedHorses}
-                entries={entries}
-                requiredCount={requiredCount}
-                dividends={dividends}
-                onSelectHorse={handleSelectHorse}
-                onSave={handleSave}
-                onDelete={handleDelete}
-                hasPick={!!myPick}
-                isSaving={pickMutation.isPending}
-                isDeleting={deleteMutation.isPending}
-              />
-            </div>
-          </aside>
-        )}
-
-        {/* Mobile Drawer */}
-        {showPickPanel && (
-          <>
-            <button
-              onClick={() => setDrawerOpen(true)}
-              className='lg:hidden fixed right-4 z-20 flex items-center gap-1.5 px-3 py-2 text-sm rounded-xl bg-primary text-primary-foreground font-semibold shadow-lg touch-manipulation'
-              style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
-              aria-label='출전마 고르기'
-            >
-              <Icon name='ClipboardList' size={20} />
-              <span>
-                출전마 고르기
-                {selectedHorses.length > 0 && (
-                  <span className='ml-1 opacity-90'>
-                    ({selectedHorses.length}/{requiredCount})
-                  </span>
-                )}
-              </span>
-            </button>
-            {drawerOpen && (
-              <>
-                <div
-                  className='lg:hidden fixed inset-0 z-40 bg-black/50'
-                  onClick={() => setDrawerOpen(false)}
-                  aria-hidden='true'
-                />
-                <div className='lg:hidden fixed inset-x-0 bottom-0 z-50 max-h-[85vh] rounded-t-3xl bg-background-elevated border-t border-border overflow-hidden flex flex-col'>
-                  <div className='flex items-center justify-between p-4 border-b border-border shrink-0'>
-                    <h3 className='text-lg font-bold text-stone-800'>출전마 선택</h3>
-                    <button
-                      onClick={() => setDrawerOpen(false)}
-                      className='p-2 -mr-2 text-text-secondary hover:text-foreground rounded-xl'
-                      aria-label='닫기'
-                    >
-                      <Icon name='X' size={24} />
-                    </button>
-                  </div>
-                  <div className='flex-1 overflow-y-auto p-4 pb-8'>
-                    <HorsePickPanel
-                      pickType={pickType}
-                      setPickType={setPickType}
-                      selectedHorses={selectedHorses}
-                      entries={entries}
-                      requiredCount={requiredCount}
-                      dividends={dividends}
-                      onSelectHorse={handleSelectHorse}
-                      onSave={handleSave}
-                      onDelete={handleDelete}
-                      hasPick={!!myPick}
-                      isSaving={pickMutation.isPending}
-                      isDeleting={deleteMutation.isPending}
-                      compact
-                    />
-                  </div>
-                </div>
-              </>
-            )}
-          </>
-        )}
       </div>
     </Layout>
   );

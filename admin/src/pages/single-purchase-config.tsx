@@ -193,7 +193,7 @@ export default function SinglePurchaseConfigPage() {
               </div>
 
               <div className='bg-blue-50 p-4 rounded-md'>
-                <h3 className='font-semibold text-gray-900 mb-4'>💰 가격 미리보기</h3>
+                <h3 className='font-semibold text-gray-900 mb-4'>가격 미리보기</h3>
                 <div className='space-y-2'>
                   <div className='flex justify-between'>
                     <span>1장 구매:</span>

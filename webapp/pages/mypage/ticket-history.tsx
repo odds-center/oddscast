@@ -4,6 +4,7 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
+import Icon from '@/components/icons';
 import { Badge, DataTable, TabBar } from '@/components/ui';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -34,6 +35,13 @@ export default function TicketHistoryPage() {
   }, [allTickets, statusFilter]);
   const totalPages = data?.totalPages ?? 1;
 
+  const soonExpiringCount = useMemo(() => {
+    const inSevenDays = Date.now() + 7 * 24 * 60 * 60 * 1000;
+    return allTickets.filter(
+      (t: PredictionTicket) => t.status === 'AVAILABLE' && t.expiresAt && new Date(t.expiresAt).getTime() < inSevenDays,
+    ).length;
+  }, [allTickets]);
+
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'AVAILABLE':
@@ -62,7 +70,7 @@ export default function TicketHistoryPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='OddsCast'>
+      <Layout title='예측권 이력 | OddsCast'>
         <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
         <RequireLogin />
       </Layout>
@@ -70,7 +78,7 @@ export default function TicketHistoryPage() {
   }
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='예측권 이력 | OddsCast'>
       <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
@@ -96,12 +104,31 @@ export default function TicketHistoryPage() {
             size='sm'
             className='mb-4'
           />
+          {soonExpiringCount > 0 && statusFilter !== 'EXPIRED' && statusFilter !== 'USED' && (
+            <div className='flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3'>
+              <Icon name='AlertCircle' size={15} className='text-amber-500 shrink-0' />
+              <p className='text-sm text-amber-700 font-medium'>
+                7일 이내 만료 예정 예측권 {soonExpiringCount}장 — 빨리 사용하세요!
+              </p>
+            </div>
+          )}
           {statusFilter === 'EXPIRED' && (
             <p className='text-text-tertiary text-sm mb-3'>유효기간이 지난 예측권입니다. 사용할 수 없습니다.</p>
           )}
           <DataTable<PredictionTicket>
               className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
               columns={[
+                {
+                  key: 'type',
+                  header: '유형',
+                  headerClassName: 'w-20',
+                  align: 'center',
+                  render: (t) => (
+                    <Badge variant={(t.type === 'MATRIX') ? 'warning' : 'primary'} size='sm'>
+                      {t.type === 'MATRIX' ? '종합' : '경주'}
+                    </Badge>
+                  ),
+                },
                 {
                   key: 'status',
                   header: '상태',
@@ -123,7 +150,7 @@ export default function TicketHistoryPage() {
                         href={routes.races.detail(t.raceId)}
                         className='text-sm font-medium text-primary hover:underline whitespace-nowrap'
                       >
-                        경주 보기 →
+                        보기 →
                       </Link>
                     ) : (
                       <span className='text-text-tertiary'>—</span>

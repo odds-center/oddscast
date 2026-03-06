@@ -10,7 +10,7 @@ import Card from '@/components/common/Card';
 import PageLoading from '@/components/common/PageLoading';
 import Button from '@/components/common/Button';
 import { adminRacesApi, adminKraApi, AdminAIApi } from '@/lib/api/admin';
-import { isRaceActuallyEnded, getDisplayRaceStatus } from '@/lib/utils';
+import { isRaceActuallyEnded, getDisplayRaceStatus, getErrorMessage } from '@/lib/utils';
 
 type EditRaceForm = {
   rcName?: string;
@@ -246,8 +246,7 @@ export default function RaceDetailPage() {
       setShowEditModal(false);
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : '수정에 실패했습니다';
-      toast.error(msg);
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -259,7 +258,7 @@ export default function RaceDetailPage() {
       toast.success('경기 결과 적재 요청이 완료되었습니다.');
     },
     onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : '경기 결과 적재 실패');
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -270,7 +269,7 @@ export default function RaceDetailPage() {
       toast.success('AI 예측 생성이 완료되었습니다.');
     },
     onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : '예측 생성 실패');
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -401,10 +400,6 @@ export default function RaceDetailPage() {
                   )}
                 </div>
               </div>
-            </Card>
-
-            <Card title='경주명'>
-              <div className='text-lg font-semibold'>{race.rcName}</div>
             </Card>
 
             <Card

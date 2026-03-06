@@ -49,7 +49,7 @@ export default function ResetPasswordPage() {
 
   if (!token && typeof window !== 'undefined' && router.isReady) {
     return (
-      <Layout title='비밀번호 재설정 — OddsCast'>
+      <Layout title='비밀번호 재설정 | OddsCast'>
         <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
           <AuthCard
             title='링크를 확인해주세요'
@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <Layout title='비밀번호 재설정 — OddsCast'>
+    <Layout title='비밀번호 재설정 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         <AuthCard
           title='비밀번호 재설정'

@@ -44,7 +44,7 @@ export default function MatrixTicketPurchasePage() {
   const totalPrice = count * PRICE_PER_TICKET;
 
   return (
-    <Layout title='종합 예측권 구매 — OddsCast'>
+    <Layout title='종합 예측권 구매 | OddsCast'>
       <CompactPageTitle title='종합 예측권 구매' backHref={routes.predictions.matrix} />
 
       {!isLoggedIn ? (
@@ -184,7 +184,7 @@ export default function MatrixTicketPurchasePage() {
           >
             종합 예상표 바로가기 →
           </Link>
-          <BackLink href={routes.profile.index} label='정보로' className='mt-6 block' />
+          <BackLink href={routes.profile.index} label='내 정보로' className='mt-6 block' />
         </div>
       )}
     </Layout>

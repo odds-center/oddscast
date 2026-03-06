@@ -100,6 +100,7 @@ export interface SubscriptionPlan {
   baseTickets: number;
   bonusTickets: number;
   totalTickets: number;
+  matrixTickets: number;
   isActive: boolean;
   sortOrder: number;
 }

@@ -95,34 +95,21 @@ export default function Home() {
         <RecentRacesSection />
       </div>
 
-      {isLoggedIn ? (
-        <>
-          <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-            <div className='lg:col-span-2'>
-              <TodaysFortuneCard />
-            </div>
+      {isLoggedIn && (
+        <div className='grid lg:grid-cols-2 gap-4 mb-4'>
+          <div className='lg:col-span-2'>
+            <TodaysFortuneCard />
           </div>
-          <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-            <RecentResultsSection />
-            <PredictionMatrixPreviewSection />
-          </div>
-          <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-            <RacePredictionsPreviewSection />
-            <RankingPreviewSection />
-          </div>
-        </>
-      ) : (
-        <>
-          <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-            <RecentResultsSection />
-            <PredictionMatrixPreviewSection />
-          </div>
-          <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-            <RacePredictionsPreviewSection />
-            <RankingPreviewSection />
-          </div>
-        </>
+        </div>
       )}
+      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
+        <RecentResultsSection />
+        <PredictionMatrixPreviewSection />
+      </div>
+      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
+        <RacePredictionsPreviewSection />
+        <RankingPreviewSection />
+      </div>
 
       <div className='mb-4'>
         <AllRacesSection />
@@ -134,11 +121,11 @@ export default function Home() {
 export const getServerSideProps: GetServerSideProps = async () => {
   const queryClient = new QueryClient();
   const weekDates: string[] = [];
-  const today = new Date();
+  const kstToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  const [year, month, day] = kstToday.split('-').map(Number);
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    weekDates.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+    const d = new Date(Date.UTC(year, month - 1, day + i));
+    weekDates.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`);
   }
 
   try {

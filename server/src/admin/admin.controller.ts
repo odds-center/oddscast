@@ -29,6 +29,7 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { UpdateUserDto } from '../users/dto/user.dto';
+import { todayKstYyyymmdd } from '../common/utils/kst';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -85,7 +86,7 @@ export class AdminController {
   })
   async syncResults(@Query('date') date?: string) {
     const norm = (s: string) => s.replace(/-/g, '').slice(0, 8);
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    const today = todayKstYyyymmdd();
     if (date && norm(date)) {
       const d = norm(date);
       const resultRes = await this.kraService.fetchRaceResults(d, true);
@@ -205,8 +206,7 @@ export class AdminController {
     @Res({ passthrough: false }) res: Response,
   ) {
     const d =
-      date?.replace(/-/g, '').slice(0, 8) ||
-      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -260,8 +260,7 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] KRA 상세/훈련정보 동기화 (Group B)' })
   async syncDetails(@Query('date') date?: string) {
     const d =
-      date?.replace(/-/g, '').slice(0, 8) ||
-      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     return this.kraService.syncAnalysisData(d);
   }
 
@@ -308,8 +307,7 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] KRA 전체 적재 (출전표→결과→상세→기수)' })
   async syncAll(@Query('date') date?: string) {
     const d =
-      date?.replace(/-/g, '').slice(0, 8) ||
-      new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     return this.kraService.syncAll(d);
   }
 
@@ -360,7 +358,10 @@ export class AdminController {
 
   @Patch('users/:id')
   @ApiOperation({ summary: '[Admin] 사용자 수정' })
-  async updateUser(@Param('id', ParseIntPipe) id: number, @Body() body: UpdateUserDto) {
+  async updateUser(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() body: UpdateUserDto,
+  ) {
     return this.usersService.update(id, body);
   }
 

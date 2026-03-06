@@ -26,6 +26,19 @@ interface Notification {
   createdAt: string;
 }
 
+const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
+  SYSTEM: '시스템',
+  RACE: '경주',
+  PREDICTION: 'AI 예측',
+  PROMOTION: '프로모션',
+  SUBSCRIPTION: '구독',
+  GENERAL: '일반',
+};
+
+function getNotificationTypeLabel(type: string): string {
+  return NOTIFICATION_TYPE_LABELS[type] ?? type;
+}
+
 // Zod 스키마
 const notificationSchema = z.object({
   title: z.string().min(1, '제목을 입력해주세요').max(100, '제목은 100자 이내로 입력해주세요'),
@@ -114,8 +127,14 @@ export default function NotificationsPage() {
       key: 'type',
       header: '유형',
       render: (notification: Notification) => (
-        <span className='inline-flex rounded-full bg-blue-100 px-2 text-xs font-semibold leading-5 text-blue-800'>
-          {notification.type}
+        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+          notification.type === 'RACE' ? 'bg-emerald-100 text-emerald-800'
+          : notification.type === 'PREDICTION' ? 'bg-teal-100 text-teal-800'
+          : notification.type === 'SUBSCRIPTION' ? 'bg-purple-100 text-purple-800'
+          : notification.type === 'PROMOTION' ? 'bg-amber-100 text-amber-800'
+          : 'bg-blue-100 text-blue-800'
+        }`}>
+          {getNotificationTypeLabel(notification.type)}
         </span>
       ),
     },
@@ -125,10 +144,10 @@ export default function NotificationsPage() {
       render: (notification: Notification) => (
         <span
           className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
-            notification.isRead ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+            notification.isRead ? 'bg-gray-100 text-gray-600' : 'bg-blue-100 text-blue-800'
           }`}
         >
-          {notification.isRead ? '읽음' : '안읽음'}
+          {notification.isRead ? '읽음' : '미읽음'}
         </span>
       ),
     },

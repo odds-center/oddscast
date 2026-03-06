@@ -9,7 +9,7 @@ import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge } from '@/components/ui';
 import ResultApi from '@/lib/api/resultApi';
 import { routes } from '@/lib/routes';
-import { formatRcDate } from '@/lib/utils/format';
+import { formatRcDate, getTodayKstDate } from '@/lib/utils/format';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import type { GetStaticProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
@@ -59,11 +59,12 @@ export default function Results() {
     queryFn: () => {
       let date: string | undefined;
       if (dateFilter === 'today') {
-        date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        const kst = getTodayKstDate();
+        date = `${kst.year}${String(kst.month).padStart(2, '0')}${String(kst.day).padStart(2, '0')}`;
       } else if (dateFilter === 'yesterday') {
-        const d = new Date();
-        d.setDate(d.getDate() - 1);
-        date = d.toISOString().slice(0, 10).replace(/-/g, '');
+        const kst = getTodayKstDate();
+        const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
+        date = `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
       } else if (dateFilter) {
         date = dateFilter.replace(/-/g, '');
       }
@@ -139,12 +140,12 @@ export default function Results() {
               : `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
             : dateFilter === 'yesterday'
               ? (() => {
-                  const d = new Date();
-                  d.setDate(d.getDate() - 1);
-                  return d.toISOString().slice(0, 10);
+                  const kst = getTodayKstDate();
+                  const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
+                  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
                 })()
               : dateFilter === 'today'
-                ? new Date().toISOString().slice(0, 10)
+                ? (() => { const k = getTodayKstDate(); return `${k.year}-${String(k.month).padStart(2, '0')}-${String(k.day).padStart(2, '0')}`; })()
                 : ''
         }
         onDateChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
@@ -241,11 +242,14 @@ function parseDateFilter(qDate: string | undefined): string {
 }
 
 function dateToParam(dateFilter: string): string | undefined {
-  if (dateFilter === 'today') return new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  if (dateFilter === 'today') {
+    const kst = getTodayKstDate();
+    return `${kst.year}${String(kst.month).padStart(2, '0')}${String(kst.day).padStart(2, '0')}`;
+  }
   if (dateFilter === 'yesterday') {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10).replace(/-/g, '');
+    const kst = getTodayKstDate();
+    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
+    return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
   }
   if (dateFilter) return dateFilter.replace(/-/g, '');
   return undefined;

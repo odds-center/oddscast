@@ -5,15 +5,15 @@ import Link from 'next/link';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
+import { getTodayKstDate } from '@/lib/utils/format';
 import Icon from '@/components/icons';
 
 function getWeekDates(): string[] {
+  const kst = getTodayKstDate();
   const dates: string[] = [];
-  const today = new Date();
   for (let i = 0; i < 7; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    dates.push(d.toISOString().slice(0, 10).replace(/-/g, ''));
+    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day + i));
+    dates.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`);
   }
   return dates;
 }

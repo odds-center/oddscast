@@ -12,7 +12,7 @@ import Button from '@/components/common/Button';
 import PageHeader from '@/components/common/PageHeader';
 import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminRacesApi, adminKraApi } from '@/lib/api/admin';
-import { formatDate, getDisplayRaceStatus } from '@/lib/utils';
+import { formatDate, getDisplayRaceStatus, getErrorMessage, getTodayKstDate } from '@/lib/utils';
 
 interface RaceData {
   id: string;
@@ -41,10 +41,6 @@ const STATUS_OPTIONS = [
   { value: 'COMPLETED', label: '종료' },
 ] as const;
 
-/** Today in KST as YYYY-MM-DD for date input default */
-function getTodayKstDate(): string {
-  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
-}
 
 export default function RacesPage() {
   const router = useRouter();
@@ -71,7 +67,7 @@ export default function RacesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('출전표 동기화 완료');
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
     onSettled: () => setSyncProgress(null),
   });
 
@@ -82,7 +78,7 @@ export default function RacesPage() {
       const r = res as { races?: number; entries?: number };
       toast.success(`샘플 데이터 적재 완료: ${r?.races ?? 0}경주, ${r?.entries ?? 0}건`);
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '샘플 적재 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
   const syncResultsMutation = useMutation({
@@ -100,7 +96,7 @@ export default function RacesPage() {
       const msg = (res as { result?: { message?: string } })?.result?.message ?? '경주 결과 동기화 완료';
       toast.success(msg);
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
     onSettled: () => setSyncProgress(null),
   });
 
@@ -110,7 +106,7 @@ export default function RacesPage() {
       queryClient.invalidateQueries({ queryKey: ['admin-races'] });
       toast.success('상세정보(훈련·장구 등) 동기화 완료');
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '동기화 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
   const syncAllMutation = useMutation({
@@ -128,33 +124,10 @@ export default function RacesPage() {
       const msg = (res as { message?: string })?.message ?? '전체 적재 완료';
       toast.success(msg);
     },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '전체 적재 실패'),
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
     onSettled: () => setSyncProgress(null),
   });
 
-  const [histFrom, setHistFrom] = useState('20230101');
-  const [histTo, setHistTo] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  });
-  const syncHistoricalMutation = useMutation({
-    mutationFn: async ({ from, to }: { from: string; to: string }) => {
-      const out = await adminKraApi.syncHistoricalWithProgress(from, to, {
-        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
-      });
-      if (out.error) throw new Error(out.error);
-      return out.result;
-    },
-    onSuccess: (res: unknown) => {
-      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
-      queryClient.invalidateQueries({ queryKey: ['race'] });
-      const r = res as { processed?: number; totalResults?: number };
-      toast.success(`과거 데이터 적재 완료: ${r?.processed ?? 0}일, ${r?.totalResults ?? 0}건 결과`);
-    },
-    onError: (err: unknown) => toast.error(err instanceof Error ? err.message : '과거 데이터 적재 실패'),
-    onSettled: () => setSyncProgress(null),
-  });
 
   const { data, isLoading, error: racesError, refetch: refetchRaces } = useQuery({
     queryKey: ['admin-races', page, meetFilter, statusFilter, dateFilter],

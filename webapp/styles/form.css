@@ -1,7 +1,7 @@
 /* Form inputs, dropdowns */
 .input-base {
   padding: 0 0.75rem;
-  min-height: 40px;
+  min-height: 44px;
   border-radius: 8px;
   font-size: 1rem;
   font-family: var(--font-sans);
@@ -35,5 +35,5 @@ textarea:focus {
   scrollbar-width: none;
 }
 .dropdown-option {
-  min-height: 40px;
+  min-height: 44px;
 }

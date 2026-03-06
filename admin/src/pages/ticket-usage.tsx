@@ -40,14 +40,16 @@ type UsageItem = {
 export default function TicketUsagePage() {
   const [page, setPage] = useState(1);
   const [userIdFilter, setUserIdFilter] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'' | 'RACE' | 'MATRIX'>('');
 
   const { data, isLoading, error: usageError, refetch: refetchUsage } = useQuery({
-    queryKey: ['admin', 'prediction-tickets', 'usage', page, userIdFilter],
+    queryKey: ['admin', 'prediction-tickets', 'usage', page, userIdFilter, typeFilter],
     queryFn: () =>
       adminPredictionTicketsApi.getUsage({
         page,
         limit: 20,
         userId: userIdFilter.trim() || undefined,
+        type: typeFilter || undefined,
       }),
     placeholderData: (prev) => prev,
     staleTime: 2 * 60 * 1000,
@@ -97,7 +99,13 @@ export default function TicketUsagePage() {
       header: '유형',
       className: 'w-20',
       render: (row: UsageItem) => (
-        <span className='text-sm'>{row.type === 'MATRIX' ? '종합' : '경주'}</span>
+        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+          row.type === 'MATRIX'
+            ? 'bg-purple-100 text-purple-800'
+            : 'bg-blue-100 text-blue-800'
+        }`}>
+          {row.type === 'MATRIX' ? '종합' : '경주'}
+        </span>
       ),
     },
     {
@@ -109,31 +117,43 @@ export default function TicketUsagePage() {
     },
     {
       key: 'prediction',
-      header: '예측 내용',
+      header: '예측',
       className: 'min-w-[200px] max-w-[320px]',
       render: (row: UsageItem) => {
         const p = row.prediction;
         const analysis = p?.analysis;
         const preview = analysis
-          ? analysis.length > 120
-            ? `${analysis.slice(0, 120)}...`
+          ? analysis.length > 80
+            ? `${analysis.slice(0, 80)}...`
             : analysis
           : null;
+        const accuracy = p?.accuracy;
         return (
-          <div className='flex items-center gap-2'>
+          <div className='flex flex-col gap-1'>
+            <div className='flex items-center gap-2'>
+              {accuracy != null && (
+                <span className={`inline-flex rounded-full px-1.5 text-xs font-semibold shrink-0 ${
+                  accuracy >= 60 ? 'bg-green-100 text-green-800'
+                  : accuracy >= 30 ? 'bg-yellow-100 text-yellow-800'
+                  : 'bg-red-100 text-red-800'
+                }`}>
+                  {accuracy}%
+                </span>
+              )}
+              {row.raceId && (
+                <Link href={`/races/${row.raceId}`}>
+                  <Button size='sm' variant='ghost'>
+                    보기
+                  </Button>
+                </Link>
+              )}
+            </div>
             {preview ? (
-              <span className='text-sm text-gray-700 line-clamp-2' title={analysis ?? undefined}>
+              <span className='text-xs text-gray-600 line-clamp-2' title={analysis ?? undefined}>
                 {preview}
               </span>
             ) : (
-              <span className='text-gray-400 text-sm'>-</span>
-            )}
-            {row.raceId && (
-              <Link href={`/races/${row.raceId}`}>
-                <Button size='sm' variant='ghost'>
-                  보기
-                </Button>
-              </Link>
+              <span className='text-gray-400 text-xs'>-</span>
             )}
           </div>
         );
@@ -168,17 +188,37 @@ export default function TicketUsagePage() {
                 </Button>
               </div>
             )}
-            <div className='mb-4'>
+            <div className='mb-4 flex flex-wrap gap-3 items-center'>
               <input
                 type='text'
-                placeholder='사용자 ID로 필터...'
+                placeholder='사용자 ID 또는 이메일 필터...'
                 value={userIdFilter}
                 onChange={(e) => {
                   setUserIdFilter(e.target.value);
                   setPage(1);
                 }}
-                className='w-full max-w-md px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                className='flex-1 min-w-[200px] max-w-sm px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
               />
+              <div className='flex gap-1'>
+                {(['', 'RACE', 'MATRIX'] as const).map((t) => (
+                  <button
+                    key={t}
+                    type='button'
+                    onClick={() => { setTypeFilter(t); setPage(1); }}
+                    className={`px-3 py-1.5 rounded-md text-xs font-semibold border transition-colors ${
+                      typeFilter === t
+                        ? t === 'MATRIX'
+                          ? 'bg-purple-600 text-white border-purple-600'
+                          : t === 'RACE'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-gray-800 text-white border-gray-800'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {t === '' ? '전체' : t === 'RACE' ? '경주' : '종합'}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <Table

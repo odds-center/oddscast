@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
 import { WeeklyPreview } from '../database/entities/weekly-preview.entity';
 import { Race } from '../database/entities/race.entity';
+import { kst } from '../common/utils/kst';
 
 export interface WeeklyPreviewContent {
   highlights?: string;
@@ -11,27 +12,25 @@ export interface WeeklyPreviewContent {
   raceDates?: string[];
 }
 
+/** Returns next Fri/Sat/Sun as YYYYMMDD strings, computed in KST. */
 function getNextFriSatSun(from: Date): [string, string, string] {
-  const d = new Date(from);
-  const day = d.getDay();
-  let daysUntilFri = 5 - day;
+  const d = kst(from);
+  let daysUntilFri = 5 - d.day(); // 0=Sun … 5=Fri
   if (daysUntilFri <= 0) daysUntilFri += 7;
-  const fri = new Date(d);
-  fri.setDate(d.getDate() + daysUntilFri);
-  const sat = new Date(fri);
-  sat.setDate(fri.getDate() + 1);
-  const sun = new Date(fri);
-  sun.setDate(fri.getDate() + 2);
-  const fmt = (x: Date) => x.toISOString().slice(0, 10).replace(/-/g, '');
-  return [fmt(fri), fmt(sat), fmt(sun)];
+  const fri = d.add(daysUntilFri, 'day');
+  return [
+    fri.format('YYYYMMDD'),
+    fri.add(1, 'day').format('YYYYMMDD'),
+    fri.add(2, 'day').format('YYYYMMDD'),
+  ];
 }
 
+/** Returns the Thursday label (YYYY-MM-DD) of the current/previous week in KST. */
 function getThursdayLabel(from: Date): string {
-  const d = new Date(from);
-  const day = d.getDay();
-  const thu = new Date(d);
-  thu.setDate(d.getDate() - day + (day >= 4 ? 4 : 4 - 7));
-  return thu.toISOString().slice(0, 10);
+  const d = kst(from);
+  const day = d.day(); // 0=Sun … 4=Thu … 6=Sat
+  const daysToThursday = day >= 4 ? day - 4 : day + 3;
+  return d.subtract(daysToThursday, 'day').format('YYYY-MM-DD');
 }
 
 @Injectable()

@@ -17,6 +17,7 @@ import { EmailVerificationToken } from '../database/entities/email-verification-
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { PointsService } from '../points/points.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
+import { dateToKstDash, kst, yesterdayKstDash } from '../common/utils/kst';
 
 export interface LoginBonusResult {
   dailyBonusGranted: boolean;
@@ -144,7 +145,7 @@ export class AuthService {
 
   /** KST date string YYYY-MM-DD */
   private getDateKST(d: Date): string {
-    return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    return dateToKstDash(d);
   }
 
   /**
@@ -164,10 +165,8 @@ export class AuthService {
     if (!user) return this.emptyLoginBonus();
 
     const now = new Date();
-    const todayKST = this.getDateKST(now);
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const yesterdayKST = this.getDateKST(yesterday);
+    const todayKST = kst(now).format('YYYY-MM-DD');
+    const yesterdayKST = yesterdayKstDash();
 
     let dailyBonusGranted = false;
     let dailyBonusPoints = 0;

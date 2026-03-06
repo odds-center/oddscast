@@ -75,7 +75,7 @@ export default function PointTransactionsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='OddsCast'>
+      <Layout title='포인트 거래 내역 | OddsCast'>
         <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
         <RequireLogin />
       </Layout>
@@ -83,7 +83,7 @@ export default function PointTransactionsPage() {
   }
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='포인트 거래 내역 | OddsCast'>
       <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}

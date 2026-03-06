@@ -12,7 +12,7 @@ import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'next/router';
 import { authApi } from '@/lib/api/auth';
 import { adminSystemConfigApi, adminAIConfigApi } from '@/lib/api/admin';
-import { Bot, Settings, Database, ExternalLink } from 'lucide-react';
+import { Bot, Settings, Database, ExternalLink, Bell } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import toast from 'react-hot-toast';
 
@@ -179,6 +179,17 @@ export default function SettingsPage() {
                   <div className='flex-1'>
                     <div className='font-medium text-sm text-gray-900'>구독 플랜</div>
                     <div className='text-sm text-gray-500'>LIGHT, PREMIUM 플랜 관리</div>
+                  </div>
+                  <AdminIcon icon={ExternalLink} className='w-4 h-4 text-gray-400' />
+                </Link>
+                <Link
+                  href='/notifications'
+                  className='flex items-center gap-2 p-2.5 rounded border hover:bg-gray-50 transition'
+                >
+                  <AdminIcon icon={Bell} className='w-5 h-5 text-pink-600' />
+                  <div className='flex-1'>
+                    <div className='font-medium text-sm text-gray-900'>알림 관리</div>
+                    <div className='text-sm text-gray-500'>푸시 알림 전송 및 내역 조회</div>
                   </div>
                   <AdminIcon icon={ExternalLink} className='w-4 h-4 text-gray-400' />
                 </Link>

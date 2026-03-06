@@ -38,7 +38,7 @@ export default function PredictionAccuracyPage() {
   const byMeet = stats?.byMeet ?? [];
 
   return (
-    <Layout title='예측 정확도 — OddsCast'>
+    <Layout title='예측 정확도 | OddsCast'>
       <CompactPageTitle
         title='예측 정확도'
         backHref={routes.predictions.matrix}

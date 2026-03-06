@@ -86,19 +86,19 @@ export default function DateHeader() {
     <div className='home-hero'>
       <div className='relative z-10 flex items-center justify-between gap-4'>
         <div>
-          <p className='text-stone-400 text-xs mb-1 whitespace-nowrap'>
+          <p className='text-stone-400 text-sm mb-1 whitespace-nowrap'>
             {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDayName})
           </p>
-          <h1 className='text-base sm:text-lg font-bold text-white mb-1'>
+          <h1 className='text-lg sm:text-xl font-bold text-white mb-1'>
             {msg.title}
           </h1>
-          <p className='text-stone-400 text-xs'>
+          <p className='text-stone-400 text-sm'>
             {msg.subtitle}
           </p>
           {showCountdown && (
-            <p className='text-primary/90 text-xs font-medium mt-1.5 flex items-center gap-1'>
-              <Icon name='Clock' size={12} />
-              {countdownMins <= 1 ? '다음 경주 곧 시작' : `다음 경주 ${countdownMins}분 후`}
+            <p className={`text-sm font-medium mt-1.5 flex items-center gap-1 ${countdownMins <= 5 ? 'text-amber-400 animate-pulse' : 'text-primary/90'}`}>
+              <Icon name='Clock' size={13} />
+              {countdownMins <= 1 ? '다음 경주 곧 시작!' : `다음 경주 ${countdownMins}분 후`}
             </p>
           )}
         </div>

@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
+import Icon from '@/components/icons';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
 import { Toggle } from '@/components/ui';
-import LoadingSpinner from '@/components/LoadingSpinner';
+import DataFetchState from '@/components/page/DataFetchState';
 import NotificationApi from '@/lib/api/notificationApi';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -82,7 +83,7 @@ export default function NotificationSettingsPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='알림 설정 — OddsCast'>
+      <Layout title='알림 설정 | OddsCast'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         <RequireLogin suffix='설정할 수 있습니다' />
         <BackLink href={routes.settings} label='설정으로' />
@@ -91,14 +92,10 @@ export default function NotificationSettingsPage() {
   }
 
   return (
-    <Layout title='알림 설정 — OddsCast'>
+    <Layout title='알림 설정 | OddsCast'>
       <div className='space-y-6'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
-        {isLoading ? (
-          <div className='py-16'>
-            <LoadingSpinner size={28} label='설정 준비 중...' />
-          </div>
-        ) : (
+        <DataFetchState isLoading={isLoading} error={null} loadingLabel='설정 준비 중...'>
           <SectionCard
             title='알림 유형'
             icon='Bell'
@@ -115,9 +112,12 @@ export default function NotificationSettingsPage() {
             </p>
           )}
           {!isNativeApp && (
-            <p className='text-text-secondary text-sm mb-6 px-1'>
-              푸시 알림은 모바일 앱에서만 설정할 수 있습니다.
-            </p>
+            <div className='flex items-start gap-2.5 bg-stone-50 border border-stone-200 rounded-lg px-3.5 py-3 mb-5'>
+              <Icon name='Smartphone' size={16} className='text-text-tertiary mt-0.5 shrink-0' />
+              <p className='text-text-secondary text-sm leading-relaxed'>
+                푸시 알림은 <span className='font-medium text-foreground'>모바일 앱</span>에서만 설정할 수 있습니다.
+              </p>
+            </div>
           )}
           <div className='divide-y divide-border -mx-1 px-1'>
             {visibleSettings.map(({ key, label, description, defaultChecked }) => (
@@ -133,7 +133,7 @@ export default function NotificationSettingsPage() {
             ))}
           </div>
           </SectionCard>
-        )}
+        </DataFetchState>
 
         <BackLink href={routes.settings} label='설정으로' />
       </div>

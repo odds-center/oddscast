@@ -42,7 +42,7 @@ export default function DeleteAccountPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='회원탈퇴 — OddsCast'>
+      <Layout title='회원탈퇴 | OddsCast'>
         <CompactPageTitle title='회원탈퇴' backHref={routes.settings} />
         <RequireLogin suffix='회원탈퇴를 진행할 수 있습니다.' />
         <BackLink href={routes.settings} label='설정으로' />
@@ -51,7 +51,7 @@ export default function DeleteAccountPage() {
   }
 
   return (
-    <Layout title='회원탈퇴 — OddsCast'>
+    <Layout title='회원탈퇴 | OddsCast'>
       <div className='space-y-6'>
         <CompactPageTitle title='회원탈퇴' backHref={routes.settings} />
 

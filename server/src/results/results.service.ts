@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Brackets, In, Repository } from 'typeorm';
+import { Brackets, Repository } from 'typeorm';
 import { PredictionStatus, RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
@@ -266,10 +266,9 @@ export class ResultsService {
   }
 
   async bulkCreate(dto: BulkCreateResultDto) {
-    let count = 0;
     const now = new Date();
-    for (const row of dto.results) {
-      const result = this.resultRepo.create({
+    const entities = dto.results.map((row) =>
+      this.resultRepo.create({
         raceId: row.raceId,
         ord: row.ord ?? null,
         ordType: row.ordType ?? null,
@@ -281,12 +280,16 @@ export class ResultsService {
         rcTime: row.rcTime ?? null,
         chaksun1: row.chaksun1 ?? null,
         updatedAt: now,
-      });
-      await this.resultRepo.save(result);
-      count++;
-    }
-    const raceId = dto.results[0]?.raceId;
-    if (raceId) {
+      }),
+    );
+    await this.resultRepo.save(entities, { chunk: 100 });
+    const count = entities.length;
+
+    // Collect all unique raceIds and mark each as COMPLETED
+    const raceIds = [
+      ...new Set(dto.results.map((r) => r.raceId).filter(Boolean)),
+    ];
+    for (const raceId of raceIds) {
       await this.raceRepo.update(raceId, {
         status: RaceStatus.COMPLETED,
         updatedAt: new Date(),

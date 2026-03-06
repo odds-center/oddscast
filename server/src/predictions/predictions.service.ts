@@ -26,6 +26,7 @@ import type {
   GeminiPredictionJson,
   BetTypePredictions,
 } from './prediction-internal.types';
+import { todayKstYyyymmdd } from '../common/utils/kst';
 
 /** 세션 중 마지막으로 성공한 Gemini 모델 — 다음 요청에서 우선 시도 (404 낭비 방지) */
 let lastWorkingGeminiModel: string | null = null;
@@ -567,7 +568,9 @@ AI 예측 순위: ${predictedTop || '-'}
 
   /** Admin: count of predictions created today (KST). */
   async getTodayCreatedCount(): Promise<{ count: number }> {
-    const kstDateStr = new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
+    const kstDateStr = new Date()
+      .toLocaleString('en-CA', { timeZone: 'Asia/Seoul' })
+      .slice(0, 10);
     const dayStart = new Date(`${kstDateStr}T00:00:00+09:00`);
     const dayEnd = new Date(`${kstDateStr}T23:59:59.999+09:00`);
     const count = await this.predictionRepo.count({
@@ -755,7 +758,7 @@ AI 예측 순위: ${predictedTop || '-'}
   async getMatrix(date?: string, meet?: string) {
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
-      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      : todayKstYyyymmdd();
     const raceWhereOpts: { rcDate: string; meet?: string } = { rcDate };
     if (meet) raceWhereOpts.meet = toKraMeetName(meet);
     const rawRacesList = await this.raceRepo.find({
@@ -878,7 +881,7 @@ AI 예측 순위: ${predictedTop || '-'}
   async getCommentary(date?: string, limit = 20, offset = 0, meet?: string) {
     const rcDate = date
       ? date.replace(/-/g, '').slice(0, 8)
-      : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      : todayKstYyyymmdd();
     const predsList = await this.predictionRepo.find({
       where: {
         previewApproved: true,

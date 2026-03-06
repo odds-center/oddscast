@@ -5,7 +5,7 @@ import Layout from '@/components/layout/Layout';
 import PageHeader from '@/components/common/PageHeader';
 import Button from '@/components/common/Button';
 import { adminAIApi } from '@/lib/api/admin';
-import { formatCurrency, formatNumber } from '@/lib/utils';
+import { formatCurrency, formatNumber, getTodayKstDate, getKstDateOffset } from '@/lib/utils';
 import {
   TrendingUp,
   TrendingDown,
@@ -20,10 +20,10 @@ import { AdminIcon } from '@/components/common/AdminIcon';
 import PageLoading from '@/components/common/PageLoading';
 
 export default function AnalyticsPage() {
-  const [dateRange, setDateRange] = useState({
-    startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    endDate: new Date().toISOString().split('T')[0],
-  });
+  const [dateRange, setDateRange] = useState(() => ({
+    startDate: getKstDateOffset(-7),
+    endDate: getTodayKstDate(),
+  }));
 
   // AI 대시보드 데이터
   const { data: dashboard, isLoading, error: dashboardError, refetch: refetchDashboard } = useQuery({
@@ -286,7 +286,7 @@ export default function AnalyticsPage() {
               />
               <span className='text-sm text-gray-500'>분석 기간</span>
             </div>
-          {failureAnalysis ? (
+            {failureAnalysis ? (
               <div className='space-y-4'>
                 <div className='grid grid-cols-2 gap-4'>
                   <div>
@@ -342,9 +342,9 @@ export default function AnalyticsPage() {
                   </div>
                 </div>
               </div>
-          ) : (
-            <div className='text-sm text-gray-500 py-4'>선택 기간 내 실패 데이터가 없습니다.</div>
-          )}
+            ) : (
+              <div className='text-sm text-gray-500 py-4'>선택 기간 내 실패 데이터가 없습니다.</div>
+            )}
           </div>
         </div>
       </Layout>

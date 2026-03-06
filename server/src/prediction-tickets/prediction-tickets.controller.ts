@@ -16,6 +16,7 @@ import {
   JwtPayload,
 } from '../common/decorators/current-user.decorator';
 import { UseTicketDto } from '../common/dto/payment.dto';
+import { todayKstDash } from '../common/utils/kst';
 
 @ApiTags('Prediction Tickets')
 @ApiBearerAuth()
@@ -44,7 +45,7 @@ export class PredictionTicketsController {
   ) {
     return this.ticketsService.checkMatrixAccess(
       user.sub,
-      date || new Date().toISOString().slice(0, 10),
+      date || todayKstDash(),
     );
   }
 
@@ -56,7 +57,7 @@ export class PredictionTicketsController {
   ) {
     return this.ticketsService.useMatrixTicket(
       user.sub,
-      body.date || new Date().toISOString().slice(0, 10),
+      body.date || todayKstDash(),
     );
   }
 

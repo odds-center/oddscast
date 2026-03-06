@@ -61,7 +61,7 @@ export default function NotificationsPage() {
   };
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='알림 | OddsCast'>
       <CompactPageTitle title='알림' backHref={routes.profile.index} />
       {!isLoggedIn && <RequireLogin />}
 

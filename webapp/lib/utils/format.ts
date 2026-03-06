@@ -1,31 +1,32 @@
 /**
- * Format utilities for display — shared for dates, times, numbers
- * All time displays use ko-KR locale (AM/PM)
+ * Format utilities for display — shared for dates, times, numbers.
+ * All time operations use dayjs with KST (Asia/Seoul) timezone.
  */
+import { dayjsKST, KST } from './dayjs';
 
 const LOCALE = 'ko-KR';
-const TZ = 'Asia/Seoul';
+
+// ─── KST date primitives ───
 
 /** Today as YYYYMMDD in KST (for race date comparison). */
 function getTodayKstYyyymmdd(): string {
-  const s = new Date().toLocaleString('en-CA', { timeZone: TZ }).slice(0, 10);
-  return s.replace(/-/g, '');
+  return dayjsKST().format('YYYYMMDD');
 }
 
 /** Today's calendar date in KST (for header display and race-day check). */
 export function getTodayKstDate(): { year: number; month: number; day: number; weekDay: number } {
-  const ymd = getTodayKstYyyymmdd();
-  const year = parseInt(ymd.slice(0, 4), 10);
-  const month = parseInt(ymd.slice(4, 6), 10);
-  const day = parseInt(ymd.slice(6, 8), 10);
-  const noonKst = new Date(`${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}T12:00:00+09:00`);
-  const weekDay = noonKst.getUTCDay();
-  return { year, month, day, weekDay };
+  const d = dayjsKST();
+  return {
+    year: d.year(),
+    month: d.month() + 1, // dayjs months are 0-indexed
+    day: d.date(),
+    weekDay: d.day(), // 0=Sunday … 6=Saturday
+  };
 }
 
 // ─── Date ───
 
-/** Returns true if rcDate(YYYYMMDD) is before today (KST). Prefer isPastRaceDateTime when stTime is available. */
+/** Returns true if rcDate(YYYYMMDD) is before today (KST). */
 export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
@@ -34,8 +35,8 @@ export function isPastRaceDate(rcDate: string | null | undefined): boolean {
 }
 
 /**
- * Returns true if race start (rcDate + stTime) is in the past. Use for "종료" vs "예정".
- * stTime format: "14:00" or "1400". If stTime is missing, falls back to date-only (isPastRaceDate).
+ * Returns true if race start (rcDate + stTime) is in the past.
+ * Falls back to date-only check if stTime is missing.
  */
 export function isPastRaceDateTime(
   rcDate: string | null | undefined,
@@ -67,9 +68,11 @@ export function formatRcDate(rcDate: string | undefined): string {
   return `${norm.slice(0, 4)}.${norm.slice(4, 6)}.${norm.slice(6, 8)}`;
 }
 
+// ─── Time parsing ───
+
 /**
  * Parse KRA stTime ("14:00" or "1400") with rcDate (YYYYMMDD) as KST.
- * Returns Date (UTC ms) so comparison with Date.now() is correct.
+ * Returns a Date (UTC ms) so comparison with Date.now() is correct.
  */
 export function parseStTimeToDate(
   stTime: string | null | undefined,
@@ -83,12 +86,12 @@ export function parseStTimeToDate(
     timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
   const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;
   if (Number.isNaN(hour) || hour < 0 || hour > 23) return null;
-  const y = norm.slice(0, 4);
-  const m = norm.slice(4, 6);
-  const d = norm.slice(6, 8);
-  const iso = `${y}-${m}-${d}T${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00+09:00`;
-  const date = new Date(iso);
-  return Number.isNaN(date.getTime()) ? null : date;
+  const d = dayjsKST(`${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}`)
+    .hour(hour)
+    .minute(minute)
+    .second(0)
+    .millisecond(0);
+  return d.isValid() ? d.toDate() : null;
 }
 
 /**
@@ -104,12 +107,12 @@ export function minutesUntilStart(
   return Math.floor((start.getTime() - Date.now()) / 60_000);
 }
 
-/** Default buffer (minutes) after race start to consider race "ended" for display/KRA sync. */
+/** Default buffer (minutes) after race start to consider race "ended". */
 const RACE_END_BUFFER_MINUTES = 20;
 
 /**
- * Race end time (start + buffer). Used to decide "실제 종료" on frontend and when to sync results.
- * If no stTime, returns end of rcDate day in KST (23:59) so we don't treat as ended before the day is over.
+ * Race end time (start + buffer). Used to decide "실제 종료" on frontend.
+ * If no stTime, returns end of rcDate day in KST (23:59).
  */
 export function getRaceEndTime(
   rcDate: string | null | undefined,
@@ -121,19 +124,16 @@ export function getRaceEndTime(
   if (norm.length < 8) return null;
   const start = parseStTimeToDate(stTime, rcDate);
   if (start) {
-    const end = new Date(start.getTime() + bufferMinutes * 60 * 1000);
-    return end;
+    return new Date(start.getTime() + bufferMinutes * 60 * 1000);
   }
-  const endOfDayKst = new Date(
-    `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
-  );
-  return endOfDayKst;
+  return dayjsKST(`${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}`)
+    .hour(23)
+    .minute(59)
+    .second(0)
+    .toDate();
 }
 
-/**
- * True when race end time (start + buffer) is in the past. Use for client-side "종료" vs "예정".
- * Even if server returns COMPLETED, show as 예정/진행 until race end time has passed.
- */
+/** True when race end time (start + buffer) is in the past. */
 export function isRaceActuallyEnded(
   rcDate: string | null | undefined,
   stTime?: string | null,
@@ -145,8 +145,8 @@ export function isRaceActuallyEnded(
 }
 
 /**
- * Display status: show "종료" when race end time has passed (so ended races always show as 종료).
- * If server says COMPLETED but end time not yet passed, show 예정. Otherwise use server status.
+ * Display status: show "종료" when race end time has passed.
+ * If server says COMPLETED but end time not yet passed, show 예정.
  */
 export function getDisplayRaceStatus(
   serverStatus: string | null | undefined,
@@ -167,9 +167,9 @@ export function formatRcDateShort(rcDate: string | undefined): string {
   return `${m}월 ${d}일`;
 }
 
-// ─── Time ───
+// ─── Time display ───
 
-/** ISO or Date → "3:05 PM" (ko-KR AM/PM format) */
+/** ISO or Date → "오후 3:05" (ko-KR AM/PM format in KST) */
 export function formatTime(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {
@@ -177,14 +177,14 @@ export function formatTime(date: string | Date | null | undefined): string {
     return d.toLocaleTimeString(LOCALE, {
       hour: '2-digit',
       minute: '2-digit',
-      timeZone: TZ,
+      timeZone: KST,
     });
   } catch {
     return '-';
   }
 }
 
-/** ISO or Date → "2025. 2. 15. 3:05 PM" (ko-KR format) */
+/** ISO or Date → "2025. 2. 15. 오후 3:05" (ko-KR short datetime in KST) */
 export function formatDateTime(date: string | Date | null | undefined): string {
   if (!date) return '-';
   try {
@@ -192,7 +192,7 @@ export function formatDateTime(date: string | Date | null | undefined): string {
     return d.toLocaleString(LOCALE, {
       dateStyle: 'short',
       timeStyle: 'short',
-      timeZone: TZ,
+      timeZone: KST,
     });
   } catch {
     return '-';
@@ -208,7 +208,7 @@ export function formatDateOnly(date: string | Date | null | undefined): string {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
-      timeZone: TZ,
+      timeZone: KST,
     });
   } catch {
     return '-';

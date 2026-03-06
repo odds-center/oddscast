@@ -61,7 +61,7 @@ export default function SubscriptionCheckoutSuccessPage() {
 
   if (status === 'loading') {
     return (
-      <Layout title='구독 결제 확인 — OddsCast'>
+      <Layout title='구독 결제 확인 | OddsCast'>
         <div className='max-w-md mx-auto'>
           <CompactPageTitle title='결제 확인' backHref={routes.mypage.subscriptions} />
           <div className='flex flex-col items-center justify-center py-16'>
@@ -74,7 +74,7 @@ export default function SubscriptionCheckoutSuccessPage() {
 
   if (status === 'error') {
     return (
-      <Layout title='구독 결제 실패 — OddsCast'>
+      <Layout title='구독 결제 실패 | OddsCast'>
         <div className='max-w-md mx-auto'>
           <CompactPageTitle title='결제 실패' backHref={routes.mypage.subscriptions} />
           <EmptyState icon='AlertCircle' title='결제 확인 실패' description={errorMsg} />
@@ -82,7 +82,7 @@ export default function SubscriptionCheckoutSuccessPage() {
             <Link href={routes.mypage.subscriptions} className='btn-primary block text-center py-2.5'>
               구독 플랜에서 다시 시도
             </Link>
-            <BackLink href={routes.profile.index} label='정보로' className='block' />
+            <BackLink href={routes.profile.index} label='내 정보로' className='block' />
           </div>
         </div>
       </Layout>
@@ -90,7 +90,7 @@ export default function SubscriptionCheckoutSuccessPage() {
   }
 
   return (
-    <Layout title='구독 완료 — OddsCast'>
+    <Layout title='구독 완료 | OddsCast'>
       <div className='max-w-md mx-auto text-center'>
         <CompactPageTitle title='구독 완료' backHref={routes.mypage.subscriptions} />
         <div className='rounded-xl border border-border bg-card p-6 mb-6'>
@@ -109,7 +109,7 @@ export default function SubscriptionCheckoutSuccessPage() {
         >
           구독 관리
         </Link>
-        <BackLink href={routes.profile.index} label='정보로' className='mt-4 block' />
+        <BackLink href={routes.profile.index} label='내 정보로' className='mt-4 block' />
       </div>
     </Layout>
   );

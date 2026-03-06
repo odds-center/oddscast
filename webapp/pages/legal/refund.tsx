@@ -121,7 +121,7 @@ export default function RefundPage() {
             본 정책은 2025년 1월 1일부터 시행됩니다.
           </p>
         </div>
-        <BackLink href={routes.profile.index} label='정보로' />
+        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

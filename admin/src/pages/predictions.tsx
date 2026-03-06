@@ -10,7 +10,7 @@ import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import { AdminAIApi, adminAIConfigApi } from '@/lib/api/admin';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, formatYyyyMmDd } from '@/lib/utils';
 
 type PredictionRow = {
   id: number;
@@ -114,11 +114,6 @@ export default function PredictionsListPage() {
     generateBatchMutation.mutate({ dateFrom: from, dateTo: to });
   };
 
-  const formatRcDate = (rcDate: string) => {
-    if (!rcDate || rcDate.length < 8) return rcDate;
-    return `${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}`;
-  };
-
   const columns = [
     {
       key: 'race',
@@ -132,7 +127,7 @@ export default function PredictionsListPage() {
             href={`/races/${r.id}`}
             className='text-primary-600 hover:underline font-medium'
           >
-            {r.meetName || r.meet} {r.rcNo}R · {formatRcDate(r.rcDate)}
+            {r.meetName || r.meet} {r.rcNo}R · {formatYyyyMmDd(r.rcDate)}
           </Link>
         );
       },
@@ -225,23 +220,21 @@ export default function PredictionsListPage() {
           >
             <div className='flex flex-wrap items-end gap-3'>
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>시작일 (YYYYMMDD)</label>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>시작일</label>
                 <input
-                  type='text'
-                  placeholder='20250101'
+                  type='date'
                   value={batchDateFrom}
                   onChange={(e) => setBatchDateFrom(e.target.value)}
-                  className='w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
                 />
               </div>
               <div>
-                <label className='block text-sm font-medium text-gray-700 mb-1'>종료일 (YYYYMMDD)</label>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>종료일</label>
                 <input
-                  type='text'
-                  placeholder='20250224'
+                  type='date'
                   value={batchDateTo}
                   onChange={(e) => setBatchDateTo(e.target.value)}
-                  className='w-32 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
                 />
               </div>
               <Button
@@ -305,13 +298,13 @@ export default function PredictionsListPage() {
                     setStatusFilter(e.target.value);
                     setPage(1);
                   }}
-                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500'
+                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
                 >
                   <option value=''>전체</option>
-                  <option value='COMPLETED'>COMPLETED</option>
-                  <option value='PENDING'>PENDING</option>
-                  <option value='PROCESSING'>PROCESSING</option>
-                  <option value='FAILED'>FAILED</option>
+                  <option value='COMPLETED'>완료 (COMPLETED)</option>
+                  <option value='PENDING'>대기 (PENDING)</option>
+                  <option value='PROCESSING'>처리 중 (PROCESSING)</option>
+                  <option value='FAILED'>실패 (FAILED)</option>
                 </select>
               </div>
               <span className='text-sm text-gray-500'>총 {total}건</span>

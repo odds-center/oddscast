@@ -1,6 +1,8 @@
-# OddsCast 프로젝트 AI 규칙
+# OddsCast 프로젝트 AI 규칙 (DEPRECATED)
 
-> `.cursorrules`와 동기화. Cursor AI 에이전트가 참조하는 프로젝트 규칙 문서.
+> **DEPRECATED**: 이 문서는 더 이상 사용하지 않습니다. `CLAUDE.md` (프로젝트 루트) 및 `.claude/rules/` 디렉토리를 참조하세요.
+>
+> 이전: `.cursorrules`와 동기화. Cursor AI 에이전트가 참조하던 프로젝트 규칙 문서.
 
 ---
 

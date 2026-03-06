@@ -415,7 +415,7 @@ export default function RevenuePage() {
             </div>
 
             <div className='mt-4 p-4 bg-blue-50 rounded-lg'>
-              <h4 className='font-semibold text-blue-900 mb-2'>💡 핵심 인사이트</h4>
+              <h4 className='font-semibold text-blue-900 mb-2'>핵심 인사이트</h4>
               <ul className='text-sm text-blue-800 space-y-1'>
                 <li>• AI 비용은 고정: 구독자 수와 무관하게 월 ₩30,240</li>
                 <li>• 인프라 비용: 구독자 1,000명까지 Railway로 ₩46,900 유지</li>

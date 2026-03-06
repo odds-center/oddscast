@@ -1,7 +1,14 @@
 import { type ClassValue, clsx } from 'clsx';
 import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 import { isString } from 'es-toolkit';
 import { twMerge } from 'tailwind-merge';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const KST = 'Asia/Seoul';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -20,7 +27,7 @@ export function isPastRaceDate(rcDate: string | null | undefined): boolean {
   if (!rcDate || typeof rcDate !== 'string') return false;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
   if (norm.length < 8) return false;
-  const today = dayjs().format('YYYYMMDD');
+  const today = dayjs().tz(KST).format('YYYYMMDD');
   return norm < today;
 }
 
@@ -81,6 +88,16 @@ export function getDisplayRaceStatus(
   if (isRaceActuallyEnded(rcDate, stTime)) return 'COMPLETED';
   if (s === 'COMPLETED') return 'SCHEDULED';
   return s || '';
+}
+
+/** Today in KST as YYYY-MM-DD (for date input default) */
+export function getTodayKstDate(): string {
+  return dayjs().tz(KST).format('YYYY-MM-DD');
+}
+
+/** KST date N days offset from today as YYYY-MM-DD. Negative = past. */
+export function getKstDateOffset(days: number): string {
+  return dayjs().tz(KST).add(days, 'day').format('YYYY-MM-DD');
 }
 
 /** YYYYMMDD → YYYY-MM-DD */

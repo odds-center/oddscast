@@ -49,7 +49,14 @@ export class HorsesService {
   async getProfile(hrNo: string): Promise<HorseProfileDto | null> {
     const results = await this.resultRepo
       .createQueryBuilder('rr')
-      .select(['rr.hrName', 'rr.sex', 'rr.age', 'rr.ord', 'rr.ordInt', 'rr.ordType'])
+      .select([
+        'rr.hrName',
+        'rr.sex',
+        'rr.age',
+        'rr.ord',
+        'rr.ordInt',
+        'rr.ordType',
+      ])
       .where('rr.hrNo = :hrNo', { hrNo })
       .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
       .orderBy('rr.createdAt', 'DESC')

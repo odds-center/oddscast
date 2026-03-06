@@ -55,7 +55,7 @@ export default function JockeyProfilePage() {
   const isEmpty = !profile && !profileLoading;
 
   return (
-    <Layout title={profile ? `${profile.jkName} — 기수 정보` : '기수 정보 — OddsCast'}>
+    <Layout title={profile ? `${profile.jkName} | OddsCast` : '기수 정보 | OddsCast'}>
       <CompactPageTitle
         title={profile?.jkName ?? '기수 정보'}
         backHref={router.query?.from ? String(router.query.from) : routes.home}

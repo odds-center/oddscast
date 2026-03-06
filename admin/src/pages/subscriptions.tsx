@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
@@ -9,8 +10,10 @@ import Card from '@/components/common/Card';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import Button from '@/components/common/Button';
 import { adminSubscriptionsApi } from '@/lib/api/admin';
-import { formatCurrency } from '@/lib/utils';
+import { formatCurrency, getErrorMessage } from '@/lib/utils';
 import type { SubscriptionPlan } from '@/lib/types/admin';
+
+type SubscriptionPlanExtended = SubscriptionPlan & { matrixTickets?: number };
 
 type CreatePlanForm = {
   planName: string;
@@ -49,8 +52,7 @@ export default function SubscriptionsPage() {
       toast.success('플랜 상태가 변경되었습니다');
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : '상태 변경에 실패했습니다';
-      toast.error(msg);
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -79,8 +81,7 @@ export default function SubscriptionsPage() {
       reset();
     },
     onError: (err: unknown) => {
-      const msg = err instanceof Error ? err.message : '플랜 추가에 실패했습니다';
-      toast.error(msg);
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -119,7 +120,7 @@ export default function SubscriptionsPage() {
                   <LoadingSpinner size='lg' label='구독 플랜을 불러오는 중...' />
                 </div>
               ) : plans && plans.length > 0 ? (
-                plans.map((plan) => (
+                (plans as SubscriptionPlanExtended[]).map((plan) => (
                   <Card key={plan.id}>
                     <div className='space-y-4'>
                       <div className='flex items-start justify-between'>
@@ -137,7 +138,12 @@ export default function SubscriptionsPage() {
                       <div className='border-t pt-4'>
                         <div className='text-lg font-bold'>{formatCurrency(plan.totalPrice)}</div>
                         <div className='text-sm text-gray-500 mt-1'>
-                          월 {plan.totalTickets}개 예측권
+                          경주 예측권 {plan.totalTickets}장/월
+                          {(plan.matrixTickets ?? 0) > 0 && (
+                            <span className='ml-1.5 text-purple-600 font-medium'>
+                              + 종합 {plan.matrixTickets}장
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -174,14 +180,11 @@ export default function SubscriptionsPage() {
                       </div>
 
                       <div className='border-t pt-4 flex gap-2'>
-                        <Button
-                          size='sm'
-                          variant='ghost'
-                          className='flex-1'
-                          onClick={() => (window.location.href = '/subscription-plans')}
-                        >
-                          수정
-                        </Button>
+                        <Link href='/subscription-plans' className='flex-1'>
+                          <Button size='sm' variant='ghost' className='w-full'>
+                            수정
+                          </Button>
+                        </Link>
                         <Button
                           size='sm'
                           variant='ghost'

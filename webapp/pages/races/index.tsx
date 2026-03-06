@@ -130,7 +130,7 @@ export default function RacesListPage() {
     );
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='전체 경주 | OddsCast'>
       <CompactPageTitle title='전체 경주' backHref={routes.home} />
       <FilterDateBar
         filterOptions={[

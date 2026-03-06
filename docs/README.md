@@ -67,6 +67,8 @@
 
 - [`LEGAL_NOTICE.md`](legal/LEGAL_NOTICE.md) — 서비스 법적 고지사항
 
-### 🤖 AI / 규칙
+### 🤖 AI / Rules
 
-- [`CURSOR_RULES.md`](CURSOR_RULES.md) — `.cursorrules`와 동기화된 프로젝트 규칙 (요약)
+- **`CLAUDE.md`** (project root) — Claude Code main rules (replaces .cursorrules)
+- **`.claude/rules/`** — Detailed rules: server, webapp, database, testing, workflow
+- [`CURSOR_RULES.md`](CURSOR_RULES.md) — (deprecated) Legacy cursor rules, replaced by CLAUDE.md

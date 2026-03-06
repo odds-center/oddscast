@@ -4,6 +4,10 @@
  */
 import {
   Trophy,
+  ScrollText,
+  ShieldCheck,
+  ReceiptText,
+  Smartphone,
   Clock,
   ClipboardList,
   User,
@@ -110,6 +114,10 @@ export const Icons = {
   Grip,
   Wifi,
   WifiOff,
+  ScrollText,
+  ShieldCheck,
+  ReceiptText,
+  Smartphone,
 } as const;
 
 export type IconName = keyof typeof Icons;

@@ -12,6 +12,7 @@ import FilterDateBar from '@/components/page/FilterDateBar';
 import { routes } from '@/lib/routes';
 import DataFetchState from '@/components/page/DataFetchState';
 import { StatusBadge } from '@/components/ui';
+import { getTodayKstDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@oddscast/shared';
 
@@ -40,10 +41,13 @@ export default function AllRacesSection() {
     queryKey: ['races', 'all', dateFilter, meetFilter],
     placeholderData: keepPreviousData,
     queryFn: () => {
-      const date =
-        dateFilter === 'today'
-          ? new Date().toISOString().slice(0, 10).replace(/-/g, '')
-          : dateFilter;
+      let date: string | undefined;
+      if (dateFilter === 'today') {
+        const kst = getTodayKstDate();
+        date = `${kst.year}${String(kst.month).padStart(2, '0')}${String(kst.day).padStart(2, '0')}`;
+      } else {
+        date = dateFilter || undefined;
+      }
       return RaceApi.getRaces({
         limit: PREVIEW_LIMIT,
         page: 1,

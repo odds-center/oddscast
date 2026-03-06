@@ -10,7 +10,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import SyncProgressBar from '@/components/common/SyncProgressBar';
 import { adminKraApi } from '@/lib/api/admin';
-import { formatYyyyMmDd } from '@/lib/utils';
+import { formatYyyyMmDd, getErrorMessage, getTodayKstDate } from '@/lib/utils';
 import {
   Database, RefreshCw, FileText, Trophy, User, Zap, History,
   Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server,
@@ -22,18 +22,6 @@ function toYyyyMmDd(s: string): string {
   return s.replace(/-/g, '').slice(0, 8);
 }
 
-/** Today in KST as YYYY-MM-DD for date input default */
-function getTodayKstDate(): string {
-  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
-}
-
-function getErrorMessage(err: unknown): string {
-  if (err && typeof err === 'object' && 'message' in err && typeof (err as { message?: unknown }).message === 'string') {
-    return (err as { message: string }).message;
-  }
-  if (err instanceof Error) return err.message;
-  return String(err) || '오류가 발생했습니다';
-}
 
 function HelpBox({ children, variant = 'info' }: { children: React.ReactNode; variant?: 'info' | 'warning' | 'success' }) {
   const styles = {
@@ -116,7 +104,7 @@ export default function KraPage() {
 
   const syncResultsMutation = useMutation({
     mutationFn: async (date?: string) => {
-      const d = date ? toYyyyMmDd(date) : new Date().toISOString().slice(0, 10).replace(/-/g, '');
+      const d = date ? toYyyyMmDd(date) : getTodayKstDate().replace(/-/g, '');
       const out = await adminKraApi.syncResultsWithProgress(d, {
         onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
       });

@@ -26,7 +26,9 @@ const KST_TZ = 'Asia/Seoul';
 
 /** Today's date as YYYYMMDD in Korea (KST). Used for "오늘 경주" filtering. */
 function getTodayKstYyyymmdd(): string {
-  const s = new Date().toLocaleString('en-CA', { timeZone: KST_TZ }).slice(0, 10);
+  const s = new Date()
+    .toLocaleString('en-CA', { timeZone: KST_TZ })
+    .slice(0, 10);
   return s.replace(/-/g, '');
 }
 
@@ -71,12 +73,16 @@ export class RacesService {
     const page = Math.max(1, Number(filters.page) || 1);
     const limit = Math.min(100, Math.max(1, Number(filters.limit) || 20));
     const { q, date, dateFrom, dateTo, meet, status } = filters;
-    const maxFetch = 5000;
 
+    // Use DB-level numeric ordering for rcNo (avoids fetching 5000 rows for in-memory sort).
+    // COALESCE(NULLIF(rcNo,'')::INTEGER, 0) safely converts '1'..'12' to integers.
     const qb = this.raceRepo
       .createQueryBuilder('r')
       .orderBy('r.rcDate', 'DESC')
-      .take(maxFetch);
+      .addOrderBy('r.meet', 'ASC')
+      .addOrderBy("COALESCE(NULLIF(r.rcNo, '')::INTEGER, 0)", 'ASC')
+      .skip((page - 1) * limit)
+      .take(limit);
 
     if (date) {
       const lower = String(date).toLowerCase();
@@ -109,33 +115,40 @@ export class RacesService {
       );
     }
 
-    const [allRaces, total] = await qb.getManyAndCount();
-    const raceIds = allRaces.map((r) => r.id);
+    const [races, total] = await qb.getManyAndCount();
+    const raceIds = races.map((r) => r.id);
     const entriesByRace = await this._loadEntriesForRaces(raceIds);
     const raceIdsWithResults = await this._getRaceIdsWithResults(raceIds);
-    const merged = allRaces.map((r) => {
+    const statusFixups: { id: number; status: RaceStatus }[] = [];
+    const merged = races.map((r) => {
       const hasResults = raceIdsWithResults.has(r.id);
-      let status = r.status;
-      if (hasResults) status = RaceStatus.COMPLETED;
-      else if (status === RaceStatus.COMPLETED) status = RaceStatus.SCHEDULED;
+      let correctedStatus = r.status;
+      if (hasResults && r.status !== RaceStatus.COMPLETED) {
+        correctedStatus = RaceStatus.COMPLETED;
+        statusFixups.push({ id: r.id, status: correctedStatus });
+      } else if (!hasResults && r.status === RaceStatus.COMPLETED) {
+        correctedStatus = RaceStatus.SCHEDULED;
+        statusFixups.push({ id: r.id, status: correctedStatus });
+      }
       return {
         ...r,
-        status,
+        status: correctedStatus,
         entries: entriesByRace.get(r.id) ?? [],
       };
     });
 
-    const sorted = sortRacesByNumericRcNo(merged, {
-      getRcDate: (r) => (r as RaceRow).rcDate ?? '',
-      getMeet: (r) => (r as RaceRow).meet ?? '',
-      getRcNo: (r) => (r as RaceRow).rcNo ?? '',
-      rcDateOrder: 'desc',
-    });
-    const start = (page - 1) * limit;
-    const races = sorted.slice(start, start + limit);
+    // Persist status corrections to DB so they don't recur
+    if (statusFixups.length > 0) {
+      const now = new Date();
+      await Promise.all(
+        statusFixups.map(({ id, status }) =>
+          this.raceRepo.update(id, { status, updatedAt: now }),
+        ),
+      );
+    }
 
     return {
-      races: serializeRaces(races as RaceRow[]),
+      races: serializeRaces(merged as RaceRow[]),
       total,
       page,
       totalPages: Math.ceil(total / limit),
@@ -178,8 +191,10 @@ export class RacesService {
     if (!Array.isArray(results) || results.length === 0) return false;
     return results.some(
       (r) =>
-        (r as { ordInt?: number | null; ordType?: string | null }).ordInt != null ||
-        (r as { ordInt?: number | null; ordType?: string | null }).ordType != null,
+        (r as { ordInt?: number | null; ordType?: string | null }).ordInt !=
+          null ||
+        (r as { ordInt?: number | null; ordType?: string | null }).ordType !=
+          null,
     );
   }
 
@@ -198,7 +213,11 @@ export class RacesService {
           const hasResults = this._hasActualFinishData(fresh.results);
           const corrected = {
             ...fresh,
-            status: hasResults ? RaceStatus.COMPLETED : fresh.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : fresh.status,
+            status: hasResults
+              ? RaceStatus.COMPLETED
+              : fresh.status === RaceStatus.COMPLETED
+                ? RaceStatus.SCHEDULED
+                : fresh.status,
           };
           const serialized = serializeRace(corrected);
           await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -209,7 +228,11 @@ export class RacesService {
       const hasResults = this._hasActualFinishData(c.results);
       const corrected = {
         ...cached,
-        status: hasResults ? RaceStatus.COMPLETED : c.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : c.status,
+        status: hasResults
+          ? RaceStatus.COMPLETED
+          : c.status === RaceStatus.COMPLETED
+            ? RaceStatus.SCHEDULED
+            : c.status,
       };
       return serializeRace(corrected) ?? corrected;
     }
@@ -218,7 +241,11 @@ export class RacesService {
     const hasResults = this._hasActualFinishData(race.results);
     const corrected = {
       ...race,
-      status: hasResults ? RaceStatus.COMPLETED : race.status === RaceStatus.COMPLETED ? RaceStatus.SCHEDULED : race.status,
+      status: hasResults
+        ? RaceStatus.COMPLETED
+        : race.status === RaceStatus.COMPLETED
+          ? RaceStatus.SCHEDULED
+          : race.status,
     };
     const serialized = serializeRace(corrected);
     await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -418,19 +445,35 @@ export class RacesService {
     const raceIds = races.map((r) => r.id);
     const entriesByRace = await this._loadEntriesForRaces(raceIds);
     const raceIdsWithResults = await this._getRaceIdsWithResults(raceIds);
+    const statusFixups2: { id: number; status: RaceStatus }[] = [];
     const merged = races.map((r) => {
       const hasResults = raceIdsWithResults.has(r.id);
-      let status = r.status;
-      if (hasResults) status = RaceStatus.COMPLETED;
-      else if (status === RaceStatus.COMPLETED) status = RaceStatus.SCHEDULED;
+      let correctedStatus = r.status;
+      if (hasResults && r.status !== RaceStatus.COMPLETED) {
+        correctedStatus = RaceStatus.COMPLETED;
+        statusFixups2.push({ id: r.id, status: correctedStatus });
+      } else if (!hasResults && r.status === RaceStatus.COMPLETED) {
+        correctedStatus = RaceStatus.SCHEDULED;
+        statusFixups2.push({ id: r.id, status: correctedStatus });
+      }
       return {
         ...r,
-        status,
+        status: correctedStatus,
         entries: (entriesByRace.get(r.id) ?? []).filter(
           (e) => !(e as Record<string, unknown>).isScratched,
         ),
       };
     });
+
+    // Persist status corrections to DB
+    if (statusFixups2.length > 0) {
+      const now = new Date();
+      await Promise.all(
+        statusFixups2.map(({ id, status }) =>
+          this.raceRepo.update(id, { status, updatedAt: now }),
+        ),
+      );
+    }
     const sorted = sortRacesByNumericRcNo(merged, {
       getRcDate: () => rcDate,
       getMeet: (r) => (r as RaceRow).meet ?? '',
@@ -489,7 +532,15 @@ export class RacesService {
     };
     const results = (await this.resultRepo
       .createQueryBuilder('rr')
-      .select(['rr.ord', 'rr.ordInt', 'rr.ordType', 'rr.chulNo', 'rr.hrNo', 'rr.winOdds', 'rr.plcOdds'])
+      .select([
+        'rr.ord',
+        'rr.ordInt',
+        'rr.ordType',
+        'rr.chulNo',
+        'rr.hrNo',
+        'rr.winOdds',
+        'rr.plcOdds',
+      ])
       .where('rr.raceId = :raceId', { raceId })
       .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
       .orderBy('rr.ordInt', 'ASC')

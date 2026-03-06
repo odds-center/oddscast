@@ -35,7 +35,7 @@ export default function PredictionHistoryPage() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='내가 본 예측 — OddsCast'>
+      <Layout title='내가 본 예측 | OddsCast'>
         <CompactPageTitle title='내가 본 예측' backHref={routes.profile.index} />
         <RequireLogin />
       </Layout>
@@ -43,7 +43,7 @@ export default function PredictionHistoryPage() {
   }
 
   return (
-    <Layout title='내가 본 예측 — OddsCast'>
+    <Layout title='내가 본 예측 | OddsCast'>
       <CompactPageTitle title='내가 본 예측' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
@@ -87,14 +87,17 @@ export default function PredictionHistoryPage() {
                 header: '정확도',
                 headerClassName: 'w-20',
                 align: 'center',
-                render: (item) =>
-                  item.accuracy != null ? (
-                    <Badge variant='muted' size='md'>
-                      {Number(item.accuracy).toFixed(1)}%
+                render: (item) => {
+                  if (item.accuracy == null) return <span className='text-text-tertiary'>—</span>;
+                  const pct = Number(item.accuracy);
+                  const variant =
+                    pct >= 60 ? 'primary' : pct >= 30 ? 'warning' : 'muted';
+                  return (
+                    <Badge variant={variant} size='md'>
+                      {pct.toFixed(1)}%
                     </Badge>
-                  ) : (
-                    <span className='text-text-tertiary'>—</span>
-                  ),
+                  );
+                },
               },
             ]}
             data={list}

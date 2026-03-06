@@ -59,20 +59,30 @@ export class NotificationsService {
     }
   }
 
-  private async sendFcm(token: string, title: string, body: string, data: Record<string, string>): Promise<boolean> {
+  private async sendFcm(
+    token: string,
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ): Promise<boolean> {
     if (!this.firebaseApp) return false;
     try {
       await admin.messaging().send({
         token,
         notification: { title, body },
-        data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+        data: Object.fromEntries(
+          Object.entries(data).map(([k, v]) => [k, String(v)]),
+        ),
         android: { priority: 'high' as const },
         apns: { payload: { aps: { sound: 'default' } } },
       });
       return true;
     } catch (err) {
       const msg = (err as Error)?.message ?? String(err);
-      if (msg.includes('registration-token-not-registered') || msg.includes('invalid-registration-token')) {
+      if (
+        msg.includes('registration-token-not-registered') ||
+        msg.includes('invalid-registration-token')
+      ) {
         this.logger.debug(`Removing invalid FCM token: ${msg}`);
       } else {
         this.logger.warn(`FCM send failed: ${msg}`);
@@ -418,10 +428,15 @@ export class NotificationsService {
           });
           if (ok) sent++;
         }
-        this.logger.log(`[SmartAlert] Push sent to ${sent}/${pushTokens.length} device(s)`);
+        this.logger.log(
+          `[SmartAlert] Push sent to ${sent}/${pushTokens.length} device(s)`,
+        );
       }
     } catch (err) {
-      this.logger.warn('[SmartAlert] Push send failed', (err as Error)?.message);
+      this.logger.warn(
+        '[SmartAlert] Push send failed',
+        (err as Error)?.message,
+      );
     }
     return { count: userIds.length };
   }
@@ -441,7 +456,9 @@ export class NotificationsService {
     const title = '첫 경주 30분 전';
     const message = `${raceLabel}이(가) 곧 시작됩니다. 경주 정보를 확인하세요.`;
     const baseUrl = this.getWebappBaseUrl();
-    const deepLink = baseUrl ? `${baseUrl}/races/${raceId}` : `/races/${raceId}`;
+    const deepLink = baseUrl
+      ? `${baseUrl}/races/${raceId}`
+      : `/races/${raceId}`;
     const dataJson: Record<string, unknown> = {
       type: 'FIRST_RACE_SOON',
       raceId,
@@ -486,7 +503,10 @@ export class NotificationsService {
         }
       }
     } catch (err) {
-      this.logger.warn('[FirstRaceReminder] Push failed', (err as Error)?.message);
+      this.logger.warn(
+        '[FirstRaceReminder] Push failed',
+        (err as Error)?.message,
+      );
     }
     return { count: userIds.length };
   }

@@ -30,6 +30,7 @@ import { firstValueFrom } from 'rxjs';
 import * as xml2js from 'xml2js';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import { kst } from '../common/utils/kst';
 import { KRA_MEETS, meetToCode, toKraMeetName } from './constants';
 import { parseOrd } from './ord-parser';
 import type { KraApiItem, KraSyncAllOutput } from '@oddscast/shared';
@@ -163,8 +164,8 @@ export class KraService {
   async syncDailyUpcomingRacePlans() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Daily Upcoming Race Plans Sync (next 7 days)');
-    const today = this.formatYyyyMmDd(dayjs());
-    const nextWeek = this.formatYyyyMmDd(dayjs().add(7, 'day'));
+    const today = this.formatYyyyMmDd(kst());
+    const nextWeek = this.formatYyyyMmDd(kst().add(7, 'day'));
     const dates = this.getRaceDateRange(today, nextWeek);
 
     for (const d of dates) {
@@ -420,63 +421,66 @@ export class KraService {
     }
   }
 
-  /** Last sync time per rcDate (ms) to avoid hammering KRA. Cooldown 10 min. */
-  private lastResultSyncByDate: Record<string, number> = {};
-  private static readonly RESULT_SYNC_COOLDOWN_MS = 10 * 60 * 1000;
-
   /**
-   * 3a. Race-end–aware result sync (every 5 min on Fri/Sat/Sun KST).
-   * Only syncs dates that have races whose end time has passed and are not yet COMPLETED.
+   * Auto-create PENDING batch jobs for any races that have already ended (today/yesterday)
+   * but have no associated PENDING, RUNNING, or COMPLETED batch job.
+   * This makes the batch schedule system self-healing — no separate safety-net crons needed.
    */
-  /**
-   * Process batch_schedules: run due jobs (scheduledAt <= now) every 5 min.
-   * Jobs are enqueued when race plans are loaded (scheduleResultFetchForRcDate).
-   */
-  @Cron('*/5 * * * *', { timeZone: 'Asia/Seoul' })
-  async processDueBatchSchedulesCron() {
-    if (!this.ensureServiceKey()) return;
-    await this.processDueBatchSchedules();
-  }
+  private async ensureResultFetchJobsForEndedRaces(): Promise<void> {
+    const endedDates = await this.getRacesThatShouldHaveEnded();
+    if (endedDates.length === 0) return;
 
-  @Cron('*/5 10-20 * * 5,6,0', { timeZone: 'Asia/Seoul' })
-  async syncResultsWhenRacesEnded() {
-    if (!this.ensureServiceKey()) return;
-    const dates = await this.getRacesThatShouldHaveEnded();
-    if (dates.length === 0) return;
-
-    const now = Date.now();
-    for (const rcDate of dates) {
-      const last = this.lastResultSyncByDate[rcDate] ?? 0;
-      if (now - last < KraService.RESULT_SYNC_COOLDOWN_MS) continue;
-      this.logger.log(
-        `[Race-end sync] Fetching results for ${rcDate} (race end time passed)`,
-      );
-      try {
-        await this.fetchRaceResults(rcDate, true);
-        this.lastResultSyncByDate[rcDate] = now;
-        await this.syncAnalysisData(rcDate);
-      } catch (err) {
-        this.logger.warn(`[Race-end sync] Failed for ${rcDate}`, err);
+    const now = new Date();
+    for (const rcDate of endedDates) {
+      const existing = await this.batchScheduleRepo.findOne({
+        where: [
+          {
+            jobType: BATCH_JOB_KRA_RESULT_FETCH,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.PENDING,
+          },
+          {
+            jobType: BATCH_JOB_KRA_RESULT_FETCH,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.RUNNING,
+          },
+          {
+            jobType: BATCH_JOB_KRA_RESULT_FETCH,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.COMPLETED,
+          },
+        ],
+      });
+      if (!existing) {
+        this.logger.log(
+          `[BatchSchedule] Auto-creating result fetch job for ended race date ${rcDate}`,
+        );
+        await this.batchScheduleRepo.save(
+          this.batchScheduleRepo.create({
+            jobType: BATCH_JOB_KRA_RESULT_FETCH,
+            targetRcDate: rcDate,
+            scheduledAt: now,
+            status: BatchScheduleStatus.PENDING,
+          }),
+        );
       }
     }
   }
 
   /**
-   * 3b. Real-time results fallback: every 15 min on race days (backup if race-end sync missed).
+   * Process batch_schedules: run due jobs (scheduledAt <= now) every 5 min.
+   * Jobs are enqueued when race plans are loaded (scheduleResultFetchForRcDate).
+   * Also auto-creates jobs for any ended races that slipped through (self-healing).
    */
-  @Cron('*/15 10-20 * * 5,6,0', { timeZone: 'Asia/Seoul' })
-  async syncRealtimeResults() {
+  @Cron('*/5 * * * *', { timeZone: 'Asia/Seoul' })
+  async processDueBatchSchedulesCron() {
     if (!this.ensureServiceKey()) return;
-    this.logger.log(
-      'Running Real-time Result Sync (KST race-day batch fallback)',
-    );
-    const today = this.getTodayKstYyyymmdd();
-    await this.fetchRaceResults(today, true);
-    await this.syncAnalysisData(today);
+    await this.ensureResultFetchJobsForEndedRaces();
+    await this.processDueBatchSchedules();
   }
 
   /**
-   * 4. Previous day results post-sync (daily 06:00 KST)
+   * 3. Previous day results post-sync (daily 06:00 KST)
    * Only runs if yesterday was a race day (Fri/Sat/Sun).
    * Ensures results are cached in DB for immediate user access.
    */
@@ -494,7 +498,7 @@ export class KraService {
   }
 
   /**
-   * 5. Data consistency check (daily 05:30 KST)
+   * 4. Data consistency check (daily 05:30 KST)
    * Finds past races (in last 14 days) that have a race row but no result rows (orphaned),
    * and attempts to backfill their results from KRA API.
    * Does not filter by status so that SCHEDULED races that never received result sync are included.
@@ -504,7 +508,7 @@ export class KraService {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running orphaned race results check (last 14 days)');
 
-    const today = dayjs();
+    const today = kst();
     const twoWeeksAgo = today.subtract(14, 'day');
     const todayStr = this.formatYyyyMmDd(today);
     const fromStr = this.formatYyyyMmDd(twoWeeksAgo);
@@ -547,7 +551,7 @@ export class KraService {
 
   // --- Helper Methods ---
 
-  /** Format as YYYYMMDD (local date) */
+  /** Format as YYYYMMDD (KST date) */
   private formatYyyyMmDd(d: dayjs.Dayjs): string {
     return d.format('YYYYMMDD');
   }
@@ -555,9 +559,9 @@ export class KraService {
   /** Normalize input to YYYYMMDD (supports YYYY-MM-DD and YYYYMMDD). Coerces to string. */
   private normalizeToYyyyMmDd(date: string): string {
     const s = String(date ?? '').trim();
-    if (!s) return this.formatYyyyMmDd(dayjs());
+    if (!s) return this.formatYyyyMmDd(kst());
     const d = s.includes('-') ? dayjs(s) : dayjs(s, 'YYYYMMDD', true);
-    if (!d.isValid()) return this.formatYyyyMmDd(dayjs());
+    if (!d.isValid()) return this.formatYyyyMmDd(kst());
     return d.format('YYYYMMDD');
   }
 
@@ -593,7 +597,7 @@ export class KraService {
   }
 
   private getTodayDateString(): string {
-    return this.formatYyyyMmDd(dayjs());
+    return this.formatYyyyMmDd(kst());
   }
 
   /** Today as YYYYMMDD in KST (for "past date" completion check). */
@@ -618,7 +622,7 @@ export class KraService {
   }
 
   private getUpcomingWeekendDates(): string[] {
-    const today = dayjs();
+    const today = kst();
     const day = today.day(); // 0=Sun, 1=Mon, ..., 3=Wed, 4=Thu
     const dates: string[] = [];
 
@@ -1315,6 +1319,7 @@ export class KraService {
     let totalRaces = 0;
     const numOfRows = 500;
     let pageNo = 1;
+    const seenDates = new Set<string>();
 
     for (;;) {
       try {
@@ -1404,6 +1409,7 @@ export class KraService {
             { conflictPaths: ['meet', 'rcDate', 'rcNo'] },
           );
           totalRaces++;
+          seenDates.add(rcDate);
         }
 
         const totalCount =
@@ -1424,6 +1430,17 @@ export class KraService {
           err,
         );
         break;
+      }
+    }
+
+    // Schedule result fetch jobs for future race dates discovered in this sync.
+    const nowMs = Date.now();
+    for (const rcDate of seenDates) {
+      const dateMs = new Date(
+        `${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}T23:59:00+09:00`,
+      ).getTime();
+      if (dateMs > nowMs) {
+        await this.scheduleResultFetchForRcDate(rcDate);
       }
     }
 
@@ -1460,8 +1477,8 @@ export class KraService {
     datesProcessed: number;
   }> {
     this.ensureServiceKeyOrThrow();
-    const today = this.formatYyyyMmDd(dayjs());
-    const threeMonthsLater = this.formatYyyyMmDd(dayjs().add(3, 'month'));
+    const today = this.formatYyyyMmDd(kst());
+    const threeMonthsLater = this.formatYyyyMmDd(kst().add(3, 'month'));
     const dates = this.getRaceDateRange(today, threeMonthsLater);
 
     this.logger.log(
@@ -1779,6 +1796,7 @@ export class KraService {
               await this.cache.del(`race:${race.id}`);
             } else {
               await this.entryRepo.update(existingEntry.id, entryPayload);
+              await this.cache.del(`race:${race.id}`);
             }
           }
 
@@ -1904,6 +1922,7 @@ export class KraService {
             status: RaceStatus.COMPLETED,
             updatedAt: new Date(),
           });
+          await this.cache.del(`race:${raceId}`);
         }
         // Update prediction accuracy and generate post-race summary
         await Promise.allSettled(

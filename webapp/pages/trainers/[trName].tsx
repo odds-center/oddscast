@@ -55,7 +55,7 @@ export default function TrainerProfilePage() {
   const isEmpty = !profile && !profileLoading;
 
   return (
-    <Layout title={profile ? `${profile.trName} — 조교사 정보` : '조교사 정보 — OddsCast'}>
+    <Layout title={profile ? `${profile.trName} | OddsCast` : '조교사 정보 | OddsCast'}>
       <CompactPageTitle
         title={profile?.trName ?? '조교사 정보'}
         backHref={router.query?.from ? String(router.query.from) : routes.home}

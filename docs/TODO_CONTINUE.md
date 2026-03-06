@@ -2,9 +2,9 @@
 
 > 프로젝트에서 **앞으로 진행할 작업**을 한 문서에 정리한 것입니다.  
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
-> **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`.cursorrules`, `CURSOR_RULES.md` 반영)
+> **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-02 (문서 통합: NEXT_TASKS 내용 본 문서에 반영, KRA 경주별 배치·종료 판단 10분 반영)
+**Last updated:** 2026-03-06 (Playwright E2E 228개 테스트 전 페이지 커버, 컨트롤러 테스트 143개, 터치 44px 통일, 시드 스크립트 통일 — docs/db/seed.sql 추가, setup.sh 5단계로 확장(seed+admin계정생성), UI 공통화·에러 처리 통일, kra.service 테스트 107개, ts-jest moduleNameMapper, admin getTodayKstDate 공통화, WebApp DataFetchState 표준화)
 
 ---
 
@@ -20,8 +20,19 @@
 | 구독 PG (토스페이먼츠) | ✅ 완료 | 빌링키·첫 결제·정기 결제 크론, 결제창 연동 |
 | **종료/예정·KRA 정책** | ✅ 완료 | COMPLETED는 KRA 결과 적재 시에만 설정. 날짜 기반 COMPLETED 제거. WebApp/서버는 status만 사용. [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
 | **배치 스케줄(결과 조회)** | ✅ 완료 | batch_schedules 테이블·Cron 5분마다 due 작업 실행. Admin KRA 페이지에 예정/완료/실패 테이블·집계 표시. |
+| **Cron 통합** | ✅ 완료 | syncResultsWhenRacesEnded·syncRealtimeResults 제거. processDueBatchSchedulesCron에 self-healing 로직(ensureResultFetchJobsForEndedRaces) 통합. 경주 종료 감지 시 자동 PENDING 잡 생성. |
+| **races.service findAll 최적화** | ✅ 완료 | 5000행 인메모리 정렬→페이지네이션 방식을 DB 레벨 CAST(rcNo::INTEGER) 정렬+skip/take로 교체. |
+| **경주 상세 Picks 데드코드 제거** | ✅ 완료 | CONFIG.picksEnabled=false로 실제 렌더되지 않던 HorsePickPanel, 관련 state/mutation/query 전체 제거. |
+| **fetchRacePlanScheduleByYearMonth 개선** | ✅ 완료 | 월별 경주 동기화 시 미래 날짜에 대한 배치 스케줄 자동 생성 추가. |
+| **bulkCreate 배치 저장** | ✅ 완료 | 결과 1건씩 save→배열 save(chunk:100)로 변경. |
+| **results.tsx KST 날짜 버그** | ✅ 완료 | 'today'/'yesterday' 필터 시 UTC 기준 날짜→KST 기준(getTodayKstDate) 날짜 계산으로 수정. |
+| **홈페이지 JSX 중복** | ✅ 완료 | isLoggedIn 분기로 4개 섹션 중복 제거. TodaysFortuneCard만 조건부 렌더, 나머지 공통화. |
+| **서버 단위 테스트 107개** | ✅ 완료 | auth/races/results/points/subscriptions/prediction-tickets/predictions/kra 서비스 테스트 완료. ts-jest moduleNameMapper로 경고 제거. |
 | **모바일 첫 화면** | ✅ 완료 | WebApp에서 네이티브 앱일 때 비로그인 → 로그인 페이지, 로그인 시 홈. AUTH_LOGOUT 연동. |
 | **WebApp/Admin 에러·타입** | ✅ 완료 | API catch (err: unknown), Admin any 제거·getErrorMessage, 서버 admin body 타입 정리. |
+| **Admin util 중복 제거** | ✅ 완료 | admin/utils.ts에 getTodayKstDate 추가. kra/races/predictions/subscriptions/users 페이지 로컬 함수·instanceof Error 패턴 제거. |
+| **WebApp DataFetchState 표준화** | ✅ 완료 | notifications.tsx·subscriptions.tsx LoadingSpinner 직접 사용→DataFetchState로 교체. shared RaceDetailDto alias 필드 @deprecated JSDoc 추가. |
+| **시드 스크립트 통일** | ✅ 완료 | `docs/db/seed.sql` (SubscriptionPlan 3종·PointConfig·PointTicketPrice·GlobalConfig). `setup.sh` 5단계: schema→seed→admin 계정 bcrypt 생성. 모두 ON CONFLICT DO NOTHING 멱등 처리. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -85,7 +96,7 @@
 | 항목 | 상태 | 상세 |
 |------|------|------|
 | **TypeORM 마이그레이션 CLI 정비** | 선택 | 스키마 변경 시 `migration:generate` / `migration:run` 워크플로 정리. [TYPEORM_SETUP.md](guides/TYPEORM_SETUP.md) |
-| **시드 스크립트 통일** | 선택 | PointConfig, SubscriptionPlan 등 초기 데이터 삽입 스크립트/SQL 한곳에서 관리 |
+| **시드 스크립트 통일** | ✅ 완료 | `docs/db/seed.sql` 추가 (SubscriptionPlan·PointConfig·PointTicketPrice·GlobalConfig). `setup.sh` 5단계 확장(seed 적용 + bcrypt admin 계정 생성). |
 | **문서 동기화** | 진행 중 | 기능 추가/변경 시 FEATURE_ROADMAP, API_SPECIFICATION, DATABASE_SCHEMA 등 해당 문서 갱신. 프로젝트/저장소·디렉터리명은 **oddscast** 통일. 최근: API 명세(Horses·Fortune·Referrals·WeeklyPreview·Activity), SERVER_COMPLETENESS, PROJECT_STRUCTURE 서버/웹앱 구조 보완, WEBAPP_COMPLETENESS·GAPS 갱신 |
 
 ---
@@ -108,18 +119,18 @@
 | infra-3 | DB 백업 자동화 | §1 |
 | ops-1 | SENTRY_DSN 에러 모니터링 | §2 품질·운영 |
 | ops-2 | 업타임 모니터링 (/health) | §2 |
-| ops-3 | E2E/통합 테스트 (선택) | §2 |
+| ops-3 | E2E/통합 테스트 | §2 — ✅ 완료. Playwright 설치, 228개 테스트 10파일 (auth/races/subscriptions/settings/navigation/profile/mypage/results/predictions/detail-pages). CI e2e 잡 추가. |
 | feat-1 | 푸시 타이밍 개선 | §3 단기 — ✅ 완료 |
 | feat-2 | AI 신뢰도 표시 | §3 — ✅ 완료 |
 | feat-3 | Push Deep Link (Mobile) | §3 중기 — ✅ 완료 |
 | feat-4 | 이미지 최적화 (선택) | §3 |
 | tech-1 | TypeORM 마이그레이션 CLI (선택) | §4 |
-| tech-2 | 시드 스크립트 통일 (선택) | §4 |
+| tech-2 | 시드 스크립트 통일 | §4 — ✅ 완료 |
 | gap-1 | Admin 페이지별 권한/가드 점검 | WEBAPP_ADMIN_GAPS §2.1 — ✅ Layout useRequireAuth 적용 |
-| gap-2 | WebApp 터치 영역·44px 점검 | WEBAPP_ADMIN_GAPS §1.3 |
+| gap-2 | WebApp 터치 영역·44px 점검 | WEBAPP_ADMIN_GAPS §1.3 — ✅ 완료 |
 | doc-1 | 문서 동기화 유지 | §4 |
 
-작업 시 Cursor Todos에서 해당 ID로 진행·완료 표시하고, 완료 시 이 문서와 WEBAPP_ADMIN_GAPS 등 해당 섹션 상태를 갱신한다.
+작업 완료 시 이 문서와 WEBAPP_ADMIN_GAPS 등 해당 섹션 상태를 갱신한다.
 
 ---
 
@@ -142,11 +153,11 @@
 ## 7. 규칙 (Rules) — 이 문서 사용법
 
 - **Planning / "다음에 할 일" 논의 시:** 이 문서(`TODO_CONTINUE.md`)를 먼저 확인한다.
-- **작업 완료 시:** 해당 항목의 **상태**를 갱신하고, 관련 **docs도 함께 갱신**한다. (문서 갱신 규칙: `.cursorrules` §문서 갱신(Docs Update) 참고.)
+- **작업 완료 시:** 해당 항목의 **상태**를 갱신하고, 관련 **docs도 함께 갱신**한다. (문서 갱신 규칙: `CLAUDE.md` 참고.)
 - **새 작업 추가 시:**  
   - 해당 섹션(1 배포·인프라 / 2 품질·운영 / 3 기능·콘텐츠 / 4 기술·유지보수)에 행을 추가하고,  
   - 필요하면 [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)에도 맞춰 적는다.
 - **우선순위 변경 시:** §5 추천 순서와 각 표의 순서를 팀 상황에 맞게 조정한다.
 - **세부 체크리스트가 필요하면:** 이 문서에 하위 항목을 추가하거나, 별도 파일(예: `docs/tasks/railway-checklist.md`)로 나눠도 된다.
 
-이 규칙은 `.cursorrules` 및 `docs/CURSOR_RULES.md`에 반영되어 있으며, AI 에이전트와 개발자 모두 이 문서를 기준으로 진행할 일을 관리한다.
+이 규칙은 `CLAUDE.md` 및 `.claude/rules/`에 반영되어 있으며, AI 에이전트와 개발자 모두 이 문서를 기준으로 진행할 일을 관리한다.

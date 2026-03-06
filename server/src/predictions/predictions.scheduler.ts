@@ -8,7 +8,7 @@ import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionsService } from './predictions.service';
 import { GlobalConfigService } from '../config/config.service';
-import dayjs from 'dayjs';
+import { kst } from '../common/utils/kst';
 
 /**
  * 예측 자동 생성 Cron (BUSINESS_LOGIC 1.1)
@@ -36,7 +36,7 @@ export class PredictionsScheduler {
       );
       return;
     }
-    const today = dayjs().format('YYYYMMDD');
+    const today = kst().format('YYYYMMDD');
     this.logger.log(`[Cron] Generate predictions for ${today}`);
 
     const qbToday = this.raceRepo
@@ -97,7 +97,7 @@ export class PredictionsScheduler {
       );
       return;
     }
-    const today = dayjs();
+    const today = kst();
     const dates: string[] = [];
     for (let i = 0; i < 7; i++) {
       dates.push(today.subtract(i, 'day').format('YYYYMMDD'));

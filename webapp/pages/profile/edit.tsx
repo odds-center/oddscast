@@ -97,7 +97,7 @@ export default function ProfileEditPage() {
   }
 
   return (
-    <Layout title='프로필 수정 — OddsCast'>
+    <Layout title='프로필 수정 | OddsCast'>
       <div className='max-w-md mx-auto space-y-6'>
         <CompactPageTitle title='프로필 수정' backHref={routes.profile.index} />
         <SectionCard

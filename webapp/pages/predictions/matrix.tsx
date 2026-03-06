@@ -21,6 +21,7 @@ import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tansta
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
 import { trackCTA } from '@/lib/analytics';
+import { getTodayKstDate } from '@/lib/utils/format';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
@@ -32,9 +33,9 @@ const MATRIX_HINT_STORAGE_KEY = 'oddscast_matrix_hint_seen';
 function getDateParam(filter: string): string | undefined {
   if (!filter || filter === 'today') return undefined;
   if (filter === 'yesterday') {
-    const d = new Date();
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().slice(0, 10);
+    const kst = getTodayKstDate();
+    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
   }
   if (/^\d{4}-?\d{2}-?\d{2}$/.test(filter.replace(/-/g, ''))) {
     return filter.includes('-') ? filter : `${filter.slice(0, 4)}-${filter.slice(4, 6)}-${filter.slice(6, 8)}`;
@@ -75,7 +76,7 @@ export default function PredictionMatrixPage() {
   );
 
   const apiDate = getDateParam(dateFilter);
-  const apiDateStr = apiDate ?? new Date().toISOString().slice(0, 10);
+  const apiDateStr = apiDate ?? (() => { const k = getTodayKstDate(); return `${k.year}-${String(k.month).padStart(2, '0')}-${String(k.day).padStart(2, '0')}`; })();
 
   const { data: hitRecords } = useQuery({
     queryKey: ['predictions', 'hit-record'],
@@ -158,7 +159,7 @@ export default function PredictionMatrixPage() {
   }, [matrixData]);
 
   return (
-    <Layout title='종합 예상 — OddsCast'>
+    <Layout title='종합 예상 | OddsCast'>
       <CompactPageTitle title='일일 종합 가이드' backHref={routes.home} />
       <div className='mb-2 flex justify-end'>
         <Link
@@ -253,8 +254,8 @@ export default function PredictionMatrixPage() {
               if (v === 'today') updateQuery({ date: 'today' });
               else if (v === 'yesterday') updateQuery({ date: 'yesterday' });
               else {
-                const d = new Date();
-                updateQuery({ date: d.toISOString().slice(0, 10) });
+                const kst = getTodayKstDate();
+                updateQuery({ date: `${kst.year}-${String(kst.month).padStart(2, '0')}-${String(kst.day).padStart(2, '0')}` });
               }
             }}
             showDatePicker
@@ -262,8 +263,8 @@ export default function PredictionMatrixPage() {
               dateFilter && dateFilter !== 'today' && dateFilter !== 'yesterday'
                 ? dateFilter.includes('-') ? dateFilter : `${dateFilter.slice(0, 4)}-${dateFilter.slice(4, 6)}-${dateFilter.slice(6, 8)}`
                 : dateFilter === 'yesterday'
-                  ? (() => { const d = new Date(); d.setDate(d.getDate() - 1); return d.toISOString().slice(0, 10); })()
-                  : dateFilter === 'today' ? new Date().toISOString().slice(0, 10) : ''
+                  ? (() => { const kst = getTodayKstDate(); const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1)); return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`; })()
+                  : dateFilter === 'today' ? (() => { const k = getTodayKstDate(); return `${k.year}-${String(k.month).padStart(2, '0')}-${String(k.day).padStart(2, '0')}`; })() : ''
             }
             onDateChange={(v) => updateQuery({ date: v || undefined, meet: meetFilter || undefined })}
             dateId='matrix-date'
@@ -375,7 +376,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const dateFilter = query?.date ?? 'today';
   const meetFilter = query?.meet ?? '';
   const apiDate = getDateParam(dateFilter);
-  const apiDateStr = apiDate ?? new Date().toISOString().slice(0, 10);
+  const kstToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  const apiDateStr = apiDate ?? kstToday;
 
   const queryClient = new QueryClient();
   try {

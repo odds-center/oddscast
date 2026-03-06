@@ -7,7 +7,11 @@
     "dev:webpack": "next dev -p 3000 --webpack",
     "build": "next build",
     "start": "next start -p 3000",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report"
   },
   "dependencies": {
     "@oddscast/shared": "file:../shared",
@@ -15,6 +19,7 @@
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.5",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.19",
     "es-toolkit": "^1.38.0",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
@@ -27,6 +32,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@playwright/test": "^1.58.2",
     "@types/node": "^20",
     "@types/qs": "^6.14.0",
     "@types/react": "^19.2.0",

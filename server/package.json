@@ -107,6 +107,10 @@
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
+    "moduleNameMapper": {
+      "^@oddscast/shared$": "<rootDir>/../../shared/types/index.ts",
+      "^@oddscast/shared/(.*)$": "<rootDir>/../../shared/$1"
+    },
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],

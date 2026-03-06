@@ -47,7 +47,7 @@ export default function Register() {
   };
 
   return (
-    <Layout title='회원가입 — OddsCast'>
+    <Layout title='회원가입 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         <AuthCard
           title='회원가입'

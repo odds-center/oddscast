@@ -2,6 +2,15 @@
  * Admin API 클라이언트 (Mobile 패턴 적용)
  */
 import { axiosInstance, handleApiResponse, handleApiError } from '../utils/axios';
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
+
+const KST = 'Asia/Seoul';
+
 import type {
   DashboardStats,
   UserListResponse,
@@ -550,6 +559,7 @@ export class AdminPredictionTicketsApi {
     page?: number;
     limit?: number;
     userId?: string;
+    type?: string;
   }): Promise<{
     items: Array<{
       id: number;
@@ -837,7 +847,7 @@ export class AdminKraApi {
   }> {
     try {
       const d = date?.replace(/-/g, '').slice(0, 8) ||
-        new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        dayjs().tz(KST).format('YYYYMMDD');
       const response = await axiosInstance.post(`/kra/sync/all?date=${d}`, {}, { timeout: 300_000 });
       return handleApiResponse(response);
     } catch (err: unknown) {

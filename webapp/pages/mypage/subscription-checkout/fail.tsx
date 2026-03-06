@@ -24,7 +24,7 @@ export default function SubscriptionCheckoutFailPage() {
           : '카드 등록 또는 본인인증이 취소되었거나 실패했습니다.';
 
   return (
-    <Layout title='구독 결제 실패 — OddsCast'>
+    <Layout title='구독 결제 실패 | OddsCast'>
       <div className='max-w-md mx-auto'>
         <CompactPageTitle title='결제 실패' backHref={routes.mypage.subscriptions} />
         <EmptyState
@@ -37,7 +37,7 @@ export default function SubscriptionCheckoutFailPage() {
           <Link href={routes.mypage.subscriptions} className='btn-primary block text-center py-2.5'>
             구독 플랜으로
           </Link>
-          <BackLink href={routes.profile.index} label='정보로' className='block' />
+          <BackLink href={routes.profile.index} label='내 정보로' className='block' />
         </div>
       </div>
     </Layout>

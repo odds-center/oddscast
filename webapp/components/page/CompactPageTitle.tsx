@@ -24,7 +24,7 @@ export default function CompactPageTitle({
       {backHref && (
         <Link
           href={backHref}
-          className='group flex items-center justify-center w-9 h-9 -ml-0.5 shrink-0 text-stone-500 touch-manipulation rounded-full bg-stone-100/80 hover:bg-stone-200/80 active:bg-stone-200 active:scale-95 transition-all'
+          className='group flex items-center justify-center w-11 h-11 -ml-1.5 shrink-0 text-stone-500 touch-manipulation rounded-full bg-stone-100/80 hover:bg-stone-200/80 active:bg-stone-200 active:scale-95 transition-all'
           aria-label='Back'
         >
           <Icon name='ChevronLeft' size={18} strokeWidth={2.5} className='group-hover:text-foreground transition-colors' />

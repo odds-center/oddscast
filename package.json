@@ -1,7 +1,7 @@
 {
   "name": "goldenrace",
   "private": true,
-  "packageManager": "pnpm@10.29.3",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "dev": "pnpm run --parallel dev:server dev:webapp",
     "setup": "bash scripts/setup.sh",

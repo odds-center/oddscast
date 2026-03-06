@@ -12,6 +12,7 @@ import { PredictionTicket } from '../database/entities/prediction-ticket.entity'
 import { BetStatus } from '../database/db-enums';
 import { SubscriptionStatus } from '../database/db-enums';
 import { TicketStatus } from '../database/db-enums';
+import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
 @Injectable()
 export class AdminService {
@@ -117,9 +118,9 @@ export class AdminService {
   }
 
   async getDashboardStats() {
-    const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const dayStart = new Date(new Date().setHours(0, 0, 0, 0));
-    const dayEnd = new Date(new Date().setHours(23, 59, 59, 999));
+    const today = todayKstYyyymmdd();
+    const dayStart = kst().startOf('day').toDate();
+    const dayEnd = kst().endOf('day').toDate();
 
     const [
       totalUsers,
@@ -221,9 +222,8 @@ export class AdminService {
     }> = [];
 
     if (periodType === 'day') {
-      const today = new Date().toISOString().slice(0, 10);
-      const dayStart = new Date(today + 'T00:00:00.000Z');
-      const dayEnd = new Date(new Date(today).getTime() + 86400000);
+      const dayStart = kst().startOf('day').toDate();
+      const dayEnd = kst().endOf('day').toDate();
       const daySingle = await this.singlePurchaseRepo
         .createQueryBuilder('s')
         .select('COALESCE(SUM(s.totalAmount), 0)', 'sum')
@@ -231,7 +231,7 @@ export class AdminService {
         .andWhere('s.purchasedAt < :end', { end: dayEnd })
         .getRawOne<{ sum: string }>();
       const dayRev = parseInt(daySingle?.sum ?? '0', 10);
-      rows.push({ period: today, revenue: dayRev, payout: 0, profit: dayRev });
+      rows.push({ period: kst().format('YYYY-MM-DD'), revenue: dayRev, payout: 0, profit: dayRev });
     } else if (periodType === 'year') {
       const y = new Date().getFullYear();
       const yearSingle = await this.singlePurchaseRepo

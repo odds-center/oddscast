@@ -596,7 +596,7 @@ export default function AIConfigPage() {
 
           {/* 도움말 & 예상 비용 계산 */}
           <div className='bg-blue-50 border border-blue-200 rounded-md p-4'>
-            <h4 className='font-semibold text-blue-900 mb-3'>💡 설정 가이드 & 예상 비용 계산</h4>
+            <h4 className='font-semibold text-blue-900 mb-3'>설정 가이드 & 예상 비용 계산</h4>
             <div className='space-y-2 text-sm text-blue-800'>
               <p>
                 <strong>• Premium 전략:</strong> Gemini 1.5 Pro만 사용, 최고 정확도 (30%), 월 ₩7,200
@@ -608,7 +608,7 @@ export default function AIConfigPage() {
                 <strong>• Budget 전략:</strong> Flash 위주, 정확도 25%, 월 ₩1,200
               </p>
               <div className='mt-3 pt-3 border-t border-blue-200'>
-                <strong>📊 예상 비용 계산식</strong>
+                <strong>예상 비용 계산식</strong>
                 <pre className='mt-2 p-2 bg-white rounded text-xs overflow-x-auto'>
 {`경주당 비용(모델별) × 월 경기 수(≈50) = 월 비용(캐싱 OFF)
   - gemini-2.5-flash (권장): ₩5 × 50 = ₩250
@@ -620,7 +620,7 @@ export default function AIConfigPage() {
                 </pre>
               </div>
               <p className='mt-2'>
-                <strong>⚠️ 캐싱 활성화 시:</strong> 실제 비용은 1% 수준. 무료 tier (1,500 RPD)
+                <strong>캐싱 활성화 시:</strong> 실제 비용은 1% 수준. 무료 tier (1,500 RPD)
                 활용 가능
               </p>
             </div>

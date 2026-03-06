@@ -23,6 +23,7 @@ export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const storeUser = useAuthStore((s) => s.user);
   const [purchaseQty, setPurchaseQty] = useState(1);
+  const [codeCopied, setCodeCopied] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
@@ -93,10 +94,15 @@ export default function Profile() {
 
   const handleCopyReferralCode = () => {
     if (!referralCode?.code) return;
+    const doFeedback = () => {
+      setCodeCopied(true);
+      setTimeout(() => setCodeCopied(false), 2000);
+    };
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(referralCode.code).then(() => alert('코드가 복사되었습니다.'));
+      navigator.clipboard.writeText(referralCode.code).then(doFeedback);
     } else {
       prompt('아래 코드를 복사하세요', referralCode.code);
+      doFeedback();
     }
   };
 
@@ -106,7 +112,7 @@ export default function Profile() {
 
   if (!isLoggedIn) {
     return (
-      <Layout title='OddsCast'>
+      <Layout title='내 정보 | OddsCast'>
         <div>
           <CompactPageTitle title='내 정보' backHref={routes.home} />
           <RequireLogin suffix='포인트, 예측권, 구독 정보를 확인할 수 있습니다.' />
@@ -140,27 +146,39 @@ export default function Profile() {
               <p className='text-stone-500 text-sm'>안녕하세요</p>
               <p className='text-lg font-bold text-foreground mt-1'>{displayName}님</p>
               {consecutiveDays > 0 && (
-                <p className='text-text-secondary text-sm mt-1'>
-                  {consecutiveDays}일 연속 로그인
-                  {consecutiveDays < 7 && ' · 7일 연속 시 예측권 1장'}
-                </p>
+                <div className='mt-2'>
+                  <p className='text-text-secondary text-sm flex items-center gap-1.5'>
+                    <Icon name='TrendingUp' size={14} className='text-primary shrink-0' />
+                    {consecutiveDays}일 연속 로그인
+                    {consecutiveDays < 7 && <span className='text-text-tertiary ml-1'>· {7 - consecutiveDays}일 더하면 예측권 1장!</span>}
+                  </p>
+                  <div className='mt-2 flex gap-1'>
+                    {Array.from({ length: 7 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`h-1.5 flex-1 rounded-full ${i < consecutiveDays ? 'bg-primary' : 'bg-stone-200'}`}
+                      />
+                    ))}
+                  </div>
+                  <p className='text-text-tertiary text-xs mt-1'>{consecutiveDays}/7일</p>
+                </div>
               )}
               <div className='grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-stone-100'>
                 <div className='text-center'>
-                  <p className='text-stone-400 text-xs mb-1'>예측권</p>
+                  <p className='text-stone-500 text-sm mb-1'>예측권</p>
                   <p className='text-xl font-bold text-stone-800'>{ticketsCount}장</p>
                 </div>
                 <div className='text-center'>
-                  <p className='text-stone-400 text-xs mb-1'>포인트</p>
+                  <p className='text-stone-500 text-sm mb-1'>포인트</p>
                   <p className='text-xl font-bold text-stone-800'>{points.toLocaleString()}pt</p>
                 </div>
                 <div className='text-center'>
-                  <p className='text-stone-400 text-xs mb-1'>구독</p>
+                  <p className='text-stone-500 text-sm mb-1'>구독</p>
                   <p className='text-base font-semibold mt-0.5'>
                     {subscription?.isActive ? (
                       <span className='text-primary'>{subscription.planId}</span>
                     ) : (
-                      <span className='text-stone-400'>비활성</span>
+                      <span className='text-stone-400'>미구독</span>
                     )}
                   </p>
                 </div>
@@ -210,10 +228,10 @@ export default function Profile() {
                     <button
                       type='button'
                       onClick={handleCopyReferralCode}
-                      className='btn-secondary inline-flex items-center gap-1.5'
+                      className={`btn-secondary inline-flex items-center gap-1.5 transition-colors ${codeCopied ? 'text-primary border-primary/40' : ''}`}
                     >
-                      <Icon name='ClipboardList' size={16} />
-                      복사
+                      <Icon name={codeCopied ? 'Check' : 'ClipboardList'} size={16} />
+                      {codeCopied ? '복사됨!' : '복사'}
                     </button>
                   </div>
                   <p className='text-text-secondary text-sm mt-2'>

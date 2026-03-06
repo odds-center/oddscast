@@ -55,7 +55,7 @@ export default function HorseProfilePage() {
   const isEmpty = !profile && !profileLoading;
 
   return (
-    <Layout title={profile ? `${profile.hrName} — 마필 정보` : '마필 정보 — OddsCast'}>
+    <Layout title={profile ? `${profile.hrName} | OddsCast` : '마필 정보 | OddsCast'}>
       <CompactPageTitle
         title={profile?.hrName ?? '마필 정보'}
         backHref={router.query?.from ? String(router.query.from) : routes.home}

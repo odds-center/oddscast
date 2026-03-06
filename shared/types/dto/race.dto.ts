@@ -20,6 +20,7 @@ export interface RaceDto {
   weather?: string;
   track?: string;
   status?: string;
+  /** @deprecated Use `status`. Server sets both for backward compatibility. */
   raceStatus?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -92,10 +93,12 @@ export interface DividendDto {
 /** 경주 상세 응답 DTO (entries, results 포함) */
 export interface RaceDetailDto extends RaceDto {
   entries?: RaceEntryDto[];
+  /** @deprecated Use `entries`. Alias kept for backward compatibility. */
   entryDetails?: RaceEntryDto[];
   results?: RaceResultDto[];
-  dividendRates?: DividendDto[];
   dividends?: DividendDto[];
+  /** @deprecated Use `dividends`. Alias kept for backward compatibility. */
+  dividendRates?: DividendDto[];
 }
 
 /** 경주 목록 응답 DTO */

@@ -129,7 +129,7 @@ export default function SimulatorPage() {
   const meetName = (race as { meetName?: string } | undefined)?.meetName ?? '';
 
   return (
-    <Layout title={`커스텀 예측 시뮬레이터 — 경주 #${rcNo ?? ''} | OddsCast`}>
+    <Layout title={rcNo ? `커스텀 시뮬레이터 | 경주 #${rcNo} | OddsCast` : '커스텀 시뮬레이터 | OddsCast'}>
       <BackLink href={id ? routes.races.detail(id) : routes.races.list} label="경주 상세로" className="block mb-4" />
 
       {!id ? (

@@ -25,13 +25,27 @@ export class BatchSchedule {
   @Column({ name: 'scheduledAt', type: 'timestamp', precision: 3 })
   scheduledAt!: Date;
 
-  @Column({ type: 'enum', enum: BatchScheduleStatus, default: BatchScheduleStatus.PENDING })
+  @Column({
+    type: 'enum',
+    enum: BatchScheduleStatus,
+    default: BatchScheduleStatus.PENDING,
+  })
   status!: BatchScheduleStatus;
 
-  @Column({ name: 'startedAt', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'startedAt',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   startedAt!: Date | null;
 
-  @Column({ name: 'completedAt', type: 'timestamp', precision: 3, nullable: true })
+  @Column({
+    name: 'completedAt',
+    type: 'timestamp',
+    precision: 3,
+    nullable: true,
+  })
   completedAt!: Date | null;
 
   @Column({ name: 'errorMessage', type: 'text', nullable: true })

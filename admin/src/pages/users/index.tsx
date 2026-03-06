@@ -9,21 +9,21 @@ import Button from '@/components/common/Button';
 import Modal from '@/components/common/Modal';
 import PageHeader from '@/components/common/PageHeader';
 import { adminUsersApi } from '@/lib/api/admin';
-import { formatDateTime } from '@/lib/utils';
+import { formatDateTime, getErrorMessage } from '@/lib/utils';
 import toast from 'react-hot-toast';
 
 interface User {
   id: number | string;
   email: string;
   name: string;
+  nickname?: string;
   role: string;
   isActive: boolean;
-  totalBets?: number;
-  wonBets?: number;
-  totalBetAmount?: number;
-  totalWinAmount?: number;
   availableTickets?: number;
   totalTickets?: number;
+  consecutiveLoginDays?: number;
+  subscriptionStatus?: string;
+  subscriptionPlanId?: string;
   createdAt: string;
 }
 
@@ -66,7 +66,7 @@ export default function UsersPage() {
       setGrantTicketType('RACE');
     },
     onError: (err: unknown) => {
-      toast.error(err instanceof Error ? err.message : '예측권 지급에 실패했습니다');
+      toast.error(getErrorMessage(err));
     },
   });
 
@@ -105,19 +105,16 @@ export default function UsersPage() {
       ),
     },
     {
-      key: 'stats',
-      header: '베팅 통계',
+      key: 'subscription',
+      header: '구독',
       render: (user: User) => (
-        <div className='text-sm'>
-          <div>{(user.totalBets ?? 0)}건</div>
-          <div className='text-gray-500'>
-            승률:{' '}
-            {(user.totalBets ?? 0) > 0
-              ? (((user.wonBets ?? 0) / (user.totalBets ?? 1)) * 100).toFixed(1)
-              : 0}
-            %
-          </div>
-        </div>
+        <span className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
+          user.subscriptionStatus === 'ACTIVE'
+            ? 'bg-purple-100 text-purple-800'
+            : 'bg-gray-100 text-gray-500'
+        }`}>
+          {user.subscriptionStatus === 'ACTIVE' ? (user.subscriptionPlanId ?? '구독중') : '미구독'}
+        </span>
       ),
     },
     {
@@ -277,41 +274,28 @@ export default function UsersPage() {
               </div>
 
               <div className='border-t pt-3'>
-                <h3 className='text-sm font-semibold mb-2'>베팅 통계</h3>
+                <h3 className='text-sm font-semibold mb-2'>구독 · 예측권 현황</h3>
                 <div className='grid grid-cols-2 gap-3'>
                   <div className='bg-gray-50 p-2.5 rounded'>
-                    <div className='text-xs text-gray-600'>총 베팅 수</div>
-                    <div className='text-base font-bold'>{selectedUser.totalBets ?? 0}건</div>
+                    <div className='text-xs text-gray-600'>구독 상태</div>
+                    <div className={`text-base font-bold ${selectedUser.subscriptionStatus === 'ACTIVE' ? 'text-purple-600' : 'text-gray-400'}`}>
+                      {selectedUser.subscriptionStatus === 'ACTIVE'
+                        ? (selectedUser.subscriptionPlanId ?? '구독중')
+                        : '미구독'}
+                    </div>
                   </div>
                   <div className='bg-gray-50 p-2.5 rounded'>
-                    <div className='text-xs text-gray-600'>승리 횟수</div>
+                    <div className='text-xs text-gray-600'>연속 로그인</div>
+                    <div className='text-base font-bold text-amber-600'>
+                      {selectedUser.consecutiveLoginDays ?? 0}일
+                    </div>
+                  </div>
+                  <div className='bg-green-50 p-2.5 rounded col-span-2'>
+                    <div className='text-xs text-gray-600'>예측권</div>
                     <div className='text-base font-bold text-green-600'>
-                      {selectedUser.wonBets ?? 0}건
+                      사용 가능 {selectedUser.availableTickets ?? 0}장
+                      <span className='text-gray-400 font-normal text-sm ml-1'>/ 총 {selectedUser.totalTickets ?? 0}장</span>
                     </div>
-                  </div>
-                  <div className='bg-gray-50 p-2.5 rounded'>
-                    <div className='text-xs text-gray-600'>총 베팅 금액</div>
-                    <div className='text-base font-bold'>
-                      {(selectedUser.totalBetAmount ?? 0).toLocaleString()}원
-                    </div>
-                  </div>
-                  <div className='bg-gray-50 p-2.5 rounded'>
-                    <div className='text-xs text-gray-600'>총 당첨 금액</div>
-                    <div className='text-base font-bold text-green-600'>
-                      {(selectedUser.totalWinAmount ?? 0).toLocaleString()}원
-                    </div>
-                  </div>
-                </div>
-                <div className='mt-2 bg-blue-50 p-2.5 rounded'>
-                  <div className='text-xs text-gray-600'>승률</div>
-                  <div className='text-base font-bold text-blue-600'>
-                    {(selectedUser.totalBets ?? 0) > 0
-                      ? (
-                          ((selectedUser.wonBets ?? 0) / (selectedUser.totalBets ?? 1)) *
-                          100
-                        ).toFixed(1)
-                      : 0}
-                    %
                   </div>
                 </div>
               </div>

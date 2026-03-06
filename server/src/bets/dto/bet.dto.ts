@@ -154,7 +154,10 @@ export class CreateBetSlipDto {
   @Type(() => Number)
   raceId: number;
 
-  @ApiProperty({ type: [Object], description: 'Array of bet items in the slip' })
+  @ApiProperty({
+    type: [Object],
+    description: 'Array of bet items in the slip',
+  })
   @IsArray()
   bets: unknown[];
 }

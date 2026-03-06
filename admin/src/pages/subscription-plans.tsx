@@ -22,6 +22,7 @@ interface SubscriptionPlan {
   baseTickets: number;
   bonusTickets: number;
   totalTickets: number;
+  matrixTickets: number;
   isActive: boolean;
   sortOrder: number;
 }
@@ -38,6 +39,7 @@ const planSchema = z.object({
   baseTickets: z.number().int().min(1),
   bonusTickets: z.number().int().min(0),
   totalTickets: z.number().int().min(1),
+  matrixTickets: z.number().int().min(0),
   isActive: z.boolean(),
   sortOrder: z.number().int(),
 });
@@ -210,15 +212,19 @@ export default function SubscriptionPlansPage() {
 
                     <div className='border-t pt-3 mt-3'>
                       <div className='flex justify-between'>
-                        <span className='text-gray-600'>기본 예측권</span>
+                        <span className='text-gray-600'>기본 예측권 (경주)</span>
                         <span className='font-semibold'>{plan.baseTickets}장</span>
                       </div>
                       <div className='flex justify-between'>
                         <span className='text-gray-600'>보너스</span>
                         <span className='font-semibold text-green-600'>+{plan.bonusTickets}장</span>
                       </div>
+                      <div className='flex justify-between'>
+                        <span className='text-gray-600'>종합 예측권 (MATRIX)</span>
+                        <span className='font-semibold text-purple-600'>{plan.matrixTickets ?? 0}장</span>
+                      </div>
                       <div className='flex justify-between border-t pt-2 mt-2'>
-                        <span className='text-gray-900 font-bold'>총 예측권</span>
+                        <span className='text-gray-900 font-bold'>총 경주 예측권</span>
                         <span className='text-lg font-bold'>{plan.totalTickets}장</span>
                       </div>
                     </div>
@@ -342,6 +348,22 @@ export default function SubscriptionPlansPage() {
                       disabled
                       className='w-full px-4 py-2 border rounded-lg bg-gray-100 font-bold'
                     />
+                  </div>
+
+                  <div>
+                    <label className='block text-sm font-medium text-gray-700 mb-2'>
+                      종합 예측권 (MATRIX)
+                    </label>
+                    <input
+                      type='number'
+                      {...register('matrixTickets', { valueAsNumber: true })}
+                      min={0}
+                      className='w-full px-4 py-2 border rounded-lg'
+                    />
+                    {errors.matrixTickets && (
+                      <p className='text-red-500 text-sm mt-1'>{errors.matrixTickets.message}</p>
+                    )}
+                    <p className='text-xs text-gray-500 mt-1'>구독 시 지급되는 종합 예측권 수 (0이면 미지급)</p>
                   </div>
 
                   <div className='bg-blue-50 p-4 rounded-lg'>

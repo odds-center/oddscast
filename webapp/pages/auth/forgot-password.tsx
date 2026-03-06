@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <Layout title='비밀번호 찾기 — OddsCast'>
+    <Layout title='비밀번호 찾기 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         {sent ? (
           <AuthCard

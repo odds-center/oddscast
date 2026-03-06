@@ -118,7 +118,10 @@ export class UsersController {
 
   @Put(':id/preferences')
   @ApiOperation({ summary: '사용자 설정 수정' })
-  updatePreferences(@Param('id') _id: string, @Body() _body: Record<string, unknown>) {
+  updatePreferences(
+    @Param('id') _id: string,
+    @Body() _body: Record<string, unknown>,
+  ) {
     return { marketing: true, notifications: true };
   }
 

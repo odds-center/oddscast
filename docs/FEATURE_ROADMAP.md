@@ -4,7 +4,7 @@
 >
 > This document defines features to implement, services to enhance, and the
 > overall product direction. It must be read before any planning/development
-> session via `.cursorrules`.
+> session via `CLAUDE.md` and `.claude/rules/`.
 >
 > **Last updated:** 2026-03-02
 

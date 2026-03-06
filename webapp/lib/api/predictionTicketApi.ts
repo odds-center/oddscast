@@ -9,6 +9,7 @@ export interface PredictionTicket {
   id: string;
   userId: string;
   subscriptionId: string | null;
+  type: 'RACE' | 'MATRIX';
   status: 'AVAILABLE' | 'USED' | 'EXPIRED';
   usedAt: string | null;
   raceId: string | null;

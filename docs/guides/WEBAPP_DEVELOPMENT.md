@@ -32,7 +32,7 @@ npm run dev
 
 ## 2. Form — react-hook-form
 
-모든 폼은 `react-hook-form`을 사용합니다. (`.cursorrules` 규칙 8)
+모든 폼은 `react-hook-form`을 사용합니다. (`CLAUDE.md` 코드 규칙 참고)
 
 | 페이지 | 적용 |
 |--------|------|

@@ -26,7 +26,7 @@ import type {
   GeminiPredictionJson,
   BetTypePredictions,
 } from './prediction-internal.types';
-import { todayKstYyyymmdd } from '../common/utils/kst';
+import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
 /** 세션 중 마지막으로 성공한 Gemini 모델 — 다음 요청에서 우선 시도 (404 낭비 방지) */
 let lastWorkingGeminiModel: string | null = null;
@@ -264,7 +264,7 @@ export class PredictionsService {
           ? dayPredsFiltered.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count
           : 0;
       results.push({
-        date: d.toISOString().slice(0, 10),
+        date: kst(d).format('YYYY-MM-DD'),
         accuracy,
         count,
       });
@@ -995,7 +995,7 @@ AI 예측 순위: ${predictedTop || '-'}
     return preds.map((p) => {
       const d = p.race?.rcDate
         ? `${p.race.rcDate.slice(0, 4)}-${p.race.rcDate.slice(4, 6)}-${p.race.rcDate.slice(6, 8)}`
-        : new Date(p.createdAt).toISOString().slice(0, 10);
+        : kst(p.createdAt).format('YYYY-MM-DD');
       const acc = Math.round((p.accuracy ?? 0) as number);
       return {
         id: `hit-${p.id}`,

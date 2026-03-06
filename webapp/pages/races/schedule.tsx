@@ -13,6 +13,7 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import DataFetchState from '@/components/page/DataFetchState';
 import RaceApi, { type ScheduleDateItem } from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
+import { dayjsKST } from '@/lib/utils/dayjs';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Icon from '@/components/icons';
 
@@ -397,8 +398,8 @@ export default function RaceSchedulePage() {
 export const getServerSideProps: GetServerSideProps = async (context) => {
   const year = context.query?.year
     ? parseInt(String(context.query.year), 10)
-    : new Date().getFullYear();
-  const y = Number.isNaN(year) || year < 2000 || year > 2100 ? new Date().getFullYear() : year;
+    : dayjsKST().year();
+  const y = Number.isNaN(year) || year < 2000 || year > 2100 ? dayjsKST().year() : year;
   const { dateFrom, dateTo } = getYearRange(y);
 
   const queryClient = new QueryClient();

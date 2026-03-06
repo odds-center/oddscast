@@ -29,7 +29,7 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { UpdateUserDto } from '../users/dto/user.dto';
-import { todayKstYyyymmdd } from '../common/utils/kst';
+import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -109,9 +109,7 @@ export class AdminController {
         };
       }
     }
-    const oneYearAgo = new Date();
-    oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-    const dateFrom = oneYearAgo.toISOString().slice(0, 10).replace(/-/g, '');
+    const dateFrom = kst().subtract(1, 'year').format('YYYYMMDD');
     return this.kraService.syncHistoricalBackfill(dateFrom, today);
   }
 
@@ -205,8 +203,7 @@ export class AdminController {
     @Query('date') date: string,
     @Res({ passthrough: false }) res: Response,
   ) {
-    const d =
-      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
+    const d = date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
@@ -259,8 +256,7 @@ export class AdminController {
   @Post('kra/sync/details')
   @ApiOperation({ summary: '[Admin] KRA 상세/훈련정보 동기화 (Group B)' })
   async syncDetails(@Query('date') date?: string) {
-    const d =
-      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
+    const d = date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     return this.kraService.syncAnalysisData(d);
   }
 
@@ -306,8 +302,7 @@ export class AdminController {
   @Post('kra/sync/all')
   @ApiOperation({ summary: '[Admin] KRA 전체 적재 (출전표→결과→상세→기수)' })
   async syncAll(@Query('date') date?: string) {
-    const d =
-      date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
+    const d = date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
     return this.kraService.syncAll(d);
   }
 

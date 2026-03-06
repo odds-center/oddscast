@@ -22,6 +22,7 @@ import Link from 'next/link';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
+import { dayjsKST } from '@/lib/utils/dayjs';
 
 export default function Home() {
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -121,11 +122,9 @@ export default function Home() {
 export const getServerSideProps: GetServerSideProps = async () => {
   const queryClient = new QueryClient();
   const weekDates: string[] = [];
-  const kstToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
-  const [year, month, day] = kstToday.split('-').map(Number);
+  const today = dayjsKST();
   for (let i = 0; i < 7; i++) {
-    const d = new Date(Date.UTC(year, month - 1, day + i));
-    weekDates.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`);
+    weekDates.push(today.add(i, 'day').format('YYYYMMDD'));
   }
 
   try {

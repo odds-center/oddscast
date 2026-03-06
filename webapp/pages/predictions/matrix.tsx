@@ -25,6 +25,7 @@ import { getTodayKstDate } from '@/lib/utils/format';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
+import { dayjsKST } from '@/lib/utils/dayjs';
 
 type TabId = 'matrix' | 'commentary';
 
@@ -376,7 +377,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const dateFilter = query?.date ?? 'today';
   const meetFilter = query?.meet ?? '';
   const apiDate = getDateParam(dateFilter);
-  const kstToday = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul' }).format(new Date());
+  const kstToday = dayjsKST().format('YYYY-MM-DD');
   const apiDateStr = apiDate ?? kstToday;
 
   const queryClient = new QueryClient();

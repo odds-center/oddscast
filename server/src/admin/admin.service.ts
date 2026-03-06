@@ -12,7 +12,7 @@ import { PredictionTicket } from '../database/entities/prediction-ticket.entity'
 import { BetStatus } from '../database/db-enums';
 import { SubscriptionStatus } from '../database/db-enums';
 import { TicketStatus } from '../database/db-enums';
-import { todayKstYyyymmdd, kst } from '../common/utils/kst';
+import { todayKstYyyymmdd, kst, dateToKstDash } from '../common/utils/kst';
 
 @Injectable()
 export class AdminService {
@@ -231,9 +231,14 @@ export class AdminService {
         .andWhere('s.purchasedAt < :end', { end: dayEnd })
         .getRawOne<{ sum: string }>();
       const dayRev = parseInt(daySingle?.sum ?? '0', 10);
-      rows.push({ period: kst().format('YYYY-MM-DD'), revenue: dayRev, payout: 0, profit: dayRev });
+      rows.push({
+        period: kst().format('YYYY-MM-DD'),
+        revenue: dayRev,
+        payout: 0,
+        profit: dayRev,
+      });
     } else if (periodType === 'year') {
-      const y = new Date().getFullYear();
+      const y = kst().year();
       const yearSingle = await this.singlePurchaseRepo
         .createQueryBuilder('s')
         .select('COALESCE(SUM(s.totalAmount), 0)', 'sum')
@@ -313,11 +318,11 @@ export class AdminService {
     for (let i = 0; i < d; i++) {
       const dt = new Date(start);
       dt.setDate(dt.getDate() + i);
-      const key = dt.toISOString().slice(0, 10);
+      const key = dateToKstDash(dt);
       byDate[key] = 0;
     }
     users.forEach((u) => {
-      const key = new Date(u.createdAt).toISOString().slice(0, 10);
+      const key = dateToKstDash(new Date(u.createdAt));
       if (byDate[key] !== undefined) byDate[key]++;
     });
 
@@ -402,12 +407,12 @@ export class AdminService {
     for (let i = 0; i < d; i++) {
       const dt = new Date(start);
       dt.setDate(dt.getDate() + i);
-      const key = dt.toISOString().slice(0, 10);
+      const key = dateToKstDash(dt);
       byDate[key] = 0;
     }
     filtered.forEach((t) => {
       if (t.usedAt) {
-        const key = new Date(t.usedAt).toISOString().slice(0, 10);
+        const key = dateToKstDash(new Date(t.usedAt));
         if (byDate[key] != null) byDate[key]++;
       }
     });

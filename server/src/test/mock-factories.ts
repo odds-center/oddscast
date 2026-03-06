@@ -81,6 +81,7 @@ export function createMockConfigService(defaults?: Record<string, string>) {
     get: jest
       .fn()
       .mockImplementation((key: string) => defaults?.[key] ?? undefined),
+    set: jest.fn().mockResolvedValue(undefined),
   };
 }
 

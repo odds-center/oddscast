@@ -12,8 +12,6 @@ import {
   PasswordResetToken,
   EmailVerificationToken,
   PredictionTicket,
-  ReferralCode,
-  ReferralClaim,
   Race,
   RaceEntry,
   RaceResult,
@@ -67,7 +65,6 @@ import { HorsesModule } from './horses/horses.module';
 import { JockeysModule } from './jockeys/jockeys.module';
 import { TrainersModule } from './trainers/trainers.module';
 import { FortuneModule } from './fortune/fortune.module';
-import { ReferralsModule } from './referrals/referrals.module';
 import { WeeklyPreviewModule } from './weekly-preview/weekly-preview.module';
 import { AdminModule } from './admin/admin.module';
 import { GlobalConfigModule } from './config/config.module';
@@ -95,8 +92,6 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
           PasswordResetToken,
           EmailVerificationToken,
           PredictionTicket,
-          ReferralCode,
-          ReferralClaim,
           Race,
           RaceEntry,
           RaceResult,
@@ -151,7 +146,6 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
     PicksModule, // 내가 고른 말 (사행성 없음)
 
     // P2 — Monetization & Social
-    ReferralsModule,
     WeeklyPreviewModule,
     NotificationsModule,
     SubscriptionsModule,

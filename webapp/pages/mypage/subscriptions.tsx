@@ -137,7 +137,7 @@ export default function SubscriptionsPage() {
 
         <DataFetchState
           isLoading={isLoading}
-          error={plansError as Error | null}
+          error={plansError}
           onRetry={() => refetchPlans()}
           isEmpty={!plans?.length}
           emptyIcon='Crown'

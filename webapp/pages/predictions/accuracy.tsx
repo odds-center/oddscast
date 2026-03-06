@@ -40,7 +40,7 @@ export default function PredictionAccuracyPage() {
       </p>
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!overall && !isLoading}
         emptyIcon='BarChart2'

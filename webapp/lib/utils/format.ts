@@ -87,7 +87,9 @@ export function parseStTimeToDate(
   if (!stTime || !rcDate || typeof stTime !== 'string' || typeof rcDate !== 'string') return null;
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
   if (norm.length < 8) return null;
-  const timeStr = stTime.trim().replace(':', '');
+  // KRA stTime formats: "14:00", "1400", "출발 :14:00", "출발 :1400"
+  const cleaned = stTime.trim().replace(/^[^\d]*/, '');
+  const timeStr = cleaned.replace(/:/g, '');
   const hour =
     timeStr.length >= 2 ? parseInt(timeStr.slice(0, 2), 10) : parseInt(timeStr, 10);
   const minute = timeStr.length >= 4 ? parseInt(timeStr.slice(2, 4), 10) : 0;

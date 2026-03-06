@@ -43,7 +43,7 @@ export default function WeeklyPreviewPage() {
       </p>
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!hasContent && !isLoading}
         emptyIcon='Calendar'

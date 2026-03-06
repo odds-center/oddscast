@@ -7,7 +7,6 @@ import {
   mockPointBalance,
   mockTicketBalance,
   mockSubscriptionStatus,
-  mockReferralCode,
   seedAuth,
   stubUser,
 } from './fixtures/api-mocks';
@@ -17,7 +16,6 @@ async function setupProfile(page: import('@playwright/test').Page) {
   await mockPointBalance(page);
   await mockTicketBalance(page);
   await mockSubscriptionStatus(page, false);
-  await mockReferralCode(page);
 }
 
 test.describe('Profile page — unauthenticated', () => {
@@ -69,15 +67,6 @@ test.describe('Profile page — authenticated', () => {
     // Should have link to subscriptions
     const subLink = page.locator('a[href*="subscriptions"]').first();
     await expect(subLink).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows referral code section', async ({ page }) => {
-    await page.goto('/profile');
-    await seedAuth(page);
-    await page.reload();
-
-    const codeEl = page.locator('text=TEST123').first();
-    await expect(codeEl).toBeVisible({ timeout: 10000 });
   });
 
   test('shows consecutive login days', async ({ page }) => {

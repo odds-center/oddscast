@@ -21,29 +21,7 @@ import {
 } from '../common/serializers/kra.serializer';
 import { toKraMeetForDb } from '@oddscast/shared';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
-
-const KST_TZ = 'Asia/Seoul';
-
-/** Today's date as YYYYMMDD in Korea (KST). Used for "오늘 경주" filtering. */
-function getTodayKstYyyymmdd(): string {
-  const s = new Date()
-    .toLocaleString('en-CA', { timeZone: KST_TZ })
-    .slice(0, 10);
-  return s.replace(/-/g, '');
-}
-
-/** Yesterday in KST as YYYYMMDD. */
-function getYesterdayKstYyyymmdd(): string {
-  const today = getTodayKstYyyymmdd();
-  const d = new Date(
-    `${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6, 8)}T12:00:00+09:00`,
-  );
-  d.setUTCDate(d.getUTCDate() - 1);
-  const y = d.getUTCFullYear();
-  const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-  const day = String(d.getUTCDate()).padStart(2, '0');
-  return `${y}${m}${day}`;
-}
+import { kst, todayKstYyyymmdd, yesterdayKstYyyymmdd } from '../common/utils/kst';
 
 type RaceRow = Record<string, unknown> & {
   id: number;
@@ -88,9 +66,9 @@ export class RacesService {
       const lower = String(date).toLowerCase();
       const dateNorm =
         lower === 'today'
-          ? getTodayKstYyyymmdd()
+          ? todayKstYyyymmdd()
           : lower === 'yesterday'
-            ? getYesterdayKstYyyymmdd()
+            ? yesterdayKstYyyymmdd()
             : date.replace(/-/g, '').slice(0, 8);
       qb.andWhere('r.rcDate = :date', { date: dateNorm });
     } else if (dateFrom && dateTo) {
@@ -432,7 +410,7 @@ export class RacesService {
   }
 
   async getTodayRaces() {
-    const today = getTodayKstYyyymmdd();
+    const today = todayKstYyyymmdd();
     return this.getRacesByDate(today);
   }
 

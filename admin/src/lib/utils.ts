@@ -45,7 +45,7 @@ function parseRaceStartKst(
   const norm = rcDate.replace(/-/g, '').slice(0, 8);
   if (norm.length < 8) return null;
   if (!stTime || typeof stTime !== 'string') return null;
-  const t = stTime.trim().replace(':', '');
+  const t = stTime.trim().replace(/^[^\d]*/, '').replace(/:/g, '');
   const hour = t.length >= 2 ? parseInt(t.slice(0, 2), 10) : parseInt(t, 10);
   const min = t.length >= 4 ? parseInt(t.slice(2, 4), 10) : 0;
   if (Number.isNaN(hour) || hour < 0 || hour > 23) return null;

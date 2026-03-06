@@ -9,12 +9,11 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useEffect, useState, useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
 import { routes } from '@/lib/routes';
-import { getDateHeaderMessage, getNextRaceDayLabel } from '@/lib/utils/dateHeaderMessages';
+import { getDateHeaderMessage } from '@/lib/utils/dateHeaderMessages';
 import { parseStTimeToDate, isTodayRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 
-const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
 const WEEK_DAYS = ['일', '월', '화', '수', '목', '금', '토'];
-const LIVE_REFETCH_MS = 5 * 60 * 1000; // 5 min on race days
+const LIVE_REFETCH_MS = 5 * 60 * 1000; // 5 min when today has races
 const COUNTDOWN_TICK_MS = 60 * 1000; // 1 min
 
 type RaceWithTime = {
@@ -39,48 +38,92 @@ function getNextRaceMinutes(races: RaceWithTime[]): number | null {
   return Math.floor((nextStart - nowMs) / 60_000);
 }
 
+/** Format rcDate YYYYMMDD to next race day label like "금요일 (3/7)" */
+function formatNextRaceDateLabel(rcDate: string): string {
+  const y = parseInt(rcDate.slice(0, 4), 10);
+  const m = parseInt(rcDate.slice(4, 6), 10);
+  const d = parseInt(rcDate.slice(6, 8), 10);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  const dayName = WEEK_DAYS[date.getUTCDay()];
+  return `${dayName}요일 (${m}/${d})`;
+}
+
 export default function DateHeader() {
   const kst = getTodayKstDate();
   const { year, month, day, weekDay } = kst;
   const weekDayName = WEEK_DAYS[weekDay];
-  const isTodayRaceDay = RACE_DAYS.includes(weekDay);
-  const kstTodayDate = new Date(
-    `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T12:00:00+09:00`,
-  );
+  const todayYyyymmdd = `${year}${String(month).padStart(2, '0')}${String(day).padStart(2, '0')}`;
 
+  // Fetch today's races
   const { data: todayData } = useQuery({
     queryKey: ['races', 'today', 'stats'],
     queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
     placeholderData: keepPreviousData,
-    refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
   });
   const races = useMemo(
     () => (todayData?.races ?? []) as RaceWithTime[],
     [todayData?.races],
   );
   const todayCount = todayData?.total ?? races.length;
+  const todayHasRaces = todayCount > 0;
   const todayAllEnded =
-    todayCount > 0 &&
+    todayHasRaces &&
     races.length > 0 &&
-    races.every(
-      (r) =>
-        (r.status ?? r.raceStatus) === 'COMPLETED' && isRaceActuallyEnded(r.rcDate, r.stTime),
-    );
-  const nextRaceDayLabel = getNextRaceDayLabel(RACE_DAYS, kstTodayDate);
+    races.every((r) => isRaceActuallyEnded(r.rcDate, r.stTime));
+
+  // Fetch next upcoming race date from DB (tomorrow onwards, limit 1)
+  const shouldFetchNext = !todayHasRaces || todayAllEnded;
+  const { data: nextData } = useQuery({
+    queryKey: ['races', 'next-upcoming', todayYyyymmdd],
+    queryFn: async () => {
+      // Tomorrow's YYYYMMDD
+      const tomorrow = new Date(Date.UTC(year, month - 1, day + 1));
+      const tY = tomorrow.getUTCFullYear();
+      const tM = String(tomorrow.getUTCMonth() + 1).padStart(2, '0');
+      const tD = String(tomorrow.getUTCDate()).padStart(2, '0');
+      const dateFrom = `${tY}${tM}${tD}`;
+      // Look 30 days ahead
+      const future = new Date(Date.UTC(year, month - 1, day + 30));
+      const fY = future.getUTCFullYear();
+      const fM = String(future.getUTCMonth() + 1).padStart(2, '0');
+      const fD = String(future.getUTCDate()).padStart(2, '0');
+      const dateTo = `${fY}${fM}${fD}`;
+      // Server sorts rcDate DESC, so fetch enough to find the earliest date
+      const res = await RaceApi.getRaces({ limit: 100, page: 1, dateFrom, dateTo });
+      const upcoming = res?.races ?? [];
+      if (upcoming.length === 0) return null;
+      // Find the race with the earliest rcDate
+      let earliest = upcoming[0];
+      for (const r of upcoming) {
+        if (r.rcDate && earliest.rcDate && r.rcDate < earliest.rcDate) earliest = r;
+      }
+      return earliest;
+    },
+    enabled: shouldFetchNext,
+    staleTime: 10 * 60 * 1000, // 10 min
+  });
+
+  const nextRaceDayLabel = useMemo(() => {
+    if (!shouldFetchNext) return null;
+    const nextRace = nextData as RaceWithTime | null;
+    if (!nextRace?.rcDate || nextRace.rcDate.length < 8) return null;
+    return formatNextRaceDateLabel(nextRace.rcDate);
+  }, [shouldFetchNext, nextData]);
+
   const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel, todayAllEnded);
 
   const [countdownMins, setCountdownMins] = useState<number | null>(() =>
     getNextRaceMinutes(races),
   );
   useEffect(() => {
-    if (!isTodayRaceDay || races.length === 0) return;
+    if (todayAllEnded || races.length === 0) return;
     const tick = () => setCountdownMins(getNextRaceMinutes(races));
     const id = setInterval(tick, COUNTDOWN_TICK_MS);
     queueMicrotask(tick);
     return () => clearInterval(id);
-  }, [races, isTodayRaceDay]);
+  }, [races, todayAllEnded]);
 
-  const showCountdown = isTodayRaceDay && todayCount > 0 && countdownMins != null && countdownMins > 0;
+  const showCountdown = todayHasRaces && !todayAllEnded && countdownMins != null && countdownMins > 0;
 
   return (
     <div className='home-hero'>

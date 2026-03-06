@@ -120,6 +120,8 @@ export interface DividendRate {
 export interface RaceFilters {
   meet?: string;
   date?: string;
+  dateFrom?: string;
+  dateTo?: string;
   month?: string;
   year?: string;
   grade?: string;

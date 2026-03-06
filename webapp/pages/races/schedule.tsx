@@ -295,7 +295,7 @@ export default function RaceSchedulePage() {
 
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={false}
         loadingLabel='시행일 준비 중...'

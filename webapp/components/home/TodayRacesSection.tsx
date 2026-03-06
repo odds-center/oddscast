@@ -33,11 +33,7 @@ export default function TodayRacesSection() {
   const races = (data ?? []) as RaceDto[];
   const allEnded =
     races.length > 0 &&
-    races.every(
-      (r) =>
-        (r.status ?? (r as RaceDto & { raceStatus?: string }).raceStatus) === 'COMPLETED' &&
-        isRaceActuallyEnded(r.rcDate, r.stTime),
-    );
+    races.every((r) => isRaceActuallyEnded(r.rcDate, r.stTime));
 
   return (
     <HomeSection

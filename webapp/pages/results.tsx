@@ -157,7 +157,7 @@ export default function Results() {
 
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!groupedRaces.length}
         emptyIcon='TrendingUp'

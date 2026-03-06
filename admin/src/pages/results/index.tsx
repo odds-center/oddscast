@@ -14,7 +14,7 @@ import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
 import { adminResultsApi, adminRacesApi, adminKraApi } from '@/lib/api/admin';
-import { formatDate, getErrorMessage } from '@/lib/utils';
+import { formatDate, getErrorMessage, getTodayKstDate, getKstDateOffset } from '@/lib/utils';
 
 interface RaceResult {
   id?: string;
@@ -359,11 +359,6 @@ const MEET_OPTIONS = [
   { value: '부산경남', label: '부산' },
 ] as const;
 
-/** Today in KST as YYYY-MM-DD for date input default */
-function getTodayKstDate(): string {
-  return new Date().toLocaleString('en-CA', { timeZone: 'Asia/Seoul' }).slice(0, 10);
-}
-
 export default function ResultsPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -376,10 +371,8 @@ export default function ResultsPage() {
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
-  const toDate = (d: Date) =>
-    `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  const dateTo = toDate(new Date());
-  const dateFrom = toDate(new Date(Date.now() - 30 * 24 * 60 * 60 * 1000));
+  const dateTo = getTodayKstDate().replace(/-/g, '');
+  const dateFrom = getKstDateOffset(-30).replace(/-/g, '');
 
   const syncResultsMutation = useMutation({
     mutationFn: async (date: string) => {
@@ -616,7 +609,7 @@ export default function ResultsPage() {
                   size='md'
                   onClick={() =>
                     syncResultsMutation.mutate(
-                      dateFilter ? dateFilter.replace(/-/g, '').slice(0, 8) : toDate(new Date())
+                      dateFilter ? dateFilter.replace(/-/g, '').slice(0, 8) : getTodayKstDate().replace(/-/g, '')
                     )
                   }
                   disabled={syncResultsMutation.isPending}

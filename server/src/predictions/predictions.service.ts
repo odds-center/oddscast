@@ -566,11 +566,8 @@ AI 예측 순위: ${predictedTop || '-'}
 
   /** Admin: count of predictions created today (KST). */
   async getTodayCreatedCount(): Promise<{ count: number }> {
-    const kstDateStr = new Date()
-      .toLocaleString('en-CA', { timeZone: 'Asia/Seoul' })
-      .slice(0, 10);
-    const dayStart = new Date(`${kstDateStr}T00:00:00+09:00`);
-    const dayEnd = new Date(`${kstDateStr}T23:59:59.999+09:00`);
+    const dayStart = kst().startOf('day').toDate();
+    const dayEnd = kst().endOf('day').toDate();
     const count = await this.predictionRepo.count({
       where: {
         createdAt: Between(dayStart, dayEnd),

@@ -198,7 +198,7 @@ export default function RaceDetailPage() {
   const displayPrediction =
     fullPredictionFromUse ??
     (selectedPredictionId != null
-      ? list.find((p) => Number((p as unknown as { id?: number }).id) === selectedPredictionId)
+      ? list.find((p) => Number(p.id) === selectedPredictionId)
       : list[0]);
   const availableTickets = ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
 
@@ -1141,10 +1141,10 @@ function PredictionFullView({
       {list.length > 1 && (
         <div className='flex gap-1.5 overflow-x-auto pb-1'>
           {list.map((p, i) => {
-            const pid = Number((p as unknown as { id?: number }).id ?? i);
+            const pid = Number(p.id ?? i);
             const isActive =
-              pid === (selectedPredictionId ?? Number((list[0] as unknown as { id?: number })?.id));
-            const createdAt = (p as unknown as { createdAt?: string }).createdAt;
+              pid === (selectedPredictionId ?? Number(list[0]?.id));
+            const createdAt = p.createdAt;
             let timeStr = '';
             try {
               if (createdAt) timeStr = formatTime(createdAt);

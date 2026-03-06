@@ -306,6 +306,13 @@ export class AdminController {
     return this.kraService.syncAll(d);
   }
 
+  @Post('kra/generate-predictions')
+  @ApiOperation({ summary: '[Admin] 특정 날짜 AI 예측 일괄 생성' })
+  async generatePredictionsForDate(@Query('date') date?: string) {
+    const d = date?.replace(/-/g, '').slice(0, 8) || todayKstYyyymmdd();
+    return this.kraService.generatePredictionsForDate(d);
+  }
+
   @Post('kra/sync/historical')
   @ApiOperation({ summary: '[Admin] 과거 경마 기록 적재 (몇 년치 백업용)' })
   async syncHistorical(

@@ -16,6 +16,7 @@ import { ConfigModule } from '@nestjs/config';
 import { CacheModule } from '../cache/cache.module';
 import { GlobalConfigModule } from '../config/config.module';
 import { ResultsModule } from '../results/results.module';
+import { PredictionsModule } from '../predictions/predictions.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { ResultsModule } from '../results/results.module';
     CacheModule,
     GlobalConfigModule,
     ResultsModule,
+    PredictionsModule,
   ],
   controllers: [KraController],
   providers: [KraService],

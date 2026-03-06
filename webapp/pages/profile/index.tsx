@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -8,19 +7,15 @@ import LegalFooter from '@/components/page/LegalFooter';
 import RequireLogin from '@/components/page/RequireLogin';
 import PointApi from '@/lib/api/pointApi';
 import AuthApi from '@/lib/api/authApi';
-import ReferralsApi from '@/lib/api/referralsApi';
 import { routes } from '@/lib/routes';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { getErrorMessage } from '@/lib/utils/error';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const storeUser = useAuthStore((s) => s.user);
-  const [codeCopied, setCodeCopied] = useState(false);
-  const queryClient = useQueryClient();
 
   const { data: currentUser } = useQuery({
     queryKey: ['auth', 'me'],
@@ -55,37 +50,6 @@ export default function Profile() {
     enabled: isLoggedIn,
     placeholderData: keepPreviousData,
   });
-
-  const { data: referralCode } = useQuery({
-    queryKey: ['referrals', 'me'],
-    queryFn: () => ReferralsApi.getMyCode(),
-    enabled: isLoggedIn,
-    placeholderData: keepPreviousData,
-  });
-
-  const [claimCodeInput, setClaimCodeInput] = useState('');
-  const claimMutation = useMutation({
-    mutationFn: (code: string) => ReferralsApi.claim(code),
-    onSuccess: () => {
-      setClaimCodeInput('');
-      queryClient.invalidateQueries({ queryKey: ['referrals', 'me'] });
-      queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
-    },
-  });
-
-  const handleCopyReferralCode = () => {
-    if (!referralCode?.code) return;
-    const doFeedback = () => {
-      setCodeCopied(true);
-      setTimeout(() => setCodeCopied(false), 2000);
-    };
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(referralCode.code).then(doFeedback);
-    } else {
-      prompt('아래 코드를 복사하세요', referralCode.code);
-      doFeedback();
-    }
-  };
 
   if (!isLoggedIn) {
     return (
@@ -168,63 +132,6 @@ export default function Profile() {
                   </p>
                 </div>
               </div>
-            </div>
-
-            {/* Referral section - combined into one compact card */}
-            <div className='rounded-xl bg-white border border-stone-200 p-4'>
-              <div className='flex items-center gap-2 mb-3'>
-                <Icon name='UserPlus' size={16} className='text-stone-500' />
-                <h3 className='text-sm font-semibold text-foreground'>추천 코드</h3>
-                <span className='text-xs text-stone-400 ml-auto'>추천인 3장 · 친구 2장</span>
-              </div>
-
-              {/* My code */}
-              {referralCode && (
-                <div className='flex items-center gap-2 mb-3'>
-                  <span className='font-mono text-sm font-bold text-foreground tracking-wider bg-stone-50 px-2.5 py-1.5 rounded-lg flex-1 text-center'>
-                    {referralCode.code}
-                  </span>
-                  <button
-                    type='button'
-                    onClick={handleCopyReferralCode}
-                    className={`btn-secondary text-xs px-3 py-1.5 inline-flex items-center gap-1 shrink-0 ${codeCopied ? 'text-primary border-primary/40' : ''}`}
-                  >
-                    <Icon name={codeCopied ? 'Check' : 'Copy'} size={14} />
-                    {codeCopied ? '복사됨' : '복사'}
-                  </button>
-                  <span className='text-xs text-stone-400 shrink-0'>{referralCode.usedCount}/{referralCode.maxUses}</span>
-                </div>
-              )}
-
-              {/* Claim code */}
-              <div className='flex gap-2'>
-                <input
-                  type='text'
-                  value={claimCodeInput}
-                  onChange={(e) => setClaimCodeInput(e.target.value.trim().toUpperCase())}
-                  placeholder='친구 코드 입력'
-                  className='flex-1 min-w-0 rounded-lg border border-border px-3 py-2 text-sm text-foreground font-mono'
-                  maxLength={12}
-                />
-                <button
-                  type='button'
-                  onClick={() => claimMutation.mutate(claimCodeInput)}
-                  disabled={!claimCodeInput || claimCodeInput.length < 4 || claimMutation.isPending}
-                  className='btn-primary text-sm px-4 shrink-0 inline-flex items-center gap-1'
-                >
-                  {claimMutation.isPending ? (
-                    <Icon name='Loader2' size={14} className='animate-spin' />
-                  ) : (
-                    '사용'
-                  )}
-                </button>
-              </div>
-              {claimMutation.isError && (
-                <p className='msg-error mt-2 text-xs'>{getErrorMessage(claimMutation.error)}</p>
-              )}
-              {claimMutation.isSuccess && (
-                <p className='msg-success mt-2 text-xs'>예측권이 지급되었습니다.</p>
-              )}
             </div>
 
             {/* Menu */}

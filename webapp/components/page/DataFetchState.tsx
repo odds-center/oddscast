@@ -1,11 +1,12 @@
 import { ReactNode } from 'react';
 import LoadingSpinner from '../LoadingSpinner';
 import EmptyState from '../EmptyState';
+import { getErrorMessage } from '@/lib/utils/error';
 import type { IconName } from '../icons';
 
 interface DataFetchStateProps {
   isLoading: boolean;
-  error: Error | null;
+  error: unknown;
   onRetry?: () => void;
   isEmpty?: boolean;
   emptyIcon?: IconName;
@@ -47,7 +48,7 @@ export default function DataFetchState({
       <EmptyState
         icon='AlertCircle'
         title={errorTitle}
-        description={error.message}
+        description={getErrorMessage(error)}
         action={
           onRetry ? (
             <button onClick={onRetry} className='btn-secondary px-4 py-2 text-sm' aria-label='다시 시도'>

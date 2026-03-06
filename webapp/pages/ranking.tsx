@@ -45,7 +45,7 @@ export default function Ranking() {
 
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!data?.length}
         emptyIcon='Medal'

@@ -82,7 +82,7 @@ export default function TicketHistoryPage() {
       <CompactPageTitle title='예측권 이력' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!tickets.length}
         emptyIcon='Ticket'

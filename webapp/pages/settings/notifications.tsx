@@ -7,6 +7,7 @@ import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
 import { Toggle } from '@/components/ui';
 import DataFetchState from '@/components/page/DataFetchState';
+import { getErrorMessage } from '@/lib/utils/error';
 import NotificationApi from '@/lib/api/notificationApi';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -108,7 +109,7 @@ export default function NotificationSettingsPage() {
           )}
           {updateMutation.isError && (
             <p className='msg-error mb-4'>
-              {(updateMutation.error as Error)?.message || '설정 저장에 실패했습니다.'}
+              {getErrorMessage(updateMutation.error) || '설정 저장에 실패했습니다.'}
             </p>
           )}
           {!isNativeApp && (

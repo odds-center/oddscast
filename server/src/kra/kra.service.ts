@@ -25,12 +25,17 @@ import {
 import { BatchScheduleStatus } from '../database/db-enums';
 import { GlobalConfigService } from '../config/config.service';
 import { ResultsService } from '../results/results.service';
+import { PredictionsService } from '../predictions/predictions.service';
 import { Cron } from '@nestjs/schedule';
 import { firstValueFrom } from 'rxjs';
 import * as xml2js from 'xml2js';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
-import { kst } from '../common/utils/kst';
+import {
+  kst,
+  todayKstYyyymmdd,
+  yesterdayKstYyyymmdd,
+} from '../common/utils/kst';
 import { KRA_MEETS, meetToCode, toKraMeetName } from './constants';
 import { parseOrd } from './ord-parser';
 import type { KraApiItem, KraSyncAllOutput } from '@oddscast/shared';
@@ -66,6 +71,7 @@ export class KraService {
     @InjectRepository(BatchSchedule)
     private readonly batchScheduleRepo: Repository<BatchSchedule>,
     private resultsService: ResultsService,
+    private predictionsService: PredictionsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
   ) {
     dayjs.extend(customParseFormat);
@@ -215,7 +221,7 @@ export class KraService {
   async syncRaceDayMorning() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Race Day Morning Sync (Finalization)');
-    const today = this.getTodayKstYyyymmdd();
+    const today = todayKstYyyymmdd();
 
     await this.syncEntrySheet(today);
     await this.syncAnalysisData(today);
@@ -239,7 +245,10 @@ export class KraService {
     const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
     if (norm.length < 8) return 0;
     if (stTime && String(stTime).trim()) {
-      const t = String(stTime).trim().replace(':', '');
+      const t = String(stTime)
+        .trim()
+        .replace(/^[^\d]*/, '')
+        .replace(/:/g, '');
       const hour =
         t.length >= 2 ? parseInt(t.slice(0, 2), 10) : parseInt(t, 10);
       const min = t.length >= 4 ? parseInt(t.slice(2, 4), 10) : 0;
@@ -260,8 +269,8 @@ export class KraService {
    * Used to trigger result sync only when races have actually finished.
    */
   private async getRacesThatShouldHaveEnded(): Promise<string[]> {
-    const today = this.getTodayKstYyyymmdd();
-    const yesterday = this.getYesterdayKstYyyymmdd();
+    const today = todayKstYyyymmdd();
+    const yesterday = yesterdayKstYyyymmdd();
     const now = Date.now();
     const bufferMin = KraService.RACE_END_BUFFER_MINUTES;
 
@@ -405,6 +414,12 @@ export class KraService {
           updatedAt: new Date(),
         });
         this.logger.log(`[BatchSchedule] COMPLETED KRA_RESULT_FETCH ${rcDate}`);
+        // Auto-generate predictions (fire-and-forget, don't block batch job)
+        this.generatePredictionsForDate(rcDate).catch((e) =>
+          this.logger.warn(
+            `[BatchSchedule] prediction generation failed for ${rcDate}: ${e instanceof Error ? e.message : String(e)}`,
+          ),
+        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await this.batchScheduleRepo.update(job.id, {
@@ -487,7 +502,7 @@ export class KraService {
   @Cron('0 6 * * *', { timeZone: 'Asia/Seoul' })
   async syncPreviousDayResults() {
     if (!this.ensureServiceKey()) return;
-    const yesterdayStr = this.getYesterdayKstYyyymmdd();
+    const yesterdayStr = yesterdayKstYyyymmdd();
     const y = parseInt(yesterdayStr.slice(0, 4), 10);
     const m = parseInt(yesterdayStr.slice(4, 6), 10) - 1;
     const day = parseInt(yesterdayStr.slice(6, 8), 10);
@@ -598,27 +613,6 @@ export class KraService {
 
   private getTodayDateString(): string {
     return this.formatYyyyMmDd(kst());
-  }
-
-  /** Today as YYYYMMDD in KST (for "past date" completion check). */
-  private getTodayKstYyyymmdd(): string {
-    const s = new Date()
-      .toLocaleString('en-CA', { timeZone: 'Asia/Seoul' })
-      .slice(0, 10);
-    return s.replace(/-/g, '');
-  }
-
-  /** Yesterday in KST as YYYYMMDD (for previous-day result sync). */
-  private getYesterdayKstYyyymmdd(): string {
-    const today = this.getTodayKstYyyymmdd();
-    const d = new Date(
-      `${today.slice(0, 4)}-${today.slice(4, 6)}-${today.slice(6, 8)}T12:00:00+09:00`,
-    );
-    d.setUTCDate(d.getUTCDate() - 1);
-    const y = d.getUTCFullYear();
-    const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(d.getUTCDate()).padStart(2, '0');
-    return `${y}${m}${day}`;
   }
 
   private getUpcomingWeekendDates(): string[] {
@@ -1047,50 +1041,130 @@ export class KraService {
    */
   async syncAll(
     date: string,
-    opts?: KraSyncProgressOptions,
+    opts?: KraSyncProgressOptions & { generatePredictions?: boolean },
   ): Promise<{
     message: string;
     entrySheet?: { races: number; entries: number };
     results?: { totalResults: number };
     details?: string;
     jockeys?: string;
+    predictions?: { generated: number; failed: number };
   }> {
     this.ensureServiceKeyOrThrow();
     const d = this.normalizeToYyyyMmDd(date);
     this.logger.log(`[syncAll] Starting full sync for ${d}`);
 
-    const out: KraSyncAllOutput = {
+    const out: KraSyncAllOutput & {
+      predictions?: { generated: number; failed: number };
+    } = {
       message: '',
     };
 
     try {
       opts?.onProgress?.(5, '경주계획표 조회 중…');
       await this.fetchRacePlanSchedule(d);
-      opts?.onProgress?.(25, '출전표 동기화 중…');
+      opts?.onProgress?.(20, '출전표 동기화 중…');
       const entryRes = await this.syncEntrySheet(d, opts);
       out.entrySheet = { races: entryRes.races, entries: entryRes.entries };
       await this.delay(300);
 
       // createRaceIfMissing: true — 결과 API에만 있는 경주도 Race 생성 후 결과·출전마 보강 기록
-      opts?.onProgress?.(50, '경주 결과 수집 중…');
+      opts?.onProgress?.(40, '경주 결과 수집 중…');
       const resultRes = await this.fetchRaceResults(d, true, opts);
       out.results = { totalResults: resultRes.totalResults ?? 0 };
       await this.delay(300);
 
-      opts?.onProgress?.(75, '상세정보(훈련·장구) 동기화 중…');
+      opts?.onProgress?.(60, '상세정보(훈련·장구) 동기화 중…');
       const detailRes = await this.syncAnalysisData(d);
       out.details = detailRes.message;
 
-      opts?.onProgress?.(95, '기수 통산전적 동기화 중…');
+      opts?.onProgress?.(70, '기수 통산전적 동기화 중…');
       const jockeyRes = await this.fetchJockeyTotalResults();
       out.jockeys = jockeyRes.message;
+
+      // Auto-generate AI predictions for races missing them
+      if (opts?.generatePredictions !== false) {
+        opts?.onProgress?.(80, 'AI 예측 생성 중…');
+        out.predictions = await this.generatePredictionsForDate(d, opts);
+      }
+
       opts?.onProgress?.(100, '완료');
-      out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results`;
+      const predMsg = out.predictions
+        ? `, ${out.predictions.generated} predictions`
+        : '';
+      out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results${predMsg}`;
     } catch (err) {
       this.logger.error('[syncAll] Failed', err);
       throw err;
     }
     return out;
+  }
+
+  /**
+   * Generate AI predictions for all races on a given date that don't have one yet.
+   * Gracefully handles errors per-race so one failure doesn't stop the batch.
+   */
+  async generatePredictionsForDate(
+    rcDate: string,
+    opts?: KraSyncProgressOptions,
+  ): Promise<{ generated: number; failed: number }> {
+    const races = await this.raceRepo
+      .createQueryBuilder('r')
+      .select(['r.id', 'r.rcNo', 'r.meet'])
+      .where('r.rcDate = :rcDate', { rcDate })
+      .getMany();
+
+    if (races.length === 0) return { generated: 0, failed: 0 };
+
+    // Filter races that already have a completed prediction
+    const raceIds = races.map((r) => r.id);
+    const existing = await this.raceRepo.manager
+      .createQueryBuilder()
+      .select('p.raceId', 'raceId')
+      .from('oddscast.predictions', 'p')
+      .where('p.raceId IN (:...ids)', { ids: raceIds })
+      .andWhere('p.status = :status', { status: 'COMPLETED' })
+      .getRawMany<{ raceId: number }>();
+    const existingIds = new Set(existing.map((e) => e.raceId));
+
+    const toGenerate = races.filter((r) => !existingIds.has(r.id));
+    if (toGenerate.length === 0) {
+      this.logger.log(
+        `[generatePredictionsForDate] All ${races.length} races already have predictions for ${rcDate}`,
+      );
+      return { generated: 0, failed: 0 };
+    }
+
+    this.logger.log(
+      `[generatePredictionsForDate] Generating predictions for ${toGenerate.length}/${races.length} races on ${rcDate}`,
+    );
+    let generated = 0;
+    let failed = 0;
+
+    for (let i = 0; i < toGenerate.length; i++) {
+      const race = toGenerate[i];
+      const pct = 80 + Math.floor((i / toGenerate.length) * 18); // 80% → 98%
+      opts?.onProgress?.(
+        pct,
+        `AI 예측 생성 중… ${race.meet} ${race.rcNo}R (${i + 1}/${toGenerate.length})`,
+      );
+      try {
+        await this.predictionsService.generatePrediction(race.id);
+        generated++;
+        this.logger.log(
+          `[generatePredictionsForDate] OK: ${race.meet} R${race.rcNo}`,
+        );
+      } catch (err) {
+        failed++;
+        this.logger.warn(
+          `[generatePredictionsForDate] FAIL: ${race.meet} R${race.rcNo}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+      // Delay between calls to avoid Gemini rate limits
+      if (i < toGenerate.length - 1) await this.delay(2000);
+    }
+
+    return { generated, failed };
   }
 
   /**

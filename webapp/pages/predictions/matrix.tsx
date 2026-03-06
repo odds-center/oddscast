@@ -11,6 +11,7 @@ import { TabBar } from '@/components/ui';
 import FilterDateBar from '@/components/page/FilterDateBar';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
+import { getErrorMessage } from '@/lib/utils/error';
 import HitRecordBanner from '@/components/predictions/HitRecordBanner';
 import PredictionMatrixTable from '@/components/predictions/PredictionMatrixTable';
 import CommentaryFeed from '@/components/predictions/CommentaryFeed';
@@ -225,13 +226,8 @@ export default function PredictionMatrixPage() {
                   ) : (
                     <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-white/10 text-stone-400 text-xs font-medium'>
                       <Icon name='Lock' size={12} />
-                      잠금
+                      AI 예측 비공개
                     </span>
-                  )}
-                  {!hasAccess && (
-                    <p className='text-[10px] text-stone-500 mt-1'>
-                      예측권 {availableMatrixTickets}장 보유
-                    </p>
                   )}
                 </div>
               </div>
@@ -287,7 +283,7 @@ export default function PredictionMatrixPage() {
 
           {activeTab === 'matrix' && (
             <>
-              {/* 종합 예측권 사용/구매 CTA — 항상 노출 (잠금 시 테이블 위에 표시) */}
+              {/* Unlock CTA — visible when locked */}
               {!hasAccess && isLoggedIn && (
                 <div className='rounded border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.04)] p-4 mb-3'>
                   <div className='flex flex-wrap items-center gap-3'>
@@ -295,19 +291,19 @@ export default function PredictionMatrixPage() {
                       <Icon name='BarChart2' size={18} className='text-white' />
                     </div>
                     <div className='flex-1 min-w-0'>
-                      <h3 className='text-sm font-bold text-foreground'>종합 예측권으로 열람하기</h3>
+                      <h3 className='text-sm font-bold text-foreground'>AI 예측 열람하기</h3>
                       <p className='text-xs text-stone-500 mt-0.5'>
-                        하루 전체 경주의 AI 예상을 한눈에 — 1일 1장 · 1,000원/장
+                        경주 정보는 무료 공개 · AI 예측은 종합 예측권 필요 (1일 1장 · 1,000원)
                       </p>
                     </div>
-                    <div className='flex items-center gap-2 shrink-0'>
+                    <div className='flex flex-col items-end gap-1 shrink-0'>
                       {availableMatrixTickets > 0 ? (
                         <button
                           onClick={() => useMatrixMutation.mutate()}
                           disabled={useMatrixMutation.isPending}
                           className='btn-primary text-sm px-4 py-2'
                         >
-                          {useMatrixMutation.isPending ? '열람 중...' : `종합 예측권 사용 (${availableMatrixTickets}장)`}
+                          {useMatrixMutation.isPending ? '열람 중...' : `예측권 사용 (${availableMatrixTickets}장 보유)`}
                         </button>
                       ) : (
                         <Link href={routes.mypage.matrixTicketPurchase} className='btn-primary inline-flex items-center gap-1.5 text-sm px-4 py-2'>
@@ -318,14 +314,14 @@ export default function PredictionMatrixPage() {
                     </div>
                   </div>
                   {useMatrixMutation.isError && (
-                    <p className='msg-error text-xs mt-2'>{(useMatrixMutation.error as Error)?.message ?? '사용에 실패했습니다'}</p>
+                    <p className='msg-error text-xs mt-2'>{getErrorMessage(useMatrixMutation.error) || '사용에 실패했습니다'}</p>
                   )}
                 </div>
               )}
 
               <DataFetchState
                 isLoading={isLoading}
-                error={error as Error | null}
+                error={error}
                 onRetry={() => refetch()}
                 isEmpty={!matrixData?.raceMatrix?.length}
                 emptyIcon='BarChart2'
@@ -352,7 +348,7 @@ export default function PredictionMatrixPage() {
           {activeTab === 'commentary' && (
             <DataFetchState
               isLoading={commentaryLoading}
-              error={commentaryError as Error | null}
+              error={commentaryError}
               onRetry={() => commentaryRefetch()}
               isEmpty={!commentaryData?.comments?.length}
               emptyIcon='Sparkles'

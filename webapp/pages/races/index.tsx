@@ -166,7 +166,7 @@ export default function RacesListPage() {
 
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!filteredRaces.length}
         emptyIcon='Flag'

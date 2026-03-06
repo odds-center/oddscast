@@ -88,6 +88,8 @@ export interface PredictionScoresDto {
  * AI prediction detail (for race detail display)
  */
 export interface PredictionDetailDto {
+  id?: string | number;
+  createdAt?: string;
   scores?: PredictionScoresDto;
   analysis?: string;
   preview?: string;

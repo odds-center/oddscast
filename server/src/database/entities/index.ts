@@ -8,8 +8,6 @@ export { AdminUser } from './admin-user.entity';
 export { PasswordResetToken } from './password-reset-token.entity';
 export { EmailVerificationToken } from './email-verification-token.entity';
 export { PredictionTicket } from './prediction-ticket.entity';
-export { ReferralCode } from './referral-code.entity';
-export { ReferralClaim } from './referral-claim.entity';
 export { Race } from './race.entity';
 export { RaceEntry } from './race-entry.entity';
 export { RaceResult } from './race-result.entity';

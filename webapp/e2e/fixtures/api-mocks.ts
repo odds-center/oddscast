@@ -550,16 +550,6 @@ export async function mockGroupedResults(
   });
 }
 
-export async function mockReferralCode(page: Page) {
-  await page.route(`${API}/referrals/me**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ code: 'TEST123' })),
-    });
-  });
-}
-
 /** Seed auth token into localStorage to simulate a logged-in state. */
 export async function seedAuth(page: Page) {
   await page.evaluate(

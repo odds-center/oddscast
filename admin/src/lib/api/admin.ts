@@ -907,6 +907,20 @@ export class AdminKraApi {
     }
   }
 
+  /** Generate AI predictions for all races on a given date that don't have one yet. */
+  static async generatePredictions(date: string): Promise<{ generated: number; failed: number }> {
+    try {
+      const response = await axiosInstance.post(
+        `/kra/generate-predictions?date=${date}`,
+        {},
+        { timeout: 600_000 },
+      );
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
   /** Batch schedules (KRA result fetch jobs: PENDING/COMPLETED/FAILED). */
   static async getBatchSchedules(params?: {
     status?: string;

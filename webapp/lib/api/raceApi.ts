@@ -49,6 +49,8 @@ export default class RaceApi {
 
       if (filters?.meet) params.append('meet', filters.meet);
       if (filters?.date) params.append('date', filters.date);
+      if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);
+      if (filters?.dateTo) params.append('dateTo', filters.dateTo);
       if (filters?.month) params.append('month', filters.month);
       if (filters?.year) params.append('year', filters.year);
       if (filters?.grade) params.append('grade', filters.grade);

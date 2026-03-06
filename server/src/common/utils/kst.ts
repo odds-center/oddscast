@@ -35,3 +35,8 @@ export function dateToKstDash(d: Date): string {
 export function yesterdayKstDash(): string {
   return kst().subtract(1, 'day').format('YYYY-MM-DD');
 }
+
+/** Yesterday in KST as YYYYMMDD (e.g. "20250228"). */
+export function yesterdayKstYyyymmdd(): string {
+  return kst().subtract(1, 'day').format('YYYYMMDD');
+}

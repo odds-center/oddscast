@@ -87,7 +87,7 @@ export default function PointTransactionsPage() {
       <CompactPageTitle title='포인트 거래 내역' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!transactions.length}
         emptyIcon='Gem'

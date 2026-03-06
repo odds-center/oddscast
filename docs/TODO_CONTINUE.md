@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-06 (Playwright E2E 228개 테스트 전 페이지 커버, 컨트롤러 테스트 143개, 터치 44px 통일, 시드 스크립트 통일 — docs/db/seed.sql 추가, setup.sh 5단계로 확장(seed+admin계정생성), UI 공통화·에러 처리 통일, kra.service 테스트 107개, ts-jest moduleNameMapper, admin getTodayKstDate 공통화, WebApp DataFetchState 표준화)
+**Last updated:** 2026-03-06 (stTime 파싱 버그 수정, 홈 DateHeader 경주 종료/다음 경주 표시 개선, Matrix 예측표 잠금 UX 개선, KRA 동기화 시 AI 예측 자동 생성 통합)
 
 ---
 
@@ -33,6 +33,10 @@
 | **Admin util 중복 제거** | ✅ 완료 | admin/utils.ts에 getTodayKstDate 추가. kra/races/predictions/subscriptions/users 페이지 로컬 함수·instanceof Error 패턴 제거. |
 | **WebApp DataFetchState 표준화** | ✅ 완료 | notifications.tsx·subscriptions.tsx LoadingSpinner 직접 사용→DataFetchState로 교체. shared RaceDetailDto alias 필드 @deprecated JSDoc 추가. |
 | **시드 스크립트 통일** | ✅ 완료 | `docs/db/seed.sql` (SubscriptionPlan 3종·PointConfig·PointTicketPrice·GlobalConfig). `setup.sh` 5단계: schema→seed→admin 계정 bcrypt 생성. 모두 ON CONFLICT DO NOTHING 멱등 처리. |
+| **stTime 파싱 버그 수정** | ✅ 완료 | KRA stTime `"출발 :10:50"` 형식 파싱 버그 수정. admin/utils.ts에서 `replace(/^[^\d]*/, '').replace(/:/g, '')` 적용. |
+| **홈 DateHeader 개선** | ✅ 완료 | 경주 종료 후 "오늘의 경주가 열렸습니다" 오류 메시지 제거. DB 기반 다음 경주일 조회로 하드코딩(금/토/일) 대체. `todayAllEnded`를 시간 기반 `isRaceActuallyEnded()`만 사용. |
+| **Matrix 예측표 잠금 UX** | ✅ 완료 | 경주 정보(rcNo, meet, 출전 등)는 항상 공개. AI 예측 셀만 잠금(LockedCell 플레이스홀더). 미리보기 2행 허용. |
+| **KRA 동기화 시 AI 예측 자동 생성** | ✅ 완료 | `kra.service.ts`에 `generatePredictionsForDate()` 추가. `syncAll()` 최종 단계에서 예측 생성. `processDueBatchSchedules()` 결과 적재 후 fire-and-forget 예측 생성. Admin KRA 페이지에 Step 4 "AI 예측 생성" 카드 추가. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

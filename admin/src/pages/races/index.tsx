@@ -49,10 +49,7 @@ export default function RacesPage() {
   const [meetFilter, setMeetFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [dateFilter, setDateFilter] = useState(() => getTodayKstDate());
-  const [syncDate, setSyncDate] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
-  });
+  const [syncDate, setSyncDate] = useState(() => getTodayKstDate().replace(/-/g, ''));
   const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
   const syncScheduleMutation = useMutation({

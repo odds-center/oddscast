@@ -13,10 +13,12 @@ function todayRcDate(): string {
   return todayKstYyyymmdd();
 }
 
-/** Parse stTime "HH:mm" or "HH:mm:ss" to minutes since midnight */
+/** Parse stTime "HH:mm", "HH:mm:ss", or "출발 :HH:mm" to minutes since midnight */
 function parseStTimeMinutes(stTime: string | null): number | null {
-  if (!stTime || !/^\d{1,2}:\d{2}/.test(stTime)) return null;
-  const [h, m] = stTime.split(':').map(Number);
+  if (!stTime) return null;
+  const cleaned = stTime.replace(/^[^\d]*/, '');
+  if (!/^\d{1,2}:\d{2}/.test(cleaned)) return null;
+  const [h, m] = cleaned.split(':').map(Number);
   if (Number.isNaN(h) || Number.isNaN(m)) return null;
   return h * 60 + m;
 }

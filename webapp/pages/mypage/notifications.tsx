@@ -79,7 +79,7 @@ export default function NotificationsPage() {
 
           <DataFetchState
             isLoading={isLoading}
-            error={error as Error | null}
+            error={error}
             onRetry={() => refetch()}
             isEmpty={!notifications.length}
             emptyIcon='Bell'

@@ -47,7 +47,7 @@ export default function PredictionHistoryPage() {
       <CompactPageTitle title='내가 본 예측' backHref={routes.profile.index} />
       <DataFetchState
         isLoading={isLoading}
-        error={error as Error | null}
+        error={error}
         onRetry={() => refetch()}
         isEmpty={!list.length}
         emptyIcon='ClipboardList'

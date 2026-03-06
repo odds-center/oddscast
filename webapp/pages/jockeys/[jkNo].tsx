@@ -46,7 +46,7 @@ export default function JockeyProfilePage() {
       />
       <DataFetchState
         isLoading={profileLoading && !profile}
-        error={profileError as Error | null}
+        error={profileError}
         onRetry={() => refetchProfile()}
         isEmpty={isEmpty}
         emptyIcon='User'

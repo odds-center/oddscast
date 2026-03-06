@@ -13,7 +13,7 @@ import { adminKraApi } from '@/lib/api/admin';
 import { formatYyyyMmDd, getErrorMessage, getTodayKstDate, getKstDateOffset } from '@/lib/utils';
 import {
   Database, RefreshCw, FileText, Trophy, User, Zap, History,
-  Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server,
+  Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server, Sparkles,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -64,15 +64,8 @@ export default function KraPage() {
       );
     }
   }, [dateFromQuery]);
-  const [histFrom, setHistFrom] = useState(() => {
-    const d = new Date();
-    d.setFullYear(d.getFullYear() - 1);
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
-  const [histTo, setHistTo] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  });
+  const [histFrom, setHistFrom] = useState(() => getKstDateOffset(-365));
+  const [histTo, setHistTo] = useState(() => getTodayKstDate());
   const [meetFilter, setMeetFilter] = useState('');
   const [logEndpointFilter, setLogEndpointFilter] = useState('');
   const [scheduleYear, setScheduleYear] = useState(() => parseInt(getTodayKstDate().slice(0, 4), 10));
@@ -174,6 +167,16 @@ export default function KraPage() {
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
+  const generatePredictionsMutation = useMutation({
+    mutationFn: (date: string) => adminKraApi.generatePredictions(toYyyyMmDd(date)),
+    onSuccess: (res: { generated: number; failed: number }) => {
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
+      toast.success(`AI 예측 생성 완료: ${res.generated}건 성공${res.failed > 0 ? `, ${res.failed}건 실패` : ''}`);
+    },
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
+  });
+
   const syncHistoricalMutation = useMutation({
     mutationFn: async ({ from, to }: { from: string; to: string }) => {
       const out = await adminKraApi.syncHistoricalWithProgress(toYyyyMmDd(from), toYyyyMmDd(to), {
@@ -226,6 +229,7 @@ export default function KraPage() {
     syncDetailsMutation.isPending ||
     syncJockeysMutation.isPending ||
     syncAllMutation.isPending ||
+    generatePredictionsMutation.isPending ||
     seedSampleMutation.isPending ||
     syncHistoricalMutation.isPending;
 
@@ -255,6 +259,8 @@ export default function KraPage() {
                   { time: '매일 17:30', label: '경주 결과', desc: '당일 결과 + 배당금', icon: Trophy },
                   { time: '매일 18:00', label: '상세정보', desc: '훈련기록, 장구, 마체중', icon: Zap },
                   { time: '매주 월 02:00', label: '기수 전적', desc: '기수별 통산 성적 갱신', icon: User },
+                  { time: '금·토·일 09:00', label: 'AI 예측 생성', desc: '당일 경주 Gemini AI 예측 자동 생성', icon: Sparkles },
+                  { time: '결과 적재 시', label: '예측 정확도', desc: '결과 적재 후 AI 예측 vs 실제 착순 비교', icon: Trophy },
                 ].map((item) => (
                   <div key={item.label} className='flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200'>
                     <AdminIcon icon={item.icon} className='w-5 h-5 text-indigo-500 shrink-0 mt-0.5' />
@@ -490,6 +496,38 @@ export default function KraPage() {
             </div>
           </Card>
 
+          {/* STEP 4: AI 예측 생성 */}
+          <Card
+            title={
+              <span className='flex items-center gap-2'>
+                <StepBadge step={4} />
+                AI 예측 생성
+              </span>
+            }
+            description='출전표와 상세정보가 적재된 경주에 대해 Gemini AI 예측을 생성합니다. 이미 예측이 있는 경주는 건너뜁니다.'
+          >
+            <div className='space-y-4'>
+              <HelpBox variant='info'>
+                <strong>전체 적재 시 자동 실행됩니다.</strong> 개별 실행은 출전표(Step 1) + 상세정보(Step 3) 적재 후 사용하세요.
+                Gemini API 호출로 경주당 약 2~5초 소요됩니다.
+              </HelpBox>
+              <div className='flex flex-wrap items-center gap-3'>
+                <Button
+                  variant='secondary'
+                  onClick={() => generatePredictionsMutation.mutate(syncDate)}
+                  disabled={isAnyPending}
+                  isLoading={generatePredictionsMutation.isPending}
+                >
+                  <AdminIcon icon={Sparkles} className='w-4 h-4 mr-1.5 inline' />
+                  {syncDate} AI 예측 생성
+                </Button>
+                <span className='text-sm text-gray-500'>
+                  예측 미생성 경주에 대해 AI 분석 실행
+                </span>
+              </div>
+            </div>
+          </Card>
+
           {/* 전체 적재 */}
           <Card
             title={
@@ -498,7 +536,7 @@ export default function KraPage() {
                 전체 한 번에 적재
               </span>
             }
-            description='위 1~3단계를 한 번에 실행합니다. 선택한 날짜의 경주계획 + 출전표 + 결과 + 상세정보를 모두 가져옵니다.'
+            description='위 1~4단계를 한 번에 실행합니다. 경주계획 + 출전표 + 결과 + 상세정보 + AI 예측을 모두 처리합니다.'
           >
             <div className='space-y-3'>
               <HelpBox variant='warning'>

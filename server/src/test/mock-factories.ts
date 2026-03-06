@@ -19,12 +19,20 @@ export function createMockQueryBuilder(overrides?: Record<string, unknown>) {
     'innerJoin',
     'innerJoinAndSelect',
     'leftJoinAndSelect',
+    'leftJoin',
     'skip',
     'take',
     'limit',
     'groupBy',
     'addGroupBy',
     'subQuery',
+    'update',
+    'set',
+    'insert',
+    'into',
+    'values',
+    'delete',
+    'from',
   ];
   for (const m of chainable) {
     qb[m] = jest.fn().mockReturnThis();
@@ -38,6 +46,7 @@ export function createMockQueryBuilder(overrides?: Record<string, unknown>) {
   qb.getRawOne = jest.fn().mockResolvedValue(null);
   qb.getCount = jest.fn().mockResolvedValue(0);
   qb.getQuery = jest.fn().mockReturnValue('');
+  qb.execute = jest.fn().mockResolvedValue({ affected: 1 });
 
   if (overrides) {
     Object.assign(qb, overrides);
@@ -87,15 +96,19 @@ export function createMockConfigService(defaults?: Record<string, string>) {
 
 /** Mock DataSource with transaction callback. Manager has save/update/delete/getRepository. */
 export function createMockDataSource() {
+  const managerQb = createMockQueryBuilder();
   const mockManager = {
+    create: jest.fn().mockImplementation((_entity, data) => ({ ...data })),
     save: jest
       .fn()
       .mockImplementation((_entity, data) =>
-        Promise.resolve({ id: 1, ...data }),
+        Promise.resolve({ id: 1, ...(data ?? {}) }),
       ),
     update: jest.fn().mockResolvedValue({ affected: 1 }),
     delete: jest.fn().mockResolvedValue({ affected: 1 }),
     getRepository: jest.fn().mockReturnValue(createMockRepository()),
+    createQueryBuilder: jest.fn().mockReturnValue(managerQb),
+    _qb: managerQb,
   };
   return {
     transaction: jest

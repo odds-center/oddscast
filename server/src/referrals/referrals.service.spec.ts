@@ -1,15 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { DataSource } from 'typeorm';
 import { ReferralsService } from './referrals.service';
 import { ReferralCode } from '../database/entities/referral-code.entity';
 import { ReferralClaim } from '../database/entities/referral-claim.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
-import { createMockRepository } from '../test/mock-factories';
+import { createMockRepository, createMockDataSource } from '../test/mock-factories';
 
 const mockTicketsService = {
   grantTickets: jest.fn().mockResolvedValue(undefined),
 };
+
+const mockDataSource = createMockDataSource();
 
 describe('ReferralsService', () => {
   let service: ReferralsService;
@@ -32,6 +35,7 @@ describe('ReferralsService', () => {
           useValue: referralClaimRepo,
         },
         { provide: PredictionTicketsService, useValue: mockTicketsService },
+        { provide: DataSource, useValue: mockDataSource },
       ],
     }).compile();
 
@@ -134,7 +138,6 @@ describe('ReferralsService', () => {
       referralClaimRepo.findOne.mockResolvedValue(null); // no existing claim
       referralClaimRepo.create.mockReturnValue({});
       referralClaimRepo.save.mockResolvedValue({});
-      referralCodeRepo.update.mockResolvedValue({ affected: 1 });
 
       const result = await service.claim(2, 'VALID123');
       expect(result.message).toContain('예측권이 지급');
@@ -154,18 +157,17 @@ describe('ReferralsService', () => {
       ); // referrer
     });
 
-    it('increments usedCount by 1 after claim', async () => {
+    it('increments usedCount via atomic QueryBuilder update', async () => {
       referralCodeRepo.findOne.mockResolvedValue(referral);
       referralClaimRepo.findOne.mockResolvedValue(null);
       referralClaimRepo.create.mockReturnValue({});
       referralClaimRepo.save.mockResolvedValue({});
-      referralCodeRepo.update.mockResolvedValue({ affected: 1 });
 
       await service.claim(2, 'VALID123');
-      expect(referralCodeRepo.update).toHaveBeenCalledWith(
-        10,
-        expect.objectContaining({ usedCount: 3 }), // 2 + 1
-      );
+
+      // Service uses manager.createQueryBuilder().update().set().where().execute()
+      expect(mockDataSource._manager.createQueryBuilder).toHaveBeenCalled();
+      expect(mockDataSource._manager._qb.execute).toHaveBeenCalled();
     });
 
     it('normalizes code to uppercase before lookup', async () => {

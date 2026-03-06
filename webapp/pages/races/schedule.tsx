@@ -154,8 +154,8 @@ function LegendItem({
 
 export default function RaceSchedulePage() {
   const router = useRouter();
-  const today = useMemo(() => new Date(), []);
-  const [year, setYear] = useState(today.getFullYear());
+  const today = useMemo(() => dayjsKST(), []);
+  const [year, setYear] = useState(today.year());
 
   useEffect(() => {
     const y = router.query?.year;
@@ -333,9 +333,9 @@ export default function RaceSchedulePage() {
                     const isCurrentMonth = cell.type === 'current';
                     const isToday =
                       isCurrentMonth &&
-                      today.getFullYear() === year &&
-                      today.getMonth() === monthIndex &&
-                      today.getDate() === cell.day;
+                      today.year() === year &&
+                      today.month() === monthIndex &&
+                      today.date() === cell.day;
                     const hasRaces = !!item && item.totalRaces > 0;
                     const meetText = hasRaces && item ? formatMeetLabels(item.meetCounts) : '';
                     const raceStyle = hasRaces && item ? getRaceDayStyle(item.meetCounts) : {};

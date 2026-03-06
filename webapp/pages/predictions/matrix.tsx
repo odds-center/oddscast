@@ -46,12 +46,12 @@ function getDateParam(filter: string): string | undefined {
 
 function formatDisplayDate(filter: string): string {
   const d = filter === 'today' || !filter
-    ? new Date()
+    ? dayjsKST()
     : filter === 'yesterday'
-      ? (() => { const x = new Date(); x.setDate(x.getDate() - 1); return x; })()
-      : new Date(filter);
+      ? dayjsKST().subtract(1, 'day')
+      : dayjsKST(filter);
   const wd = ['일', '월', '화', '수', '목', '금', '토'];
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')} (${wd[d.getDay()]})`;
+  return `${d.year()}.${String(d.month() + 1).padStart(2, '0')}.${String(d.date()).padStart(2, '0')} (${wd[d.day()]})`;
 }
 
 export default function PredictionMatrixPage() {

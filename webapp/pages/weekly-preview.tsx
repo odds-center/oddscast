@@ -10,16 +10,18 @@ import WeeklyPreviewApi from '@/lib/api/weeklyPreviewApi';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
+import { dayjsKST } from '@/lib/utils/dayjs';
 
 function formatWeekLabel(weekLabel: string | null): string {
   if (!weekLabel) return '';
-  const d = new Date(weekLabel);
-  if (Number.isNaN(d.getTime())) return weekLabel;
-  const mon = new Date(d);
-  mon.setDate(d.getDate() - d.getDay() + 1);
-  const sun = new Date(mon);
-  sun.setDate(mon.getDate() + 6);
-  return `${mon.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })} ~ ${sun.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric' })}`;
+  const d = dayjsKST(weekLabel);
+  if (!d.isValid()) return weekLabel;
+  const dayOfWeek = d.day(); // 0=Sun..6=Sat
+  const mon = d.subtract(dayOfWeek === 0 ? 6 : dayOfWeek - 1, 'day');
+  const sun = mon.add(6, 'day');
+  const fmt = (dt: ReturnType<typeof dayjsKST>) =>
+    `${dt.month() + 1}월 ${dt.date()}일`;
+  return `${fmt(mon)} ~ ${fmt(sun)}`;
 }
 
 export default function WeeklyPreviewPage() {

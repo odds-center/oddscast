@@ -56,7 +56,11 @@
       "Bash(brew install:*)",
       "Bash(export:*)",
       "Bash(sed:*)",
-      "Bash(gh secret:*)"
+      "Bash(gh secret:*)",
+      "Bash(docker ps:*)",
+      "Bash(docker exec:*)",
+      "Bash(lsof:*)",
+      "Bash(kill 3870:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

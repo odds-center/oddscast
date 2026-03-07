@@ -111,6 +111,26 @@ export class AdminPredictionsController {
   }
 
   /**
+   * [Admin] 특정 날짜의 모든 경주 예측을 한번에 생성 (종합 매트릭스 배치용).
+   * date: YYYYMMDD, meet: 서울|제주|부산경남 (선택)
+   * generateBatch와 달리 기존 예측을 덮어씀, 경주 간 지연 없음.
+   */
+  @Post('generate-for-date')
+  @ApiOperation({ summary: '[Admin] 특정 날짜 전체 경주 예측 일괄 생성 (매트릭스 배치)' })
+  generateForDate(
+    @Body()
+    body: {
+      date: string;
+      meet?: string;
+    },
+  ) {
+    return this.predictionsService.generatePredictionsForDate(
+      body.date,
+      body.meet,
+    );
+  }
+
+  /**
    * [Admin] 미생성 예측 일괄 생성 — 기간 내 예측이 없는 경주를 rcDate·경주순으로 순차 생성.
    * dateFrom/dateTo: YYYYMMDD (미입력 시 최근 30일 ~ 오늘+7일). 경주 간 지연·429 재시도 적용.
    */

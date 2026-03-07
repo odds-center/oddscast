@@ -35,6 +35,8 @@ export default function PredictionsListPage() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [batchDateFrom, setBatchDateFrom] = useState('');
   const [batchDateTo, setBatchDateTo] = useState('');
+  const [forDateDate, setForDateDate] = useState('');
+  const [forDateMeet, setForDateMeet] = useState('');
   const [batchProgress, setBatchProgress] = useState<{
     requested: number;
     current: number;
@@ -112,6 +114,33 @@ export default function PredictionsListPage() {
     const from = batchDateFrom.replace(/-/g, '').slice(0, 8) || undefined;
     const to = batchDateTo.replace(/-/g, '').slice(0, 8) || undefined;
     generateBatchMutation.mutate({ dateFrom: from, dateTo: to });
+  };
+
+  const generateForDateMutation = useMutation({
+    mutationFn: (params: { date: string; meet?: string }) =>
+      AdminAIApi.generateForDate(params),
+    onSuccess: (result) => {
+      const { requested, generated, failed, errors } = result;
+      toast.success(
+        `날짜별 생성 완료: ${requested}건 중 ${generated}건 성공${failed > 0 ? `, ${failed}건 실패` : ''}`,
+      );
+      if (errors.length > 0) {
+        errors.slice(0, 3).forEach((e) => toast.error(e));
+      }
+      queryClient.invalidateQueries({ queryKey: ['admin', 'predictions'] });
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || '날짜별 생성 실패');
+    },
+  });
+
+  const handleForDateGenerate = () => {
+    const date = forDateDate.replace(/-/g, '').slice(0, 8);
+    if (!date) {
+      toast.error('날짜를 선택해 주세요');
+      return;
+    }
+    generateForDateMutation.mutate({ date, meet: forDateMeet || undefined });
   };
 
   const columns = [
@@ -272,6 +301,42 @@ export default function PredictionsListPage() {
                 </div>
               </div>
             )}
+          </Card>
+
+          <Card
+            title='날짜별 전체 경주 예측 생성 (종합 배치)'
+            description='특정 날짜의 모든 경주를 한번에 예측 생성합니다. 기존 예측을 덮어씁니다. Gemini 할당량 소모에 주의.'
+          >
+            <div className='flex flex-wrap items-end gap-3'>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>날짜</label>
+                <input
+                  type='date'
+                  value={forDateDate}
+                  onChange={(e) => setForDateDate(e.target.value)}
+                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
+                />
+              </div>
+              <div>
+                <label className='block text-sm font-medium text-gray-700 mb-1'>경마장 (선택)</label>
+                <select
+                  value={forDateMeet}
+                  onChange={(e) => setForDateMeet(e.target.value)}
+                  className='px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm'
+                >
+                  <option value=''>전체</option>
+                  <option value='서울'>서울</option>
+                  <option value='제주'>제주</option>
+                  <option value='부산경남'>부산경남</option>
+                </select>
+              </div>
+              <Button
+                onClick={handleForDateGenerate}
+                disabled={generateForDateMutation.isPending}
+              >
+                {generateForDateMutation.isPending ? '생성 중...' : '날짜별 전체 생성'}
+              </Button>
+            </div>
           </Card>
 
           <Card>

@@ -7,6 +7,7 @@ import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
+import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -43,6 +44,8 @@ export class PredictionsService {
     private readonly resultRepo: Repository<RaceResult>,
     @InjectRepository(TrainerResult)
     private readonly trainerResultRepo: Repository<TrainerResult>,
+    @InjectRepository(JockeyResult)
+    private readonly jockeyResultRepo: Repository<JockeyResult>,
     private readonly analysisService: AnalysisService,
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
@@ -747,6 +750,45 @@ AI 예측 순위: ${predictedTop || '-'}
   }
 
   /**
+   * Generate predictions for all races on a given date (for matrix batch generation).
+   * Unlike generateBatch, this targets a specific date and overwrites existing predictions.
+   * No long delay between races — used for admin on-demand matrix generation.
+   */
+  async generatePredictionsForDate(
+    date: string,
+    meet?: string,
+  ): Promise<{ requested: number; generated: number; failed: number; errors: string[] }> {
+    const rcDate = date.replace(/-/g, '').slice(0, 8);
+    const kraMeetName = meet ? toKraMeetName(meet) : undefined;
+    const races = await this.raceRepo.find({
+      where: kraMeetName ? { rcDate, meet: kraMeetName } : { rcDate },
+      select: ['id', 'rcDate', 'rcNo', 'meet'],
+      order: { rcNo: 'ASC' },
+    });
+
+    const generated: number[] = [];
+    const errors: string[] = [];
+
+    for (const race of races) {
+      const raceLabel = `${race.meet} ${rcDate} R${race.rcNo}`;
+      try {
+        await this.generatePrediction(race.id);
+        generated.push(race.id);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        errors.push(`${raceLabel}: ${msg}`);
+      }
+    }
+
+    return {
+      requested: races.length,
+      generated: generated.length,
+      failed: errors.length,
+      errors,
+    };
+  }
+
+  /**
    * 종합 예상 매트릭스 (용산종합지 스타일)
    * date: YYYYMMDD 또는 YYYY-MM-DD, meet: 서울|제주|부산경남
    */
@@ -1078,9 +1120,12 @@ AI 예측 순위: ${predictedTop || '-'}
     // 3c. 조교사 승률/복승률 보강 — TrainerResult (API19_1)
     const raceWithTrainer =
       await this.enrichEntriesWithTrainerResults(raceWithFallHistory);
+    // 3c-2. 기수 meet-level 승률/복승률 보강 — JockeyResult → Python jockey weight 직접 반영
+    const raceWithJockey =
+      await this.enrichEntriesWithJockeyResults(raceWithTrainer);
     // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
     const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceWithTrainer,
+      raceWithJockey,
       sectionalByHorse,
     );
 
@@ -1534,6 +1579,55 @@ AI 예측 순위: ${predictedTop || '-'}
         ...e,
         trainerWinRate: t.winRateTsum,
         trainerQuRate: t.quRateTsum,
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
+  /**
+   * 기수 meet-level 승률/복승률 보강 — JockeyResult에서 조회해 entries에 채움.
+   * Python _jockey_score()가 jockeyMeetWinRate/jockeyMeetQuRate를 읽어 직접 가중치 반영.
+   */
+  private async enrichEntriesWithJockeyResults(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+
+    const meetCode = meetToCode(race.meet ?? '');
+    const jkNos = [
+      ...new Set(
+        entries.map((e) => e.jkNo).filter((v): v is string => Boolean(v)),
+      ),
+    ];
+    if (!jkNos.length) return race;
+
+    const jockeys = await this.jockeyResultRepo.find({
+      where: { meet: meetCode, jkNo: In(jkNos) },
+      select: ['jkNo', 'rcCntT', 'winRateTsum', 'quRateTsum'],
+    });
+    const byJkNo = new Map(
+      jockeys.map((j) => [
+        j.jkNo,
+        {
+          winRateTsum: j.winRateTsum,
+          quRateTsum: j.quRateTsum,
+          rcCntT: j.rcCntT,
+        },
+      ]),
+    );
+
+    const enrichedEntries = entries.map((e) => {
+      const jkNo = e.jkNo;
+      if (!jkNo) return e;
+      const j = byJkNo.get(jkNo);
+      if (!j) return e;
+      return {
+        ...e,
+        jockeyMeetWinRate: j.winRateTsum,
+        jockeyMeetQuRate: j.quRateTsum,
+        jockeyRcCntT: j.rcCntT,
       };
     });
 

@@ -457,6 +457,21 @@ export class AdminAIApi {
     }
   }
 
+  /** [Admin] 특정 날짜 전체 경주 예측 일괄 생성 (종합 매트릭스 배치) */
+  static async generateForDate(params: {
+    date: string;
+    meet?: string;
+  }): Promise<{ requested: number; generated: number; failed: number; errors: string[] }> {
+    try {
+      const response = await axiosInstance.post('/predictions/generate-for-date', params, {
+        timeout: 600_000,
+      });
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
   /** [Admin] 미생성 예측 일괄 생성 (기간 내 예측 없는 경주 순차 생성) */
   static async generateBatch(params?: {
     dateFrom?: string;

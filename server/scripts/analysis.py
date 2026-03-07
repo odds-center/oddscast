@@ -11,15 +11,17 @@ import sys
 import json
 import math
 
-# ─── 말 기준 가중치 (기수 제외, 합 = 1.0) ───
+# ─── 말+기수 통합 가중치 (합 = 1.0) ───
 # 경마 예측 학술 연구(Racing Post / Timeform) 기반 배분
+# jockey: entry.jockeyMeetWinRate / jockeyMeetQuRate 사용 (Python 직접 반영)
 W_HORSE = {
-    'rating': 0.33,
-    'form': 0.26,
-    'condition': 0.14,
-    'experience': 0.10,
-    'suitability': 0.10,
-    'trainer': 0.07,
+    'rating': 0.28,
+    'form': 0.24,
+    'condition': 0.12,
+    'experience': 0.08,
+    'suitability': 0.09,
+    'trainer': 0.09,
+    'jockey': 0.10,
 }
 
 
@@ -202,6 +204,31 @@ def _trainer_score(entry):
     return round(min(100, max(0, score)), 2)
 
 
+def _jockey_score(entry):
+    """기수 능력 → 0~100 (meet-level 승률/복승률 직접 반영)."""
+    win_rate = entry.get("jockeyMeetWinRate")
+    qu_rate = entry.get("jockeyMeetQuRate")
+    rc_cnt = int(entry.get("jockeyRcCntT") or 0)
+
+    if win_rate is None and qu_rate is None:
+        return 40.0
+
+    score = 20.0
+    try:
+        if win_rate is not None:
+            score += min(45, float(win_rate) * 2.5)
+        if qu_rate is not None:
+            score += min(25, float(qu_rate) * 0.7)
+    except (ValueError, TypeError):
+        pass
+
+    # Experience penalty for jockeys with few races
+    if rc_cnt > 0 and rc_cnt < 100:
+        score *= 0.85
+
+    return round(min(100, max(0, score)), 2)
+
+
 def _suitability_score(entry, rc_dist, track):
     """거리·각질·주로 적합도 → 0~100."""
     score = 50.0
@@ -299,10 +326,10 @@ def _cascade_fall_risk(entries):
 
 
 def _win_probability(scores):
-    """softmax → 승률 확률(%). T=15 (적절한 분산)."""
+    """softmax → 승률 확률(%). T=12 (충분한 분산, 상위마 차별화)."""
     if not scores:
         return []
-    T = 15.0
+    T = 12.0
     max_s = max(scores)
     exp_s = [math.exp((s - max_s) / T) for s in scores]
     total = sum(exp_s)
@@ -408,6 +435,7 @@ def calculate_score(data):
             exp = _experience_score(total_runs, total_wins)
             trn = _trainer_score(e)
             suit = _suitability_score(e, rc_dist, track)
+            jky = _jockey_score(e)
 
             composite = (
                 rat * W_HORSE['rating']
@@ -416,6 +444,7 @@ def calculate_score(data):
                 + exp * W_HORSE['experience']
                 + trn * W_HORSE['trainer']
                 + suit * W_HORSE['suitability']
+                + jky * W_HORSE['jockey']
             )
 
             fall_risk = _fall_risk_score(e)
@@ -448,7 +477,7 @@ def calculate_score(data):
                 'score': composite,
                 'sub': {
                     'rat': rat, 'frm': frm, 'cnd': cnd,
-                    'exp': exp, 'trn': trn, 'suit': suit,
+                    'exp': exp, 'trn': trn, 'suit': suit, 'jky': jky,
                 },
                 'risk': fall_risk,
                 'recentRanks': recent_ranks[:5],

@@ -166,7 +166,7 @@ export class KraService {
    * Fetches race plans for the next 7 days (Fri/Sat/Sun only) via API72_2.
    * Lightweight: only processes ~3 race days max. Keeps upcoming schedules fresh.
    */
-  @Cron('0 4 * * *') // Daily 04:00
+  @Cron('0 4 * * *', { timeZone: 'Asia/Seoul' }) // Daily 04:00 KST
   async syncDailyUpcomingRacePlans() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Daily Upcoming Race Plans Sync (next 7 days)');
@@ -189,7 +189,7 @@ export class KraService {
    * Fetches race plans for the next 3 months via API72_2.
    * Ensures longer-term schedule visibility for the calendar.
    */
-  @Cron('0 3 * * 1') // Monday 03:00
+  @Cron('0 3 * * 1', { timeZone: 'Asia/Seoul' }) // Monday 03:00 KST
   async syncFutureRacePlans() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Future Race Plans Sync (next 3 months)');
@@ -201,7 +201,7 @@ export class KraService {
    * Fetches race plan + entry sheet for the upcoming weekend.
    * Entry sheets (API26_2) are usually available 2-3 days before race day.
    */
-  @Cron('0 18 * * 3,4') // Wed, Thu at 18:00
+  @Cron('0 18 * * 3,4', { timeZone: 'Asia/Seoul' }) // Wed, Thu 18:00 KST
   async syncWeeklySchedule() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Weekly Schedule Sync (Pre-fetch)');
@@ -209,6 +209,12 @@ export class KraService {
     for (const date of dates) {
       await this.fetchRacePlanSchedule(date);
       await this.syncEntrySheet(date);
+      // Also attempt analysis data (horse weight, ratings, equipment) — available 2-3 days before race day
+      try {
+        await this.syncAnalysisData(date);
+      } catch (err) {
+        this.logger.warn(`[syncWeeklySchedule] Analysis data not yet available for ${date}`, err);
+      }
       await this.delay(300);
     }
   }

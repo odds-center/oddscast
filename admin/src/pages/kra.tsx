@@ -254,12 +254,13 @@ export default function KraPage() {
               </HelpBox>
               <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3'>
                 {[
-                  { time: '매주 월 03:00', label: '미래 경주 계획표', desc: 'API72_2 — 1년 내 금·토·일 경주 일정', icon: Calendar },
-                  { time: '매주 수·목 18:00', label: '주말 출전표', desc: 'API72_2 + API26_2 — 금·토·일 출전마', icon: FileText },
-                  { time: '매일 17:30', label: '경주 결과', desc: '당일 결과 + 배당금', icon: Trophy },
-                  { time: '매일 18:00', label: '상세정보', desc: '훈련기록, 장구, 마체중', icon: Zap },
-                  { time: '매주 월 02:00', label: '기수 전적', desc: '기수별 통산 성적 갱신', icon: User },
-                  { time: '금·토·일 09:00', label: 'AI 예측 생성', desc: '당일 경주 Gemini AI 예측 자동 생성', icon: Sparkles },
+                  { time: '매일 04:00 KST', label: '근래 경주 계획표', desc: 'API72_2 — 다음 7일 내 금·토·일 경주 일정 갱신', icon: Calendar },
+                  { time: '매주 월 03:00 KST', label: '3개월 경주 계획표', desc: 'API72_2 — 다음 3개월 금·토·일 경주 일정 전체', icon: Calendar },
+                  { time: '매주 수·목 18:00 KST', label: '주말 출전표 + 상세정보', desc: 'API26_2 + 훈련·마체중·장구 — 주말 출전마 사전 적재', icon: FileText },
+                  { time: '금·토·일 08:00 KST', label: '경주 당일 최종 출전표', desc: 'API26_2 + 분석데이터 — 출전취소 반영·마체중·레이팅', icon: Zap },
+                  { time: '5분마다 KST', label: '경주 결과 자동 처리', desc: '경주 종료 예정 시각 이후 배치 처리 — 결과+출전마 보강', icon: Trophy },
+                  { time: '매일 05:30 KST', label: '결과 누락 자동 보완', desc: '최근 14일 결과 없는 경주 자동 재시도', icon: RefreshCw },
+                  { time: '금·토·일 08:00 KST', label: 'AI 예측 생성', desc: '당일 경주 Gemini AI 예측 자동 생성 (출전표 적재 후)', icon: Sparkles },
                   { time: '결과 적재 시', label: '예측 정확도', desc: '결과 적재 후 AI 예측 vs 실제 착순 비교', icon: Trophy },
                 ].map((item) => (
                   <div key={item.label} className='flex items-start gap-3 p-3 rounded-lg bg-gray-50 border border-gray-200'>
@@ -415,7 +416,7 @@ export default function KraPage() {
                 경주 결과 동기화
               </span>
             }
-            description='경주 종료 후 착순, 기록, 배당금 데이터를 가져옵니다. 경주 당일 17:30 이후 자동 실행됩니다.'
+            description='경주 종료 후 착순, 기록, 배당금 데이터를 가져옵니다. 경주 종료 후 5분마다 자동으로 배치 처리됩니다.'
           >
             <div className='space-y-4'>
               <HelpBox variant='info'>

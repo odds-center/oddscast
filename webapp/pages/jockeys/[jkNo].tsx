@@ -143,7 +143,7 @@ export default function JockeyProfilePage() {
                         </div>
                         <div className='flex items-center gap-2 text-right shrink-0'>
                           {r.ord != null && (
-                            <span className={`text-sm font-bold ${r.ord === 1 ? 'text-amber-600' : r.ord <= 3 ? 'text-stone-600' : 'text-text-tertiary'}`}>
+                            <span className={`text-sm font-bold ${Number(r.ord) === 1 ? 'text-amber-600' : Number(r.ord) <= 3 ? 'text-stone-600' : 'text-text-tertiary'}`}>
                               {r.ord}위
                             </span>
                           )}

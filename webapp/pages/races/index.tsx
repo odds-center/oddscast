@@ -163,17 +163,20 @@ export default function RacesPage() {
     return map;
   }, [resultsData?.raceGroups]);
 
+  function getRaceStatus(race: RaceDto): string {
+    return race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus ?? '';
+  }
+
   const todayRacesAllEnded =
     dateFilter === 'today' &&
     races.length > 0 &&
     races.every(
       (race: RaceDto) =>
-        (race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus) === 'COMPLETED' &&
-        isRaceActuallyEnded(race.rcDate, race.stTime),
+        getRaceStatus(race) === 'COMPLETED' && isRaceActuallyEnded(race.rcDate, race.stTime),
     );
 
   function raceIsCompleted(race: RaceDto): boolean {
-    const s = race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus ?? '';
+    const s = getRaceStatus(race);
     return s === 'COMPLETED' || isRaceActuallyEnded(race.rcDate, race.stTime);
   }
 
@@ -230,7 +233,7 @@ export default function RacesPage() {
             const completed = raceIsCompleted(race);
             const raceResults = resultsByRaceId.get(race.id) ?? [];
             const showResults = completed && raceResults.length > 0;
-            const raceStatus = race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus ?? '';
+            const raceStatus = getRaceStatus(race);
             return (
               <Link
                 key={race.id}
@@ -306,7 +309,7 @@ export default function RacesPage() {
                 render: (race) => {
                   const completed = raceIsCompleted(race);
                   const raceResults = resultsByRaceId.get(race.id) ?? [];
-                  const raceStatus = race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus ?? '';
+                  const raceStatus = getRaceStatus(race);
                   if (completed && raceResults.length > 0) {
                     return (
                       <span className='inline-flex items-center gap-4 text-sm'>

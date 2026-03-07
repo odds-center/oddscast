@@ -172,7 +172,7 @@ export default function SimulatorPage() {
           <div className="space-y-5">
             {/* Info bar */}
             <div className="flex items-center gap-2 rounded-lg bg-primary/8 border border-primary/20 px-3 py-2">
-              <Icon name="Info" size={15} className="text-primary shrink-0" />
+              <Icon name="AlertCircle" size={15} className="text-primary shrink-0" />
               <p className="text-xs text-primary">
                 {hasRealSub
                   ? 'AI가 계산한 실제 세부 점수(레이팅·폼·컨디션·경험·훈련·거리적성)를 가중치로 조절합니다.'

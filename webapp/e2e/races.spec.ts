@@ -132,16 +132,6 @@ test.describe('Race detail — authenticated', () => {
   });
 });
 
-test.describe('Race schedule page', () => {
-  test('/races/schedule renders calendar or date picker', async ({ page }) => {
-    await mockRaceList(page);
-    await page.goto('/races/schedule');
-
-    await expect(page).toHaveTitle(/일정|OddsCast/);
-    // Should have some content (calendar, schedule etc.)
-    await expect(page.locator('main')).toBeVisible();
-  });
-});
 
 test.describe('Races page — unified view', () => {
   test('shows race cards with schedule info for upcoming races', async ({ page }) => {

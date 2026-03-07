@@ -183,8 +183,7 @@ export default function Profile() {
                 { href: routes.mypage.predictionHistory, icon: 'ClipboardList', label: '내가 본 예측' },
                 { href: routes.mypage.pointTransactions, icon: 'Gem', label: '포인트 거래 내역' },
                 { href: routes.mypage.matrixTicketPurchase, icon: 'CreditCard', label: '종합예측권 구매' },
-                { href: routes.ranking, icon: 'Medal', label: '랭킹' },
-                { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
+{ href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />

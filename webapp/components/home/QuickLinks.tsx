@@ -16,8 +16,7 @@ const DEFAULT_LINKS: QuickLinkItem[] = [
   { href: routes.home, label: '경주', icon: 'Flag', description: '실시간 경주 목록' },
   { href: routes.results, label: '결과', icon: 'TrendingUp', description: '경주 결과 조회' },
   { href: routes.predictions.matrix, label: '종합 예상', icon: 'BarChart2', description: '용산종합지 스타일' },
-  { href: routes.ranking, label: '랭킹', icon: 'Medal', description: '예측 적중 순위' },
-  { href: routes.mypage.subscriptions, label: '구독', icon: 'Crown', description: '예측권 구독' },
+{ href: routes.mypage.subscriptions, label: '구독', icon: 'Crown', description: '예측권 구독' },
   { href: routes.profile.index, label: '내 정보', icon: 'User', description: '프로필·설정' },
 ];
 

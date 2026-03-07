@@ -7,8 +7,7 @@ export const routes = {
   home: '/',
   results: '/races',
   resultsDetail: (id: string) => `/races/${id}?view=result`,
-  ranking: '/ranking',
-  settings: '/settings',
+settings: '/settings',
   settingsNotifications: '/settings/notifications',
   settingsDeleteAccount: '/settings/delete-account',
 
@@ -41,8 +40,7 @@ export const routes = {
   races: {
     index: '/',
     list: '/races',
-    schedule: '/races/schedule',
-    detail: (id: string) => `/races/${id}`,
+detail: (id: string) => `/races/${id}`,
     simulator: (id: string) => `/races/${id}/simulator`,
   },
 

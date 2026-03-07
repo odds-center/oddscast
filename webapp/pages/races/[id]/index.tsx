@@ -777,7 +777,6 @@ export default function RaceDetailPage() {
                   </tbody>
                 </table>
               </div>
-              </div>
 
               {/* 승식별 배당률 */}
               {Array.isArray(dividends) && dividends.length > 0 && (() => {
@@ -883,7 +882,7 @@ export default function RaceDetailPage() {
                     .sort((a, b) => parseInt(String(a.ord), 10) - parseInt(String(b.ord), 10))
                     .slice(0, 3)
                     .map((res) => {
-                      const entry = raceData?.entries?.find((e) => String(e.hrNo) === String(res.hrNo));
+                      const entry = race?.entries?.find((e) => String(e.hrNo) === String(res.hrNo));
                       return {
                         ord: parseInt(String(res.ord), 10),
                         hrNo: String(res.hrNo ?? '').trim(),

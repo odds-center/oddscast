@@ -1255,6 +1255,21 @@ export class AdminStatisticsApi {
 }
 
 // Export instances (기존 호환성 유지)
+export class AdminWeeklyPreviewApi {
+  static async generate(date?: string): Promise<{ weekLabel: string; content: Record<string, unknown> }> {
+    const response = await axiosInstance.post('/weekly-preview/generate', {}, {
+      params: date ? { date } : {},
+      timeout: 60000, // Gemini generation can take up to ~30s
+    });
+    return handleApiResponse(response) as { weekLabel: string; content: Record<string, unknown> };
+  }
+
+  static async getLatest(): Promise<{ weekLabel: string | null; content: Record<string, unknown> | null }> {
+    const response = await axiosInstance.get('/weekly-preview/latest');
+    return handleApiResponse(response) as { weekLabel: string | null; content: Record<string, unknown> | null };
+  }
+}
+
 export const adminDashboardApi = AdminDashboardApi;
 export const adminUsersApi = AdminUsersApi;
 export const adminBetsApi = AdminBetsApi;

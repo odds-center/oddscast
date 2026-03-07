@@ -28,6 +28,7 @@ import { SinglePurchasesService } from '../single-purchases/single-purchases.ser
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
+import { WeeklyPreviewService } from '../weekly-preview/weekly-preview.service';
 import { UpdateUserDto } from '../users/dto/user.dto';
 import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
@@ -48,6 +49,7 @@ export class AdminController {
     private readonly singlePurchasesService: SinglePurchasesService,
     private readonly predictionTicketsService: PredictionTicketsService,
     private readonly activityLogsService: ActivityLogsService,
+    private readonly weeklyPreviewService: WeeklyPreviewService,
   ) {}
 
   /** Write SSE event (progress or done). */
@@ -747,5 +749,20 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] User activity summary' })
   async getUserActivitySummary(@Param('userId', ParseIntPipe) userId: number) {
     return this.activityLogsService.getUserActivitySummary(userId);
+  }
+
+  // --- Weekly Preview ---
+
+  @Post('weekly-preview/generate')
+  @ApiOperation({ summary: '[Admin] Manually trigger weekly preview generation' })
+  async generateWeeklyPreview(@Query('date') date?: string) {
+    const fromDate = date ? new Date(date) : undefined;
+    return this.weeklyPreviewService.generate({ fromDate });
+  }
+
+  @Get('weekly-preview/latest')
+  @ApiOperation({ summary: '[Admin] Get latest weekly preview' })
+  async getLatestWeeklyPreview() {
+    return this.weeklyPreviewService.getLatest();
   }
 }

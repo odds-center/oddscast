@@ -701,39 +701,71 @@ export default function RaceDetailPage() {
                 </table>
               </div>
 
-              {/* 승식별 배당률 — 승식별로 묶어 조합·배당을 한 줄로 표시 */}
+              {/* 승식별 배당률 */}
               {Array.isArray(dividends) && dividends.length > 0 && (() => {
                 type D = { poolName?: string; pool?: string; chulNo?: string; chulNo2?: string; chulNo3?: string; odds?: number };
+                const ORDERED_POOLS = new Set(['쌍승식', '삼쌍승식']);
+                const POOL_BADGE: Record<string, string> = {
+                  '단승식': 'bg-emerald-600', '연승식': 'bg-teal-600', '복승식': 'bg-blue-600',
+                  '쌍승식': 'bg-violet-600', '복연승식': 'bg-amber-600', '삼복승식': 'bg-orange-600', '삼쌍승식': 'bg-rose-600',
+                };
+                const POOL_ODDS: Record<string, string> = {
+                  '단승식': 'text-emerald-700', '연승식': 'text-teal-700', '복승식': 'text-blue-700',
+                  '쌍승식': 'text-violet-700', '복연승식': 'text-amber-700', '삼복승식': 'text-orange-700', '삼쌍승식': 'text-rose-700',
+                };
                 const byPool = (dividends as D[]).reduce((acc, d) => {
                   const key = d.poolName ?? d.pool ?? '배당';
                   if (!acc[key]) acc[key] = [];
-                  const combo = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean).join('-');
-                  if (combo || d.odds != null) acc[key].push({ combo, odds: d.odds });
+                  const nums = [d.chulNo, d.chulNo2, d.chulNo3].filter(Boolean) as string[];
+                  acc[key].push({ nums, odds: d.odds });
                   return acc;
-                }, {} as Record<string, { combo: string; odds?: number }[]>);
-                const poolOrder = ['단승식', '연승식', '쌍승식', '복승식', '삼복승식', '삼쌍승식', '배당'];
-                const ordered = poolOrder.filter((p) => byPool[p]?.length).concat(Object.keys(byPool).filter((k) => !poolOrder.includes(k)));
+                }, {} as Record<string, { nums: string[]; odds?: number }[]>);
+                const poolOrder = ['단승식', '연승식', '복승식', '쌍승식', '복연승식', '삼복승식', '삼쌍승식'];
+                const ordered = poolOrder.filter((p) => byPool[p]?.length).concat(Object.keys(byPool).filter((k) => !poolOrder.includes(k) && byPool[k]?.length));
+                const nameByChulNo: Record<string, string> = {};
+                for (const e of displayEntries) {
+                  if (e.chulNo && e.hrName) nameByChulNo[e.chulNo] = e.hrName;
+                }
                 return (
                   <div className='rounded-xl border border-border overflow-hidden mt-4'>
-                    <div className='bg-stone-50 border-b border-border px-3 py-2.5'>
-                      <span className='text-sm font-semibold text-foreground'>승식별 배당률</span>
-                      <p className='text-text-tertiary text-xs mt-0.5'>경주 확정 후 적용된 배당 (조합·배당)</p>
+                    <div className='bg-[#1c1917] px-3 py-2 flex items-center justify-between'>
+                      <span className='text-xs font-semibold text-white'>승식별 배당률</span>
+                      <span className='text-stone-500 text-[10px]'>파리뮤추얼 · 경주 확정 후 적용</span>
                     </div>
-                    <div className='px-3 py-2.5 space-y-2'>
-                      {ordered.map((poolName) => {
-                        const items = byPool[poolName];
-                        if (!items?.length) return null;
-                        const parts = items.map(({ combo, odds }) => (combo && odds != null ? `${combo} ${odds}배` : combo || (odds != null ? `${odds}배` : ''))).filter(Boolean);
-                        return (
-                          <div key={poolName} className='flex flex-wrap items-baseline gap-x-3 gap-y-1 text-sm'>
-                            <span className='text-text-secondary font-medium shrink-0 w-16'>{poolName}</span>
-                            <span className='text-foreground'>
-                              {parts.length > 0 ? parts.join(', ') : '-'}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <table className='w-full border-collapse text-xs'>
+                      <tbody>
+                        {ordered.map((poolName, pi) => {
+                          const items = byPool[poolName];
+                          if (!items?.length) return null;
+                          const badgeCls = POOL_BADGE[poolName] ?? 'bg-stone-600';
+                          const oddsCls = POOL_ODDS[poolName] ?? 'text-stone-700';
+                          const isOrdered = ORDERED_POOLS.has(poolName);
+                          return (
+                            <tr key={poolName} className={pi % 2 === 1 ? 'bg-stone-50/60' : 'bg-white'}>
+                              <td className='pl-3 pr-2 py-2 align-top w-[72px]'>
+                                <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${badgeCls}`}>{poolName}</span>
+                              </td>
+                              <td className='pr-3 py-2'>
+                                <div className='flex flex-wrap gap-x-3 gap-y-1'>
+                                  {items.map(({ nums, odds }, ci) => (
+                                    <span key={ci} className='inline-flex items-center gap-0.5'>
+                                      {nums.map((n, ni) => (
+                                        <span key={ni} className='inline-flex items-center gap-0.5'>
+                                          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white font-bold' style={{ fontSize: '10px' }}>{n}</span>
+                                          {nameByChulNo[n] && <span className='text-foreground font-medium'>{nameByChulNo[n]}</span>}
+                                          {ni < nums.length - 1 && <span className='text-stone-300 mx-0.5'>{isOrdered ? '→' : '-'}</span>}
+                                        </span>
+                                      ))}
+                                      {odds != null && <span className={`ml-1 font-bold ${oddsCls}`}>{odds}배</span>}
+                                    </span>
+                                  ))}
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
                   </div>
                 );
               })()}

@@ -15,6 +15,7 @@ import {
   TrendingUp,
   Database,
   ListOrdered,
+  Newspaper,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 
@@ -30,6 +31,7 @@ const navigation = [
   { name: '개별 구매', href: '/single-purchase-config', icon: Ticket },
   { name: '예측권 사용 내역', href: '/ticket-usage', icon: Ticket },
   { name: '예측 목록', href: '/predictions', icon: ListOrdered },
+  { name: '주간 프리뷰', href: '/weekly-preview', icon: Newspaper },
   { name: 'AI 설정', href: '/ai-config', icon: Bot },
   { name: 'AI 분석', href: '/analytics', icon: BarChart3 },
   { name: '수익 대시보드', href: '/revenue', icon: TrendingUp },

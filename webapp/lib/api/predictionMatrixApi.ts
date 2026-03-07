@@ -6,6 +6,7 @@
 import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
 import RaceApi from './raceApi';
 import PredictionApi from './predictionApi';
+import type { PredictionHorseScore } from '@/lib/types/predictions';
 
 /** Prediction matrix row per race */
 export interface MatrixRowDto {
@@ -17,11 +18,15 @@ export interface MatrixRowDto {
   rcDist?: string;
   rank?: string;
   entryCount?: number;
-  entries?: Array<{ hrNo: string; hrName: string }>;
+  entries?: Array<{ hrNo: string; hrName: string; chulNo?: string }>;
   predictions: Record<string, string[] | string>;
   horseNames?: Record<string, string>;
   aiConsensus: string;
   consensusLabel?: string;
+  /** Full ranked horse scores — used for bet type derivation when unlocked */
+  horseScores?: PredictionHorseScore[];
+  /** AI analysis text for this race */
+  analysis?: string;
 }
 
 /** Matrix response */
@@ -63,8 +68,9 @@ export default class PredictionMatrixApi {
   /**
    * Get comprehensive prediction matrix
    * date: YYYY-MM-DD, meet: Seoul|Jeju|BusanGyeongnam
+   * unlocked: true when user has matrix access — fetches full analysis per race
    */
-  static async getMatrix(date?: string, meet?: string): Promise<MatrixResponseDto> {
+  static async getMatrix(date?: string, meet?: string, unlocked = false): Promise<MatrixResponseDto> {
     try {
       const response = await axiosInstance.get<{ data?: MatrixResponseDto } | MatrixResponseDto>(
         '/predictions/matrix',
@@ -72,16 +78,18 @@ export default class PredictionMatrixApi {
       );
       return handleApiResponse(response) as MatrixResponseDto;
     } catch {
-      return this.buildMatrixFromRaces(date, meet);
+      return this.buildMatrixFromRaces(date, meet, unlocked);
     }
   }
 
   /**
    * Build matrix on client side using races + preview when API is not implemented
+   * unlocked=true: also fetch full prediction analysis per race (for unlocked matrix)
    */
   private static async buildMatrixFromRaces(
     date?: string,
     meet?: string,
+    unlocked = false,
   ): Promise<MatrixResponseDto> {
     const useToday = !date || date === 'today';
     const list = useToday
@@ -98,15 +106,35 @@ export default class PredictionMatrixApi {
         preview = null;
       }
 
-      const scores =
-        (preview as { scores?: { horseScores?: { hrNo?: string; hrName?: string }[] } })?.scores?.horseScores ?? [];
+      // When unlocked, also fetch full prediction for analysis text and better scores
+      type FullPrediction = { analysis?: string; scores?: { horseScores?: { hrNo?: string; hrName?: string; score?: number; chulNo?: string }[] } };
+      let fullPrediction: FullPrediction | null = null;
+      if (unlocked) {
+        try {
+          fullPrediction = await PredictionApi.getByRaceId(rid) as unknown as FullPrediction;
+        } catch {
+          fullPrediction = null;
+        }
+      }
+
+      const previewScores = (preview as { scores?: { horseScores?: { hrNo?: string; hrName?: string }[] } })?.scores?.horseScores ?? [];
+      const fullScores = fullPrediction?.scores?.horseScores ?? [];
+      const scores = fullScores.length > 0 ? fullScores : previewScores;
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
       const consensusArr = top1 && top2 ? [top1, top2] : top1 ? [top1] : [];
 
       const raceAny = race as unknown as Record<string, unknown>;
-      const entryRaw = (raceAny.entries ?? raceAny.entryDetails ?? []) as Array<{ hrNo?: string; hrName?: string }>;
+      const entryRaw = (raceAny.entries ?? raceAny.entryDetails ?? []) as Array<{ hrNo?: string; hrName?: string; chulNo?: string }>;
+
+      // Build chulNo lookup from scores (prediction scores often carry chulNo even when entry sheet is missing)
+      const chulNoByHrNo: Record<string, string> = {};
+      for (const s of scores) {
+        if (s.hrNo && (s as { chulNo?: string }).chulNo) {
+          chulNoByHrNo[s.hrNo] = (s as { chulNo?: string }).chulNo!;
+        }
+      }
 
       const horseNames: Record<string, string> = {};
       for (const e of entryRaw) {
@@ -116,6 +144,13 @@ export default class PredictionMatrixApi {
         if (s.hrNo && s.hrName && !horseNames[s.hrNo]) horseNames[s.hrNo] = s.hrName;
       }
 
+      // Enrich entries: fill chulNo from scores when entry sheet chulNo is missing
+      const enrichedEntries = entryRaw.map((e) => ({
+        hrNo: e.hrNo ?? '',
+        hrName: e.hrName ?? '',
+        chulNo: e.chulNo ?? (e.hrNo ? chulNoByHrNo[e.hrNo] : undefined),
+      }));
+
       rows.push({
         raceId: rid,
         meet: race.meet ?? '',
@@ -124,8 +159,8 @@ export default class PredictionMatrixApi {
         stTime: race.stTime,
         rcDist: (raceAny.rcDist as string) ?? undefined,
         rank: (raceAny.rank as string) ?? undefined,
-        entryCount: entryRaw.length > 0 ? entryRaw.length : undefined,
-        entries: entryRaw.map((e) => ({ hrNo: e.hrNo ?? '', hrName: e.hrName ?? '' })),
+        entryCount: enrichedEntries.length > 0 ? enrichedEntries.length : undefined,
+        entries: enrichedEntries,
         predictions: {
           ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
           expert_1: top1 && top2 ? [top1, top2] : top1 ? [top1] : [],
@@ -133,6 +168,11 @@ export default class PredictionMatrixApi {
         horseNames,
         aiConsensus: consensus,
         consensusLabel: top1 ? '축' : undefined,
+        horseScores: scores.length > 0 ? scores : undefined,
+        analysis: (fullPrediction as { analysis?: string } | null)?.analysis
+          || (preview as { analysis?: string })?.analysis
+          || (preview as { preview?: string })?.preview
+          || undefined,
       });
     }
 

@@ -87,25 +87,6 @@ export default function PredictionMatrixPage() {
     placeholderData: keepPreviousData,
   });
 
-  const { data: matrixData, isLoading, error, refetch } = useQuery({
-    queryKey: ['predictions', 'matrix', dateFilter, meetFilter],
-    queryFn: () => PredictionMatrixApi.getMatrix(apiDate, meetFilter || undefined),
-    enabled: isLoggedIn,
-    placeholderData: keepPreviousData,
-  });
-
-  const {
-    data: commentaryData,
-    isLoading: commentaryLoading,
-    error: commentaryError,
-    refetch: commentaryRefetch,
-  } = useQuery({
-    queryKey: ['predictions', 'commentary', dateFilter, meetFilter],
-    queryFn: () => PredictionMatrixApi.getCommentary(apiDate, 20, 0, meetFilter || undefined),
-    enabled: isLoggedIn && activeTab === 'commentary',
-    placeholderData: keepPreviousData,
-  });
-
   const { data: matrixAccess } = useQuery({
     queryKey: ['predictions', 'matrix-access', apiDateStr],
     queryFn: () => PredictionTicketsApi.checkMatrixAccess(apiDateStr),
@@ -122,6 +103,25 @@ export default function PredictionMatrixPage() {
 
   const hasAccess = matrixAccess?.hasAccess ?? false;
   const availableMatrixTickets = matrixBalance?.available ?? 0;
+
+  const { data: matrixData, isLoading, error, refetch } = useQuery({
+    queryKey: ['predictions', 'matrix', dateFilter, meetFilter, hasAccess],
+    queryFn: () => PredictionMatrixApi.getMatrix(apiDate, meetFilter || undefined, hasAccess),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
+  const {
+    data: commentaryData,
+    isLoading: commentaryLoading,
+    error: commentaryError,
+    refetch: commentaryRefetch,
+  } = useQuery({
+    queryKey: ['predictions', 'commentary', dateFilter, meetFilter],
+    queryFn: () => PredictionMatrixApi.getCommentary(apiDate, 20, 0, meetFilter || undefined),
+    enabled: isLoggedIn && activeTab === 'commentary',
+    placeholderData: keepPreviousData,
+  });
 
   const [showHint, setShowHint] = useState(() => {
     if (typeof window === 'undefined') return false;

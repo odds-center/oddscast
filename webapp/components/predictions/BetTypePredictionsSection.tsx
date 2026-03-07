@@ -4,15 +4,13 @@
  * full: complete table of 7 bet types
  */
 import { ArrowRight, Circle } from 'lucide-react';
-import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC, PICK_TYPE_DESCRIPTIONS } from '@/lib/api/picksApi';
-import { Tooltip } from '@/components/ui';
+import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC } from '@/lib/api/picksApi';
 import type { BetTypePredictions, PredictionHorseScore } from '@/lib/types/predictions';
 
 const BET_TYPE_ORDER: (keyof BetTypePredictions)[] = [
   'SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE',
 ];
 
-const TOP_3_BET_TYPES: (keyof BetTypePredictions)[] = ['SINGLE', 'QUINELLA', 'TRIPLE'];
 
 interface Entry {
   hrNo: string;
@@ -25,6 +23,10 @@ interface BetTypePredictionsSectionProps {
   horseScores?: PredictionHorseScore[];
   entries: Entry[];
   showOnlySingle?: boolean;
+  /** Show gate number alongside horse name: "3번 천리마" */
+  showNumber?: boolean;
+  /** AI analysis text to display below the bet type grid */
+  analysis?: string;
 }
 
 function toHorseNoOnly(hrNoOrChulNo: string, entries: Entry[]): string {
@@ -47,11 +49,12 @@ function toHorseName(hrNoOrChulNo: string, entries: Entry[]): string {
   return e?.hrName ?? '';
 }
 
-function deriveFromHorseScores(
+export function deriveFromHorseScores(
   horseScores: PredictionHorseScore[],
   entries: Entry[],
 ): BetTypePredictions {
-  const id = (h: PredictionHorseScore) => (h?.hrNo ?? h?.chulNo ?? '').toString().trim();
+  // Prefer chulNo as the display identifier — it's the race entry number shown to bettors
+  const id = (h: PredictionHorseScore) => (h?.chulNo ?? h?.hrNo ?? '').toString().trim();
   const sorted = [...horseScores]
     .filter((h) => id(h))
     .sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
@@ -59,7 +62,7 @@ function deriveFromHorseScores(
   if (ids.length < 4) {
     ids = [
       ...ids,
-      ...entries.slice(ids.length, 6).map((e) => e.hrNo ?? e.chulNo ?? '').filter(Boolean),
+      ...entries.slice(ids.length, 6).map((e) => e.chulNo ?? e.hrNo ?? '').filter(Boolean),
     ];
   }
   const [a, b, c, d] = ids;
@@ -89,7 +92,7 @@ function deriveFromHorseScores(
   };
 }
 
-type DisplayNodes = { numbers: string[]; ordered: boolean };
+export type DisplayNodes = { numbers: string[]; ordered: boolean };
 
 function comboToDisplayNodes(
   combo: { hrNo?: string; hrNos?: string[]; first?: string; second?: string; third?: string },
@@ -113,7 +116,7 @@ function comboToDisplayNodes(
   return null;
 }
 
-function predToDisplayNodesList(
+export function predToDisplayNodesList(
   pred: BetTypePredictions[keyof BetTypePredictions],
   entries: Entry[],
 ): DisplayNodes[] {
@@ -149,9 +152,13 @@ function getFirstHrNo(pred: BetTypePredictions[keyof BetTypePredictions]): strin
 }
 
 const BET_COLORS: Record<string, { bg: string; border: string; badge: string }> = {
-  SINGLE: { bg: 'bg-[rgba(22,163,74,0.04)]', border: 'border-[rgba(22,163,74,0.15)]', badge: 'bg-[#16a34a] text-white' },
-  QUINELLA: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-700 text-white' },
-  TRIPLE: { bg: 'bg-stone-50', border: 'border-stone-200', badge: 'bg-stone-500 text-white' },
+  SINGLE:        { bg: 'bg-[rgba(22,163,74,0.04)]',  border: 'border-[rgba(22,163,74,0.2)]',  badge: 'bg-[#16a34a] text-white' },
+  PLACE:         { bg: 'bg-[rgba(22,163,74,0.02)]',  border: 'border-[rgba(22,163,74,0.12)]', badge: 'bg-[#15803d] text-white' },
+  QUINELLA:      { bg: 'bg-blue-50/60',               border: 'border-blue-200',                badge: 'bg-blue-600 text-white' },
+  EXACTA:        { bg: 'bg-blue-50/30',               border: 'border-blue-200/70',             badge: 'bg-blue-500 text-white' },
+  QUINELLA_PLACE:{ bg: 'bg-violet-50/50',             border: 'border-violet-200',              badge: 'bg-violet-600 text-white' },
+  TRIFECTA:      { bg: 'bg-amber-50/50',              border: 'border-amber-200',               badge: 'bg-amber-600 text-white' },
+  TRIPLE:        { bg: 'bg-rose-50/50',               border: 'border-rose-200',                badge: 'bg-rose-600 text-white' },
 };
 
 function NumberBadge({ num, ordered, isLast }: { num: string; ordered: boolean; isLast: boolean }) {
@@ -172,6 +179,8 @@ export default function BetTypePredictionsSection({
   horseScores,
   entries,
   showOnlySingle = false,
+  showNumber = false,
+  analysis,
 }: BetTypePredictionsSectionProps) {
   const derived = horseScores?.length || entries.length
     ? deriveFromHorseScores(horseScores ?? [], entries)
@@ -185,6 +194,22 @@ export default function BetTypePredictionsSection({
     TRIFECTA: betTypePredictions?.TRIFECTA ?? derived.TRIFECTA,
     TRIPLE: betTypePredictions?.TRIPLE ?? derived.TRIPLE,
   };
+
+  /** Format a horse into "출전번호번 이름" or just "이름". Always uses chulNo, never hrNo. */
+  function formatHorse(num: string): string {
+    const e = entries.find(
+      (x) => String(x.hrNo || '').trim() === num.trim() || String(x.chulNo || '').trim() === num.trim(),
+    );
+    const chulNo = e?.chulNo ?? '';
+    const name = e?.hrName ?? '';
+    if (showNumber) {
+      if (name && chulNo) return `${name} (${chulNo}번)`;
+      if (name) return name;
+      if (chulNo) return `${chulNo}번`;
+      return num;
+    }
+    return name || num;
+  }
 
   if (showOnlySingle) {
     const pred = merged.SINGLE;
@@ -203,8 +228,8 @@ export default function BetTypePredictionsSection({
     );
   }
 
-  // Core 3 recommended bet cards
-  const top3Items = TOP_3_BET_TYPES.map((key) => {
+  // All 7 bet type cards
+  const allItems = BET_TYPE_ORDER.map((key) => {
     const pred = merged[key];
     const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
     const reason = getReason(pred);
@@ -217,25 +242,25 @@ export default function BetTypePredictionsSection({
       <p className='text-text-secondary text-sm font-semibold'>AI 도출 승식</p>
       <p className='text-text-tertiary text-xs'>승식별로 AI가 도출한 추천 출전번호·말과 도출 근거입니다.</p>
 
-      {/* Core 3 cards */}
-      <div className='grid grid-cols-1 sm:grid-cols-3 gap-2.5'>
-        {top3Items.map((item) => (
+      {/* All 7 bet type cards */}
+      <div className='grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2'>
+        {allItems.map((item) => (
           <div
             key={item.key}
             className={`rounded border ${item.colors.border} ${item.colors.bg} p-3 flex flex-col gap-2`}
           >
-            <div className='flex items-center gap-2'>
+            <div className='flex items-center gap-1.5 flex-wrap'>
               <span className={`text-xs font-semibold px-2 py-0.5 rounded ${item.colors.badge}`}>
                 {item.label}
               </span>
-              <span className='text-text-secondary text-sm'>{item.desc}</span>
+              <span className='text-text-secondary text-xs'>{item.desc}</span>
             </div>
             {item.nodesList.length > 0 ? (
-              <div className='flex flex-col gap-1.5'>
+              <div className='flex flex-col gap-1'>
                 {item.nodesList.map((nodes, ci) => (
-                  <div key={ci} className='flex items-center gap-1'>
+                  <div key={ci} className='flex items-center gap-1 flex-wrap'>
                     {nodes.numbers.map((num, i) => (
-                      <NumberBadge key={i} num={toHorseName(num, entries) || num} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
+                      <NumberBadge key={i} num={formatHorse(num)} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
                     ))}
                   </div>
                 ))}
@@ -244,72 +269,19 @@ export default function BetTypePredictionsSection({
               <span className='text-text-tertiary text-sm'>—</span>
             )}
             {item.reason && (
-              <p className='text-text-secondary text-sm leading-snug mt-0.5 line-clamp-2'>{item.reason}</p>
+              <p className='text-text-tertiary text-xs leading-snug mt-0.5 line-clamp-2'>{item.reason}</p>
             )}
           </div>
         ))}
       </div>
 
-      {/* All 7 bet types: 승식 | 추천 조합 | 도출 근거 (how the prediction was derived) */}
-      <div className='overflow-x-auto rounded-lg border border-border'>
-        <table className='data-table data-table-compact w-full min-w-[320px]'>
-          <thead>
-            <tr>
-              <th className='w-24 text-left py-2 text-sm'>승식</th>
-              <th className='text-left py-2 text-sm'>추천 조합</th>
-              <th className='text-left py-2 text-sm min-w-[140px]'>도출 근거</th>
-            </tr>
-          </thead>
-          <tbody>
-            {BET_TYPE_ORDER.map((key) => {
-              const pred = merged[key];
-              const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
-              const reason = pred ? getReason(pred) : '';
-              const label = PICK_TYPE_POOL_NAMES[key] ?? key;
-              const comboDesc = PICK_TYPE_COMBO_DESC[key] ?? '';
-              return (
-                <tr key={key} className='border-t border-border'>
-                  <td className='py-2.5 font-medium text-foreground text-sm'>
-                    <Tooltip content={PICK_TYPE_DESCRIPTIONS[key] ?? comboDesc} inline position='right'>
-                      {label}
-                    </Tooltip>
-                  </td>
-                  <td className='py-2.5'>
-                    {nodesList.length > 0 ? (
-                      <div className='flex flex-wrap items-center gap-x-2 gap-y-1'>
-                        {nodesList.map((nodes, ci) => (
-                          <span key={ci} className='inline-flex items-center gap-0.5'>
-                            {nodes.numbers.map((num, i) => (
-                              <span key={i} className='flex items-center gap-0.5'>
-                                <span className='font-medium text-foreground text-sm'>
-                                  {toHorseName(num, entries) || num}
-                                </span>
-                                {i < nodes.numbers.length - 1 && (
-                                  nodes.ordered
-                                    ? <ArrowRight size={14} className='text-text-tertiary shrink-0' strokeWidth={2.5} />
-                                    : <Circle size={5} className='text-text-tertiary fill-text-tertiary shrink-0' />
-                                )}
-                              </span>
-                            ))}
-                            {ci < nodesList.length - 1 && (
-                              <span className='text-text-tertiary text-sm ml-1'>|</span>
-                            )}
-                          </span>
-                        ))}
-                      </div>
-                    ) : (
-                      <span className='text-text-secondary text-sm'>—</span>
-                    )}
-                  </td>
-                  <td className='py-2.5 text-text-secondary text-sm'>
-                    {reason ? <span className='line-clamp-2'>{reason}</span> : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
+      {/* AI analysis comment */}
+      {analysis && (
+        <div className='rounded border border-stone-200 bg-stone-50 p-3'>
+          <p className='text-xs font-semibold text-stone-500 mb-1'>AI 분석 코멘트</p>
+          <p className='text-sm text-foreground leading-relaxed whitespace-pre-wrap'>{analysis}</p>
+        </div>
+      )}
     </div>
   );
 }

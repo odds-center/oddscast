@@ -39,7 +39,13 @@
       "Bash(python3:*)",
       "Bash(./node_modules/.bin/tsc:*)",
       "Bash(./node_modules/.bin/nest build:*)",
-      "Bash(./node_modules/.bin/jest:*)"
+      "Bash(./node_modules/.bin/jest:*)",
+      "Bash(GIT_CONFIG_NOSYSTEM=1 HOME=/tmp git:*)",
+      "Bash(gpg:*)",
+      "Bash(git config:*)",
+      "Bash(git:*)",
+      "Bash(psql:*)",
+      "Bash(npx:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

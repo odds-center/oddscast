@@ -9,7 +9,7 @@ import Table from '@/components/common/Table';
 import Pagination from '@/components/common/Pagination';
 import Card from '@/components/common/Card';
 import Button from '@/components/common/Button';
-import { AdminAIApi, adminAIConfigApi } from '@/lib/api/admin';
+import { AdminAIApi, adminAIConfigApi, AdminWeeklyPreviewApi } from '@/lib/api/admin';
 import { formatDateTime, formatYyyyMmDd } from '@/lib/utils';
 
 type PredictionRow = {
@@ -43,6 +43,23 @@ export default function PredictionsListPage() {
     lastRace?: string;
     retryAfter?: number;
   } | null>(null);
+  const [weeklyPreviewDate, setWeeklyPreviewDate] = useState('');
+
+  const { data: weeklyPreview, refetch: refetchWeeklyPreview } = useQuery({
+    queryKey: ['admin', 'weekly-preview', 'latest'],
+    queryFn: () => AdminWeeklyPreviewApi.getLatest(),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const generateWeeklyPreviewMutation = useMutation({
+    mutationFn: () => AdminWeeklyPreviewApi.generate(weeklyPreviewDate || undefined),
+    onSuccess: (result) => {
+      toast.success(`주간 프리뷰 생성 완료: ${result.weekLabel}`);
+      queryClient.invalidateQueries({ queryKey: ['admin', 'weekly-preview'] });
+      void refetchWeeklyPreview();
+    },
+    onError: () => toast.error('주간 프리뷰 생성 실패'),
+  });
 
   const { data, isLoading, error: listError, refetch: refetchList } = useQuery({
     queryKey: ['admin', 'predictions', 'list', page, statusFilter],
@@ -272,6 +289,49 @@ export default function PredictionsListPage() {
                 </div>
               </div>
             )}
+          </Card>
+
+          {/* Weekly Preview Generation */}
+          <Card>
+            <h3 className='text-base font-semibold text-gray-800 mb-1'>주간 프리뷰 생성</h3>
+            <p className='text-sm text-gray-500 mb-4'>
+              매주 목요일 20:00 KST에 자동 생성됩니다. 수동으로 즉시 생성할 수도 있습니다.
+            </p>
+
+            {/* Current preview status */}
+            {weeklyPreview?.weekLabel && (
+              <div className='mb-4 rounded-lg border border-gray-200 bg-gray-50 px-4 py-3'>
+                <p className='text-xs text-gray-500 mb-1'>마지막 생성: <span className='font-medium text-gray-700'>{weeklyPreview.weekLabel}</span></p>
+                {!!weeklyPreview.content?.highlights && (
+                  <p className='text-sm text-gray-700 line-clamp-2'>{String(weeklyPreview.content.highlights)}</p>
+                )}
+                {Array.isArray(weeklyPreview.content?.horsesToWatch) && (weeklyPreview.content.horsesToWatch as unknown[]).length > 0 && (
+                  <p className='text-xs text-gray-500 mt-1'>주목마: {(weeklyPreview.content.horsesToWatch as string[]).join(', ')}</p>
+                )}
+              </div>
+            )}
+
+            <div className='flex flex-wrap items-center gap-3'>
+              <div className='flex items-center gap-2'>
+                <label className='text-sm font-medium text-gray-700 whitespace-nowrap'>기준 날짜</label>
+                <input
+                  type='date'
+                  value={weeklyPreviewDate}
+                  onChange={(e) => setWeeklyPreviewDate(e.target.value)}
+                  className='px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
+                />
+                <span className='text-xs text-gray-400'>비워두면 오늘 기준</span>
+              </div>
+              <Button
+                type='button'
+                variant='primary'
+                size='sm'
+                onClick={() => generateWeeklyPreviewMutation.mutate()}
+                disabled={generateWeeklyPreviewMutation.isPending}
+              >
+                {generateWeeklyPreviewMutation.isPending ? '생성 중...' : '주간 프리뷰 생성'}
+              </Button>
+            </div>
           </Card>
 
           <Card>

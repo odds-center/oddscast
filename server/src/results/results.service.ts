@@ -69,7 +69,7 @@ export class ResultsService {
       .createQueryBuilder('rr')
       .innerJoinAndSelect('rr.race', 'r')
       .orderBy('r.rcDate', 'DESC')
-      .addOrderBy('rr.ordInt', 'ASC')
+      .addOrderBy('rr.ordInt', 'ASC', 'NULLS LAST')
       .addOrderBy('rr.ord', 'ASC')
       .skip((page - 1) * limit)
       .take(limit);
@@ -162,7 +162,7 @@ export class ResultsService {
         .createQueryBuilder('rr')
         .where('rr.raceId IN (:...raceIds)', { raceIds })
         .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
-        .orderBy('rr.ordInt', 'ASC')
+        .orderBy('rr.ordInt', 'ASC', 'NULLS LAST')
         .addOrderBy('rr.ord', 'ASC')
         .getMany();
     }
@@ -320,7 +320,7 @@ export class ResultsService {
       .select(['rr.hrNo', 'rr.hrName', 'rr.ordType', 'rr.ordInt', 'rr.ord'])
       .where('rr.raceId = :raceId', { raceId })
       .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
-      .orderBy('rr.ordInt', 'ASC')
+      .orderBy('rr.ordInt', 'ASC', 'NULLS LAST')
       .addOrderBy('rr.ord', 'ASC')
       .getMany();
     if (!results.length) return;
@@ -351,7 +351,7 @@ export class ResultsService {
       .createQueryBuilder('rr')
       .where('rr.raceId = :raceId', { raceId })
       .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
-      .orderBy('rr.ordInt', 'ASC')
+      .orderBy('rr.ordInt', 'ASC', 'NULLS LAST')
       .addOrderBy('rr.ord', 'ASC')
       .getMany();
   }
@@ -455,7 +455,7 @@ export class ResultsService {
       .select(['rr.id', 'rr.hrNo', 'rr.hrName'])
       .where('rr.raceId = :raceId', { raceId })
       .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
-      .orderBy('rr.ordInt', 'ASC')
+      .orderBy('rr.ordInt', 'ASC', 'NULLS LAST')
       .addOrderBy('rr.ord', 'ASC')
       .getMany();
     const errors: string[] = [];

@@ -972,7 +972,8 @@ export class KraService {
         owName: ent.owName ?? null,
         wgBudam: ent.wgBudam ?? null,
         rating: ent.rating ?? null,
-        chulNo: ent.chulNo ?? null,
+        // Preserve existing chulNo — only update if new value is non-null (avoid overwriting with null)
+        ...(ent.chulNo != null ? { chulNo: ent.chulNo } : {}),
         dusu: ent.dusu ?? null,
         sex: ent.sex ?? null,
         age: ent.age ?? null,
@@ -1855,7 +1856,8 @@ export class KraService {
                 null,
               owName: sv(item.owName ?? item.ow_name) ?? null,
               wgBudam,
-              chulNo: sv(item.chulNo ?? item.chul_no) ?? null,
+              // Preserve existing chulNo — result API includes chulNo, but only update if non-null
+              ...(sv(item.chulNo ?? item.chul_no) != null ? { chulNo: sv(item.chulNo ?? item.chul_no) } : {}),
               age: ageVal,
               sex: sv(item.sex) ?? null,
               prd: sv(item.prd) ?? null,

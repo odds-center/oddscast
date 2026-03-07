@@ -1,11 +1,9 @@
 /* Mobile bottom navigation */
 .nav-mobile-bar {
-  background: rgba(255, 255, 255, 0.97);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: #ffffff;
   border: 1px solid #e7e5e4;
   border-radius: 8px;
-  box-shadow: 0 -1px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.10);
   display: flex;
   justify-content: space-around;
   padding: 0.25rem;

@@ -161,10 +161,17 @@ const BET_COLORS: Record<string, { bg: string; border: string; badge: string }> 
   TRIPLE:        { bg: 'bg-rose-50/50',               border: 'border-rose-200',                badge: 'bg-rose-600 text-white' },
 };
 
-function NumberBadge({ num, ordered, isLast }: { num: string; ordered: boolean; isLast: boolean }) {
+function NumberBadge({ num, chulNo, ordered, isLast }: { num: string; chulNo?: string; ordered: boolean; isLast: boolean }) {
   return (
     <span className='inline-flex items-center gap-1'>
-      <span className='font-medium text-foreground text-sm'>{num}</span>
+      <span className='inline-flex items-center gap-1'>
+        {chulNo != null && (
+          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0'>
+            {chulNo}
+          </span>
+        )}
+        <span className='font-medium text-foreground text-sm'>{num}</span>
+      </span>
       {!isLast && (
         ordered
           ? <ArrowRight size={12} className='text-stone-400 shrink-0' strokeWidth={2.5} />
@@ -216,12 +223,20 @@ export default function BetTypePredictionsSection({
     const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
     const hrNo = getFirstHrNo(pred);
     const name = hrNo ? toHorseName(hrNo, entries) : '';
+    const singleEntry = hrNo ? entries.find((x) => String(x.hrNo || '').trim() === hrNo.trim() || String(x.chulNo || '').trim() === hrNo.trim()) : undefined;
     return (
       <div className='py-2'>
         <div className='flex items-center gap-3 p-3 rounded border border-[rgba(22,163,74,0.15)] bg-[rgba(22,163,74,0.04)]'>
           <span className='text-sm font-semibold px-2 py-0.5 rounded bg-[#16a34a] text-white'>단승</span>
           {(name || nodesList[0]) && (
-            <span className='font-bold text-foreground text-base'>{name || nodesList[0]?.numbers[0]}</span>
+            <span className='inline-flex items-center gap-1.5 font-bold text-foreground text-base'>
+              {singleEntry?.chulNo != null && (
+                <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-xs font-bold shrink-0'>
+                  {singleEntry.chulNo}
+                </span>
+              )}
+              {name || nodesList[0]?.numbers[0]}
+            </span>
           )}
         </div>
       </div>
@@ -259,9 +274,12 @@ export default function BetTypePredictionsSection({
               <div className='flex flex-col gap-1'>
                 {item.nodesList.map((nodes, ci) => (
                   <div key={ci} className='flex items-center gap-1 flex-wrap'>
-                    {nodes.numbers.map((num, i) => (
-                      <NumberBadge key={i} num={formatHorse(num)} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
-                    ))}
+                    {nodes.numbers.map((num, i) => {
+                      const e = entries.find((x) => String(x.hrNo || '').trim() === num.trim() || String(x.chulNo || '').trim() === num.trim());
+                      return (
+                        <NumberBadge key={i} num={e?.hrName || num} chulNo={e?.chulNo} ordered={nodes.ordered} isLast={i === nodes.numbers.length - 1} />
+                      );
+                    })}
                   </div>
                 ))}
               </div>

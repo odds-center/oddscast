@@ -100,15 +100,17 @@ export class PredictionTicketsService {
       this.ticketRepo
         .createQueryBuilder('t')
         .where('t.userId = :userId', { userId })
+        .andWhere('t.type = :type', { type: TicketType.RACE })
         .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
         .andWhere('t.expiresAt >= :now', { now })
         .getCount(),
       this.ticketRepo.count({
-        where: { userId, status: TicketStatus.USED },
+        where: { userId, type: TicketType.RACE, status: TicketStatus.USED },
       }),
       this.ticketRepo
         .createQueryBuilder('t')
         .where('t.userId = :userId', { userId })
+        .andWhere('t.type = :type', { type: TicketType.RACE })
         .andWhere(
           '(t.status = :expired OR (t.status = :avail AND t.expiresAt < :now))',
           {

@@ -523,6 +523,7 @@ export default function RaceDetailPage() {
                   <thead>
                     <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
                       <th className='cell-center w-10 py-3 font-semibold'>순위</th>
+                      <th className='cell-center w-10 py-3 font-semibold'>번호</th>
                       <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
                       <th className='cell-center py-3 w-12 font-semibold'>성별</th>
                       <th className='cell-center py-3 w-12 font-semibold'>연령</th>
@@ -607,8 +608,22 @@ export default function RaceDetailPage() {
                           key={typeof res.id !== 'undefined' ? String(res.id) : `result-${i}`}
                           className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
                         >
-                          <td className={`cell-center py-2.5 ${rankCls}`}>
-                            {displayOrdType ? '-' : ordStr}
+                          <td className='cell-center py-2.5'>
+                            <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                              !displayOrdType && ordN === 1 ? 'bg-amber-400 text-white' :
+                              !displayOrdType && ordN === 2 ? 'bg-stone-400 text-white' :
+                              !displayOrdType && ordN === 3 ? 'bg-amber-700 text-white' :
+                              'bg-stone-100 text-text-tertiary'
+                            }`}>
+                              {displayOrdType ? '—' : ordStr}
+                            </span>
+                          </td>
+                          <td className='cell-center py-2.5'>
+                            {res.chulNo != null && res.chulNo !== '' ? (
+                              <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-xs font-bold'>
+                                {res.chulNo}
+                              </span>
+                            ) : <span className='text-text-tertiary text-xs'>-</span>}
                           </td>
                           <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
                             {res.hrNo ? (
@@ -794,6 +809,7 @@ export default function RaceDetailPage() {
                     rank: i + 1,
                     hrNo: String(p.hrNo ?? p.chulNo ?? '').trim(),
                     hrName: (p.hrName ?? p.horseName ?? '').trim() || '-',
+                    chulNo: p.chulNo,
                   }));
                   const normalResults = effectiveResults.filter((res) => {
                     const ord = parseInt(String(res.ord ?? ''), 10);
@@ -803,12 +819,16 @@ export default function RaceDetailPage() {
                   const actualTop = normalResults
                     .sort((a, b) => parseInt(String(a.ord), 10) - parseInt(String(b.ord), 10))
                     .slice(0, 3)
-                    .map((res) => ({
-                      ord: parseInt(String(res.ord), 10),
-                      hrNo: String(res.hrNo ?? '').trim(),
-                      hrName: (res.hrName ?? '').trim() || '-',
-                      ordType: res.ordType,
-                    }));
+                    .map((res) => {
+                      const entry = raceData?.entries?.find((e) => String(e.hrNo) === String(res.hrNo));
+                      return {
+                        ord: parseInt(String(res.ord), 10),
+                        hrNo: String(res.hrNo ?? '').trim(),
+                        hrName: (res.hrName ?? '').trim() || '-',
+                        chulNo: entry?.chulNo,
+                        ordType: res.ordType,
+                      };
+                    });
                   return (
                     <div className='mt-4'>
                       <PredictionResultComparison
@@ -1287,7 +1307,7 @@ function PredictionLockedView({
         <p className='text-text-secondary text-xs mb-3'>승률 점수 · 추천식 · 상세 분석</p>
         {isLoggedIn && availableTickets > 0 && (
           <>
-            <p className='text-text-secondary text-sm mb-3'>잔여 예측권 {availableTickets}장</p>
+            <p className='text-text-secondary text-sm mb-3'>개별 예측권 {availableTickets}장 보유</p>
             <button
               onClick={() => {
                 trackCTA('PREDICTION_TICKET_USE', raceId);

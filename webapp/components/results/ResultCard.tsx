@@ -64,6 +64,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
               <thead>
                 <tr>
                   <th className='cell-center w-10'>순위</th>
+                  <th className='cell-center w-8'>번호</th>
                   <th className='min-w-[60px]'>마명</th>
                   <th>기수</th>
                 </tr>
@@ -74,6 +75,12 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
                   return (
                     <tr key={`${p.ord}-${p.hrNo}`} className={`border-b border-border last:border-0 ${style.bg} ${style.text}`}>
                       <td className='cell-center font-bold'>{p.ord}</td>
+                      <td className='cell-center'>
+                        {p.chulNo != null
+                          ? <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>{p.chulNo}</span>
+                          : <span className='text-text-tertiary'>-</span>
+                        }
+                      </td>
                       <td className='font-medium'>{p.hrName}</td>
                       <td className='text-text-tertiary'>{p.jkName}</td>
                     </tr>

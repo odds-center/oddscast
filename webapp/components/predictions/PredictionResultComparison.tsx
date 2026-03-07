@@ -10,12 +10,14 @@ export interface PredictedRow {
   rank: number;
   hrNo: string;
   hrName: string;
+  chulNo?: string;
 }
 
 export interface ActualRow {
   ord: number;
   hrNo: string;
   hrName: string;
+  chulNo?: string;
   ordType?: string | null;
 }
 
@@ -57,16 +59,26 @@ export default function PredictionResultComparison({
     if (predicted || actual) rows.push({ rank: r, predicted, actual });
   }
 
-  const renderName = (hrName: string, hrNo: string) => {
+  const renderName = (hrName: string, hrNo: string, chulNo?: string) => {
     const name = hrName || hrNo || '-';
+    const inner = (
+      <span className="inline-flex items-center gap-1.5">
+        {chulNo != null && (
+          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
+            {chulNo}
+          </span>
+        )}
+        <span>{name}</span>
+      </span>
+    );
     if (horseLink && hrNo) {
       return (
         <Link href={horseLink(hrNo)} className="hover:text-primary hover:underline">
-          {name}
+          {inner}
         </Link>
       );
     }
-    return <span>{name}</span>;
+    return inner;
   };
 
   return (
@@ -98,12 +110,12 @@ export default function PredictionResultComparison({
                   <td className="py-2 px-3 font-medium text-foreground">{rank}위</td>
                   <td className="py-2 px-3 text-foreground">
                     {predicted
-                      ? renderName(predicted.hrName, predicted.hrNo)
+                      ? renderName(predicted.hrName, predicted.hrNo, predicted.chulNo)
                       : '-'}
                   </td>
                   <td className="py-2 px-3 text-foreground">
                     {actual
-                      ? renderName(actual.hrName ?? '', actual.hrNo ?? '')
+                      ? renderName(actual.hrName ?? '', actual.hrNo ?? '', actual.chulNo)
                       : '-'}
                   </td>
                   <td className="cell-center py-2 px-3">

@@ -106,6 +106,11 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
               <div className='p-4'>
                 <div className='min-w-0'>
                   <div className='flex items-center gap-2 flex-wrap'>
+                    {e.chulNo != null && (
+                      <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-xs font-bold shrink-0'>
+                        {e.chulNo}
+                      </span>
+                    )}
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}
                       onClick={(ev) => ev.stopPropagation()}
@@ -156,6 +161,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
         <table className='data-table data-table-compact w-full'>
           <thead>
             <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
+              <th className='cell-center py-3 w-10 font-semibold'>번호</th>
               <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
               <th className='text-left py-3 font-semibold'>기수/조교사</th>
               <th className='text-left py-3 w-20 font-semibold'>마주</th>
@@ -196,6 +202,13 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     ${isSelected?.(e.hrNo) ? 'bg-primary-50/50' : ''}
                   `}
                 >
+                  <td className='cell-center py-2.5'>
+                    {e.chulNo != null ? (
+                      <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-xs font-bold'>
+                        {e.chulNo}
+                      </span>
+                    ) : '-'}
+                  </td>
                   <td className='py-2.5'>
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}

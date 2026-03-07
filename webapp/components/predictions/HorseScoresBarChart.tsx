@@ -35,8 +35,13 @@ export default function HorseScoresBarChart({
 
         return (
           <div key={i} className='flex items-center gap-2 text-sm'>
-            <span className='w-16 shrink-0 text-right text-text-tertiary font-medium truncate' title={label}>
-              {label}
+            <span className='w-20 shrink-0 text-right text-text-tertiary font-medium truncate flex items-center justify-end gap-1' title={label}>
+              {h.chulNo != null && (
+                <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0'>
+                  {h.chulNo}
+                </span>
+              )}
+              <span className='truncate'>{label}</span>
             </span>
             <div className='min-w-0 flex-1'>
               <div className='h-5 overflow-hidden rounded bg-stone-100'>

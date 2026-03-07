@@ -54,16 +54,46 @@ function FloatingAppBar({ pathname, asPath, isMobile }: { pathname: string; asPa
   );
   const [isDragging, setIsDragging] = useState(false);
   const [safeAreaBottom, setSafeAreaBottom] = useState(0);
+  const [isAppBarHidden, setIsAppBarHidden] = useState(false);
   const safeAreaBottomRef = useRef(0);
   const barRef = useRef<HTMLDivElement>(null);
   const dragStart = useRef({ clientX: 0, clientY: 0, left: 0, bottom: 0 });
   const dragCurrent = useRef<NavPosition>({ left: DEFAULT_LEFT, bottom: DEFAULT_BOTTOM });
+  const lastScrollY = useRef(0);
+  const scrollTicking = useRef(false);
 
   useEffect(() => {
     const value = getSafeAreaBottomPx();
     safeAreaBottomRef.current = value;
     queueMicrotask(() => setSafeAreaBottom(value));
   }, []);
+
+  // Scroll-based hide/show for mobile appbar
+  useEffect(() => {
+    if (!isMobile) return;
+    const scrollEl = document.getElementById('main-content');
+    if (!scrollEl) return;
+    lastScrollY.current = scrollEl.scrollTop;
+
+    const handleScroll = () => {
+      if (scrollTicking.current) return;
+      scrollTicking.current = true;
+      requestAnimationFrame(() => {
+        const currentY = scrollEl.scrollTop;
+        const diff = currentY - lastScrollY.current;
+        if (diff > 6 && currentY > 60) {
+          setIsAppBarHidden(true);
+        } else if (diff < -6) {
+          setIsAppBarHidden(false);
+        }
+        lastScrollY.current = currentY;
+        scrollTicking.current = false;
+      });
+    };
+
+    scrollEl.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollEl.removeEventListener('scroll', handleScroll);
+  }, [isMobile]);
 
   const savePosition = useCallback((pos: NavPosition) => {
     try {
@@ -198,38 +228,42 @@ function FloatingAppBar({ pathname, asPath, isMobile }: { pathname: string; asPa
   /* ── Mobile: fixed at screen bottom, no drag/toggle ── */
   if (isMobile) {
     return (
-      <nav
-        aria-label='메뉴'
-        className='fixed bottom-0 left-0 right-0 z-10 nav-mobile-bar nav-mobile-bar-fixed rounded-none border-x-0 border-b-0'
-        style={{ paddingBottom: `max(0.25rem, env(safe-area-inset-bottom))` }}
+      <div
+        className={`fixed bottom-0 left-0 right-0 z-10 px-4 transition-transform duration-300 ease-in-out ${isAppBarHidden ? 'translate-y-full' : 'translate-y-0'}`}
+        style={{ paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
       >
-        <div className='flex flex-row justify-between w-full px-4'>
-          {navLinks.map(({ href, icon, label, isActive }) => {
-            const isProfile = href === routes.profile.index;
-            const active = isActive
-              ? isActive(pathname, asPath)
-              : isProfile
-                ? pathname === href ||
-                  pathname.startsWith('/profile') ||
-                  pathname.startsWith('/mypage')
-                : pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`nav-mobile-item ${active ? 'nav-mobile-item-active' : ''}`}
-              >
-                <span className='nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0'>
-                  <Icon name={icon} size={22} strokeWidth={active ? 2.5 : 2} />
-                </span>
-                <span className='nav-mobile-label font-medium w-full text-center text-xs truncate'>
-                  {label}
-                </span>
-              </Link>
-            );
-          })}
-        </div>
-      </nav>
+        <nav
+          aria-label='메뉴'
+          className='nav-mobile-bar nav-mobile-bar-fixed rounded-2xl w-full'
+        >
+          <div className='flex flex-row justify-between w-full px-2'>
+            {navLinks.map(({ href, icon, label, isActive }) => {
+              const isProfile = href === routes.profile.index;
+              const active = isActive
+                ? isActive(pathname, asPath)
+                : isProfile
+                  ? pathname === href ||
+                    pathname.startsWith('/profile') ||
+                    pathname.startsWith('/mypage')
+                  : pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  className={`nav-mobile-item ${active ? 'nav-mobile-item-active' : ''}`}
+                >
+                  <span className='nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0'>
+                    <Icon name={icon} size={22} strokeWidth={active ? 2.5 : 2} />
+                  </span>
+                  <span className='nav-mobile-label font-medium w-full text-center text-xs truncate'>
+                    {label}
+                  </span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </div>
     );
   }
 

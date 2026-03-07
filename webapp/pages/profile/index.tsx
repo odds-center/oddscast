@@ -51,6 +51,13 @@ export default function Profile() {
     placeholderData: keepPreviousData,
   });
 
+  const { data: matrixBalance } = useQuery({
+    queryKey: ['prediction-tickets', 'matrix-balance'],
+    queryFn: () => PredictionTicketApi.getMatrixBalance(),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
   const { data: subscription, isLoading: subscriptionLoading } = useQuery({
     queryKey: ['subscription', 'status'],
     queryFn: () => SubscriptionApi.getStatus(),
@@ -92,7 +99,8 @@ export default function Profile() {
 
   const points = balance?.currentPoints ?? 0;
   const isLoading = balanceLoading || ticketBalanceLoading || subscriptionLoading;
-  const ticketsCount = ticketBalance?.availableTickets ?? 0;
+  const raceTicketsCount = ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
+  const matrixTicketsCount = matrixBalance?.available ?? 0;
 
   return (
     <Layout title='내 정보 | OddsCast'>
@@ -139,17 +147,21 @@ export default function Profile() {
               )}
 
               {/* Stats row */}
-              <div className='grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-stone-100'>
+              <div className='grid grid-cols-4 gap-1 mt-3 pt-3 border-t border-stone-100'>
                 <div className='text-center py-1'>
-                  <p className='text-xs text-stone-400'>예측권</p>
-                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{ticketsCount}<span className='text-sm font-medium'>장</span></p>
+                  <p className='text-[11px] text-stone-400 leading-tight'>개별권</p>
+                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{raceTicketsCount}<span className='text-xs font-medium'>장</span></p>
                 </div>
                 <div className='text-center py-1 border-x border-stone-100'>
-                  <p className='text-xs text-stone-400'>포인트</p>
-                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{points.toLocaleString()}<span className='text-sm font-medium'>pt</span></p>
+                  <p className='text-[11px] text-stone-400 leading-tight'>종합권</p>
+                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{matrixTicketsCount}<span className='text-xs font-medium'>장</span></p>
+                </div>
+                <div className='text-center py-1 border-r border-stone-100'>
+                  <p className='text-[11px] text-stone-400 leading-tight'>포인트</p>
+                  <p className='text-base font-bold text-stone-800 leading-tight mt-0.5'>{points.toLocaleString()}<span className='text-xs font-medium'>pt</span></p>
                 </div>
                 <div className='text-center py-1'>
-                  <p className='text-xs text-stone-400'>구독</p>
+                  <p className='text-[11px] text-stone-400 leading-tight'>구독</p>
                   <p className='text-base font-semibold leading-tight mt-1'>
                     {subscription?.isActive ? (
                       <span className='text-primary'>{subscription.planId}</span>

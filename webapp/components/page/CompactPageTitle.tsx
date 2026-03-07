@@ -19,7 +19,7 @@ export default function CompactPageTitle({
 }: CompactPageTitleProps) {
   return (
     <div
-      className={`flex flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-5 max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-background/98 max-md:backdrop-blur-sm max-md:border-b max-md:border-border/60 max-md:-mt-[max(1.25rem,env(safe-area-inset-top))] max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:pb-3 max-md:mb-4 ${className}`.trim()}
+      className={`flex flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-5 max-md:sticky max-md:top-0 max-md:z-10 max-md:bg-background max-md:border-b max-md:border-border max-md:-mt-[max(1.25rem,env(safe-area-inset-top))] max-md:pt-[max(0.75rem,env(safe-area-inset-top))] max-md:pb-3 max-md:mb-4 ${className}`.trim()}
     >
       {backHref && (
         <Link

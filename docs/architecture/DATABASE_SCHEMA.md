@@ -3,7 +3,7 @@
 > **TypeORM + PostgreSQL.** 스키마 DDL: `docs/db/schema.sql` (전체 SQL은 `docs/db/`에서 확인), 엔티티: `server/src/database/entities/`  
 > **KRA API 기준 정렬** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-08
 
 ---
 
@@ -117,7 +117,7 @@ SinglePurchase[]
 | `track`       | String?       | 주로상태    | KRA (trackState)   |
 | `status`      | RaceStatus    | 경기 상태   | default: SCHEDULED |
 
-**Unique:** `[meet, rcDate, rcNo]` **관계:** RaceEntry[], RaceResult[], Prediction[], UserPick[]
+**Unique:** `[meet, rcDate, rcNo]` **관계:** RaceEntry[], RaceResult[], RaceDividend[], Prediction[], UserPick[]
 
 ---
 
@@ -320,6 +320,7 @@ SinglePurchase[]
 | **GlobalConfig**     | `global_config`      | 글로벌 설정 (key-value, NoSQL 스타일). show_google_login 등          |
 | **KraSyncLog**       | `kra_sync_logs`      | KRA API 동기화 로그 (endpoint, meet, rcDate, status, recordCount 등)  |
 | **BatchSchedule**    | `batch_schedules`    | 배치 작업 스케줄 (jobType, targetRcDate, scheduledAt, status — 예정/완료/실패) |
+| **RaceDividend**     | `race_dividends`     | 경주별 확정배당률 (7승식: WIN/PLC/QNL/EXA/QPL/TLA/TRI). KRA API160 결과 적재 후 갱신. |
 
 ---
 
@@ -377,6 +378,28 @@ SinglePurchase[]
 | `metadata`     | JSONB?        | 부가 정보            |
 | `createdAt`    | DateTime      | 생성일               |
 | `updatedAt`    | DateTime      | 수정일               |
+
+---
+
+### RaceDividend (확정배당률)
+
+> 테이블명: `race_dividends` — KRA API160/integratedInfo에서 경주 결과 적재 후 갱신. 7승식 전체 배당률 저장.
+
+| 필드        | 타입    | 설명                                                        | 비고                             |
+| ----------- | ------- | ----------------------------------------------------------- | -------------------------------- |
+| `id`        | Int     | PK (auto increment)                                         |                                  |
+| `raceId`    | Int     | 경기 FK                                                     | → Race.id (CASCADE)              |
+| `pool`      | String  | KRA 풀 코드                                                 | WIN, PLC, QNL, EXA, QPL, TLA, TRI |
+| `poolName`  | String  | KRA 풀 한국어명                                             | 단승식, 연승식, 복승식, 쌍승식, 복연승식, 삼복승식, 삼쌍승식 |
+| `chulNo`    | String  | 1번 말 출전번호                                             |                                  |
+| `chulNo2`   | String  | 2번 말 출전번호 (해당 없으면 `''`)                          | default: ''                      |
+| `chulNo3`   | String  | 3번 말 출전번호 (해당 없으면 `''`)                          | default: ''                      |
+| `odds`      | Float   | 확정 배당률                                                 |                                  |
+| `createdAt` | DateTime| 생성일                                                      | auto                             |
+| `updatedAt` | DateTime| 수정일                                                      | auto                             |
+
+**Unique:** `[raceId, pool, chulNo, chulNo2, chulNo3]`
+**참고:** `GET /races/:id/dividends`는 race_dividends 우선, 없으면 race_results의 winOdds/plcOdds에서 WIN·PLC fallback 제공.
 
 ---
 

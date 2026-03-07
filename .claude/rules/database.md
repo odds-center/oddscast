@@ -78,6 +78,7 @@
 | `TrainerResult` | `trainer_results` | Trainer career stats |
 | `KraSyncLog` | `kra_sync_logs` | API sync audit log |
 | `BatchSchedule` | `batch_schedules` | Scheduled batch jobs |
+| `RaceDividend` | `race_dividends` | Confirmed payout dividends per race (7 pool types: WIN/PLC/QNL/EXA/QPL/TLA/TRI). Fetched from KRA API160 after results load. |
 
 ### Other
 | Entity | Table |

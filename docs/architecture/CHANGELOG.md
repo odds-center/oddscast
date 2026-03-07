@@ -10,6 +10,18 @@
 
 ---
 
+## 2026-03-08 — RaceDividend 엔티티 + 확정배당률 동기화
+
+- **RaceDividend 엔티티 추가:** `server/src/database/entities/race-dividend.entity.ts` 신규 생성. 테이블: `race_dividends`. 7승식(WIN/PLC/QNL/EXA/QPL/TLA/TRI) 확정배당률 저장. Unique: [raceId, pool, chulNo, chulNo2, chulNo3]. Race CASCADE DELETE.
+- **KraService.fetchDividends():** KRA API160/integratedInfo에서 일자별 배당률 적재. `syncAll()` 파이프라인에 포함 (40%→50% 단계).
+- **KraController:** `POST /kra/sync/dividends?date=YYYYMMDD` 엔드포인트 추가.
+- **Admin KRA 페이지:** 확정배당률 동기화 버튼 추가 (`AdminKraApi.syncDividends()`).
+- **RacesService.getDividends():** `race_dividends` 우선 반환, 없으면 `race_results.winOdds`/`plcOdds`에서 WIN·PLC fallback 제공. `GET /races/:id/dividends` 응답 개선.
+- **PredictionsService (matrix):** `entries[].chulNo`, `horseScores[]` (chulNo/score/winProb 포함), `analysis` 필드를 매트릭스 응답에 추가.
+- **문서:** `DATABASE_SCHEMA.md`에 RaceDividend 상세 섹션 추가. `API_SPECIFICATION.md`에 `POST /kra/sync/dividends` 및 syncAll 설명 갱신.
+
+---
+
 ## 2026-03-02 — 구글 로그인 제거 + 문서 통합
 
 - **구글 로그인 제거:** 서버 Admin `show_google_login` 제거. WebApp `CONFIG.google`·bridge `LOGIN_GOOGLE`/`LOGIN_SUCCESS`·analytics `GOOGLE_LOGIN_CLICK` 제거. Mobile `@react-native-google-signin/google-signin` 제거, webview `LOGIN_GOOGLE` 핸들러·configure 제거, app.config `google`·extra `webClientId`/`iosClientId` 제거. Admin 설정 페이지에서 Google 로그인 노출 체크 제거. 문서: GOOGLE_OAUTH_SETUP.md → 제거 안내로 대체, SERVICE_SPECIFICATION·MOBILE_GUIDE·WEBAPP_MOBILE_INTEGRATION·.cursorrules·README 갱신.

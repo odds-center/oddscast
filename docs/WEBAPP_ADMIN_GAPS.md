@@ -3,7 +3,7 @@
 > 웹앱(유저 사이트)과 관리자(Admin)에서 보완이 필요한 항목을 한곳에 정리합니다.  
 > **Planning 시 참고:** [TODO_CONTINUE.md](TODO_CONTINUE.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)
 
-**Last updated:** 2026-03-02 (문서 통합 반영)
+**Last updated:** 2026-03-07 (모바일 UI 개선 완료, KRA 크론 수정, chulNo/순위 버그 수정)
 
 ---
 
@@ -35,6 +35,10 @@
 | Push Deep Link (모바일) | 적용됨 | 알림 탭 시 deepLink로 WebView 초기 URL 설정 (index + webview 연동) |
 | 터치 영역·버튼 크기 | 적용됨 | 44px 최소(버튼·FilterChips·TabBar·BackLink), touch-manipulation 적용 |
 | 고대비/글자 크기 기본값 | 적용됨 | 설정에서 토글 가능 |
+| **AppBar 스크롤 hide/show** | 적용됨 | 스크롤 다운 시 하단 AppBar slideDown, 스크롤 업 시 slideUp. px padding 추가. 투명도 제거(solid white). |
+| **모바일 버튼 레이아웃** | 적용됨 | 홈/구독/매트릭스 등 전 영역 flex-col 스택 레이아웃. space-between 제거. w-full 버튼. |
+| **출전마 번호(chulNo) 표시** | 적용됨 | HorseEntryTable·ResultCard·BetTypePredictionsSection·HorseScoresBarChart·PredictionMatrixTable·HorsePickPanel 모두 circle badge 표시 |
+| **개별/종합 예측권 분리 표기** | 적용됨 | 프로필 4컬럼(개별권·종합권·포인트·구독), 경주 상세에서 개별권만 표시 |
 
 ### 1.4 페이지별 보강 (우선 점검 권장)
 

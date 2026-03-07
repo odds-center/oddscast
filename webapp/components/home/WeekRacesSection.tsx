@@ -58,57 +58,84 @@ export default function WeekRacesSection() {
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
       ) : (
-        <DataTable
-          className='data-table-kra'
-          columns={[
-            {
-              key: 'race',
-              header: '경주',
-              headerClassName: 'w-24 cell-center',
-              align: 'center',
-              render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-stone-700 font-semibold hover:underline text-sm'>
-                  {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
-                </Link>
-              ),
-            },
-            {
-              key: 'date',
-              header: '날짜',
-              headerClassName: 'w-16 cell-center',
-              align: 'center',
-              render: (row) => {
-                const d = (row.rcDate ?? '').replace(/-/g, '');
-                const str = d.length >= 8 ? `${d.slice(4, 6)}/${d.slice(6, 8)}` : '-';
-                return <span className='text-text-secondary'>{str}</span>;
-              },
-            },
-            {
-              key: 'dist',
-              header: '거리',
-              headerClassName: 'w-16 cell-center',
-              align: 'center',
-              render: (row) => (
-                <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
-              ),
-            },
-            {
-              key: 'detail',
-              header: '',
-              headerClassName: 'w-12 cell-center',
-              align: 'center',
-              render: (row) => (
-                <Link href={routes.races.detail(row.id)} className='text-foreground text-xs font-medium hover:underline'>
-                  보기
-                </Link>
-              ),
-            },
-          ]}
-          data={races}
-          getRowKey={(row) => row.id}
-          getRowHref={(row) => routes.races.detail(row.id)}
-          compact
-        />
+        <>
+          {/* Mobile: card list */}
+          <div className='block sm:hidden divide-y divide-border -mx-0.5'>
+            {races.map((row) => {
+              const d = (row.rcDate ?? '').replace(/-/g, '');
+              const dateStr = d.length >= 8 ? `${d.slice(4, 6)}/${d.slice(6, 8)}` : '';
+              return (
+                <a
+                  key={row.id}
+                  href={routes.races.detail(row.id)}
+                  className='flex items-center justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                >
+                  <span className='font-semibold text-foreground text-sm'>
+                    {row.meetName ?? row.meet ?? '-'} {row.rcNo}R
+                  </span>
+                  <div className='flex items-center gap-2 text-xs text-text-tertiary'>
+                    {dateStr && <span>{dateStr}</span>}
+                    {row.rcDist && <span>{row.rcDist}M</span>}
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className='hidden sm:block'>
+            <DataTable
+              className='data-table-kra'
+              columns={[
+                {
+                  key: 'race',
+                  header: '경주',
+                  headerClassName: 'w-24 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <Link href={routes.races.detail(row.id)} className='text-stone-700 font-semibold hover:underline text-sm'>
+                      {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
+                    </Link>
+                  ),
+                },
+                {
+                  key: 'date',
+                  header: '날짜',
+                  headerClassName: 'w-16 cell-center',
+                  align: 'center',
+                  render: (row) => {
+                    const d = (row.rcDate ?? '').replace(/-/g, '');
+                    const str = d.length >= 8 ? `${d.slice(4, 6)}/${d.slice(6, 8)}` : '-';
+                    return <span className='text-text-secondary'>{str}</span>;
+                  },
+                },
+                {
+                  key: 'dist',
+                  header: '거리',
+                  headerClassName: 'w-16 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
+                  ),
+                },
+                {
+                  key: 'detail',
+                  header: '',
+                  headerClassName: 'w-12 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <Link href={routes.races.detail(row.id)} className='text-foreground text-xs font-medium hover:underline'>
+                      보기
+                    </Link>
+                  ),
+                },
+              ]}
+              data={races}
+              getRowKey={(row) => row.id}
+              getRowHref={(row) => routes.races.detail(row.id)}
+              compact
+            />
+          </div>
+        </>
       )}
     </HomeSection>
   );

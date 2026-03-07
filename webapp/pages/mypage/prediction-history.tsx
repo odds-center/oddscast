@@ -56,56 +56,83 @@ export default function PredictionHistoryPage() {
         loadingLabel='목록 불러오는 중...'
       >
         <div>
-          <DataTable<MyPredictionHistoryItem>
-            className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
-            columns={[
-              {
-                key: 'race',
-                header: '경주',
-                headerClassName: 'min-w-[140px]',
-                render: (item) => (
-                  <Link
-                    href={routes.races.detail(String(item.raceId))}
-                    className='text-sm font-medium text-primary hover:underline whitespace-nowrap'
-                  >
-                    {raceLabel(item)} →
-                  </Link>
-                ),
-              },
-              {
-                key: 'usedAt',
-                header: '열람일',
-                headerClassName: 'w-36',
-                render: (item) => (
-                  <span className='whitespace-nowrap text-text-secondary text-sm'>
-                    {item.usedAt ? formatDateTime(item.usedAt) : '—'}
-                  </span>
-                ),
-              },
-              {
-                key: 'accuracy',
-                header: '정확도',
-                headerClassName: 'w-20',
-                align: 'center',
-                render: (item) => {
-                  if (item.accuracy == null) return <span className='text-text-tertiary'>—</span>;
-                  const pct = Number(item.accuracy);
-                  const variant =
-                    pct >= 60 ? 'primary' : pct >= 30 ? 'warning' : 'muted';
-                  return (
-                    <Badge variant={variant} size='md'>
-                      {pct.toFixed(1)}%
-                    </Badge>
-                  );
+          {/* Mobile: card list */}
+          <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+            {list.map((item) => {
+              const pct = item.accuracy != null ? Number(item.accuracy) : null;
+              const variant = pct != null ? (pct >= 60 ? 'primary' : pct >= 30 ? 'warning' : 'muted') : null;
+              return (
+                <Link
+                  key={`${item.ticketId}-${item.raceId}`}
+                  href={routes.races.detail(String(item.raceId))}
+                  className='flex items-center justify-between py-3 px-3 active:bg-stone-50 transition-colors bg-card'
+                >
+                  <div>
+                    <p className='text-sm font-medium text-primary'>{raceLabel(item)}</p>
+                    <p className='text-xs text-text-tertiary mt-0.5'>
+                      {item.usedAt ? formatDateTime(item.usedAt) : '—'}
+                    </p>
+                  </div>
+                  {variant != null && pct != null && (
+                    <Badge variant={variant} size='md'>{pct.toFixed(1)}%</Badge>
+                  )}
+                </Link>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className='hidden sm:block'>
+            <DataTable<MyPredictionHistoryItem>
+              className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
+              columns={[
+                {
+                  key: 'race',
+                  header: '경주',
+                  headerClassName: 'min-w-[140px]',
+                  render: (item) => (
+                    <Link
+                      href={routes.races.detail(String(item.raceId))}
+                      className='text-sm font-medium text-primary hover:underline whitespace-nowrap'
+                    >
+                      {raceLabel(item)} →
+                    </Link>
+                  ),
                 },
-              },
-            ]}
-            data={list}
-            getRowKey={(item) => `${item.ticketId}-${item.raceId}`}
-            getRowHref={(item) => routes.races.detail(String(item.raceId))}
-            compact
-            emptyMessage='열람한 예측이 없습니다.'
-          />
+                {
+                  key: 'usedAt',
+                  header: '열람일',
+                  headerClassName: 'w-36',
+                  render: (item) => (
+                    <span className='whitespace-nowrap text-text-secondary text-sm'>
+                      {item.usedAt ? formatDateTime(item.usedAt) : '—'}
+                    </span>
+                  ),
+                },
+                {
+                  key: 'accuracy',
+                  header: '정확도',
+                  headerClassName: 'w-20',
+                  align: 'center',
+                  render: (item) => {
+                    if (item.accuracy == null) return <span className='text-text-tertiary'>—</span>;
+                    const pct = Number(item.accuracy);
+                    const variant =
+                      pct >= 60 ? 'primary' : pct >= 30 ? 'warning' : 'muted';
+                    return (
+                      <Badge variant={variant} size='md'>
+                        {pct.toFixed(1)}%
+                      </Badge>
+                    );
+                  },
+                },
+              ]}
+              data={list}
+              getRowKey={(item) => `${item.ticketId}-${item.raceId}`}
+              getRowHref={(item) => routes.races.detail(String(item.raceId))}
+              compact
+              emptyMessage='열람한 예측이 없습니다.'
+            />
+          </div>
         </div>
         <Pagination
           page={page}

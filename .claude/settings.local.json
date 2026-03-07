@@ -45,7 +45,17 @@
       "Bash(git config:*)",
       "Bash(git:*)",
       "Bash(psql:*)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(/Users/risingcore/Desktop/project/oddscast/admin/.env:*)",
+      "Bash(railway:*)",
+      "Read(//usr/local/bin/**)",
+      "Read(//opt/homebrew/**)",
+      "Bash(/opt/homebrew/Cellar/postgresql@18/18.3/bin/psql:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:server-production-aee6.up.railway.app)",
+      "Bash(brew install:*)",
+      "Bash(export:*)",
+      "Bash(sed:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

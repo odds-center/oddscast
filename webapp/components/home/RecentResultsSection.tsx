@@ -103,44 +103,69 @@ export default function RecentResultsSection() {
       ) : grouped.length === 0 ? (
         <div className='py-8 text-center text-text-secondary text-sm'>최근 결과가 없습니다.</div>
       ) : (
-        <div className='overflow-x-auto'>
-          <table className='data-table data-table-compact w-full min-w-[320px]'>
-            <thead>
-              <tr>
-                <th className='w-28'>경주</th>
-                <th className='min-w-[80px]'>1위</th>
-                <th className='min-w-[80px]'>2위</th>
-                <th className='min-w-[80px]'>3위</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grouped.slice(0, 6).map((row) => (
-                <tr key={row.raceId}>
-                  <td>
-                    <Link
-                      href={routes.resultsDetail(row.raceId)}
-                      className='font-medium text-stone-700 hover:text-stone-900 hover:underline'
-                    >
-                      {row.meetName} {row.rcNo}경
-                    </Link>
-                  </td>
-                  {(['1', '2', '3'] as const).map((ord) => {
-                    const r = row.results.find((x) => x.ord === ord);
-                    return (
-                      <td key={ord} className='text-sm'>
-                        {r ? (
-                          <span className='font-medium'>{r.hrName}</span>
-                        ) : (
-                          <span className='text-text-tertiary'>-</span>
-                        )}
-                      </td>
-                    );
-                  })}
+        <>
+          {/* Mobile: card list */}
+          <div className='block sm:hidden divide-y divide-border -mx-0.5'>
+            {grouped.slice(0, 6).map((row) => {
+              const [p1, p2, p3] = ['1', '2', '3'].map((ord) => row.results.find((x) => x.ord === ord));
+              return (
+                <Link
+                  key={row.raceId}
+                  href={routes.resultsDetail(row.raceId)}
+                  className='flex items-start justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                >
+                  <span className='font-semibold text-foreground text-sm min-w-[72px]'>
+                    {row.meetName} {row.rcNo}경
+                  </span>
+                  <div className='flex items-center gap-1 text-xs text-text-secondary flex-wrap justify-end'>
+                    {p1 && <span className='text-amber-600 font-medium'>🥇{p1.hrName}</span>}
+                    {p2 && <span className='text-stone-500'>🥈{p2.hrName}</span>}
+                    {p3 && <span className='text-stone-400'>🥉{p3.hrName}</span>}
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className='hidden sm:block overflow-x-auto'>
+            <table className='data-table data-table-compact w-full min-w-[320px]'>
+              <thead>
+                <tr>
+                  <th className='w-28'>경주</th>
+                  <th className='min-w-[80px]'>1위</th>
+                  <th className='min-w-[80px]'>2위</th>
+                  <th className='min-w-[80px]'>3위</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {grouped.slice(0, 6).map((row) => (
+                  <tr key={row.raceId}>
+                    <td>
+                      <Link
+                        href={routes.resultsDetail(row.raceId)}
+                        className='font-medium text-stone-700 hover:text-stone-900 hover:underline'
+                      >
+                        {row.meetName} {row.rcNo}경
+                      </Link>
+                    </td>
+                    {(['1', '2', '3'] as const).map((ord) => {
+                      const r = row.results.find((x) => x.ord === ord);
+                      return (
+                        <td key={ord} className='text-sm'>
+                          {r ? (
+                            <span className='font-medium'>{r.hrName}</span>
+                          ) : (
+                            <span className='text-text-tertiary'>-</span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
     </HomeSection>
   );

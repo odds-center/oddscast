@@ -63,55 +63,84 @@ export default function TodayRacesSection() {
               {TODAY_ALL_ENDED_MESSAGE}
             </p>
           )}
-          <DataTable
-          className='data-table-kra'
-          columns={[
-            {
-              key: 'race',
-              header: '경주',
-              headerClassName: 'w-24 cell-center',
-              align: 'center',
-              render: (row) => (
-                <LinkBadge href={routes.races.detail(row.id)} icon='Flag' iconSize={12}>
-                  {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
-                </LinkBadge>
-              ),
-            },
-            {
-              key: 'dist',
-              header: '거리',
-              headerClassName: 'w-16 cell-center',
-              align: 'center',
-              render: (row) => (
-                <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
-              ),
-            },
-            {
-              key: 'entries',
-              header: '두수',
-              headerClassName: 'w-12 cell-center',
-              align: 'center',
-              render: (row) => {
-                const detail = row as RaceDetailDto;
-                const entries = detail.entries ?? detail.entryDetails ?? [];
-                return <span className='text-text-secondary'>{entries.length > 0 ? `${entries.length}` : '-'}</span>;
-              },
-            },
-            {
-              key: 'status',
-              header: '상태',
-              headerClassName: 'w-14 cell-center',
-              align: 'center',
-              render: (row) => (
-                <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />
-              ),
-            },
-          ]}
-          data={races}
-          getRowKey={(row) => row.id}
-          getRowHref={(row) => routes.races.detail(row.id)}
-          compact
-        />
+          {/* Mobile: card list */}
+          <div className='block sm:hidden divide-y divide-border -mx-0.5'>
+            {races.map((row) => {
+              const detail = row as RaceDetailDto;
+              const entries = detail.entries ?? detail.entryDetails ?? [];
+              return (
+                <a
+                  key={row.id}
+                  href={routes.races.detail(row.id)}
+                  className='flex items-center justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                >
+                  <div>
+                    <span className='font-semibold text-foreground text-sm'>
+                      {row.meetName ?? row.meet ?? '-'} {row.rcNo}R
+                    </span>
+                    <div className='flex items-center gap-2 mt-0.5 text-xs text-text-tertiary'>
+                      {row.rcDist && <span>{row.rcDist}M</span>}
+                      {entries.length > 0 && <span>{entries.length}두</span>}
+                      {row.stTime && <span>{row.stTime}</span>}
+                    </div>
+                  </div>
+                  <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />
+                </a>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className='hidden sm:block'>
+            <DataTable
+              className='data-table-kra'
+              columns={[
+                {
+                  key: 'race',
+                  header: '경주',
+                  headerClassName: 'w-24 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <LinkBadge href={routes.races.detail(row.id)} icon='Flag' iconSize={12}>
+                      {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
+                    </LinkBadge>
+                  ),
+                },
+                {
+                  key: 'dist',
+                  header: '거리',
+                  headerClassName: 'w-16 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
+                  ),
+                },
+                {
+                  key: 'entries',
+                  header: '두수',
+                  headerClassName: 'w-12 cell-center',
+                  align: 'center',
+                  render: (row) => {
+                    const detail = row as RaceDetailDto;
+                    const entries = detail.entries ?? detail.entryDetails ?? [];
+                    return <span className='text-text-secondary'>{entries.length > 0 ? `${entries.length}` : '-'}</span>;
+                  },
+                },
+                {
+                  key: 'status',
+                  header: '상태',
+                  headerClassName: 'w-14 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />
+                  ),
+                },
+              ]}
+              data={races}
+              getRowKey={(row) => row.id}
+              getRowHref={(row) => routes.races.detail(row.id)}
+              compact
+            />
+          </div>
         </>
       )}
     </HomeSection>

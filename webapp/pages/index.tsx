@@ -68,8 +68,7 @@ export default function Home() {
       <div className='flex items-center gap-2 mb-4 overflow-x-auto pb-0.5 -mx-1 px-1'>
         {[
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주' },
-          { href: routes.races.schedule, icon: 'Calendar' as const, label: '시행일' },
-          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
+{ href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
           { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상' },
           { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 정확도' },
           { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰' },

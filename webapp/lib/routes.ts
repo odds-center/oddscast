@@ -41,8 +41,7 @@ export const routes = {
   races: {
     index: '/',
     list: '/races',
-    schedule: '/races/schedule',
-    detail: (id: string) => `/races/${id}`,
+detail: (id: string) => `/races/${id}`,
     simulator: (id: string) => `/races/${id}/simulator`,
   },
 

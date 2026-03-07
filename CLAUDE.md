@@ -6,6 +6,14 @@ NestJS + Python + PostgreSQL + Next.js 기반 AI 경마 예측 플랫폼.
 공공데이터포털 경마 데이터 + Python 수학 분석 + Gemini AI 추론으로 승부 예측.
 pnpm 모노레포 구조. 패키지 매니저는 반드시 pnpm 사용.
 
+## 브랜치 규칙 (MANDATORY)
+
+**모든 개발 작업은 반드시 `develop` 브랜치에서 진행한다.**
+- 새 기능, 버그픽스, 리팩토링 등 모든 변경은 `develop` 브랜치에 커밋/푸시
+- `master` 브랜치에는 절대 직접 푸시하지 않는다
+- `master` 업데이트는 사용자가 명시적으로 "master에 머지해줘" 요청할 때만 `develop → master` 머지
+- `master`는 Railway 프로덕션 배포 브랜치이므로 함부로 변경 금지
+
 ## 필수 원칙 (Documentation First)
 
 **모든 작업 전 `docs/` 관련 문서를 먼저 읽고 기존 아키텍처/규칙을 준수할 것.**

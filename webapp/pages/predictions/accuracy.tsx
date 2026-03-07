@@ -109,7 +109,20 @@ export default function PredictionAccuracyPage() {
                     })}
                   </div>
                 </div>
-                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                {/* Mobile: stat rows */}
+                <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+                  {byMonth.map((r) => (
+                    <div key={r.month} className='flex items-center justify-between py-2.5 px-3 bg-card'>
+                      <span className='text-sm font-medium text-foreground'>{formatMonth(r.month)}</span>
+                      <div className='flex items-center gap-3 text-sm text-text-secondary'>
+                        <span>{r.count.toLocaleString()}건</span>
+                        <span className='font-semibold text-primary'>{r.averageAccuracy}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop: table */}
+                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                   <DataTable<{ month: string; count: number; averageAccuracy: number }>
                     columns={[
                       {
@@ -147,7 +160,20 @@ export default function PredictionAccuracyPage() {
                 icon='MapPin'
                 description='시행 경마장별 정확도'
               >
-                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                {/* Mobile: stat rows */}
+                <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+                  {byMeet.map((r) => (
+                    <div key={r.meet} className='flex items-center justify-between py-2.5 px-3 bg-card'>
+                      <span className='text-sm font-medium text-foreground'>{formatMeet(r.meet)}</span>
+                      <div className='flex items-center gap-3 text-sm text-text-secondary'>
+                        <span>{r.count.toLocaleString()}건</span>
+                        <span className='font-semibold text-primary'>{r.averageAccuracy}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* Desktop: table */}
+                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                   <DataTable<{ meet: string; count: number; averageAccuracy: number }>
                     columns={[
                       {

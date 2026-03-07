@@ -53,15 +53,38 @@ export default function Ranking() {
         emptyDescription='예측 적중 기록이 쌓이면 랭킹이 표시됩니다.'
         loadingLabel='랭킹 준비 중...'
       >
-        <DataTable
-          columns={[
-            { key: 'rank', header: '순위', align: 'center', headerClassName: 'w-16', cellClassName: (_, i) => `font-bold ${i === 0 ? 'text-emerald-600' : i === 1 ? 'text-[var(--color-rank-2)]' : i === 2 ? 'text-[var(--color-rank-3)]' : 'text-text-tertiary'}`.trim(), render: (_, i) => i + 1 },
-            { key: 'name', header: '이름', headerClassName: 'min-w-[120px]', cellClassName: 'font-medium', render: (item) => (item as { name?: string; user?: { name?: string }; nickname?: string }).name || (item as { user?: { name?: string }; nickname?: string }).user?.name || (item as { nickname?: string }).nickname || '-' },
-            { key: 'hit', header: '적중', align: 'center', headerClassName: 'w-24', cellClassName: 'text-stone-700 font-semibold', render: (item) => `${(item as { correctCount?: number }).correctCount ?? 0}회` },
-          ]}
-          data={data ?? []}
-          getRowKey={(item, i) => item.id ?? i}
-        />
+        <>
+          {/* Mobile: card list */}
+          <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+            {(data ?? []).map((item, i) => {
+              const name = (item as { name?: string; user?: { name?: string }; nickname?: string }).name || (item as { user?: { name?: string }; nickname?: string }).user?.name || (item as { nickname?: string }).nickname || '-';
+              const hits = (item as { correctCount?: number }).correctCount ?? 0;
+              const rankColors = ['text-emerald-600', 'text-[var(--color-rank-2)]', 'text-[var(--color-rank-3)]'];
+              const rankColor = rankColors[i] ?? 'text-text-tertiary';
+              return (
+                <div key={(item as { id?: string }).id ?? i} className='flex items-center justify-between py-3 px-3 bg-card'>
+                  <div className='flex items-center gap-3'>
+                    <span className={`text-base font-extrabold w-6 text-center ${rankColor}`}>{i + 1}</span>
+                    <span className='text-sm font-medium text-foreground'>{name}</span>
+                  </div>
+                  <span className='text-sm font-semibold text-stone-700'>{hits}회 적중</span>
+                </div>
+              );
+            })}
+          </div>
+          {/* Desktop: table */}
+          <div className='hidden sm:block'>
+            <DataTable
+              columns={[
+                { key: 'rank', header: '순위', align: 'center', headerClassName: 'w-16', cellClassName: (_, i) => `font-bold ${i === 0 ? 'text-emerald-600' : i === 1 ? 'text-[var(--color-rank-2)]' : i === 2 ? 'text-[var(--color-rank-3)]' : 'text-text-tertiary'}`.trim(), render: (_, i) => i + 1 },
+                { key: 'name', header: '이름', headerClassName: 'min-w-[120px]', cellClassName: 'font-medium', render: (item) => (item as { name?: string; user?: { name?: string }; nickname?: string }).name || (item as { user?: { name?: string }; nickname?: string }).user?.name || (item as { nickname?: string }).nickname || '-' },
+                { key: 'hit', header: '적중', align: 'center', headerClassName: 'w-24', cellClassName: 'text-stone-700 font-semibold', render: (item) => `${(item as { correctCount?: number }).correctCount ?? 0}회` },
+              ]}
+              data={data ?? []}
+              getRowKey={(item, i) => item.id ?? i}
+            />
+          </div>
+        </>
       </DataFetchState>
     </Layout>
   );

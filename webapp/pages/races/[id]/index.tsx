@@ -988,7 +988,48 @@ export default function RaceDetailPage() {
                     {Math.round(jockeyAnalysis.weightRatio.jockey * 100)}% (참고용)
                   </p>
                 )}
-                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+                {/* Mobile: card list */}
+                <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+                  {jockeyAnalysis.entriesWithScores.slice(0, 14).map(
+                    (
+                      e: {
+                        hrNo: string;
+                        hrName: string;
+                        jkName?: string;
+                        chulNo?: string;
+                        horseScore?: number;
+                        jockeyScore?: number;
+                        combinedScore?: number;
+                      },
+                      i,
+                    ) => (
+                      <div key={e.hrNo} className='flex items-center gap-2.5 py-2.5 px-3 bg-card'>
+                        <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
+                        <div className='flex-1 min-w-0'>
+                          <div className='flex items-center gap-1.5'>
+                            {e.chulNo != null && (
+                              <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold shrink-0'>
+                                {e.chulNo}
+                              </span>
+                            )}
+                            <span className='text-sm font-medium text-foreground'>{e.hrName ?? '-'}</span>
+                          </div>
+                          {e.jkName && <p className='text-xs text-text-secondary mt-0.5'>{e.jkName}</p>}
+                        </div>
+                        <div className='text-right shrink-0'>
+                          <p className={`text-sm font-bold tabular-nums ${i === 0 ? 'text-foreground' : i === 1 ? 'text-stone-600' : i === 2 ? 'text-stone-500' : 'text-text-tertiary'}`}>
+                            {e.combinedScore != null ? Math.round(e.combinedScore) : '-'}
+                          </p>
+                          <p className='text-[10px] text-text-tertiary tabular-nums'>
+                            말{e.horseScore != null ? Math.round(e.horseScore) : '-'} · 기{e.jockeyScore != null ? Math.round(e.jockeyScore) : '-'}
+                          </p>
+                        </div>
+                      </div>
+                    ),
+                  )}
+                </div>
+                {/* Desktop: table */}
+                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
                   <table className='data-table data-table-compact w-full min-w-[320px]'>
                     <thead>
                       <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
@@ -1253,7 +1294,23 @@ function PredictionFullView({
               horseScores={prediction.scores!.horseScores!}
               className='mb-4 rounded-xl border border-border bg-background-elevated p-3 shadow-sm'
             />
-            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
+            {/* Mobile: card list */}
+            <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+              {prediction.scores!.horseScores!.map((h, i) => (
+                <div key={i} className='flex items-center gap-3 py-2.5 px-3 bg-card'>
+                  <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
+                  <div className='flex-1 min-w-0'>
+                    <p className='text-sm font-medium text-foreground'>{h.hrName ?? h.horseName ?? '-'}</p>
+                    {h.reason && <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>{h.reason}</p>}
+                  </div>
+                  <span className={`text-sm font-bold tabular-nums ${i === 0 ? 'text-foreground' : i === 1 ? 'text-stone-600' : i === 2 ? 'text-stone-500' : 'text-text-tertiary'}`}>
+                    {h.score != null ? Math.round(h.score) : '-'}
+                  </span>
+                </div>
+              ))}
+            </div>
+            {/* Desktop: table */}
+            <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
               <table className='data-table data-table-compact w-full text-sm'>
                 <thead>
                   <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>

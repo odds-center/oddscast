@@ -147,26 +147,26 @@ export default function Profile() {
               )}
 
               {/* Stats row */}
-              <div className='grid grid-cols-4 gap-1 mt-3 pt-3 border-t border-stone-100'>
-                <div className='text-center py-1'>
-                  <p className='text-[11px] text-stone-400 leading-tight'>개별권</p>
-                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{raceTicketsCount}<span className='text-xs font-medium'>장</span></p>
+              <div className='grid grid-cols-2 sm:grid-cols-4 gap-0 mt-3 pt-3 border-t border-stone-100'>
+                <div className='text-center py-2 border-r border-stone-100'>
+                  <p className='text-xs text-stone-400 leading-tight'>개별 예측권</p>
+                  <p className='text-xl font-bold text-stone-800 leading-tight mt-0.5'>{raceTicketsCount}<span className='text-sm font-medium'>장</span></p>
                 </div>
-                <div className='text-center py-1 border-x border-stone-100'>
-                  <p className='text-[11px] text-stone-400 leading-tight'>종합권</p>
-                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{matrixTicketsCount}<span className='text-xs font-medium'>장</span></p>
+                <div className='text-center py-2 sm:border-r border-stone-100'>
+                  <p className='text-xs text-stone-400 leading-tight'>종합 예측권</p>
+                  <p className='text-xl font-bold text-stone-800 leading-tight mt-0.5'>{matrixTicketsCount}<span className='text-sm font-medium'>장</span></p>
                 </div>
-                <div className='text-center py-1 border-r border-stone-100'>
-                  <p className='text-[11px] text-stone-400 leading-tight'>포인트</p>
-                  <p className='text-base font-bold text-stone-800 leading-tight mt-0.5'>{points.toLocaleString()}<span className='text-xs font-medium'>pt</span></p>
+                <div className='text-center py-2 border-t sm:border-t-0 border-r border-stone-100'>
+                  <p className='text-xs text-stone-400 leading-tight'>포인트</p>
+                  <p className='text-lg font-bold text-stone-800 leading-tight mt-0.5'>{points.toLocaleString()}<span className='text-sm font-medium'>pt</span></p>
                 </div>
-                <div className='text-center py-1'>
-                  <p className='text-[11px] text-stone-400 leading-tight'>구독</p>
-                  <p className='text-base font-semibold leading-tight mt-1'>
+                <div className='text-center py-2 border-t sm:border-t-0 border-stone-100'>
+                  <p className='text-xs text-stone-400 leading-tight'>구독</p>
+                  <p className='text-lg font-semibold leading-tight mt-1'>
                     {subscription?.isActive ? (
                       <span className='text-primary'>{subscription.planId}</span>
                     ) : (
-                      <span className='text-stone-300'>-</span>
+                      <span className='text-stone-300'>없음</span>
                     )}
                   </p>
                 </div>

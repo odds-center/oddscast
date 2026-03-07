@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-06 (서버 단위 테스트 352개 완료 — 30 suites; webapp tsconfig PagesPageConfig 중복 오류 수정)
+**Last updated:** 2026-03-07 (KRA 크론 KST 타임존 수정, 출전마 번호/순위 저장 버그 수정, Railway 배포 완료, 모바일 UI 개선)
 
 ---
 
@@ -39,6 +39,11 @@
 | **KRA 동기화 시 AI 예측 자동 생성** | ✅ 완료 | `kra.service.ts`에 `generatePredictionsForDate()` 추가. `syncAll()` 최종 단계에서 예측 생성. `processDueBatchSchedules()` 결과 적재 후 fire-and-forget 예측 생성. Admin KRA 페이지에 Step 4 "AI 예측 생성" 카드 추가. |
 | **레퍼럴(추천인) 시스템** | ✅ 완료 | DB 스키마 이미 있었으나 코드 미구현. ReferralCode/Claim 엔티티·ReferralsModule(서버) + referralsApi·프로필 UI(웹앱) 전체 구현. 추천인 3장·피추천인 2장 RACE 예측권 30일. |
 | **races + results 탭 통합** | ✅ 완료 | `/races?view=results` 탭으로 합침. `/results` 301 redirect. routes.ts·Layout AppBar 활성 상태·e2e 픽스처 URL/응답 구조 버그 수정. |
+| **Railway 배포** | ✅ 완료 | Server + PostgreSQL Railway 배포 완료. DB oddscast 스키마(36개 테이블) 확인. 어드민 기본 계정(admin/admin1234!) 설정. |
+| **모바일 UI 개선** | ✅ 완료 | chulNo(출전마 번호) 전 영역 표시. 개별/종합 예측권 분리 표기. AppBar 스크롤 hide/show 애니메이션. flex-col 버튼 레이아웃. Matrix 컴팩트 뷰 4컬럼. |
+| **KRA 크론 타임존 수정** | ✅ 완료 | `@Cron` 3개에 `{ timeZone: 'Asia/Seoul' }` 누락 수정(UTC→KST). 수·목 출전표 sync 시 분석데이터도 함께 적재. |
+| **경주 결과 순위 정렬 버그** | ✅ 완료 | `ordInt` 정렬에 `NULLS LAST` 추가 — 낙마/실격(ordInt=null) 말들이 1위 앞에 표시되던 문제 수정. |
+| **출전마 번호(chulNo) 보존** | ✅ 완료 | entry 업데이트 시 null로 기존 chulNo 덮어쓰던 버그 수정. 출전표 sync·결과 sync 모두 적용. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -48,7 +53,7 @@
 
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
-| 1 | **Railway 배포** | 준비됨 | Server + DB 띄워 실제 URL로 웹앱 연동 테스트. [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) 참고 (Docker/Nixpacks) |
+| 1 | **Railway 배포** | ✅ 완료 | Server + DB Railway 배포 완료. KRA 데이터 적재, 어드민 계정 설정 완료. |
 | 2 | **CD 파이프라인** | 준비됨 | `.github/workflows/deploy.yml` 추가됨. `RAILWAY_TOKEN` 시크릿 설정 후 push 시 자동 배포. [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) §4.2 |
 | 3 | **DB 백업** | 가이드 추가 | [guides/DB_BACKUP.md](guides/DB_BACKUP.md). pg_dump 수동 실행 또는 cron 연동은 환경별 적용 |
 | 4 | **앱 스토어** | 중기 | iOS / Google Play 출시 (필요 시 별도 체크리스트) |

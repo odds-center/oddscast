@@ -146,36 +146,82 @@ export default function SubscriptionsPage() {
           loadingLabel='구독 플랜 준비 중...'
           errorTitle='구독 플랜을 확인할 수 없습니다'
         >
-          <div className='space-y-4'>
-            {(plans ?? []).map((plan: SubscriptionPlan) => (
-              <SectionCard key={plan.id}>
-                <div className='flex flex-col gap-3'>
-                  <div>
-                    <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
-                    <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
-                    <p className='text-stone-800 font-bold mt-2'>
-                      {plan.totalPrice?.toLocaleString() ?? plan.totalPrice}원/월
-                    </p>
-                    <p className='text-text-tertiary text-xs mt-1'>
-                      예측권 {plan.totalTickets ?? plan.baseTickets}장/월
-                      {plan.matrixTickets > 0 && (
-                        <span className='ml-1 text-primary font-medium'>
-                          + 종합 {plan.matrixTickets}장
-                        </span>
-                      )}
-                    </p>
+          <div className='space-y-3'>
+            {(plans ?? []).map((plan: SubscriptionPlan) => {
+              const name = (plan.planName ?? '').toUpperCase();
+              const isRecommended = name === 'STANDARD';
+              const isPremium = name === 'PREMIUM';
+              const isCurrentPlan = status?.isActive && status.planId === plan.planName;
+              const features: string[] = [
+                `경주 예측권 ${plan.totalTickets ?? plan.baseTickets}장/월`,
+                ...(plan.matrixTickets > 0 ? [`종합 예측권 ${plan.matrixTickets}장/월`] : []),
+                plan.description ?? '',
+              ].filter(Boolean);
+              return (
+                <div
+                  key={plan.id}
+                  className={[
+                    'rounded-xl border p-4 relative transition-all',
+                    isRecommended
+                      ? 'border-primary bg-primary/5 shadow-sm'
+                      : isPremium
+                        ? 'border-amber-300 bg-amber-50/60'
+                        : 'border-border bg-card',
+                  ].join(' ')}
+                >
+                  {isRecommended && (
+                    <span className='absolute -top-2.5 left-4 bg-primary text-white text-xs font-semibold px-2.5 py-0.5 rounded-full'>
+                      추천
+                    </span>
+                  )}
+                  {isPremium && (
+                    <span className='absolute -top-2.5 left-4 bg-amber-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full'>
+                      프리미엄
+                    </span>
+                  )}
+                  <div className='flex items-start justify-between gap-3 mb-3'>
+                    <div>
+                      <h3 className={['text-base font-bold', isPremium ? 'text-amber-700' : isRecommended ? 'text-primary-dark' : 'text-foreground'].join(' ')}>
+                        {plan.displayName ?? plan.planName}
+                      </h3>
+                    </div>
+                    <div className='text-right shrink-0'>
+                      <p className='text-xl font-extrabold text-foreground'>
+                        {(plan.totalPrice ?? 0).toLocaleString()}원
+                      </p>
+                      <p className='text-xs text-text-tertiary'>/ 월</p>
+                    </div>
                   </div>
-                  {isLoggedIn && !status?.isActive && (
+                  <ul className='space-y-1.5 mb-4'>
+                    {features.map((f, i) => (
+                      <li key={i} className='flex items-center gap-2 text-sm text-text-secondary'>
+                        <Icon name='Check' size={14} className={isPremium ? 'text-amber-500 shrink-0' : 'text-primary shrink-0'} />
+                        {f}
+                      </li>
+                    ))}
+                  </ul>
+                  {isCurrentPlan ? (
+                    <div className='w-full text-center text-sm font-medium text-primary py-2 border border-primary/40 rounded-lg bg-primary/5'>
+                      현재 구독 중
+                    </div>
+                  ) : isLoggedIn && !status?.isActive ? (
                     <Link
                       href={routes.mypage.subscriptionsCheckout(plan.id)}
-                      className='btn-primary w-full flex items-center justify-center gap-1.5 no-underline text-sm py-2.5'
+                      className={[
+                        'no-underline w-full flex items-center justify-center text-sm font-semibold py-2.5 rounded-lg transition-colors',
+                        isPremium
+                          ? 'bg-amber-500 hover:bg-amber-600 text-white'
+                          : isRecommended
+                            ? 'btn-primary'
+                            : 'btn-secondary',
+                      ].join(' ')}
                     >
                       구독하기
                     </Link>
-                  )}
+                  ) : null}
                 </div>
-              </SectionCard>
-            ))}
+              );
+            })}
           </div>
         </DataFetchState>
         <BackLink href={routes.profile.index} label='내 정보로' className='mt-6 block' />

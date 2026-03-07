@@ -89,7 +89,44 @@ export default function PredictionResultComparison({
           이 경주 적중: {hits}/3
         </Badge>
       </div>
-      <div className="overflow-x-auto">
+      {/* Mobile: stacked comparison rows */}
+      <div className="block sm:hidden divide-y divide-border">
+        {rows.map(({ rank, predicted, actual }) => {
+          const match = predicted && actual && normalizeHrNo(predicted.hrNo, actual.hrNo);
+          return (
+            <div key={rank} className="px-3 py-2.5 flex items-center gap-3">
+              <span className="text-sm font-bold text-text-secondary w-6 shrink-0">{rank}위</span>
+              <div className="flex-1 grid grid-cols-2 gap-2 text-sm min-w-0">
+                <div className="min-w-0">
+                  <p className="text-[10px] text-text-tertiary mb-0.5">AI 예측</p>
+                  <div className="font-medium text-foreground truncate">
+                    {predicted ? renderName(predicted.hrName, predicted.hrNo, predicted.chulNo) : <span className="text-text-tertiary">-</span>}
+                  </div>
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[10px] text-text-tertiary mb-0.5">실제 결과</p>
+                  <div className="font-medium text-foreground truncate">
+                    {actual ? renderName(actual.hrName ?? '', actual.hrNo ?? '', actual.chulNo) : <span className="text-text-tertiary">-</span>}
+                  </div>
+                </div>
+              </div>
+              <div className="shrink-0">
+                {predicted && actual ? (
+                  match ? (
+                    <span className="inline-flex text-green-600" aria-label="일치"><Icon name="Check" size={16} /></span>
+                  ) : (
+                    <span className="inline-flex text-red-400" aria-label="불일치"><Icon name="X" size={16} /></span>
+                  )
+                ) : (
+                  <span className="text-text-tertiary text-xs">-</span>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      {/* Desktop: table */}
+      <div className="hidden sm:block overflow-x-auto">
         <table className="w-full min-w-[280px] text-sm">
           <thead>
             <tr className="border-b border-border text-text-secondary">

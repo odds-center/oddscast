@@ -11,9 +11,14 @@ COPY . .
 # Install all workspace deps (required for pnpm workspace resolution)
 RUN pnpm install --frozen-lockfile
 
-# Build shared first (server depends on @oddscast/shared types)
+# Build shared package (creates dist/types/index.d.ts and dist/types/index.js)
 WORKDIR /app/shared
-RUN pnpm run build
+RUN pnpm exec tsc -p tsconfig.build.json
+
+# Explicitly link @oddscast/shared into server node_modules for TypeScript resolution
+RUN mkdir -p /app/server/node_modules/@oddscast && \
+    rm -rf /app/server/node_modules/@oddscast/shared && \
+    ln -s /app/shared /app/server/node_modules/@oddscast/shared
 
 # Build server
 WORKDIR /app

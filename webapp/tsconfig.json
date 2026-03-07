@@ -19,9 +19,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"],
-      "@oddscast/shared": ["../shared/types/index.ts"],
-      "@oddscast/shared/*": ["../shared/*"]
+      "@/*": ["./*"]
     }
   },
   "include": [

@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-07 (KRA 크론 KST 타임존 수정, 출전마 번호/순위 저장 버그 수정, Railway 배포 완료, 모바일 UI 개선)
+**Last updated:** 2026-03-08 (Sentry 에러 모니터링 동작 확인, CD 파이프라인 자동 배포 확인, 예측 정확도 개선 — 기수 가중치 추가/softmax T 하향, 날짜별 매트릭스 배치 생성)
 
 ---
 
@@ -54,7 +54,7 @@
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
 | 1 | **Railway 배포** | ✅ 완료 | Server + DB Railway 배포 완료. KRA 데이터 적재, 어드민 계정 설정 완료. |
-| 2 | **CD 파이프라인** | 준비됨 | `.github/workflows/deploy.yml` 추가됨. `RAILWAY_TOKEN` 시크릿 설정 후 push 시 자동 배포. [RAILWAY_DEPLOYMENT.md](RAILWAY_DEPLOYMENT.md) §4.2 |
+| 2 | **CD 파이프라인** | ✅ 완료 | `.github/workflows/deploy.yml` + `RAILWAY_TOKEN` 설정 완료. push 시 자동 배포 동작 확인. |
 | 3 | **DB 백업** | 가이드 추가 | [guides/DB_BACKUP.md](guides/DB_BACKUP.md). pg_dump 수동 실행 또는 cron 연동은 환경별 적용 |
 | 4 | **앱 스토어** | 중기 | iOS / Google Play 출시 (필요 시 별도 체크리스트) |
 
@@ -64,7 +64,7 @@
 
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
-| 1 | **에러 모니터링** | 준비됨 | 서버 `main.ts`에 Sentry 조건부 초기화 적용. `SENTRY_DSN` 설정 시 동작. [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) |
+| 1 | **에러 모니터링** | ✅ 완료 | Sentry 서버+웹앱 모두 동작 확인. `SENTRY_DSN` 환경변수 설정 완료. |
 | 2 | **업타임/지연 모니터링** | 가이드 추가 | [guides/MONITORING_SETUP.md](guides/MONITORING_SETUP.md) — GET /health, GET /health/detailed (prefix 제외). [API_SPECIFICATION.md](architecture/API_SPECIFICATION.md) §0 Health 명세 |
 | 3 | **E2E/통합 테스트 보강** | 선택 | 중요 플로우(로그인, 경주 조회, 예측권) E2E 또는 API 통합 테스트 추가 |
 | 4 | **부하 테스트** | 선택 | 경주일 트래픽 스파이크 시뮬레이션 |

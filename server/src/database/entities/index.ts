@@ -37,3 +37,4 @@ export { SubscriptionPlan } from './subscription-plan.entity';
 export { BillingHistory } from './billing-history.entity';
 export { ReferralCode } from './referral-code.entity';
 export { ReferralClaim } from './referral-claim.entity';
+export { RaceDividend } from './race-dividend.entity';

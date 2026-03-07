@@ -1,6 +1,6 @@
 import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
@@ -146,6 +146,7 @@ export default function RaceDetailPage() {
   });
 
   const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
+  const [oddsExplainOpen, setOddsExplainOpen] = useState(false);
 
   const { data: predictionPreview } = useQuery({
     queryKey: ['prediction', 'preview', id],
@@ -350,6 +351,21 @@ export default function RaceDetailPage() {
         : [];
   const hasResults = effectiveResults.length > 0;
   const firstPlaceTimeSec = getFirstPlaceTimeSec(effectiveResults);
+
+  // Build hrNo → { winOdds, plcOdds } map for completed races (passed to entry table)
+  const oddsMap = useMemo(() => {
+    if (!isRaceCompleted || effectiveResults.length === 0) return undefined;
+    const map = new Map<string, { winOdds?: number; plcOdds?: number }>();
+    for (const res of effectiveResults) {
+      if (res.hrNo) {
+        const r = res as { winOdds?: number; plcOdds?: number };
+        if (r.winOdds != null || r.plcOdds != null) {
+          map.set(res.hrNo, { winOdds: r.winOdds, plcOdds: r.plcOdds });
+        }
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [isRaceCompleted, effectiveResults]);
 
   // Extract entry list from results data (fallback when entries is empty)
   const entriesFromResults = hasResults
@@ -919,6 +935,7 @@ export default function RaceDetailPage() {
                 <HorseEntryTable
                   entries={entries}
                   raceId={typeof id === 'string' ? id : undefined}
+                  oddsMap={oddsMap}
                 />
               ) : displayEntries.length > 0 ? (
                 <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
@@ -949,6 +966,41 @@ export default function RaceDetailPage() {
                   >
                     다시 시도
                   </button>
+                </div>
+              )}
+              {/* Odds explanation panel — shown for completed races */}
+              {isRaceCompleted && (
+                <div className='mt-3'>
+                  <button
+                    type='button'
+                    onClick={() => setOddsExplainOpen((v) => !v)}
+                    className='inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors'
+                  >
+                    <Icon name='AlertCircle' size={13} />
+                    배당률이란 무엇인가요?
+                    <Icon name={oddsExplainOpen ? 'Minus' : 'Plus'} size={12} />
+                  </button>
+                  {oddsExplainOpen && (
+                    <div className='mt-2 rounded-xl border border-border bg-stone-50 p-4 text-xs text-text-secondary space-y-3'>
+                      <div>
+                        <p className='font-semibold text-foreground mb-1'>배당률 결정 방식 — 파리뮤추얼(Pari-mutuel)</p>
+                        <p>경마 배당률은 고정된 것이 아닙니다. 투표자들이 각 말에 투표한 금액의 합계로 자동 결정됩니다. 마감 전까지 실시간으로 바뀌며, 경주 확정 후 최종 배당률이 확정됩니다.</p>
+                      </div>
+                      <div className='space-y-1.5'>
+                        <div className='flex gap-2'>
+                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white'>단승식</span>
+                          <span>1위 말을 적중시키는 방식. 배당 = (전체 판매금 × 공제 후) ÷ 해당 말 투표금. 인기마일수록 투표가 몰려 배당이 낮아집니다.</span>
+                        </div>
+                        <div className='flex gap-2'>
+                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white'>연승식</span>
+                          <span>3위 내에 드는 말을 적중시키는 방식. 적중 확률이 높은 만큼 단승식보다 배당이 낮습니다.</span>
+                        </div>
+                      </div>
+                      <div className='pt-1 border-t border-border text-text-tertiary'>
+                        <p>공제율(약 20~25%)은 마사회 운영비·세금 등으로 차감됩니다. 표시된 배당률은 KRA 공시 기준 최종 지급 배수입니다.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </section>

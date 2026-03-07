@@ -849,6 +849,16 @@ export class AdminKraApi {
     }
   }
 
+  static async syncDividends(date: string): Promise<{ message: string; total: number }> {
+    try {
+      const d = date.replace(/-/g, '').slice(0, 8);
+      const response = await axiosInstance.post(`/kra/sync/dividends?date=${d}`, {}, { timeout: 120_000 });
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
   static async syncAll(date?: string): Promise<{
     message: string;
     entrySheet?: { races: number; entries: number };

@@ -13,7 +13,7 @@ import { adminKraApi } from '@/lib/api/admin';
 import { formatYyyyMmDd, getErrorMessage, getTodayKstDate, getKstDateOffset } from '@/lib/utils';
 import {
   Database, RefreshCw, FileText, Trophy, User, Zap, History,
-  Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server, Sparkles,
+  Info, Clock, CheckCircle2, AlertTriangle, Calendar, Server, Sparkles, DollarSign,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import LoadingSpinner from '@/components/common/LoadingSpinner';
@@ -136,6 +136,15 @@ export default function KraPage() {
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
+  const syncDividendsMutation = useMutation({
+    mutationFn: (date: string) => adminKraApi.syncDividends(toYyyyMmDd(date)),
+    onSuccess: (res: { message: string; total: number }) => {
+      queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      toast.success(res?.message ?? '배당률 동기화 완료');
+    },
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
+  });
+
   const syncAllMutation = useMutation({
     mutationFn: async (date: string) => {
       const out = await adminKraApi.syncAllWithProgress(toYyyyMmDd(date), {
@@ -228,6 +237,7 @@ export default function KraPage() {
     syncResultsMutation.isPending ||
     syncDetailsMutation.isPending ||
     syncJockeysMutation.isPending ||
+    syncDividendsMutation.isPending ||
     syncAllMutation.isPending ||
     generatePredictionsMutation.isPending ||
     seedSampleMutation.isPending ||
@@ -435,6 +445,15 @@ export default function KraPage() {
                 >
                   <AdminIcon icon={Trophy} className='w-4 h-4 mr-1.5 inline' />
                   선택일 결과 동기화
+                </Button>
+                <Button
+                  variant='secondary'
+                  onClick={() => syncDividendsMutation.mutate(syncDate)}
+                  disabled={isAnyPending}
+                  isLoading={syncDividendsMutation.isPending}
+                >
+                  <AdminIcon icon={DollarSign} className='w-4 h-4 mr-1.5 inline' />
+                  배당률 동기화
                 </Button>
                 <Button
                   variant='ghost'

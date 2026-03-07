@@ -41,6 +41,7 @@ import {
   BillingHistory,
   ReferralCode,
   ReferralClaim,
+  RaceDividend,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 
@@ -124,6 +125,7 @@ import { ReferralsModule } from './referrals/referrals.module';
           BillingHistory,
           ReferralCode,
           ReferralClaim,
+          RaceDividend,
         ],
         logging: config.get<string>('NODE_ENV') === 'development',
         synchronize: false,

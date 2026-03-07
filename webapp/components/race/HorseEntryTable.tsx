@@ -69,6 +69,8 @@ export interface HorseEntryTableProps {
   isSelected?: (hrNo: string) => boolean;
   /** When set, horse profile link includes ?from= so back button returns to this race */
   raceId?: string | number;
+  /** Final win/place odds per horse (hrNo → odds). Only available for completed races. */
+  oddsMap?: Map<string, { winOdds?: number; plcOdds?: number }>;
 }
 
 function horseProfileHref(hrNo: string, raceId?: string | number): string {
@@ -79,7 +81,8 @@ function horseProfileHref(hrNo: string, raceId?: string | number): string {
   return base;
 }
 
-export default function HorseEntryTable({ entries, onSelectHorse, isSelected, raceId }: HorseEntryTableProps) {
+export default function HorseEntryTable({ entries, onSelectHorse, isSelected, raceId, oddsMap }: HorseEntryTableProps) {
+  const showOdds = !!oddsMap && oddsMap.size > 0;
   return (
     <div className='space-y-2 sm:space-y-0'>
       {/* Mobile: card layout */}
@@ -90,6 +93,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
           const record = formatRecord(e.rcCntT, e.ord1CntT);
           const recentStr = formatRecentRanks(e.recentRanks);
 
+          const odds = oddsMap?.get(e.hrNo);
           return (
             <div
               key={e.id ?? e.hrNo}
@@ -145,6 +149,12 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     {record !== '-' && <span>{record}</span>}
                     {recentStr !== '-' && <span>최근 {recentStr}</span>}
                     {e.equipment && <span>장구 {e.equipment}</span>}
+                    {odds?.winOdds != null && (
+                      <span className='text-emerald-700 font-medium'>단승 {odds.winOdds}</span>
+                    )}
+                    {odds?.plcOdds != null && (
+                      <span className='text-teal-700 font-medium'>연승 {odds.plcOdds}</span>
+                    )}
                   </div>
                 </div>
                 {onSelectHorse && isSelected?.(e.hrNo) && (
@@ -186,11 +196,22 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
               <th className='text-left py-3 w-16 hidden md:table-cell font-semibold'>
                 <Tooltip content='경주 시 말에 장착하는 보조 장비 (차안대, 혀묶개 등)' inline>장구</Tooltip>
               </th>
+              {showOdds && (
+                <th className='cell-center py-3 w-14 font-semibold'>
+                  <Tooltip content='단승식 최종 배당률 (1위 적중 시 배당)' inline>단승</Tooltip>
+                </th>
+              )}
+              {showOdds && (
+                <th className='cell-center py-3 w-14 font-semibold'>
+                  <Tooltip content='연승식 최종 배당률 (3위 내 적중 시 배당)' inline>연승</Tooltip>
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className='divide-y divide-border'>
             {entries.map((e) => {
               const { base: hwBase, delta: hwDelta } = parseHorseWeight(e.horseWeight);
+              const entryOdds = oddsMap?.get(e.hrNo);
 
               return (
                 <tr
@@ -263,6 +284,16 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                   <td className='py-2.5 text-xs text-text-tertiary hidden md:table-cell'>
                     {e.equipment ?? '-'}
                   </td>
+                  {showOdds && (
+                    <td className='cell-center py-2.5 text-sm font-medium text-emerald-700'>
+                      {entryOdds?.winOdds ?? '-'}
+                    </td>
+                  )}
+                  {showOdds && (
+                    <td className='cell-center py-2.5 text-sm font-medium text-teal-700'>
+                      {entryOdds?.plcOdds ?? '-'}
+                    </td>
+                  )}
                 </tr>
               );
             })}

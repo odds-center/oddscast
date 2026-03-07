@@ -249,6 +249,21 @@ CREATE TABLE IF NOT EXISTS "race_results" (
     CONSTRAINT "race_results_pkey" PRIMARY KEY ("id")
 );
 
+CREATE TABLE IF NOT EXISTS "race_dividends" (
+    "id" SERIAL NOT NULL,
+    "raceId" INTEGER NOT NULL,
+    "pool" TEXT NOT NULL,
+    "poolName" TEXT NOT NULL,
+    "chulNo" TEXT NOT NULL,
+    "chulNo2" TEXT NOT NULL DEFAULT '',
+    "chulNo3" TEXT NOT NULL DEFAULT '',
+    "odds" DOUBLE PRECISION NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "race_dividends_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "race_dividends_unique" UNIQUE ("raceId", "pool", "chulNo", "chulNo2", "chulNo3")
+);
+
 CREATE TABLE IF NOT EXISTS "jockey_results" (
     "id" SERIAL NOT NULL,
     "meet" TEXT NOT NULL,
@@ -663,6 +678,11 @@ DO $$ BEGIN
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'race_results_raceId_fkey' AND n.nspname = 'oddscast') THEN
     ALTER TABLE "race_results" ADD CONSTRAINT "race_results_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'race_dividends_raceId_fkey' AND n.nspname = 'oddscast') THEN
+    ALTER TABLE "race_dividends" ADD CONSTRAINT "race_dividends_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'predictions_raceId_fkey' AND n.nspname = 'oddscast') THEN

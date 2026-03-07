@@ -764,16 +764,16 @@ AI 예측 순위: ${predictedTop || '-'}
     const raceIds = rawRacesList.map((r) => r.id);
     const entriesMap = new Map<
       number,
-      Array<{ hrNo: string; hrName: string }>
+      Array<{ hrNo: string; hrName: string; chulNo?: string }>
     >();
     if (raceIds.length > 0) {
       const entriesList = await this.entryRepo.find({
         where: { raceId: In(raceIds) },
-        select: ['raceId', 'hrNo', 'hrName'],
+        select: ['raceId', 'hrNo', 'hrName', 'chulNo'],
       });
       for (const e of entriesList) {
         if (!entriesMap.has(e.raceId)) entriesMap.set(e.raceId, []);
-        entriesMap.get(e.raceId)!.push({ hrNo: e.hrNo, hrName: e.hrName });
+        entriesMap.get(e.raceId)!.push({ hrNo: e.hrNo, hrName: e.hrName, chulNo: (e as { chulNo?: string }).chulNo ?? undefined });
       }
     }
     const rawRaces = rawRacesList.map((r) => ({
@@ -796,11 +796,13 @@ AI 예측 순위: ${predictedTop || '-'}
       rcDist?: string;
       rank?: string;
       entryCount?: number;
-      entries?: Array<{ hrNo: string; hrName: string }>;
+      entries?: Array<{ hrNo: string; hrName: string; chulNo?: string }>;
       predictions: Record<string, string[] | string>;
       horseNames: Record<string, string>;
       aiConsensus: string;
       consensusLabel?: string;
+      horseScores?: Array<{ hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number }>;
+      analysis?: string;
     }> = [];
 
     for (const race of races) {
@@ -810,15 +812,12 @@ AI 예측 순위: ${predictedTop || '-'}
           previewApproved: true,
           status: PredictionStatus.COMPLETED,
         },
-        select: ['scores'],
+        select: ['scores', 'analysis'],
         order: { createdAt: 'DESC' },
       });
-      const scores =
-        (
-          pred?.scores as {
-            horseScores?: Array<{ hrNo?: string; hrName?: string }>;
-          } | null
-        )?.horseScores ?? [];
+      type HorseScore = { hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number };
+      const scoresData = pred?.scores as { horseScores?: HorseScore[] } | null;
+      const scores: HorseScore[] = scoresData?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
       const top2 = scores[1]?.hrNo;
       const consensus = top1 ?? '-';
@@ -826,19 +825,21 @@ AI 예측 순위: ${predictedTop || '-'}
 
       const horseNames: Record<string, string> = {};
       const entryList =
-        (race as { entries?: Array<{ hrNo?: string; hrName?: string }> })
+        (race as { entries?: Array<{ hrNo?: string; hrName?: string; chulNo?: string }> })
           .entries ?? [];
       for (const e of entryList) {
         if (e.hrNo && e.hrName) horseNames[e.hrNo] = e.hrName;
       }
       for (const s of scores) {
-        if (
-          s.hrNo &&
-          (s as { hrName?: string }).hrName &&
-          !horseNames[s.hrNo]
-        ) {
-          horseNames[s.hrNo] = (s as { hrName?: string }).hrName!;
+        if (s.hrNo && s.hrName && !horseNames[s.hrNo]) {
+          horseNames[s.hrNo] = s.hrName;
         }
+      }
+
+      // Build chulNo lookup: scores may carry chulNo even when entry sheet is missing
+      const chulNoByHrNo: Record<string, string> = {};
+      for (const s of scores) {
+        if (s.hrNo && s.chulNo) chulNoByHrNo[s.hrNo] = s.chulNo;
       }
 
       rows.push({
@@ -853,6 +854,7 @@ AI 예측 순위: ${predictedTop || '-'}
         entries: entryList.map((e) => ({
           hrNo: e.hrNo ?? '',
           hrName: e.hrName ?? '',
+          chulNo: e.chulNo ?? (e.hrNo ? chulNoByHrNo[e.hrNo] : undefined),
         })),
         predictions: {
           ai_consensus: consensusArr.length > 0 ? consensusArr : consensus,
@@ -861,6 +863,8 @@ AI 예측 순위: ${predictedTop || '-'}
         horseNames,
         aiConsensus: consensus,
         consensusLabel: top1 ? '축' : undefined,
+        horseScores: scores.length > 0 ? scores : undefined,
+        analysis: (pred as { analysis?: string } | null)?.analysis ?? undefined,
       });
     }
 

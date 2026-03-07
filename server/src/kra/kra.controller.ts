@@ -94,4 +94,12 @@ export class KraController {
   async syncJockeys(@Query('meet') meet?: string) {
     return this.kraService.fetchJockeyTotalResults(meet);
   }
+
+  @Post('sync/dividends')
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'KRA 확정배당율 동기화 (7승식: 단승/연승/복승/쌍승/복연승/삼복승/삼쌍승)' })
+  async syncDividends(@Query('date') date: string) {
+    return this.kraService.fetchDividends(date);
+  }
 }

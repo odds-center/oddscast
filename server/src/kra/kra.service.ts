@@ -22,6 +22,7 @@ import {
   BatchSchedule,
   BATCH_JOB_KRA_RESULT_FETCH,
 } from '../database/entities/batch-schedule.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { BatchScheduleStatus } from '../database/db-enums';
 import { GlobalConfigService } from '../config/config.service';
 import { ResultsService } from '../results/results.service';
@@ -70,6 +71,8 @@ export class KraService {
     private readonly kraSyncLogRepo: Repository<KraSyncLog>,
     @InjectRepository(BatchSchedule)
     private readonly batchScheduleRepo: Repository<BatchSchedule>,
+    @InjectRepository(RaceDividend)
+    private readonly dividendRepo: Repository<RaceDividend>,
     private resultsService: ResultsService,
     private predictionsService: PredictionsService,
     @Inject(CACHE_MANAGER) private cache: Cache,
@@ -1081,6 +1084,14 @@ export class KraService {
       out.results = { totalResults: resultRes.totalResults ?? 0 };
       await this.delay(300);
 
+      opts?.onProgress?.(50, '배당률 동기화 중…');
+      try {
+        await this.fetchDividends(d);
+      } catch (err) {
+        this.logger.warn(`[syncAll] fetchDividends failed: ${err instanceof Error ? err.message : String(err)}`);
+      }
+      await this.delay(200);
+
       opts?.onProgress?.(60, '상세정보(훈련·장구) 동기화 중…');
       const detailRes = await this.syncAnalysisData(d);
       out.details = detailRes.message;
@@ -2054,6 +2065,115 @@ export class KraService {
       message: `Synced ${totalResults} results for ${date}`,
       totalResults,
     };
+  }
+
+  /**
+   * Fetches confirmed payout dividends for all 7 승식 pool types (WIN, PLC, QNL, EXA, QPL, TLA, TRI).
+   * Endpoint: KRA API160/integratedInfo
+   * Called after fetchRaceResults — upserts into race_dividends table.
+   */
+  async fetchDividends(date: string): Promise<{ message: string; total: number }> {
+    this.ensureServiceKeyOrThrow();
+    const normalizedDate = this.normalizeToYyyyMmDd(date);
+    const baseUrl = await this.resolveBaseUrl();
+    const url = `${baseUrl}/API160/integratedInfo`;
+
+    /** KRA Korean pool name → our pool code */
+    const POOL_NAME_TO_CODE: Record<string, string> = {
+      단승식: 'WIN',
+      연승식: 'PLC',
+      복승식: 'QNL',
+      쌍승식: 'EXA',
+      복연승식: 'QPL',
+      삼복승식: 'TLA',
+      삼쌍승식: 'TRI',
+    };
+
+    let total = 0;
+
+    for (const meet of KRA_MEETS) {
+      try {
+        const params = {
+          serviceKey: decodeURIComponent(this.serviceKey),
+          meet: meet.code,
+          rc_date: normalizedDate,
+          numOfRows: 1000,
+          pageNo: 1,
+          _type: 'json',
+        };
+
+        const response = await firstValueFrom(
+          this.httpService.get(url, { params }),
+        );
+
+        let items: KraApiItem[] = [];
+        if (response.data?.response?.body?.items?.item) {
+          const raw = response.data.response.body.items.item;
+          items = (Array.isArray(raw) ? raw : [raw]) as KraApiItem[];
+        } else if (
+          typeof response.data === 'string' &&
+          response.data.includes('<')
+        ) {
+          const parser = new xml2js.Parser({ explicitArray: false });
+          const result = await parser.parseStringPromise(response.data);
+          if (result?.response?.body?.items?.item) {
+            const raw = result.response.body.items.item;
+            items = (Array.isArray(raw) ? raw : [raw]) as KraApiItem[];
+          }
+        }
+
+        for (const item of items) {
+          const rcNo = String(item.rcNo ?? item.rc_no ?? '');
+          const poolNameRaw = String(item.pool ?? '').trim();
+          const poolCode = POOL_NAME_TO_CODE[poolNameRaw] ?? poolNameRaw;
+          const oddsVal = parseFloat(String(item.odds ?? '0'));
+          const chulNo = String(item.chulNo ?? item.chul_no ?? '').trim();
+          const chulNo2 = String(item.chulNo2 ?? item.chul_no2 ?? '0').trim();
+          const chulNo3 = String(item.chulNo3 ?? item.chul_no3 ?? '0').trim();
+
+          if (!rcNo || !chulNo || !poolCode || Number.isNaN(oddsVal) || oddsVal <= 0) continue;
+
+          // Normalize "0" → empty string for unused horse slots
+          const cn2 = chulNo2 === '0' ? '' : chulNo2;
+          const cn3 = chulNo3 === '0' ? '' : chulNo3;
+
+          const race = await this.findRaceByMeetDateNo(meet.name, normalizedDate, rcNo);
+          if (!race) continue;
+
+          const existing = await this.dividendRepo.findOne({
+            where: { raceId: race.id, pool: poolCode, chulNo, chulNo2: cn2, chulNo3: cn3 },
+            select: ['id'],
+          });
+
+          if (existing) {
+            await this.dividendRepo.update(existing.id, { odds: oddsVal, poolName: poolNameRaw });
+          } else {
+            await this.dividendRepo.save(
+              this.dividendRepo.create({
+                raceId: race.id,
+                pool: poolCode,
+                poolName: poolNameRaw,
+                chulNo,
+                chulNo2: cn2,
+                chulNo3: cn3,
+                odds: oddsVal,
+              }),
+            );
+          }
+          total++;
+        }
+
+        this.logger.log(
+          `[fetchDividends] ${meet.name} ${normalizedDate}: ${items.length} records processed`,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `[fetchDividends] ${meet.name} ${normalizedDate} failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
+    }
+
+    return { message: `Synced ${total} dividend records for ${normalizedDate}`, total };
   }
 
   /**

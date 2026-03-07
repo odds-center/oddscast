@@ -7,6 +7,7 @@ import { PredictionStatus, RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import {
   CreateRaceDto,
@@ -42,6 +43,8 @@ export class RacesService {
     private readonly entryRepo: Repository<RaceEntry>,
     @InjectRepository(RaceResult)
     private readonly resultRepo: Repository<RaceResult>,
+    @InjectRepository(RaceDividend)
+    private readonly dividendRepo: Repository<RaceDividend>,
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
     @Inject(CACHE_MANAGER) private cache: Cache,
@@ -499,6 +502,24 @@ export class RacesService {
   }
 
   async getDividends(raceId: number) {
+    // Prefer confirmed dividends from race_dividends (all 7 pool types)
+    const dividends = await this.dividendRepo.find({
+      where: { raceId },
+      order: { pool: 'ASC', chulNo: 'ASC', chulNo2: 'ASC', chulNo3: 'ASC' },
+    });
+
+    if (dividends.length > 0) {
+      return dividends.map((d) => ({
+        poolName: d.poolName,
+        pool: d.pool,
+        chulNo: d.chulNo,
+        chulNo2: d.chulNo2 || undefined,
+        chulNo3: d.chulNo3 || undefined,
+        odds: d.odds,
+      }));
+    }
+
+    // Fallback: derive 단승식 / 연승식 from per-horse race_results
     type ResultRow = {
       ord: string | null;
       ordInt: number | null;
@@ -526,6 +547,7 @@ export class RacesService {
       .getMany()) as unknown as ResultRow[];
     const list: {
       poolName: string;
+      pool?: string;
       chulNo?: string;
       chulNo2?: string;
       chulNo3?: string;
@@ -539,10 +561,10 @@ export class RacesService {
     for (const r of normal) {
       const chulNo = r.chulNo ?? r.hrNo ?? '';
       if (chulNo && r.winOdds != null) {
-        list.push({ poolName: '단승식', chulNo, odds: r.winOdds });
+        list.push({ poolName: '단승식', pool: 'WIN', chulNo, odds: r.winOdds });
       }
       if (chulNo && r.plcOdds != null) {
-        list.push({ poolName: '연승식', chulNo, odds: r.plcOdds });
+        list.push({ poolName: '연승식', pool: 'PLC', chulNo, odds: r.plcOdds });
       }
     }
     return list;

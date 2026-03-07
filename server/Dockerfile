@@ -11,8 +11,12 @@ COPY . .
 # Install all workspace deps (required for pnpm workspace resolution)
 RUN pnpm install --frozen-lockfile
 
-# Build only shared and server
-RUN pnpm --filter @oddscast/shared build
+# Build shared first (server depends on @oddscast/shared types)
+WORKDIR /app/shared
+RUN pnpm run build
+
+# Build server
+WORKDIR /app
 RUN pnpm --filter server build
 
 # Run production server (PORT from env; Railway injects PORT)

@@ -1,0 +1,1 @@
+{"version":3,"file":"prediction-ticket.types.d.ts","sourceRoot":"","sources":["../../types/prediction-ticket.types.ts"],"names":[],"mappings":"AAAA;;;;GAIG;AAEH,OAAO,KAAK,EAAE,gBAAgB,EAAE,MAAM,sBAAsB,CAAC;AAE7D,MAAM,WAAW,qBAAqB;IACpC,OAAO,EAAE,gBAAgB,EAAE,CAAC;IAC5B,KAAK,EAAE,MAAM,CAAC;IACd,IAAI,EAAE,MAAM,CAAC;IACb,UAAU,EAAE,MAAM,CAAC;CACpB"}

@@ -10,6 +10,9 @@ dist/
 server/dist/
 .expo/
 
+# shared/dist is committed to git for Docker builds
+!shared/dist/
+
 # Environment
 .env
 .env*.local

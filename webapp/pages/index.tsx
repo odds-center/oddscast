@@ -12,16 +12,12 @@ import {
   RecentRacesSection,
   PredictionMatrixPreviewSection,
   RacePredictionsPreviewSection,
-AllRacesSection,
+  AllRacesSection,
 } from '@/components/home';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import ResultApi from '@/lib/api/resultApi';
 import Link from 'next/link';
-import type { GetServerSideProps } from 'next';
-import { QueryClient, dehydrate } from '@tanstack/react-query';
-import { serverGet } from '@/lib/api/serverFetch';
-import { dayjsKST } from '@/lib/utils/dayjs';
 
 export default function Home() {
   const [loginError, setLoginError] = useState<string | null>(null);
@@ -115,79 +111,3 @@ export default function Home() {
   );
 }
 
-export const getServerSideProps: GetServerSideProps = async () => {
-  const queryClient = new QueryClient();
-  const weekDates: string[] = [];
-  const today = dayjsKST();
-  for (let i = 0; i < 7; i++) {
-    weekDates.push(today.add(i, 'day').format('YYYYMMDD'));
-  }
-
-  try {
-    await Promise.all([
-      queryClient.prefetchQuery({
-        queryKey: ['races', 'today'],
-        queryFn: async () => {
-          const res = await serverGet<{ races?: unknown[] }>('/races', {
-            params: { date: 'today', limit: 12, page: 1 },
-          });
-          return res?.races ?? [];
-        },
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['races', 'today', 'stats'],
-        queryFn: async () => {
-          const res = await serverGet<{ races?: unknown[]; total?: number }>('/races', {
-            params: { date: 'today', limit: 30, page: 1 },
-          });
-          return res ?? { races: [], total: 0 };
-        },
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['races', 'week', 'count'],
-        queryFn: async () => {
-          const res = await serverGet<{ races?: { rcDate?: string }[] }>('/races', {
-            params: { limit: 40, page: 1 },
-          });
-          const races = res?.races ?? [];
-          const total = races.filter((r) => {
-            const d = (r.rcDate ?? '').replace(/-/g, '').slice(0, 8);
-            return weekDates.some((wd) => d === wd);
-          }).length;
-          return { total };
-        },
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['races', 'week'],
-        queryFn: async () => {
-          const res = await serverGet<{ races?: { rcDate?: string }[] }>('/races', {
-            params: { limit: 30, page: 1 },
-          });
-          const races = (res?.races ?? []).filter((r) => {
-            const d = (r.rcDate ?? '').replace(/-/g, '').slice(0, 8);
-            return weekDates.some((wd) => d === wd);
-          });
-          return races;
-        },
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['results', 'recent'],
-        queryFn: () =>
-          serverGet<{ results?: unknown[] }>('/results', { params: { limit: 30, page: 1 } }),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['predictions', 'matrix', 'preview'],
-        queryFn: () =>
-          serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix'),
-      }),
-    ]);
-  } catch {
-    // If SSR fails, fetch on client
-  }
-
-  return {
-    props: {
-      dehydratedState: dehydrate(queryClient),
-    },
-  };
-};

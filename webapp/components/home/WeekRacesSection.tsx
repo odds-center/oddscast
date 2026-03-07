@@ -11,14 +11,13 @@ import { routes } from '@/lib/routes';
 import { getTodayKstDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
 
-function getWeekDates(): string[] {
+function getWeekRange(): { dateFrom: string; dateTo: string } {
   const kst = getTodayKstDate();
-  const dates: string[] = [];
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day + i));
-    dates.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`);
-  }
-  return dates;
+  const from = new Date(Date.UTC(kst.year, kst.month - 1, kst.day));
+  const to = new Date(Date.UTC(kst.year, kst.month - 1, kst.day + 6));
+  const fmt = (d: Date) =>
+    `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
+  return { dateFrom: fmt(from), dateTo: fmt(to) };
 }
 
 export default function WeekRacesSection() {
@@ -26,13 +25,9 @@ export default function WeekRacesSection() {
     queryKey: ['races', 'week'],
     placeholderData: keepPreviousData,
     queryFn: async () => {
-      const res = await RaceApi.getRaces({ limit: 50, page: 1 });
-      const races = (res?.races ?? []) as RaceDto[];
-      const weekDates = getWeekDates();
-      return races.filter((r) => {
-        const d = (r.rcDate ?? '').replace(/-/g, '').slice(0, 8);
-        return weekDates.some((wd) => d === wd);
-      });
+      const { dateFrom, dateTo } = getWeekRange();
+      const res = await RaceApi.getRaces({ limit: 50, page: 1, dateFrom, dateTo });
+      return (res?.races ?? []) as RaceDto[];
     },
   });
 

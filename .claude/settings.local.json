@@ -55,7 +55,8 @@
       "WebFetch(domain:server-production-aee6.up.railway.app)",
       "Bash(brew install:*)",
       "Bash(export:*)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(gh secret:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

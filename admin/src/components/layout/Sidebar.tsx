@@ -14,7 +14,6 @@ import {
   BookOpen,
   ShoppingCart,
   ClipboardList,
-  Ticket,
   Bot,
   TrendingUp,
   Database,

@@ -20,20 +20,19 @@ const LIVE_REFETCH_MS = 5 * 60 * 1000;
 export default function TodayRacesSection() {
   const { weekDay } = getTodayKstDate();
   const isTodayRaceDay = RACE_DAYS.includes(weekDay);
-  const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'today'],
+  // Share cache with DateHeader and HomeQuickStats (same key/queryFn)
+  const { data: todayData, isLoading, error, refetch } = useQuery({
+    queryKey: ['races', 'today', 'stats'],
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
-    queryFn: async () => {
-      const res = await RaceApi.getRaces({ limit: 12, page: 1, date: 'today' });
-      return res?.races ?? [];
-    },
+    queryFn: () => RaceApi.getRaces({ limit: 100, page: 1, date: 'today' }),
   });
 
-  const races = (data ?? []) as RaceDto[];
+  const allTodayRaces = (todayData?.races ?? []) as RaceDto[];
+  const races = allTodayRaces.slice(0, 12);
   const allEnded =
-    races.length > 0 &&
-    races.every((r) => isRaceActuallyEnded(r.rcDate, r.stTime));
+    allTodayRaces.length > 0 &&
+    allTodayRaces.every((r) => isRaceActuallyEnded(r.rcDate, r.stTime));
 
   return (
     <HomeSection

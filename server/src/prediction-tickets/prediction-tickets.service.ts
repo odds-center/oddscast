@@ -287,20 +287,16 @@ export class PredictionTicketsService {
 
     const tickets = await this.dataSource.transaction(async (manager) => {
       const repo = manager.getRepository(PredictionTicket);
-      const created: PredictionTicket[] = [];
-      for (let i = 0; i < count; i++) {
-        const t = await repo.save(
-          repo.create({
-            userId,
-            type: TicketType.MATRIX,
-            status: TicketStatus.AVAILABLE,
-            expiresAt,
-            issuedAt: new Date(),
-          }),
-        );
-        created.push(t);
-      }
-      return created;
+      const entities = Array.from({ length: count }, () =>
+        repo.create({
+          userId,
+          type: TicketType.MATRIX,
+          status: TicketStatus.AVAILABLE,
+          expiresAt,
+          issuedAt: new Date(),
+        }),
+      );
+      return repo.save(entities);
     });
 
     return {
@@ -326,19 +322,16 @@ export class PredictionTicketsService {
       expiresAt.getDate() + Math.min(365, Math.max(1, expiresInDays)),
     );
     const ticketType = type === 'MATRIX' ? TicketType.MATRIX : TicketType.RACE;
-    const tickets: PredictionTicket[] = [];
-    for (let i = 0; i < count; i++) {
-      const t = await this.ticketRepo.save(
-        this.ticketRepo.create({
-          userId,
-          type: ticketType,
-          status: TicketStatus.AVAILABLE,
-          expiresAt,
-          issuedAt: new Date(),
-        }),
-      );
-      tickets.push(t);
-    }
+    const entities = Array.from({ length: count }, () =>
+      this.ticketRepo.create({
+        userId,
+        type: ticketType,
+        status: TicketStatus.AVAILABLE,
+        expiresAt,
+        issuedAt: new Date(),
+      }),
+    );
+    const tickets = await this.ticketRepo.save(entities);
     return {
       granted: tickets.length,
       type,

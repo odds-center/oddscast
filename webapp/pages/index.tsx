@@ -12,8 +12,7 @@ import {
   RecentRacesSection,
   PredictionMatrixPreviewSection,
   RacePredictionsPreviewSection,
-  RankingPreviewSection,
-  AllRacesSection,
+AllRacesSection,
 } from '@/components/home';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
@@ -72,7 +71,6 @@ export default function Home() {
           { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상' },
           { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 정확도' },
           { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰' },
-          { href: routes.ranking, icon: 'Medal' as const, label: '예측랭킹' },
         ].map((item) => (
           <Link
             key={item.label}
@@ -106,9 +104,8 @@ export default function Home() {
         <RecentResultsSection />
         <PredictionMatrixPreviewSection />
       </div>
-      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
+      <div className='mb-4'>
         <RacePredictionsPreviewSection />
-        <RankingPreviewSection />
       </div>
 
       <div className='mb-4'>
@@ -182,15 +179,6 @@ export const getServerSideProps: GetServerSideProps = async () => {
         queryKey: ['predictions', 'matrix', 'preview'],
         queryFn: () =>
           serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix'),
-      }),
-      queryClient.prefetchQuery({
-        queryKey: ['rankings', 'preview'],
-        queryFn: async () => {
-          const res = await serverGet<{ data?: unknown[] } | unknown[]>('/rankings', {
-            params: { limit: 5 },
-          });
-          return Array.isArray(res) ? res : (res?.data ?? []);
-        },
       }),
     ]);
   } catch {

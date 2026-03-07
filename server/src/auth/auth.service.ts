@@ -16,6 +16,7 @@ import { PasswordResetToken } from '../database/entities/password-reset-token.en
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { PointsService } from '../points/points.service';
+import { GlobalConfigService } from '../config/config.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { dateToKstDash, kst, yesterdayKstDash } from '../common/utils/kst';
 
@@ -51,10 +52,6 @@ export interface SanitizedAdminUser {
   updatedAt: Date;
 }
 
-/** Signup bonus: 1 complimentary RACE ticket, 30 days expiry */
-const SIGNUP_BONUS_TICKETS = 1;
-const SIGNUP_BONUS_EXPIRES_DAYS = 30;
-
 @Injectable()
 export class AuthService {
   constructor(
@@ -70,6 +67,7 @@ export class AuthService {
     private readonly config: ConfigService,
     private readonly predictionTicketsService: PredictionTicketsService,
     private readonly pointsService: PointsService,
+    private readonly globalConfig: GlobalConfigService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -91,10 +89,12 @@ export class AuthService {
     if (!saved) throw new Error('User insert failed');
 
     try {
+      const bonusTickets = parseInt(await this.globalConfig.get('signup_bonus_tickets') ?? '1', 10);
+      const bonusDays = parseInt(await this.globalConfig.get('signup_bonus_expires_days') ?? '30', 10);
       await this.predictionTicketsService.grantTickets(
         saved.id,
-        SIGNUP_BONUS_TICKETS,
-        SIGNUP_BONUS_EXPIRES_DAYS,
+        bonusTickets,
+        bonusDays,
         'RACE',
       );
     } catch (err: unknown) {
@@ -192,13 +192,17 @@ export class AuthService {
       lastConsecutive = todayKST;
     }
 
+    const streakThreshold = parseInt(await this.globalConfig.get('consecutive_streak_days') ?? '7', 10);
+    const streakTickets = parseInt(await this.globalConfig.get('consecutive_streak_tickets') ?? '1', 10);
+    const streakExpiresDays = parseInt(await this.globalConfig.get('consecutive_expires_days') ?? '30', 10);
+
     let consecutiveRewardGranted = false;
-    if (streak >= 7) {
+    if (streak >= streakThreshold) {
       try {
         await this.predictionTicketsService.grantTickets(
           userId,
-          1,
-          SIGNUP_BONUS_EXPIRES_DAYS,
+          streakTickets,
+          streakExpiresDays,
           'RACE',
         );
         consecutiveRewardGranted = true;
@@ -206,7 +210,7 @@ export class AuthService {
       } catch (err: unknown) {
         if (this.config.get('NODE_ENV') !== 'test') {
           console.warn(
-            `[Auth] Consecutive 7-day ticket grant failed for user ${userId}:`,
+            `[Auth] Consecutive login ticket grant failed for user ${userId}:`,
             err instanceof Error ? err.message : String(err),
           );
         }

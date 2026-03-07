@@ -5,11 +5,13 @@ import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionTicketsController } from './prediction-tickets.controller';
 import { PredictionTicketsService } from './prediction-tickets.service';
 import { PredictionsModule } from '../predictions/predictions.module';
+import { GlobalConfigModule } from '../config/config.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([PredictionTicket, Prediction]),
     PredictionsModule,
+    GlobalConfigModule,
   ],
   controllers: [PredictionTicketsController],
   providers: [PredictionTicketsService],

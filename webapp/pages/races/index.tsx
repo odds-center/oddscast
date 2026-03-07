@@ -20,11 +20,6 @@ import { formatRcDate, getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/
 import type { RaceDto } from '@/lib/types/race';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
-import type { GetStaticProps } from 'next';
-import { QueryClient, dehydrate } from '@tanstack/react-query';
-import { serverGet } from '@/lib/api/serverFetch';
-
-const REVALIDATE_RACES = 60;
 const RACES_PER_PAGE = 20;
 const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
 const LIVE_REFETCH_MS = 5 * 60 * 1000;
@@ -358,20 +353,3 @@ export default function RacesPage() {
   );
 }
 
-export const getStaticProps: GetStaticProps = async () => {
-  const queryClient = new QueryClient();
-  const dateFilter = '';
-  const date = dateToScheduleParam(dateFilter);
-  const page = 1;
-  try {
-    const params: Record<string, string | number> = { limit: RACES_PER_PAGE, page };
-    if (date) params.date = date;
-    await queryClient.prefetchQuery({
-      queryKey: ['races', 'list', dateFilter, '', page],
-      queryFn: () => serverGet<{ races?: unknown[]; totalPages?: number }>('/races', { params }),
-    });
-  } catch {
-    // Fetch on client if SSR fails
-  }
-  return { props: { dehydratedState: dehydrate(queryClient) }, revalidate: REVALIDATE_RACES };
-};

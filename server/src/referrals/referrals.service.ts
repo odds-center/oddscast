@@ -9,10 +9,7 @@ import { randomUUID } from 'crypto';
 import { ReferralCode } from '../database/entities/referral-code.entity';
 import { ReferralClaim } from '../database/entities/referral-claim.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
-
-const REFERRER_TICKET_COUNT = 3;
-const REFERRED_TICKET_COUNT = 2;
-const TICKET_EXPIRES_DAYS = 30;
+import { GlobalConfigService } from '../config/config.service';
 
 // Derive an 8-char uppercase hex code from a UUID (e.g. "A1B2C3D4")
 function generateCode(): string {
@@ -27,6 +24,7 @@ export class ReferralsService {
     @InjectRepository(ReferralClaim)
     private readonly referralClaimRepo: Repository<ReferralClaim>,
     private readonly predictionTicketsService: PredictionTicketsService,
+    private readonly globalConfig: GlobalConfigService,
   ) {}
 
   async getMyReferral(userId: number) {
@@ -104,25 +102,29 @@ export class ReferralsService {
       1,
     );
 
-    // Grant tickets to referred user (2 RACE tickets)
+    const referredCount = parseInt(await this.globalConfig.get('referred_ticket_count') ?? '2', 10);
+    const referrerCount = parseInt(await this.globalConfig.get('referrer_ticket_count') ?? '3', 10);
+    const expiresDays = parseInt(await this.globalConfig.get('referral_ticket_expires_days') ?? '30', 10);
+
+    // Grant tickets to referred user
     await this.predictionTicketsService.grantTickets(
       referredUserId,
-      REFERRED_TICKET_COUNT,
-      TICKET_EXPIRES_DAYS,
+      referredCount,
+      expiresDays,
       'RACE',
     );
 
-    // Grant tickets to referrer (3 RACE tickets)
+    // Grant tickets to referrer
     await this.predictionTicketsService.grantTickets(
       referralCode.userId,
-      REFERRER_TICKET_COUNT,
-      TICKET_EXPIRES_DAYS,
+      referrerCount,
+      expiresDays,
       'RACE',
     );
 
     return {
       success: true,
-      ticketsGranted: REFERRED_TICKET_COUNT,
+      ticketsGranted: referredCount,
     };
   }
 }

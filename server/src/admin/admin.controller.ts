@@ -457,7 +457,16 @@ export class AdminController {
   async getSystemConfig() {
     const all = await this.configService.getAll();
     return {
-      kra_base_url_override: all.kra_base_url_override || '',
+      kra_base_url_override:       all.kra_base_url_override || '',
+      signup_bonus_tickets:        all.signup_bonus_tickets || '1',
+      signup_bonus_expires_days:   all.signup_bonus_expires_days || '30',
+      consecutive_streak_days:     all.consecutive_streak_days || '7',
+      consecutive_streak_tickets:  all.consecutive_streak_tickets || '1',
+      consecutive_expires_days:    all.consecutive_expires_days || '30',
+      referrer_ticket_count:       all.referrer_ticket_count || '3',
+      referred_ticket_count:       all.referred_ticket_count || '2',
+      referral_ticket_expires_days:all.referral_ticket_expires_days || '30',
+      matrix_ticket_price:         all.matrix_ticket_price || '1000',
     };
   }
 
@@ -467,13 +476,33 @@ export class AdminController {
     @Body()
     body: {
       kra_base_url_override?: string;
+      signup_bonus_tickets?: string;
+      signup_bonus_expires_days?: string;
+      consecutive_streak_days?: string;
+      consecutive_streak_tickets?: string;
+      consecutive_expires_days?: string;
+      referrer_ticket_count?: string;
+      referred_ticket_count?: string;
+      referral_ticket_expires_days?: string;
+      matrix_ticket_price?: string;
     },
   ) {
-    if (body.kra_base_url_override !== undefined) {
-      await this.configService.set(
-        'kra_base_url_override',
-        String(body.kra_base_url_override),
-      );
+    const keys = [
+      'kra_base_url_override',
+      'signup_bonus_tickets',
+      'signup_bonus_expires_days',
+      'consecutive_streak_days',
+      'consecutive_streak_tickets',
+      'consecutive_expires_days',
+      'referrer_ticket_count',
+      'referred_ticket_count',
+      'referral_ticket_expires_days',
+      'matrix_ticket_price',
+    ] as const;
+    for (const key of keys) {
+      if (body[key] !== undefined) {
+        await this.configService.set(key, String(body[key]));
+      }
     }
     return this.getSystemConfig();
   }

@@ -22,7 +22,6 @@
 |------|------|-----------|
 | CD 자동 배포 | 준비됨 | GitHub Secrets에 `RAILWAY_TOKEN` 추가 |
 | Sentry 에러 모니터링 | 준비됨 | Railway env에 `SENTRY_DSN` 추가 |
-| Vercel 웹앱 배포 | 미진행 | Vercel 프로젝트 연결 + `NEXT_PUBLIC_API_URL` 설정 |
 
 ---
 

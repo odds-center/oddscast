@@ -48,5 +48,14 @@ WHERE NOT EXISTS (SELECT 1 FROM "point_ticket_prices" WHERE "isActive" = true);
 -- ------------------------------------------------------------------
 INSERT INTO "global_config" ("key","value")
 VALUES
-  ('kra_base_url_override', '')
+  ('kra_base_url_override',       ''),
+  ('signup_bonus_tickets',        '1'),
+  ('signup_bonus_expires_days',   '30'),
+  ('consecutive_streak_days',     '7'),
+  ('consecutive_streak_tickets',  '1'),
+  ('consecutive_expires_days',    '30'),
+  ('referrer_ticket_count',       '3'),
+  ('referred_ticket_count',       '2'),
+  ('referral_ticket_expires_days','30'),
+  ('matrix_ticket_price',         '1000')
 ON CONFLICT ("key") DO NOTHING;

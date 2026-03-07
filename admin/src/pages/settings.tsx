@@ -11,13 +11,22 @@ import Button from '@/components/common/Button';
 import { useAuth } from '@/lib/hooks/useAuth';
 import { useRouter } from 'next/router';
 import { authApi } from '@/lib/api/auth';
-import { adminSystemConfigApi, adminAIConfigApi } from '@/lib/api/admin';
+import { adminSystemConfigApi, adminAIConfigApi, type SystemConfig } from '@/lib/api/admin';
 import { Bot, Settings, Database, ExternalLink, Bell } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import toast from 'react-hot-toast';
 
 type SystemConfigForm = {
   kra_base_url_override: string;
+  signup_bonus_tickets: string;
+  signup_bonus_expires_days: string;
+  consecutive_streak_days: string;
+  consecutive_streak_tickets: string;
+  consecutive_expires_days: string;
+  referrer_ticket_count: string;
+  referred_ticket_count: string;
+  referral_ticket_expires_days: string;
+  matrix_ticket_price: string;
 };
 
 export default function SettingsPage() {
@@ -39,7 +48,7 @@ export default function SettingsPage() {
     mutationFn: (data: SystemConfigForm) => adminSystemConfigApi.updateConfig(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['system-config'] });
-      toast.success('시스템 설정이 저장되었습니다');
+      toast.success('설정이 저장되었습니다');
     },
     onError: () => toast.error('저장에 실패했습니다'),
   });
@@ -47,13 +56,31 @@ export default function SettingsPage() {
   const { register, handleSubmit, reset } = useForm<SystemConfigForm>({
     defaultValues: {
       kra_base_url_override: '',
+      signup_bonus_tickets: '1',
+      signup_bonus_expires_days: '30',
+      consecutive_streak_days: '7',
+      consecutive_streak_tickets: '1',
+      consecutive_expires_days: '30',
+      referrer_ticket_count: '3',
+      referred_ticket_count: '2',
+      referral_ticket_expires_days: '30',
+      matrix_ticket_price: '1000',
     },
   });
 
   useEffect(() => {
     if (systemConfig) {
       reset({
-        kra_base_url_override: systemConfig.kra_base_url_override || '',
+        kra_base_url_override:        (systemConfig as SystemConfig).kra_base_url_override || '',
+        signup_bonus_tickets:         (systemConfig as SystemConfig).signup_bonus_tickets || '1',
+        signup_bonus_expires_days:    (systemConfig as SystemConfig).signup_bonus_expires_days || '30',
+        consecutive_streak_days:      (systemConfig as SystemConfig).consecutive_streak_days || '7',
+        consecutive_streak_tickets:   (systemConfig as SystemConfig).consecutive_streak_tickets || '1',
+        consecutive_expires_days:     (systemConfig as SystemConfig).consecutive_expires_days || '30',
+        referrer_ticket_count:        (systemConfig as SystemConfig).referrer_ticket_count || '3',
+        referred_ticket_count:        (systemConfig as SystemConfig).referred_ticket_count || '2',
+        referral_ticket_expires_days: (systemConfig as SystemConfig).referral_ticket_expires_days || '30',
+        matrix_ticket_price:          (systemConfig as SystemConfig).matrix_ticket_price || '1000',
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -196,6 +223,82 @@ export default function SettingsPage() {
               </div>
             </Card>
           </div>
+
+          <Card title='리워드 설정'>
+            {isLoading ? (
+              <PageLoading label='설정을 불러오는 중...' padding='md' />
+            ) : (
+              <form onSubmit={handleSubmit((d) => updateMutation.mutate(d))} className='space-y-6'>
+                {/* Signup bonus */}
+                <div>
+                  <h4 className='text-sm font-semibold text-gray-800 mb-3'>회원가입 보너스</h4>
+                  <div className='grid grid-cols-2 gap-3'>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>지급 예측권 (장)</label>
+                      <input type='number' min='0' {...register('signup_bonus_tickets')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>유효기간 (일)</label>
+                      <input type='number' min='1' {...register('signup_bonus_expires_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Consecutive login */}
+                <div>
+                  <h4 className='text-sm font-semibold text-gray-800 mb-3'>연속 로그인 보상</h4>
+                  <div className='grid grid-cols-3 gap-3'>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>연속 일수 기준</label>
+                      <input type='number' min='1' {...register('consecutive_streak_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>지급 예측권 (장)</label>
+                      <input type='number' min='0' {...register('consecutive_streak_tickets')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>유효기간 (일)</label>
+                      <input type='number' min='1' {...register('consecutive_expires_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Referral */}
+                <div>
+                  <h4 className='text-sm font-semibold text-gray-800 mb-3'>추천인 보상</h4>
+                  <div className='grid grid-cols-3 gap-3'>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>추천인 지급 (장)</label>
+                      <input type='number' min='0' {...register('referrer_ticket_count')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>피추천인 지급 (장)</label>
+                      <input type='number' min='0' {...register('referred_ticket_count')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                    <div>
+                      <label className='block text-xs font-medium text-gray-600 mb-1'>유효기간 (일)</label>
+                      <input type='number' min='1' {...register('referral_ticket_expires_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Matrix ticket price */}
+                <div>
+                  <h4 className='text-sm font-semibold text-gray-800 mb-3'>종합 예측권 가격</h4>
+                  <div className='max-w-xs'>
+                    <label className='block text-xs font-medium text-gray-600 mb-1'>장당 가격 (원)</label>
+                    <input type='number' min='0' {...register('matrix_ticket_price')} className='w-full px-3 py-2 border rounded-lg text-sm' />
+                  </div>
+                </div>
+
+                <div className='pt-4 border-t'>
+                  <Button type='submit' variant='primary' disabled={updateMutation.isPending}>
+                    {updateMutation.isPending ? '저장 중...' : '리워드 설정 저장'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Card>
 
           <Card title='시스템 설정'>
             {isLoading ? (

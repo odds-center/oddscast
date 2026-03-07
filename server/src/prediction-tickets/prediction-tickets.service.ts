@@ -13,6 +13,7 @@ import {
   PredictionStatus,
 } from '../database/db-enums';
 import { PredictionsService } from '../predictions/predictions.service';
+import { GlobalConfigService } from '../config/config.service';
 import { UseTicketDto } from '../common/dto/payment.dto';
 
 @Injectable()
@@ -24,6 +25,7 @@ export class PredictionTicketsService {
     private readonly predictionRepo: Repository<Prediction>,
     private readonly dataSource: DataSource,
     private readonly predictionsService: PredictionsService,
+    private readonly globalConfig: GlobalConfigService,
   ) {}
 
   async useTicket(userId: number, dto: UseTicketDto) {
@@ -278,7 +280,7 @@ export class PredictionTicketsService {
     if (count < 1 || count > 10) {
       throw new BadRequestException('구매 수량은 1~10장 사이여야 합니다');
     }
-    const PRICE_PER_TICKET = 1000;
+    const PRICE_PER_TICKET = parseInt(await this.globalConfig.get('matrix_ticket_price') ?? '1000', 10);
     const totalPrice = PRICE_PER_TICKET * count;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 30);

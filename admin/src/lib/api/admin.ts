@@ -589,10 +589,21 @@ export class AdminPredictionTicketsApi {
 /**
  * System Config API
  */
+export interface SystemConfig {
+  kra_base_url_override: string;
+  signup_bonus_tickets: string;
+  signup_bonus_expires_days: string;
+  consecutive_streak_days: string;
+  consecutive_streak_tickets: string;
+  consecutive_expires_days: string;
+  referrer_ticket_count: string;
+  referred_ticket_count: string;
+  referral_ticket_expires_days: string;
+  matrix_ticket_price: string;
+}
+
 export class AdminSystemConfigApi {
-  static async getConfig(): Promise<{
-    kra_base_url_override: string;
-  }> {
+  static async getConfig(): Promise<SystemConfig> {
     try {
       const response = await axiosInstance.get('/config/system');
       return handleApiResponse(response);
@@ -601,9 +612,7 @@ export class AdminSystemConfigApi {
     }
   }
 
-  static async updateConfig(data: {
-    kra_base_url_override?: string;
-  }): Promise<{ kra_base_url_override: string }> {
+  static async updateConfig(data: Partial<SystemConfig>): Promise<SystemConfig> {
     try {
       const response = await axiosInstance.patch('/config/system', data);
       return handleApiResponse(response);

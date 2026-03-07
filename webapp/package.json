@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@oddscast/shared": "file:../shared",
+    "@sentry/nextjs": "^10.42.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@tanstack/react-query": "^5.90.21",
     "axios": "^1.13.5",

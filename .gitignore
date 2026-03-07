@@ -25,6 +25,7 @@ server/dist/
 # Debug
 *.log
 npm-debug.log*
+server/logs/
 
 # Playwright
 webapp/playwright-report/

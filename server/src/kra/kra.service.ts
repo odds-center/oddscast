@@ -1229,7 +1229,7 @@ export class KraService {
     try {
       await this.fetchJockeyTotalResults();
     } catch (e) {
-      this.logger.warn('Jockey sync after historical failed', e);
+      this.logger.warn(`Jockey sync after historical failed: ${e instanceof Error ? e.message : String(e)}`);
     }
     opts?.onProgress?.(100, '완료');
 
@@ -2262,7 +2262,7 @@ export class KraService {
 
         await this.delay(150);
       } catch (e) {
-        this.logger.warn(`Horse details fetch failed for ${entry.hrNo}`, e);
+        this.logger.warn(`Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 
@@ -2376,7 +2376,7 @@ export class KraService {
 
         await this.delay(200);
       } catch (e) {
-        this.logger.warn(`Training fetch failed for horse ${entry.hrNo}`, e);
+        this.logger.warn(`Training fetch failed for horse ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
     }
 

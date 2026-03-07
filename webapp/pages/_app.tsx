@@ -1,6 +1,7 @@
 import type { AppProps } from 'next/app';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
+import * as Sentry from '@sentry/nextjs';
 import { QueryClient, QueryClientProvider, HydrationBoundary, onlineManager } from '@tanstack/react-query';
 import type { DehydratedState } from '@tanstack/react-query';
 import 'pretendard/dist/web/static/pretendard.css';
@@ -144,11 +145,13 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           </Script>
         </>
       )}
-      <QueryClientProvider client={queryClient}>
-        <HydrationBoundary state={dehydratedState ?? undefined}>
-          <Component {...restPageProps} />
-        </HydrationBoundary>
-      </QueryClientProvider>
+      <Sentry.ErrorBoundary fallback={<p>An error occurred. Please refresh the page.</p>}>
+        <QueryClientProvider client={queryClient}>
+          <HydrationBoundary state={dehydratedState ?? undefined}>
+            <Component {...restPageProps} />
+          </HydrationBoundary>
+        </QueryClientProvider>
+      </Sentry.ErrorBoundary>
       {clientMounted && showOnboarding && (
         <OnboardingTutorial onComplete={() => setShowOnboarding(false)} />
       )}

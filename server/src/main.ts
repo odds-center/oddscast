@@ -3,17 +3,22 @@ import { AppModule } from './app.module';
 import { ValidationPipe, RequestMethod } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
+import { WinstonModule } from 'nest-winston';
+import { winstonConfig } from './common/logger/winston.config';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
-    environment: process.env.NODE_ENV ?? 'development',
+    environment: process.env.APP_ENV ?? 'local',
     tracesSampleRate: 0.1,
   });
 }
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: WinstonModule.createLogger(winstonConfig),
+  });
 
   // Global API Prefix — 모바일 앱의 baseURL이 /api를 사용
   // health는 nginx/LB 헬스체크용으로 /health에 노출 (prefix 제외)
@@ -29,6 +34,9 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
+
+  // Global exception filter — logs to file + Sentry
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Global validation pipe
   app.useGlobalPipes(

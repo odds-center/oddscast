@@ -119,7 +119,45 @@ export default function TicketHistoryPage() {
           {statusFilter === 'EXPIRED' && (
             <p className='text-text-tertiary text-sm mb-3'>유효기간이 지난 예측권입니다. 사용할 수 없습니다.</p>
           )}
-          <DataTable<PredictionTicket>
+          {/* Mobile: card list */}
+          <div className='block sm:hidden space-y-2'>
+            {tickets.map((t) => (
+              <div
+                key={String(t.id)}
+                className='rounded-xl border border-border bg-card p-3'
+                onClick={() => t.raceId && (window.location.href = routes.races.detail(t.raceId))}
+                role={t.raceId ? 'button' : undefined}
+              >
+                <div className='flex items-center justify-between gap-2'>
+                  <div className='flex items-center gap-1.5'>
+                    <Badge variant={t.type === 'MATRIX' ? 'warning' : 'primary'} size='sm'>
+                      {t.type === 'MATRIX' ? '종합' : '경주'}
+                    </Badge>
+                    <Badge variant={getStatusVariant(t.status)} size='sm'>
+                      {getStatusLabel(t.status)}
+                    </Badge>
+                  </div>
+                  {t.raceId && (
+                    <Link
+                      href={routes.races.detail(t.raceId)}
+                      className='text-sm font-medium text-primary shrink-0'
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      경주 보기 →
+                    </Link>
+                  )}
+                </div>
+                <div className='mt-2 flex flex-wrap gap-x-4 gap-y-0.5 text-xs text-text-tertiary'>
+                  <span>발급 {formatDateTime(t.issuedAt)}</span>
+                  <span>만료 {formatDateTime(t.expiresAt)}</span>
+                  {t.usedAt && <span>사용 {formatDateTime(t.usedAt)}</span>}
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Desktop: full table */}
+          <div className='hidden sm:block'>
+            <DataTable<PredictionTicket>
               className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
               columns={[
                 {
@@ -200,6 +238,7 @@ export default function TicketHistoryPage() {
               compact
               emptyMessage={statusFilter === 'all' ? '예측권 이력이 없습니다.' : '해당 상태의 이력이 없습니다.'}
             />
+          </div>
         </div>
         <Pagination
           page={page}

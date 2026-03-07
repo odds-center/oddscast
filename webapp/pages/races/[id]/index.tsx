@@ -518,7 +518,69 @@ export default function RaceDetailPage() {
                 </div>
               ) : (
               <>
-              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+              {/* Mobile: result cards */}
+              <div className='block sm:hidden space-y-2'>
+                {effectiveResults.map((res, i) => {
+                  const mrow = res as { ordType?: string | null; diffUnit?: string; winOdds?: number; plcOdds?: number; trName?: string | null; wgHr?: string | null };
+                  const mordStr = String(res.ord ?? i + 1);
+                  const mordN = parseInt(mordStr, 10);
+                  const mAbnormal = !mrow.ordType && mordN >= 90;
+                  const mOrdType = mrow.ordType ?? (mAbnormal ? 'DQ' : null);
+                  const mLabel = formatOrdTypeLabel(mOrdType);
+                  const mTimeSec = res.rcTime != null && res.rcTime !== '' ? parseFloat(String(res.rcTime)) : NaN;
+                  const mHasTime = Number.isFinite(mTimeSec);
+                  const mRecord = mHasTime && !mOrdType
+                    ? mordN === 1
+                      ? formatRaceTime(mTimeSec)
+                      : firstPlaceTimeSec != null
+                        ? `${formatRaceTime(mTimeSec)} (${mTimeSec >= firstPlaceTimeSec ? '+' : ''}${(mTimeSec - firstPlaceTimeSec).toFixed(1)}초)`
+                        : formatRaceTime(mTimeSec)
+                    : formatDiffUnit(mrow.diffUnit);
+                  const mRankStyle = !mOrdType && mordN === 1 ? 'bg-amber-400 text-white' : !mOrdType && mordN === 2 ? 'bg-stone-400 text-white' : !mOrdType && mordN === 3 ? 'bg-amber-700 text-white' : 'bg-stone-100 text-text-tertiary';
+                  return (
+                    <div key={typeof res.id !== 'undefined' ? String(res.id) : `mr-${i}`} className='rounded-xl border border-border bg-card p-3 flex items-start gap-3'>
+                      <div className='flex flex-col items-center gap-1.5 shrink-0 pt-0.5'>
+                        <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-xs font-bold ${mRankStyle}`}>
+                          {mOrdType ? '—' : mordStr}
+                        </span>
+                        {res.chulNo != null && res.chulNo !== '' && (
+                          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>
+                            {res.chulNo}
+                          </span>
+                        )}
+                      </div>
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-center gap-2 flex-wrap'>
+                          {res.hrNo ? (
+                            <Link href={routes.horses.detail(res.hrNo)} className='font-semibold text-foreground hover:text-primary hover:underline'>{res.hrName}</Link>
+                          ) : (
+                            <span className='font-semibold text-foreground'>{res.hrName}</span>
+                          )}
+                          {mLabel && (
+                            <Badge variant={mOrdType === 'FALL' ? 'warning' : mOrdType === 'DQ' ? 'error' : 'muted'} size='sm'>{mLabel}</Badge>
+                          )}
+                        </div>
+                        <div className='flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-text-secondary'>
+                          {res.jkName && (
+                            (res as { jkNo?: string }).jkNo
+                              ? <Link href={routes.jockeys.detail((res as { jkNo: string }).jkNo)} className='hover:text-primary hover:underline'>{res.jkName}</Link>
+                              : <span>{res.jkName}</span>
+                          )}
+                          {mrow.trName && <span className='text-text-tertiary'>{mrow.trName}</span>}
+                        </div>
+                        <div className='flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-xs text-text-tertiary'>
+                          {mRecord && <span className='font-mono'>{mRecord}</span>}
+                          {mrow.winOdds != null && !mOrdType && <span>단승 {mrow.winOdds}</span>}
+                          {mrow.plcOdds != null && !mOrdType && <span>연승 {mrow.plcOdds}</span>}
+                          {mrow.wgHr && <span>마체중 {mrow.wgHr}</span>}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              {/* Desktop: full results table */}
+              <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                 <table className='data-table data-table-compact w-full min-w-[640px]'>
                   <thead>
                     <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
@@ -714,6 +776,7 @@ export default function RaceDetailPage() {
                     })}
                   </tbody>
                 </table>
+              </div>
               </div>
 
               {/* 승식별 배당률 */}
@@ -969,8 +1032,15 @@ export default function RaceDetailPage() {
                                 <td className='cell-center py-2.5'>
                                   <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
                                 </td>
-                                <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
-                                  {e.hrName ?? '-'}
+                                <td className='py-2.5 font-medium text-foreground'>
+                                  <span className='inline-flex items-center gap-1.5 min-w-0'>
+                                    {e.chulNo != null && (
+                                      <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold shrink-0'>
+                                        {e.chulNo}
+                                      </span>
+                                    )}
+                                    <span className='whitespace-nowrap'>{e.hrName ?? '-'}</span>
+                                  </span>
                                 </td>
                                 <td className='py-2.5 text-text-secondary whitespace-nowrap'>
                                   {e.jkName ?? '-'}

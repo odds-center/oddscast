@@ -64,4 +64,9 @@
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;
   }
+  /* Consistent active feedback for all buttons */
+  button:active,
+  [role='button']:active {
+    opacity: 0.85;
+  }
 }

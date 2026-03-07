@@ -117,55 +117,81 @@ export default function PointTransactionsPage() {
             size='sm'
             className='mb-4'
           />
-          <DataTable<PointTransaction>
-            className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
-            columns={[
-              {
-                key: 'type',
-                header: '유형',
-                headerClassName: 'min-w-[100px]',
-                cellClassName: 'font-medium',
-                render: (t) => (
-                  <Badge
-                    variant={isIncome(t.transactionType) ? 'primary' : 'muted'}
-                    size='sm'
-                  >
-                    {getTypeLabel(t.transactionType)}
-                  </Badge>
-                ),
-              },
-              {
-                key: 'desc',
-                header: '설명',
-                cellClassName: 'text-text-secondary',
-                render: (t) => t.description ?? '-',
-              },
-              {
-                key: 'amount',
-                header: '포인트',
-                align: 'right',
-                headerClassName: 'w-24',
-                cellClassName: (t) =>
-                  `font-semibold ${isIncome(t.transactionType) ? 'text-emerald-600' : 'text-text-secondary'}`,
-                render: (t) =>
-                  `${isIncome(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt`,
-              },
-              {
-                key: 'date',
-                header: '일시',
-                align: 'center',
-                headerClassName: 'w-32',
-                cellClassName: 'text-text-tertiary',
-                render: (t) => {
-                  const v = t.transactionTime ?? t.createdAt;
-                  return formatDateTime(v);
+          {/* Mobile: card list */}
+          <div className='block sm:hidden space-y-2'>
+            {transactions.map((t) => {
+              const income = isIncome(t.transactionType);
+              const dateVal = t.transactionTime ?? t.createdAt;
+              return (
+                <div key={String(t.id)} className='rounded-xl border border-border bg-card p-3'>
+                  <div className='flex items-center justify-between gap-2'>
+                    <Badge variant={income ? 'primary' : 'muted'} size='sm'>
+                      {getTypeLabel(t.transactionType)}
+                    </Badge>
+                    <span className={`text-sm font-semibold ${income ? 'text-emerald-600' : 'text-text-secondary'}`}>
+                      {income ? '+' : '-'}{Math.abs(t.amount ?? 0).toLocaleString()}pt
+                    </span>
+                  </div>
+                  {t.description && (
+                    <p className='mt-1 text-sm text-text-secondary truncate'>{t.description}</p>
+                  )}
+                  <p className='mt-1 text-xs text-text-tertiary'>{formatDateTime(dateVal)}</p>
+                </div>
+              );
+            })}
+          </div>
+          {/* Desktop: full table */}
+          <div className='hidden sm:block'>
+            <DataTable<PointTransaction>
+              className='rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'
+              columns={[
+                {
+                  key: 'type',
+                  header: '유형',
+                  headerClassName: 'min-w-[100px]',
+                  cellClassName: 'font-medium',
+                  render: (t) => (
+                    <Badge
+                      variant={isIncome(t.transactionType) ? 'primary' : 'muted'}
+                      size='sm'
+                    >
+                      {getTypeLabel(t.transactionType)}
+                    </Badge>
+                  ),
                 },
-              },
-            ]}
-            data={transactions}
-            getRowKey={(t) => String(t.id)}
-            compact
-          />
+                {
+                  key: 'desc',
+                  header: '설명',
+                  cellClassName: 'text-text-secondary',
+                  render: (t) => t.description ?? '-',
+                },
+                {
+                  key: 'amount',
+                  header: '포인트',
+                  align: 'right',
+                  headerClassName: 'w-24',
+                  cellClassName: (t) =>
+                    `font-semibold ${isIncome(t.transactionType) ? 'text-emerald-600' : 'text-text-secondary'}`,
+                  render: (t) =>
+                    `${isIncome(t.transactionType) ? '+' : '-'}${Math.abs(t.amount ?? 0).toLocaleString()}pt`,
+                },
+                {
+                  key: 'date',
+                  header: '일시',
+                  align: 'center',
+                  headerClassName: 'w-32',
+                  cellClassName: 'text-text-tertiary',
+                  render: (t) => {
+                    const v = t.transactionTime ?? t.createdAt;
+                    return formatDateTime(v);
+                  },
+                },
+              ]}
+              data={transactions}
+              getRowKey={(t) => String(t.id)}
+              compact
+            />
+          </div>
         </div>
         <Pagination
           page={page}

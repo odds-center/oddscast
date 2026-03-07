@@ -296,17 +296,17 @@ export default function PredictionMatrixPage() {
                         종합 예측권 1장으로 해당 날짜 전체 AI 예측을 열람할 수 있습니다 (1일 1장 · 1,000원)
                       </p>
                     </div>
-                    <div className='flex flex-col items-end gap-1 shrink-0'>
+                    <div className='w-full sm:w-auto flex flex-col gap-1'>
                       {availableMatrixTickets > 0 ? (
                         <button
                           onClick={() => useMatrixMutation.mutate()}
                           disabled={useMatrixMutation.isPending}
-                          className='btn-primary text-sm px-4 py-2'
+                          className='btn-primary w-full sm:w-auto text-sm px-4 py-2'
                         >
                           {useMatrixMutation.isPending ? '열람 중...' : `예측권 사용 (${availableMatrixTickets}장 보유)`}
                         </button>
                       ) : (
-                        <Link href={routes.mypage.matrixTicketPurchase} className='btn-primary inline-flex items-center gap-1.5 text-sm px-4 py-2'>
+                        <Link href={routes.mypage.matrixTicketPurchase} className='btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-sm px-4 py-2'>
                           <Icon name='CreditCard' size={16} />
                           종합 예측권 구매
                         </Link>

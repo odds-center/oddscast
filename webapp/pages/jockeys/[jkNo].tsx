@@ -124,7 +124,36 @@ export default function JockeyProfilePage() {
                 <p className='text-sm text-text-secondary py-4'>경주 이력이 없습니다.</p>
               ) : (
                 <>
-                  <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                  {/* Mobile: card list */}
+                  <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
+                    {historyItems.map((r) => (
+                      <a
+                        key={`${r.raceId}-${r.rcDate}`}
+                        href={routes.races.detail(String(r.raceId))}
+                        className='flex items-center justify-between py-2.5 px-3 active:bg-stone-50 transition-colors bg-card'
+                      >
+                        <div>
+                          <p className='text-sm font-medium text-foreground'>
+                            {formatMeet(r.meet)} {r.rcNo}R
+                          </p>
+                          <p className='text-xs text-text-tertiary mt-0.5'>
+                            {formatRcDate(r.rcDate)}
+                            {r.hrName && <span className='ml-2'>{r.hrName}</span>}
+                          </p>
+                        </div>
+                        <div className='flex items-center gap-2 text-right shrink-0'>
+                          {r.ord != null && (
+                            <span className={`text-sm font-bold ${r.ord === 1 ? 'text-amber-600' : r.ord <= 3 ? 'text-stone-600' : 'text-text-tertiary'}`}>
+                              {r.ord}위
+                            </span>
+                          )}
+                          {r.rcTime && <span className='font-mono text-xs text-text-secondary'>{formatRaceTime(r.rcTime)}</span>}
+                        </div>
+                      </a>
+                    ))}
+                  </div>
+                  {/* Desktop: table */}
+                  <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                     <DataTable<JockeyHistoryItem>
                       columns={[
                         {

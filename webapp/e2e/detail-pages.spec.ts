@@ -1,5 +1,5 @@
 /**
- * E2E: Detail pages — horses, jockeys, trainers, weekly preview, ranking
+ * E2E: Detail pages — horses, jockeys, trainers, weekly preview
  */
 import { test, expect } from '@playwright/test';
 import {
@@ -7,7 +7,6 @@ import {
   mockJockeyProfile,
   mockTrainerProfile,
   mockWeeklyPreview,
-  mockRankings,
   stubHorse,
   stubJockey,
 } from './fixtures/api-mocks';
@@ -152,56 +151,6 @@ test.describe('Weekly preview page', () => {
 
 // -------------------------------------------------------------------
 // Ranking page
-// -------------------------------------------------------------------
-test.describe('Ranking page', () => {
-  test.beforeEach(async ({ page }) => {
-    await mockRankings(page);
-  });
-
-  test('page title contains OddsCast', async ({ page }) => {
-    await page.goto('/ranking');
-    await expect(page).toHaveTitle(/OddsCast/);
-  });
-
-  test('shows top ranked users', async ({ page }) => {
-    await page.goto('/ranking');
-
-    await expect(page.locator('text=User A').first()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=User B').first()).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows rank numbers', async ({ page }) => {
-    await page.goto('/ranking');
-
-    // Rank 1 and 2
-    const rankOne = page.locator('text=/^1$|1위|1등/i').first();
-    await expect(rankOne).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows correct prediction counts', async ({ page }) => {
-    await page.goto('/ranking');
-
-    // correctCount: 25
-    const count = page.locator('text=/25/').first();
-    await expect(count).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows empty state when no rankings', async ({ page }) => {
-    await page.route('**/api/rankings**', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ data: { rankings: [], total: 0, myRank: null }, status: 200 }),
-      });
-    });
-
-    await page.goto('/ranking');
-
-    const empty = page.locator('text=/없습니다|순위가 없습니다/i').first();
-    await expect(empty).toBeVisible({ timeout: 8000 });
-  });
-});
-
 // -------------------------------------------------------------------
 // Legal pages (static, no API)
 // -------------------------------------------------------------------

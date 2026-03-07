@@ -387,11 +387,6 @@ export const stubWeeklyPreview = {
   },
 };
 
-export const stubRanking = [
-  { rank: 1, userId: 1, name: 'User A', correctCount: 25, totalPredictions: 40 },
-  { rank: 2, userId: 2, name: 'User B', correctCount: 20, totalPredictions: 38 },
-];
-
 // Flat shape used in tests; mockGroupedResults converts to server's raceGroups format
 export const stubGroupedResult = {
   raceId: '1',
@@ -593,18 +588,6 @@ export async function mockWeeklyPreview(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(apiResponse(stubWeeklyPreview)),
-    });
-  });
-}
-
-export async function mockRankings(page: Page) {
-  await page.route(`${API}/rankings**`, async (route) => {
-    // RankingApi.getRankings() expects the array directly as data
-    // (Array.isArray check in the client — see rankingApi.ts)
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse(stubRanking)),
     });
   });
 }

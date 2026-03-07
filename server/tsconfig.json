@@ -18,6 +18,10 @@
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
     "esModuleInterop": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@oddscast/shared": ["../shared/types/index.ts"],
+      "@oddscast/shared/*": ["../shared/*"]
+    }
   }
 }

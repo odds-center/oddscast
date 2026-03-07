@@ -1,81 +1,75 @@
 /**
  * Custom Prediction Simulator (FEATURE_ROADMAP 3.2)
- * Adjust 6 weight factors, see re-ranked horses. Client-side only, uses existing prediction scores.
+ * Uses real Python sub-scores (rat/frm/cnd/exp/trn/suit) to re-rank horses by user-adjusted weights.
+ * Falls back to synthetic factor distribution when sub-scores are unavailable.
  */
 import { useRouter } from 'next/router';
 import { useMemo, useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import Link from 'next/link';
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import DataFetchState from '@/components/page/DataFetchState';
-import EmptyState from '@/components/EmptyState';
-import LoadingSpinner from '@/components/LoadingSpinner';
 import Icon from '@/components/icons';
-import { SectionTitle } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
 import PredictionApi from '@/lib/api/predictionApi';
 import { routes } from '@/lib/routes';
+import type { PredictionHorseScore } from '@/lib/types/predictions';
 
-const FACTOR_LABELS: [string, string][] = [
-  ['rating', '레이팅'],
-  ['form', '폼'],
-  ['condition', '컨디션'],
-  ['experience', '경험'],
-  ['fitness', '체력'],
-  ['trainer', '조교사'],
+// Sub-score keys match Python analysis output (prediction-internal.types.ts HorseAnalysisItem.sub)
+const FACTORS: { key: keyof NonNullable<PredictionHorseScore['sub']>; label: string; desc: string }[] = [
+  { key: 'rat', label: '레이팅',   desc: '공식 레이팅 점수 기반' },
+  { key: 'frm', label: '폼',       desc: '최근 경주 착순 기반' },
+  { key: 'cnd', label: '컨디션',   desc: '훈련 강도·상태' },
+  { key: 'exp', label: '경험',     desc: '출전 횟수·경험치' },
+  { key: 'trn', label: '훈련',     desc: '조교 기록 기반' },
+  { key: 'suit', label: '거리적성', desc: '거리·경마장 적합도' },
 ];
 
-const SLIDER_MIN = 0.5;
-const SLIDER_MAX = 1.5;
+const SLIDER_MIN = 0;
+const SLIDER_MAX = 2;
 const SLIDER_DEFAULT = 1;
 
-/** Deterministic 6 factors per horse that sum to score, so weight change can reorder. */
-function buildSyntheticFactors(
-  horseScores: Array<{ score?: number; hrNo?: string }>,
-): number[][] {
-  const sorted = [...horseScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0));
-  return sorted.map((h, i) => {
-    const s = Math.max(0, h.score ?? 0);
-    const base = s / 6;
-    const parts: number[] = [];
-    let sum = 0;
-    for (let j = 0; j < 6; j++) {
-      const variation = 0.15 * Math.sin((i * 7 + j * 11) % 10);
-      const v = Math.max(0.01, base * (1 + variation));
-      parts.push(v);
-      sum += v;
-    }
-    const scale = sum > 0 ? s / sum : 1;
-    return parts.map((p) => p * scale);
+/**
+ * Extract real sub-scores from a horse. If unavailable, distribute total score synthetically
+ * so weights still have a meaningful effect. Returns array aligned with FACTORS order.
+ */
+function getFactorValues(h: PredictionHorseScore): number[] {
+  const sub = h.sub;
+  if (sub && Object.values(sub).some((v) => v != null && v > 0)) {
+    return FACTORS.map(({ key }) => sub[key] ?? 0);
+  }
+  // Fallback: distribute total score into 6 parts with minor variation per horse
+  const s = Math.max(1, h.score ?? 50);
+  const base = s / FACTORS.length;
+  const hrSeed = [...(h.hrNo ?? h.hrName ?? '?')].reduce((acc, c) => acc + c.charCodeAt(0), 0);
+  return FACTORS.map((_, j) => {
+    const v = base * (1 + 0.12 * Math.sin(hrSeed * 0.37 + j * 1.9));
+    return Math.max(0.5, v);
   });
 }
+
+type RankedHorse = {
+  horse: PredictionHorseScore;
+  aiRank: number;
+  customScore: number;
+  aiScore: number;
+  factors: number[];
+};
 
 export default function SimulatorPage() {
   const router = useRouter();
   const id = router.query?.id as string | undefined;
+  const [weights, setWeights] = useState<number[]>(() => FACTORS.map(() => SLIDER_DEFAULT));
+  const [copied, setCopied] = useState(false);
 
-  const [weights, setWeights] = useState<number[]>(() =>
-    FACTOR_LABELS.map(() => SLIDER_DEFAULT),
-  );
-
-  const {
-    data: race,
-    isLoading: raceLoading,
-    isError: raceError,
-    refetch: refetchRace,
-  } = useQuery({
+  const { data: race, isLoading: raceLoading, isError: raceError, refetch: refetchRace } = useQuery({
     queryKey: ['race', id],
     queryFn: () => RaceApi.getRace(id!),
     enabled: !!id,
   });
 
-  const {
-    data: preview,
-    isLoading: previewLoading,
-    isError: previewError,
-    refetch: refetchPreview,
-  } = useQuery({
+  const { data: preview, isLoading: previewLoading, isError: previewError, refetch: refetchPreview } = useQuery({
     queryKey: ['prediction', 'preview', id],
     queryFn: () => PredictionApi.getPreview(id!),
     enabled: !!id,
@@ -83,186 +77,306 @@ export default function SimulatorPage() {
 
   const horseScores = useMemo(() => preview?.scores?.horseScores ?? [], [preview?.scores?.horseScores]);
   const hasScores = horseScores.length > 0;
-
-  const factorsPerHorse = useMemo(
-    () => (hasScores ? buildSyntheticFactors(horseScores) : []),
-    [hasScores, horseScores],
+  const hasRealSub = useMemo(
+    () => horseScores.some((h) => h.sub && Object.values(h.sub).some((v) => v != null && v > 0)),
+    [horseScores],
   );
 
-  const sortedByScore = useMemo(
+  // AI ranking (by score desc) — fixed reference for rank-change calculation
+  const aiRanked = useMemo(
     () => [...horseScores].sort((a, b) => (b.score ?? 0) - (a.score ?? 0)),
     [horseScores],
   );
 
-  const customRanked = useMemo(() => {
-    if (sortedByScore.length === 0 || factorsPerHorse.length === 0) return [];
-    const withCustom = sortedByScore.map((h, i) => {
-      const factors = factorsPerHorse[i] ?? [];
-      const customScore = factors.reduce((acc, f, j) => acc + (weights[j] ?? SLIDER_DEFAULT) * f, 0);
-      return { horse: h, customScore, aiScore: h.score ?? 0 };
-    });
-    return [...withCustom].sort((a, b) => b.customScore - a.customScore);
-  }, [sortedByScore, factorsPerHorse, weights]);
+  // Per-horse factor values (real sub-scores or synthetic fallback)
+  const factorsByHorse = useMemo(
+    () => aiRanked.map((h) => getFactorValues(h)),
+    [aiRanked],
+  );
 
-  const resetWeights = useCallback(() => {
-    setWeights(FACTOR_LABELS.map(() => SLIDER_DEFAULT));
-  }, []);
+  // Re-rank by weighted sum of factor values
+  const customRanked = useMemo((): RankedHorse[] => {
+    if (aiRanked.length === 0) return [];
+    return aiRanked
+      .map((horse, i) => {
+        const factors = factorsByHorse[i] ?? [];
+        const customScore = factors.reduce((acc, f, j) => acc + (weights[j] ?? SLIDER_DEFAULT) * f, 0);
+        return { horse, aiRank: i + 1, customScore, aiScore: horse.score ?? 0, factors };
+      })
+      .sort((a, b) => b.customScore - a.customScore);
+  }, [aiRanked, factorsByHorse, weights]);
+
+  const maxCustomScore = useMemo(
+    () => Math.max(1, ...customRanked.map((r) => r.customScore)),
+    [customRanked],
+  );
+
+  const resetWeights = useCallback(() => setWeights(FACTORS.map(() => SLIDER_DEFAULT)), []);
 
   const handleShare = useCallback(() => {
-    const top3 = customRanked.slice(0, 3).map((r, i) => `${i + 1}. ${r.horse.hrName ?? r.horse.horseName ?? r.horse.hrNo ?? '-'}`);
+    const top3 = customRanked
+      .slice(0, 3)
+      .map((r, i) => `${i + 1}위 ${r.horse.chulNo ? `(${r.horse.chulNo}번)` : ''}${r.horse.hrName ?? r.horse.hrNo ?? '-'}`)
+      .join(' / ');
     const rcNo = (race as { rcNo?: string } | undefined)?.rcNo ?? id ?? '';
-    const text = `내 커스텀 예측 경주 #${rcNo}: ${top3.join(' ')}`;
+    const meetName = (race as { meetName?: string } | undefined)?.meetName ?? '';
+    const text = `[OddsCast 시뮬레이터] ${meetName} 제${rcNo}경주 내 예측 → ${top3}`;
     if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      navigator.clipboard.writeText(text).then(() => alert('클립보드에 복사되었습니다.')).catch(() => {});
-    } else {
-      prompt('아래 텍스트를 복사하세요', text);
+      navigator.clipboard.writeText(text)
+        .then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000); })
+        .catch(() => {});
     }
   }, [customRanked, race, id]);
 
   const isLoading = raceLoading || previewLoading;
   const isError = raceError || previewError;
-  const refetch = useCallback(() => {
-    refetchRace();
-    refetchPreview();
-  }, [refetchRace, refetchPreview]);
-  const rcNo = (race as { rcNo?: string } | undefined)?.rcNo ?? id ?? '';
+  const refetch = useCallback(() => { refetchRace(); refetchPreview(); }, [refetchRace, refetchPreview]);
+
+  const rcNo = (race as { rcNo?: string } | undefined)?.rcNo ?? '';
   const meetName = (race as { meetName?: string } | undefined)?.meetName ?? '';
+  const backHref = id ? routes.races.detail(id) : routes.races.list;
+  const pageTitle = rcNo ? `시뮬레이터 — ${meetName} 제${rcNo}경주` : '시뮬레이터';
 
   return (
-    <Layout title={rcNo ? `커스텀 시뮬레이터 | 경주 #${rcNo} | OddsCast` : '커스텀 시뮬레이터 | OddsCast'}>
-      <BackLink href={id ? routes.races.detail(id) : routes.races.list} label="경주 상세로" className="block mb-4" />
+    <Layout title={rcNo ? `시뮬레이터 | 경주 #${rcNo} | OddsCast` : '시뮬레이터 | OddsCast'}>
+      <CompactPageTitle title={pageTitle} backHref={backHref} />
 
-      {!id ? (
-        <DataFetchState
-          isLoading={false}
-          error={null}
-          isEmpty
-          emptyTitle="경주를 선택해 주세요"
-          emptyAction={
-            <Link href={routes.races.list} className="btn-primary inline-flex items-center gap-2">
-              <Icon name="ClipboardList" size={18} />
-              경주 목록
-            </Link>
-          }
-        >
-          {null}
-        </DataFetchState>
-      ) : isLoading ? (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner />
-        </div>
-      ) : isError ? (
-        <EmptyState
-          icon="AlertCircle"
-          title="경주 또는 예측 정보를 불러올 수 없습니다"
-          description="잠시 후 다시 시도해 주세요."
-          action={
-            <button type="button" onClick={() => refetch()} className="btn-secondary px-3 py-1.5 text-sm">
-              다시 시도
-            </button>
-          }
-        />
-      ) : !hasScores ? (
-        <div className="rounded-xl border border-border bg-muted/20 px-4 py-8 text-center">
-          <p className="text-foreground font-medium mb-2">예측 데이터가 없습니다</p>
-          <p className="text-sm text-text-secondary mb-4">
-            이 경주의 AI 예측을 먼저 확인한 뒤 시뮬레이터를 이용해 주세요.
-          </p>
-          <Link href={id ? routes.races.detail(id) : routes.races.list} className="btn-primary inline-flex items-center gap-2">
-            <Icon name="ChevronLeft" size={18} />
-            경주 상세로
+      <DataFetchState
+        isLoading={isLoading}
+        error={isError ? new Error('경주 또는 예측 정보를 불러올 수 없습니다') : null}
+        onRetry={() => refetch()}
+        isEmpty={!isLoading && !isError && !id}
+        emptyIcon="Target"
+        emptyTitle="경주를 선택해 주세요"
+        emptyAction={
+          <Link href={routes.races.list} className="btn-primary inline-flex items-center gap-2">
+            <Icon name="ClipboardList" size={18} />
+            경주 목록
           </Link>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          <SectionTitle
-            title={`커스텀 예측 시뮬레이터`}
-            icon="Target"
-            badge={meetName ? `${meetName} 제${rcNo}경주` : undefined}
-            className="mb-2"
-          />
-
-          <p className="text-sm text-text-secondary">
-            아래 가중치를 조절하면 말 순위가 바뀝니다. AI 기본 예측에 보조 요인을 반영한 재순위입니다.
-          </p>
-
-          <div className="rounded-xl border border-border overflow-hidden bg-muted/5">
-            <div className="px-3 py-2.5 border-b border-border bg-stone-50/80">
-              <span className="text-sm font-semibold text-foreground">가중치 조절</span>
+        }
+        loadingLabel="예측 데이터 불러오는 중..."
+      >
+        {!hasScores && !isLoading ? (
+          <div className="rounded-xl border border-border bg-stone-50 px-4 py-10 text-center">
+            <Icon name="AlertCircle" size={32} className="text-text-tertiary mx-auto mb-3" />
+            <p className="text-foreground font-medium mb-1">예측 데이터가 없습니다</p>
+            <p className="text-sm text-text-secondary mb-5">
+              이 경주의 AI 예측이 준비되면 시뮬레이터를 이용할 수 있습니다.
+            </p>
+            <Link href={backHref} className="btn-primary inline-flex items-center gap-2">
+              <Icon name="ChevronLeft" size={18} />
+              경주 상세로
+            </Link>
+          </div>
+        ) : hasScores ? (
+          <div className="space-y-5">
+            {/* Info bar */}
+            <div className="flex items-center gap-2 rounded-lg bg-primary/8 border border-primary/20 px-3 py-2">
+              <Icon name="Info" size={15} className="text-primary shrink-0" />
+              <p className="text-xs text-primary">
+                {hasRealSub
+                  ? 'AI가 계산한 실제 세부 점수(레이팅·폼·컨디션·경험·훈련·거리적성)를 가중치로 조절합니다.'
+                  : '이 예측은 세부 점수 없이 종합 점수만 제공됩니다. 가중치 조절 시 추정 비중을 반영합니다.'}
+              </p>
             </div>
-            <div className="p-4 space-y-4">
-              {FACTOR_LABELS.map(([key, label], j) => (
-                <div key={key} className="flex items-center gap-3">
-                  <label className="w-20 text-sm text-foreground shrink-0">{label}</label>
-                  <input
-                    type="range"
-                    min={SLIDER_MIN}
-                    max={SLIDER_MAX}
-                    step={0.1}
-                    value={weights[j] ?? SLIDER_DEFAULT}
-                    onChange={(e) => {
-                      const v = parseFloat(e.target.value);
-                      setWeights((prev) => {
-                        const next = [...prev];
-                        next[j] = v;
-                        return next;
-                      });
-                    }}
-                    className="flex-1 h-2 rounded-lg appearance-none bg-stone-200 accent-primary"
-                  />
-                  <span className="w-10 text-right text-sm tabular-nums text-foreground">
-                    {(weights[j] ?? SLIDER_DEFAULT).toFixed(1)}
-                  </span>
+
+            {/* Weight sliders */}
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">가중치 조절</span>
+                <button
+                  type="button"
+                  onClick={resetWeights}
+                  className="text-xs text-text-secondary hover:text-foreground flex items-center gap-1 touch-manipulation"
+                >
+                  <Icon name="RefreshCw" size={13} />
+                  초기화
+                </button>
+              </div>
+              <div className="p-4 space-y-4">
+                {FACTORS.map(({ key, label, desc }, j) => {
+                  const w = weights[j] ?? SLIDER_DEFAULT;
+                  const isHigh = w > 1.3;
+                  const isLow = w < 0.7;
+                  return (
+                    <div key={key}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div>
+                          <span className="text-sm font-medium text-foreground">{label}</span>
+                          <span className="ml-1.5 text-xs text-text-tertiary">{desc}</span>
+                        </div>
+                        <span className={`text-sm font-semibold tabular-nums w-10 text-right ${isHigh ? 'text-primary' : isLow ? 'text-text-tertiary' : 'text-foreground'}`}>
+                          ×{w.toFixed(1)}
+                        </span>
+                      </div>
+                      <input
+                        type="range"
+                        min={SLIDER_MIN}
+                        max={SLIDER_MAX}
+                        step={0.1}
+                        value={w}
+                        onChange={(e) => {
+                          const v = parseFloat(e.target.value);
+                          setWeights((prev) => { const next = [...prev]; next[j] = v; return next; });
+                        }}
+                        className="w-full h-2 rounded-full appearance-none bg-stone-200 accent-primary"
+                        aria-label={`${label} 가중치`}
+                      />
+                      <div className="flex justify-between text-[10px] text-text-tertiary mt-0.5">
+                        <span>무시</span>
+                        <span>기본</span>
+                        <span>강조</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Re-ranked results */}
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
+                <span className="text-sm font-semibold text-foreground">재순위 결과</span>
+                <button
+                  type="button"
+                  onClick={handleShare}
+                  className="text-xs text-text-secondary hover:text-foreground flex items-center gap-1 touch-manipulation"
+                >
+                  <Icon name={copied ? 'Check' : 'Copy'} size={13} />
+                  {copied ? '복사됨' : '결과 복사'}
+                </button>
+              </div>
+              <div className="divide-y divide-border">
+                {customRanked.map(({ horse, aiRank, customScore, aiScore }, i) => {
+                  const rank = i + 1;
+                  const rankDiff = aiRank - rank; // positive = moved up
+                  const horseName = horse.hrName ?? horse.horseName ?? horse.hrNo ?? '-';
+                  const isTop3 = rank <= 3;
+                  const barPct = Math.round((customScore / maxCustomScore) * 100);
+                  const aiBarPct = Math.round((aiScore / (Math.max(1, ...customRanked.map(r => r.aiScore)))) * 100);
+
+                  return (
+                    <div key={horse.hrNo ?? i} className={`px-4 py-3 ${isTop3 ? 'bg-primary/3' : ''}`}>
+                      <div className="flex items-center gap-3">
+                        {/* Rank badge */}
+                        <div className="shrink-0 flex flex-col items-center gap-0.5 w-8">
+                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
+                            rank === 1 ? 'bg-amber-400 text-white' :
+                            rank === 2 ? 'bg-stone-400 text-white' :
+                            rank === 3 ? 'bg-amber-700 text-white' :
+                            'bg-stone-100 text-text-tertiary'
+                          }`}>
+                            {rank}
+                          </span>
+                          {rankDiff !== 0 && (
+                            <span className={`text-[10px] font-semibold leading-none ${rankDiff > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                              {rankDiff > 0 ? `▲${rankDiff}` : `▼${Math.abs(rankDiff)}`}
+                            </span>
+                          )}
+                          {rankDiff === 0 && (
+                            <span className="text-[10px] text-text-tertiary leading-none">—</span>
+                          )}
+                        </div>
+
+                        {/* Horse info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            {horse.chulNo != null && horse.chulNo !== '' && (
+                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
+                                {horse.chulNo}
+                              </span>
+                            )}
+                            <Link
+                              href={horse.hrNo ? routes.horses.detail(horse.hrNo) : '#'}
+                              className="font-semibold text-foreground text-sm hover:text-primary"
+                            >
+                              {horseName}
+                            </Link>
+                            {horse.winProb != null && (
+                              <span className="text-xs text-text-tertiary">
+                                승률 {horse.winProb.toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          {/* Score bars */}
+                          <div className="mt-1.5 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-text-tertiary w-12 shrink-0">커스텀</span>
+                              <div className="flex-1 h-2 rounded-full bg-stone-100 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-primary transition-all duration-300"
+                                  style={{ width: `${barPct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs tabular-nums text-foreground font-medium w-9 text-right">{customScore.toFixed(1)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] text-text-tertiary w-12 shrink-0">AI</span>
+                              <div className="flex-1 h-1.5 rounded-full bg-stone-100 overflow-hidden">
+                                <div
+                                  className="h-full rounded-full bg-stone-300 transition-all duration-300"
+                                  style={{ width: `${aiBarPct}%` }}
+                                />
+                              </div>
+                              <span className="text-xs tabular-nums text-text-tertiary w-9 text-right">{aiScore.toFixed(1)}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Sub-score breakdown table (only when real sub data available) */}
+            {hasRealSub && (
+              <div className="rounded-xl border border-border overflow-hidden">
+                <div className="px-4 py-3 border-b border-border bg-stone-50/80">
+                  <span className="text-sm font-semibold text-foreground">말별 세부 점수</span>
+                  <span className="ml-2 text-xs text-text-tertiary">가중치 적용 전 원점수 (0–100)</span>
                 </div>
-              ))}
-            </div>
-            <div className="flex flex-wrap gap-2 px-4 pb-4">
-              <button type="button" onClick={resetWeights} className="btn-secondary text-sm inline-flex items-center gap-1.5">
-                <Icon name="RefreshCw" size={16} />
-                AI 기본값으로
-              </button>
-              <button type="button" onClick={handleShare} className="btn-secondary text-sm inline-flex items-center gap-1.5">
-                <Icon name="ClipboardList" size={16} />
-                결과 공유
-              </button>
-            </div>
+                <div className="overflow-x-auto">
+                  <table className="data-table data-table-compact w-full">
+                    <thead>
+                      <tr>
+                        <th className="text-left">마명</th>
+                        {FACTORS.map((f) => (
+                          <th key={f.key} className="cell-center w-14">{f.label}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aiRanked.map((h, i) => {
+                        const fs = factorsByHorse[i] ?? [];
+                        return (
+                          <tr key={h.hrNo ?? i}>
+                            <td className="font-medium">
+                              <span className="flex items-center gap-1.5">
+                                {h.chulNo != null && h.chulNo !== '' && (
+                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-stone-700 text-white text-[9px] font-bold shrink-0">
+                                    {h.chulNo}
+                                  </span>
+                                )}
+                                {h.hrName ?? h.hrNo ?? '-'}
+                              </span>
+                            </td>
+                            {fs.map((v, j) => (
+                              <td key={j} className="cell-center tabular-nums text-text-secondary">
+                                {v.toFixed(1)}
+                              </td>
+                            ))}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
           </div>
-
-          <div className="rounded-xl border border-border overflow-hidden">
-            <div className="px-3 py-2.5 border-b border-border bg-stone-50/80 flex justify-between items-center">
-              <span className="text-sm font-semibold text-foreground">재순위 결과</span>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[280px] text-sm">
-                <thead>
-                  <tr className="border-b border-border text-text-secondary">
-                    <th className="text-left py-2 px-3 w-14 font-medium">순위</th>
-                    <th className="text-left py-2 px-3 font-medium">마명</th>
-                    <th className="cell-right py-2 px-3 w-20 font-medium">커스텀 점수</th>
-                    <th className="cell-right py-2 px-3 w-20 font-medium">AI 점수</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {customRanked.map(({ horse, customScore, aiScore }, i) => (
-                    <tr key={horse.hrNo ?? i} className="border-b border-border last:border-0">
-                      <td className="py-2 px-3 font-medium text-foreground">{i + 1}</td>
-                      <td className="py-2 px-3 text-foreground">
-                        {horse.hrName ?? horse.horseName ?? horse.hrNo ?? '-'}
-                      </td>
-                      <td className="cell-right py-2 px-3 tabular-nums text-foreground">
-                        {customScore.toFixed(1)}
-                      </td>
-                      <td className="cell-right py-2 px-3 tabular-nums text-text-secondary">
-                        {aiScore.toFixed(1)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
+        ) : null}
+      </DataFetchState>
     </Layout>
   );
 }

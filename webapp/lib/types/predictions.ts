@@ -16,6 +16,19 @@ export interface PredictionHorseScore {
   confidence?: 'high' | 'medium' | 'low';
   /** Win probability 0–100 (from model) */
   winProb?: number;
+  /** Sub-scores (0–100 normalized): rat=레이팅, frm=폼, cnd=컨디션, exp=경험, trn=훈련, suit=거리적성 */
+  sub?: {
+    rat?: number;
+    frm?: number;
+    cnd?: number;
+    exp?: number;
+    trn?: number;
+    suit?: number;
+  };
+  /** Recent finishing ranks */
+  recentRanks?: number[];
+  /** Analysis tags (e.g. '선행마', '추입마') */
+  tags?: string[];
 }
 
 /** AI prediction by bet type — separate recommendation for each bet type */

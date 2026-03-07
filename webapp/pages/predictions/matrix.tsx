@@ -202,7 +202,7 @@ export default function PredictionMatrixPage() {
           {/* Hero header */}
           <div className='home-hero mb-3'>
             <div className='relative z-10'>
-              <div className='flex items-center justify-between gap-4'>
+              <div className='flex flex-col gap-2.5'>
                 <div>
                   <p className='text-stone-400 text-xs mb-0.5'>일일 경주 종합 가이드</p>
                   <h2 className='text-base font-bold text-white'>{formatDisplayDate(dateFilter)}</h2>
@@ -217,7 +217,7 @@ export default function PredictionMatrixPage() {
                   </div>
                 </div>
                 {/* Matrix ticket status */}
-                <div className='text-right shrink-0'>
+                <div>
                   {hasAccess ? (
                     <span className='inline-flex items-center gap-1 px-2.5 py-1 rounded bg-primary text-white text-xs font-semibold'>
                       <Icon name='Unlock' size={12} />

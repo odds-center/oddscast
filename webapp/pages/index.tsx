@@ -48,13 +48,13 @@ export default function Home() {
       <DateHeader />
 
       {/* Login + Quick stats bar */}
-      <div className='flex items-center justify-between gap-3 mt-4 mb-4'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 mb-4'>
         <HomeQuickStats />
         {!isLoggedIn && (
-          <div className='flex items-center gap-2 shrink-0'>
+          <div className='flex items-center gap-2'>
             <button
               onClick={handleLoginClick}
-              className='btn-primary flex items-center gap-2 px-4 py-2.5 text-sm'
+              className='btn-primary flex items-center gap-2 px-4 py-2.5 text-sm w-full sm:w-auto justify-center'
             >
               <Icon name='LogIn' size={16} />
               로그인

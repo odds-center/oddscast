@@ -126,9 +126,9 @@ export default function DateHeader() {
 
   return (
     <div className='home-hero'>
-      <div className='relative z-10 flex items-center justify-between gap-4'>
+      <div className='relative z-10 flex flex-col gap-3'>
         <div>
-          <p className='text-stone-400 text-sm mb-1 whitespace-nowrap'>
+          <p className='text-stone-400 text-sm mb-1'>
             {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDayName})
           </p>
           <h1 className='text-lg sm:text-xl font-bold text-white mb-1'>
@@ -144,11 +144,11 @@ export default function DateHeader() {
             </p>
           )}
         </div>
-        <div className='flex items-center gap-2 shrink-0'>
+        <div className='flex items-center gap-2'>
           {msg.showTodayLink && (
             <Link
               href={`${routes.races.list}?date=today`}
-              className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
+              className='inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
             >
               <Icon name='Flag' size={15} />
               오늘의 경주
@@ -156,7 +156,7 @@ export default function DateHeader() {
           )}
           <Link
             href={routes.predictions.matrix}
-            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white/10 text-stone-300 text-sm font-medium hover:bg-white/15 active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
+            className='inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/10 text-stone-300 text-sm font-medium hover:bg-white/15 active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
           >
             <Icon name='BarChart2' size={15} />
             종합 예상

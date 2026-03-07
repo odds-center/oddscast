@@ -149,7 +149,7 @@ export default function SubscriptionsPage() {
           <div className='space-y-4'>
             {(plans ?? []).map((plan: SubscriptionPlan) => (
               <SectionCard key={plan.id}>
-                <div className='flex justify-between items-start gap-2'>
+                <div className='flex flex-col gap-3'>
                   <div>
                     <h3 className='text-foreground font-semibold'>{plan.displayName ?? plan.planName}</h3>
                     <p className='text-text-secondary text-sm mt-1'>{plan.description}</p>
@@ -168,7 +168,7 @@ export default function SubscriptionsPage() {
                   {isLoggedIn && !status?.isActive && (
                     <Link
                       href={routes.mypage.subscriptionsCheckout(plan.id)}
-                      className='btn-primary shrink-0 flex items-center gap-1.5 no-underline text-sm px-3 py-1.5'
+                      className='btn-primary w-full flex items-center justify-center gap-1.5 no-underline text-sm py-2.5'
                     >
                       구독하기
                     </Link>

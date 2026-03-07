@@ -443,7 +443,7 @@ export default function RaceDetailPage() {
                       useTicketMutation.mutate({ raceId: id as string });
                     }}
                     disabled={useTicketMutation.isPending}
-                    className='btn-primary px-5 py-2.5 text-sm inline-flex items-center gap-2'
+                    className='btn-primary w-full sm:w-auto px-5 py-2.5 text-sm inline-flex items-center justify-center gap-2'
                   >
                     {useTicketMutation.isPending ? (
                       <>
@@ -1314,7 +1314,7 @@ function PredictionLockedView({
                 useTicketMutation.mutate({ raceId });
               }}
               disabled={useTicketMutation.isPending}
-              className='btn-primary px-5 py-2.5 text-sm flex items-center gap-2'
+              className='btn-primary w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2'
             >
               {useTicketMutation.isPending ? (
                 <>

@@ -56,7 +56,7 @@ export default function StatusBadge({ status, rcDate, stTime, className = '' }: 
   }
 
   return (
-    <span className={`inline-flex items-center text-xs px-1.5 py-px rounded border font-medium whitespace-nowrap ${displayCls} ${className}`.trim()}>
+    <span role="status" className={`inline-flex items-center text-xs px-1.5 py-px rounded border font-medium whitespace-nowrap ${displayCls} ${className}`.trim()}>
       {label}
     </span>
   );

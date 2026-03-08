@@ -349,9 +349,12 @@ function FloatingAppBar({ pathname, asPath, isMobile }: { pathname: string; asPa
 interface LayoutProps {
   children: React.ReactNode;
   title?: string;
+  description?: string;
 }
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast' }) => {
+const DEFAULT_DESCRIPTION = 'AI 기반 경마 분석 서비스 - 데이터 분석과 인공지능으로 경마를 더 스마트하게';
+
+const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', description = DEFAULT_DESCRIPTION }) => {
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
       <a
@@ -366,13 +369,19 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast' }) => {
           name='viewport'
           content='width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover'
         />
+        <meta name='description' content={description} />
         <meta name='theme-color' content='#1c1917' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
         <meta property='og:title' content={title} />
-        <meta property='og:description' content='AI 기반 경마 분석 서비스' />
+        <meta property='og:description' content={description} />
         <meta property='og:image' content='/oddscast-logo.png' />
         <meta property='og:type' content='website' />
+        <meta property='og:locale' content='ko_KR' />
+        <meta property='og:site_name' content='OddsCast' />
+        <meta name='twitter:card' content='summary' />
+        <meta name='twitter:title' content={title} />
+        <meta name='twitter:description' content={description} />
       </Head>
 
       <main id='main-content' role='main' aria-label='Main content' className='flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain flex flex-col lg:max-w-[1200px] mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-0 lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))] lg:pt-6'>

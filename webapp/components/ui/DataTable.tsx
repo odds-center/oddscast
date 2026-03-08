@@ -85,6 +85,7 @@ export default function DataTable<T>({
                 onClick={handleRowClick}
                 onKeyDown={handleRowClick && href ? (e) => e.key === 'Enter' && router.push(href) : undefined}
                 role={handleRowClick ? 'button' : undefined}
+                aria-label={handleRowClick ? 'View details' : undefined}
                 tabIndex={handleRowClick ? 0 : undefined}
               >
                 {columns.map((col) => {

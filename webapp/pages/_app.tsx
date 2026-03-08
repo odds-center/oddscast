@@ -1,4 +1,5 @@
 import type { AppProps } from 'next/app';
+import dynamic from 'next/dynamic';
 import Script from 'next/script';
 import { useRouter } from 'next/router';
 import * as Sentry from '@sentry/nextjs';
@@ -14,8 +15,17 @@ import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { routes } from '@/lib/routes';
 import { FloatingAppBar } from '@/components/Layout';
-import NetworkStatusBanner from '@/components/ui/NetworkStatusBanner';
-import { OnboardingTutorial, hasSeenOnboarding } from '@/components/onboarding';
+import { hasSeenOnboarding } from '@/components/onboarding';
+
+const OnboardingTutorial = dynamic(
+  () => import('@/components/onboarding/OnboardingTutorial'),
+  { ssr: false }
+);
+
+const NetworkStatusBanner = dynamic(
+  () => import('@/components/ui/NetworkStatusBanner'),
+  { ssr: false }
+);
 import { trackActivity, ACTIVITY_EVENTS } from '@/lib/api/activityApi';
 
 const MOBILE_BREAKPOINT = 768;

@@ -47,11 +47,13 @@ export default function TabBar<T extends string = string>({
   const btnClass = isMd ? btnMd : btnSm;
 
   return (
-    <div className={`${barClass} ${className}`.trim()}>
+    <div role="tablist" className={`${barClass} ${className}`.trim()}>
       {options.map((opt) => (
         <button
           key={opt.value}
           type='button'
+          role="tab"
+          aria-selected={value === opt.value}
           onClick={() => onChange(opt.value)}
           className={`${btnClass} ${value === opt.value ? activeClass : inactiveClass}`}
         >

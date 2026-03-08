@@ -1,9 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
 
 @Injectable()
 export class MailService {
+  private readonly logger = new Logger(MailService.name);
   private resend: Resend;
   private fromAddress: string;
 
@@ -31,13 +32,13 @@ export class MailService {
         html: this.buildVerificationHtml(code),
       });
       if (error) {
-        console.error('[Mail] Resend error:', error);
+        this.logger.error(`Resend error: ${error.message}`);
         return { success: false, error: error.message };
       }
       return { success: true };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[Mail] Send failed:', msg);
+      this.logger.error(`Send failed: ${msg}`);
       return { success: false, error: msg };
     }
   }

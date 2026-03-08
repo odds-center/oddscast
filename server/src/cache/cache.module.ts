@@ -1,4 +1,4 @@
-import { Module, Global } from '@nestjs/common';
+import { Module, Global, Logger } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule as NestCacheModule } from '@nestjs/cache-manager';
 import { Keyv } from 'keyv';
@@ -22,9 +22,8 @@ const nestCacheModule = NestCacheModule.registerAsync({
       try {
         stores.push(new Keyv({ store: new KeyvRedis(redisUrl) }));
       } catch (e) {
-        console.warn(
-          '[Cache] Redis 연결 실패, 인메모리만 사용:',
-          (e as Error).message,
+        new Logger('CacheModule').warn(
+          `Redis connection failed, using in-memory only: ${(e as Error).message}`,
         );
       }
     }

@@ -12,12 +12,16 @@ import {
   Linking,
   AppState,
   Alert,
+  Keyboard,
+  type AppStateStatus,
 } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  withDelay,
   runOnJS,
+  Easing,
 } from 'react-native-reanimated';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { useRoute, RouteProp } from '@react-navigation/native';
@@ -36,6 +40,15 @@ const API_BASE = config.apiBaseUrl;
 
 // Pages where Android back button should minimize the app (not go back)
 const ROOT_PATHS = ['/', '/auth/login', '/auth/register'];
+
+// Double-tap back to exit: interval within which second press exits app
+const BACK_EXIT_INTERVAL_MS = 2000;
+
+// Toast auto-dismiss duration
+const EXIT_TOAST_DURATION_MS = 2000;
+
+// Background threshold: reload WebView if app was in background longer than this
+const BACKGROUND_RELOAD_THRESHOLD_MS = 30 * 60 * 1000; // 30 minutes
 
 /**
  * Bridge message protocol:
@@ -74,6 +87,14 @@ export default function WebAppScreen() {
   const refreshTokenRef = useRef<string | null>(null);
   const hasRegisteredRef = useRef(false);
 
+  // Double-tap back to exit (Android)
+  const lastBackPressRef = useRef(0);
+  const exitToastTranslateY = useSharedValue(100);
+  const exitToastOpacity = useSharedValue(0);
+
+  // Background time tracking for stale reload
+  const backgroundAtRef = useRef<number | null>(null);
+
   // Splash overlay
   const [webViewLoaded, setWebViewLoaded] = useState(false);
   const [splashDismissed, setSplashDismissed] = useState(false);
@@ -97,6 +118,32 @@ export default function WebAppScreen() {
   const splashAnimatedStyle = useAnimatedStyle(() => ({
     opacity: splashOpacity.value,
   }));
+
+  // Exit toast animated style
+  const exitToastAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: exitToastTranslateY.value }],
+    opacity: exitToastOpacity.value,
+  }));
+
+  // Show exit toast with auto-dismiss animation
+  const showExitToast = useCallback(() => {
+    // Slide up + fade in
+    exitToastTranslateY.value = withTiming(0, {
+      duration: 250,
+      easing: Easing.out(Easing.cubic),
+    });
+    exitToastOpacity.value = withTiming(1, { duration: 250 });
+
+    // Auto-dismiss: fade out + slide down after delay
+    exitToastTranslateY.value = withDelay(
+      EXIT_TOAST_DURATION_MS,
+      withTiming(100, { duration: 300, easing: Easing.in(Easing.cubic) }),
+    );
+    exitToastOpacity.value = withDelay(
+      EXIT_TOAST_DURATION_MS,
+      withTiming(0, { duration: 300 }),
+    );
+  }, [exitToastTranslateY, exitToastOpacity]);
 
   // --- Send message to WebView ---
   const sendToWeb = useCallback((type: string, payload?: unknown) => {
@@ -165,11 +212,28 @@ export default function WebAppScreen() {
     return () => { if (unsubscribe) unsubscribe(); };
   }, [sendToWeb]);
 
-  // --- App state: ping webapp on resume ---
+  // --- App state: ping on resume + reload if stale ---
   useEffect(() => {
-    const subscription = AppState.addEventListener('change', (state) => {
-      if (state === 'active' && authTokenRef.current) {
-        sendToWeb('ECHO');
+    const subscription = AppState.addEventListener('change', (nextState: AppStateStatus) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        // Record when app went to background
+        backgroundAtRef.current = Date.now();
+        // Dismiss keyboard when backgrounding to prevent layout issues on resume
+        Keyboard.dismiss();
+      } else if (nextState === 'active') {
+        // Reload WebView if app was in background too long (stale data)
+        if (
+          backgroundAtRef.current &&
+          Date.now() - backgroundAtRef.current > BACKGROUND_RELOAD_THRESHOLD_MS
+        ) {
+          webViewRef.current?.reload();
+        }
+        backgroundAtRef.current = null;
+
+        // Ping webapp to check liveness
+        if (authTokenRef.current) {
+          sendToWeb('ECHO');
+        }
       }
     });
     return () => subscription.remove();
@@ -182,22 +246,39 @@ export default function WebAppScreen() {
     }
   }, [webViewLoaded, sendToWeb]);
 
-  // --- Android back button ---
+  // --- Android back button with double-tap-to-exit ---
   useEffect(() => {
     if (Platform.OS !== 'android') return;
     const handler = () => {
+      // If WebView can go back in its history, just go back
       if (canGoBack) {
         webViewRef.current?.goBack();
         return true;
       }
+
       const url = currentUrlRef.current;
+      let isRootPath = false;
       try {
         const parsed = new URL(url);
         const pathname = (parsed as unknown as { pathname: string }).pathname ?? '';
-        if (ROOT_PATHS.includes(pathname) || pathname === '') return false;
+        isRootPath = ROOT_PATHS.includes(pathname) || pathname === '';
       } catch {
-        return false;
+        isRootPath = true;
       }
+
+      if (isRootPath) {
+        // Double-tap to exit: first press shows toast, second press exits immediately
+        const now = Date.now();
+        if (now - lastBackPressRef.current < BACK_EXIT_INTERVAL_MS) {
+          BackHandler.exitApp();
+        } else {
+          lastBackPressRef.current = now;
+          showExitToast();
+        }
+        return true;
+      }
+
+      // Not on root path — navigate to home
       webViewRef.current?.injectJavaScript("window.location.href='/';true;");
       return true;
     };
@@ -359,8 +440,8 @@ export default function WebAppScreen() {
         onLoadEnd={() => setWebViewLoaded(true)}
         onError={handleWebViewError}
         scrollEnabled={true}
-        bounces={true}
-        overScrollMode="always"
+        bounces={Platform.OS === 'ios'}
+        overScrollMode={Platform.OS === 'android' ? 'never' : 'always'}
         keyboardDisplayRequiresUserAction={false}
         cacheEnabled={true}
         allowsInlineMediaPlayback={true}
@@ -373,6 +454,12 @@ export default function WebAppScreen() {
         setSupportMultipleWindows={false}
         allowsLinkPreview={false}
         sharedCookiesEnabled={true}
+        automaticallyAdjustContentInsets={true}
+        contentInsetAdjustmentBehavior="automatic"
+        // Android: hardware-accelerated rendering for smoother scrolling
+        androidLayerType={Platform.OS === 'android' ? 'hardware' : undefined}
+        // Prevent text selection in WebView for native feel
+        textInteractionEnabled={false}
       />
 
       {/* Network error overlay */}
@@ -386,6 +473,18 @@ export default function WebAppScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      {/* Exit toast bar */}
+      <Animated.View
+        style={[styles.exitToast, exitToastAnimatedStyle]}
+        pointerEvents="none"
+      >
+        <View style={styles.exitToastInner}>
+          <Text style={styles.exitToastText}>
+            한 번 더 누르면 종료합니다
+          </Text>
+        </View>
+      </Animated.View>
 
       {/* Splash overlay */}
       {!splashDismissed && (
@@ -435,4 +534,29 @@ const styles = StyleSheet.create({
     borderRadius: 8, minWidth: 120, alignItems: 'center',
   },
   retryButtonText: { color: '#0c0c0c', fontSize: 16, fontWeight: '600' },
+  exitToast: {
+    position: 'absolute',
+    bottom: Platform.OS === 'ios' ? 100 : 80,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    zIndex: 20,
+  },
+  exitToastInner: {
+    backgroundColor: 'rgba(30, 30, 30, 0.95)',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  exitToastText: {
+    color: '#e0e0e0',
+    fontSize: 14,
+    fontWeight: '500',
+    letterSpacing: 0.2,
+  },
 });

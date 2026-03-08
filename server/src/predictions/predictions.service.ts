@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Not, Repository } from 'typeorm';
 import { Prediction } from '../database/entities/prediction.entity';
@@ -40,11 +40,15 @@ export class PredictionInProgressException extends Error {
   }
 }
 
-/** 세션 중 마지막으로 성공한 Gemini 모델 — 다음 요청에서 우선 시도 (404 낭비 방지) */
+/** Last successful Gemini model — prioritized on next request to avoid 404 retries */
 let lastWorkingGeminiModel: string | null = null;
+let lastWorkingGeminiModelAt = 0;
+const MODEL_CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
 
 @Injectable()
 export class PredictionsService {
+  private readonly logger = new Logger(PredictionsService.name);
+
   constructor(
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
@@ -408,9 +412,8 @@ AI 예측 순위: ${predictedTop || '-'}
         });
       }
     } catch (err) {
-      console.warn(
-        `[PredictionsService] Post-race summary failed for race ${raceId}:`,
-        err instanceof Error ? err.message : String(err),
+      this.logger.warn(
+        `Post-race summary failed for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }
@@ -842,6 +845,25 @@ AI 예측 순위: ${predictedTop || '-'}
       rcDateOrder: 'asc',
     });
 
+    // Batch-load all COMPLETED predictions for these races (avoid N+1)
+    type HorseScore = { hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number };
+    const predsByRaceId = new Map<number, { scores: unknown; analysis?: string }>();
+    if (raceIds.length > 0) {
+      const allPreds = await this.predictionRepo
+        .createQueryBuilder('p')
+        .select(['p.raceId', 'p.scores', 'p.analysis'])
+        .where('p.raceId IN (:...raceIds)', { raceIds })
+        .andWhere('p.status = :status', { status: PredictionStatus.COMPLETED })
+        .orderBy('p.createdAt', 'DESC')
+        .getMany();
+      // Keep only the most recent prediction per race
+      for (const p of allPreds) {
+        if (!predsByRaceId.has(p.raceId)) {
+          predsByRaceId.set(p.raceId, { scores: p.scores, analysis: p.analysis ?? undefined });
+        }
+      }
+    }
+
     const rows: Array<{
       raceId: string;
       meet: string;
@@ -861,17 +883,7 @@ AI 예측 순위: ${predictedTop || '-'}
     }> = [];
 
     for (const race of races) {
-      // Matrix is a paid feature (ticket-gated) — show all COMPLETED predictions
-      // regardless of previewApproved (which is only for free public preview)
-      const pred = await this.predictionRepo.findOne({
-        where: {
-          raceId: (race as unknown as { id: number }).id,
-          status: PredictionStatus.COMPLETED,
-        },
-        select: ['scores', 'analysis'],
-        order: { createdAt: 'DESC' },
-      });
-      type HorseScore = { hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number };
+      const pred = predsByRaceId.get((race as unknown as { id: number }).id);
       const scoresData = pred?.scores as { horseScores?: HorseScore[] } | null;
       const scores: HorseScore[] = scoresData?.horseScores ?? [];
       const top1 = scores[0]?.hrNo;
@@ -1096,9 +1108,10 @@ AI 예측 순위: ${predictedTop || '-'}
     let modelsToTry = deprecatedOrUnavailable.includes(rawModel)
       ? [...fallbackModels]
       : [rawModel, ...fallbackModels.filter((m) => m !== rawModel)];
-    // 이전 성공 모델이 있으면 맨 앞에 배치 (404 스킵)
+    // Prioritize last working model if still within TTL
     if (
       lastWorkingGeminiModel &&
+      Date.now() - lastWorkingGeminiModelAt < MODEL_CACHE_TTL_MS &&
       modelsToTry.includes(lastWorkingGeminiModel)
     ) {
       modelsToTry = [
@@ -1134,8 +1147,8 @@ AI 예측 순위: ${predictedTop || '-'}
         order: { createdAt: 'DESC' },
       });
       if (cached) {
-        console.log(
-          `[Prediction] Cache hit for race ${raceId} (entriesHash=${entriesHash}) — reusing prediction ${cached.id}`,
+        this.logger.log(
+          `Cache hit for race ${raceId} (entriesHash=${entriesHash}) — reusing prediction ${cached.id}`,
         );
         return cached;
       }
@@ -1221,7 +1234,7 @@ AI 예측 순위: ${predictedTop || '-'}
     try {
       jockeyAnalysis = await this.analysisService.analyzeJockey(raceId);
     } catch (e) {
-      console.warn('Jockey analysis skipped:', (e as Error).message);
+      this.logger.warn(`Jockey analysis skipped: ${(e as Error).message}`);
     }
 
     // 4. Apply odds blend to horseScoreResult so saved winProb reflects market odds when available.
@@ -1275,6 +1288,7 @@ AI 예측 순위: ${predictedTop || '-'}
         );
 
         lastWorkingGeminiModel = modelName;
+        lastWorkingGeminiModelAt = Date.now();
 
         // Update lock row to COMPLETED (same row, preserving id for referential integrity).
         await this.predictionRepo
@@ -1313,9 +1327,8 @@ AI 예측 순위: ${predictedTop || '-'}
               confidencePercent,
             });
           } catch (alertErr) {
-            console.warn(
-              '[SmartAlert] notifyHighConfidencePrediction failed:',
-              alertErr instanceof Error ? alertErr.message : alertErr,
+            this.logger.warn(
+              `notifyHighConfidencePrediction failed: ${alertErr instanceof Error ? alertErr.message : alertErr}`,
             );
           }
         }
@@ -1330,12 +1343,12 @@ AI 예측 순위: ${predictedTop || '-'}
           msg.includes('404') ||
           msg.toLowerCase().includes('not found');
         if (is404) {
-          console.warn(
+          this.logger.warn(
             `Gemini model "${modelName}" not found (404), trying next...`,
           );
           continue;
         }
-        console.error(`Gemini generation failed (${modelName}):`, lastError);
+        this.logger.error(`Gemini generation failed (${modelName}): ${lastError}`);
         await this.predictionRepo.update(lockRow.id, {
           status: PredictionStatus.FAILED,
         });
@@ -1402,14 +1415,14 @@ AI 예측 순위: ${predictedTop || '-'}
           } else {
             horseScores = this.fallbackHorseScoresFromEntries(entries);
             if (code !== 0 || parsed?.error) {
-              console.warn(
+              this.logger.warn(
                 `Python analysis fallback (code=${code}): ${errorString || parsed?.error || 'no valid output'}`,
               );
             }
           }
         } catch {
           horseScores = this.fallbackHorseScoresFromEntries(entries);
-          console.warn(
+          this.logger.warn(
             `Python parse fallback: ${dataString?.slice(0, 100) || errorString}`,
           );
         }

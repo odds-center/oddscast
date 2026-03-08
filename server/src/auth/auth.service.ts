@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   ConflictException,
   BadRequestException,
@@ -56,6 +57,8 @@ export interface SanitizedAdminUser {
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
     @InjectRepository(AdminUser)
@@ -131,7 +134,7 @@ export class AuthService {
 
     const result = await this.mailService.sendVerificationCode(email, code);
     if (!result.success) {
-      console.error(`[Auth] Failed to send verification email to ${email}: ${result.error}`);
+      this.logger.error(`Failed to send verification email to ${email}: ${result.error}`);
     }
   }
 
@@ -152,8 +155,8 @@ export class AuthService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (this.config.get('NODE_ENV') !== 'test') {
-        console.warn(
-          `[Auth] Signup bonus ticket grant failed for user ${userId}: ${msg}`,
+        this.logger.warn(
+          `Signup bonus ticket grant failed for user ${userId}: ${msg}`,
         );
       }
     }
@@ -193,7 +196,7 @@ export class AuthService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (this.config.get('NODE_ENV') !== 'test') {
-        console.warn(`[Auth] Login bonus failed for user ${user.id}: ${msg}`);
+        this.logger.warn(`Login bonus failed for user ${user.id}: ${msg}`);
       }
     }
 
@@ -274,9 +277,8 @@ export class AuthService {
         streak = 0;
       } catch (err: unknown) {
         if (this.config.get('NODE_ENV') !== 'test') {
-          console.warn(
-            `[Auth] Consecutive login ticket grant failed for user ${userId}:`,
-            err instanceof Error ? err.message : String(err),
+          this.logger.warn(
+            `Consecutive login ticket grant failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`,
           );
         }
       }

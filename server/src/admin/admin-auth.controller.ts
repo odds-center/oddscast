@@ -3,6 +3,9 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from '../auth/auth.service';
 import { AdminLoginDto } from '../auth/dto/auth.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../database/db-enums';
 import {
   CurrentUser,
   JwtPayload,
@@ -25,7 +28,8 @@ export class AdminAuthController {
 
   @Get('me')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '[Admin] 내 정보 조회' })
   getMe(@CurrentUser() user: JwtPayload) {
     return this.authService.getProfile(user.sub, user.role);
@@ -33,7 +37,8 @@ export class AdminAuthController {
 
   @Post('refresh')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '[Admin] 토큰 갱신' })
   refreshToken(@CurrentUser() user: JwtPayload) {
     return this.authService.refreshToken(user.sub, user.role);

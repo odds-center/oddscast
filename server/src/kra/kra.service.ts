@@ -2040,12 +2040,14 @@ export class KraService {
           totalResults++;
         }
 
-        for (const raceId of racesToUpdate) {
-          await this.raceRepo.update(raceId, {
+        if (racesToUpdate.size > 0) {
+          await this.raceRepo.update([...racesToUpdate], {
             status: RaceStatus.COMPLETED,
             updatedAt: new Date(),
           });
-          await this.cache.del(`race:${raceId}`);
+          await Promise.all(
+            [...racesToUpdate].map((id) => this.cache.del(`race:${id}`)),
+          );
         }
         // Update prediction accuracy and generate post-race summary
         await Promise.allSettled(

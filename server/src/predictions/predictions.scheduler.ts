@@ -26,10 +26,15 @@ export class PredictionsScheduler {
     private readonly configService: GlobalConfigService,
   ) {}
 
-  @Cron('0 9 * * 5,6,0') // Fri, Sat, Sun at 09:00 KST (ai_config.batchCronSchedule 참고)
+  @Cron('0 9 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async generatePredictionsForToday() {
     const raw = await this.configService.get('ai_config');
-    const config = raw ? JSON.parse(raw) : {};
+    let config: Record<string, unknown> = {};
+    try {
+      config = raw ? JSON.parse(raw) : {};
+    } catch {
+      this.logger.warn('Failed to parse ai_config, using defaults');
+    }
     if (config.enableBatchPrediction === false) {
       this.logger.log(
         '[Cron] Batch prediction disabled in ai_config, skipping',
@@ -87,10 +92,15 @@ export class PredictionsScheduler {
    * Generate predictions for COMPLETED races that have results but no COMPLETED prediction.
    * Run after results sync (e.g. 18:30) so users can see AI analysis on race detail without a ticket.
    */
-  @Cron('30 18 * * 5,6,0') // Fri, Sat, Sun at 18:30 KST
+  @Cron('30 18 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async generatePredictionsForCompletedRaces() {
     const raw = await this.configService.get('ai_config');
-    const config = raw ? JSON.parse(raw) : {};
+    let config: Record<string, unknown> = {};
+    try {
+      config = raw ? JSON.parse(raw) : {};
+    } catch {
+      this.logger.warn('Failed to parse ai_config, using defaults');
+    }
     if (config.enableBatchPrediction === false) {
       this.logger.log(
         '[Cron] Batch prediction disabled, skipping completed-races batch',

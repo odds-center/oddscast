@@ -2,7 +2,7 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
-**Last updated:** 2026-03-08 (v3: 11-factor scoring, enrichment pipeline)
+**Last updated:** 2026-03-08 (v3: 12-factor scoring, enrichment pipeline)
 
 ---
 

@@ -10,7 +10,6 @@ export * from './kra.types';
 export * from './kra-api.types';
 export * from './race.types';
 export * from './result.types';
-export * from './bet.types';
 export * from './favorite.types';
 export * from './point.types';
 export * from './prediction.types';

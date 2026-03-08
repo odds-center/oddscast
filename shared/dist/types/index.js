@@ -33,8 +33,6 @@ __exportStar(require("./kra-api.types"), exports);
 __exportStar(require("./race.types"), exports);
 // Result
 __exportStar(require("./result.types"), exports);
-// Bet
-__exportStar(require("./bet.types"), exports);
 // Favorite
 __exportStar(require("./favorite.types"), exports);
 // Point

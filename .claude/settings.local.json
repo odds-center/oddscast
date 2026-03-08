@@ -77,7 +77,9 @@
       "Bash(/opt/homebrew/opt/postgresql@16/bin/psql:*)",
       "Bash(RAILWAY_TOKEN=\"234e1ffd-0655-479d-abf5-e73bcf65a080\" railway whoami:*)",
       "Bash(RAILWAY_TOKEN=\"5f924c55-022d-4096-9403-2a2708316f6d\" railway whoami:*)",
-      "Bash(test:*)"
+      "Bash(test:*)",
+      "Bash(/Users/risingcore/Desktop/project/oddscast/server/.env:*)",
+      "Bash(./scripts/railway-env-push.sh server:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

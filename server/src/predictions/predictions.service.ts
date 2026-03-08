@@ -1063,7 +1063,10 @@ AI 예측 순위: ${predictedTop || '-'}
 
   // --- Gemini Integration ---
 
-  async generatePrediction(raceId: number) {
+  async generatePrediction(
+    raceId: number,
+    opts?: { skipCache?: boolean; realtime?: boolean },
+  ) {
     // 1. Check Gemini Availability
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -1123,16 +1126,19 @@ AI 예측 순위: ${predictedTop || '-'}
     //     for the same race with the same entry sheet (entriesHash).
     //     KRA entry data changes at well-defined points (entry sheet upload, jockey swap, etc.)
     //     so a hash of key fields is a reliable deduplication key.
+    //     skipCache=true for individual real-time predictions (always regenerate).
     const entriesHash = this.computeEntriesHash(race.entries ?? []);
-    const cached = await this.predictionRepo.findOne({
-      where: { raceId, entriesHash, status: PredictionStatus.COMPLETED },
-      order: { createdAt: 'DESC' },
-    });
-    if (cached) {
-      console.log(
-        `[Prediction] Cache hit for race ${raceId} (entriesHash=${entriesHash}) — reusing prediction ${cached.id}`,
-      );
-      return cached;
+    if (!opts?.skipCache) {
+      const cached = await this.predictionRepo.findOne({
+        where: { raceId, entriesHash, status: PredictionStatus.COMPLETED },
+        order: { createdAt: 'DESC' },
+      });
+      if (cached) {
+        console.log(
+          `[Prediction] Cache hit for race ${raceId} (entriesHash=${entriesHash}) — reusing prediction ${cached.id}`,
+        );
+        return cached;
+      }
     }
 
     // Concurrency lock: if another process is already generating for the same entry sheet, throw.
@@ -1237,6 +1243,7 @@ AI 예측 순위: ${predictedTop || '-'}
       jockeyAnalysis,
       sectionalByHorse,
       cascadeFallRisk,
+      opts?.realtime,
     );
 
     // 6. Call Gemini (404 시 fallback 모델로 재시도)
@@ -2381,6 +2388,7 @@ AI 예측 순위: ${predictedTop || '-'}
       { tag: string; s1f?: number; g1f?: number }
     > = {},
     cascadeFallRisk?: number,
+    realtime?: boolean,
   ): string {
     const horseScores: HorseAnalysisItem[] = Array.isArray(horseAnalysis)
       ? horseAnalysis
@@ -2475,6 +2483,7 @@ AI 예측 순위: ${predictedTop || '-'}
         ];
       }
       if (entry?.rating != null) compact.r = entry.rating;
+      if (entry?.horseWeight) compact.wg = entry.horseWeight;
       if (hs.recentRanks?.length) compact.rk = hs.recentRanks;
       if (hs.risk && hs.risk >= 15) compact.risk = hs.risk;
       if (hs.tags?.length) compact.t = hs.tags;
@@ -2504,15 +2513,26 @@ AI 예측 순위: ${predictedTop || '-'}
     const weightH = Math.round(wH * 100);
     const weightJ = Math.round(wJ * 100);
 
+    const realtimeSection = realtime
+      ? `
+## 실시간 분석 (개별예측)
+이 분석은 경주 직전 최신 KRA 데이터를 반영한 실시간 개별예측입니다.
+- wg 필드는 당일 마체중(kg, 증감 포함). 체중 급변(-10kg이상 감소 또는 +8kg이상 증가)은 컨디션 이상 신호.
+- 날씨·주로상태는 당일 실시간 기상 반영. 우천시 습주로 경험마 우선 평가.
+- 배당률이 있으면 시장 평가와 모델 평가의 괴리를 분석해 저평가마(가치마) 발굴.
+- 종합예측보다 더 깊고 구체적인 분석을 제공할 것. analysis는 8~12문장으로 상세하게.
+`
+      : '';
+
     return `한국경마 AI 예측분석가. Python 통계분석(정규화 0~100) + 주관적 전문가 시각으로 승부예측. 데이터 없으면 "미확인".
 가중치: 말${weightH}/기수${weightJ}${topJ ? ` | 기수1위:${topJ.hrName}(${topJ.jkName})` : ''}
 
 ## 경주
 ${JSON.stringify(raceCtx)}
 
-## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도,기수,휴식,거리,등급,조교,당일피로],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
+## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도,기수,휴식,거리,등급,조교,당일피로],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그,wg=마체중)
 ${JSON.stringify(compactEntries)}
-
+${realtimeSection}
 ## 분석 방침
 - 숫자 데이터만으로 판단하지 말고, 경마 전문가로서 주관적·정성적 분석을 반드시 포함할 것.
 - 고려 요소: 기수-마필 궁합, 경주 페이스 전개(선행마 많으면 추입마 유리 등), 주로 바이어스(내측/외측 유불리), 날씨·기온 변화가 특정 마필에 미치는 영향, 마필 기질·성격(신경질적 여부, 좌회전/우회전 선호).
@@ -2524,7 +2544,7 @@ ${JSON.stringify(compactEntries)}
 - reason/strengths/weaknesses: sub 12요소+risk 수치 근거 + 주관적 판단 포함. 같은 표현 금지.
 - risk30+→weaknesses에 낙마위험 언급. cascade(경주정보)20+→analysis에 연쇄낙마 가능성.
 - strengths: 강점 1~2개(데이터+주관). weaknesses: 약점/리스크 1개.
-- analysis: 날씨·주로·거리·페이스전개·각질·기수전략·이변가능성 등 전문가 시각 6~10문장. 숫자 나열 금지, 서사적 분석.
+- analysis: 날씨·주로·거리·페이스전개·각질·기수전략·이변가능성 등 전문가 시각 ${realtime ? '8~12' : '6~10'}문장. 숫자 나열 금지, 서사적 분석.
 - preview: 핵심 승부 포인트 2~3문장(단승식 1등예상마만, 다른승식 금지).
 - 7승식 모두 출력. hrNo=n값.
 

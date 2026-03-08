@@ -5,7 +5,9 @@ import { DataSource } from 'typeorm';
 import { PredictionTicketsService } from './prediction-tickets.service';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { Prediction } from '../database/entities/prediction.entity';
+import { Race } from '../database/entities/race.entity';
 import { PredictionsService } from '../predictions/predictions.service';
+import { KraService } from '../kra/kra.service';
 import { GlobalConfigService } from '../config/config.service';
 import { TicketStatus, TicketType } from '../database/db-enums';
 import {
@@ -22,22 +24,31 @@ describe('PredictionTicketsService', () => {
   let service: PredictionTicketsService;
   const ticketRepo = createMockRepository();
   const predictionRepo = createMockRepository();
+  const raceRepo = createMockRepository();
   const dataSource = createMockDataSource();
 
   const mockPredictionsService = {
     generatePrediction: jest.fn().mockResolvedValue(createTestPrediction()),
   };
 
+  const mockKraService = {
+    refreshRaceDayRealtime: jest.fn().mockResolvedValue({ refreshed: true, updated: ['track', 'weight'] }),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
+    // Default: raceRepo.findOne returns a race
+    raceRepo.findOne.mockResolvedValue({ id: 1, rcDate: '20260308', meet: '서울' });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PredictionTicketsService,
         { provide: getRepositoryToken(PredictionTicket), useValue: ticketRepo },
         { provide: getRepositoryToken(Prediction), useValue: predictionRepo },
+        { provide: getRepositoryToken(Race), useValue: raceRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: PredictionsService, useValue: mockPredictionsService },
+        { provide: KraService, useValue: mockKraService },
         { provide: GlobalConfigService, useValue: { get: jest.fn().mockResolvedValue('1000') } },
       ],
     }).compile();
@@ -46,7 +57,7 @@ describe('PredictionTicketsService', () => {
   });
 
   describe('useTicket', () => {
-    it('should find earliest-expiry available ticket, mark USED, and generate prediction', async () => {
+    it('should refresh KRA data, generate real-time prediction, and mark ticket USED', async () => {
       // No rate limit (no previous usage)
       ticketRepo.findOne.mockResolvedValueOnce(null);
       // Available ticket via QB
@@ -54,9 +65,9 @@ describe('PredictionTicketsService', () => {
       const qb = createMockQueryBuilder();
       qb.getOne.mockResolvedValue(ticket);
       ticketRepo.createQueryBuilder.mockReturnValue(qb);
-      // Existing prediction
+      // Generated prediction
       const pred = createTestPrediction();
-      predictionRepo.findOne.mockResolvedValue(pred);
+      mockPredictionsService.generatePrediction.mockResolvedValue(pred);
       // After update, return updated ticket
       ticketRepo.findOne
         .mockResolvedValueOnce(null) // rate limit check
@@ -64,6 +75,11 @@ describe('PredictionTicketsService', () => {
 
       const result = await service.useTicket(1, { raceId: '1' });
 
+      expect(mockKraService.refreshRaceDayRealtime).toHaveBeenCalledWith('20260308');
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(1, {
+        skipCache: true,
+        realtime: true,
+      });
       expect(ticketRepo.update).toHaveBeenCalledWith(
         ticket.id,
         expect.objectContaining({

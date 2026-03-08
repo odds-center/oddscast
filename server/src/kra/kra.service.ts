@@ -3447,6 +3447,66 @@ export class KraService {
     }
   }
 
+  /**
+   * Lightweight real-time refresh for individual predictions.
+   * Fetches only the most volatile race-day data: horse weight, track/weather,
+   * equipment changes, and cancellations. Skips heavy operations like
+   * training data, ratings, sectional records, trainer/jockey stats.
+   */
+  async refreshRaceDayRealtime(date: string) {
+    if (!this.serviceKey) {
+      this.logger.warn('[refreshRaceDayRealtime] No KRA service key — skipping');
+      return { refreshed: false };
+    }
+    const normalizedDate = this.normalizeToYyyyMmDd(date);
+    this.logger.log(
+      `[refreshRaceDayRealtime] Refreshing real-time data for ${normalizedDate}`,
+    );
+
+    const results: string[] = [];
+    // 1. Track info (weather, track condition) — most important for real-time
+    try {
+      await this.fetchTrackInfo(date);
+      results.push('track');
+    } catch (err: unknown) {
+      this.logger.warn(
+        `[refreshRaceDayRealtime] fetchTrackInfo failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    // 2. Horse weight — changes on race day morning
+    try {
+      await this.fetchHorseWeight(date);
+      results.push('weight');
+    } catch (err: unknown) {
+      this.logger.warn(
+        `[refreshRaceDayRealtime] fetchHorseWeight failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    // 3. Equipment & bleeding
+    try {
+      await this.fetchEquipmentBleeding(date);
+      results.push('equipment');
+    } catch (err: unknown) {
+      this.logger.warn(
+        `[refreshRaceDayRealtime] fetchEquipmentBleeding failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+    // 4. Entry cancellations (scratches)
+    try {
+      await this.fetchHorseCancel(date);
+      results.push('cancel');
+    } catch (err: unknown) {
+      this.logger.warn(
+        `[refreshRaceDayRealtime] fetchHorseCancel failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+
+    this.logger.log(
+      `[refreshRaceDayRealtime] Done: ${results.join(', ') || 'none'}`,
+    );
+    return { refreshed: true, updated: results };
+  }
+
   async syncAnalysisData(date: string) {
     this.ensureServiceKeyOrThrow();
     this.logger.log(

@@ -64,7 +64,7 @@ export default function PredictionResultComparison({
     const inner = (
       <span className="inline-flex items-center gap-1.5">
         {chulNo != null && (
-          <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
+          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold shrink-0">
             {chulNo}
           </span>
         )}
@@ -98,13 +98,13 @@ export default function PredictionResultComparison({
               <span className="text-sm font-bold text-text-secondary w-6 shrink-0">{rank}위</span>
               <div className="flex-1 grid grid-cols-2 gap-2 text-sm min-w-0">
                 <div className="min-w-0">
-                  <p className="text-[10px] text-text-tertiary mb-0.5">AI 예측</p>
+                  <p className="text-xs text-text-tertiary mb-0.5">AI 예측</p>
                   <div className="font-medium text-foreground truncate">
                     {predicted ? renderName(predicted.hrName, predicted.hrNo, predicted.chulNo) : <span className="text-text-tertiary">-</span>}
                   </div>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] text-text-tertiary mb-0.5">실제 결과</p>
+                  <p className="text-xs text-text-tertiary mb-0.5">실제 결과</p>
                   <div className="font-medium text-foreground truncate">
                     {actual ? renderName(actual.hrName ?? '', actual.hrNo ?? '', actual.chulNo) : <span className="text-text-tertiary">-</span>}
                   </div>

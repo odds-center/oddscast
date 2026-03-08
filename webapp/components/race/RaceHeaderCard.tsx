@@ -80,7 +80,7 @@ export default function RaceHeaderCard({
         </div>
         {stTime && (
           <span className='flex items-center gap-1 text-sm font-semibold text-stone-600 whitespace-nowrap'>
-            <Icon name='Clock' size={13} className='shrink-0' />
+            <Icon name='Clock' size={14} className='shrink-0' />
             {stTime}
           </span>
         )}
@@ -88,7 +88,7 @@ export default function RaceHeaderCard({
       <div className='px-3 py-2 flex flex-wrap items-center gap-1.5'>
         {rcDate && (
           <span className='inline-flex items-center gap-1 text-xs text-stone-500 whitespace-nowrap'>
-            <Icon name='Calendar' size={11} className='text-stone-400' />
+            <Icon name='Calendar' size={14} className='text-stone-500' />
             {formatRcDate(rcDate)}
           </span>
         )}

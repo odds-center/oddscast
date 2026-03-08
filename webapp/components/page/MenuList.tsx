@@ -18,7 +18,7 @@ export function MenuItem({ href, icon, label }: MenuItemProps) {
         <Icon name={icon} size={20} strokeWidth={2} className='text-stone-500' />
       </span>
       <span className='flex-1'>{label}</span>
-      <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+      <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
     </Link>
   );
 }

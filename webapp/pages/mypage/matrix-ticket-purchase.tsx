@@ -67,15 +67,15 @@ export default function MatrixTicketPurchasePage() {
 
             <div className='mt-4 grid grid-cols-3 gap-2'>
               <div className='bg-stone-50 rounded p-2.5 text-center'>
-                <p className='text-stone-400 text-[11px]'>가격</p>
+                <p className='text-stone-500 text-xs'>가격</p>
                 <p className='text-foreground font-bold text-sm'>1,000원/장</p>
               </div>
               <div className='bg-stone-50 rounded p-2.5 text-center'>
-                <p className='text-stone-400 text-[11px]'>유효기간</p>
+                <p className='text-stone-500 text-xs'>유효기간</p>
                 <p className='text-foreground font-bold text-sm'>30일</p>
               </div>
               <div className='bg-stone-50 rounded p-2.5 text-center'>
-                <p className='text-stone-400 text-[11px]'>사용 방식</p>
+                <p className='text-stone-500 text-xs'>사용 방식</p>
                 <p className='text-foreground font-bold text-sm'>1일 1장</p>
               </div>
             </div>

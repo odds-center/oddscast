@@ -101,7 +101,7 @@ export default function PredictionAccuracyPage() {
                             className='w-full rounded-t bg-primary/80 min-h-[4px] transition-all'
                             style={{ height: `${(pct / 100) * 80}px` }}
                           />
-                          <span className='text-[10px] text-text-tertiary truncate w-full text-center shrink-0'>
+                          <span className='text-[11px] text-text-tertiary truncate w-full text-center shrink-0'>
                             {row.month.slice(2)}
                           </span>
                         </div>

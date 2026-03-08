@@ -43,9 +43,9 @@ const RaceCard: React.FC<RaceCardProps> = ({ race }) => {
             {name}
           </div>
           <div className='flex items-center gap-3 text-text-secondary text-xs lg:text-sm mt-1.5'>
-            {race.rcDist && <span className='flex items-center gap-1'><Icon name='Ruler' size={12} />{race.rcDist}m</span>}
+            {race.rcDist && <span className='flex items-center gap-1'><Icon name='Ruler' size={14} />{race.rcDist}m</span>}
             {(race.stTime ?? race.rcStartTime) && (
-              <span className='flex items-center gap-1'><Icon name='Clock' size={12} />{race.stTime ?? race.rcStartTime}</span>
+              <span className='flex items-center gap-1'><Icon name='Clock' size={14} />{race.stTime ?? race.rcStartTime}</span>
             )}
           </div>
           {entryPreview && (

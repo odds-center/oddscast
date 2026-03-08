@@ -166,7 +166,7 @@ function NumberBadge({ num, chulNo, ordered, isLast }: { num: string; chulNo?: s
     <span className='inline-flex items-center gap-1'>
       <span className='inline-flex items-center gap-1'>
         {chulNo != null && (
-          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0'>
+          <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold shrink-0'>
             {chulNo}
           </span>
         )}
@@ -174,7 +174,7 @@ function NumberBadge({ num, chulNo, ordered, isLast }: { num: string; chulNo?: s
       </span>
       {!isLast && (
         ordered
-          ? <ArrowRight size={12} className='text-stone-400 shrink-0' strokeWidth={2.5} />
+          ? <ArrowRight size={14} className='text-stone-500 shrink-0' strokeWidth={2.5} />
           : <Circle size={4} className='text-stone-300 fill-stone-300 shrink-0' />
       )}
     </span>

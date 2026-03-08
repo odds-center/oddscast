@@ -560,7 +560,7 @@ export default function RaceDetailPage() {
                           {mOrdType ? '—' : mordStr}
                         </span>
                         {res.chulNo != null && res.chulNo !== '' && (
-                          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>
+                          <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold'>
                             {res.chulNo}
                           </span>
                         )}
@@ -823,7 +823,7 @@ export default function RaceDetailPage() {
                   <div className='rounded-xl border border-border overflow-hidden mt-4'>
                     <div className='bg-[#1c1917] px-3 py-2 flex items-center justify-between'>
                       <span className='text-xs font-semibold text-white'>승식별 배당률</span>
-                      <span className='text-stone-500 text-[10px]'>파리뮤추얼 · 경주 확정 후 적용</span>
+                      <span className='text-stone-500 text-[11px]'>파리뮤추얼 · 경주 확정 후 적용</span>
                     </div>
                     <table className='w-full border-collapse text-xs'>
                       <tbody>
@@ -836,7 +836,7 @@ export default function RaceDetailPage() {
                           return (
                             <tr key={poolName} className={pi % 2 === 1 ? 'bg-stone-50/60' : 'bg-white'}>
                               <td className='pl-3 pr-2 py-2 align-top w-[72px]'>
-                                <span className={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded text-white ${badgeCls}`}>{poolName}</span>
+                                <span className={`inline-block text-[11px] font-bold px-1.5 py-0.5 rounded text-white ${badgeCls}`}>{poolName}</span>
                               </td>
                               <td className='pr-3 py-2'>
                                 <div className='flex flex-wrap gap-x-3 gap-y-1'>
@@ -844,9 +844,9 @@ export default function RaceDetailPage() {
                                     <span key={ci} className='inline-flex items-center gap-0.5'>
                                       {nums.map((n, ni) => (
                                         <span key={ni} className='inline-flex items-center gap-0.5'>
-                                          <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white font-bold' style={{ fontSize: '10px' }}>{n}</span>
+                                          <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white font-bold' style={{ fontSize: '11px' }}>{n}</span>
                                           {nameByChulNo[n] && <span className='text-foreground font-medium'>{nameByChulNo[n]}</span>}
-                                          {ni < nums.length - 1 && <span className='text-stone-300 mx-0.5'>{isOrdered ? '→' : '-'}</span>}
+                                          {ni < nums.length - 1 && <span className='text-stone-400 mx-0.5'>{isOrdered ? '→' : '-'}</span>}
                                         </span>
                                       ))}
                                       {odds != null && <span className={`ml-1 font-bold ${oddsCls}`}>{odds}배</span>}
@@ -988,11 +988,11 @@ export default function RaceDetailPage() {
                       </div>
                       <div className='space-y-1.5'>
                         <div className='flex gap-2'>
-                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-600 text-white'>단승식</span>
+                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[11px] font-bold bg-emerald-600 text-white'>단승식</span>
                           <span>1위 말을 적중시키는 방식. 배당 = (전체 판매금 × 공제 후) ÷ 해당 말 투표금. 인기마일수록 투표가 몰려 배당이 낮아집니다.</span>
                         </div>
                         <div className='flex gap-2'>
-                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-teal-600 text-white'>연승식</span>
+                          <span className='shrink-0 inline-block px-1.5 py-0.5 rounded text-[11px] font-bold bg-teal-600 text-white'>연승식</span>
                           <span>3위 내에 드는 말을 적중시키는 방식. 적중 확률이 높은 만큼 단승식보다 배당이 낮습니다.</span>
                         </div>
                       </div>
@@ -1059,7 +1059,7 @@ export default function RaceDetailPage() {
                         <div className='flex-1 min-w-0'>
                           <div className='flex items-center gap-1.5'>
                             {e.chulNo != null && (
-                              <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold shrink-0'>
+                              <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-[11px] font-bold shrink-0'>
                                 {e.chulNo}
                               </span>
                             )}
@@ -1071,7 +1071,7 @@ export default function RaceDetailPage() {
                           <p className={`text-sm font-bold tabular-nums ${i === 0 ? 'text-foreground' : i === 1 ? 'text-stone-600' : i === 2 ? 'text-stone-500' : 'text-text-tertiary'}`}>
                             {e.combinedScore != null ? Math.round(e.combinedScore) : '-'}
                           </p>
-                          <p className='text-[10px] text-text-tertiary tabular-nums'>
+                          <p className='text-[11px] text-text-tertiary tabular-nums'>
                             말{e.horseScore != null ? Math.round(e.horseScore) : '-'} · 기{e.jockeyScore != null ? Math.round(e.jockeyScore) : '-'}
                           </p>
                         </div>
@@ -1127,7 +1127,7 @@ export default function RaceDetailPage() {
                                 <td className='py-2.5 font-medium text-foreground'>
                                   <span className='inline-flex items-center gap-1.5 min-w-0'>
                                     {e.chulNo != null && (
-                                      <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold shrink-0'>
+                                      <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-[11px] font-bold shrink-0'>
                                         {e.chulNo}
                                       </span>
                                     )}

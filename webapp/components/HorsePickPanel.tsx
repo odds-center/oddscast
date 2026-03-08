@@ -162,7 +162,7 @@ export default function HorsePickPanel({
               >
                 <div className='flex items-center gap-2 flex-1 min-w-0'>
                   {entry.chulNo != null && (
-                    <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0'>
+                    <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold shrink-0'>
                       {entry.chulNo}
                     </span>
                   )}

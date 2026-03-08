@@ -73,35 +73,35 @@ export default function SettingsPage() {
                   <Icon name='User' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>프로필 수정</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
               <Link href={routes.settingsNotifications} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='Bell' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>알림 설정</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
               <Link href={routes.legal.terms} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='ScrollText' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>이용약관</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
               <Link href={routes.legal.privacy} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='ShieldCheck' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>개인정보처리방침</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
               <Link href={routes.legal.refund} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='ReceiptText' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>환불 및 결제 정책</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
             </div>
           ) : (
@@ -113,21 +113,21 @@ export default function SettingsPage() {
                     <Icon name='ScrollText' size={20} strokeWidth={2} className='text-stone-500' />
                   </span>
                   <span className='flex-1'>이용약관</span>
-                  <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                  <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
                 </Link>
                 <Link href={routes.legal.privacy} className={menuItemClass}>
                   <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                     <Icon name='ShieldCheck' size={20} strokeWidth={2} className='text-stone-500' />
                   </span>
                   <span className='flex-1'>개인정보처리방침</span>
-                  <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                  <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
                 </Link>
                 <Link href={routes.legal.refund} className={menuItemClass}>
                   <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                     <Icon name='ReceiptText' size={20} strokeWidth={2} className='text-stone-500' />
                   </span>
                   <span className='flex-1'>환불 및 결제 정책</span>
-                  <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                  <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
                 </Link>
               </div>
             </>
@@ -152,7 +152,7 @@ export default function SettingsPage() {
                   <Icon name='UserMinus' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>회원탈퇴</span>
-                <Icon name='ChevronRight' size={16} className='text-stone-300 shrink-0' />
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
             </div>
           </SectionCard>

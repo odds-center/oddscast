@@ -258,7 +258,7 @@ export default function RacesPage() {
                             : 'text-stone-500 font-semibold';
                       return (
                         <span key={ord} className='inline-flex items-center gap-0.5'>
-                          <span className={`text-[11px] ${cls}`}>{ord}위</span>
+                          <span className={`text-xs ${cls}`}>{ord}위</span>
                           <span className='font-medium text-foreground'>
                             {r ? r.hrName : '-'}
                           </span>

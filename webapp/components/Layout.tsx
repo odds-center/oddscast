@@ -334,7 +334,7 @@ function FloatingAppBar({ pathname, asPath, isMobile }: { pathname: string; asPa
                     <Icon name={icon} size={22} strokeWidth={active ? 2.5 : 2} />
                   </span>
                   <span
-                    className={`nav-mobile-label font-medium w-full text-center ${vertical ? 'text-[11px] leading-tight' : 'text-xs truncate'}`}
+                    className={`nav-mobile-label font-medium w-full text-center ${vertical ? 'text-xs leading-tight' : 'text-xs truncate'}`}
                   >
                     {label}
                   </span>

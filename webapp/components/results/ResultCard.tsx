@@ -77,7 +77,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
                       <td className='cell-center font-bold'>{p.ord}</td>
                       <td className='cell-center'>
                         {p.chulNo != null
-                          ? <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>{p.chulNo}</span>
+                          ? <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold'>{p.chulNo}</span>
                           : <span className='text-text-tertiary'>-</span>
                         }
                       </td>

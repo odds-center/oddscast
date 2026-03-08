@@ -5,7 +5,7 @@ import { routes } from '@/lib/routes';
 export default function LegalFooter() {
   return (
     <footer className='mt-8 pt-6 border-t border-stone-200'>
-      <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-text-tertiary text-[12px] sm:text-xs px-2'>
+      <div className='flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-text-tertiary text-xs px-2'>
         <span className='font-medium text-foreground/80'>© OddsCast</span>
         <Link
           href={routes.legal.terms}

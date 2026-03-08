@@ -213,11 +213,11 @@ export default function PredictionMatrixTable({
                                   const display = e?.chulNo ?? num;
                                   return (
                                     <span key={i} className='inline-flex items-center gap-0.5'>
-                                      <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>
+                                      <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold'>
                                         {display}
                                       </span>
                                       {i < topNodes.numbers.length - 1 && (
-                                        <span className='text-stone-300 text-[10px]'>{topNodes.ordered ? '→' : '-'}</span>
+                                        <span className='text-stone-400 text-[11px]'>{topNodes.ordered ? '→' : '-'}</span>
                                       )}
                                     </span>
                                   );
@@ -258,7 +258,7 @@ export default function PredictionMatrixTable({
           <span className='text-stone-400 font-normal'>{raceMatrix.length}경주</span>
         </div>
         <span className='inline-flex items-center gap-1 text-stone-400 font-normal'>
-          <Icon name='Lock' size={11} />
+          <Icon name='Lock' size={13} />
           AI 예측 잠금
         </span>
       </div>

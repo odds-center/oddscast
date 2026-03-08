@@ -222,7 +222,7 @@ export default function SimulatorPage() {
                         className="w-full h-2 rounded-full appearance-none bg-stone-200 accent-primary"
                         aria-label={`${label} 가중치`}
                       />
-                      <div className="flex justify-between text-[10px] text-text-tertiary mt-0.5">
+                      <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5">
                         <span>무시</span>
                         <span>기본</span>
                         <span>강조</span>
@@ -269,12 +269,12 @@ export default function SimulatorPage() {
                             {rank}
                           </span>
                           {rankDiff !== 0 && (
-                            <span className={`text-[10px] font-semibold leading-none ${rankDiff > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                            <span className={`text-[11px] font-semibold leading-none ${rankDiff > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                               {rankDiff > 0 ? `▲${rankDiff}` : `▼${Math.abs(rankDiff)}`}
                             </span>
                           )}
                           {rankDiff === 0 && (
-                            <span className="text-[10px] text-text-tertiary leading-none">—</span>
+                            <span className="text-[11px] text-text-tertiary leading-none">—</span>
                           )}
                         </div>
 
@@ -282,7 +282,7 @@ export default function SimulatorPage() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             {horse.chulNo != null && horse.chulNo !== '' && (
-                              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
+                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold shrink-0">
                                 {horse.chulNo}
                               </span>
                             )}
@@ -301,7 +301,7 @@ export default function SimulatorPage() {
                           {/* Score bars */}
                           <div className="mt-1.5 space-y-1">
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-text-tertiary w-12 shrink-0">커스텀</span>
+                              <span className="text-[11px] text-text-tertiary w-12 shrink-0">커스텀</span>
                               <div className="flex-1 h-2 rounded-full bg-stone-100 overflow-hidden">
                                 <div
                                   className="h-full rounded-full bg-primary transition-all duration-300"
@@ -311,7 +311,7 @@ export default function SimulatorPage() {
                               <span className="text-xs tabular-nums text-foreground font-medium w-9 text-right">{customScore.toFixed(1)}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-[10px] text-text-tertiary w-12 shrink-0">AI</span>
+                              <span className="text-[11px] text-text-tertiary w-12 shrink-0">AI</span>
                               <div className="flex-1 h-1.5 rounded-full bg-stone-100 overflow-hidden">
                                 <div
                                   className="h-full rounded-full bg-stone-300 transition-all duration-300"
@@ -354,7 +354,7 @@ export default function SimulatorPage() {
                             <td className="font-medium">
                               <span className="flex items-center gap-1.5">
                                 {h.chulNo != null && h.chulNo !== '' && (
-                                  <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-stone-700 text-white text-[9px] font-bold shrink-0">
+                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
                                     {h.chulNo}
                                   </span>
                                 )}

@@ -10,7 +10,7 @@ import { routes } from '@/lib/routes';
 function HorseBadge({ no, name }: { no: string; name?: string }) {
   const display = name || no;
   if (!display || display === '-') return <span className='text-stone-400'>-</span>;
-  return <span className='text-[11px] text-foreground font-medium whitespace-nowrap'>{display}</span>;
+  return <span className='text-xs text-foreground font-medium whitespace-nowrap'>{display}</span>;
 }
 
 export default function PredictionMatrixPreviewSection() {

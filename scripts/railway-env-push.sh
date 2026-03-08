@@ -34,7 +34,7 @@ SAVE_TO_BITWARDEN=false
 
 for arg in "$@"; do
   case "$arg" in
-    server|webapp)        SERVICE="$arg" ;;
+    server|webapp|admin)  SERVICE="$arg" ;;
     --from-bitwarden)     USE_BITWARDEN=true ;;
     --save-to-bitwarden)  SAVE_TO_BITWARDEN=true ;;
     --help|-h)
@@ -59,6 +59,12 @@ case "$SERVICE" in
   webapp)
     ENV_FILE="webapp/.env"
     BW_NOTE_NAME="OddsCast Railway WebApp"
+    OVERRIDES=("NEXT_PUBLIC_APP_ENV=production")
+    EXCLUDE_KEYS=()
+    ;;
+  admin)
+    ENV_FILE="admin/.env"
+    BW_NOTE_NAME="OddsCast Railway Admin"
     OVERRIDES=("NEXT_PUBLIC_APP_ENV=production")
     EXCLUDE_KEYS=()
     ;;

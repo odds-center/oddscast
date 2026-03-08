@@ -205,10 +205,16 @@ def _trainer_score(entry):
 
 
 def _jockey_score(entry):
-    """기수 능력 → 0~100 (meet-level 승률/복승률 직접 반영)."""
+    """기수 능력 → 0~100.
+    Primary: meet-level win/place rate (jockeyMeetWinRate/jockeyMeetQuRate).
+    Fallback: career-wide aggregated rate across all meets (jockeyFallbackCareer=True).
+              Less predictive than meet-specific, so a 10% discount is applied.
+    Default: 40.0 when no DB data exists.
+    """
     win_rate = entry.get("jockeyMeetWinRate")
     qu_rate = entry.get("jockeyMeetQuRate")
     rc_cnt = int(entry.get("jockeyRcCntT") or 0)
+    is_career_fallback = bool(entry.get("jockeyFallbackCareer"))
 
     if win_rate is None and qu_rate is None:
         return 40.0
@@ -222,9 +228,13 @@ def _jockey_score(entry):
     except (ValueError, TypeError):
         pass
 
-    # Experience penalty for jockeys with few races
+    # Rookie penalty: fewer than 100 career races
     if rc_cnt > 0 and rc_cnt < 100:
         score *= 0.85
+
+    # Career-wide fallback is less predictive than meet-specific data
+    if is_career_fallback:
+        score *= 0.90
 
     return round(min(100, max(0, score)), 2)
 

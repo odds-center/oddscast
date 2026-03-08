@@ -3,7 +3,7 @@
 > 웹앱(유저 사이트)과 관리자(Admin)에서 보완이 필요한 항목을 한곳에 정리합니다.  
 > **Planning 시 참고:** [TODO_CONTINUE.md](TODO_CONTINUE.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md)
 
-**Last updated:** 2026-03-07 (모바일 UI 개선 완료, KRA 크론 수정, chulNo/순위 버그 수정)
+**Last updated:** 2026-03-08 (전체 항목 적용 완료. 신규 Gap 발생 시 아래 표에 추가)
 
 ---
 

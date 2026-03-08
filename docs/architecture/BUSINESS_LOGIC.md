@@ -2,7 +2,7 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-08
 
 ---
 
@@ -25,26 +25,38 @@ flowchart TD
 
 > 상세: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md)
 
-#### 말 기준 점수 (calculate_score) — 6요소 정규화 가중합
+#### 말+기수 통합 점수 (calculate_score) — 7요소 정규화 가중합
+
+> 가중치 합 = 1.0. `analysis.py` `W_HORSE` 딕셔너리 기준 (v2, 2026-03-08)
 
 | 요소 | 가중치 | 설명 |
 |------|--------|------|
-| **레이팅** (rat) | 0.33 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
-| **폼/기세** (frm) | 0.26 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
-| **컨디션** (cnd) | 0.14 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별 |
-| **경험** (exp) | 0.10 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
-| **적합도** (suit) | 0.10 | 각질×거리 매칭 + 주로상태 영향 |
-| **조교사** (trn) | 0.07 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
+| **레이팅** (rat) | 0.28 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
+| **폼/기세** (frm) | 0.24 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
+| **컨디션** (cnd) | 0.12 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별(거세 +3) |
+| **경험** (exp) | 0.08 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
+| **적합도** (suit) | 0.09 | 각질×거리 매칭 + 주로상태(습/불/중) 영향 |
+| **조교사** (trn) | 0.09 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
+| **기수** (jky) | 0.10 | 경마장별 승률·복승률 직접 반영. 신인(100회 미만) ×0.85. 폴백(career-wide) ×0.90 |
 | 낙마 감점 | - | risk 50+ → ×0.88, 30+ → ×0.94, 20+ → ×0.97 |
-| **winProb** | - | softmax(T=15) 기반 승률 확률(%) |
+| **winProb** | - | softmax(T=12) 기반 승률 확률(%) |
 
-#### 기수 점수·가중치 (analyze_jockey)
+#### 기수 데이터 보강 전략
+
+| 우선순위 | 데이터 소스 | 조건 |
+|---------|-----------|------|
+| 1 (primary) | `jockey_results` — 해당 경마장(meet) | jkNo + meet 일치 |
+| 2 (fallback) | `jockey_results` — 전체 경마장 합산 | meet 불일치 또는 데이터 없음 |
+| 3 (default) | 고정값 40.0 | DB에 기수 데이터 전혀 없음 |
+
+폴백 합산: `winRateTsum = Σord1CntT / ΣrcCntT × 100`, `quRateTsum = Σ(ord1+ord2+ord3)CntT / ΣrcCntT × 100`
+
+#### 기수 점수·가중치 (analyze_jockey — 2단계 필터)
 
 | 항목 | 설명 |
 |------|------|
-| **jockeyScore** | winRate·quRate 80점 + experienceScore 20점. 신인(100회 미만) ×0.85 |
 | **weightRatio** | 혼전 50/50, 특수(비·습·장거리) 60/40, 일반 70/30 |
-| **NestJS 통합** | finalScore = horseScore × wH + jockeyScore × wJ → (선택) 배당 있으면 80% 모델 + 20% 배당 암시확률 블렌딩 → softmax winProb. 상세: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) |
+| **NestJS 통합** | `enrichEntriesWithJockeyResults()` → Python `_jockey_score()` 직접 반영 → softmax winProb. 상세: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) |
 
 ### 1.3 Gemini 프롬프트 구조 v2 (토큰 최적화)
 

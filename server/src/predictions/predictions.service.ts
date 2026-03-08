@@ -1586,8 +1586,12 @@ AI 예측 순위: ${predictedTop || '-'}
   }
 
   /**
-   * 기수 meet-level 승률/복승률 보강 — JockeyResult에서 조회해 entries에 채움.
-   * Python _jockey_score()가 jockeyMeetWinRate/jockeyMeetQuRate를 읽어 직접 가중치 반영.
+   * Enrich entries with jockey win/place rates from JockeyResult.
+   * Step 1: meet-specific lookup (primary — most predictive).
+   * Step 2: career-wide fallback for jockeys not found in the current meet
+   *         (e.g. first appearance at this venue, new jockey).
+   *         Aggregates ord1/ord2/ord3CntT across all meets and derives rates.
+   *         Python _jockey_score() applies a 10% discount for fallback data.
    */
   private async enrichEntriesWithJockeyResults(
     race: RaceForPython,
@@ -1603,20 +1607,56 @@ AI 예측 순위: ${predictedTop || '-'}
     ];
     if (!jkNos.length) return race;
 
-    const jockeys = await this.jockeyResultRepo.find({
+    // Step 1: meet-specific
+    const meetJockeys = await this.jockeyResultRepo.find({
       where: { meet: meetCode, jkNo: In(jkNos) },
       select: ['jkNo', 'rcCntT', 'winRateTsum', 'quRateTsum'],
     });
     const byJkNo = new Map(
-      jockeys.map((j) => [
+      meetJockeys.map((j) => [
         j.jkNo,
-        {
-          winRateTsum: j.winRateTsum,
-          quRateTsum: j.quRateTsum,
-          rcCntT: j.rcCntT,
-        },
+        { winRateTsum: j.winRateTsum, quRateTsum: j.quRateTsum, rcCntT: j.rcCntT, fallback: false },
       ]),
     );
+
+    // Step 2: career-wide fallback for jockeys missing from current meet
+    const missingJkNos = jkNos.filter((jkNo) => !byJkNo.has(jkNo));
+    if (missingJkNos.length > 0) {
+      const careerRows = await this.jockeyResultRepo.find({
+        where: { jkNo: In(missingJkNos) },
+        select: ['jkNo', 'rcCntT', 'ord1CntT', 'ord2CntT', 'ord3CntT'],
+      });
+
+      const careerTotals = new Map<
+        string,
+        { rcCntT: number; ord1CntT: number; quCnt: number }
+      >();
+      for (const row of careerRows) {
+        const prev = careerTotals.get(row.jkNo);
+        if (prev) {
+          prev.rcCntT += row.rcCntT;
+          prev.ord1CntT += row.ord1CntT;
+          prev.quCnt += row.ord1CntT + row.ord2CntT + row.ord3CntT;
+        } else {
+          careerTotals.set(row.jkNo, {
+            rcCntT: row.rcCntT,
+            ord1CntT: row.ord1CntT,
+            quCnt: row.ord1CntT + row.ord2CntT + row.ord3CntT,
+          });
+        }
+      }
+
+      for (const [jkNo, stats] of careerTotals.entries()) {
+        if (stats.rcCntT > 0) {
+          byJkNo.set(jkNo, {
+            winRateTsum: (stats.ord1CntT / stats.rcCntT) * 100,
+            quRateTsum: (stats.quCnt / stats.rcCntT) * 100,
+            rcCntT: stats.rcCntT,
+            fallback: true,
+          });
+        }
+      }
+    }
 
     const enrichedEntries = entries.map((e) => {
       const jkNo = e.jkNo;
@@ -1628,6 +1668,7 @@ AI 예측 순위: ${predictedTop || '-'}
         jockeyMeetWinRate: j.winRateTsum,
         jockeyMeetQuRate: j.quRateTsum,
         jockeyRcCntT: j.rcCntT,
+        jockeyFallbackCareer: j.fallback,
       };
     });
 

@@ -1105,6 +1105,22 @@ AI 예측 순위: ${predictedTop || '-'}
     const race = await this.loadRaceWithEntries(raceId);
     if (!race) throw new NotFoundException('Race not found');
 
+    // 2a. Cache check — skip Gemini if a COMPLETED prediction already exists
+    //     for the same race with the same entry sheet (entriesHash).
+    //     KRA entry data changes at well-defined points (entry sheet upload, jockey swap, etc.)
+    //     so a hash of key fields is a reliable deduplication key.
+    const entriesHash = this.computeEntriesHash(race.entries ?? []);
+    const cached = await this.predictionRepo.findOne({
+      where: { raceId, entriesHash, status: PredictionStatus.COMPLETED },
+      order: { createdAt: 'DESC' },
+    });
+    if (cached) {
+      console.log(
+        `[Prediction] Cache hit for race ${raceId} (entriesHash=${entriesHash}) — reusing prediction ${cached.id}`,
+      );
+      return cached;
+    }
+
     // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
     const sectionalByHorse = await this.getSectionalAnalysisByHorse(
       race as RaceForPython,
@@ -1205,7 +1221,7 @@ AI 예측 순위: ${predictedTop || '-'}
 
         lastWorkingGeminiModel = modelName;
 
-        // 새 예측 생성 (이전 예측 기록 유지 — update/delete 없음)
+        // Save new prediction (keep previous rows for history — no update/delete)
         const created = await this.predictionRepo.save(
           this.predictionRepo.create({
             raceId,
@@ -1214,6 +1230,7 @@ AI 예측 순위: ${predictedTop || '-'}
             preview: predictionData?.preview ?? '',
             status: PredictionStatus.COMPLETED,
             previewApproved: true,
+            entriesHash,
           }),
         );
 
@@ -1832,6 +1849,36 @@ AI 예측 순위: ${predictedTop || '-'}
   /**
    * softmax 승률 확률(%) — Python horse score + jockey score 통합 후 적용
    */
+  /**
+   * Computes a short hash of the entry sheet used as a prediction cache key.
+   * Hashes: hrNo, jkNo, chulNo, wgBudam, rating — sorted by hrNo.
+   * If this hash matches an existing COMPLETED prediction, Gemini is skipped.
+   */
+  private computeEntriesHash(
+    entries: Array<{
+      hrNo?: string | null;
+      jkNo?: string | null;
+      chulNo?: string | number | null;
+      wgBudam?: number | null;
+      rating?: number | null;
+    }>,
+  ): string {
+    const { createHash } = require('crypto') as typeof import('crypto');
+    const normalized = [...entries]
+      .sort((a, b) => String(a.hrNo ?? '').localeCompare(String(b.hrNo ?? '')))
+      .map((e) => ({
+        hrNo: e.hrNo ?? '',
+        jkNo: e.jkNo ?? '',
+        chulNo: e.chulNo ?? '',
+        wgBudam: e.wgBudam ?? 0,
+        rating: e.rating ?? 0,
+      }));
+    return createHash('sha256')
+      .update(JSON.stringify(normalized))
+      .digest('hex')
+      .slice(0, 16);
+  }
+
   /**
    * Applies horse+jockey score combination and optional market-odds blending to the
    * Python horseScoreResult array, then recomputes softmax winProb.

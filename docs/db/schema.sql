@@ -314,11 +314,17 @@ CREATE TABLE IF NOT EXISTS "predictions" (
     "previewApproved" BOOLEAN NOT NULL DEFAULT false,
     "accuracy" DOUBLE PRECISION,
     "postRaceSummary" TEXT,
+    "entriesHash" TEXT,
     "status" "PredictionStatus" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "predictions_pkey" PRIMARY KEY ("id")
 );
+
+-- Index for prediction cache lookup: raceId + entriesHash
+CREATE INDEX IF NOT EXISTS "idx_predictions_raceId_entriesHash"
+    ON "predictions" ("raceId", "entriesHash")
+    WHERE "status" = 'COMPLETED' AND "entriesHash" IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS "prediction_tickets" (
     "id" SERIAL NOT NULL,

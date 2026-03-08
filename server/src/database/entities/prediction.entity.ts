@@ -36,6 +36,14 @@ export class Prediction {
   @Column({ name: 'postRaceSummary', type: 'text', nullable: true })
   postRaceSummary!: string | null;
 
+  /**
+   * SHA-256 hash (first 16 hex chars) of the entry sheet used to generate this prediction.
+   * Used to detect whether a cached prediction can be reused without re-calling Gemini.
+   * Hashed fields: hrNo, jkNo, chulNo, wgBudam, rating (sorted by hrNo).
+   */
+  @Column({ name: 'entriesHash', type: 'text', nullable: true })
+  entriesHash!: string | null;
+
   @Column({
     type: 'enum',
     enum: PredictionStatus,

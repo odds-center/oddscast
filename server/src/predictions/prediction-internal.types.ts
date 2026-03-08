@@ -86,8 +86,10 @@ export interface HorseAnalysisItem {
   };
   /** 낙마 리스크 (0~100) */
   risk?: number;
-  /** softmax 승률 확률 (%) */
+  /** softmax 승률 확률 (%). When odds are available, blended 80% model + 20% market-implied. */
   winProb?: number;
+  /** Market-implied win probability derived from winOdds (1/odds normalized, %). Present only when race_results.winOdds available. */
+  oddsImplied?: number;
   /** 최근 착순 */
   recentRanks?: number[];
   /** compact 태그 배열 */

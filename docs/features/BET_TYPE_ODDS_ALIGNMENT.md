@@ -16,17 +16,20 @@
 
 | 항목 | 설명 |
 |------|------|
-| **점수에 배당 반영** | `constructPrompt`에서 해당 경주에 대한 `RaceResult.winOdds`가 있으면, 말별 finalScore를 **모델 점수 80% + 배당 암시확률 20%** 로 블렌딩. 배당 없는 말은 원점수 유지. |
-| **배당 소스** | `loadRaceWithEntries`에서 해당 `raceId`의 `race_results`를 조회해 `winOdds`로 `oddsByHrNo` 구성 후 전달. (경주 전 예측 시에는 결과가 없어 배당 미반영.) |
-| **승식 파생** | `deriveBetTypePredictionsFromHorseScores`: **score 기준 정렬**만 사용. 추천 순서는 점수(이미 배당이 반영된 경우 그 점수) 기준. |
+| **배당 소스** | `loadRaceWithEntries`에서 해당 `raceId`의 `race_results.winOdds`를 조회해 `oddsByHrNo` 구성. 경주 전 예측 시에는 결과가 없어 배당 미반영(빈 맵). |
+| **DB 저장 반영** | `applyOddsBlendToHorseScores()`: Python 결과(`horseScoreResult`)에 기수 가중치(wH/wJ) 조합 후, `oddsByHrNo`가 있으면 **모델 80% + 배당 암시확률 20%** 블렌딩 → softmax winProb 재계산. `analysisData.horseScoreResult.winProb`에 저장. `oddsImplied`(%) 필드도 함께 저장. |
+| **Gemini 컨텍스트 반영** | `constructPrompt()`: 동일한 80/20 블렌딩으로 `fs`(finalScore), `wp`(winProb)를 계산해 프롬프트에 전달. `applyOddsBlendToHorseScores()` 이후에 호출되므로 patched 결과를 입력으로 받음. |
+| **ODDS_WEIGHT** | 0.2 (20%). `predictions.service.ts`에 상수로 정의. |
+| **배당 없는 말** | `oddsByHrNo`에 없으면 원점수(모델만) 유지. |
+| **승식 파생** | `deriveBetTypePredictionsFromHorseScores`: score 기준 정렬. 배당 블렌딩된 점수 기준으로 추천 순서 결정. |
 
 ---
 
 ## 3. 개선 여지
 
-- **실시간(예상) 배당**: 경주 전 예상 배당 API 연동 시, `oddsByHrNo`에 실시간 배당을 넣어 주면 예측 생성 시점에도 점수에 배당이 반영됨.
-- **가중치(ODDS_WEIGHT)**: 현재 0.2(20%). 설정/실험으로 조정 가능.
-- **결과(확정) 배당**: 경주 종료 후 예측 재계산·검증 시 결과 테이블의 winOdds가 있으면 자동으로 점수에 반영됨.
+- **실시간(예상) 배당**: 경주 전 예상 배당 API 연동 시, `oddsByHrNo`에 실시간 배당을 넣어 주면 경주 전 예측에도 배당이 반영됨. KRA는 현재 확정배당(API160)만 제공 — 예상배당 API 없음.
+- **가중치(ODDS_WEIGHT)**: 현재 0.2(20%). `GlobalConfig` 연동 시 Admin에서 실시간 조정 가능.
+- **결과(확정) 배당**: 경주 종료 후 예측 재생성 시 결과 테이블의 winOdds가 있으면 자동으로 반영됨.
 
 ---
 

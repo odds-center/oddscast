@@ -28,6 +28,21 @@ export interface AuthResponse {
   loginBonus?: LoginBonusResult;
 }
 
+/** Returned when email verification is required (register/login with unverified email) */
+export interface VerificationRequiredResponse {
+  requireVerification: true;
+  email: string;
+  message: string;
+}
+
+/** Returned after successful email verification (includes JWT) */
+export interface VerifyEmailResponse {
+  message: string;
+  user?: import('./user').User;
+  accessToken?: string;
+  refreshToken?: string;
+}
+
 export interface RefreshTokenRequest {
   refreshToken: string;
 }

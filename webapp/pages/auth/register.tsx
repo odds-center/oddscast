@@ -37,8 +37,15 @@ export default function Register() {
         name: data.name,
         nickname: data.nickname,
       });
-      if (res?.accessToken) {
-        setAuth(res.accessToken, res.user);
+      if ('requireVerification' in res && res.requireVerification) {
+        router.push({
+          pathname: routes.auth.verifyEmail,
+          query: { email: data.email },
+        });
+        return;
+      }
+      if ('accessToken' in res && res.accessToken) {
+        setAuth(res.accessToken, res.user, res.refreshToken);
         router.push(routes.home);
       }
     } catch (err: unknown) {

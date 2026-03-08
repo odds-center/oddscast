@@ -47,8 +47,15 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       const res = await AuthApi.login(data);
-      if (res?.accessToken) {
-        setAuth(res.accessToken, res.user);
+      if ('requireVerification' in res && res.requireVerification) {
+        router.push({
+          pathname: routes.auth.verifyEmail,
+          query: { email: data.email },
+        });
+        return;
+      }
+      if ('accessToken' in res && res.accessToken) {
+        setAuth(res.accessToken, res.user, res.refreshToken);
         if (res.loginBonus) {
           const msg = formatLoginBonusMessage(res.loginBonus);
           if (msg) {

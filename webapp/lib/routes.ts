@@ -16,6 +16,7 @@ settings: '/settings',
     register: '/auth/register',
     forgotPassword: '/auth/forgot-password',
     resetPassword: '/auth/reset-password',
+    verifyEmail: '/auth/verify-email',
   },
 
   profile: {

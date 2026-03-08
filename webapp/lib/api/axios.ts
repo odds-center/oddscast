@@ -7,6 +7,7 @@ const RETRY_BASE_DELAY_MS = 1000;
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   __retryCount?: number;
+  __isRefreshRequest?: boolean;
 }
 
 function isNetworkError(error: AxiosError): boolean {
@@ -36,6 +37,73 @@ export const axiosInstance: AxiosInstance = axios.create({
   },
 });
 
+// --- Token refresh state (shared across interceptor calls) ---
+let isRefreshing = false;
+let refreshSubscribers: ((token: string) => void)[] = [];
+
+function onRefreshed(token: string) {
+  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(callback: (token: string) => void) {
+  refreshSubscribers.push(callback);
+}
+
+/**
+ * Attempt silent token refresh using stored refresh token.
+ * Returns the new access token or null if refresh failed.
+ */
+async function tryRefreshToken(): Promise<string | null> {
+  if (typeof window === 'undefined') return null;
+  const refreshToken = localStorage.getItem('jwt_refresh_token');
+  const currentToken = localStorage.getItem('jwt_token');
+  if (!currentToken) return null;
+
+  try {
+    // Use the current (possibly expired) access token to call refresh endpoint.
+    // Server refresh endpoint verifies JWT identity (sub, email, role) and issues new tokens.
+    // If the access token is expired but refresh token is still valid, server should still accept.
+    const res = await axios.post(
+      `${CONFIG.api.server.baseURL}/auth/refresh`,
+      refreshToken ? { refreshToken } : undefined,
+      {
+        headers: {
+          Authorization: `Bearer ${currentToken}`,
+          'Content-Type': 'application/json',
+        },
+        timeout: 5000,
+      },
+    );
+
+    const data = res.data?.data ?? res.data;
+    const newAccessToken = data?.accessToken;
+    const newRefreshToken = data?.refreshToken;
+
+    if (newAccessToken) {
+      // Update storage + axios default header
+      localStorage.setItem('jwt_token', newAccessToken);
+      if (newRefreshToken) {
+        localStorage.setItem('jwt_refresh_token', newRefreshToken);
+      }
+      axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${newAccessToken}`;
+
+      // Notify authStore (lazy import to avoid circular dependency)
+      try {
+        const { useAuthStore } = await import('@/lib/store/authStore');
+        useAuthStore.getState().setTokens(newAccessToken, newRefreshToken);
+      } catch {
+        // Store not available during SSR
+      }
+
+      return newAccessToken;
+    }
+  } catch {
+    // Refresh failed — token is truly expired
+  }
+  return null;
+}
+
 // Request Interceptor — JWT always included in header
 axiosInstance.interceptors.request.use(
   (config) => {
@@ -50,16 +118,46 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error),
 );
 
-// Response Interceptor — auto-retry on network/server errors + 401 logout
+// Response Interceptor — auto-refresh on 401, auto-retry on network/server errors
 axiosInstance.interceptors.response.use(
   (response: AxiosResponse) => response,
   async (error: AxiosError) => {
     const config = error.config as RetryableConfig | undefined;
     if (!config) return Promise.reject(error);
 
+    // 401 Unauthorized — attempt silent token refresh before logout
     if (error.response?.status === 401 && typeof window !== 'undefined') {
-      emitUnauthorized();
-      return Promise.reject(error);
+      // Don't retry refresh requests themselves
+      if (config.__isRefreshRequest) {
+        emitUnauthorized();
+        return Promise.reject(error);
+      }
+
+      if (!isRefreshing) {
+        isRefreshing = true;
+        const newToken = await tryRefreshToken();
+        isRefreshing = false;
+
+        if (newToken) {
+          onRefreshed(newToken);
+          // Retry the original request with new token
+          config.headers.Authorization = `Bearer ${newToken}`;
+          return axiosInstance(config);
+        } else {
+          // Refresh failed — logout
+          refreshSubscribers = [];
+          emitUnauthorized();
+          return Promise.reject(error);
+        }
+      }
+
+      // Another request hit 401 while refresh is in progress — queue it
+      return new Promise((resolve) => {
+        addRefreshSubscriber((token: string) => {
+          config.headers.Authorization = `Bearer ${token}`;
+          resolve(axiosInstance(config));
+        });
+      });
     }
 
     const shouldRetry = isNetworkError(error) || isRetryableServerError(error);

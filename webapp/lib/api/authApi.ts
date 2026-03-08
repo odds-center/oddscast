@@ -1,5 +1,11 @@
 import { ApiResponse } from '@/lib/types/api';
-import { AuthResponse, LoginRequest, RegisterRequest } from '@/lib/types/auth';
+import {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+  VerificationRequiredResponse,
+  VerifyEmailResponse,
+} from '@/lib/types/auth';
 import { User } from '@/lib/types/user';
 import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
 
@@ -17,9 +23,9 @@ export default class AuthApi {
   }
 
   // Static methods
-  static async login(credentials: LoginRequest): Promise<AuthResponse> {
+  static async login(credentials: LoginRequest): Promise<AuthResponse | VerificationRequiredResponse> {
     try {
-      const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+      const response = await axiosInstance.post<ApiResponse<AuthResponse | VerificationRequiredResponse>>(
         '/auth/login',
         credentials,
       );
@@ -29,9 +35,9 @@ export default class AuthApi {
     }
   }
 
-  static async register(userData: RegisterRequest): Promise<AuthResponse> {
+  static async register(userData: RegisterRequest): Promise<AuthResponse | VerificationRequiredResponse> {
     try {
-      const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+      const response = await axiosInstance.post<ApiResponse<AuthResponse | VerificationRequiredResponse>>(
         '/auth/register',
         userData,
       );
@@ -119,9 +125,9 @@ export default class AuthApi {
     }
   }
 
-  static async verifyEmail(token: string): Promise<{ message: string }> {
+  static async verifyEmail(token: string): Promise<VerifyEmailResponse> {
     try {
-      const response = await axiosInstance.post<ApiResponse<{ message: string }>>(
+      const response = await axiosInstance.post<ApiResponse<VerifyEmailResponse>>(
         '/auth/verify-email',
         { token },
       );
@@ -156,58 +162,4 @@ export default class AuthApi {
     }
   }
 
-  // Instance methods (maintain backward compatibility)
-  async loginInstance(credentials: LoginRequest): Promise<AuthResponse> {
-    return AuthApi.login(credentials);
-  }
-
-  async registerInstance(userData: RegisterRequest): Promise<AuthResponse> {
-    return AuthApi.register(userData);
-  }
-
-  async logoutInstance(): Promise<{ message: string }> {
-    return AuthApi.logout();
-  }
-
-  async refreshTokenInstance(): Promise<AuthResponse> {
-    return AuthApi.refreshToken();
-  }
-
-  async getCurrentUserInstance(): Promise<User> {
-    return AuthApi.getCurrentUser();
-  }
-
-  async updateProfileInstance(updateData: Partial<User>): Promise<User> {
-    return AuthApi.updateProfile(updateData);
-  }
-
-  async changePasswordInstance(passwordData: {
-    oldPassword: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    return AuthApi.changePassword(passwordData);
-  }
-
-  async forgotPasswordInstance(email: string): Promise<{ message: string }> {
-    return AuthApi.forgotPassword(email);
-  }
-
-  async resetPasswordInstance(resetData: {
-    token: string;
-    newPassword: string;
-  }): Promise<{ message: string }> {
-    return AuthApi.resetPassword(resetData);
-  }
-
-  async verifyEmailInstance(token: string): Promise<{ message: string }> {
-    return AuthApi.verifyEmail(token);
-  }
-
-  async resendVerificationEmailInstance(email: string): Promise<{ message: string }> {
-    return AuthApi.resendVerificationEmail(email);
-  }
 }
-
-// Singleton instance export (maintain backward compatibility)
-// Singleton instance export (maintain backward compatibility)
-// export const authApi = AuthApi.getInstance();

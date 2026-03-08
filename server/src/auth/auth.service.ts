@@ -18,6 +18,7 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { PointsService } from '../points/points.service';
 import { GlobalConfigService } from '../config/config.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
+import { MailService } from '../mail/mail.service';
 import { dateToKstDash, kst, yesterdayKstDash } from '../common/utils/kst';
 
 export interface LoginBonusResult {
@@ -68,13 +69,25 @@ export class AuthService {
     private readonly predictionTicketsService: PredictionTicketsService,
     private readonly pointsService: PointsService,
     private readonly globalConfig: GlobalConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async register(dto: RegisterDto) {
     const existing = await this.userRepo.findOne({
       where: { email: dto.email },
     });
-    if (existing) throw new ConflictException('이미 등록된 이메일입니다');
+    if (existing) {
+      // If user exists but not verified, allow re-registration
+      if (!existing.isEmailVerified) {
+        await this.sendVerificationCode(existing.id, existing.email);
+        return {
+          requireVerification: true,
+          email: existing.email,
+          message: '인증 코드가 이메일로 발송되었습니다.',
+        };
+      }
+      throw new ConflictException('이미 등록된 이메일입니다');
+    }
 
     const hashed = await bcrypt.hash(dto.password, 10);
     const now = new Date();
@@ -83,16 +96,53 @@ export class AuthService {
       password: hashed,
       name: dto.name,
       nickname: dto.nickname ?? null,
+      isEmailVerified: false,
       updatedAt: now,
     });
     const saved = await this.userRepo.save(user);
     if (!saved) throw new Error('User insert failed');
 
+    // Send verification code email
+    await this.sendVerificationCode(saved.id, saved.email);
+
+    return {
+      requireVerification: true,
+      email: saved.email,
+      message: '인증 코드가 이메일로 발송되었습니다.',
+    };
+  }
+
+  /**
+   * Generate 6-digit code, save to DB, send via Resend.
+   */
+  private async sendVerificationCode(
+    userId: number,
+    email: string,
+  ): Promise<void> {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    await this.emailVerificationRepo.delete({ userId });
+    await this.emailVerificationRepo.save(
+      this.emailVerificationRepo.create({ userId, token: code, expiresAt }),
+    );
+
+    const result = await this.mailService.sendVerificationCode(email, code);
+    if (!result.success) {
+      console.error(`[Auth] Failed to send verification email to ${email}: ${result.error}`);
+    }
+  }
+
+  /**
+   * Complete registration after email verification.
+   * Grants signup bonus and returns JWT.
+   */
+  private async completeRegistration(userId: number) {
     try {
       const bonusTickets = parseInt(await this.globalConfig.get('signup_bonus_tickets') ?? '1', 10);
       const bonusDays = parseInt(await this.globalConfig.get('signup_bonus_expires_days') ?? '30', 10);
       await this.predictionTicketsService.grantTickets(
-        saved.id,
+        userId,
         bonusTickets,
         bonusDays,
         'RACE',
@@ -101,13 +151,10 @@ export class AuthService {
       const msg = err instanceof Error ? err.message : String(err);
       if (this.config.get('NODE_ENV') !== 'test') {
         console.warn(
-          `[Auth] Signup bonus ticket grant failed for user ${saved.id}: ${msg}`,
+          `[Auth] Signup bonus ticket grant failed for user ${userId}: ${msg}`,
         );
       }
     }
-
-    const token = this.generateToken(saved.id, saved.email, saved.role);
-    return { user: this.sanitize(saved), ...token };
   }
 
   async login(email: string, password: string) {
@@ -118,6 +165,16 @@ export class AuthService {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid)
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+
+    // Block login if email not verified
+    if (!user.isEmailVerified) {
+      await this.sendVerificationCode(user.id, user.email);
+      return {
+        requireVerification: true,
+        email: user.email,
+        message: '이메일 인증이 필요합니다. 인증 코드가 발송되었습니다.',
+      };
+    }
 
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
@@ -428,13 +485,18 @@ export class AuthService {
     return { message: '비밀번호가 재설정되었습니다.' };
   }
 
-  async verifyEmail(token: string): Promise<{ message: string }> {
+  async verifyEmail(token: string): Promise<{
+    message: string;
+    user?: SanitizedUser;
+    accessToken?: string;
+    refreshToken?: string;
+  }> {
     const record = await this.emailVerificationRepo.findOne({
       where: { token },
       select: ['id', 'userId', 'expiresAt'],
     });
     if (!record || record.expiresAt < new Date()) {
-      throw new BadRequestException('유효하지 않거나 만료된 토큰입니다.');
+      throw new BadRequestException('유효하지 않거나 만료된 인증 코드입니다.');
     }
 
     await this.dataSource.transaction(async (manager) => {
@@ -443,38 +505,35 @@ export class AuthService {
         { id: record.userId },
         { isEmailVerified: true, updatedAt: new Date() },
       );
-      await manager.delete(EmailVerificationToken, { id: record.id });
+      await manager.delete(EmailVerificationToken, { userId: record.userId });
     });
-    return { message: '이메일이 인증되었습니다.' };
+
+    // Grant signup bonus on first verification
+    await this.completeRegistration(record.userId);
+
+    // Return JWT so user is logged in immediately
+    const user = await this.userRepo.findOne({ where: { id: record.userId } });
+    if (!user) throw new BadRequestException('User not found');
+    const jwt = this.generateToken(user.id, user.email, user.role);
+    return {
+      message: '이메일이 인증되었습니다.',
+      user: this.sanitize(user),
+      ...jwt,
+    };
   }
 
   async resendVerification(
     email: string,
-  ): Promise<{ message: string; verificationToken?: string }> {
+  ): Promise<{ message: string }> {
     const user = await this.userRepo.findOne({
       where: { email, isActive: true },
       select: ['id', 'isEmailVerified'],
     });
-    if (!user) return { message: '인증 메일이 재발송되었습니다.' };
+    if (!user) return { message: '인증 코드가 발송되었습니다.' };
     if (user.isEmailVerified) return { message: '이미 인증된 이메일입니다.' };
 
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-
-    await this.emailVerificationRepo.delete({ userId: user.id });
-    await this.emailVerificationRepo.save(
-      this.emailVerificationRepo.create({
-        userId: user.id,
-        token,
-        expiresAt,
-      }),
-    );
-
-    const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
-    return {
-      message: '인증 메일이 재발송되었습니다.',
-      ...(devReturnToken && { verificationToken: token }),
-    };
+    await this.sendVerificationCode(user.id, email);
+    return { message: '인증 코드가 발송되었습니다.' };
   }
 
   private generateToken(userId: number, email: string, role: string) {

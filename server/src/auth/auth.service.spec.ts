@@ -16,6 +16,8 @@ import { PasswordResetToken } from '../database/entities/password-reset-token.en
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { PointsService } from '../points/points.service';
+import { GlobalConfigService } from '../config/config.service';
+import { MailService } from '../mail/mail.service';
 import {
   createMockRepository,
   createMockJwtService,
@@ -44,6 +46,13 @@ describe('AuthService', () => {
   const mockPointsService = {
     grantDailyLoginBonus: jest.fn().mockResolvedValue({ points: 10 }),
   };
+  const mockGlobalConfigService = {
+    get: jest.fn().mockResolvedValue(null),
+    set: jest.fn().mockResolvedValue(undefined),
+  };
+  const mockMailService = {
+    sendVerificationCode: jest.fn().mockResolvedValue({ success: true }),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -68,6 +77,8 @@ describe('AuthService', () => {
         { provide: ConfigService, useValue: configService },
         { provide: PredictionTicketsService, useValue: mockTicketsService },
         { provide: PointsService, useValue: mockPointsService },
+        { provide: GlobalConfigService, useValue: mockGlobalConfigService },
+        { provide: MailService, useValue: mockMailService },
       ],
     }).compile();
 
@@ -75,11 +86,13 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
-    it('should create user, hash password, grant signup ticket, and return token', async () => {
+    it('should create user and return requireVerification', async () => {
       const testUser = createTestUser();
       userRepo.findOne.mockResolvedValue(null);
       userRepo.create.mockReturnValue(testUser);
       userRepo.save.mockResolvedValue(testUser);
+      emailVerificationRepo.create.mockReturnValue({});
+      emailVerificationRepo.save.mockResolvedValue({});
 
       const result = await service.register({
         email: 'test@example.com',
@@ -90,18 +103,15 @@ describe('AuthService', () => {
 
       expect(mockedBcrypt.hash).toHaveBeenCalledWith('password123', 10);
       expect(userRepo.save).toHaveBeenCalled();
-      expect(mockTicketsService.grantTickets).toHaveBeenCalledWith(
-        testUser.id,
-        1,
-        30,
-        'RACE',
-      );
-      expect(result.accessToken).toBe('mock-jwt-token');
-      expect(result.user.email).toBe('test@example.com');
+      expect(result.requireVerification).toBe(true);
+      expect(result.email).toBe('test@example.com');
+      expect(mockMailService.sendVerificationCode).toHaveBeenCalled();
     });
 
-    it('should throw ConflictException on duplicate email', async () => {
-      userRepo.findOne.mockResolvedValue(createTestUser());
+    it('should throw ConflictException on duplicate verified email', async () => {
+      userRepo.findOne.mockResolvedValue(
+        createTestUser({ isEmailVerified: true }),
+      );
 
       await expect(
         service.register({
@@ -112,21 +122,54 @@ describe('AuthService', () => {
         }),
       ).rejects.toThrow(ConflictException);
     });
+
+    it('should resend verification for unverified existing user', async () => {
+      const testUser = createTestUser({ isEmailVerified: false });
+      userRepo.findOne.mockResolvedValue(testUser);
+      emailVerificationRepo.create.mockReturnValue({});
+      emailVerificationRepo.save.mockResolvedValue({});
+
+      const result = await service.register({
+        email: 'test@example.com',
+        password: 'pass123',
+        name: 'N',
+        nickname: 'nn',
+      });
+
+      expect(result.requireVerification).toBe(true);
+      expect(mockMailService.sendVerificationCode).toHaveBeenCalled();
+    });
   });
 
   describe('login', () => {
-    it('should return token and user on valid credentials', async () => {
-      const testUser = createTestUser();
+    it('should return token and user on valid verified credentials', async () => {
+      const testUser = createTestUser({ isEmailVerified: true });
       userRepo.findOne.mockResolvedValue(testUser);
 
       const result = await service.login('test@example.com', 'password123');
 
-      expect(result.accessToken).toBe('mock-jwt-token');
-      expect(result.user.email).toBe('test@example.com');
+      expect('accessToken' in result).toBe(true);
+      const loginResult = result as { accessToken: string; user: { email: string } };
+      expect(loginResult.accessToken).toBe('mock-jwt-token');
+      expect(loginResult.user.email).toBe('test@example.com');
       expect(userRepo.update).toHaveBeenCalledWith(
         testUser.id,
         expect.objectContaining({ lastLoginAt: expect.any(Date) }),
       );
+    });
+
+    it('should return requireVerification for unverified user', async () => {
+      const testUser = createTestUser({ isEmailVerified: false });
+      userRepo.findOne.mockResolvedValue(testUser);
+      emailVerificationRepo.create.mockReturnValue({});
+      emailVerificationRepo.save.mockResolvedValue({});
+
+      const result = await service.login('test@example.com', 'password123');
+
+      expect('requireVerification' in result).toBe(true);
+      const verifyResult = result as { requireVerification: boolean; email: string };
+      expect(verifyResult.requireVerification).toBe(true);
+      expect(verifyResult.email).toBe('test@example.com');
     });
 
     it('should throw UnauthorizedException on wrong email', async () => {
@@ -146,8 +189,11 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should call processLoginBonuses on success', async () => {
-      const testUser = createTestUser({ lastDailyBonusAt: null });
+    it('should call processLoginBonuses on success for verified user', async () => {
+      const testUser = createTestUser({
+        isEmailVerified: true,
+        lastDailyBonusAt: null,
+      });
       userRepo.findOne.mockResolvedValue(testUser);
 
       await service.login('test@example.com', 'password123');

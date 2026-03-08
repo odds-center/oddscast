@@ -54,8 +54,5 @@ VALUES
   ('consecutive_streak_days',     '7'),
   ('consecutive_streak_tickets',  '1'),
   ('consecutive_expires_days',    '30'),
-  ('referrer_ticket_count',       '3'),
-  ('referred_ticket_count',       '2'),
-  ('referral_ticket_expires_days','30'),
   ('matrix_ticket_price',         '1000')
 ON CONFLICT ("key") DO NOTHING;

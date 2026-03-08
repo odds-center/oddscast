@@ -4,14 +4,11 @@ import {
   LayoutDashboard,
   Users,
   CalendarDays,
-  Trophy,
-  DollarSign,
   Bell,
   Settings,
   BarChart3,
   PieChart,
   CreditCard,
-  BookOpen,
   ShoppingCart,
   ClipboardList,
   Bot,
@@ -26,11 +23,8 @@ const navigation = [
   { name: '대시보드', href: '/', icon: LayoutDashboard },
   { name: '회원 관리', href: '/users', icon: Users },
   { name: '경주 관리', href: '/races', icon: CalendarDays },
-  { name: '경기 결과', href: '/results', icon: Trophy },
   { name: 'KRA 데이터', href: '/kra', icon: Database },
-  { name: '결제 내역', href: '/bets', icon: DollarSign },
   { name: '구독 관리', href: '/subscriptions', icon: CreditCard },
-  { name: '구독 플랜', href: '/subscription-plans', icon: BookOpen },
   { name: '개별 구매', href: '/single-purchase-config', icon: ShoppingCart },
   { name: '예측권 사용 내역', href: '/ticket-usage', icon: ClipboardList },
   { name: '예측 목록', href: '/predictions', icon: ListOrdered },
@@ -57,7 +51,7 @@ export default function Sidebar() {
             <li>
               <ul role='list' className='-mx-1 space-y-0.5'>
                 {navigation.map((item) => {
-                  const isActive = router.pathname === item.href;
+                  const isActive = router.pathname === item.href || router.pathname.startsWith(item.href + '/');
                   return (
                     <li key={item.name}>
                       <Link

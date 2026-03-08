@@ -28,10 +28,6 @@ DO $$ BEGIN CREATE TYPE "PaymentStatus" AS ENUM ('SUCCESS', 'FAILED', 'REFUNDED'
 DO $$ BEGIN CREATE TYPE "PointTransactionType" AS ENUM ('EARNED', 'SPENT', 'REFUNDED', 'BONUS', 'PROMOTION', 'ADMIN_ADJUSTMENT', 'EXPIRED', 'TRANSFER_IN', 'TRANSFER_OUT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PointStatus" AS ENUM ('ACTIVE', 'PENDING', 'EXPIRED', 'CANCELLED', 'PROCESSING'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PromotionType" AS ENUM ('SIGNUP_BONUS', 'REFERRAL_BONUS', 'DAILY_LOGIN', 'SPECIAL_EVENT', 'CUSTOM'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "BetType" AS ENUM ('WIN', 'PLACE', 'QUINELLA', 'QUINELLA_PLACE', 'EXACTA', 'TRIFECTA', 'TRIPLE'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "BetStatus" AS ENUM ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED', 'WON', 'LOST'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "BetResult" AS ENUM ('PENDING', 'WIN', 'LOSE', 'PARTIAL_WIN', 'VOID'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "BetSlipStatus" AS ENUM ('DRAFT', 'CONFIRMED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PickType" AS ENUM ('SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "BatchScheduleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -55,27 +51,6 @@ CREATE TABLE IF NOT EXISTS "users" (
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "users_email_key" UNIQUE ("email")
-);
-
-CREATE TABLE IF NOT EXISTS "referral_codes" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "code" TEXT NOT NULL,
-    "usedCount" INTEGER NOT NULL DEFAULT 0,
-    "maxUses" INTEGER NOT NULL DEFAULT 10,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "referral_codes_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "referral_codes_code_key" UNIQUE ("code")
-);
-
-CREATE TABLE IF NOT EXISTS "referral_claims" (
-    "id" SERIAL NOT NULL,
-    "referralCodeId" INTEGER NOT NULL,
-    "referredUserId" INTEGER NOT NULL,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "referral_claims_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "referral_claims_referredUserId_key" UNIQUE ("referredUserId")
 );
 
 CREATE TABLE IF NOT EXISTS "weekly_previews" (
@@ -493,52 +468,6 @@ CREATE TABLE IF NOT EXISTS "point_promotions" (
     CONSTRAINT "point_promotions_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE IF NOT EXISTS "bets" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "raceId" INTEGER NOT NULL,
-    "betType" "BetType" NOT NULL,
-    "betName" TEXT NOT NULL,
-    "betDescription" TEXT,
-    "betAmount" INTEGER NOT NULL,
-    "potentialWin" INTEGER,
-    "odds" DOUBLE PRECISION,
-    "selections" JSONB NOT NULL,
-    "betStatus" "BetStatus" NOT NULL DEFAULT 'PENDING',
-    "betResult" "BetResult" NOT NULL DEFAULT 'PENDING',
-    "betTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "raceTime" TIMESTAMP(3),
-    "resultTime" TIMESTAMP(3),
-    "actualWin" INTEGER,
-    "actualOdds" DOUBLE PRECISION,
-    "confidenceLevel" DOUBLE PRECISION,
-    "betReason" TEXT,
-    "analysisData" JSONB,
-    "apiVersion" TEXT,
-    "dataSource" TEXT,
-    "ipAddress" TEXT,
-    "userAgent" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "roi" DOUBLE PRECISION,
-    "riskLevel" TEXT,
-    "isFavorite" BOOLEAN NOT NULL DEFAULT false,
-    "notes" TEXT,
-    CONSTRAINT "bets_pkey" PRIMARY KEY ("id")
-);
-
-CREATE TABLE IF NOT EXISTS "bet_slips" (
-    "id" SERIAL NOT NULL,
-    "raceId" INTEGER NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "bets" JSONB NOT NULL,
-    "totalAmount" INTEGER NOT NULL,
-    "status" "BetSlipStatus" NOT NULL DEFAULT 'DRAFT',
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "bet_slips_pkey" PRIMARY KEY ("id")
-);
-
 CREATE TABLE IF NOT EXISTS "user_picks" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -654,14 +583,6 @@ CREATE INDEX IF NOT EXISTS "user_activity_logs_createdAt_idx" ON "user_activity_
 
 -- AddForeignKey (idempotent: add only if constraint does not exist)
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'referral_codes_userId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "referral_codes" ADD CONSTRAINT "referral_codes_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'referral_claims_referralCodeId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "referral_claims" ADD CONSTRAINT "referral_claims_referralCodeId_fkey" FOREIGN KEY ("referralCodeId") REFERENCES "referral_codes"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'user_daily_fortunes_userId_fkey' AND n.nspname = 'oddscast') THEN
     ALTER TABLE "user_daily_fortunes" ADD CONSTRAINT "user_daily_fortunes_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;
@@ -741,22 +662,6 @@ DO $$ BEGIN
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'point_transactions_userId_fkey' AND n.nspname = 'oddscast') THEN
     ALTER TABLE "point_transactions" ADD CONSTRAINT "point_transactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'bets_userId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "bets" ADD CONSTRAINT "bets_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'bets_raceId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "bets" ADD CONSTRAINT "bets_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'bet_slips_userId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "bet_slips" ADD CONSTRAINT "bet_slips_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'bet_slips_raceId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "bet_slips" ADD CONSTRAINT "bet_slips_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'user_picks_userId_fkey' AND n.nspname = 'oddscast') THEN

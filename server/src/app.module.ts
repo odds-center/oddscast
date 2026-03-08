@@ -29,7 +29,6 @@ import {
   PushToken,
   UserNotificationPreference,
   Subscription,
-  Bet,
   AdminActivityLog,
   UserActivityLog,
   SinglePurchase,
@@ -39,8 +38,6 @@ import {
   PointTicketPrice,
   SubscriptionPlan,
   BillingHistory,
-  ReferralCode,
-  ReferralClaim,
   RaceDividend,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
@@ -60,7 +57,6 @@ import { PaymentsModule } from './payments/payments.module';
 import { PredictionTicketsModule } from './prediction-tickets/prediction-tickets.module';
 import { SinglePurchasesModule } from './single-purchases/single-purchases.module';
 import { PointsModule } from './points/points.module';
-import { BetsModule } from './bets/bets.module';
 import { PicksModule } from './picks/picks.module';
 import { KraModule } from './kra/kra.module';
 import { AnalysisModule } from './analysis/analysis.module';
@@ -74,7 +70,7 @@ import { GlobalConfigModule } from './config/config.module';
 import { HealthModule } from './health/health.module';
 import { CacheModule } from './cache/cache.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
-import { ReferralsModule } from './referrals/referrals.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -113,7 +109,6 @@ import { ReferralsModule } from './referrals/referrals.module';
           PushToken,
           UserNotificationPreference,
           Subscription,
-          Bet,
           AdminActivityLog,
           UserActivityLog,
           SinglePurchase,
@@ -123,8 +118,6 @@ import { ReferralsModule } from './referrals/referrals.module';
           PointTicketPrice,
           SubscriptionPlan,
           BillingHistory,
-          ReferralCode,
-          ReferralClaim,
           RaceDividend,
         ],
         logging: config.get<string>('NODE_ENV') === 'development',
@@ -132,6 +125,7 @@ import { ReferralsModule } from './referrals/referrals.module';
       }),
       inject: [ConfigService],
     }),
+    MailModule, // Resend email (global)
     HealthModule, // nginx/LB 헬스체크 — /health
     CacheModule, // Redis(선택) / 인메모리 캐시
 
@@ -160,12 +154,10 @@ import { ReferralsModule } from './referrals/referrals.module';
     RankingsModule,
     SinglePurchasesModule,
     PointsModule,
-    BetsModule,
     KraModule,
     AdminModule,
     GlobalConfigModule,
     ActivityLogsModule,
-    ReferralsModule,
   ],
   providers: [
     {

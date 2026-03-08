@@ -29,7 +29,7 @@ async rewrites() {
 - Timeout: 5 seconds
 - Max content: 50MB
 
-## All Pages (21)
+## All Pages (20)
 
 | Page | Route | Description |
 |------|-------|-------------|
@@ -47,7 +47,6 @@ async rewrites() {
 | `subscription-plans.tsx` | `/subscription-plans` | Manage plans (price, tickets) |
 | `single-purchase-config.tsx` | `/single-purchase-config` | Configure single purchase pricing |
 | `ticket-usage.tsx` | `/ticket-usage` | Prediction ticket usage logs |
-| `bets/index.tsx` | `/bets` | Bet/payment history |
 | `statistics.tsx` | `/statistics` | User growth, ticket trends |
 | `revenue.tsx` | `/revenue` | Revenue dashboard |
 | `notifications.tsx` | `/notifications` | Push notification management |
@@ -96,7 +95,6 @@ function useRequireAuth() {
 |-------|-----------|
 | `AdminDashboardApi` | Dashboard statistics |
 | `AdminUsersApi` | User CRUD, activate/deactivate, grant tickets |
-| `AdminBetsApi` | Bet list, status update |
 | `AdminSubscriptionsApi` | Plan CRUD, user subscriptions, cancel/extend |
 | `AdminSinglePurchaseApi` | Purchase config, price calculation |
 | `AdminAIApi` | Prediction analytics, generate, batch (SSE), stats |
@@ -146,7 +144,7 @@ const axiosInstance = axios.create({
 
 ### Sidebar Navigation (17 items)
 Dashboard, Users, Races, Results, KRA Sync, Predictions, AI Config, AI Analytics,
-Subscriptions, Plans, Single Purchase, Ticket Usage, Bets, Statistics, Revenue,
+Subscriptions, Plans, Single Purchase, Ticket Usage, Statistics, Revenue,
 Notifications, Settings
 
 ## Data Fetching Pattern

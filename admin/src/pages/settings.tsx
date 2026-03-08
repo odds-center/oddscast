@@ -23,9 +23,6 @@ type SystemConfigForm = {
   consecutive_streak_days: string;
   consecutive_streak_tickets: string;
   consecutive_expires_days: string;
-  referrer_ticket_count: string;
-  referred_ticket_count: string;
-  referral_ticket_expires_days: string;
   matrix_ticket_price: string;
 };
 
@@ -61,9 +58,6 @@ export default function SettingsPage() {
       consecutive_streak_days: '7',
       consecutive_streak_tickets: '1',
       consecutive_expires_days: '30',
-      referrer_ticket_count: '3',
-      referred_ticket_count: '2',
-      referral_ticket_expires_days: '30',
       matrix_ticket_price: '1000',
     },
   });
@@ -77,9 +71,6 @@ export default function SettingsPage() {
         consecutive_streak_days:      (systemConfig as SystemConfig).consecutive_streak_days || '7',
         consecutive_streak_tickets:   (systemConfig as SystemConfig).consecutive_streak_tickets || '1',
         consecutive_expires_days:     (systemConfig as SystemConfig).consecutive_expires_days || '30',
-        referrer_ticket_count:        (systemConfig as SystemConfig).referrer_ticket_count || '3',
-        referred_ticket_count:        (systemConfig as SystemConfig).referred_ticket_count || '2',
-        referral_ticket_expires_days: (systemConfig as SystemConfig).referral_ticket_expires_days || '30',
         matrix_ticket_price:          (systemConfig as SystemConfig).matrix_ticket_price || '1000',
       });
     }
@@ -259,25 +250,6 @@ export default function SettingsPage() {
                     <div>
                       <label className='block text-xs font-medium text-gray-600 mb-1'>유효기간 (일)</label>
                       <input type='number' min='1' {...register('consecutive_expires_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Referral */}
-                <div>
-                  <h4 className='text-sm font-semibold text-gray-800 mb-3'>추천인 보상</h4>
-                  <div className='grid grid-cols-3 gap-3'>
-                    <div>
-                      <label className='block text-xs font-medium text-gray-600 mb-1'>추천인 지급 (장)</label>
-                      <input type='number' min='0' {...register('referrer_ticket_count')} className='w-full px-3 py-2 border rounded-lg text-sm' />
-                    </div>
-                    <div>
-                      <label className='block text-xs font-medium text-gray-600 mb-1'>피추천인 지급 (장)</label>
-                      <input type='number' min='0' {...register('referred_ticket_count')} className='w-full px-3 py-2 border rounded-lg text-sm' />
-                    </div>
-                    <div>
-                      <label className='block text-xs font-medium text-gray-600 mb-1'>유효기간 (일)</label>
-                      <input type='number' min='1' {...register('referral_ticket_expires_days')} className='w-full px-3 py-2 border rounded-lg text-sm' />
                     </div>
                   </div>
                 </div>

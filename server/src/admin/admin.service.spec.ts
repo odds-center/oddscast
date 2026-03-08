@@ -2,37 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { AdminService } from './admin.service';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
-import { Bet } from '../database/entities/bet.entity';
 import { Subscription } from '../database/entities/subscription.entity';
 import { SubscriptionPlan } from '../database/entities/subscription-plan.entity';
 import { User } from '../database/entities/user.entity';
 import { Race } from '../database/entities/race.entity';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
-import { BetStatus, TicketStatus } from '../database/db-enums';
-
-function makeQb(rawResult: unknown = { sum: '0' }) {
-  const qb: Record<string, jest.Mock> = {
-    select: jest.fn(),
-    addSelect: jest.fn(),
-    where: jest.fn(),
-    andWhere: jest.fn(),
-    getRawOne: jest.fn().mockResolvedValue(rawResult),
-  };
-  Object.values(qb).forEach((fn) => {
-    if (fn !== qb.getRawOne) fn.mockReturnThis();
-  });
-  return qb;
-}
+import { TicketStatus } from '../database/db-enums';
 
 const mockKraSyncLogRepo = { find: jest.fn() };
-const mockBetRepo = {
-  findAndCount: jest.fn(),
-  findOne: jest.fn(),
-  update: jest.fn(),
-  count: jest.fn(),
-  createQueryBuilder: jest.fn(),
-};
 const mockSubscriptionRepo = {
   count: jest.fn(),
   find: jest.fn(),
@@ -59,7 +37,6 @@ describe('AdminService', () => {
           provide: getRepositoryToken(KraSyncLog),
           useValue: mockKraSyncLogRepo,
         },
-        { provide: getRepositoryToken(Bet), useValue: mockBetRepo },
         {
           provide: getRepositoryToken(Subscription),
           useValue: mockSubscriptionRepo,
@@ -122,95 +99,6 @@ describe('AdminService', () => {
       expect(mockKraSyncLogRepo.find).toHaveBeenCalledWith(
         expect.objectContaining({ take: 100 }),
       );
-    });
-  });
-
-  // -------------------------------------------------------------------
-  // getBetsAdmin
-  // -------------------------------------------------------------------
-  describe('getBetsAdmin', () => {
-    it('paginates correctly and includes race summary', async () => {
-      const bet = {
-        id: 1,
-        race: {
-          id: 1,
-          meet: '서울',
-          rcDate: '20250301',
-          rcNo: '1',
-          rcName: '특별',
-        },
-      };
-      mockBetRepo.findAndCount.mockResolvedValue([[bet], 1]);
-
-      const result = await service.getBetsAdmin(1, 10);
-
-      expect(result.meta.total).toBe(1);
-      expect(result.data[0].race?.meet).toBe('서울');
-    });
-
-    it('applies userId and status filter when provided', async () => {
-      mockBetRepo.findAndCount.mockResolvedValue([[], 0]);
-
-      await service.getBetsAdmin(1, 10, 5, undefined, 'CONFIRMED');
-
-      expect(mockBetRepo.findAndCount).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { userId: 5, betStatus: BetStatus.CONFIRMED },
-        }),
-      );
-    });
-  });
-
-  // -------------------------------------------------------------------
-  // getBetById
-  // -------------------------------------------------------------------
-  describe('getBetById', () => {
-    it('returns null when bet is not found', async () => {
-      mockBetRepo.findOne.mockResolvedValue(null);
-      const result = await service.getBetById(999);
-      expect(result).toBeNull();
-    });
-
-    it('returns shaped bet with race and user summaries', async () => {
-      mockBetRepo.findOne.mockResolvedValue({
-        id: 1,
-        race: {
-          id: 1,
-          meet: '서울',
-          rcDate: '20250301',
-          rcNo: '1',
-          rcName: null,
-        },
-        user: { id: 1, email: 'a@b.com', name: '홍길동' },
-      });
-
-      const result = await service.getBetById(1);
-
-      expect(result?.race?.meet).toBe('서울');
-      expect(result?.user?.email).toBe('a@b.com');
-    });
-  });
-
-  // -------------------------------------------------------------------
-  // updateBetStatus
-  // -------------------------------------------------------------------
-  describe('updateBetStatus', () => {
-    it('calls update then returns refreshed bet', async () => {
-      mockBetRepo.update.mockResolvedValue({ affected: 1 });
-      mockBetRepo.findOne.mockResolvedValue({
-        id: 1,
-        betStatus: BetStatus.CONFIRMED,
-        race: null,
-        user: null,
-      });
-
-      const result = await service.updateBetStatus(1, BetStatus.CONFIRMED);
-
-      expect(mockBetRepo.update).toHaveBeenCalledWith(
-        1,
-        expect.objectContaining({ betStatus: BetStatus.CONFIRMED }),
-      );
-      expect(result?.race).toBeNull();
     });
   });
 
@@ -316,20 +204,15 @@ describe('AdminService', () => {
   // getDashboardStats
   // -------------------------------------------------------------------
   describe('getDashboardStats', () => {
-    it('returns aggregated counts and amounts', async () => {
+    it('returns aggregated counts', async () => {
       mockUserRepo.count.mockResolvedValue(100);
       mockRaceRepo.count.mockResolvedValue(5);
-      mockBetRepo.count.mockResolvedValue(20);
       mockSubscriptionRepo.count.mockResolvedValue(10);
-
-      const qb = makeQb({ sum: '50000' });
-      mockBetRepo.createQueryBuilder.mockReturnValue(qb);
 
       const result = await service.getDashboardStats();
 
       expect(result.totalUsers).toBe(100);
       expect(result.todayRaces).toBe(5);
-      expect(result.totalBets.amount).toBe(50000);
       expect(result.activeSubscriptions).toBe(10);
     });
   });

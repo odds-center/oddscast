@@ -47,34 +47,6 @@ export interface UserListResponse {
   };
 }
 
-// Bets
-export interface Bet {
-  id: string;
-  userId: string;
-  raceId: string;
-  betType: string;
-  betName?: string;
-  betAmount: number;
-  betStatus: string;
-  betResult?: string;
-  actualWin?: number;
-  potentialWin?: number;
-  odds?: number;
-  betTime: string;
-  createdAt?: string;
-  race?: { id: string; rcDate: string; meet: string; rcNo: string };
-  user?: { id: string; email: string; name: string };
-}
-
-export interface BetListResponse {
-  data: Bet[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
 
 // Races
 export interface Race {

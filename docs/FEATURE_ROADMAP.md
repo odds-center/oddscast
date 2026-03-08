@@ -247,22 +247,9 @@
 
 ---
 
-### 3.5 🎁 Referral & Promotion System — ✅ Implemented
+### 3.5 🎁 Referral & Promotion System — ❌ Removed
 
-> Grow the user base through word-of-mouth.
-
-| Item | Detail |
-|------|--------|
-| **What** | Referral codes: invite friend → both get bonus RACE tickets |
-| **Reward** | Referrer: 3 RACE tickets, Referred: 2 RACE tickets |
-| **Limit** | Max 10 referrals per user |
-| **Priority** | ⭐⭐ MEDIUM |
-
-**Implemented:**
-- Server: `ReferralCode` + `ReferralClaim` (one claim per referred user). `GET /api/referrals/me`, `POST /api/referrals/claim`
-- Referrer 3 RACE, Referred 2 RACE (30-day expiry); max 10 uses per code
-- WebApp: Profile "내 추천 코드" (code + copy), "추천 코드 사용" (input + submit)
-- Admin dashboard: optional later
+> Removed from service. All code, entities, API, UI, and DB schema deleted.
 
 ---
 
@@ -428,7 +415,7 @@ ORT │  Smart Alerts     │  Custom Simulator │
     │                   │  Predictions      │
     │  Deep Links       │                   │
     │                   │  Advanced         │
-    │  Referral System  │  Analytics        │
+    │                   │  Analytics        │
     │                   │                   │
     └───────────────────┼───────────────────┘
                         │
@@ -443,7 +430,6 @@ ORT │  Smart Alerts     │  Custom Simulator │
 5. Jockey & Trainer Profiles (research completeness)
 6. Weekly Preview Report (content marketing)
 7. Smart Race Alerts (retention)
-8. Referral System (growth)
 
 ---
 

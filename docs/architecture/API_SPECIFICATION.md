@@ -537,17 +537,6 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 
 ---
 
-## 13-1. Referrals (추천) — `/api/referrals`
-
-> Server: `server/src/referrals/referrals.controller.ts`
-
-| Method | Route           | 설명                     | Auth |
-| ------ | --------------- | ------------------------ | ---- |
-| `GET`  | `/referrals/me` | 내 추천 코드 조회/생성   | 🔐   |
-| `POST` | `/referrals/claim` | 추천 코드 입력 (가입 시) | 🔐   | body: `{ code: string }` |
-
----
-
 ## 13-2. Weekly Preview (주간 프리뷰) — `/api/weekly-preview`
 
 > Server: `server/src/weekly-preview/weekly-preview.controller.ts`  

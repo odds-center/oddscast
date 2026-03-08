@@ -25,9 +25,6 @@ export * from './race.types';
 // Result
 export * from './result.types';
 
-// Bet
-export * from './bet.types';
-
 // Favorite
 export * from './favorite.types';
 

@@ -56,7 +56,6 @@ server/src/<module>/
 - `kra/` - KRA API integration, Cron sync, batch schedules
 - `admin/` - Admin-only endpoints (/api/admin/*)
 - `fortune/` - Daily fortune (Gemini, 1 per user per day)
-- `referrals/` - Referral codes, claim rewards
 - `weekly-preview/` - Weekly preview (Cron Thu 20:00 KST)
 - `activity-logs/` - User/admin activity tracking
 - `bets/` - Legacy (unused, sageun-seong removed)

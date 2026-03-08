@@ -21,7 +21,7 @@
 5. Apply: `./scripts/setup.sh` or `cd server && pnpm run migration:run`
 6. If shared types affected: update `shared/types/`
 
-## All Entities (36 files)
+## All Entities (33 files)
 
 ### User Management
 | Entity | Table | Description |
@@ -56,11 +56,9 @@
 | `PointPromotion` | `point_promotions` | type(SIGNUP_BONUS/DAILY_LOGIN/...) |
 | `PointTicketPrice` | `point_ticket_prices` | pointsPerTicket, isActive |
 
-### Social & Referrals
+### Social
 | Entity | Table |
 |--------|-------|
-| `ReferralCode` | `referral_codes` |
-| `ReferralClaim` | `referral_claims` |
 | `Favorite` | `favorites` | type(RACE only used), priority |
 
 ### Notifications
@@ -88,7 +86,6 @@
 | `GlobalConfig` | `global_config` | Key-value system config |
 | `AdminActivityLog` | `admin_activity_logs` | Admin action audit |
 | `UserActivityLog` | `user_activity_logs` | User action audit |
-| `Bet` | `bets` | Legacy (unused) |
 | `UserPick` | `user_picks` | Service excluded, API only |
 
 ## All Enums (db-enums.ts)
@@ -125,11 +122,6 @@ PromotionType: SIGNUP_BONUS, REFERRAL_BONUS, DAILY_LOGIN, SPECIAL_EVENT, CUSTOM
 
 // Payments
 PaymentStatus: SUCCESS, FAILED, REFUNDED
-
-// Betting (legacy)
-BetType: WIN, PLACE, QUINELLA, QUINELLA_PLACE, EXACTA, TRIFECTA, TRIPLE
-BetStatus: PENDING, CONFIRMED, CANCELLED, COMPLETED, WON, LOST
-BetResult: PENDING, WIN, LOSE, PARTIAL_WIN, VOID
 
 // Picks
 PickType: SINGLE, PLACE, QUINELLA, EXACTA, QUINELLA_PLACE, TRIFECTA, TRIPLE

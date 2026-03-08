@@ -17,7 +17,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole, BetStatus } from '../database/db-enums';
+import { UserRole } from '../database/db-enums';
 import { KraService } from '../kra/kra.service';
 import { AdminService } from './admin.service';
 import { UsersService } from '../users/users.service';
@@ -463,9 +463,6 @@ export class AdminController {
       consecutive_streak_days:     all.consecutive_streak_days || '7',
       consecutive_streak_tickets:  all.consecutive_streak_tickets || '1',
       consecutive_expires_days:    all.consecutive_expires_days || '30',
-      referrer_ticket_count:       all.referrer_ticket_count || '3',
-      referred_ticket_count:       all.referred_ticket_count || '2',
-      referral_ticket_expires_days:all.referral_ticket_expires_days || '30',
       matrix_ticket_price:         all.matrix_ticket_price || '1000',
     };
   }
@@ -481,9 +478,6 @@ export class AdminController {
       consecutive_streak_days?: string;
       consecutive_streak_tickets?: string;
       consecutive_expires_days?: string;
-      referrer_ticket_count?: string;
-      referred_ticket_count?: string;
-      referral_ticket_expires_days?: string;
       matrix_ticket_price?: string;
     },
   ) {
@@ -494,9 +488,6 @@ export class AdminController {
       'consecutive_streak_days',
       'consecutive_streak_tickets',
       'consecutive_expires_days',
-      'referrer_ticket_count',
-      'referred_ticket_count',
-      'referral_ticket_expires_days',
       'matrix_ticket_price',
     ] as const;
     for (const key of keys) {
@@ -556,45 +547,6 @@ export class AdminController {
             : `경주당 ₩${modelCost} × ${AdminController.RACES_PER_MONTH}경기/월 ≈ ₩${rawMonthly.toLocaleString()} (캐싱 ON 시 99%↓)`
           : `전략 ${config.costStrategy ?? 'balanced'} (캐싱 ${enableCaching ? 'ON' : 'OFF'}) ≈ ₩${estimatedMonthlyCost.toLocaleString()}`,
     };
-  }
-
-  // --- Bets (Admin full list) ---
-
-  @Get('bets')
-  @ApiOperation({ summary: '[Admin] 마권 목록 조회' })
-  async getBets(
-    @Query('page') page?: number,
-    @Query('limit') limit?: number,
-    @Query('userId') userId?: string,
-    @Query('raceId') raceId?: string,
-    @Query('status') status?: string,
-  ) {
-    return this.adminService.getBetsAdmin(
-      Number(page),
-      Number(limit),
-      userId != null ? parseInt(userId, 10) : undefined,
-      raceId != null ? parseInt(raceId, 10) : undefined,
-      status ?? undefined,
-    );
-  }
-
-  @Get('bets/:id')
-  @ApiOperation({ summary: '[Admin] 마권 상세 조회' })
-  async getBet(@Param('id', ParseIntPipe) id: number) {
-    return this.adminService.getBetById(id);
-  }
-
-  @Patch('bets/:id/status')
-  @ApiOperation({ summary: '[Admin] 마권 상태 변경' })
-  async updateBetStatus(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() body: { status: string },
-  ) {
-    const valid = Object.values(BetStatus);
-    const status = valid.includes(body?.status as BetStatus)
-      ? (body.status as BetStatus)
-      : BetStatus.PENDING;
-    return this.adminService.updateBetStatus(id, status);
   }
 
   // --- Subscription Plans (Admin) ---

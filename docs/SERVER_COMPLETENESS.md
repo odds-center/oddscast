@@ -50,7 +50,6 @@
 | | HealthModule | health.controller | §0 |
 | | CacheModule | (서비스) | - |
 | | ActivityLogsModule | activity-logs.controller | §13-3 |
-| | ReferralsModule | referrals.controller | §13-1 |
 | | WeeklyPreviewModule | weekly-preview.controller | §13-2 |
 
 ---
@@ -68,7 +67,7 @@
 
 | 문서 | 내용 | 상태 |
 |------|------|------|
-| API_SPECIFICATION.md | 모든 공개 API 엔드포인트 매핑 | ✅ Health, Auth~KRA, Horses(§4-4), Fortune(§4-5), Referrals(§13-1), WeeklyPreview(§13-2), Activity(§13-3) 반영 완료 |
+| API_SPECIFICATION.md | 모든 공개 API 엔드포인트 매핑 | ✅ Health, Auth~KRA, Horses(§4-4), Fortune(§4-5), WeeklyPreview(§13-2), Activity(§13-3) 반영 완료 |
 | PROJECT_STRUCTURE.md | Server 디렉토리 구조 | TypeORM 기준으로 기술 — DB는 entities 사용 |
 | DATABASE_SCHEMA.md | TypeORM + PostgreSQL, synchronize: false | ✅ 일치 |
 | BUSINESS_LOGIC.md | 예측 파이프라인, 구독, 결제, 알림, 포인트 | 서버 구현과 일치 |

@@ -155,7 +155,6 @@ server/
 │   ├── jockeys/                         # 기수 프로필·이력 — /jockeys/:jkNo/profile, history
 │   ├── trainers/                        # 조교사 프로필·이력 — /trainers/:trName/profile, history
 │   ├── fortune/                         # 오늘의 경마운세 — /fortune/today (로그인 시)
-│   ├── referrals/                       # 추천 코드 — /referrals/me, claim
 │   ├── weekly-preview/                  # 주간 프리뷰 — /weekly-preview (Cron 목 20:00 KST)
 │   ├── activity-logs/                   # 활동 로그 — /activity/track, track/batch
 │   ├── config/                          # 글로벌 설정 — /config (GET/PUT :key)

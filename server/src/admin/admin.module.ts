@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
-import { Bet } from '../database/entities/bet.entity';
 import { Subscription } from '../database/entities/subscription.entity';
 import { SubscriptionPlan } from '../database/entities/subscription-plan.entity';
 import { User } from '../database/entities/user.entity';
@@ -32,7 +31,6 @@ import { WeeklyPreviewModule } from '../weekly-preview/weekly-preview.module';
   imports: [
     TypeOrmModule.forFeature([
       KraSyncLog,
-      Bet,
       Subscription,
       SubscriptionPlan,
       User,

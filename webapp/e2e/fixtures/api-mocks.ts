@@ -618,13 +618,6 @@ export async function mockGroupedResults(
   });
 }
 
-export const stubReferral = {
-  code: 'ABCD1234',
-  usedCount: 2,
-  maxUses: 10,
-  remainingUses: 8,
-};
-
 /** Mock GET /api/prediction-tickets/matrix/balance. */
 export async function mockMatrixBalance(page: Page) {
   await page.route(`${API}/prediction-tickets/matrix/balance**`, async (route) => {
@@ -643,17 +636,6 @@ export async function mockHitRecords(page: Page) {
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(apiResponse([])),
-    });
-  });
-}
-
-/** Mock GET /api/referrals/me — returns user's referral code info. */
-export async function mockMyReferral(page: Page, referral = stubReferral) {
-  await page.route(`${API}/referrals/me**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse(referral)),
     });
   });
 }

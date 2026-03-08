@@ -30,7 +30,6 @@ export const config = {
     '/users/:path*',
     '/races/:path*',
     '/results/:path*',
-    '/bets/:path*',
     '/kra',
     '/statistics/:path*',
     '/subscriptions/:path*',

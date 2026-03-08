@@ -37,7 +37,7 @@
 | **홈 DateHeader 개선** | ✅ 완료 | 경주 종료 후 "오늘의 경주가 열렸습니다" 오류 메시지 제거. DB 기반 다음 경주일 조회로 하드코딩(금/토/일) 대체. `todayAllEnded`를 시간 기반 `isRaceActuallyEnded()`만 사용. |
 | **Matrix 예측표 잠금 UX** | ✅ 완료 | 경주 정보(rcNo, meet, 출전 등)는 항상 공개. AI 예측 셀만 잠금(LockedCell 플레이스홀더). 미리보기 2행 허용. |
 | **KRA 동기화 시 AI 예측 자동 생성** | ✅ 완료 | `kra.service.ts`에 `generatePredictionsForDate()` 추가. `syncAll()` 최종 단계에서 예측 생성. `processDueBatchSchedules()` 결과 적재 후 fire-and-forget 예측 생성. Admin KRA 페이지에 Step 4 "AI 예측 생성" 카드 추가. |
-| **레퍼럴(추천인) 시스템** | ✅ 완료 | DB 스키마 이미 있었으나 코드 미구현. ReferralCode/Claim 엔티티·ReferralsModule(서버) + referralsApi·프로필 UI(웹앱) 전체 구현. 추천인 3장·피추천인 2장 RACE 예측권 30일. |
+| **레퍼럴(추천인) 시스템** | ❌ 제거됨 | 서비스 전체 삭제 — 엔티티·모듈·API·웹앱 UI·어드민 설정·DB 스키마·seed 모두 제거. |
 | **races + results 탭 통합** | ✅ 완료 | `/races?view=results` 탭으로 합침. `/results` 301 redirect. routes.ts·Layout AppBar 활성 상태·e2e 픽스처 URL/응답 구조 버그 수정. |
 | **Railway 배포** | ✅ 완료 | Server + PostgreSQL Railway 배포 완료. DB oddscast 스키마(36개 테이블) 확인. 어드민 기본 계정(admin/admin1234!) 설정. |
 | **모바일 UI 개선** | ✅ 완료 | chulNo(출전마 번호) 전 영역 표시. 개별/종합 예측권 분리 표기. AppBar 스크롤 hide/show 애니메이션. flex-col 버튼 레이아웃. Matrix 컴팩트 뷰 4컬럼. |

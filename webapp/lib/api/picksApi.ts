@@ -1,6 +1,3 @@
-import { ApiResponse } from '@/lib/types/api';
-import { axiosInstance, handleApiError, handleApiResponse } from '@/lib/api/axios';
-
 export const PICK_TYPE_LABELS: Record<string, string> = {
   SINGLE: '단승식',
   PLACE: '복승식',
@@ -79,72 +76,3 @@ export function findDividendForPick(
   return null;
 }
 
-export interface CreatePickDto {
-  raceId: number; // Server: number (ParseIntPipe)
-  pickType: string;
-  hrNos: string[];
-  hrNames?: string[];
-}
-
-export interface Pick {
-  id: string;
-  userId: string;
-  raceId: string;
-  pickType: string;
-  hrNos: string[];
-  hrNames: string[];
-  pointsAwarded?: number | null;
-  createdAt: string;
-  race?: { meetName?: string; rcNo?: string; rcDate?: string };
-}
-
-export default class PicksApi {
-  static async create(dto: CreatePickDto & { raceId?: number | string }): Promise<Pick> {
-    const payload = {
-      ...dto,
-      raceId: typeof dto.raceId === 'string' ? parseInt(dto.raceId, 10) : dto.raceId,
-    };
-    try {
-      const response = await axiosInstance.post<ApiResponse<Pick>>('/picks', payload);
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-
-  static async getMyPicks(page = 1, limit = 20): Promise<{
-    picks: Pick[];
-    total: number;
-    page: number;
-    totalPages: number;
-  }> {
-    try {
-      const response = await axiosInstance.get<
-        ApiResponse<{ picks: Pick[]; total: number; page: number; totalPages: number }>
-      >('/picks', { params: { page, limit } });
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-
-  static async getByRace(raceId: string): Promise<Pick | null> {
-    try {
-      const response = await axiosInstance.get<ApiResponse<Pick>>(`/picks/race/${raceId}`);
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-
-  static async delete(raceId: string): Promise<{ message: string }> {
-    try {
-      const response = await axiosInstance.delete<ApiResponse<{ message: string }>>(
-        `/picks/race/${raceId}`,
-      );
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-}

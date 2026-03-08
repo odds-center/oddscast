@@ -102,33 +102,6 @@ export enum PaymentStatus {
   REFUNDED = 'REFUNDED',
 }
 
-export enum BetType {
-  WIN = 'WIN',
-  PLACE = 'PLACE',
-  QUINELLA = 'QUINELLA',
-  QUINELLA_PLACE = 'QUINELLA_PLACE',
-  EXACTA = 'EXACTA',
-  TRIFECTA = 'TRIFECTA',
-  TRIPLE = 'TRIPLE',
-}
-
-export enum BetStatus {
-  PENDING = 'PENDING',
-  CONFIRMED = 'CONFIRMED',
-  CANCELLED = 'CANCELLED',
-  COMPLETED = 'COMPLETED',
-  WON = 'WON',
-  LOST = 'LOST',
-}
-
-export enum BetResult {
-  PENDING = 'PENDING',
-  WIN = 'WIN',
-  LOSE = 'LOSE',
-  PARTIAL_WIN = 'PARTIAL_WIN',
-  VOID = 'VOID',
-}
-
 export enum PickType {
   SINGLE = 'SINGLE',
   PLACE = 'PLACE',

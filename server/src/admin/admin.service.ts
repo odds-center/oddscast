@@ -2,16 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Repository } from 'typeorm';
 import { KraSyncLog } from '../database/entities/kra-sync-log.entity';
-import { Bet } from '../database/entities/bet.entity';
 import { Subscription } from '../database/entities/subscription.entity';
 import { SubscriptionPlan } from '../database/entities/subscription-plan.entity';
 import { User } from '../database/entities/user.entity';
 import { Race } from '../database/entities/race.entity';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
-import { BetStatus } from '../database/db-enums';
-import { SubscriptionStatus } from '../database/db-enums';
-import { TicketStatus } from '../database/db-enums';
+import { SubscriptionStatus, TicketStatus } from '../database/db-enums';
 import { todayKstYyyymmdd, kst, dateToKstDash } from '../common/utils/kst';
 
 @Injectable()
@@ -19,7 +16,6 @@ export class AdminService {
   constructor(
     @InjectRepository(KraSyncLog)
     private readonly kraSyncLogRepo: Repository<KraSyncLog>,
-    @InjectRepository(Bet) private readonly betRepo: Repository<Bet>,
     @InjectRepository(Subscription)
     private readonly subscriptionRepo: Repository<Subscription>,
     @InjectRepository(SubscriptionPlan)
@@ -45,135 +41,27 @@ export class AdminService {
     return { logs, total: logs.length };
   }
 
-  async getBetsAdmin(
-    page: number,
-    limit: number,
-    userId?: number,
-    raceId?: number,
-    status?: string,
-  ) {
-    const p = Math.max(1, Number(page) || 1);
-    const l = Math.min(100, Math.max(1, Number(limit) || 20));
-    const where: { userId?: number; raceId?: number; betStatus?: BetStatus } =
-      {};
-    if (userId != null) where.userId = userId;
-    if (raceId != null) where.raceId = raceId;
-    if (status != null) where.betStatus = status as BetStatus;
-
-    const [bets, total] = await this.betRepo.findAndCount({
-      where,
-      relations: ['race'],
-      order: { betTime: 'DESC' },
-      take: l,
-      skip: (p - 1) * l,
-    });
-    const data = bets.map((b) => ({
-      ...b,
-      race: b.race
-        ? {
-            id: b.race.id,
-            meet: b.race.meet,
-            rcDate: b.race.rcDate,
-            rcNo: b.race.rcNo,
-            rcName: b.race.rcName,
-          }
-        : null,
-    }));
-    return {
-      data,
-      meta: { total, page: p, limit: l, totalPages: Math.ceil(total / l) },
-    };
-  }
-
-  async getBetById(id: number) {
-    const bet = await this.betRepo.findOne({
-      where: { id },
-      relations: ['race', 'user'],
-    });
-    if (!bet) return null;
-    return {
-      ...bet,
-      race: bet.race
-        ? {
-            id: bet.race.id,
-            meet: bet.race.meet,
-            rcDate: bet.race.rcDate,
-            rcNo: bet.race.rcNo,
-            rcName: bet.race.rcName,
-          }
-        : null,
-      user: bet.user
-        ? { id: bet.user.id, email: bet.user.email, name: bet.user.name }
-        : null,
-    };
-  }
-
-  async updateBetStatus(id: number, status: BetStatus) {
-    await this.betRepo.update(id, { betStatus: status, updatedAt: new Date() });
-    return this.getBetById(id);
-  }
-
   async getSubscriptionPlanById(id: number) {
     return this.planRepo.findOne({ where: { id } });
   }
 
   async getDashboardStats() {
     const today = todayKstYyyymmdd();
-    const dayStart = kst().startOf('day').toDate();
-    const dayEnd = kst().endOf('day').toDate();
 
-    const [
-      totalUsers,
-      activeUsers,
-      todayRaces,
-      todayBetsCount,
-      todayBetsAmountSum,
-      totalBetsCount,
-      totalBetsAmountSum,
-      activeSubscriptions,
-      winAmountRes,
-    ] = await Promise.all([
-      this.userRepo.count(),
-      this.userRepo.count({ where: { isActive: true } }),
-      this.raceRepo.count({ where: { rcDate: today } }),
-      this.betRepo.count({
-        where: { betTime: Between(dayStart, dayEnd) },
-      }),
-      this.betRepo
-        .createQueryBuilder('b')
-        .select('COALESCE(SUM(b.betAmount), 0)', 'sum')
-        .where('b.betTime >= :start', { start: dayStart })
-        .andWhere('b.betTime < :end', { end: dayEnd })
-        .getRawOne<{ sum: string }>()
-        .then((r) => parseInt(r?.sum ?? '0', 10)),
-      this.betRepo.count(),
-      this.betRepo
-        .createQueryBuilder('b')
-        .select('COALESCE(SUM(b.betAmount), 0)', 'sum')
-        .getRawOne<{ sum: string }>()
-        .then((r) => parseInt(r?.sum ?? '0', 10)),
-      this.subscriptionRepo.count({
-        where: { status: SubscriptionStatus.ACTIVE },
-      }),
-      this.betRepo
-        .createQueryBuilder('b')
-        .select('COALESCE(SUM(b.actualWin), 0)', 'sum')
-        .where('b.actualWin IS NOT NULL')
-        .getRawOne<{ sum: string }>(),
-    ]);
-
-    const winAmount = parseInt(winAmountRes?.sum ?? '0', 10);
+    const [totalUsers, activeUsers, todayRaces, activeSubscriptions] =
+      await Promise.all([
+        this.userRepo.count(),
+        this.userRepo.count({ where: { isActive: true } }),
+        this.raceRepo.count({ where: { rcDate: today } }),
+        this.subscriptionRepo.count({
+          where: { status: SubscriptionStatus.ACTIVE },
+        }),
+      ]);
 
     return {
       totalUsers,
       activeUsers,
       todayRaces,
-      todayBets: { count: todayBetsCount, amount: todayBetsAmountSum },
-      totalBets: {
-        count: totalBetsCount,
-        amount: totalBetsAmountSum,
-        winAmount,
-      },
       activeSubscriptions,
     };
   }

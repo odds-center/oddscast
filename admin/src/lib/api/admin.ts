@@ -15,8 +15,6 @@ import type {
   DashboardStats,
   UserListResponse,
   User,
-  BetListResponse,
-  Bet,
   SubscriptionPlan,
   SinglePurchaseConfig,
   UserSubscription,
@@ -119,44 +117,6 @@ export class AdminUsersApi {
         `/users/${id}/grant-tickets`,
         { count, expiresInDays, type },
       );
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-}
-
-/**
- * Bets API
- */
-export class AdminBetsApi {
-  static async getAll(params?: {
-    page?: number;
-    limit?: number;
-    userId?: string;
-    raceId?: string;
-    status?: string;
-  }): Promise<BetListResponse> {
-    try {
-      const response = await axiosInstance.get<BetListResponse>('/bets', { params });
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-
-  static async getOne(id: string): Promise<Bet> {
-    try {
-      const response = await axiosInstance.get<Bet>(`/bets/${id}`);
-      return handleApiResponse(response);
-    } catch (err: unknown) {
-      throw handleApiError(err);
-    }
-  }
-
-  static async updateStatus(id: string, status: string): Promise<Bet> {
-    try {
-      const response = await axiosInstance.patch<Bet>(`/bets/${id}/status`, { status });
       return handleApiResponse(response);
     } catch (err: unknown) {
       throw handleApiError(err);
@@ -611,9 +571,6 @@ export interface SystemConfig {
   consecutive_streak_days: string;
   consecutive_streak_tickets: string;
   consecutive_expires_days: string;
-  referrer_ticket_count: string;
-  referred_ticket_count: string;
-  referral_ticket_expires_days: string;
   matrix_ticket_price: string;
 }
 
@@ -1000,11 +957,11 @@ export class AdminRacesApi {
     meet?: string;
   }): Promise<{
     data: unknown[];
-    meta: { totalPages: number };
+    meta: { totalPages: number; total: number };
   }> {
     try {
       const response = await axiosInstance.get<{
-        data?: { races?: unknown[]; totalPages?: number };
+        data?: { races?: unknown[]; totalPages?: number; total?: number };
       }>('/races', { params });
       const body = response.data;
       const payload = body?.data ?? body;
@@ -1014,6 +971,7 @@ export class AdminRacesApi {
           : [],
         meta: {
           totalPages: (payload as { totalPages?: number })?.totalPages ?? 1,
+          total: (payload as { total?: number })?.total ?? 0,
         },
       };
     } catch (err: unknown) {
@@ -1306,7 +1264,6 @@ export class AdminWeeklyPreviewApi {
 
 export const adminDashboardApi = AdminDashboardApi;
 export const adminUsersApi = AdminUsersApi;
-export const adminBetsApi = AdminBetsApi;
 export const adminSubscriptionsApi = AdminSubscriptionsApi;
 export const adminSinglePurchaseApi = AdminSinglePurchaseApi;
 export const adminAIApi = AdminAIApi;

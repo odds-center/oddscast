@@ -110,8 +110,10 @@ export default function RaceDetailPage() {
     (race as { status?: string; raceStatus?: string })?.raceStatus;
   const rcDate = (race as { rcDate?: string })?.rcDate;
   const stTime = (race as { stTime?: string })?.stTime;
-  // Show as completed (results, 종료) only when server says COMPLETED and race end time has passed.
-  const isRaceCompleted = raceStatus === 'COMPLETED' && isRaceActuallyEnded(rcDate, stTime);
+  // Race is over when server says COMPLETED, OR when start time + buffer has passed (even if results not yet synced).
+  const isServerCompleted = raceStatus === 'COMPLETED';
+  const isTimeElapsed = isRaceActuallyEnded(rcDate, stTime);
+  const isRaceCompleted = isServerCompleted || isTimeElapsed;
 
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
@@ -451,7 +453,11 @@ export default function RaceDetailPage() {
                 <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2'>
                   <Icon name='Target' size={20} className='text-stone-400' />
                 </div>
-                <p className='text-text-secondary text-sm'>이 경주에 대한 AI 예측이 없습니다.</p>
+                <p className='text-text-secondary text-sm'>
+                  {isServerCompleted
+                    ? '이 경주에 대한 AI 예측이 없습니다.'
+                    : '경주가 종료되었습니다. 결과 반영 후 AI 분석이 표시됩니다.'}
+                </p>
               </div>
             ) : (
               <PredictionLockedView
@@ -488,8 +494,16 @@ export default function RaceDetailPage() {
               )}
 
               {!hasResults ? (
-                <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-sm text-text-secondary'>
-                  결과를 불러오는 중이거나 아직 반영되지 않았습니다. 잠시 후 새로고침 해 주세요.
+                <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-text-secondary'>
+                  <p className='text-sm'>결과를 불러오는 중이거나 아직 반영되지 않았습니다.</p>
+                  <button
+                    type='button'
+                    onClick={() => { refetchRace(); }}
+                    className='btn-secondary mt-3 px-4 py-2 text-sm inline-flex items-center gap-1.5'
+                  >
+                    <Icon name='RefreshCw' size={14} />
+                    새로고침
+                  </button>
                 </div>
               ) : (
               <>

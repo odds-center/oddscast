@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Header,
 } from '@nestjs/common';
 import { ResultsService } from './results.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -32,6 +33,7 @@ export class ResultsController {
   constructor(private resultsService: ResultsService) {}
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=60, stale-while-revalidate=120')
   @ApiOperation({ summary: '결과 목록 조회' })
   findAll(@Query() filters: ResultFilterDto) {
     return this.resultsService.findAll(filters);

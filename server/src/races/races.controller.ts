@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Header,
 } from '@nestjs/common';
 import { RacesService } from './races.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -26,12 +27,14 @@ export class RacesController {
   constructor(private racesService: RacesService) {}
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
   @ApiOperation({ summary: '경주 목록 조회' })
   findAll(@Query() filters: RaceFilterDto) {
     return this.racesService.findAll(filters);
   }
 
   @Get('today')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
   @ApiOperation({ summary: '오늘 경주 목록' })
   getTodayRaces() {
     return this.racesService.getTodayRaces();
@@ -44,6 +47,7 @@ export class RacesController {
   }
 
   @Get('schedule')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   @ApiOperation({ summary: '경주 일정 조회' })
   getSchedule(
     @Query('dateFrom') dateFrom?: string,
@@ -74,6 +78,7 @@ export class RacesController {
   }
 
   @Get('calendar')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   @ApiOperation({ summary: '경주 달력' })
   getCalendar(@Query('year') year?: number, @Query('month') month?: number) {
     const dateFrom =
@@ -84,6 +89,7 @@ export class RacesController {
   }
 
   @Get('schedule-dates')
+  @Header('Cache-Control', 'public, max-age=300, stale-while-revalidate=600')
   @ApiOperation({ summary: '경마 시행일 목록 (날짜별·경마장별 경주 수)' })
   getScheduleDates(
     @Query('dateFrom') dateFrom?: string,
@@ -105,6 +111,7 @@ export class RacesController {
   }
 
   @Get(':id')
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=60')
   @ApiOperation({ summary: '경주 상세 조회' })
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.findOne(id);

@@ -1,0 +1,19 @@
+{
+  "name": "OddsCast",
+  "short_name": "OddsCast",
+  "description": "AI 기반 경마 분석 서비스",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0c0c",
+  "theme_color": "#1c1917",
+  "orientation": "portrait",
+  "lang": "ko",
+  "icons": [
+    {
+      "src": "/oddscast-logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

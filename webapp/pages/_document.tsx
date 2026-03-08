@@ -6,12 +6,7 @@ export default function Document() {
       <Head>
         <link rel='icon' type='image/png' href='/oddscast-logo.png' />
         <link rel='apple-touch-icon' href='/oddscast-logo.png' />
-        <link rel='preconnect' href='https://fonts.googleapis.com' />
-        <link rel='preconnect' href='https://fonts.gstatic.com' crossOrigin='anonymous' />
-        <link
-          href='https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Syne:wght@600;700;800&display=swap'
-          rel='stylesheet'
-        />
+        <link rel='manifest' href='/manifest.json' />
       </Head>
       <body className='antialiased'>
         <Main />

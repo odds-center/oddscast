@@ -8,16 +8,31 @@ import {
   HomeQuickStats,
   TodayRacesSection,
   WeekRacesSection,
-  RecentResultsSection,
   RecentRacesSection,
-  PredictionMatrixPreviewSection,
-  RacePredictionsPreviewSection,
-  AllRacesSection,
 } from '@/components/home';
 import { useEffect, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import ResultApi from '@/lib/api/resultApi';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
+
+// Below-fold sections: lazy load to reduce initial bundle
+const RecentResultsSection = dynamic(
+  () => import('@/components/home').then((m) => ({ default: m.RecentResultsSection })),
+  { ssr: false },
+);
+const PredictionMatrixPreviewSection = dynamic(
+  () => import('@/components/home').then((m) => ({ default: m.PredictionMatrixPreviewSection })),
+  { ssr: false },
+);
+const RacePredictionsPreviewSection = dynamic(
+  () => import('@/components/home').then((m) => ({ default: m.RacePredictionsPreviewSection })),
+  { ssr: false },
+);
+const AllRacesSection = dynamic(
+  () => import('@/components/home').then((m) => ({ default: m.AllRacesSection })),
+  { ssr: false },
+);
 
 export default function Home() {
   const [loginError, setLoginError] = useState<string | null>(null);

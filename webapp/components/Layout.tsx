@@ -1,8 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import Head from 'next/head';
 import Link from 'next/link';
+import { useRouter } from 'next/router';
 import Icon, { type IconName } from './icons';
 import { routes } from '@/lib/routes';
+import { CONFIG } from '@/lib/config';
 
 const NAV_POSITION_STORAGE_KEY = 'oddscast_nav_bar_position';
 const NAV_ORIENTATION_STORAGE_KEY = 'oddscast_nav_orientation';
@@ -354,7 +356,22 @@ interface LayoutProps {
 
 const DEFAULT_DESCRIPTION = 'AI 기반 경마 분석 서비스 - 데이터 분석과 인공지능으로 경마를 더 스마트하게';
 
+const WEBAPP_URL = CONFIG.webapp.baseURL;
+
+const JSON_LD_WEBSITE = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: 'OddsCast',
+  url: WEBAPP_URL,
+  description: DEFAULT_DESCRIPTION,
+  inLanguage: 'ko',
+});
+
 const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', description = DEFAULT_DESCRIPTION }) => {
+  const router = useRouter();
+  const canonicalUrl = `${WEBAPP_URL}${router.asPath.split('?')[0]}`;
+  const ogImage = `${WEBAPP_URL}/oddscast-logo.png`;
+
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
       <a
@@ -373,15 +390,19 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', descripti
         <meta name='theme-color' content='#1c1917' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
+        <link rel='canonical' href={canonicalUrl} />
         <meta property='og:title' content={title} />
         <meta property='og:description' content={description} />
-        <meta property='og:image' content='/oddscast-logo.png' />
+        <meta property='og:image' content={ogImage} />
+        <meta property='og:url' content={canonicalUrl} />
         <meta property='og:type' content='website' />
         <meta property='og:locale' content='ko_KR' />
         <meta property='og:site_name' content='OddsCast' />
         <meta name='twitter:card' content='summary' />
         <meta name='twitter:title' content={title} />
         <meta name='twitter:description' content={description} />
+        <meta name='twitter:image' content={ogImage} />
+        <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON_LD_WEBSITE }} />
       </Head>
 
       <main id='main-content' role='main' aria-label='Main content' className='flex-1 w-full min-w-0 min-h-0 overflow-y-auto overflow-x-hidden overscroll-behavior-y-contain flex flex-col lg:max-w-[1200px] mx-auto pl-[max(1rem,env(safe-area-inset-left))] pr-[max(1rem,env(safe-area-inset-right))] pt-0 lg:pl-[max(2rem,env(safe-area-inset-left))] lg:pr-[max(2rem,env(safe-area-inset-right))] lg:pt-6'>

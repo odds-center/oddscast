@@ -13,20 +13,21 @@ import json
 import math
 
 # ─── 말+기수 통합 가중치 (합 = 1.0) ───
-# v3: 11 factors (v2 7요소 재배분 + 4 신규 factors)
+# v3.1: 12 factors (v3 + same_day_fatigue)
 # jockey: entry.jockeyMeetWinRate / jockeyMeetQuRate 사용 (Python 직접 반영)
 W_HORSE = {
-    'rating': 0.23,
-    'form': 0.20,
+    'rating': 0.22,
+    'form': 0.19,
     'condition': 0.10,
     'experience': 0.06,
     'suitability': 0.07,
     'trainer': 0.07,
     'jockey': 0.09,
-    'rest': 0.05,
+    'rest': 0.04,
     'distance': 0.06,
     'class_change': 0.03,
     'training_readiness': 0.04,
+    'same_day_fatigue': 0.03,
 }
 
 
@@ -400,6 +401,39 @@ def _training_readiness_score(entry):
     return round(min(100, max(0, score)), 2)
 
 
+def _same_day_fatigue_score(entry):
+    """Same-day multi-race fatigue → 0~100.
+    A horse running multiple races on the same day fatigues progressively.
+    Weight change between races compounds the effect."""
+    races_before = entry.get("sameDayRacesBefore")
+    if not races_before or int(races_before) == 0:
+        return 50.0  # no prior race today → neutral
+
+    races_before = int(races_before)
+    hours_gap = entry.get("hoursSinceLastSameDayRace")
+
+    # Base penalty by number of prior races today
+    if races_before >= 3:
+        score = 10.0  # 4th+ race of the day — severe fatigue
+    elif races_before == 2:
+        score = 20.0  # 3rd race
+    else:
+        score = 30.0  # 2nd race
+
+    # Recovery bonus by hours gap (longer gap = slightly better)
+    if hours_gap is not None:
+        hours_gap = float(hours_gap)
+        if hours_gap >= 5:
+            score += 12  # decent recovery
+        elif hours_gap >= 4:
+            score += 8
+        elif hours_gap >= 3:
+            score += 5
+        # < 3 hours: no recovery bonus
+
+    return round(min(100, max(0, score)), 2)
+
+
 def _fall_risk_score(entry, jockey_rc_cnt=0):
     """낙마 리스크 (0~100)."""
     risk = 0.0
@@ -522,6 +556,11 @@ def _build_tags(entry, rating, recent_ranks, total_runs, total_wins,
     elif cc == "up":
         tags.append("등급↑불리")
 
+    # v3: same-day fatigue
+    same_day = entry.get("sameDayRacesBefore")
+    if same_day and int(same_day) > 0:
+        tags.append(f"당일{int(same_day)+1}번째출전")
+
     # v3: distance fit
     if dist_val >= 70:
         tags.append("거리적합◎")
@@ -594,6 +633,7 @@ def calculate_score(data):
             dst = _distance_score(e)
             cls = _class_change_score(e)
             trng = _training_readiness_score(e)
+            sdf = _same_day_fatigue_score(e)
 
             composite = (
                 rat * W_HORSE['rating']
@@ -607,6 +647,7 @@ def calculate_score(data):
                 + dst * W_HORSE['distance']
                 + cls * W_HORSE['class_change']
                 + trng * W_HORSE['training_readiness']
+                + sdf * W_HORSE['same_day_fatigue']
             )
 
             fall_risk = _fall_risk_score(e)
@@ -641,6 +682,7 @@ def calculate_score(data):
                     'rat': rat, 'frm': frm, 'cnd': cnd,
                     'exp': exp, 'trn': trn, 'suit': suit, 'jky': jky,
                     'rest': rst, 'dist': dst, 'cls': cls, 'trng': trng,
+                    'sdf': sdf,
                 },
                 'risk': fall_risk,
                 'recentRanks': recent_ranks[:5],

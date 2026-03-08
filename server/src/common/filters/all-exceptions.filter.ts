@@ -4,13 +4,19 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  Inject,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as Sentry from '@sentry/node';
 import { appLogger } from '../logger/winston.config';
+import { DiscordService } from '../../discord/discord.service';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
+  constructor(
+    @Inject(DiscordService) private readonly discordService: DiscordService,
+  ) {}
+
   catch(exception: unknown, host: ArgumentsHost): void {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
@@ -51,6 +57,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
           extra: logMeta,
         });
       }
+
+      // Discord notification for server errors (fire-and-forget)
+      this.discordService
+        .notifyError(
+          request.method,
+          request.url,
+          status,
+          errorMessage,
+          exception instanceof Error ? exception.stack : undefined,
+        )
+        .catch(() => {});
     } else if (status >= 400) {
       appLogger.warn(`[${request.method}] ${request.url} → ${status} ${errorMessage}`);
     }

@@ -19,6 +19,7 @@ import { PointsService } from '../points/points.service';
 import { GlobalConfigService } from '../config/config.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
+import { DiscordService } from '../discord/discord.service';
 import { dateToKstDash, kst, yesterdayKstDash } from '../common/utils/kst';
 
 export interface LoginBonusResult {
@@ -70,6 +71,7 @@ export class AuthService {
     private readonly pointsService: PointsService,
     private readonly globalConfig: GlobalConfigService,
     private readonly mailService: MailService,
+    private readonly discordService: DiscordService,
   ) {}
 
   async register(dto: RegisterDto) {
@@ -154,6 +156,12 @@ export class AuthService {
           `[Auth] Signup bonus ticket grant failed for user ${userId}: ${msg}`,
         );
       }
+    }
+
+    // Discord notification (fire-and-forget)
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (user) {
+      this.discordService.notifySignup(user.email, user.nickname ?? undefined).catch(() => {});
     }
   }
 

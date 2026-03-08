@@ -12,6 +12,7 @@ export interface RaceForPython {
   rank?: string | null;
   rcCondition?: string | null;
   rcPrize?: number | null;
+  stTime?: string | null;
   weather?: string | null;
   track?: string | null;
   entries?: RaceEntryForAnalysis[];
@@ -72,6 +73,10 @@ export interface RaceEntryForAnalysis {
   classChange?: string | null;
   /** Number of class levels changed (positive = up, negative = down) */
   classChangeLevel?: number | null;
+  /** Number of races this horse has ALREADY run earlier today (same rcDate + meet) */
+  sameDayRacesBefore?: number | null;
+  /** Approximate hours since the horse's last same-day race */
+  hoursSinceLastSameDayRace?: number | null;
   /** Structured training metrics from trainings table */
   trainingMetrics?: {
     sessionCount: number;
@@ -107,6 +112,7 @@ export interface HorseAnalysisItem {
     dist?: number;
     cls?: number;
     trng?: number;
+    sdf?: number;
   };
   /** 낙마 리스크 (0~100) */
   risk?: number;

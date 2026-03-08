@@ -66,8 +66,8 @@ const BET_TYPE_LABELS: Record<string, string> = {
   SINGLE: '단승', PLACE: '연승', QUINELLA: '복승',
   EXACTA: '쌍승', QUINELLA_PLACE: '복연승', TRIFECTA: '삼복승', TRIPLE: '삼쌍승',
 };
-// Compact view: 4 key bet types only (fits without horizontal scroll)
-const BET_TYPE_ORDER_COMPACT = ['SINGLE', 'QUINELLA', 'TRIFECTA', 'TRIPLE'];
+// Compact view: all 7 bet types
+const BET_TYPE_ORDER_COMPACT = ['SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'];
 
 type ViewMode = 'detail' | 'compact';
 
@@ -170,69 +170,73 @@ export default function PredictionMatrixTable({
           </>
         )}
 
-        {/* Compact view: card-per-race, 4 key bet types, no horizontal scroll */}
+        {/* Compact view: card-per-race, all 7 bet types */}
         {viewMode === 'compact' && (
           <div className='rounded-xl border border-border bg-card shadow-sm overflow-hidden'>
-            {/* Header */}
-            <div className='bg-[#1c1917] grid text-stone-300 text-[11px] font-semibold' style={{ gridTemplateColumns: '72px 1fr 1fr 1fr 1fr' }}>
-              <div className='py-2 px-3'>경주</div>
-              {BET_TYPE_ORDER_COMPACT.map((key) => (
-                <div key={key} className='py-2 px-1 text-center'>{BET_TYPE_LABELS[key]}</div>
-              ))}
-            </div>
-            {/* Rows */}
-            {raceMatrix.map((row, idx) => {
-              const entries = (row.entries ?? []).map((e) => ({ hrNo: e.hrNo, hrName: e.hrName, chulNo: e.chulNo }));
-              const derived = row.horseScores?.length
-                ? deriveFromHorseScores(row.horseScores, entries)
-                : {};
-              return (
-                <div
-                  key={row.raceId}
-                  className={`grid border-b border-stone-100 last:border-0 items-center text-xs ${idx % 2 === 1 ? 'bg-stone-50/40' : ''}`}
-                  style={{ gridTemplateColumns: '72px 1fr 1fr 1fr 1fr' }}
-                >
-                  {/* Race */}
-                  <Link href={routes.races.detail(row.raceId)} className='py-2.5 px-3 hover:text-primary transition-colors'>
-                    <div className='font-bold text-foreground text-sm'>{row.rcNo}R</div>
-                    <div className='text-stone-400 text-[10px]'>{row.meetName ?? row.meet}</div>
-                  </Link>
-                  {/* Bet type cells */}
-                  {BET_TYPE_ORDER_COMPACT.map((key) => {
-                    const pred = derived[key as keyof typeof derived];
-                    const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
-                    const topNodes = nodesList[0];
-                    return (
-                      <div key={key} className='py-2 px-1 text-center'>
-                        {topNodes ? (
-                          <span className='inline-flex items-center justify-center gap-0.5 flex-wrap font-semibold text-foreground'>
-                            {topNodes.numbers.map((num, i) => {
-                              const e = entries.find((x) => x.hrNo === num || x.chulNo === num);
-                              const display = e?.chulNo ?? num;
-                              return (
-                                <span key={i} className='inline-flex items-center gap-0.5'>
-                                  <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>
-                                    {display}
-                                  </span>
-                                  {i < topNodes.numbers.length - 1 && (
-                                    <span className='text-stone-300 text-[10px]'>{topNodes.ordered ? '→' : '-'}</span>
-                                  )}
-                                </span>
-                              );
-                            })}
-                          </span>
-                        ) : (
-                          <span className='text-stone-300'>-</span>
-                        )}
-                      </div>
-                    );
-                  })}
+            <div className='overflow-x-auto'>
+              <div style={{ minWidth: '640px' }}>
+                {/* Header */}
+                <div className='bg-[#1c1917] grid text-stone-300 text-[11px] font-semibold' style={{ gridTemplateColumns: '68px repeat(7, 1fr)' }}>
+                  <div className='py-2 px-3'>경주</div>
+                  {BET_TYPE_ORDER_COMPACT.map((key) => (
+                    <div key={key} className='py-2 px-0.5 text-center'>{BET_TYPE_LABELS[key]}</div>
+                  ))}
                 </div>
-              );
-            })}
-            {raceMatrix.length === 0 && (
-              <p className='text-stone-400 text-sm text-center py-8'>예상 정보가 없습니다</p>
-            )}
+                {/* Rows */}
+                {raceMatrix.map((row, idx) => {
+                  const entries = (row.entries ?? []).map((e) => ({ hrNo: e.hrNo, hrName: e.hrName, chulNo: e.chulNo }));
+                  const derived = row.horseScores?.length
+                    ? deriveFromHorseScores(row.horseScores, entries)
+                    : {};
+                  return (
+                    <div
+                      key={row.raceId}
+                      className={`grid border-b border-stone-100 last:border-0 items-center text-xs ${idx % 2 === 1 ? 'bg-stone-50/40' : ''}`}
+                      style={{ gridTemplateColumns: '68px repeat(7, 1fr)' }}
+                    >
+                      {/* Race */}
+                      <Link href={routes.races.detail(row.raceId)} className='py-2.5 px-3 hover:text-primary transition-colors'>
+                        <div className='font-bold text-foreground text-sm'>{row.rcNo}R</div>
+                        <div className='text-stone-400 text-[10px]'>{row.meetName ?? row.meet}</div>
+                      </Link>
+                      {/* Bet type cells */}
+                      {BET_TYPE_ORDER_COMPACT.map((key) => {
+                        const pred = derived[key as keyof typeof derived];
+                        const nodesList = pred ? predToDisplayNodesList(pred, entries) : [];
+                        const topNodes = nodesList[0];
+                        return (
+                          <div key={key} className='py-2 px-0.5 text-center'>
+                            {topNodes ? (
+                              <span className='inline-flex items-center justify-center gap-0.5 flex-wrap font-semibold text-foreground'>
+                                {topNodes.numbers.map((num, i) => {
+                                  const e = entries.find((x) => x.hrNo === num || x.chulNo === num);
+                                  const display = e?.chulNo ?? num;
+                                  return (
+                                    <span key={i} className='inline-flex items-center gap-0.5'>
+                                      <span className='inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold'>
+                                        {display}
+                                      </span>
+                                      {i < topNodes.numbers.length - 1 && (
+                                        <span className='text-stone-300 text-[10px]'>{topNodes.ordered ? '→' : '-'}</span>
+                                      )}
+                                    </span>
+                                  );
+                                })}
+                              </span>
+                            ) : (
+                              <span className='text-stone-300'>-</span>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+                {raceMatrix.length === 0 && (
+                  <p className='text-stone-400 text-sm text-center py-8'>예상 정보가 없습니다</p>
+                )}
+              </div>
+            </div>
           </div>
         )}
 

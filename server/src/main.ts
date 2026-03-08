@@ -5,7 +5,6 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/winston.config';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -34,9 +33,6 @@ async function bootstrap() {
     origin: true,
     credentials: true,
   });
-
-  // Global exception filter — logs to file + Sentry
-  app.useGlobalFilters(new AllExceptionsFilter());
 
   // Global validation pipe
   app.useGlobalPipes(

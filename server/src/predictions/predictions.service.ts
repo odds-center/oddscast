@@ -1183,9 +1183,12 @@ AI 예측 순위: ${predictedTop || '-'}
     // 3c-3. 조교 데이터 구조화 — trainings 테이블에서 최근 14일 메트릭 추출
     const raceWithTraining =
       await this.enrichEntriesWithTrainingMetrics(raceWithJockey);
+    // 3c-4. 당일 복수 출전 피로도 감지 — 같은 날 이전 경주 출전 여부 확인
+    const raceWithFatigue =
+      await this.enrichEntriesWithSameDayFatigue(raceWithTraining);
     // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
     const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceWithTraining,
+      raceWithFatigue,
       sectionalByHorse,
     );
 
@@ -2010,6 +2013,81 @@ AI 예측 순위: ${predictedTop || '-'}
     return { ...race, entries: enrichedEntries };
   }
 
+  /**
+   * Detect same-day multi-race fatigue.
+   * If a horse has already run in earlier races today, add fatigue fields.
+   */
+  private async enrichEntriesWithSameDayFatigue(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+    const rcDate = race.rcDate ?? '';
+    const meet = race.meet ?? '';
+    const currentRcNo = parseInt(race.rcNo ?? '0', 10);
+    if (!rcDate || !meet || currentRcNo <= 1) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+
+    // Find all earlier races on the same date + meet that these horses appeared in
+    const earlierEntries = await this.entryRepo
+      .createQueryBuilder('e')
+      .innerJoin('e.race', 'r')
+      .select(['e.hrNo', 'r.rcNo', 'r.stTime'])
+      .where('r.rcDate = :rcDate', { rcDate })
+      .andWhere('r.meet = :meet', { meet })
+      .andWhere('CAST(r.rcNo AS integer) < :currentRcNo', { currentRcNo })
+      .andWhere('e.hrNo IN (:...hrNos)', { hrNos })
+      .orderBy('CAST(r.rcNo AS integer)', 'ASC')
+      .getRawMany();
+
+    if (!earlierEntries.length) return race;
+
+    // Group by hrNo: count + latest stTime
+    const byHorse = new Map<string, { count: number; lastStTime: string | null }>();
+    for (const row of earlierEntries) {
+      const hrNo = row.e_hrNo ?? row.hrNo;
+      const stTime = row.r_stTime ?? row.stTime ?? null;
+      const cur = byHorse.get(hrNo) ?? { count: 0, lastStTime: null };
+      cur.count += 1;
+      cur.lastStTime = stTime; // sorted ASC, last iteration = latest earlier race
+      byHorse.set(hrNo, cur);
+    }
+
+    // Parse stTime "HH:mm" to minutes from midnight
+    const parseTime = (t: string | null): number | null => {
+      if (!t || !t.includes(':')) return null;
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const currentStMinutes = parseTime(race.stTime as string | null ?? null);
+
+    const enrichedEntries = entries.map((e) => {
+      const info = byHorse.get(e.hrNo);
+      if (!info) return e;
+
+      let hoursSinceLastSameDayRace: number | null = null;
+      if (currentStMinutes != null) {
+        const lastMinutes = parseTime(info.lastStTime);
+        if (lastMinutes != null && currentStMinutes > lastMinutes) {
+          hoursSinceLastSameDayRace = Math.round(
+            ((currentStMinutes - lastMinutes) / 60) * 10,
+          ) / 10;
+        }
+      }
+
+      return {
+        ...e,
+        sameDayRacesBefore: info.count,
+        hoursSinceLastSameDayRace,
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
   private dateToYyyymmdd(d: Date): string {
     const y = d.getFullYear();
     const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -2392,6 +2470,7 @@ AI 예측 순위: ${predictedTop || '-'}
           hs.sub.dist ?? 0,
           hs.sub.cls ?? 0,
           hs.sub.trng ?? 0,
+          hs.sub.sdf ?? 0,
         ];
       }
       if (entry?.rating != null) compact.r = entry.rating;
@@ -2424,20 +2503,28 @@ AI 예측 순위: ${predictedTop || '-'}
     const weightH = Math.round(wH * 100);
     const weightJ = Math.round(wJ * 100);
 
-    return `한국경마 AI 예측분석가. Python 통계분석(정규화 0~100) 기반 승부예측. 데이터 없으면 "미확인".
+    return `한국경마 AI 예측분석가. Python 통계분석(정규화 0~100) + 주관적 전문가 시각으로 승부예측. 데이터 없으면 "미확인".
 가중치: 말${weightH}/기수${weightJ}${topJ ? ` | 기수1위:${topJ.hrName}(${topJ.jkName})` : ''}
 
 ## 경주
 ${JSON.stringify(raceCtx)}
 
-## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도,기수,휴식,거리,등급,조교],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
+## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도,기수,휴식,거리,등급,조교,당일피로],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
 ${JSON.stringify(compactEntries)}
 
+## 분석 방침
+- 숫자 데이터만으로 판단하지 말고, 경마 전문가로서 주관적·정성적 분석을 반드시 포함할 것.
+- 고려 요소: 기수-마필 궁합, 경주 페이스 전개(선행마 많으면 추입마 유리 등), 주로 바이어스(내측/외측 유불리), 날씨·기온 변화가 특정 마필에 미치는 영향, 마필 기질·성격(신경질적 여부, 좌회전/우회전 선호).
+- 당일 다경주 출전마(sdf 태그)는 체중감소·피로 누적으로 후반경주 성적 저하 가능성을 반영.
+- 클래스 승급마는 상위 경쟁력 부족 가능성, 강등마는 상대적 우위 가능성을 주관적으로 평가.
+- 승식 예측 시 단순 점수 순위가 아닌, 레이스 흐름·변수·이변 가능성을 고려한 조합 추천.
+
 ## 규칙
-- reason/strengths/weaknesses: sub 11요소+risk 수치 근거. 같은 표현 금지.
+- reason/strengths/weaknesses: sub 12요소+risk 수치 근거 + 주관적 판단 포함. 같은 표현 금지.
 - risk30+→weaknesses에 낙마위험 언급. cascade(경주정보)20+→analysis에 연쇄낙마 가능성.
-- strengths: 강점 1~2개. weaknesses: 약점/리스크 1개.
-- analysis: 날씨·주로·거리·후보·각질·변수 5~8문장. preview: 2~3문장(단승식 1등예상마만, 다른승식 금지).
+- strengths: 강점 1~2개(데이터+주관). weaknesses: 약점/리스크 1개.
+- analysis: 날씨·주로·거리·페이스전개·각질·기수전략·이변가능성 등 전문가 시각 6~10문장. 숫자 나열 금지, 서사적 분석.
+- preview: 핵심 승부 포인트 2~3문장(단승식 1등예상마만, 다른승식 금지).
 - 7승식 모두 출력. hrNo=n값.
 
 ## 출력(JSON만)

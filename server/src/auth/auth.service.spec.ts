@@ -18,6 +18,7 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { PointsService } from '../points/points.service';
 import { GlobalConfigService } from '../config/config.service';
 import { MailService } from '../mail/mail.service';
+import { DiscordService } from '../discord/discord.service';
 import {
   createMockRepository,
   createMockJwtService,
@@ -53,6 +54,10 @@ describe('AuthService', () => {
   const mockMailService = {
     sendVerificationCode: jest.fn().mockResolvedValue({ success: true }),
   };
+  const mockDiscordService = {
+    notifySignup: jest.fn().mockResolvedValue(undefined),
+    notifyError: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -79,6 +84,7 @@ describe('AuthService', () => {
         { provide: PointsService, useValue: mockPointsService },
         { provide: GlobalConfigService, useValue: mockGlobalConfigService },
         { provide: MailService, useValue: mockMailService },
+        { provide: DiscordService, useValue: mockDiscordService },
       ],
     }).compile();
 

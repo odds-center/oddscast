@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD, APP_INTERCEPTOR, APP_FILTER } from '@nestjs/core';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
@@ -41,6 +41,7 @@ import {
   RaceDividend,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 
 // Feature modules
 import { AuthModule } from './auth/auth.module';
@@ -71,6 +72,7 @@ import { HealthModule } from './health/health.module';
 import { CacheModule } from './cache/cache.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { MailModule } from './mail/mail.module';
+import { DiscordModule } from './discord/discord.module';
 
 @Module({
   imports: [
@@ -126,6 +128,7 @@ import { MailModule } from './mail/mail.module';
       inject: [ConfigService],
     }),
     MailModule, // Resend email (global)
+    DiscordModule, // Discord webhook notifications (global)
     HealthModule, // nginx/LB 헬스체크 — /health
     CacheModule, // Redis(선택) / 인메모리 캐시
 
@@ -167,6 +170,10 @@ import { MailModule } from './mail/mail.module';
     {
       provide: APP_INTERCEPTOR,
       useClass: ResponseInterceptor,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: AllExceptionsFilter,
     },
   ],
 })

@@ -30,7 +30,7 @@ export default function PredictionAccuracyPage() {
   const byMeet = stats?.byMeet ?? [];
 
   return (
-    <Layout title='예측 정확도 | OddsCast'>
+    <Layout title='예측 정확도 | OddsCast' description='OddsCast AI 예측의 적중률과 정확도 통계를 경마장별, 월별로 확인하세요.'>
       <CompactPageTitle
         title='예측 정확도'
         backHref={routes.predictions.matrix}

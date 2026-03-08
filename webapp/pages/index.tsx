@@ -38,7 +38,7 @@ export default function Home() {
   };
 
   return (
-    <Layout title='OddsCast'>
+    <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 정확도 통계를 제공합니다.'>
       {/* Hero banner */}
       <DateHeader />
 

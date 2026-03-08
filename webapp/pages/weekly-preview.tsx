@@ -36,7 +36,7 @@ export default function WeeklyPreviewPage() {
   const hasContent = content && (content.highlights || (content.horsesToWatch && content.horsesToWatch.length > 0) || content.trackConditions);
 
   return (
-    <Layout title='주간 프리뷰 | OddsCast'>
+    <Layout title='주간 프리뷰 | OddsCast' description='이번 주 주요 경주 프리뷰와 AI 분석 하이라이트.'>
       <CompactPageTitle title='주간 프리뷰' backHref={routes.home} />
       <p className='text-sm text-text-secondary mb-4'>
         이번 주말(금·토·일) 경주 요약과 주목할 포인트입니다. 매주 목요일 저녁에 자동 생성됩니다.

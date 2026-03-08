@@ -181,7 +181,7 @@ export default function RacesPage() {
   }
 
   return (
-    <Layout title='경주 | OddsCast'>
+    <Layout title='경주 | OddsCast' description='서울, 부산, 제주 경마장 경주 일정과 출전마 정보를 확인하세요.'>
       <CompactPageTitle title='경주' backHref={routes.home} />
       <FilterDateBar
         filterOptions={[

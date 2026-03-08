@@ -161,7 +161,7 @@ export default function PredictionMatrixPage() {
   }, [matrixData]);
 
   return (
-    <Layout title='종합 예상 | OddsCast'>
+    <Layout title='종합 예상 | OddsCast' description='AI가 분석한 당일 전 경주 종합 예상표. 7가지 승식별 추천마를 한눈에 확인하세요.'>
       <CompactPageTitle title='일일 종합 가이드' backHref={routes.home} />
       <div className='mb-2 flex justify-end'>
         <Link

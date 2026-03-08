@@ -1,0 +1,54 @@
+# Daily PostgreSQL backup for production DB.
+# Runs at 03:00 KST (UTC 18:00) every day.
+#
+# Required GitHub Secrets:
+#   PROD_DATABASE_URL  - Railway PostgreSQL connection string
+#
+# Backups are stored as GitHub Artifacts (90-day retention).
+# See: docs/guides/DB_BACKUP.md
+
+name: DB Backup
+
+on:
+  schedule:
+    - cron: '0 18 * * *'  # 03:00 KST (UTC+9)
+  workflow_dispatch:       # manual trigger
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y postgresql-client
+
+      - name: Run pg_dump
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "Error: PROD_DATABASE_URL secret is not set" >&2
+            exit 1
+          fi
+          mkdir -p /tmp/backups
+          FILENAME="oddscast_$(date +%Y%m%d_%H%M%S).dump"
+          pg_dump "$DATABASE_URL" -Fc -f "/tmp/backups/$FILENAME"
+          echo "BACKUP_FILENAME=$FILENAME" >> "$GITHUB_ENV"
+          SIZE=$(du -sh "/tmp/backups/$FILENAME" | cut -f1)
+          echo "Backup created: $FILENAME ($SIZE)"
+
+      - name: Upload to GitHub Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ github.run_number }}-${{ github.run_attempt }}
+          path: /tmp/backups/*.dump
+          retention-days: 90
+
+      - name: Notify success
+        if: success()
+        run: echo "Backup completed successfully: $BACKUP_FILENAME"
+
+      - name: Notify failure
+        if: failure()
+        run: echo "::error::DB backup failed. Check logs above."

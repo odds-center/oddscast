@@ -3,7 +3,7 @@
 > 프로덕션 PostgreSQL 일일 백업 자동화 시 참고.  
 > **관련:** [TODO_CONTINUE.md](../TODO_CONTINUE.md) §1 배포·인프라, §5 추천 순서
 
-**Last updated:** 2026-02-24
+**Last updated:** 2026-03-08
 
 ---
 
@@ -50,23 +50,39 @@ echo "Backup: $FILE"
 
 ---
 
-## 3. 자동화 (cron / GitHub Actions)
+## 3. 자동화 (GitHub Actions — 구현됨)
 
-### 3.1 서버 cron (Railway/EC2 등)
+`.github/workflows/db-backup.yml`으로 **매일 03:00 KST 자동 실행**. `workflow_dispatch`로 수동 트리거도 가능.
 
-- 매일 새벽 실행: cron에서 `pg_dump $DATABASE_URL -Fc -f /path/to/backups/oddscast_$(date +\%Y\%m\%d).dump` 등으로 실행
-- 덤프 파일을 외부 스토리지(S3, Railway Volume)에 복사하도록 스크립트 확장.
+### 3.1 GitHub Secret 설정 (필수)
 
-### 3.2 GitHub Actions (스케줄)
+GitHub 저장소 → Settings → Secrets and variables → Actions:
 
-- **주의:** 프로덕션 `DATABASE_URL`을 GitHub Secrets에 두면 보안 위험. 가능하면 백업 전용 DB 사용자(읽기 위주)를 두고 URL만 저장.
-- `schedule: cron('0 18 * * *')` (UTC 18:00 = 한국 03:00) 등으로 workflow 실행.
-- workflow 내에서 `pg_dump` 가능한 runner가 없으므로, **백업 전용 작은 서버/함수**에서 `pg_dump` 실행 후 S3 등에 업로드하는 구성을 권장.
+| Secret | 설명 |
+|--------|------|
+| `PROD_DATABASE_URL` | Railway PostgreSQL 연결 문자열 |
 
-### 3.3 호스팅 제공 백업
+### 3.2 백업 저장소
 
-- **Railway:** PostgreSQL add-on은 스냅샷/백업 기능이 있을 수 있음. Dashboard에서 확인.
-- **Supabase / Neon 등:** 자체 백업·PITR 정책 확인.
+- **GitHub Artifacts**: 90일 보관. 별도 설정 없이 바로 동작.
+
+### 3.3 수동 백업 스크립트
+
+```bash
+# server/.env에서 DATABASE_URL 로드 후 실행
+cd server && export $(grep -v '^#' .env | xargs) && cd ..
+./scripts/db-backup.sh ./backups
+```
+
+### 3.4 복원
+
+```bash
+pg_restore -d "$DATABASE_URL" --no-owner backup.dump
+```
+
+### 3.5 호스팅 제공 백업
+
+- **Railway:** PostgreSQL Dashboard → Backups 탭에서 자동 스냅샷 확인 (플랜별 상이).
 
 ---
 
@@ -74,9 +90,7 @@ echo "Backup: $FILE"
 
 | 항목 | 상태 | 비고 |
 |------|------|------|
-| pg_dump 로컬 테스트 | □ | DATABASE_URL 설정 후 pg_dump $DATABASE_URL -Fc -f ./backup.dump |
-| 백업 저장 경로 결정 | □ | S3 / Volume / 로컬 |
-| cron 또는 스케줄러 등록 | □ | 일일 1회 권장 |
-| 복원 테스트 | □ | 별도 DB에 pg_restore로 확인 |
-
-설정 후 [TODO_CONTINUE.md](../TODO_CONTINUE.md) §1·§5에서 "DB 백업" 항목 상태를 갱신하면 됩니다.
+| GitHub Secret `PROD_DATABASE_URL` 등록 | □ | Railway DB URL 복사 후 등록 |
+| 워크플로우 첫 실행 확인 | □ | Actions 탭 → DB Backup → Run workflow |
+| Artifact 다운로드 테스트 | □ | 실행 후 Artifacts에서 `.dump` 파일 확인 |
+| 복원 테스트 | □ | 로컬 DB에 `pg_restore`로 확인 |

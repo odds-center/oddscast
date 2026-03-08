@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-08 (Sentry 에러 모니터링 동작 확인, CD 파이프라인 자동 배포 확인, 예측 정확도 개선 — 기수 가중치 추가/softmax T 하향, 날짜별 매트릭스 배치 생성)
+**Last updated:** 2026-03-08 (DB 백업 자동화 — GitHub Actions 스케줄 워크플로우 + 수동 스크립트 추가)
 
 ---
 
@@ -55,7 +55,7 @@
 |------|------|------|------|
 | 1 | **Railway 배포** | ✅ 완료 | Server + DB Railway 배포 완료. KRA 데이터 적재, 어드민 계정 설정 완료. |
 | 2 | **CD 파이프라인** | ✅ 완료 | `.github/workflows/deploy.yml` + `RAILWAY_TOKEN` 설정 완료. push 시 자동 배포 동작 확인. |
-| 3 | **DB 백업** | 가이드 추가 | [guides/DB_BACKUP.md](guides/DB_BACKUP.md). pg_dump 수동 실행 또는 cron 연동은 환경별 적용 |
+| 3 | **DB 백업** | ✅ 완료 | `.github/workflows/db-backup.yml` — 매일 03:00 KST `pg_dump` → GitHub Artifacts(90일). GitHub Secret `PROD_DATABASE_URL` 등록 필요. S3 선택적. [guides/DB_BACKUP.md](guides/DB_BACKUP.md) |
 | 4 | **앱 스토어** | 중기 | iOS / Google Play 출시 (필요 시 별도 체크리스트) |
 
 ---

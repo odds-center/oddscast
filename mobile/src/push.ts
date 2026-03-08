@@ -5,6 +5,12 @@
 
 export type LastNotificationData = { deepLink?: string; [key: string]: unknown } | null;
 
+/** Firebase remote message shape (minimal) */
+export interface RemoteMessage {
+  notification?: { title?: string; body?: string };
+  data?: Record<string, unknown>;
+}
+
 /**
  * Request permission and return FCM token, or null if unavailable.
  */
@@ -38,13 +44,21 @@ export async function getLastNotificationData(): Promise<LastNotificationData> {
 }
 
 /**
- * Set foreground handler so notifications show in-app.
+ * Set foreground handler so notifications can be shown in-app.
+ * Receives the full remote message including notification title/body and data.
  */
-export function setForegroundHandler(handler: (data: Record<string, unknown>) => void): () => void {
-  let unsubscribe: (() => void) | null = null;
+export function setForegroundHandler(
+  handler: (message: RemoteMessage) => void,
+): (() => void) | undefined {
+  let unsubscribe: (() => void) | undefined;
   import('@react-native-firebase/messaging').then(({ default: messaging }) => {
     unsubscribe = messaging().onMessage(async (remoteMessage) => {
-      handler((remoteMessage.data ?? {}) as Record<string, unknown>);
+      handler({
+        notification: remoteMessage.notification
+          ? { title: remoteMessage.notification.title, body: remoteMessage.notification.body }
+          : undefined,
+        data: (remoteMessage.data ?? {}) as Record<string, unknown>,
+      });
     });
   });
   return () => {

@@ -4,6 +4,13 @@ apply plugin: "com.facebook.react"
 
 apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
 
+// react-native-config: reads ENVFILE (.env / .env.dev / .env.prod)
+project.ext.envConfigFiles = [
+    debug: ".env",
+    release: ".env.prod",
+]
+apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
+
 def projectRoot = rootDir.getAbsoluteFile().getParentFile().getAbsolutePath()
 
 /**

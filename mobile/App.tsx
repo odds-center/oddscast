@@ -21,7 +21,13 @@ const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
   return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: 'none',
+        gestureEnabled: false,
+      }}
+    >
       <Stack.Screen name="Index" component={IndexScreen} />
       <Stack.Screen name="Webview" component={WebAppScreen} />
       <Stack.Screen name="NotFound" component={NotFoundScreen} />
@@ -35,7 +41,7 @@ function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <StatusBar barStyle="auto" />
+        <StatusBar barStyle="light-content" backgroundColor="#0c0c0c" />
         <RootNavigator />
       </ThemeProvider>
     </GestureHandlerRootView>

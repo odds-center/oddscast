@@ -16,7 +16,7 @@ export default function NotFoundScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>존재하지 않는 화면입니다.</Text>
       <TouchableOpacity
-        onPress={() => navigation.replace('Webview' as never)}
+        onPress={() => navigation.replace('Webview', {})}
         style={styles.link}
       >
         <Text style={styles.linkText}>홈으로 이동</Text>

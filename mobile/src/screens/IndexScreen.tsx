@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { View, ActivityIndicator } from 'react-native';
+import { View, Image, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { getLastNotificationData } from '../push';
@@ -11,7 +11,8 @@ type RootStackParamList = {
 };
 
 export default function IndexScreen() {
-  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList, 'Index'>>();
+  const navigation =
+    useNavigation<NativeStackNavigationProp<RootStackParamList, 'Index'>>();
   const done = useRef(false);
 
   useEffect(() => {
@@ -26,12 +27,12 @@ export default function IndexScreen() {
         if (deepLink) {
           navigation.replace('Webview', { initialUrl: deepLink });
         } else {
-          navigation.replace('Webview' as never);
+          navigation.replace('Webview', {});
         }
       } catch {
         if (!cancelled) {
           done.current = true;
-          navigation.replace('Webview' as never);
+          navigation.replace('Webview', {});
         }
       }
     })();
@@ -40,16 +41,27 @@ export default function IndexScreen() {
     };
   }, [navigation]);
 
+  // Show branded splash that matches the native splash screen (seamless transition)
   return (
-    <View
-      style={{
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#0c0c0c',
-      }}
-    >
-      <ActivityIndicator size="large" color="#FFD700" />
+    <View style={styles.container}>
+      <Image
+        source={require('../../assets/images/splash-icon.png')}
+        style={styles.logo}
+        resizeMode="contain"
+      />
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#0c0c0c',
+  },
+  logo: {
+    width: 120,
+    height: 120,
+  },
+});

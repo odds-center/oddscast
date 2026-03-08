@@ -185,8 +185,8 @@ export default function PredictionMatrixTable({
                 {/* Rows */}
                 {raceMatrix.map((row, idx) => {
                   const entries = (row.entries ?? []).map((e) => ({ hrNo: e.hrNo, hrName: e.hrName, chulNo: e.chulNo }));
-                  const derived = row.horseScores?.length
-                    ? deriveFromHorseScores(row.horseScores, entries)
+                  const derived = row.horseScores?.length || entries.length
+                    ? deriveFromHorseScores(row.horseScores ?? [], entries)
                     : {};
                   return (
                     <div

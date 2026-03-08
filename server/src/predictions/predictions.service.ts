@@ -861,10 +861,11 @@ AI 예측 순위: ${predictedTop || '-'}
     }> = [];
 
     for (const race of races) {
+      // Matrix is a paid feature (ticket-gated) — show all COMPLETED predictions
+      // regardless of previewApproved (which is only for free public preview)
       const pred = await this.predictionRepo.findOne({
         where: {
           raceId: (race as unknown as { id: number }).id,
-          previewApproved: true,
           status: PredictionStatus.COMPLETED,
         },
         select: ['scores', 'analysis'],

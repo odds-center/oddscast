@@ -60,7 +60,24 @@
       "Bash(docker ps:*)",
       "Bash(docker exec:*)",
       "Bash(lsof:*)",
-      "Bash(kill 3870:*)"
+      "Bash(kill 3870:*)",
+      "Bash(chmod +x:*)",
+      "Bash(command:*)",
+      "Bash(cat:*)",
+      "Bash(for p in code-review commit-commands feature-dev security-guidance typescript-lsp)",
+      "Bash(do echo \"=== $p ===\")",
+      "Read(//Users/risingcore/.claude/plugins/marketplaces/claude-plugins-official/plugins/$p/**)",
+      "Bash(for p in code-review commit-commands feature-dev typescript-lsp frontend-design)",
+      "Read(//Users/risingcore/.claude/plugins/marketplaces/claude-plugins-official/plugins/**)",
+      "Bash(npm install:*)",
+      "Bash(typescript-language-server:*)",
+      "Bash(gh workflow:*)",
+      "Bash(gh auth:*)",
+      "Bash(PGPASSWORD=oddscast psql:*)",
+      "Bash(/opt/homebrew/opt/postgresql@16/bin/psql:*)",
+      "Bash(RAILWAY_TOKEN=\"234e1ffd-0655-479d-abf5-e73bcf65a080\" railway whoami:*)",
+      "Bash(RAILWAY_TOKEN=\"5f924c55-022d-4096-9403-2a2708316f6d\" railway whoami:*)",
+      "Bash(test:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

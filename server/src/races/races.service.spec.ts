@@ -7,6 +7,7 @@ import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { RaceStatus } from '../database/db-enums';
 import {
   createMockRepository,
@@ -20,6 +21,7 @@ describe('RacesService', () => {
   const raceRepo = createMockRepository();
   const entryRepo = createMockRepository();
   const resultRepo = createMockRepository();
+  const dividendRepo = createMockRepository();
   const predictionRepo = createMockRepository();
   const cache = createMockCache();
 
@@ -32,6 +34,7 @@ describe('RacesService', () => {
         { provide: getRepositoryToken(Race), useValue: raceRepo },
         { provide: getRepositoryToken(RaceEntry), useValue: entryRepo },
         { provide: getRepositoryToken(RaceResult), useValue: resultRepo },
+        { provide: getRepositoryToken(RaceDividend), useValue: dividendRepo },
         { provide: getRepositoryToken(Prediction), useValue: predictionRepo },
         { provide: CACHE_MANAGER, useValue: cache },
       ],

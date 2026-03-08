@@ -388,6 +388,8 @@ export default function PredictionsListPage() {
                 currentPage={page}
                 totalPages={totalPages}
                 onPageChange={setPage}
+                total={total}
+                limit={50}
               />
             )}
           </Card>

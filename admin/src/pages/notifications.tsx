@@ -278,6 +278,8 @@ export default function NotificationsPage() {
                 currentPage={page}
                 totalPages={data.meta.totalPages}
                 onPageChange={setPage}
+                total={data.meta.total}
+                limit={20}
               />
             )}
           </Card>

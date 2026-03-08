@@ -136,7 +136,7 @@ export default class RaceApi {
 `predictionTicketApi.ts`, `analysisApi.ts`, `horseApi.ts`, `jockeyApi.ts`, `trainerApi.ts`,
 `userApi.ts`, `favoriteApi.ts (unused)`, `notificationApi.ts`, `subscriptionApi.ts`,
 `subscriptionPlansApi.ts`, `paymentApi.ts`, `singlePurchaseApi.ts`, `pointApi.ts`,
-`rankingApi.ts`, `fortuneApi.ts`, `referralsApi.ts`, `weeklyPreviewApi.ts`,
+`rankingApi.ts`, `fortuneApi.ts`, `weeklyPreviewApi.ts`,
 `configApi.ts`, `activityApi.ts`, `picksApi.ts (unused)`, `betApi.ts (unused)`,
 `serverFetch.ts` (SSR helper)
 

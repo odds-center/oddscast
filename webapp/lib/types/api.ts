@@ -9,21 +9,8 @@ export type {
   ErrorCode,
 } from '@oddscast/shared';
 
-// Common types (not redefined in other files)
-// BetStatistics is defined in bet.ts
-
 // Re-export types exported from other type files
 export type { AuthResponse, LoginRequest, RegisterRequest } from './auth';
-export type {
-  Bet,
-  BetFilters,
-  BetResult,
-  BetStatistics,
-  BetStatus,
-  BetType,
-  CreateBetRequest,
-  UpdateBetRequest,
-} from './bet';
 export type { Notification, NotificationPreferences } from './notification';
 export type { PointTransactionType, UserPointBalance, UserPoints } from './point';
 export type {

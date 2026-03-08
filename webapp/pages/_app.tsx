@@ -37,35 +37,30 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // First-time tutorial: show once per device when user has not seen it
-  useEffect(() => {
-    if (!clientMounted) return;
-    const needOnboarding = !hasSeenOnboarding();
-    const id = setTimeout(() => setShowOnboarding(needOnboarding), 0);
-    return () => clearTimeout(id);
-  }, [clientMounted]);
-
-  // Apply saved accessibility preferences (high contrast, font size)
+  // Post-mount initialization: accessibility + onboarding
   const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
   useEffect(() => {
-    if (clientMounted) hydrateAccessibility();
+    if (!clientMounted) return;
+    hydrateAccessibility();
+    if (!hasSeenOnboarding()) setShowOnboarding(true);
   }, [clientMounted, hydrateAccessibility]);
 
+  // GA page view tracking — register event listener once, not on every route change
   useEffect(() => {
     if (!CONFIG.analytics.gaMeasurementId) return;
     const handleRouteChange = (url: string) => trackPageView(url);
     router.events.on('routeChangeComplete', handleRouteChange);
-    trackPageView(router.asPath);
     return () => router.events.off('routeChangeComplete', handleRouteChange);
-  }, [router.asPath, router.events]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router.events is stable
+  }, []);
 
-  // Server-side activity tracking (page views)
+  // Server-side activity tracking — register once, track initial page view separately
   useEffect(() => {
-    trackActivity(ACTIVITY_EVENTS.PAGE_VIEW, { page: router.asPath });
     const handleRoute = (url: string) => trackActivity(ACTIVITY_EVENTS.PAGE_VIEW, { page: url });
     router.events.on('routeChangeComplete', handleRoute);
     return () => router.events.off('routeChangeComplete', handleRoute);
-  }, [router.asPath, router.events]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router.events is stable
+  }, []);
 
   // Sync onlineManager with browser navigator.onLine
   useEffect(() => {
@@ -107,12 +102,14 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     hydrate();
   }, [hydrate]);
 
-  // Native app: send JWT for push token registration on login
+  const refreshToken = useAuthStore((s) => s.refreshToken);
+
+  // Native app: send JWT + refreshToken for push token registration on login
   useEffect(() => {
     if (bridge.isNativeApp() && token) {
-      bridge.send('AUTH_READY', { token });
+      bridge.sendAuth(token, refreshToken ?? undefined);
     }
-  }, [token]);
+  }, [token, refreshToken]);
 
   // Native app only: first screen by login state — logged in → home, not logged in → login page
   useEffect(() => {
@@ -126,6 +123,23 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
       router.replace(routes.home);
     }
   }, [clientMounted, token, pathname, router]);
+
+  // Native app: notify route changes (for native status bar, analytics, etc.)
+  useEffect(() => {
+    if (bridge.isNativeApp()) {
+      bridge.send('ROUTE_CHANGED', { path: router.asPath });
+    }
+  }, [router.asPath]);
+
+  // Native app: listen for NAVIGATE messages from native (deep links, notifications)
+  useEffect(() => {
+    if (!bridge.isNativeApp()) return;
+    return bridge.subscribe('NAVIGATE', (payload) => {
+      const { path } = payload as { path?: string };
+      if (path) router.push(path);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router is stable
+  }, []);
 
   return (
     <>

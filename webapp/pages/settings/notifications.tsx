@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import Icon from '@/components/icons';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -46,12 +46,12 @@ export default function NotificationSettingsPage() {
   const isNativeApp = useIsNativeApp();
   const queryClient = useQueryClient();
   const [saveSuccess, setSaveSuccess] = useState(false);
-
-  useEffect(() => {
-    if (!saveSuccess) return;
-    const t = setTimeout(() => setSaveSuccess(false), 2500);
-    return () => clearTimeout(t);
-  }, [saveSuccess]);
+  const successTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const showSuccess = useCallback(() => {
+    setSaveSuccess(true);
+    clearTimeout(successTimerRef.current);
+    successTimerRef.current = setTimeout(() => setSaveSuccess(false), 2500);
+  }, []);
 
   const visibleSettings = SETTINGS.filter((s) => {
     if (s.showOn === 'all') return true;
@@ -71,7 +71,7 @@ export default function NotificationSettingsPage() {
       NotificationApi.updateNotificationPreferences(updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notification-preferences'] });
-      setSaveSuccess(true);
+      showSuccess();
     },
     onError: () => {
       // handleApiError throws; message stored in mutation.error → displayed below

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 /**
  * Whether loaded inside Mobile WebView
@@ -15,15 +15,9 @@ declare global {
 }
 
 export function useIsNativeApp(): boolean {
-  const [isNative, setIsNative] = useState(() =>
+  const [isNative] = useState(() =>
     typeof window !== 'undefined' ? Boolean(window.__IS_NATIVE_APP__) : false,
   );
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      queueMicrotask(() => setIsNative(Boolean(window.__IS_NATIVE_APP__)));
-    }
-  }, []);
 
   return isNative;
 }

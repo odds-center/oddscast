@@ -7,6 +7,8 @@ import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
+import { JockeyResult } from '../database/entities/jockey-result.entity';
+import { Training } from '../database/entities/training.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -28,6 +30,8 @@ describe('PredictionsService', () => {
   const entryRepo = createMockRepository();
   const resultRepo = createMockRepository();
   const trainerResultRepo = createMockRepository();
+  const jockeyResultRepo = createMockRepository();
+  const trainingRepo = createMockRepository();
 
   const mockAnalysisService = {
     calculateScore: jest.fn().mockResolvedValue({ scores: [] }),
@@ -54,6 +58,14 @@ describe('PredictionsService', () => {
         {
           provide: getRepositoryToken(TrainerResult),
           useValue: trainerResultRepo,
+        },
+        {
+          provide: getRepositoryToken(JockeyResult),
+          useValue: jockeyResultRepo,
+        },
+        {
+          provide: getRepositoryToken(Training),
+          useValue: trainingRepo,
         },
         { provide: AnalysisService, useValue: mockAnalysisService },
         { provide: GlobalConfigService, useValue: mockConfigService },

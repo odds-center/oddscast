@@ -6,6 +6,7 @@ import { PredictionTicketsService } from './prediction-tickets.service';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionsService } from '../predictions/predictions.service';
+import { GlobalConfigService } from '../config/config.service';
 import { TicketStatus, TicketType } from '../database/db-enums';
 import {
   createMockRepository,
@@ -37,6 +38,7 @@ describe('PredictionTicketsService', () => {
         { provide: getRepositoryToken(Prediction), useValue: predictionRepo },
         { provide: DataSource, useValue: dataSource },
         { provide: PredictionsService, useValue: mockPredictionsService },
+        { provide: GlobalConfigService, useValue: { get: jest.fn().mockResolvedValue('1000') } },
       ],
     }).compile();
 
@@ -70,6 +72,7 @@ describe('PredictionTicketsService', () => {
           raceId: 1,
         }),
       );
+      expect(result.status).toBe('LINKED');
       expect(result.prediction).toBeDefined();
     });
 
@@ -100,12 +103,12 @@ describe('PredictionTicketsService', () => {
     it('should create N tickets with correct type and expiry', async () => {
       const ticket = createTestPredictionTicket();
       ticketRepo.create.mockReturnValue(ticket);
-      ticketRepo.save.mockResolvedValue(ticket);
+      ticketRepo.save.mockResolvedValue([ticket, ticket, ticket]);
 
       const result = await service.grantTickets(1, 3, 30, 'RACE');
 
       expect(result.granted).toBe(3);
-      expect(ticketRepo.save).toHaveBeenCalledTimes(3);
+      expect(ticketRepo.save).toHaveBeenCalledTimes(1);
       expect(ticketRepo.create).toHaveBeenCalledWith(
         expect.objectContaining({
           userId: 1,

@@ -2,7 +2,7 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
-**Last updated:** 2026-03-08
+**Last updated:** 2026-03-08 (v3: 11-factor scoring, enrichment pipeline)
 
 ---
 
@@ -25,19 +25,23 @@ flowchart TD
 
 > 상세: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md)
 
-#### 말+기수 통합 점수 (calculate_score) — 7요소 정규화 가중합
+#### 말+기수 통합 점수 (calculate_score) — 11요소 정규화 가중합
 
-> 가중치 합 = 1.0. `analysis.py` `W_HORSE` 딕셔너리 기준 (v2, 2026-03-08)
+> 가중치 합 = 1.0. `analysis.py` `W_HORSE` 딕셔너리 기준 (v3, 2026-03-08)
 
 | 요소 | 가중치 | 설명 |
 |------|--------|------|
-| **레이팅** (rat) | 0.28 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
-| **폼/기세** (frm) | 0.24 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
-| **컨디션** (cnd) | 0.12 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별(거세 +3) |
-| **경험** (exp) | 0.08 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
-| **적합도** (suit) | 0.09 | 각질×거리 매칭 + 주로상태(습/불/중) 영향 |
-| **조교사** (trn) | 0.09 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
-| **기수** (jky) | 0.10 | 경마장별 승률·복승률 직접 반영. 신인(100회 미만) ×0.85. 폴백(career-wide) ×0.90 |
+| **레이팅** (rat) | 0.23 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
+| **폼/기세** (frm) | 0.20 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
+| **컨디션** (cnd) | 0.10 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별(거세 +3) |
+| **기수** (jky) | 0.09 | 경마장별 승률·복승률 직접 반영. 신인(100회 미만) ×0.85. 폴백(career-wide) ×0.90 |
+| **적합도** (suit) | 0.07 | 각질×거리 매칭 + 주로상태(습/불/중) 영향 |
+| **조교사** (trn) | 0.07 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
+| **경험** (exp) | 0.06 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
+| **거리별 성적** (dist) | 0.06 | 현재 거리 구간 승률/복승률 기반. 경험 적으면 평균 회귀 |
+| **휴식 기간** (rest) | 0.05 | 최적 21-42일. <14일 피로, >90일 녹슬음 |
+| **조교 준비도** (trng) | 0.04 | 최근 14일 세션 수, 강도, 빈도, 마지막 조교 경과일 |
+| **클래스 변경** (cls) | 0.03 | 등급 하향 +15~+25pt, 등급 상향 -15~-25pt |
 | 낙마 감점 | - | risk 50+ → ×0.88, 30+ → ×0.94, 20+ → ×0.97 |
 | **winProb** | - | softmax(T=12) 기반 승률 확률(%) |
 
@@ -58,17 +62,32 @@ flowchart TD
 | **weightRatio** | 혼전 50/50, 특수(비·습·장거리) 60/40, 일반 70/30 |
 | **NestJS 통합** | `enrichEntriesWithJockeyResults()` → Python `_jockey_score()` 직접 반영 → softmax winProb. 상세: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) |
 
-### 1.3 Gemini 프롬프트 구조 v2 (토큰 최적화)
+#### v3 신규 Enrichment Pipeline (predictions.service.ts)
+
+| 메서드 | 데이터 소스 | 출력 필드 |
+|--------|-----------|----------|
+| `enrichEntriesWithRestPeriod()` | `race_results JOIN races` (MAX rcDate) | `daysSinceLastRace` |
+| `enrichEntriesWithDistanceStats()` | `race_results JOIN races` (rcDist bracket) | `distWinRate`, `distPlaceRate`, `distRaceCount` |
+| `enrichEntriesWithClassChange()` | `race_results JOIN races` (rank) | `classChange`, `classChangeLevel` |
+| `enrichEntriesWithTrainingMetrics()` | `trainings` (recent 14 days) | `trainingMetrics` (sessionCount, highIntensityCount, daysSinceLastTraining, avgSessionsPerWeek) |
+
+#### v3 Cron 추가
+
+| 크론 | 스케줄 | 설명 |
+|------|--------|------|
+| `generatePreRacePredictions()` | 금/토/일 06:30 KST | 당일 경주 예측 자동 생성 (결과 배치 의존 제거) |
+
+### 1.3 Gemini 프롬프트 구조 v3 (토큰 최적화)
 
 ```
-[compact 입력 (~1200 토큰, 기존 대비 ~60% 절감)]
+[compact 입력 (~1500 토큰)]
 - 경주 정보: meet, date, dist, rank, weather, track, cascade(10+)
 - 출전마: n(번호), h(마명), j(기수), fs(통합점수), wp(승률%), hs(말점수), js(기수점수),
-          sub([rat,frm,cnd,exp,trn,suit]), r(레이팅), rk(착순), risk(낙마), t(태그)
+          sub([rat,frm,cnd,exp,trn,suit,jky,rest,dist,cls,trng]), r(레이팅), rk(착순), risk(낙마), t(태그)
 - Python이 처리한 raw 데이터(equipment, chaksun, ratingHistory 등)는 전송 제외
 
 [규칙]
-- sub 6요소+js+risk 수치 근거로 reason/strengths/weaknesses 작성
+- sub 11요소+risk 수치 근거로 reason/strengths/weaknesses 작성
 - risk 30+ → weaknesses에 낙마, cascade 20+ → analysis에 연쇄낙마
 
 [출력] horseScores, betTypePredictions(7승식), analysis, preview

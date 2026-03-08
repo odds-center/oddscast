@@ -237,6 +237,36 @@ export class KraService {
   }
 
   /**
+   * 2b. Pre-race prediction auto-generation (Fri, Sat, Sun 06:30 KST)
+   * Generates AI predictions for today's races that don't have COMPLETED predictions.
+   * Runs before the morning sync to ensure predictions are ready when users check.
+   */
+  @Cron('30 6 * * 5,6,0', { timeZone: 'Asia/Seoul' }) // Fri, Sat, Sun 06:30 KST
+  async generatePreRacePredictions() {
+    if (!this.ensureServiceKey()) return;
+    const today = todayKstYyyymmdd();
+    this.logger.log(
+      `Running Pre-Race Prediction Generation for ${today}`,
+    );
+    try {
+      const result = await this.predictionsService.generatePredictionsForDate(today);
+      this.logger.log(
+        `Pre-Race Predictions: ${result.generated}/${result.requested} generated, ${result.failed} failed`,
+      );
+      if (result.errors.length > 0) {
+        this.logger.warn(
+          `Pre-Race Prediction errors: ${result.errors.slice(0, 5).join('; ')}`,
+        );
+      }
+    } catch (err) {
+      this.logger.error(
+        'Pre-Race Prediction Generation failed:',
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
+  /**
    * Minutes after race start to consider race "ended" for result sync.
    * Korean racing: typically ~2–3 min per race; KRA result API reflects within ~5–10 min.
    */
@@ -3459,6 +3489,15 @@ export class KraService {
       await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
       await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);
       processedCount++;
+    }
+
+    // 8. Jockey total results (jktresult) — auto-sync within analysis pipeline
+    try {
+      await this.fetchJockeyTotalResults();
+    } catch (err) {
+      this.logger.warn(
+        `[syncAnalysisData] Jockey total results sync failed: ${err instanceof Error ? err.message : String(err)}`,
+      );
     }
 
     return { message: `Synced analysis data for ${processedCount} races` };

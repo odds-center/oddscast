@@ -1,8 +1,9 @@
 """
-KRA 경마 예측 분석 v2 — 정규화·변수 보강·토큰 최적화
+KRA 경마 예측 분석 v3 — 정규화·변수 보강·토큰 최적화
 - 모든 하위 점수 0~100 정규화
-- 가중치 합 = 1.0 (경마 학술 연구 기반 배분)
-- 누락 변수 추가: 컨디션(마체중·연령·부담중량), 거리적합도, 성별
+- 가중치 합 = 1.0 (경마 학술 연구 기반 배분, v3: 11 factors)
+- v2 → v3: 휴식기간(rest), 거리별성적(distance), 클래스변경(class_change),
+  조교메트릭(training_readiness) 추가 — 기존 7요소에서 11요소로 확장
 - 낙마 리스크 → 감점 적용 (별도 출력도 유지)
 - softmax 승률 확률 산출
 - compact tags 출력 (토큰 절감)
@@ -12,16 +13,20 @@ import json
 import math
 
 # ─── 말+기수 통합 가중치 (합 = 1.0) ───
-# 경마 예측 학술 연구(Racing Post / Timeform) 기반 배분
+# v3: 11 factors (v2 7요소 재배분 + 4 신규 factors)
 # jockey: entry.jockeyMeetWinRate / jockeyMeetQuRate 사용 (Python 직접 반영)
 W_HORSE = {
-    'rating': 0.28,
-    'form': 0.24,
-    'condition': 0.12,
-    'experience': 0.08,
-    'suitability': 0.09,
-    'trainer': 0.09,
-    'jockey': 0.10,
+    'rating': 0.23,
+    'form': 0.20,
+    'condition': 0.10,
+    'experience': 0.06,
+    'suitability': 0.07,
+    'trainer': 0.07,
+    'jockey': 0.09,
+    'rest': 0.05,
+    'distance': 0.06,
+    'class_change': 0.03,
+    'training_readiness': 0.04,
 }
 
 
@@ -279,6 +284,122 @@ def _suitability_score(entry, rc_dist, track):
     return round(min(100, max(0, score)), 2)
 
 
+def _rest_period_score(entry):
+    """Rest period (days since last race) → 0~100.
+    Optimal: 21-42 days. Too short (<14): fatigue. Too long (>90): rustiness."""
+    days = entry.get("daysSinceLastRace")
+    if days is None:
+        return 50.0  # unknown → neutral
+    days = int(days)
+    if 21 <= days <= 42:
+        return 75.0  # optimal rest window
+    elif 14 <= days < 21:
+        return 60.0  # slightly short but acceptable
+    elif 43 <= days <= 60:
+        return 60.0  # slightly long but acceptable
+    elif 7 <= days < 14:
+        return 35.0  # fatigue risk
+    elif 61 <= days <= 90:
+        return 40.0  # getting rusty
+    elif days < 7:
+        return 25.0  # very fatigued
+    else:
+        return 20.0  # >90 days, very rusty
+
+
+def _distance_score(entry):
+    """Distance-specific performance → 0~100.
+    Uses distWinRate and distPlaceRate from the current race distance bracket."""
+    dist_count = int(entry.get("distRaceCount") or 0)
+    if dist_count == 0:
+        return 50.0  # no data → neutral
+
+    win_rate = float(entry.get("distWinRate") or 0)
+    place_rate = float(entry.get("distPlaceRate") or 0)
+
+    # Weight: win rate (impact) capped at 50, place rate (stability) capped at 50
+    base = min(50, win_rate * 2.0) + min(50, place_rate * 0.5)
+
+    # Confidence adjustment: fewer races → regress toward mean
+    if dist_count < 3:
+        base = base * 0.5 + 50 * 0.5
+    elif dist_count < 5:
+        base = base * 0.7 + 50 * 0.3
+
+    return round(min(100, max(0, base)), 2)
+
+
+def _class_change_score(entry):
+    """Class change detection → 0~100.
+    Dropping class is positive (easier competition), rising class is negative."""
+    change = entry.get("classChange")
+    level = int(entry.get("classChangeLevel") or 0)
+    if not change or change == "same":
+        return 50.0  # no change → neutral
+
+    if change == "down":
+        # Dropping class → advantage
+        if abs(level) >= 2:
+            return 75.0  # big drop
+        return 65.0  # one level drop
+    elif change == "up":
+        # Rising class → disadvantage
+        if abs(level) >= 2:
+            return 25.0  # big jump
+        return 35.0  # one level up
+
+    return 50.0
+
+
+def _training_readiness_score(entry):
+    """Training readiness from structured metrics → 0~100.
+    Evaluates session count, intensity, recency, and frequency."""
+    metrics = entry.get("trainingMetrics")
+    if not metrics or not isinstance(metrics, dict):
+        return 50.0  # no data → neutral
+
+    session_count = int(metrics.get("sessionCount") or 0)
+    high_count = int(metrics.get("highIntensityCount") or 0)
+    days_since = metrics.get("daysSinceLastTraining")
+    avg_per_week = float(metrics.get("avgSessionsPerWeek") or 0)
+
+    score = 45.0
+
+    # Session count (14 days): 3-6 sessions optimal
+    if 3 <= session_count <= 6:
+        score += 15
+    elif 7 <= session_count <= 9:
+        score += 10  # slightly overworked
+    elif session_count >= 10:
+        score += 3  # too many sessions
+    elif session_count >= 1:
+        score += 5  # at least some training
+
+    # High intensity ratio
+    if session_count > 0:
+        intensity_ratio = high_count / session_count
+        if 0.3 <= intensity_ratio <= 0.6:
+            score += 12  # good mix
+        elif intensity_ratio > 0.6:
+            score += 5  # too intense
+        elif high_count >= 1:
+            score += 8  # at least some intensity
+
+    # Recency: last training should be 2-5 days before race
+    if days_since is not None:
+        days_since = int(days_since)
+        if 2 <= days_since <= 5:
+            score += 10  # optimal taper
+        elif 0 <= days_since <= 1:
+            score += 5  # day before, might be tired
+        elif 6 <= days_since <= 8:
+            score += 5  # a bit stale
+        elif days_since > 8:
+            score -= 5  # too long since training
+
+    return round(min(100, max(0, score)), 2)
+
+
 def _fall_risk_score(entry, jockey_rc_cnt=0):
     """낙마 리스크 (0~100)."""
     risk = 0.0
@@ -350,7 +471,8 @@ def _win_probability(scores):
 
 
 def _build_tags(entry, rating, recent_ranks, total_runs, total_wins,
-                form_val, cnd_val, fall_risk):
+                form_val, cnd_val, fall_risk, rest_val=50, dist_val=50,
+                cls_val=50, trng_val=50):
     """Gemini 전달용 compact 태그 배열."""
     tags = []
     r = float(rating or 0)
@@ -383,6 +505,28 @@ def _build_tags(entry, rating, recent_ranks, total_runs, total_wins,
 
     if fall_risk >= 30:
         tags.append(f"낙마위험{fall_risk:.0f}")
+
+    # v3: rest period tags
+    days = entry.get("daysSinceLastRace")
+    if days is not None:
+        days = int(days)
+        if days < 14:
+            tags.append(f"피로{days}일")
+        elif days > 90:
+            tags.append(f"장기휴식{days}일")
+
+    # v3: class change tags
+    cc = entry.get("classChange")
+    if cc == "down":
+        tags.append("등급↓유리")
+    elif cc == "up":
+        tags.append("등급↑불리")
+
+    # v3: distance fit
+    if dist_val >= 70:
+        tags.append("거리적합◎")
+    elif dist_val <= 30:
+        tags.append("거리부적합")
 
     return tags
 
@@ -446,6 +590,10 @@ def calculate_score(data):
             trn = _trainer_score(e)
             suit = _suitability_score(e, rc_dist, track)
             jky = _jockey_score(e)
+            rst = _rest_period_score(e)
+            dst = _distance_score(e)
+            cls = _class_change_score(e)
+            trng = _training_readiness_score(e)
 
             composite = (
                 rat * W_HORSE['rating']
@@ -455,6 +603,10 @@ def calculate_score(data):
                 + trn * W_HORSE['trainer']
                 + suit * W_HORSE['suitability']
                 + jky * W_HORSE['jockey']
+                + rst * W_HORSE['rest']
+                + dst * W_HORSE['distance']
+                + cls * W_HORSE['class_change']
+                + trng * W_HORSE['training_readiness']
             )
 
             fall_risk = _fall_risk_score(e)
@@ -478,7 +630,7 @@ def calculate_score(data):
             composite_list.append(composite)
 
             tags = _build_tags(e, rating, recent_ranks, total_runs, total_wins,
-                               frm, cnd, fall_risk)
+                               frm, cnd, fall_risk, rst, dst, cls, trng)
 
             results.append({
                 'hrNo': str(hr_no),
@@ -488,6 +640,7 @@ def calculate_score(data):
                 'sub': {
                     'rat': rat, 'frm': frm, 'cnd': cnd,
                     'exp': exp, 'trn': trn, 'suit': suit, 'jky': jky,
+                    'rest': rst, 'dist': dst, 'cls': cls, 'trng': trng,
                 },
                 'risk': fall_risk,
                 'recentRanks': recent_ranks[:5],

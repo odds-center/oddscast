@@ -7,7 +7,9 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  Res,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { PredictionTicketsService } from './prediction-tickets.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -27,8 +29,16 @@ export class PredictionTicketsController {
 
   @Post('use')
   @ApiOperation({ summary: '예측권 사용' })
-  useTicket(@CurrentUser() user: JwtPayload, @Body() dto: UseTicketDto) {
-    return this.ticketsService.useTicket(user.sub, dto);
+  async useTicket(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UseTicketDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.ticketsService.useTicket(user.sub, dto);
+    if (result.status === 'PREPARING') {
+      res.status(202);
+    }
+    return result;
   }
 
   @Get('balance')

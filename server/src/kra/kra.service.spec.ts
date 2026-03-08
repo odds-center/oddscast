@@ -15,6 +15,7 @@ import {
   BatchSchedule,
   BATCH_JOB_KRA_RESULT_FETCH,
 } from '../database/entities/batch-schedule.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { BatchScheduleStatus, RaceStatus } from '../database/db-enums';
 import { ResultsService } from '../results/results.service';
 import { PredictionsService } from '../predictions/predictions.service';
@@ -37,6 +38,7 @@ describe('KraService', () => {
   const trainerResultRepo = createMockRepository();
   const kraSyncLogRepo = createMockRepository();
   const batchScheduleRepo = createMockRepository();
+  const dividendRepo = createMockRepository();
   const cache = createMockCache();
 
   const mockConfigService = createMockConfigService({
@@ -76,6 +78,10 @@ describe('KraService', () => {
         {
           provide: getRepositoryToken(BatchSchedule),
           useValue: batchScheduleRepo,
+        },
+        {
+          provide: getRepositoryToken(RaceDividend),
+          useValue: dividendRepo,
         },
         { provide: ResultsService, useValue: mockResultsService },
         { provide: PredictionsService, useValue: mockPredictionsService },
@@ -221,6 +227,10 @@ describe('KraService', () => {
           {
             provide: getRepositoryToken(BatchSchedule),
             useValue: batchScheduleRepo,
+          },
+          {
+            provide: getRepositoryToken(RaceDividend),
+            useValue: dividendRepo,
           },
           { provide: ResultsService, useValue: mockResultsService },
           { provide: PredictionsService, useValue: mockPredictionsService },

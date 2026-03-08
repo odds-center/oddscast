@@ -8,6 +8,7 @@ import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
+import { Training } from '../database/entities/training.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -29,6 +30,16 @@ import type {
 } from './prediction-internal.types';
 import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
+/** Thrown when a generatePrediction call finds a PROCESSING row for the same race+entriesHash. */
+export class PredictionInProgressException extends Error {
+  readonly predictionId: number;
+  constructor(predictionId: number) {
+    super('Prediction generation is already in progress');
+    this.name = 'PredictionInProgressException';
+    this.predictionId = predictionId;
+  }
+}
+
 /** 세션 중 마지막으로 성공한 Gemini 모델 — 다음 요청에서 우선 시도 (404 낭비 방지) */
 let lastWorkingGeminiModel: string | null = null;
 
@@ -46,6 +57,8 @@ export class PredictionsService {
     private readonly trainerResultRepo: Repository<TrainerResult>,
     @InjectRepository(JockeyResult)
     private readonly jockeyResultRepo: Repository<JockeyResult>,
+    @InjectRepository(Training)
+    private readonly trainingRepo: Repository<Training>,
     private readonly analysisService: AnalysisService,
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
@@ -1121,6 +1134,28 @@ AI 예측 순위: ${predictedTop || '-'}
       return cached;
     }
 
+    // Concurrency lock: if another process is already generating for the same entry sheet, throw.
+    const inProgress = await this.predictionRepo.findOne({
+      where: { raceId, entriesHash, status: PredictionStatus.PROCESSING },
+      order: { createdAt: 'DESC' },
+    });
+    if (inProgress) {
+      const err = new PredictionInProgressException(inProgress.id);
+      throw err;
+    }
+
+    // Acquire lock by creating a PROCESSING row before expensive work.
+    const lockRow = await this.predictionRepo.save(
+      this.predictionRepo.create({
+        raceId,
+        entriesHash,
+        status: PredictionStatus.PROCESSING,
+        scores: {},
+        analysis: '',
+        preview: '',
+      }),
+    );
+
     // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
     const sectionalByHorse = await this.getSectionalAnalysisByHorse(
       race as RaceForPython,
@@ -1133,15 +1168,24 @@ AI 예측 순위: ${predictedTop || '-'}
     // 3b-2. 낙마 이력 보강 — 말/기수별 과거 낙마 횟수 (fall risk·연쇄 낙마 산출용)
     const raceWithFallHistory =
       await this.enrichEntriesWithFallHistory(raceWithRecentRanks);
+    // 3b-3. 거리별 성적 보강 — 현재 경주 거리 구간의 승률/복승률
+    const raceWithDist =
+      await this.enrichEntriesWithDistanceStats(raceWithFallHistory);
+    // 3b-5. 클래스 변경 감지 — 이전 경주 대비 등급 상/하향
+    const raceWithClass =
+      await this.enrichEntriesWithClassChange(raceWithDist);
     // 3c. 조교사 승률/복승률 보강 — TrainerResult (API19_1)
     const raceWithTrainer =
-      await this.enrichEntriesWithTrainerResults(raceWithFallHistory);
+      await this.enrichEntriesWithTrainerResults(raceWithClass);
     // 3c-2. 기수 meet-level 승률/복승률 보강 — JockeyResult → Python jockey weight 직접 반영
     const raceWithJockey =
       await this.enrichEntriesWithJockeyResults(raceWithTrainer);
+    // 3c-3. 조교 데이터 구조화 — trainings 테이블에서 최근 14일 메트릭 추출
+    const raceWithTraining =
+      await this.enrichEntriesWithTrainingMetrics(raceWithJockey);
     // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
     const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceWithJockey,
+      raceWithTraining,
       sectionalByHorse,
     );
 
@@ -1184,7 +1228,7 @@ AI 예측 순위: ${predictedTop || '-'}
 
     // 5. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
     const prompt = this.constructPrompt(
-      raceWithTrainer,
+      raceWithSectional,
       patchedHorseScoreResult,
       jockeyAnalysis,
       sectionalByHorse,
@@ -1221,18 +1265,23 @@ AI 예측 순위: ${predictedTop || '-'}
 
         lastWorkingGeminiModel = modelName;
 
-        // Save new prediction (keep previous rows for history — no update/delete)
-        const created = await this.predictionRepo.save(
-          this.predictionRepo.create({
-            raceId,
-            scores: scoresToSave as Record<string, unknown>,
+        // Update lock row to COMPLETED (same row, preserving id for referential integrity).
+        await this.predictionRepo
+          .createQueryBuilder()
+          .update()
+          .set({
+            scores: () =>
+              `'${JSON.stringify(scoresToSave)}'::jsonb`,
             analysis: predictionData?.analysis ?? '',
             preview: predictionData?.preview ?? '',
             status: PredictionStatus.COMPLETED,
             previewApproved: true,
-            entriesHash,
-          }),
-        );
+          })
+          .where('id = :id', { id: lockRow.id })
+          .execute();
+        const created = await this.predictionRepo.findOneOrFail({
+          where: { id: lockRow.id },
+        });
 
         // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
         const horseScores =
@@ -1276,11 +1325,17 @@ AI 예측 순위: ${predictedTop || '-'}
           continue;
         }
         console.error(`Gemini generation failed (${modelName}):`, lastError);
+        await this.predictionRepo.update(lockRow.id, {
+          status: PredictionStatus.FAILED,
+        });
         throw new Error(
           `Failed to generate prediction via Gemini: ${lastError.message}`,
         );
       }
     }
+    await this.predictionRepo.update(lockRow.id, {
+      status: PredictionStatus.FAILED,
+    });
     throw new Error(
       `Failed to generate prediction: no usable model. Last error: ${lastError?.message ?? 'unknown'}`,
     );
@@ -1433,6 +1488,15 @@ AI 예측 순위: ${predictedTop || '-'}
       base.fallHistoryHorse = entry.fallHistoryHorse;
     if (entry.fallHistoryJockey != null)
       base.fallHistoryJockey = entry.fallHistoryJockey;
+    if (entry.daysSinceLastRace != null)
+      base.daysSinceLastRace = entry.daysSinceLastRace;
+    if (entry.distWinRate != null) base.distWinRate = entry.distWinRate;
+    if (entry.distPlaceRate != null) base.distPlaceRate = entry.distPlaceRate;
+    if (entry.distRaceCount != null) base.distRaceCount = entry.distRaceCount;
+    if (entry.classChange) base.classChange = entry.classChange;
+    if (entry.classChangeLevel != null)
+      base.classChangeLevel = entry.classChangeLevel;
+    if (entry.trainingMetrics) base.trainingMetrics = entry.trainingMetrics;
     if (trainSummary) base.trainingSummary = trainSummary;
     if (sectionalTag) base.sectionalTag = sectionalTag;
     return base;
@@ -1495,10 +1559,33 @@ AI 예측 순위: ${predictedTop || '-'}
       byHorse.set(r.hrNo, arr);
     }
 
+    // Also derive rest period (daysSinceLastRace) from the most recent result per horse
+    const raceDate = this.parseYyyymmddToDate(beforeRcDate);
+    const lastRcDateByHorse = new Map<string, string>();
+    for (const r of sorted) {
+      if (!lastRcDateByHorse.has(r.hrNo)) {
+        lastRcDateByHorse.set(r.hrNo, r.race.rcDate);
+      }
+    }
+
     const enrichedEntries = entries.map((e) => {
       const ranks = byHorse.get(e.hrNo);
-      if (!ranks?.length && e.recentRanks) return e;
-      return { ...e, recentRanks: ranks ?? e.recentRanks };
+      const enriched = { ...e, recentRanks: ranks ?? e.recentRanks };
+
+      // Compute daysSinceLastRace from recentRanks data
+      const lastDate = lastRcDateByHorse.get(e.hrNo);
+      if (lastDate && raceDate) {
+        const lastDateObj = this.parseYyyymmddToDate(lastDate);
+        if (lastDateObj) {
+          const diffMs = raceDate.getTime() - lastDateObj.getTime();
+          const daysSinceLastRace = Math.round(diffMs / (1000 * 60 * 60 * 24));
+          if (daysSinceLastRace >= 0) {
+            enriched.daysSinceLastRace = daysSinceLastRace;
+          }
+        }
+      }
+
+      return enriched;
     });
 
     return { ...race, entries: enrichedEntries };
@@ -1702,6 +1789,232 @@ AI 예측 순위: ${predictedTop || '-'}
     });
 
     return { ...race, entries: enrichedEntries };
+  }
+
+  private parseYyyymmddToDate(yyyymmdd: string): Date | null {
+    if (!yyyymmdd || yyyymmdd.length < 8) return null;
+    const y = parseInt(yyyymmdd.slice(0, 4), 10);
+    const m = parseInt(yyyymmdd.slice(4, 6), 10) - 1;
+    const d = parseInt(yyyymmdd.slice(6, 8), 10);
+    const dt = new Date(y, m, d);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  /**
+   * Enrich entries with distance-specific performance stats.
+   * Groups past results by distance bracket and computes win/place rates for the current race distance.
+   */
+  private async enrichEntriesWithDistanceStats(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+    const rcDist = parseInt(race.rcDist ?? '0', 10);
+    if (rcDist <= 0) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+    const beforeRcDate = race.rcDate ?? '';
+    if (!beforeRcDate) return race;
+
+    const bracket = this.getDistanceBracket(rcDist);
+
+    const rows = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('rr.ordInt', 'ordInt')
+      .addSelect('r.rcDist', 'rcDist')
+      .where('rr.hrNo IN (:...hrNos)', { hrNos })
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .andWhere('rr.ordInt IS NOT NULL')
+      .orderBy('r.rcDate', 'DESC')
+      .limit(2000)
+      .getRawMany<{ hrNo: string; ordInt: number; rcDist: string }>();
+
+    const byHorse = new Map<
+      string,
+      { total: number; wins: number; places: number }
+    >();
+    for (const r of rows) {
+      const dist = parseInt(r.rcDist ?? '0', 10);
+      if (this.getDistanceBracket(dist) !== bracket) continue;
+      const stats = byHorse.get(r.hrNo) ?? { total: 0, wins: 0, places: 0 };
+      stats.total++;
+      if (r.ordInt === 1) stats.wins++;
+      if (r.ordInt <= 3) stats.places++;
+      byHorse.set(r.hrNo, stats);
+    }
+
+    const enrichedEntries = entries.map((e) => {
+      const stats = byHorse.get(e.hrNo);
+      if (!stats || stats.total === 0) return e;
+      return {
+        ...e,
+        distWinRate: Math.round((stats.wins / stats.total) * 10000) / 100,
+        distPlaceRate: Math.round((stats.places / stats.total) * 10000) / 100,
+        distRaceCount: stats.total,
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
+  /** Map distance to bracket: sprint/mile/middle/long */
+  private getDistanceBracket(dist: number): string {
+    if (dist <= 1300) return 'sprint';
+    if (dist <= 1600) return 'mile';
+    if (dist <= 1900) return 'middle';
+    return 'long';
+  }
+
+  /**
+   * Enrich entries with class change detection.
+   * Compares the current race rank with the horse's most recent race rank.
+   */
+  private async enrichEntriesWithClassChange(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+    const currentRank = race.rank ?? '';
+    if (!currentRank) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+    const beforeRcDate = race.rcDate ?? '';
+    if (!beforeRcDate) return race;
+
+    const lastRaceRanks = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('r.rank', 'rank')
+      .addSelect('r.rcDate', 'rcDate')
+      .where('rr.hrNo IN (:...hrNos)', { hrNos })
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .andWhere('r.rank IS NOT NULL')
+      .orderBy('r.rcDate', 'DESC')
+      .limit(Math.max(500, hrNos.length * 10))
+      .getRawMany<{ hrNo: string; rank: string; rcDate: string }>();
+
+    // Get most recent rank per horse
+    const byHorse = new Map<string, string>();
+    for (const r of lastRaceRanks) {
+      if (!byHorse.has(r.hrNo)) byHorse.set(r.hrNo, r.rank);
+    }
+
+    const currentLevel = this.rankToLevel(currentRank);
+    const enrichedEntries = entries.map((e) => {
+      const prevRank = byHorse.get(e.hrNo);
+      if (!prevRank) return e;
+      const prevLevel = this.rankToLevel(prevRank);
+      if (currentLevel === 0 || prevLevel === 0) return e;
+      const diff = currentLevel - prevLevel;
+      const classChange = diff > 0 ? 'up' : diff < 0 ? 'down' : 'same';
+      return { ...e, classChange, classChangeLevel: diff };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
+  /**
+   * Convert Korean race rank to numeric level.
+   * Higher number = higher class. 0 = unknown.
+   */
+  private rankToLevel(rank: string): number {
+    const r = rank.trim();
+    // Korean class hierarchy
+    if (/국제|국1/i.test(r)) return 7;
+    if (/국2/i.test(r)) return 6;
+    if (/국3/i.test(r)) return 5;
+    if (/국4/i.test(r)) return 4;
+    if (/국5/i.test(r)) return 3;
+    if (/국6/i.test(r)) return 2;
+    if (/일반|비등급/i.test(r)) return 1;
+    // Numeric grades (1급~6급) — 1급 is highest
+    const numMatch = r.match(/(\d+)급/);
+    if (numMatch) return Math.max(0, 8 - parseInt(numMatch[1]!, 10));
+    return 0;
+  }
+
+  /**
+   * Enrich entries with structured training metrics from the trainings table.
+   * Queries recent 14 days of training sessions for each horse.
+   */
+  private async enrichEntriesWithTrainingMetrics(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+    const raceDate = race.rcDate ?? '';
+    if (!raceDate) return race;
+
+    const raceDateObj = this.parseYyyymmddToDate(raceDate);
+    if (!raceDateObj) return race;
+    const fourteenDaysAgo = new Date(raceDateObj.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgoStr = this.dateToYyyymmdd(fourteenDaysAgo);
+
+    const trainings = await this.trainingRepo
+      .createQueryBuilder('t')
+      .select(['t.horseNo', 't.trDate', 't.intensity', 't.trContent'])
+      .where('t.horseNo IN (:...hrNos)', { hrNos })
+      .andWhere('t.trDate >= :from', { from: fourteenDaysAgoStr })
+      .andWhere('t.trDate <= :to', { to: raceDate })
+      .orderBy('t.trDate', 'DESC')
+      .getMany();
+
+    const byHorse = new Map<string, typeof trainings>();
+    for (const t of trainings) {
+      const arr = byHorse.get(t.horseNo) ?? [];
+      arr.push(t);
+      byHorse.set(t.horseNo, arr);
+    }
+
+    const enrichedEntries = entries.map((e) => {
+      const sessions = byHorse.get(e.hrNo);
+      if (!sessions?.length) return e;
+
+      const sessionCount = sessions.length;
+      const highIntensityCount = sessions.filter((s) =>
+        /강|상|고/.test(String(s.intensity ?? s.trContent ?? '')),
+      ).length;
+
+      const lastTrainingDate = sessions[0]?.trDate;
+      let daysSinceLastTraining: number | null = null;
+      if (lastTrainingDate && raceDateObj) {
+        const lastDate = this.parseYyyymmddToDate(lastTrainingDate);
+        if (lastDate) {
+          daysSinceLastTraining = Math.round(
+            (raceDateObj.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+          );
+        }
+      }
+
+      const avgSessionsPerWeek = Math.round((sessionCount / 2) * 100) / 100; // 14 days = 2 weeks
+
+      return {
+        ...e,
+        trainingMetrics: {
+          sessionCount,
+          highIntensityCount,
+          daysSinceLastTraining,
+          avgSessionsPerWeek,
+        },
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
+  }
+
+  private dateToYyyymmdd(d: Date): string {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
   }
 
   private summarizeTraining(entry: RaceEntryForAnalysis): string | undefined {
@@ -2074,6 +2387,11 @@ AI 예측 순위: ${predictedTop || '-'}
           hs.sub.exp ?? 0,
           hs.sub.trn ?? 0,
           hs.sub.suit ?? 0,
+          hs.sub.jky ?? 0,
+          hs.sub.rest ?? 0,
+          hs.sub.dist ?? 0,
+          hs.sub.cls ?? 0,
+          hs.sub.trng ?? 0,
         ];
       }
       if (entry?.rating != null) compact.r = entry.rating;
@@ -2112,11 +2430,11 @@ AI 예측 순위: ${predictedTop || '-'}
 ## 경주
 ${JSON.stringify(raceCtx)}
 
-## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
+## 출전마 (fs=통합점수,wp=승률%,hs=말점수,js=기수점수,sub=[레이팅,폼,컨디션,경험,조교사,적합도,기수,휴식,거리,등급,조교],r=레이팅,rk=최근착순,risk=낙마리스크,t=태그)
 ${JSON.stringify(compactEntries)}
 
 ## 규칙
-- reason/strengths/weaknesses: sub 6요소+js(기수)+risk 수치 근거. 같은 표현 금지.
+- reason/strengths/weaknesses: sub 11요소+risk 수치 근거. 같은 표현 금지.
 - risk30+→weaknesses에 낙마위험 언급. cascade(경주정보)20+→analysis에 연쇄낙마 가능성.
 - strengths: 강점 1~2개. weaknesses: 약점/리스크 1개.
 - analysis: 날씨·주로·거리·후보·각질·변수 5~8문장. preview: 2~3문장(단승식 1등예상마만, 다른승식 금지).

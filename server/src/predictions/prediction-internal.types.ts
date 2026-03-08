@@ -60,6 +60,25 @@ export interface RaceEntryForAnalysis {
   fallHistoryHorse?: number;
   /** 과거 N경기 내 기수(jkNo) 낙마 횟수 — fall risk 산출용 */
   fallHistoryJockey?: number;
+  /** Days since last race — rest period scoring */
+  daysSinceLastRace?: number | null;
+  /** Distance-specific win rate for the current race distance bracket */
+  distWinRate?: number | null;
+  /** Distance-specific place rate (top 3) for the current race distance bracket */
+  distPlaceRate?: number | null;
+  /** Number of races in the current distance bracket */
+  distRaceCount?: number | null;
+  /** Class change direction: 'up' | 'down' | 'same' | null */
+  classChange?: string | null;
+  /** Number of class levels changed (positive = up, negative = down) */
+  classChangeLevel?: number | null;
+  /** Structured training metrics from trainings table */
+  trainingMetrics?: {
+    sessionCount: number;
+    highIntensityCount: number;
+    daysSinceLastTraining: number | null;
+    avgSessionsPerWeek: number;
+  } | null;
   trainings?: Array<{
     trDate?: string;
     intensity?: string;
@@ -83,6 +102,11 @@ export interface HorseAnalysisItem {
     exp?: number;
     trn?: number;
     suit?: number;
+    jky?: number;
+    rest?: number;
+    dist?: number;
+    cls?: number;
+    trng?: number;
   };
   /** 낙마 리스크 (0~100) */
   risk?: number;

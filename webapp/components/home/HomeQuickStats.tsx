@@ -61,7 +61,7 @@ export default function HomeQuickStats() {
           오늘 {todayCount}경
         </Link>
       ) : (
-        <span className='inline-flex items-center gap-1.5 text-stone-400 whitespace-nowrap'>
+        <span className='inline-flex items-center gap-1.5 text-stone-600 whitespace-nowrap'>
           <Icon name='Flag' size={13} />
           오늘 경주 없음
         </span>
@@ -70,7 +70,7 @@ export default function HomeQuickStats() {
       {weekCount > 0 && (
         <Link
           href={routes.races.list}
-          className='text-stone-500 hover:text-foreground transition-colors whitespace-nowrap'
+          className='text-stone-700 hover:text-foreground transition-colors whitespace-nowrap'
         >
           금주 <span className='font-semibold'>{weekCount}경</span>
         </Link>
@@ -84,7 +84,7 @@ export default function HomeQuickStats() {
               <Link
                 key={meet}
                 href={`${routes.races.list}?date=today&meet=${encodeURIComponent(meet)}`}
-                className='text-stone-500 hover:text-foreground transition-colors whitespace-nowrap'
+                className='text-stone-700 hover:text-foreground transition-colors whitespace-nowrap'
               >
                 {meet} {cnt}경
               </Link>

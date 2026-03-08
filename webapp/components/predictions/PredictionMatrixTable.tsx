@@ -41,7 +41,7 @@ function RaceInfoCell({ row }: { row: MatrixRowDto }) {
           {row.meetName ?? row.meet}
         </span>
       </div>
-      <div className='flex items-center gap-2 text-[11px] text-stone-400 mt-0.5'>
+      <div className='flex items-center gap-2 text-xs text-stone-500 mt-0.5'>
         {row.stTime && <span className='whitespace-nowrap'>{row.stTime}</span>}
         {row.rcDist && <span className='whitespace-nowrap'>{row.rcDist}m</span>}
         {row.rank && <span className='whitespace-nowrap'>{row.rank}</span>}
@@ -176,7 +176,7 @@ export default function PredictionMatrixTable({
             <div className='overflow-x-auto'>
               <div style={{ minWidth: '640px' }}>
                 {/* Header */}
-                <div className='bg-[#1c1917] grid text-stone-300 text-[11px] font-semibold' style={{ gridTemplateColumns: '68px repeat(7, 1fr)' }}>
+                <div className='bg-[#1c1917] grid text-stone-300 text-xs font-semibold' style={{ gridTemplateColumns: '68px repeat(7, 1fr)' }}>
                   <div className='py-2 px-3'>경주</div>
                   {BET_TYPE_ORDER_COMPACT.map((key) => (
                     <div key={key} className='py-2 px-0.5 text-center'>{BET_TYPE_LABELS[key]}</div>
@@ -197,7 +197,7 @@ export default function PredictionMatrixTable({
                       {/* Race */}
                       <Link href={routes.races.detail(row.raceId)} className='py-2.5 px-3 hover:text-primary transition-colors'>
                         <div className='font-bold text-foreground text-sm'>{row.rcNo}R</div>
-                        <div className='text-stone-400 text-[10px]'>{row.meetName ?? row.meet}</div>
+                        <div className='text-stone-500 text-[11px]'>{row.meetName ?? row.meet}</div>
                       </Link>
                       {/* Bet type cells */}
                       {BET_TYPE_ORDER_COMPACT.map((key) => {
@@ -266,8 +266,8 @@ export default function PredictionMatrixTable({
         <table className='w-full min-w-[280px] border-collapse'>
           <thead>
             <tr className='bg-[#1c1917] text-stone-300'>
-              <th className='text-left py-2 px-3 text-[11px] font-semibold uppercase tracking-wider whitespace-nowrap'>경주</th>
-              <th className='text-center py-2 px-3 text-[11px] font-bold text-primary whitespace-nowrap'>AI 예측</th>
+              <th className='text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap'>경주</th>
+              <th className='text-center py-2 px-3 text-xs font-bold text-primary whitespace-nowrap'>AI 예측</th>
             </tr>
           </thead>
           <tbody>

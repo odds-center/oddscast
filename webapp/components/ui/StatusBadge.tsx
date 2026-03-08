@@ -19,11 +19,11 @@ const STATUS_MAP: Record<string, { label: string; cls: string }> = {
   in_progress: { label: '진행', cls: 'bg-primary text-white border-primary' },
   RUNNING: { label: '진행', cls: 'bg-primary text-white border-primary' },
   running: { label: '진행', cls: 'bg-primary text-white border-primary' },
-  COMPLETED: { label: '종료', cls: 'bg-stone-100 text-stone-500 border-stone-200' },
-  completed: { label: '종료', cls: 'bg-stone-100 text-stone-500 border-stone-200' },
+  COMPLETED: { label: '종료', cls: 'bg-stone-100 text-stone-700 border-stone-200' },
+  completed: { label: '종료', cls: 'bg-stone-100 text-stone-700 border-stone-200' },
 };
 
-const DEFAULT = { label: '-', cls: 'bg-stone-50 text-stone-400 border-stone-200' };
+const DEFAULT = { label: '-', cls: 'bg-stone-50 text-stone-600 border-stone-200' };
 
 export default function StatusBadge({ status, rcDate, stTime, className = '' }: StatusBadgeProps) {
   // Show "종료" only when server says COMPLETED and race end time has passed (client-side guard).

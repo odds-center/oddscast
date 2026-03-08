@@ -9,14 +9,14 @@ interface BadgeProps {
 
 const variantClass = {
   primary: 'bg-[rgba(22,163,74,0.07)] text-[#16a34a] border-[rgba(22,163,74,0.18)]',
-  muted: 'bg-stone-50 text-stone-500 border-stone-200',
+  muted: 'bg-stone-50 text-stone-600 border-stone-200',
   success: 'bg-green-50 text-green-700 border-green-200',
   warning: 'bg-amber-50 text-amber-700 border-amber-200',
   error: 'bg-red-50 text-red-700 border-red-200',
 };
 
 const sizeClass = {
-  sm: 'text-[11px] px-1.5 py-px rounded border',
+  sm: 'text-xs px-1.5 py-px rounded border',
   md: 'text-xs px-2 py-0.5 rounded border font-medium',
 };
 

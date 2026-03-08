@@ -81,8 +81,8 @@ export default function Tooltip({
       >
         {children}
         {!hideTriggerIcon && (
-          <span className='cursor-help inline-flex items-center ml-0.5 text-text-tertiary opacity-60 group-hover/tooltip:opacity-100 transition-opacity'>
-            <svg width='13' height='13' viewBox='0 0 16 16' fill='none' className='shrink-0'>
+          <span className='cursor-help inline-flex items-center ml-0.5 text-text-tertiary opacity-80 group-hover/tooltip:opacity-100 transition-opacity'>
+            <svg width='16' height='16' viewBox='0 0 16 16' fill='none' className='shrink-0'>
               <circle cx='8' cy='8' r='7' stroke='currentColor' strokeWidth='1.5' />
               <text x='8' y='12' textAnchor='middle' fill='currentColor' fontSize='10' fontWeight='600'>?</text>
             </svg>

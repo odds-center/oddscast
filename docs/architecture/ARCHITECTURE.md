@@ -198,7 +198,7 @@ const handleApiResponse = <T>(response): T => {
 
 | 원칙                       | 설명                                                                     |
 | -------------------------- | ------------------------------------------------------------------------ |
-| **Server-Side Caching**    | Gemini 분석은 Cron으로 미리 실행 → DB 캐싱 → 사용자는 DB만 읽음          |
+| **Server-Side Caching**    | 종합예측: Cron 배치 → DB 캐싱. 개별예측: RACE 티켓 사용 시 KRA 실시간 재조회 + Gemini 실시간 생성 |
 | **Python은 순수 계산**     | DB 접근 없이 NestJS가 주는 JSON만 받아서 점수 계산 후 반환               |
 | **NestJS = Control Tower** | 모든 외부 서비스(Python, Gemini, KRA API) 호출은 NestJS가 관리           |
 | **Global API Prefix**      | `main.ts`에서 `app.setGlobalPrefix('api')` → 모든 라우트에 `/api` prefix |
@@ -215,8 +215,9 @@ const handleApiResponse = <T>(response): T => {
 | **KRA API72_2**    | 경주계획표 (미래 일정)       | `racePlan_2` — Cron·Admin 수동   |
 | **KRA API26_2**    | 출전표 (출전마)              | `entrySheet_2` — 경주 2~3일 전   |
 | **Google Gemini**  | AI 분석 코멘트 생성          | REST API (@google/generative-ai) |
-| **Python Scripts** | 통계 분석 (Speed Index 등)   | python-shell (stdin/stdout JSON) |
+| **Python Scripts** | 통계 분석 (12요소 정규화)    | python-shell (stdin/stdout JSON) |
 | **PostgreSQL**     | 데이터 저장소                | TypeORM                          |
+| **Discord API**    | 회원가입·서버에러 알림       | REST API (Bot token + channel ID) |
 
 ---
 

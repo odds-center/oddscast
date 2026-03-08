@@ -211,7 +211,7 @@ RaceResultDto[] {
 | `GET`   | `/predictions/race/:raceId`          | 경주별 예측           | 🔓   |
 | `GET`   | `/predictions/race/:raceId/preview`  | 예측 미리보기 (무료, 검수 통과만) | 🔓   |
 | `GET`   | `/predictions/preview/:raceId`       | 예측 미리보기 (alias) | 🔓   |
-| `GET`   | `/predictions/matrix`                | 종합 예상 매트릭스    | 🔓   | date, meet — 응답에 entries[].chulNo, horseScores[], analysis 포함 |
+| `GET`   | `/predictions/matrix`                | 종합 예상 매트릭스    | 🔓   | date, meet — status=COMPLETED인 모든 예측 포함 (previewApproved 무관). 응답에 entries[].chulNo, horseScores[], analysis 포함 |
 | `GET`   | `/predictions/commentary`            | AI 코멘트 피드        | 🔓   | date, meet, limit, offset |
 | `GET`   | `/predictions/hit-record`            | 적중 내역 배너        | 🔓   | limit |
 | `GET`   | `/predictions/:id`                   | 예측 상세             | 🔓   |
@@ -450,7 +450,7 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 
 | Method | Route                         | 설명        | Auth |
 | ------ | ----------------------------- | ----------- | ---- |
-| `POST` | `/prediction-tickets/use`     | 예측권 사용 | 🔐   |
+| `POST` | `/prediction-tickets/use`     | 예측권 사용 (실시간 KRA 재조회 + fresh Gemini 분석) | 🔐   |
 | `GET`  | `/prediction-tickets/balance` | 잔여 수량   | 🔐   |
 | `GET`  | `/prediction-tickets/history` | 사용 이력   | 🔐   |
 | `GET`  | `/prediction-tickets/my-predictions` | 내가 본 예측 목록 (USED RACE, page, limit) | 🔐   |

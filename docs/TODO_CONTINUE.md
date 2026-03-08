@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-08 (전체 인프라 완료. 예측 정확도 개선, 에러 페이지, Sentry 복원, 문서 정리)
+**Last updated:** 2026-03-08 (Discord 알림, 실시간 개별예측, 12요소 분석, AI 주관적 분석 강화)
 
 ---
 
@@ -44,6 +44,12 @@
 | **KRA 크론 타임존 수정** | ✅ 완료 | `@Cron` 3개에 `{ timeZone: 'Asia/Seoul' }` 누락 수정(UTC→KST). 수·목 출전표 sync 시 분석데이터도 함께 적재. |
 | **경주 결과 순위 정렬 버그** | ✅ 완료 | `ordInt` 정렬에 `NULLS LAST` 추가 — 낙마/실격(ordInt=null) 말들이 1위 앞에 표시되던 문제 수정. |
 | **출전마 번호(chulNo) 보존** | ✅ 완료 | entry 업데이트 시 null로 기존 chulNo 덮어쓰던 버그 수정. 출전표 sync·결과 sync 모두 적용. |
+| **Discord 알림 모듈** | ✅ 완료 | DiscordModule(Global). 회원가입·서버 에러(5xx) 채널별 알림. Bot token + channel ID 방식. AllExceptionsFilter를 APP_FILTER 등록(DI 지원). |
+| **당일 다경주 피로 감지** | ✅ 완료 | 12번째 분석 요소 `sdf` (same_day_fatigue). Python `_same_day_fatigue_score()` 추가. 가중치 0.03. W_HORSE 합 = 1.0 유지. |
+| **AI 주관적 분석 강화** | ✅ 완료 | Gemini 프롬프트에 "분석 방침" 섹션 추가. 기수-마필 궁합, 페이스 전개, 주로 바이어스, 날씨 영향, 클래스 변경 주관 평가 등 정성적 분석 지시. |
+| **Matrix previewApproved 필터 제거** | ✅ 완료 | 종합예상표는 유료 기능이므로 `previewApproved` 체크 불필요. `status=COMPLETED`인 예측 모두 표시. |
+| **실시간 개별예측** | ✅ 완료 | RACE 티켓 사용 시 KRA 실시간 데이터(마체중·날씨·장비·취소) 재조회 후 fresh 예측 생성. skipCache + realtime 프롬프트. 종합예측은 배치 캐시 유지. |
+| **종합예상표 한눈에 7승식** | ✅ 완료 | compact view에서 4승식→7승식 전체 표시. 가로 스크롤 + 68px+repeat(7,1fr) 그리드. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

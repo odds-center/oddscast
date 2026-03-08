@@ -78,23 +78,45 @@ flowchart TD
 |------|--------|------|
 | `generatePreRacePredictions()` | 금/토/일 06:30 KST | 당일 경주 예측 자동 생성 (결과 배치 의존 제거) |
 
-### 1.3 Gemini 프롬프트 구조 v3 (토큰 최적화)
+### 1.3 Gemini 프롬프트 구조 v3.1 (주관적 분석 + 실시간 지원)
 
 ```
 [compact 입력 (~1500 토큰)]
 - 경주 정보: meet, date, dist, rank, weather, track, cascade(10+)
 - 출전마: n(번호), h(마명), j(기수), fs(통합점수), wp(승률%), hs(말점수), js(기수점수),
-          sub([rat,frm,cnd,exp,trn,suit,jky,rest,dist,cls,trng]), r(레이팅), rk(착순), risk(낙마), t(태그)
+          sub([rat,frm,cnd,exp,trn,suit,jky,rest,dist,cls,trng,sdf]), r(레이팅), wg(마체중), rk(착순), risk(낙마), t(태그)
 - Python이 처리한 raw 데이터(equipment, chaksun, ratingHistory 등)는 전송 제외
 
+[분석 방침] — v3.1 추가
+- 숫자 데이터 + 경마 전문가 주관적·정성적 분석 필수
+- 기수-마필 궁합, 페이스 전개, 주로 바이어스, 날씨 영향, 마필 기질 고려
+- 당일 다경주 출전마(sdf) 체중감소·피로 반영, 클래스 승강 주관 평가
+- 승식 예측: 레이스 흐름·변수·이변 가능성 고려한 조합 추천
+
 [규칙]
-- sub 11요소+risk 수치 근거로 reason/strengths/weaknesses 작성
+- sub 12요소+risk 수치 근거 + 주관적 판단으로 reason/strengths/weaknesses 작성
 - risk 30+ → weaknesses에 낙마, cascade 20+ → analysis에 연쇄낙마
+- analysis: 종합예측 6~10문장, 개별예측(realtime) 8~12문장. 서사적 분석, 숫자 나열 금지
+
+[실시간 개별예측 추가 섹션] — realtime=true 시
+- 마체중 급변 분석, 당일 실시간 기상 반영, 저평가마(가치마) 발굴
 
 [출력] horseScores, betTypePredictions(7승식), analysis, preview
 ```
 
-### 1.4 무료 vs 유료 콘텐츠
+### 1.4 종합예측 vs 개별예측
+
+| 구분 | 종합예측 (Matrix) | 개별예측 (Race Detail) |
+|------|-------------------|----------------------|
+| 생성 시점 | Cron/배치 사전 생성 | 사용자 RACE 티켓 사용 시 실시간 |
+| KRA 데이터 | 사전 적재된 DB 데이터 | `refreshRaceDayRealtime()` 재조회 (마체중·날씨·장비·취소) |
+| 캐시 | entriesHash 기반 재사용 | skipCache=true, 항상 새로 생성 |
+| 프롬프트 | 기본 (analysis 6~10문장) | 실시간 강화 (analysis 8~12문장, 체중급변·기상·저평가마 분석) |
+| 비용 | 배치 1회 Gemini 호출 | 티켓 사용마다 Gemini 호출 |
+| 결과 | 모든 유저 동일 | 조회 시점 최신 데이터 반영 |
+| 티켓 | MATRIX 티켓 | RACE 티켓 |
+
+### 1.5 무료 vs 유료 콘텐츠
 
 | 구분      | 무료 (preview)                      | 유료 (analysis)             |
 | --------- | ----------------------------------- | --------------------------- |
@@ -103,13 +125,14 @@ flowchart TD
 | DB 필드   | `prediction.preview`                | `prediction.analysis`       |
 | API       | `GET /predictions/race/:id/preview` | `GET /predictions/race/:id` |
 
-### 1.5 Preview 검수 (previewApproved)
+### 1.6 Preview 검수 (previewApproved)
 
-- `prediction.previewApproved` (Boolean): 관리자 검수 완료 시 `true`
+- `prediction.previewApproved` (Boolean): 관리자 검수 완료 시 `true` (예측 생성 시 자동 `true` 설정)
 - **Preview API는 `previewApproved: true`이고 `status: COMPLETED`인 예측만 반환**
+- **Matrix API는 `previewApproved` 무시** — 종합예상표는 유료 기능이므로 `status: COMPLETED`만 체크
 - 검수 미통과 시 해당 경기 preview 데이터는 서버에서 전송하지 않음 (클라이언트에 미노출)
 
-### 1.6 예측 성공 시 DB 저장 구조 (scores)
+### 1.7 예측 성공 시 DB 저장 구조 (scores)
 
 예측 생성 성공 시 `Prediction.scores`(Json)에 다음을 저장:
 
@@ -123,7 +146,7 @@ flowchart TD
     "horseScoreResult": [
       {
         "hrNo": "...", "score": 84.26,
-        "sub": {"rat": 94.98, "frm": 88.71, "cnd": 80.0, "exp": 66.85, "trn": 82.4, "suit": 62.0},
+        "sub": {"rat": 94.98, "frm": 88.71, "cnd": 80.0, "exp": 66.85, "trn": 82.4, "suit": 62.0, "jky": 55.0, "rest": 75.0, "dist": 60.0, "cls": 50.0, "trng": 65.0, "sdf": 50.0},
         "risk": 10, "winProb": 39.4,
         "tags": ["R상위82", "기세↑", "베테랑55전9승"]
       }
@@ -138,7 +161,7 @@ flowchart TD
 ```
 
 - `horseScores`: Gemini 결과 (API/UI 호환). reason, strengths, weaknesses 포함
-- `horseScoreResult`: Python calculate_score v2 원본 (sub 6요소, risk, winProb, tags)
+- `horseScoreResult`: Python calculate_score v3.1 원본 (sub 12요소, risk, winProb, tags)
 - `analysisData`: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md), [KRA_ANALYSIS_STRATEGY.md](../specs/KRA_ANALYSIS_STRATEGY.md) 참고
 - 점수에 배당 반영(배당 있으면 finalScore 블렌딩). 배당·승식 원칙: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) 참고
 

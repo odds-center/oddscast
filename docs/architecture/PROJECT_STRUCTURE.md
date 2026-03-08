@@ -159,6 +159,7 @@ server/
 │   ├── activity-logs/                   # 활동 로그 — /activity/track, track/batch
 │   ├── config/                          # 글로벌 설정 — /config (GET/PUT :key)
 │   ├── health/                          # 헬스체크 — /health, /health/detailed (prefix 제외)
+│   ├── discord/                          # 📢 Discord 알림 (Global 모듈) — 회원가입·에러 채널 알림
 │   ├── cache/                           # Redis/인메모리 캐시 (서비스)
 │   └── admin/                           # Admin 전용 — /admin/* (users, predictions, kra, statistics 등)
 │

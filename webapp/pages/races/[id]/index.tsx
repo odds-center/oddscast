@@ -414,11 +414,13 @@ export default function RaceDetailPage() {
               title='AI 예측'
               icon='Target'
               badge={
-                !isRaceCompleted && isLoggedIn && availableTickets > 0
-                  ? `예측권 ${availableTickets}장`
-                  : displayPrediction
-                    ? '열람 중'
-                    : undefined
+                isRaceCompleted
+                  ? displayPrediction ? 'AI 결과' : undefined
+                  : isLoggedIn && availableTickets > 0
+                    ? `예측권 ${availableTickets}장`
+                    : displayPrediction
+                      ? '열람 중'
+                      : undefined
               }
               className='mb-2'
             />
@@ -449,50 +451,7 @@ export default function RaceDetailPage() {
                 <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2'>
                   <Icon name='Target' size={20} className='text-stone-400' />
                 </div>
-                <p className='text-text-secondary text-sm mb-3'>이 경주에 대한 AI 예측이 없습니다.</p>
-                <p className='text-text-tertiary text-xs mb-3'>예측권으로 과거 경주 예측을 생성해 볼 수 있습니다.</p>
-                {isLoggedIn && availableTickets > 0 && (
-                  <button
-                    type='button'
-                    onClick={() => {
-                      trackCTA('PREDICTION_TICKET_USE', id as string);
-                      useTicketMutation.mutate({ raceId: id as string });
-                    }}
-                    disabled={useTicketMutation.isPending}
-                    className='btn-primary w-full sm:w-auto px-5 py-2.5 text-sm inline-flex items-center justify-center gap-2'
-                  >
-                    {useTicketMutation.isPending ? (
-                      <>
-                        <Icon name='Loader2' size={18} className='animate-spin' />
-                        AI 분석 생성 중...
-                      </>
-                    ) : (
-                      <>
-                        <Icon name='Target' size={18} />
-                        예측권 1장 사용
-                      </>
-                    )}
-                  </button>
-                )}
-                {isLoggedIn && availableTickets === 0 && (
-                  <p className='text-text-secondary text-sm'>
-                    예측권이 없습니다.{' '}
-                    <Link href={routes.profile.index} className='text-primary hover:underline font-medium'>
-                      충전하기
-                    </Link>
-                  </p>
-                )}
-                {!isLoggedIn && (
-                  <p className='text-text-secondary text-sm'>
-                    <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>
-                      로그인
-                    </Link>
-                    후 예측권으로 AI 분석을 확인하세요.
-                  </p>
-                )}
-                {useTicketMutation.isError && (
-                  <p className='msg-error text-sm mt-2'>{getErrorMessage(useTicketMutation.error)}</p>
-                )}
+                <p className='text-text-secondary text-sm'>이 경주에 대한 AI 예측이 없습니다.</p>
               </div>
             ) : (
               <PredictionLockedView

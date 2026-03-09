@@ -72,7 +72,7 @@ export default function Login() {
   };
 
   return (
-    <Layout title='로그인 | OddsCast'>
+    <Layout title='로그인 | OddsCast' description='OddsCast 로그인 - AI 경마 분석 서비스'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         <AuthCard
           title='로그인'

@@ -39,7 +39,7 @@ export default function JockeyProfilePage() {
   const isEmpty = !profile && !profileLoading;
 
   return (
-    <Layout title={profile ? `${profile.jkName} | OddsCast` : '기수 정보 | OddsCast'}>
+    <Layout title={profile ? `${profile.jkName} | OddsCast` : '기수 정보 | OddsCast'} description='기수 프로필, 경주 이력, 승률 데이터를 확인하세요.'>
       <CompactPageTitle
         title={profile?.jkName ?? '기수 정보'}
         backHref={router.query?.from ? String(router.query.from) : routes.home}

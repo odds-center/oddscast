@@ -49,7 +49,7 @@ export default function SubscriptionsPage() {
   });
 
   return (
-    <Layout title='구독 플랜 | OddsCast'>
+    <Layout title='구독 플랜 | OddsCast' description='OddsCast 구독 플랜을 비교하고 선택하세요.'>
       <CompactPageTitle title='구독 플랜' backHref={routes.profile.index} />
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm mb-6'>

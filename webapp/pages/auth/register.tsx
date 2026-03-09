@@ -54,7 +54,7 @@ export default function Register() {
   };
 
   return (
-    <Layout title='회원가입 | OddsCast'>
+    <Layout title='회원가입 | OddsCast' description='OddsCast 회원가입 - AI 경마 분석 서비스에 가입하세요.'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
         <AuthCard
           title='회원가입'

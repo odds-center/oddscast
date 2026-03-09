@@ -352,9 +352,11 @@ interface LayoutProps {
   children: React.ReactNode;
   title?: string;
   description?: string;
+  keywords?: string;
 }
 
-const DEFAULT_DESCRIPTION = 'AI 기반 경마 분석 서비스 - 데이터 분석과 인공지능으로 경마를 더 스마트하게';
+const DEFAULT_DESCRIPTION = 'AI 기반 경마 승부 예측 서비스 - 공공데이터 분석과 인공지능으로 경마를 더 스마트하게. 서울, 부산, 제주 경마장 경주 분석, 출전마 데이터, AI 예측 제공.';
+const DEFAULT_KEYWORDS = '경마 예측, AI 경마, 경마 분석, 경마 승부 예측, 말 경주, 경마장, 서울경마, 부산경마, 제주경마, OddsCast, 오즈캐스트, 경마 데이터, 경마 AI, 경주 분석, 출전마 분석, 기수 분석, 경마 순위, 경마 결과, KRA, 한국경마';
 
 const WEBAPP_URL = CONFIG.webapp.baseURL;
 
@@ -362,15 +364,24 @@ const JSON_LD_WEBSITE = JSON.stringify({
   '@context': 'https://schema.org',
   '@type': 'WebSite',
   name: 'OddsCast',
+  alternateName: '오즈캐스트',
   url: WEBAPP_URL,
   description: DEFAULT_DESCRIPTION,
   inLanguage: 'ko',
+  publisher: {
+    '@type': 'Organization',
+    name: 'OddsCast',
+    logo: {
+      '@type': 'ImageObject',
+      url: `${WEBAPP_URL}/oddscast-logo.png`,
+    },
+  },
 });
 
-const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', description = DEFAULT_DESCRIPTION }) => {
+const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', description = DEFAULT_DESCRIPTION, keywords = DEFAULT_KEYWORDS }) => {
   const router = useRouter();
   const canonicalUrl = `${WEBAPP_URL}${router.asPath.split('?')[0]}`;
-  const ogImage = `${WEBAPP_URL}/oddscast-logo.png`;
+  const ogImage = `${WEBAPP_URL}/og-image.png`;
 
   return (
     <div className='h-dvh bg-background flex flex-col overflow-hidden w-full max-w-full'>
@@ -387,6 +398,9 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', descripti
           content='width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover'
         />
         <meta name='description' content={description} />
+        <meta name='keywords' content={keywords} />
+        <meta name='author' content='OddsCast' />
+        <meta name='robots' content='index, follow' />
         <meta name='theme-color' content='#1c1917' />
         <meta name='apple-mobile-web-app-capable' content='yes' />
         <meta name='apple-mobile-web-app-status-bar-style' content='default' />
@@ -394,14 +408,20 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', descripti
         <meta property='og:title' content={title} />
         <meta property='og:description' content={description} />
         <meta property='og:image' content={ogImage} />
+        <meta property='og:image:width' content='2752' />
+        <meta property='og:image:height' content='1536' />
+        <meta property='og:image:type' content='image/png' />
+        <meta property='og:image:alt' content='OddsCast - AI 기반 경마 승부 예측' />
         <meta property='og:url' content={canonicalUrl} />
         <meta property='og:type' content='website' />
         <meta property='og:locale' content='ko_KR' />
         <meta property='og:site_name' content='OddsCast' />
-        <meta name='twitter:card' content='summary' />
+        <meta name='twitter:card' content='summary_large_image' />
         <meta name='twitter:title' content={title} />
         <meta name='twitter:description' content={description} />
         <meta name='twitter:image' content={ogImage} />
+        <meta name='twitter:image:alt' content='OddsCast - AI 기반 경마 승부 예측' />
+        <meta name='naver-site-verification' content='' />
         <script type='application/ld+json' dangerouslySetInnerHTML={{ __html: JSON_LD_WEBSITE }} />
       </Head>
 

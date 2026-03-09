@@ -39,7 +39,7 @@ export default function TrainerProfilePage() {
   const isEmpty = !profile && !profileLoading;
 
   return (
-    <Layout title={profile ? `${profile.trName} | OddsCast` : '조교사 정보 | OddsCast'}>
+    <Layout title={profile ? `${profile.trName} | OddsCast` : '조교사 정보 | OddsCast'} description='조교사 프로필, 관리마 정보, 성적을 확인하세요.'>
       <CompactPageTitle
         title={profile?.trName ?? '조교사 정보'}
         backHref={router.query?.from ? String(router.query.from) : routes.home}

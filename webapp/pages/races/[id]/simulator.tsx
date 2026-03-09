@@ -138,7 +138,7 @@ export default function SimulatorPage() {
   const pageTitle = rcNo ? `시뮬레이터 — ${meetName} 제${rcNo}경주` : '시뮬레이터';
 
   return (
-    <Layout title={rcNo ? `시뮬레이터 | 경주 #${rcNo} | OddsCast` : '시뮬레이터 | OddsCast'}>
+    <Layout title={rcNo ? `시뮬레이터 | 경주 #${rcNo} | OddsCast` : '시뮬레이터 | OddsCast'} description='나만의 경주 시뮬레이션으로 출전마를 분석하고 예측해 보세요.'>
       <CompactPageTitle title={pageTitle} backHref={backHref} />
 
       <DataFetchState

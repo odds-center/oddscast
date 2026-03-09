@@ -80,7 +80,9 @@
       "Bash(test:*)",
       "Bash(/Users/risingcore/Desktop/project/oddscast/server/.env:*)",
       "Bash(./scripts/railway-env-push.sh server:*)",
-      "Bash(TZ=Asia/Seoul date +%Y-%m-%d %H:%M:%S KST:*)"
+      "Bash(TZ=Asia/Seoul date +%Y-%m-%d %H:%M:%S KST:*)",
+      "Bash(identify:*)",
+      "Bash(grep \"\"name\"\":*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

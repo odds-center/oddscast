@@ -408,8 +408,8 @@ const Layout: React.FC<LayoutProps> = ({ children, title = 'OddsCast', descripti
         <meta property='og:title' content={title} />
         <meta property='og:description' content={description} />
         <meta property='og:image' content={ogImage} />
-        <meta property='og:image:width' content='2752' />
-        <meta property='og:image:height' content='1536' />
+        <meta property='og:image:width' content='1129' />
+        <meta property='og:image:height' content='630' />
         <meta property='og:image:type' content='image/png' />
         <meta property='og:image:alt' content='OddsCast - AI 기반 경마 승부 예측' />
         <meta property='og:url' content={canonicalUrl} />

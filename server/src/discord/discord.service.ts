@@ -96,4 +96,46 @@ export class DiscordService {
       },
     ]);
   }
+
+  /**
+   * Notify client error (4xx) → error channel.
+   * Covers 429 (rate limit), 401, 403, 400, 404, etc.
+   */
+  async notifyClientError(
+    method: string,
+    url: string,
+    status: number,
+    message: string,
+    ip?: string,
+  ): Promise<void> {
+    const STATUS_LABELS: Record<number, string> = {
+      429: '⚠️ Rate Limit (429)',
+      401: '🔒 Unauthorized (401)',
+      403: '🚫 Forbidden (403)',
+      400: '❌ Bad Request (400)',
+      404: '🔍 Not Found (404)',
+    };
+    const title = STATUS_LABELS[status] ?? `⚠️ Client Error (${status})`;
+
+    // Orange for rate limit, yellow for others
+    const color = status === 429 ? 0xea580c : 0xd97706;
+
+    const fields: Array<{ name: string; value: string; inline?: boolean }> = [
+      { name: '요청', value: `\`${method} ${url}\``, inline: false },
+      { name: '메시지', value: message.slice(0, 200), inline: false },
+    ];
+    if (ip) {
+      fields.push({ name: 'IP', value: `\`${ip}\``, inline: true });
+    }
+
+    await this.sendToChannel(this.errorChannelId, [
+      {
+        title,
+        color,
+        fields,
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
 }

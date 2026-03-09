@@ -70,6 +70,17 @@ export class AllExceptionsFilter implements ExceptionFilter {
         .catch(() => {});
     } else if (status >= 400) {
       appLogger.warn(`[${request.method}] ${request.url} → ${status} ${errorMessage}`);
+
+      // Discord notification for client errors (fire-and-forget)
+      this.discordService
+        .notifyClientError(
+          request.method,
+          request.url,
+          status,
+          errorMessage,
+          (request.headers['x-forwarded-for'] as string) ?? request.ip,
+        )
+        .catch(() => {});
     }
 
     response.status(status).json({

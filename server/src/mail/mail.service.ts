@@ -5,12 +5,16 @@ import { Resend } from 'resend';
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
-  private resend: Resend;
+  private resend: Resend | null = null;
   private fromAddress: string;
 
   constructor(private readonly config: ConfigService) {
     const apiKey = this.config.get<string>('RESEND_API_KEY', '');
-    this.resend = new Resend(apiKey);
+    if (apiKey) {
+      this.resend = new Resend(apiKey);
+    } else {
+      this.logger.warn('RESEND_API_KEY not configured — email sending disabled');
+    }
     this.fromAddress = this.config.get<string>(
       'MAIL_FROM',
       'OddsCast <onboarding@resend.dev>',
@@ -24,6 +28,10 @@ export class MailService {
     to: string,
     code: string,
   ): Promise<{ success: boolean; error?: string }> {
+    if (!this.resend) {
+      this.logger.warn('Email not sent (Resend not configured)');
+      return { success: false, error: 'Mail service not configured' };
+    }
     try {
       const { error } = await this.resend.emails.send({
         from: this.fromAddress,

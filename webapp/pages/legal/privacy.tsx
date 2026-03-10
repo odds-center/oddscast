@@ -1,5 +1,4 @@
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
@@ -9,7 +8,7 @@ export default function PrivacyPage() {
     <Layout title='개인정보 처리방침 | OddsCast'>
       <div className='max-w-2xl mx-auto pb-12'>
         <CompactPageTitle title='개인정보 처리방침' backHref={routes.home} />
-        <div className='card space-y-6 text-sm text-foreground leading-relaxed'>
+        <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-6 text-sm text-foreground leading-relaxed'>
           <p className='text-text-tertiary text-xs'>
             시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
           </p>
@@ -238,7 +237,6 @@ export default function PrivacyPage() {
             본 개인정보처리방침은 2025년 1월 1일부터 시행됩니다. 이용약관은 <Link href={routes.legal.terms} className='text-primary underline'>서비스 이용 약관</Link>을 참고하세요.
           </p>
         </div>
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

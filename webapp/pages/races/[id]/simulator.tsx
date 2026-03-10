@@ -11,6 +11,7 @@ import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import DataFetchState from '@/components/page/DataFetchState';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import RaceApi from '@/lib/api/raceApi';
 import PredictionApi from '@/lib/api/predictionApi';
 import { routes } from '@/lib/routes';
@@ -149,10 +150,12 @@ export default function SimulatorPage() {
         emptyIcon="Target"
         emptyTitle="경주를 선택해 주세요"
         emptyAction={
-          <Link href={routes.races.list} className="btn-primary inline-flex items-center gap-2">
-            <Icon name="ClipboardList" size={18} />
-            경주 목록
-          </Link>
+          <Button asChild>
+            <Link href={routes.races.list}>
+              <Icon name="ClipboardList" size={18} />
+              경주 목록
+            </Link>
+          </Button>
         }
         loadingLabel="예측 데이터 불러오는 중..."
       >
@@ -163,10 +166,12 @@ export default function SimulatorPage() {
             <p className="text-sm text-text-secondary mb-5">
               이 경주의 AI 예측이 준비되면 시뮬레이터를 이용할 수 있습니다.
             </p>
-            <Link href={backHref} className="btn-primary inline-flex items-center gap-2">
-              <Icon name="ChevronLeft" size={18} />
-              경주 상세로
-            </Link>
+            <Button asChild>
+              <Link href={backHref}>
+                <Icon name="ChevronLeft" size={18} />
+                경주 상세로
+              </Link>
+            </Button>
           </div>
         ) : hasScores ? (
           <div className="space-y-5">

@@ -4,9 +4,10 @@ import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 import Link from 'next/link';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import AuthCard from '@/components/page/AuthCard';
 import FormInput from '@/components/page/FormInput';
+import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useMutation } from '@tanstack/react-query';
@@ -36,6 +37,7 @@ export default function ForgotPasswordPage() {
   return (
     <Layout title='비밀번호 찾기 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <CompactPageTitle title='비밀번호 찾기' backHref={routes.auth.login} />
         {sent ? (
           <AuthCard
             title='이메일을 확인해주세요'
@@ -44,13 +46,12 @@ export default function ForgotPasswordPage() {
             <p className='text-text-secondary text-sm mb-6'>
               메일함에서 링크를 클릭하여 새 비밀번호를 설정하세요.
             </p>
-            <Link
-              href={routes.auth.login}
-              className='btn-primary w-full min-h-[44px] py-3 inline-flex items-center justify-center gap-2 rounded-lg text-[16px]'
-            >
-              <Icon name='LogIn' size={20} />
-              로그인
-            </Link>
+            <Button asChild className='w-full py-3 rounded-lg text-[16px]'>
+              <Link href={routes.auth.login}>
+                <Icon name='LogIn' size={20} />
+                로그인
+              </Link>
+            </Button>
           </AuthCard>
         ) : (
           <AuthCard
@@ -71,10 +72,10 @@ export default function ForgotPasswordPage() {
                   {getErrorMessage(mutation.error)}
                 </p>
               )}
-              <button
+              <Button
                 type='submit'
                 disabled={mutation.isPending || isSubmitting}
-                className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+                className='w-full py-3 rounded-lg text-[16px]'
               >
                 {mutation.isPending ? (
                   <>
@@ -84,14 +85,11 @@ export default function ForgotPasswordPage() {
                 ) : (
                   '재설정 링크 발송'
                 )}
-              </button>
+              </Button>
             </form>
           </AuthCard>
         )}
 
-        <div className='mt-6 flex justify-center'>
-          <BackLink href={routes.auth.login} label='로그인으로' />
-        </div>
       </div>
     </Layout>
   );

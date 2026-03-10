@@ -52,6 +52,9 @@ export class User {
   @Column({ type: 'text', nullable: true })
   favoriteMeet!: string | null;
 
+  @Column({ type: 'boolean', default: false })
+  hasSeenOnboarding!: boolean;
+
   @CreateDateColumn({ type: 'timestamp', precision: 3 })
   createdAt!: Date;
 

@@ -74,7 +74,7 @@ export default function PredictionHistoryPage() {
                     </p>
                   </div>
                   {variant != null && pct != null && (
-                    <Badge variant={variant} size='md'>{pct.toFixed(1)}%</Badge>
+                    <Badge variant={variant}>{pct.toFixed(1)}%</Badge>
                   )}
                 </Link>
               );
@@ -119,7 +119,7 @@ export default function PredictionHistoryPage() {
                     const variant =
                       pct >= 60 ? 'primary' : pct >= 30 ? 'warning' : 'muted';
                     return (
-                      <Badge variant={variant} size='md'>
+                      <Badge variant={variant}>
                         {pct.toFixed(1)}%
                       </Badge>
                     );

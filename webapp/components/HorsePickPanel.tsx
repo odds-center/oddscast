@@ -3,6 +3,7 @@
  * Bet type selection, selection history, horse list, save/delete
  */
 import Icon from './icons';
+import { Button } from '@/components/ui/button';
 import { SectionTitle } from './ui';
 import {
   PICK_TYPE_LABELS,
@@ -187,13 +188,14 @@ export default function HorsePickPanel({
       {/* Save/Delete */}
       <div className='shrink-0 mt-4 flex gap-2'>
         {canSave && (
-          <button
+          <Button
+            size='sm'
             onClick={() => {
               trackCTA('PICK_SAVE', pickType);
               onSave();
             }}
             disabled={isSaving}
-            className='btn-primary flex-1 py-1.5 text-sm flex items-center justify-center gap-1'
+            className='flex-1'
           >
             {isSaving ? (
               <>
@@ -203,17 +205,18 @@ export default function HorsePickPanel({
             ) : (
               <>{hasPick ? '수정' : '저장'}</>
             )}
-          </button>
+          </Button>
         )}
         {hasPick && (
-          <button
+          <Button
+            variant='outline'
+            size='sm'
             onClick={onDelete}
             disabled={isDeleting}
-            className='btn-secondary py-1.5 px-3 text-sm flex items-center gap-1'
           >
             <Icon name='Trash2' size={14} />
             삭제
-          </button>
+          </Button>
         )}
       </div>
     </div>

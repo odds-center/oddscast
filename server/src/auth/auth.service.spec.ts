@@ -164,18 +164,15 @@ describe('AuthService', () => {
       );
     });
 
-    it('should return requireVerification for unverified user', async () => {
+    it('should allow login for unverified user (verification not required at login)', async () => {
       const testUser = createTestUser({ isEmailVerified: false });
       userRepo.findOne.mockResolvedValue(testUser);
-      emailVerificationRepo.create.mockReturnValue({});
-      emailVerificationRepo.save.mockResolvedValue({});
 
       const result = await service.login('test@example.com', 'password123');
 
-      expect('requireVerification' in result).toBe(true);
-      const verifyResult = result as { requireVerification: boolean; email: string };
-      expect(verifyResult.requireVerification).toBe(true);
-      expect(verifyResult.email).toBe('test@example.com');
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('user');
+      expect(result.user.email).toBe('test@example.com');
     });
 
     it('should throw UnauthorizedException on wrong email', async () => {

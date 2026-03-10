@@ -62,3 +62,17 @@ h3 {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Message utilities (migrated from messages.css) */
+.msg-error { color: var(--error); }
+.msg-success { color: var(--success); }
+.msg-warning { color: var(--warning); }
+
+/* Link utility (migrated from links.css) */
+.link-primary {
+  color: var(--primary);
+  text-decoration: none;
+}
+.link-primary:hover {
+  text-decoration: underline;
+}

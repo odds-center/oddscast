@@ -3,9 +3,10 @@ import { useForm } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import AuthCard from '@/components/page/AuthCard';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import FormInput from '@/components/page/FormInput';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
@@ -51,21 +52,18 @@ export default function ResetPasswordPage() {
     return (
       <Layout title='비밀번호 재설정 | OddsCast'>
         <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+          <CompactPageTitle title='비밀번호 재설정' backHref={routes.auth.login} />
           <AuthCard
             title='링크를 확인해주세요'
             description='비밀번호 재설정 링크에 토큰이 없습니다. 이메일의 링크를 다시 확인해주세요.'
           >
-            <Link
-              href={routes.auth.forgotPassword}
-              className='btn-primary w-full min-h-[44px] py-3 inline-flex items-center justify-center gap-2 rounded-lg text-[16px]'
-            >
-              <Icon name='Mail' size={20} />
-              비밀번호 찾기
-            </Link>
+            <Button asChild className='w-full py-3 rounded-lg text-[16px]'>
+              <Link href={routes.auth.forgotPassword}>
+                <Icon name='Mail' size={20} />
+                비밀번호 찾기
+              </Link>
+            </Button>
           </AuthCard>
-          <div className='mt-6 flex justify-center'>
-            <BackLink href={routes.auth.login} label='로그인으로' />
-          </div>
         </div>
       </Layout>
     );
@@ -74,6 +72,7 @@ export default function ResetPasswordPage() {
   return (
     <Layout title='비밀번호 재설정 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <CompactPageTitle title='비밀번호 재설정' backHref={routes.auth.login} />
         <AuthCard
           title='비밀번호 재설정'
           description='새 비밀번호를 입력하세요. (6자 이상)'
@@ -104,10 +103,10 @@ export default function ResetPasswordPage() {
             {errors.root && (
               <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
-            <button
+            <Button
               type='submit'
               disabled={isSubmitting || mutation.isPending}
-              className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+              className='w-full py-3 rounded-lg text-[16px]'
             >
               {mutation.isPending ? (
                 <>
@@ -117,13 +116,10 @@ export default function ResetPasswordPage() {
               ) : (
                 '비밀번호 변경'
               )}
-            </button>
+            </Button>
           </form>
         </AuthCard>
 
-        <div className='mt-6 flex justify-center'>
-          <BackLink href={routes.auth.login} label='로그인으로' />
-        </div>
       </div>
     </Layout>
   );

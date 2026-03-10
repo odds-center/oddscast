@@ -30,7 +30,7 @@ const RaceCard: React.FC<RaceCardProps> = ({ race }) => {
 
   return (
     <Link href={routes.races.detail(race.id)} className='block group touch-manipulation'>
-      <div className='card card-hover flex items-center gap-3 sm:gap-4 py-4 sm:py-5 px-4 sm:px-5 lg:px-6 border-l-[4px] border-l-slate-400'>
+      <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] hover:border-stone-300 active:bg-stone-50 cursor-pointer flex items-center gap-3 sm:gap-4 py-4 sm:py-5 px-4 sm:px-5 lg:px-6 border-l-[4px] border-l-slate-400'>
         <div className='flex flex-col items-center justify-center min-w-[56px] sm:min-w-[64px] py-2 rounded-lg bg-stone-100 border border-stone-200 shrink-0'>
           <Icon name='Flag' size={18} className='text-stone-500 mb-0.5 sm:mb-1' strokeWidth={2} />
           <span className='font-display font-bold text-base lg:text-lg text-stone-700'>

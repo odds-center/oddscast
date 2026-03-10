@@ -39,6 +39,7 @@ export interface SanitizedUser {
   role: string;
   isActive: boolean;
   favoriteMeet: string | null;
+  hasSeenOnboarding: boolean;
   /** Consecutive login days (for 7-day reward display) */
   consecutiveLoginDays?: number;
   createdAt: Date;
@@ -176,16 +177,6 @@ export class AuthService {
     const valid = await bcrypt.compare(password, user.password);
     if (!valid)
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
-
-    // Block login if email not verified
-    if (!user.isEmailVerified) {
-      await this.sendVerificationCode(user.id, user.email);
-      return {
-        requireVerification: true,
-        email: user.email,
-        message: '이메일 인증이 필요합니다. 인증 코드가 발송되었습니다.',
-      };
-    }
 
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
@@ -349,6 +340,7 @@ export class AuthService {
         'role',
         'isActive',
         'favoriteMeet',
+        'hasSeenOnboarding',
         'consecutiveLoginDays',
         'createdAt',
         'updatedAt',
@@ -370,16 +362,18 @@ export class AuthService {
         'role',
         'isActive',
         'favoriteMeet',
+        'hasSeenOnboarding',
         'createdAt',
         'updatedAt',
       ],
     });
     if (!user) throw new UnauthorizedException();
 
-    if (dto.name !== undefined) user.name = dto.name;
-    if (dto.nickname !== undefined) user.nickname = dto.nickname;
-    if (dto.name === undefined && dto.nickname === undefined)
-      return this.sanitize(user);
+    let changed = false;
+    if (dto.name !== undefined) { user.name = dto.name; changed = true; }
+    if (dto.nickname !== undefined) { user.nickname = dto.nickname; changed = true; }
+    if (dto.hasSeenOnboarding !== undefined) { user.hasSeenOnboarding = dto.hasSeenOnboarding; changed = true; }
+    if (!changed) return this.sanitize(user);
 
     await this.userRepo.save(user);
     return this.sanitize(user);
@@ -564,6 +558,7 @@ export class AuthService {
       role: user.role,
       isActive: user.isActive,
       favoriteMeet: user.favoriteMeet ?? null,
+      hasSeenOnboarding: user.hasSeenOnboarding ?? false,
       consecutiveLoginDays: user.consecutiveLoginDays ?? 0,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,

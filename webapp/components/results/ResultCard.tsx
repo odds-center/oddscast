@@ -38,7 +38,7 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
       href={routes.races.detail(linkId)}
       className='block group touch-manipulation'
     >
-      <div className='card card-hover flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-slate-400 h-full'>
+      <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] hover:border-stone-300 active:bg-stone-50 cursor-pointer flex flex-col gap-3 py-4 px-4 sm:px-5 border-l-[4px] border-l-slate-400 h-full'>
         {/* Race information */}
         <div className='flex items-center gap-3 min-w-0'>
           <div className='flex flex-col items-center justify-center min-w-[52px] py-2 rounded-lg bg-stone-100 border border-stone-200 shrink-0'>

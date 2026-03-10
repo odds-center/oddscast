@@ -18,6 +18,7 @@ import CommentaryFeed from '@/components/predictions/CommentaryFeed';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import PredictionTicketsApi from '@/lib/api/predictionTicketApi';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -177,9 +178,11 @@ export default function PredictionMatrixPage() {
           <RequireLogin
             suffix='종합 예상표를 확인할 수 있습니다'
             action={
-              <Link href={routes.auth.login} className='btn-primary inline-flex items-center gap-1.5 px-4 py-2'>
-                로그인하고 보기
-              </Link>
+              <Button asChild>
+                <Link href={routes.auth.login}>
+                  로그인하고 보기
+                </Link>
+              </Button>
             }
           />
         </div>
@@ -298,18 +301,20 @@ export default function PredictionMatrixPage() {
                     </div>
                     <div className='w-full sm:w-auto flex flex-col gap-1'>
                       {availableMatrixTickets > 0 ? (
-                        <button
+                        <Button
                           onClick={() => useMatrixMutation.mutate()}
                           disabled={useMatrixMutation.isPending}
-                          className='btn-primary w-full sm:w-auto text-sm px-4 py-2'
+                          className='w-full sm:w-auto'
                         >
                           {useMatrixMutation.isPending ? '열람 중...' : `예측권 사용 (${availableMatrixTickets}장 보유)`}
-                        </button>
+                        </Button>
                       ) : (
-                        <Link href={routes.mypage.matrixTicketPurchase} className='btn-primary w-full sm:w-auto inline-flex items-center justify-center gap-1.5 text-sm px-4 py-2'>
-                          <Icon name='CreditCard' size={16} />
-                          종합 예측권 구매
-                        </Link>
+                        <Button asChild className='w-full sm:w-auto'>
+                          <Link href={routes.mypage.matrixTicketPurchase}>
+                            <Icon name='CreditCard' size={16} />
+                            종합 예측권 구매
+                          </Link>
+                        </Button>
                       )}
                     </div>
                   </div>

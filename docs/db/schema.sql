@@ -47,6 +47,7 @@ CREATE TABLE IF NOT EXISTS "users" (
     "lastConsecutiveLoginDate" TEXT,
     "consecutiveLoginDays" INTEGER NOT NULL DEFAULT 0,
     "favoriteMeet" TEXT,
+    "hasSeenOnboarding" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),

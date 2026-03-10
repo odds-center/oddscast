@@ -3,7 +3,7 @@
 > **TypeORM + PostgreSQL.** 스키마 DDL: `docs/db/schema.sql` (전체 SQL은 `docs/db/`에서 확인), 엔티티: `server/src/database/entities/`  
 > **KRA API 기준 정렬** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
-**Last updated:** 2026-03-08
+**Last updated:** 2026-03-10
 
 ---
 
@@ -68,6 +68,7 @@ erDiagram
 | `lastConsecutiveLoginDate` | String? | 연속 로그인 기준일 (KST YYYY-MM-DD) | |
 | `consecutiveLoginDays` | Int       | 연속 로그인 일수 (7일 달성 시 예측권 지급 후 0 리셋) | default: 0 |
 | `favoriteMeet`    | String?       | 즐겨찾기 경마장        | 서울/제주/부산경남 등 |
+| `hasSeenOnboarding` | Boolean     | 온보딩 튜토리얼 완료 여부 | default: false |
 | `createdAt`       | DateTime      | 생성일                 | auto           |
 | `updatedAt`       | DateTime      | 수정일                 | auto           |
 

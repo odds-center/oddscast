@@ -4,7 +4,7 @@
  */
 import Link from 'next/link';
 import Icon from '@/components/icons';
-import { Tooltip } from '@/components/ui';
+import Tooltip from '@/components/ui/SimpleTooltip';
 import { routes } from '@/lib/routes';
 
 /** Horse entry fields required for rendering */

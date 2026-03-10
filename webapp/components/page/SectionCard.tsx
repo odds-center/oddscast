@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Icon from '../icons';
-import { Card, SectionTitle } from '../ui';
+import { Card } from '../ui/card';
+import SectionTitle from '../ui/SectionTitle';
 import type { IconName } from '../icons';
 
 interface SectionCardProps {

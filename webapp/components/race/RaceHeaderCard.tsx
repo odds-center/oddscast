@@ -3,8 +3,8 @@
  */
 import type { ReactNode } from 'react';
 import Icon from '@/components/icons';
-import Badge from '@/components/ui/Badge';
-import Tooltip from '@/components/ui/Tooltip';
+import { Badge } from '@/components/ui/badge';
+import Tooltip from '@/components/ui/SimpleTooltip';
 import { formatRcDate, formatNumber } from '@/lib/utils/format';
 import {
   getRankTerm,

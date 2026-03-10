@@ -1,12 +1,11 @@
 import { InputHTMLAttributes, forwardRef } from 'react';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils/cn';
 
 interface FormInputProps extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
   error?: string;
 }
-
-const inputClass =
-  'input-base w-full px-4 text-foreground focus:border-stone-400 focus:outline-none focus:ring-2 focus:ring-gray-200';
 
 const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ({ label, error, className = '', name, id, ...props }, ref) => {
@@ -15,16 +14,16 @@ const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
     return (
       <div>
         <label className='block text-[16px] font-medium mb-2 text-foreground'>{label}</label>
-        <input
+        <Input
           ref={ref}
           name={name}
           id={inputId}
-          className={`${inputClass} ${className}`}
+          className={cn(className)}
           aria-invalid={error ? true : undefined}
           aria-describedby={error && errorId ? errorId : undefined}
           {...props}
         />
-        {error && <p id={errorId} className='msg-error mt-1.5'>{error}</p>}
+        {error && <p id={errorId} className='text-error text-xs mt-1.5'>{error}</p>}
       </div>
     );
   },

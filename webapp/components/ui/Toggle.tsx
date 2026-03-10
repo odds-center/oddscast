@@ -1,4 +1,9 @@
-'use client';
+/**
+ * Toggle — wrapper around shadcn Switch with label/description support
+ * Keeps the same checked/onChange API for backward compatibility
+ */
+import { Switch } from './switch';
+import { cn } from '@/lib/utils/cn';
 
 interface ToggleProps {
   checked: boolean;
@@ -7,6 +12,7 @@ interface ToggleProps {
   label?: string;
   description?: string;
   'aria-label'?: string;
+  className?: string;
 }
 
 export default function Toggle({
@@ -16,34 +22,22 @@ export default function Toggle({
   label,
   description,
   'aria-label': ariaLabel,
+  className,
 }: ToggleProps) {
   return (
     <label
-      className={`flex items-center gap-4 py-4 min-h-[56px] cursor-pointer select-none rounded-xl transition-colors ${
-        disabled ? 'cursor-not-allowed opacity-70' : 'active:opacity-90 focus-within:bg-stone-100'
-      }`}
+      className={cn(
+        'flex items-center gap-4 py-4 min-h-[56px] cursor-pointer select-none rounded-xl transition-colors',
+        disabled ? 'cursor-not-allowed opacity-70' : 'active:opacity-90',
+        className,
+      )}
     >
-      <span className='relative inline-flex shrink-0'>
-        <input
-          type='checkbox'
-          role='switch'
-          checked={checked}
-          onChange={(e) => onChange(e.target.checked)}
-          disabled={disabled}
-          aria-label={ariaLabel ?? label}
-          className='peer sr-only'
-        />
-        <span
-          className={`block w-12 h-7 rounded-full transition-colors duration-200 ${
-            checked ? 'bg-stone-600' : 'bg-border'
-          }`}
-        />
-        <span
-          className={`absolute top-1 left-1 w-5 h-5 rounded-full bg-white shadow-md transition-transform duration-200 ease-out ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
-        />
-      </span>
+      <Switch
+        checked={checked}
+        onCheckedChange={onChange}
+        disabled={disabled}
+        aria-label={ariaLabel ?? label}
+      />
       {(label || description) && (
         <span className='flex-1 min-w-0'>
           {label && (

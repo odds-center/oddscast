@@ -18,9 +18,6 @@
   .data-table {
     min-width: max-content;
   }
-  .card {
-    padding: 0.875rem;
-  }
   .page-header {
     margin-bottom: 0.75rem;
   }
@@ -30,36 +27,11 @@
   .home-hero {
     padding: 1rem;
   }
-  .btn-primary,
-  .btn-secondary,
-  .btn-ghost {
-    min-height: 44px;
-    padding: 0 1rem;
-    font-size: 0.9375rem;
-    border-radius: 10px;
-  }
-  .btn-ghost {
-    padding: 0 0.75rem;
-    display: inline-flex;
-    align-items: center;
-  }
-  .input-base {
-    min-height: 44px;
-  }
   .dropdown-option {
     min-height: 44px;
   }
 }
 @media (hover: none) {
-  .btn-primary:active {
-    opacity: 0.9;
-  }
-  .btn-secondary:active {
-    opacity: 0.88;
-  }
-  .card-hover:active {
-    background: #fafaf9;
-  }
   a {
     -webkit-tap-highlight-color: transparent;
     touch-action: manipulation;

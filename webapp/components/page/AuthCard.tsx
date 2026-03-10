@@ -1,4 +1,4 @@
-import { Card } from '@/components/ui';
+import { Card } from '@/components/ui/card';
 
 interface AuthCardProps {
   title: string;

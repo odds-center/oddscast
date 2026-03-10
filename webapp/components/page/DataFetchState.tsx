@@ -1,6 +1,7 @@
 import { ReactNode } from 'react';
 import LoadingSpinner from '../LoadingSpinner';
 import EmptyState from '../EmptyState';
+import { Button } from '@/components/ui/button';
 import { getErrorMessage } from '@/lib/utils/error';
 import type { IconName } from '../icons';
 
@@ -51,9 +52,9 @@ export default function DataFetchState({
         description={getErrorMessage(error)}
         action={
           onRetry ? (
-            <button onClick={onRetry} className='btn-secondary px-4 py-2 text-sm' aria-label='다시 시도'>
+            <Button onClick={onRetry} variant='outline' size='sm' aria-label='다시 시도'>
               다시 시도
-            </button>
+            </Button>
           ) : undefined
         }
       />

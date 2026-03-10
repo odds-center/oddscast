@@ -35,7 +35,7 @@ export default function QuickLinks({ items = DEFAULT_LINKS, columns = 3 }: Quick
         <Link
           key={href}
           href={href}
-          className='card card-hover flex flex-col items-center justify-center gap-2 py-6 px-4 text-center touch-manipulation group'
+          className='rounded-[10px] border border-border bg-card p-4 hover:border-stone-300 active:bg-stone-50 cursor-pointer -webkit-tap-highlight-color-transparent flex flex-col items-center justify-center gap-2 py-6 px-4 text-center touch-manipulation group'
         >
           <span className='inline-flex items-center justify-center w-12 h-12 rounded-xl bg-stone-100 border border-stone-200 group-hover:bg-stone-200 transition-colors shrink-0'>
             <Icon name={icon} size={24} className='text-stone-500' strokeWidth={2} />

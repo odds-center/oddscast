@@ -15,7 +15,9 @@ import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { routes } from '@/lib/routes';
 import { FloatingAppBar } from '@/components/Layout';
-import { hasSeenOnboarding } from '@/components/onboarding';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { hasSeenOnboardingLocal } from '@/components/onboarding';
+import AuthApi from '@/lib/api/authApi';
 
 const OnboardingTutorial = dynamic(
   () => import('@/components/onboarding/OnboardingTutorial'),
@@ -49,11 +51,28 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
 
   // Post-mount initialization: accessibility + onboarding
   const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   useEffect(() => {
     if (!clientMounted) return;
     hydrateAccessibility();
-    if (!hasSeenOnboarding()) setShowOnboarding(true);
-  }, [clientMounted, hydrateAccessibility]);
+
+    // Logged-in: check DB; non-logged-in: check localStorage
+    if (isLoggedIn) {
+      AuthApi.getCurrentUser()
+        .then((user) => {
+          const u = user as { hasSeenOnboarding?: boolean };
+          if (!u.hasSeenOnboarding && !hasSeenOnboardingLocal()) {
+            setShowOnboarding(true);
+          }
+        })
+        .catch(() => {
+          // Fallback to localStorage on API failure
+          if (!hasSeenOnboardingLocal()) setShowOnboarding(true);
+        });
+    } else {
+      if (!hasSeenOnboardingLocal()) setShowOnboarding(true);
+    }
+  }, [clientMounted, hydrateAccessibility, isLoggedIn]);
 
   // GA page view tracking — register event listener once, not on every route change
   useEffect(() => {
@@ -172,12 +191,20 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
       <Sentry.ErrorBoundary fallback={<p>An error occurred. Please refresh the page.</p>}>
         <QueryClientProvider client={queryClient}>
           <HydrationBoundary state={dehydratedState ?? undefined}>
-            <Component {...restPageProps} />
+            <TooltipProvider>
+              <Component {...restPageProps} />
+            </TooltipProvider>
           </HydrationBoundary>
         </QueryClientProvider>
       </Sentry.ErrorBoundary>
       {clientMounted && showOnboarding && (
-        <OnboardingTutorial onComplete={() => setShowOnboarding(false)} />
+        <OnboardingTutorial onComplete={() => {
+          setShowOnboarding(false);
+          // Persist to DB for logged-in users (fire-and-forget)
+          if (isLoggedIn) {
+            AuthApi.updateProfile({ hasSeenOnboarding: true } as Record<string, unknown>).catch(() => {});
+          }
+        }} />
       )}
       {clientMounted && <NetworkStatusBanner />}
       {clientMounted && <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />}

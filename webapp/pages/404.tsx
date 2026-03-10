@@ -1,6 +1,7 @@
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { routes } from '@/lib/routes';
 
 export default function NotFoundPage() {
@@ -15,14 +16,18 @@ export default function NotFoundPage() {
           요청하신 페이지가 존재하지 않거나 이동되었을 수 있습니다.
         </p>
         <div className='flex flex-wrap items-center justify-center gap-3'>
-          <Link href={routes.home} className='btn-primary inline-flex items-center gap-2'>
-            <Icon name='Flag' size={18} />
-            홈으로
-          </Link>
-          <Link href={routes.races.list} className='btn-secondary inline-flex items-center gap-2'>
-            <Icon name='Calendar' size={18} />
-            경주 목록
-          </Link>
+          <Button asChild>
+            <Link href={routes.home}>
+              <Icon name='Flag' size={18} />
+              홈으로
+            </Link>
+          </Button>
+          <Button variant='outline' asChild>
+            <Link href={routes.races.list}>
+              <Icon name='Calendar' size={18} />
+              경주 목록
+            </Link>
+          </Button>
         </div>
       </div>
     </Layout>

@@ -1,4 +1,4 @@
-import { IsEmail, IsString, MinLength, IsOptional } from 'class-validator';
+import { IsEmail, IsString, MinLength, IsOptional, IsBoolean } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -72,6 +72,11 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsString()
   favoriteMeet?: string | null;
+
+  @ApiPropertyOptional({ description: 'Whether user has completed onboarding tutorial' })
+  @IsOptional()
+  @IsBoolean()
+  hasSeenOnboarding?: boolean;
 }
 
 export class ChangePasswordDto {

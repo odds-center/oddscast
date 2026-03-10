@@ -1,5 +1,6 @@
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/lib/store/authStore';
 import { routes } from '@/lib/routes';
 import {
@@ -62,13 +63,13 @@ export default function Home() {
         <HomeQuickStats />
         {!isLoggedIn && (
           <div className='flex items-center gap-2'>
-            <button
+            <Button
               onClick={handleLoginClick}
-              className='btn-primary flex items-center gap-2 px-4 py-2.5 text-sm w-full sm:w-auto justify-center'
+              className='w-full sm:w-auto'
             >
               <Icon name='LogIn' size={16} />
               로그인
-            </button>
+            </Button>
             {loginError && <p className='msg-error text-xs mt-1'>{loginError}</p>}
           </div>
         )}

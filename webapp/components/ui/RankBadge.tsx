@@ -10,7 +10,7 @@ const RANK_STYLES: Record<string, string> = {
 };
 
 export default function RankBadge({ rank, className = '' }: RankBadgeProps) {
-  const style = RANK_STYLES[rank] ?? 'badge-muted';
+  const style = RANK_STYLES[rank] ?? 'bg-stone-100 text-stone-600 border-stone-200';
   return (
     <span className={`inline-flex items-center justify-center min-w-[24px] text-xs font-bold px-1.5 py-0.5 rounded border ${style} ${className}`.trim()}>
       {rank}

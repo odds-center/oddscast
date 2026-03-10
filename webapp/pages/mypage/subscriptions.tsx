@@ -1,7 +1,6 @@
 import React from 'react';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
-import BackLink from '@/components/page/BackLink';
 import DataFetchState from '@/components/page/DataFetchState';
 import Link from 'next/link';
 import SectionCard from '@/components/page/SectionCard';
@@ -13,6 +12,7 @@ import type { SubscriptionHistoryItem } from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 
 export default function SubscriptionsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
@@ -99,13 +99,15 @@ export default function SubscriptionsPage() {
               </p>
             )}
             {!confirmCancel ? (
-              <button
+              <Button
+                variant='outline'
+                size='sm'
                 onClick={() => setConfirmCancel(true)}
                 disabled={cancelMutation.isPending}
-                className='btn-secondary mt-3 text-sm px-3 py-1.5'
+                className='mt-3'
               >
                 구독 취소
-              </button>
+              </Button>
             ) : (
               <div className='mt-3 p-3 rounded-lg bg-stone-50 border border-stone-200'>
                 <p className='text-sm text-foreground font-medium mb-2'>
@@ -115,20 +117,23 @@ export default function SubscriptionsPage() {
                   취소 후에도 현재 기간 만료일까지 이용 가능합니다.
                 </p>
                 <div className='flex gap-2'>
-                  <button
+                  <Button
+                    variant='outline'
+                    size='sm'
                     onClick={() => cancelMutation.mutate()}
                     disabled={cancelMutation.isPending}
-                    className='btn-secondary text-sm px-3 py-1.5 text-error border-error/40 hover:bg-error/5'
+                    className='text-error border-error/40 hover:bg-error/5'
                   >
                     {cancelMutation.isPending ? '처리 중...' : '네, 취소합니다'}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant='outline'
+                    size='sm'
                     onClick={() => setConfirmCancel(false)}
                     disabled={cancelMutation.isPending}
-                    className='btn-secondary text-sm px-3 py-1.5'
                   >
                     아니요
-                  </button>
+                  </Button>
                 </div>
               </div>
             )}
@@ -205,26 +210,30 @@ export default function SubscriptionsPage() {
                       현재 구독 중
                     </div>
                   ) : isLoggedIn && !status?.isActive ? (
-                    <Link
-                      href={routes.mypage.subscriptionsCheckout(plan.id)}
-                      className={[
-                        'no-underline w-full flex items-center justify-center text-sm font-semibold py-2.5 rounded-lg transition-colors',
-                        isPremium
-                          ? 'bg-amber-500 hover:bg-amber-600 text-white'
-                          : isRecommended
-                            ? 'btn-primary'
-                            : 'btn-secondary',
-                      ].join(' ')}
-                    >
-                      구독하기
-                    </Link>
+                    isPremium ? (
+                      <Link
+                        href={routes.mypage.subscriptionsCheckout(plan.id)}
+                        className='no-underline w-full flex items-center justify-center text-sm font-semibold py-2.5 rounded-lg transition-colors bg-amber-500 hover:bg-amber-600 text-white'
+                      >
+                        구독하기
+                      </Link>
+                    ) : (
+                      <Button
+                        variant={isRecommended ? 'default' : 'outline'}
+                        asChild
+                        className='no-underline w-full py-2.5 rounded-lg'
+                      >
+                        <Link href={routes.mypage.subscriptionsCheckout(plan.id)}>
+                          구독하기
+                        </Link>
+                      </Button>
+                    )
                   ) : null}
                 </div>
               );
             })}
           </div>
         </DataFetchState>
-        <BackLink href={routes.profile.index} label='내 정보로' className='mt-6 block' />
     </Layout>
   );
 }

@@ -2,9 +2,9 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
-import BackLink from '@/components/page/BackLink';
 import SectionCard from '@/components/page/SectionCard';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -88,13 +88,15 @@ export default function MatrixTicketPurchasePage() {
             ) : balanceError ? (
               <div className='flex flex-col gap-2'>
                 <p className='text-red-600 text-sm'>보유 현황을 불러올 수 없습니다.</p>
-                <button
+                <Button
                   type='button'
+                  variant='outline'
+                  size='sm'
                   onClick={() => refetchBalance()}
-                  className='btn-secondary text-sm w-fit'
+                  className='w-fit'
                 >
                   다시 시도
-                </button>
+                </Button>
               </div>
             ) : (
               <div className='flex items-center gap-4'>
@@ -141,17 +143,17 @@ export default function MatrixTicketPurchasePage() {
           </SectionCard>
 
           {/* Purchase button */}
-          <button
+          <Button
             type='button'
             onClick={() => purchaseMutation.mutate(count)}
             disabled={purchaseMutation.isPending}
-            className='btn-primary w-full py-3 text-sm font-semibold flex items-center justify-center gap-2'
+            className='w-full py-3'
           >
             <Icon name='CreditCard' size={16} />
             {purchaseMutation.isPending
               ? '결제 처리 중...'
               : `종합 예측권 ${count}장 구매 — ${totalPrice.toLocaleString()}원`}
-          </button>
+          </Button>
 
           {/* Success message */}
           {purchaseSuccess && (
@@ -184,7 +186,6 @@ export default function MatrixTicketPurchasePage() {
           >
             종합 예상표 바로가기 →
           </Link>
-          <BackLink href={routes.profile.index} label='내 정보로' className='mt-6 block' />
         </div>
       )}
     </Layout>

@@ -3,6 +3,7 @@
  */
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import PredictionApi from '@/lib/api/predictionApi';
+import { Button } from '@/components/ui/button';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 
@@ -30,9 +31,9 @@ export default function AccuracyPreviewSection() {
       ) : error ? (
         <div className='py-4 text-center'>
           <p className='text-xs text-text-secondary'>통계를 불러올 수 없습니다.</p>
-          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
-          </button>
+          </Button>
         </div>
       ) : !overall || overall.totalCount === 0 ? (
         <div className='py-6 text-center text-stone-400 text-sm'>아직 집계된 예측 데이터가 없습니다.</div>

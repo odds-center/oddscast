@@ -3,10 +3,10 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import FormInput from '@/components/page/FormInput';
-import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
 import { routes } from '@/lib/routes';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -45,7 +45,6 @@ export default function DeleteAccountPage() {
       <Layout title='회원탈퇴 | OddsCast'>
         <CompactPageTitle title='회원탈퇴' backHref={routes.settings} />
         <RequireLogin suffix='회원탈퇴를 진행할 수 있습니다.' />
-        <BackLink href={routes.settings} label='설정으로' />
       </Layout>
     );
   }
@@ -84,10 +83,11 @@ export default function DeleteAccountPage() {
             {errors.root && (
               <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
-            <button
+            <Button
               type='submit'
+              variant='outline'
               disabled={isSubmitting || !confirmChecked}
-              className='btn-secondary w-full py-2.5 flex items-center justify-center gap-2 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300 disabled:opacity-50'
+              className='w-full py-2.5 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'
             >
               {isSubmitting ? (
                 <>
@@ -100,11 +100,10 @@ export default function DeleteAccountPage() {
                   회원탈퇴
                 </>
               )}
-            </button>
+            </Button>
           </form>
         </SectionCard>
 
-        <BackLink href={routes.settings} label='설정으로' />
       </div>
     </Layout>
   );

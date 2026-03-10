@@ -2,25 +2,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import Icon, { type IconName } from '@/components/icons';
-
-const STORAGE_KEY = 'oddscast_onboarding_tutorial_done';
-
-export function hasSeenOnboarding(): boolean {
-  if (typeof window === 'undefined') return true;
-  try {
-    return !!window.localStorage.getItem(STORAGE_KEY);
-  } catch {
-    return true;
-  }
-}
-
-export function setOnboardingDone(): void {
-  try {
-    window.localStorage.setItem(STORAGE_KEY, '1');
-  } catch {
-    // ignore
-  }
-}
+import { setOnboardingDoneLocal } from './onboardingUtils';
 
 interface Slide {
   icon: IconName;
@@ -63,7 +45,7 @@ export default function OnboardingTutorial({ onComplete }: OnboardingTutorialPro
   const touchEndX = useRef(0);
 
   const finish = useCallback(() => {
-    setOnboardingDone();
+    setOnboardingDoneLocal();
     onComplete();
   }, [onComplete]);
 

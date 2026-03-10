@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import FormInput from '@/components/page/FormInput';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
@@ -118,7 +119,7 @@ export default function ProfileEditPage() {
         />
 
         {activeTab === 'profile' && (
-          <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className='card space-y-4'>
+          <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-4'>
             <FormInput
               label='이름'
               type='text'
@@ -140,10 +141,10 @@ export default function ProfileEditPage() {
               </p>
             )}
             {profileMutation.isSuccess && <p className='msg-success'>저장되었습니다.</p>}
-            <button
+            <Button
               type='submit'
               disabled={profileMutation.isPending}
-              className='btn-primary w-full py-2 disabled:opacity-50 flex items-center gap-2'
+              className='w-full py-2'
             >
               {profileMutation.isPending ? (
                 <>
@@ -153,12 +154,12 @@ export default function ProfileEditPage() {
               ) : (
                 '저장'
               )}
-            </button>
+            </Button>
           </form>
         )}
 
         {activeTab === 'password' && (
-          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className='card space-y-4'>
+          <form onSubmit={passwordForm.handleSubmit(onPasswordSubmit)} className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-4'>
             <FormInput
               label='현재 비밀번호'
               type='password'
@@ -196,14 +197,14 @@ export default function ProfileEditPage() {
             {passwordMutation.isSuccess && (
               <p className='msg-success'>비밀번호가 변경되었습니다.</p>
             )}
-            <button
+            <Button
               type='submit'
               disabled={
                 passwordMutation.isPending ||
                 newPassword !== newPasswordConfirm ||
                 newPassword.length < 6
               }
-              className='btn-primary w-full py-2 disabled:opacity-50 flex items-center gap-2'
+              className='w-full py-2'
             >
               {passwordMutation.isPending ? (
                 <>
@@ -213,7 +214,7 @@ export default function ProfileEditPage() {
               ) : (
                 '비밀번호 변경'
               )}
-            </button>
+            </Button>
           </form>
         )}
         </SectionCard>

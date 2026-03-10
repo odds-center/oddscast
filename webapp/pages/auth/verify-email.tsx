@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import AuthCard from '@/components/page/AuthCard';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -112,11 +113,11 @@ export default function VerifyEmail() {
     return (
       <Layout title='이메일 인증 | OddsCast'>
         <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+          <CompactPageTitle title='이메일 인증' backHref={routes.auth.register} />
           <AuthCard title='이메일 인증'>
             <p className='text-text-secondary text-sm mb-4'>
               잘못된 접근입니다. 회원가입부터 진행해 주세요.
             </p>
-            <BackLink href={routes.auth.register} label='회원가입으로' />
           </AuthCard>
         </div>
       </Layout>
@@ -126,6 +127,7 @@ export default function VerifyEmail() {
   return (
     <Layout title='이메일 인증 | OddsCast'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <CompactPageTitle title='이메일 인증' backHref={routes.auth.register} />
         <AuthCard
           title='이메일 인증'
           description={`${email}로 발송된 6자리 인증 코드를 입력하세요.`}
@@ -162,11 +164,11 @@ export default function VerifyEmail() {
             <p className='text-success text-sm text-center mb-4'>{resendMessage}</p>
           )}
 
-          <button
+          <Button
             type='button'
             onClick={handleManualSubmit}
             disabled={isSubmitting || digits.some((d) => !d)}
-            className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px] mb-4'
+            className='w-full py-3 rounded-lg text-[16px] mb-4'
           >
             {isSubmitting ? (
               <>
@@ -179,7 +181,7 @@ export default function VerifyEmail() {
                 인증 확인
               </>
             )}
-          </button>
+          </Button>
 
           <div className='text-center'>
             <p className='text-text-secondary text-sm mb-2'>
@@ -198,9 +200,6 @@ export default function VerifyEmail() {
           </div>
         </AuthCard>
 
-        <div className='mt-6 flex justify-center'>
-          <BackLink href={routes.auth.register} label='회원가입으로 돌아가기' />
-        </div>
       </div>
     </Layout>
   );

@@ -7,9 +7,9 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
-import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
@@ -136,7 +136,6 @@ export default function SubscriptionCheckoutPage() {
             </Link>
             후 구독할 수 있습니다.
           </p>
-          <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block' />
         </div>
       </Layout>
     );
@@ -157,7 +156,6 @@ export default function SubscriptionCheckoutPage() {
       <Layout title='구독 결제 | OddsCast'>
         <div className='max-w-md mx-auto'>
           <EmptyState icon='AlertCircle' title='오류' description={errorMsg} />
-          <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' className='mt-4 block text-center' />
         </div>
       </Layout>
     );
@@ -178,10 +176,10 @@ export default function SubscriptionCheckoutPage() {
         </SectionCard>
 
         <div className='flex gap-3'>
-          <button
+          <Button
             onClick={handlePay}
             disabled={step === 'paying'}
-            className='btn-primary flex-1 flex items-center justify-center gap-1.5 text-sm px-4 py-2'
+            className='flex-1'
           >
             {step === 'paying' ? (
               <>
@@ -191,13 +189,14 @@ export default function SubscriptionCheckoutPage() {
             ) : (
               '결제하기'
             )}
-          </button>
-          <Link href={routes.mypage.subscriptions} className='btn-secondary shrink-0'>
-            취소
-          </Link>
+          </Button>
+          <Button variant='outline' asChild className='shrink-0'>
+            <Link href={routes.mypage.subscriptions}>
+              취소
+            </Link>
+          </Button>
         </div>
 
-        <BackLink href={routes.mypage.subscriptions} label='구독 플랜으로' />
       </div>
     </Layout>
   );

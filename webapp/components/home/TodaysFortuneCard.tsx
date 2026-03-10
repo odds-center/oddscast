@@ -4,6 +4,7 @@
  */
 import Icon from '@/components/icons';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import FortuneApi from '@/lib/api/fortuneApi';
 import type { TodaysFortune } from '@/lib/api/fortuneApi';
@@ -34,13 +35,12 @@ export default function TodaysFortuneCard() {
           <p className='text-sm text-text-secondary mb-3'>
             로그인하면 오늘의 운세를 확인할 수 있어요.
           </p>
-          <Link
-            href={routes.auth.login}
-            className='btn-primary inline-flex items-center gap-2 px-4 py-2.5 text-sm'
-          >
-            <Icon name='LogIn' size={16} />
-            로그인
-          </Link>
+          <Button asChild>
+            <Link href={routes.auth.login}>
+              <Icon name='LogIn' size={16} />
+              로그인
+            </Link>
+          </Button>
         </div>
       </section>
     );

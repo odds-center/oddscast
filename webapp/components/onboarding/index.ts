@@ -1,1 +1,2 @@
-export { default as OnboardingTutorial, hasSeenOnboarding, setOnboardingDone } from './OnboardingTutorial';
+export { hasSeenOnboardingLocal, setOnboardingDoneLocal } from './onboardingUtils';
+export { default as OnboardingTutorial } from './OnboardingTutorial';

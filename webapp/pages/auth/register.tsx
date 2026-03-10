@@ -1,12 +1,13 @@
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import AuthCard from '@/components/page/AuthCard';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
+import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -56,6 +57,7 @@ export default function Register() {
   return (
     <Layout title='회원가입 | OddsCast' description='OddsCast 회원가입 - AI 경마 분석 서비스에 가입하세요.'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <CompactPageTitle title='회원가입' backHref={routes.home} />
         <AuthCard
           title='회원가입'
           description='OddsCast와 함께 시작하세요.'
@@ -101,10 +103,10 @@ export default function Register() {
             {errors.root && (
               <p className='msg-error text-sm'>{errors.root.message}</p>
             )}
-            <button
+            <Button
               type='submit'
               disabled={isSubmitting}
-              className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+              className='w-full py-3 rounded-lg text-[16px]'
             >
               {isSubmitting ? (
                 <>
@@ -117,7 +119,7 @@ export default function Register() {
                   회원가입
                 </>
               )}
-            </button>
+            </Button>
           </form>
         </AuthCard>
 
@@ -130,9 +132,6 @@ export default function Register() {
             로그인
           </Link>
         </p>
-        <div className='mt-6 flex justify-center'>
-          <BackLink href={routes.home} label='홈으로' />
-        </div>
       </div>
     </Layout>
   );

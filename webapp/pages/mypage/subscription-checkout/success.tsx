@@ -7,8 +7,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
-import BackLink from '@/components/page/BackLink';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import EmptyState from '@/components/EmptyState';
 import Link from 'next/link';
@@ -79,10 +79,11 @@ export default function SubscriptionCheckoutSuccessPage() {
           <CompactPageTitle title='결제 실패' backHref={routes.mypage.subscriptions} />
           <EmptyState icon='AlertCircle' title='결제 확인 실패' description={errorMsg} />
           <div className='flex flex-col gap-2 mt-4'>
-            <Link href={routes.mypage.subscriptions} className='btn-primary block text-center py-2.5'>
-              구독 플랜에서 다시 시도
-            </Link>
-            <BackLink href={routes.profile.index} label='내 정보로' className='block' />
+            <Button asChild className='w-full py-2.5'>
+              <Link href={routes.mypage.subscriptions}>
+                구독 플랜에서 다시 시도
+              </Link>
+            </Button>
           </div>
         </div>
       </Layout>
@@ -100,16 +101,17 @@ export default function SubscriptionCheckoutSuccessPage() {
             매월 예측권이 자동으로 발급됩니다. AI 예측을 이용해 보세요.
           </p>
         </div>
-        <Link href={routes.profile.index} className='btn-primary block'>
-          내 정보로
-        </Link>
+        <Button asChild className='w-full'>
+          <Link href={routes.profile.index}>
+            내 정보로
+          </Link>
+        </Button>
         <Link
           href={routes.mypage.subscriptions}
           className='block mt-3 text-text-secondary text-sm hover:underline'
         >
           구독 관리
         </Link>
-        <BackLink href={routes.profile.index} label='내 정보로' className='mt-4 block' />
       </div>
     </Layout>
   );

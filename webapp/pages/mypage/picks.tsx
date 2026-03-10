@@ -4,6 +4,7 @@ import SectionCard from '@/components/page/SectionCard';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 
 /**
  * My picks (Picks) — Excluded from service according to SERVICE_SPEC.
@@ -22,10 +23,12 @@ export default function PicksPage() {
             <br />
             이용해 주셔서 감사합니다.
           </p>
-          <Link href={routes.profile.index} className='btn-primary px-4 py-2 text-sm inline-flex items-center gap-2'>
-            <Icon name='ChevronLeft' size={16} />
-            내 정보로
-          </Link>
+          <Button asChild>
+            <Link href={routes.profile.index}>
+              <Icon name='ChevronLeft' size={16} />
+              내 정보로
+            </Link>
+          </Button>
         </div>
       </SectionCard>
     </Layout>

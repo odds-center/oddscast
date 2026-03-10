@@ -1,16 +1,35 @@
 /**
- * Shared UI components — maximize reusability
+ * Shared UI components — shadcn/ui + custom domain components
  */
-export { default as Badge } from './Badge';
-export { default as LinkBadge } from './LinkBadge';
-export { default as RankBadge } from './RankBadge';
-export { default as Card } from './Card';
+
+// shadcn/ui primitives
+export { Button, buttonVariants } from './button';
+export { Badge, badgeVariants } from './badge';
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from './card';
+export { Input } from './input';
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from './tooltip';
+export { Switch } from './switch';
+export {
+  Select, SelectContent, SelectGroup, SelectItem, SelectLabel,
+  SelectSeparator, SelectTrigger, SelectValue,
+} from './select';
+export {
+  Dialog, DialogClose, DialogContent, DialogDescription,
+  DialogFooter, DialogHeader, DialogOverlay, DialogPortal,
+  DialogTitle, DialogTrigger,
+} from './dialog';
+export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
+export { Label } from './label';
+export { Separator } from './separator';
+
+// Custom domain components
 export { default as DataTable } from './DataTable';
 export { default as LinkCard } from './LinkCard';
 export { default as SectionTitle } from './SectionTitle';
 export { default as StatusBadge } from './StatusBadge';
-export { default as TabBar } from './TabBar';
+export { default as RankBadge } from './RankBadge';
+export { default as LinkBadge } from './LinkBadge';
 export { default as Toggle } from './Toggle';
-export { default as Tooltip } from './Tooltip';
-export { default as Dropdown } from './Dropdown';
+export { default as TabBar } from './TabBar';
 export { default as DatePicker } from './DatePicker';
+export { default as NetworkStatusBanner } from './NetworkStatusBanner';

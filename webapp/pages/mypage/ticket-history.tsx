@@ -177,7 +177,7 @@ export default function TicketHistoryPage() {
                   headerClassName: 'w-24',
                   align: 'center',
                   render: (t) => (
-                    <Badge variant={getStatusVariant(t.status)} size='md'>
+                    <Badge variant={getStatusVariant(t.status)}>
                       {getStatusLabel(t.status)}
                     </Badge>
                   ),

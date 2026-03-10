@@ -3,7 +3,6 @@ import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
-import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
 import { TabBar, Toggle } from '@/components/ui';
 import { routes } from '@/lib/routes';
@@ -158,7 +157,6 @@ export default function SettingsPage() {
           </SectionCard>
         )}
 
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

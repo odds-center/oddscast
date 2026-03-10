@@ -2,6 +2,7 @@ import type { NextPageContext } from 'next';
 import Layout from '@/components/Layout';
 import Link from 'next/link';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { routes } from '@/lib/routes';
 
 interface ErrorPageProps {
@@ -82,17 +83,16 @@ export default function ErrorPage({ statusCode }: ErrorPageProps) {
         <h1 className='text-xl md:text-2xl font-bold text-foreground mb-2'>{title}</h1>
         <p className='text-text-secondary text-sm mb-6 max-w-md'>{description}</p>
         <div className='flex flex-wrap items-center justify-center gap-3'>
-          <button
-            onClick={() => window.location.reload()}
-            className='btn-primary inline-flex items-center gap-2'
-          >
+          <Button onClick={() => window.location.reload()}>
             <Icon name='RefreshCw' size={18} />
             다시 시도
-          </button>
-          <Link href={routes.home} className='btn-secondary inline-flex items-center gap-2'>
-            <Icon name='Flag' size={18} />
-            홈으로
-          </Link>
+          </Button>
+          <Button variant='outline' asChild>
+            <Link href={routes.home}>
+              <Icon name='Flag' size={18} />
+              홈으로
+            </Link>
+          </Button>
         </div>
       </div>
     </Layout>

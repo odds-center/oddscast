@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import AuthCard from '@/components/page/AuthCard';
 import { routes } from '@/lib/routes';
 import Link from 'next/link';
 import Icon from '@/components/icons';
 import FormInput from '@/components/page/FormInput';
+import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/lib/store/authStore';
@@ -47,13 +48,6 @@ export default function Login() {
   const onSubmit = async (data: LoginForm) => {
     try {
       const res = await AuthApi.login(data);
-      if ('requireVerification' in res && res.requireVerification) {
-        router.push({
-          pathname: routes.auth.verifyEmail,
-          query: { email: data.email },
-        });
-        return;
-      }
       if ('accessToken' in res && res.accessToken) {
         setAuth(res.accessToken, res.user, res.refreshToken);
         if (res.loginBonus) {
@@ -74,6 +68,7 @@ export default function Login() {
   return (
     <Layout title='로그인 | OddsCast' description='OddsCast 로그인 - AI 경마 분석 서비스'>
       <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+        <CompactPageTitle title='로그인' backHref={routes.home} />
         <AuthCard
           title='로그인'
           description='OddsCast 계정으로 로그인하세요.'
@@ -113,10 +108,10 @@ export default function Login() {
                 비밀번호를 잊으셨나요?
               </Link>
             </div>
-            <button
+            <Button
               type='submit'
               disabled={isSubmitting}
-              className='btn-primary w-full min-h-[44px] py-3 disabled:opacity-50 flex items-center justify-center gap-2 rounded-lg text-[16px]'
+              className='w-full py-3 rounded-lg text-[16px]'
             >
               {isSubmitting ? (
                 <>
@@ -129,7 +124,7 @@ export default function Login() {
                   로그인
                 </>
               )}
-            </button>
+            </Button>
           </form>
         </AuthCard>
 
@@ -142,9 +137,6 @@ export default function Login() {
             회원가입
           </Link>
         </p>
-        <div className='mt-6 flex justify-center'>
-          <BackLink href={routes.home} label='홈으로' />
-        </div>
       </div>
     </Layout>
   );

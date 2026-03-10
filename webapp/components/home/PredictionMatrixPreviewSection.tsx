@@ -5,6 +5,7 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
+import { Button } from '@/components/ui/button';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 function HorseBadge({ no, name }: { no: string; name?: string }) {
@@ -35,9 +36,9 @@ export default function PredictionMatrixPreviewSection() {
       ) : error ? (
         <div className='py-6 text-center text-text-secondary text-sm'>
           <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
-          </button>
+          </Button>
         </div>
       ) : rows.length === 0 ? (
         <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 정보가 없습니다.</div>

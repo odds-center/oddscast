@@ -6,9 +6,10 @@ import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import { Badge, SectionTitle } from '@/components/ui';
-import Tooltip from '@/components/ui/Tooltip';
-import BackLink from '@/components/page/BackLink';
+import Tooltip from '@/components/ui/SimpleTooltip';
+import CompactPageTitle from '@/components/page/CompactPageTitle';
 import LoadingSpinner from '@/components/LoadingSpinner';
 import RaceHeaderCard from '@/components/race/RaceHeaderCard';
 import HorseEntryTable from '@/components/race/HorseEntryTable';
@@ -231,15 +232,13 @@ export default function RaceDetailPage() {
           <h2 className='text-lg md:text-xl font-bold mb-2 text-foreground'>경주를 찾을 수 없습니다</h2>
           <p className='text-text-secondary text-sm mb-4'>일시적인 오류일 수 있습니다. 다시 시도해 보세요.</p>
           <div className='flex flex-col sm:flex-row items-center justify-center gap-3'>
-            <button
+            <Button
               type='button'
               onClick={() => refetchRace()}
-              className='btn-primary px-4 py-2 text-sm'
               aria-label='다시 시도'
             >
               다시 시도
-            </button>
-            <BackLink href={routes.races.list} label='경주 목록' />
+            </Button>
           </div>
         </div>
       </Layout>
@@ -388,10 +387,9 @@ export default function RaceDetailPage() {
     <Layout title='경주 상세 | OddsCast' description='경주 출전마 정보, AI 예측 분석, 경주 결과를 상세히 확인하세요.'>
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         <div className='flex-1 min-w-0 w-full space-y-4'>
-          <BackLink
-            href={isResultView ? routes.results : routes.home}
-            label={isResultView ? '결과로' : '목록으로'}
-            className='block'
+          <CompactPageTitle
+            title={r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : '경주 상세'}
+            backHref={routes.races.list}
           />
 
           {/* ── Race header ── */}
@@ -496,14 +494,16 @@ export default function RaceDetailPage() {
               {!hasResults ? (
                 <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-text-secondary'>
                   <p className='text-sm'>결과를 불러오는 중이거나 아직 반영되지 않았습니다.</p>
-                  <button
+                  <Button
                     type='button'
+                    variant='outline'
+                    size='sm'
                     onClick={() => { refetchRace(); }}
-                    className='btn-secondary mt-3 px-4 py-2 text-sm inline-flex items-center gap-1.5'
+                    className='mt-3'
                   >
                     <Icon name='RefreshCw' size={14} />
                     새로고침
-                  </button>
+                  </Button>
                 </div>
               ) : (
               <>
@@ -932,13 +932,15 @@ export default function RaceDetailPage() {
               ) : (
                 <div className='rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center'>
                   <p className='text-text-secondary text-sm'>출전마 정보가 없습니다.</p>
-                  <button
+                  <Button
                     type='button'
+                    variant='outline'
+                    size='sm'
                     onClick={() => refetchRace()}
-                    className='btn-secondary mt-3 text-sm px-3 py-1.5'
+                    className='mt-3'
                   >
                     다시 시도
-                  </button>
+                  </Button>
                 </div>
               )}
               {/* Odds explanation panel — shown for completed races */}
@@ -996,13 +998,15 @@ export default function RaceDetailPage() {
             ) : jockeyError ? (
               <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center'>
                 <p className='text-text-secondary text-sm'>분석 정보를 확인할 수 없습니다.</p>
-                <button
+                <Button
                   type='button'
+                  variant='outline'
+                  size='sm'
                   onClick={() => refetchJockey()}
-                  className='btn-secondary mt-2 text-sm px-3 py-1.5'
+                  className='mt-2'
                 >
                   다시 시도
-                </button>
+                </Button>
               </div>
             ) : jockeyAnalysis?.entriesWithScores?.length ? (
               <div className='space-y-3'>
@@ -1232,14 +1236,16 @@ function PredictionFullView({
           {list.length > 1 && <span className='text-text-tertiary text-sm'>({list.length}건)</span>}
         </div>
         {!isRaceCompleted && availableTickets > 0 && (
-          <button
+          <Button
             type='button'
+            variant='outline'
+            size='sm'
             onClick={() => {
               trackCTA('PREDICTION_REGENERATE', raceId);
               useTicketMutation.mutate({ raceId, regenerate: true });
             }}
             disabled={useTicketMutation.isPending || isCoolingDown}
-            className='btn-secondary text-xs px-2.5 py-1.5 flex items-center gap-1 shrink-0'
+            className='shrink-0'
           >
             {useTicketMutation.isPending ? (
               <>
@@ -1257,7 +1263,7 @@ function PredictionFullView({
                 다시 예측
               </>
             )}
-          </button>
+          </Button>
         )}
       </div>
 
@@ -1459,13 +1465,13 @@ function PredictionLockedView({
         {isLoggedIn && availableTickets > 0 && (
           <>
             <p className='text-text-secondary text-sm mb-3'>개별 예측권 {availableTickets}장 보유</p>
-            <button
+            <Button
               onClick={() => {
                 trackCTA('PREDICTION_TICKET_USE', raceId);
                 useTicketMutation.mutate({ raceId });
               }}
               disabled={useTicketMutation.isPending}
-              className='btn-primary w-full sm:w-auto px-5 py-2.5 text-sm flex items-center justify-center gap-2'
+              className='w-full sm:w-auto px-5 py-2.5'
             >
               {useTicketMutation.isPending ? (
                 <>
@@ -1478,7 +1484,7 @@ function PredictionLockedView({
                   예측권 1장 사용
                 </>
               )}
-            </button>
+            </Button>
             {useTicketMutation.isError && (
               <p className='msg-error mt-3'>{getErrorMessage(useTicketMutation.error)}</p>
             )}

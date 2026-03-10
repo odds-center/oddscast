@@ -9,6 +9,7 @@ import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 import { StatusBadge, LinkBadge } from '@/components/ui';
 import LoadingSpinner from '@/components/LoadingSpinner';
+import { Button } from '@/components/ui/button';
 import { getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
 import type { RaceDto } from '@/lib/types/race';
@@ -49,9 +50,9 @@ export default function TodayRacesSection() {
       ) : error ? (
         <div className='py-4 text-center text-text-secondary text-sm'>
           <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <button type='button' onClick={() => refetch()} className='btn-secondary mt-2 px-3 py-1.5 text-xs'>
+          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
-          </button>
+          </Button>
         </div>
       ) : races.length === 0 ? (
         <div className='py-4 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>

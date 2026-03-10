@@ -1,5 +1,4 @@
 import Layout from '@/components/Layout';
-import BackLink from '@/components/page/BackLink';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Link from 'next/link';
 import { routes } from '@/lib/routes';
@@ -9,7 +8,7 @@ export default function TermsPage() {
     <Layout title='서비스 이용 약관 | OddsCast'>
       <div className='max-w-2xl mx-auto pb-12'>
         <CompactPageTitle title='서비스 이용 약관' backHref={routes.home} />
-        <div className='card space-y-6 text-sm text-foreground leading-relaxed'>
+        <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-6 text-sm text-foreground leading-relaxed'>
           <p className='text-text-tertiary text-xs'>
             시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
           </p>
@@ -221,7 +220,6 @@ export default function TermsPage() {
             본 약관에 대한 문의: support@oddscast.com | 법적 분쟁 시 관할: 회사 본사 소재지 관할 법원
           </p>
         </div>
-        <BackLink href={routes.profile.index} label='내 정보로' />
       </div>
     </Layout>
   );

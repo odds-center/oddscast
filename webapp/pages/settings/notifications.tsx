@@ -3,7 +3,6 @@ import Icon from '@/components/icons';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
-import BackLink from '@/components/page/BackLink';
 import RequireLogin from '@/components/page/RequireLogin';
 import { Toggle } from '@/components/ui';
 import DataFetchState from '@/components/page/DataFetchState';
@@ -87,7 +86,6 @@ export default function NotificationSettingsPage() {
       <Layout title='알림 설정 | OddsCast'>
         <CompactPageTitle title='알림 설정' backHref={routes.settings} />
         <RequireLogin suffix='설정할 수 있습니다' />
-        <BackLink href={routes.settings} label='설정으로' />
       </Layout>
     );
   }
@@ -136,7 +134,6 @@ export default function NotificationSettingsPage() {
           </SectionCard>
         </DataFetchState>
 
-        <BackLink href={routes.settings} label='설정으로' />
       </div>
     </Layout>
   );

@@ -18,8 +18,6 @@ export const stubUser = {
   nickname: null,
   role: 'USER',
   isActive: true,
-  consecutiveLoginDays: 1,
-  pointBalance: 500,
 };
 
 export const stubToken = 'mock-jwt-token-abc123';
@@ -248,11 +246,6 @@ export async function mockRacePredictionUnlocked(page: Page, raceId = '1') {
 // Additional stubs
 // ------------------------------------------------------------------
 
-// Matches PointApi.getMyBalance() response shape (GET /points/me/balance)
-export const stubPointBalance = { currentPoints: 1200, totalPointsEarned: 1200, totalPointsSpent: 0 };
-
-export const stubPointTicketPrice = { pointsPerTicket: 1200 };
-
 export const stubTicket = {
   id: 'ticket-1',
   type: 'RACE',
@@ -261,15 +254,6 @@ export const stubTicket = {
   expiresAt: '2025-04-01T00:00:00.000Z',
   usedAt: null,
   raceId: null,
-};
-
-export const stubPointTransaction = {
-  id: 1,
-  transactionType: 'BONUS',
-  amount: 10,
-  balanceAfter: 110,
-  description: '일일 로그인 보너스',
-  transactionTime: '2025-03-01T09:00:00.000Z',
 };
 
 export const stubNotification = {
@@ -405,41 +389,12 @@ export const stubGroupedResult = {
 // Additional mock setup functions
 // ------------------------------------------------------------------
 
-export async function mockPointBalance(page: Page) {
-  // Matches PointApi.getMyBalance() → GET /points/me/balance
-  await page.route(`${API}/points/me/balance**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse(stubPointBalance)),
-    });
-  });
-  await page.route(`${API}/points/ticket-price**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse(stubPointTicketPrice)),
-    });
-  });
-}
-
 export async function mockTicketHistory(page: Page, tickets = [stubTicket]) {
   await page.route(`${API}/prediction-tickets/history**`, async (route) => {
     await route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify(apiResponse({ tickets, total: tickets.length, totalPages: 1 })),
-    });
-  });
-}
-
-export async function mockPointTransactions(page: Page, transactions = [stubPointTransaction]) {
-  // Matches PointApi.getMyTransactions() → GET /points/me/transactions
-  await page.route(`${API}/points/me/transactions**`, async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify(apiResponse({ transactions, total: transactions.length, totalPages: 1 })),
     });
   });
 }

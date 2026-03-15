@@ -12,4 +12,6 @@ export { default as RecentRacesSection } from './RecentRacesSection';
 export { default as PredictionMatrixPreviewSection } from './PredictionMatrixPreviewSection';
 export { default as RacePredictionsPreviewSection } from './RacePredictionsPreviewSection';
 export { default as AccuracyPreviewSection } from './AccuracyPreviewSection';
+export { default as AIPredictionSection } from './AIPredictionSection';
+export { default as WhyOddsCastSection } from './WhyOddsCastSection';
 export { default as AllRacesSection } from './AllRacesSection';

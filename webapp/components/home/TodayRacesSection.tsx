@@ -55,7 +55,10 @@ export default function TodayRacesSection() {
           </Button>
         </div>
       ) : races.length === 0 ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>오늘 예정된 경주가 없습니다.</div>
+        <div className='py-6 text-center text-text-secondary'>
+          <p className='text-sm'>오늘은 예정된 경주가 없습니다.</p>
+          <p className='text-xs text-text-tertiary mt-1'>경주는 매주 금·토·일 진행됩니다.</p>
+        </div>
       ) : (
         <>
           {allEnded && (
@@ -72,16 +75,16 @@ export default function TodayRacesSection() {
                 <a
                   key={row.id}
                   href={routes.races.detail(row.id)}
-                  className='flex items-center justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                  className='flex items-center justify-between py-3 px-1 active:bg-stone-50 transition-colors'
                 >
                   <div>
-                    <span className='font-semibold text-foreground text-sm'>
+                    <span className='font-bold text-foreground text-sm'>
                       {row.meetName ?? row.meet ?? '-'} {row.rcNo}R
                     </span>
-                    <div className='flex items-center gap-2 mt-0.5 text-xs text-text-tertiary'>
+                    <div className='flex items-center gap-2.5 mt-1 text-xs text-text-secondary'>
                       {row.rcDist && <span>{row.rcDist}M</span>}
                       {entries.length > 0 && <span>{entries.length}두</span>}
-                      {row.stTime && <span>{row.stTime}</span>}
+                      {row.stTime && <span className='font-medium'>{row.stTime}</span>}
                     </div>
                   </div>
                   <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />
@@ -103,6 +106,15 @@ export default function TodayRacesSection() {
                     <LinkBadge href={routes.races.detail(row.id)} icon='Flag' iconSize={12}>
                       {(row.meetName ?? row.meet ?? '-')} {row.rcNo}R
                     </LinkBadge>
+                  ),
+                },
+                {
+                  key: 'time',
+                  header: '시간',
+                  headerClassName: 'w-16 cell-center',
+                  align: 'center',
+                  render: (row) => (
+                    <span className='text-text-secondary font-medium'>{row.stTime ?? '-'}</span>
                   ),
                 },
                 {
@@ -128,7 +140,7 @@ export default function TodayRacesSection() {
                 {
                   key: 'status',
                   header: '상태',
-                  headerClassName: 'w-14 cell-center',
+                  headerClassName: 'w-16 cell-center',
                   align: 'center',
                   render: (row) => (
                     <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />

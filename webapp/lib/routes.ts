@@ -35,7 +35,7 @@ settings: '/settings',
     notifications: '/mypage/notifications',
     ticketHistory: '/mypage/ticket-history',
     predictionHistory: '/mypage/prediction-history',
-    pointTransactions: '/mypage/point-transactions',
+
   },
 
   races: {
@@ -63,6 +63,7 @@ detail: (id: string) => `/races/${id}`,
     accuracy: '/predictions/accuracy',
   },
 
+  welcome: '/welcome',
   weeklyPreview: '/weekly-preview',
 
   legal: {

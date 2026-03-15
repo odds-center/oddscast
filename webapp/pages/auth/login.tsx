@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -12,31 +11,15 @@ import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/lib/store/authStore';
-import type { LoginBonusResult } from '@/lib/types/auth';
 
 type LoginForm = {
   email: string;
   password: string;
 };
 
-function formatLoginBonusMessage(b: LoginBonusResult): string | null {
-  const parts: string[] = [];
-  if (b.dailyBonusGranted && b.dailyBonusPoints > 0) {
-    parts.push(`일일 로그인 보너스 ${b.dailyBonusPoints}P 적립`);
-  }
-  if (b.consecutiveRewardGranted) {
-    parts.push('7일 연속 로그인 보상으로 예측권 1장이 지급되었습니다.');
-  }
-  if (b.consecutiveDays > 0 && !b.consecutiveRewardGranted) {
-    parts.push(`${b.consecutiveDays}일 연속 로그인`);
-  }
-  return parts.length ? parts.join('. ') : null;
-}
-
 export default function Login() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
-  const [loginBonusMessage, setLoginBonusMessage] = useState<string | null>(null);
 
   const {
     register,
@@ -50,14 +33,6 @@ export default function Login() {
       const res = await AuthApi.login(data);
       if ('accessToken' in res && res.accessToken) {
         setAuth(res.accessToken, res.user, res.refreshToken);
-        if (res.loginBonus) {
-          const msg = formatLoginBonusMessage(res.loginBonus);
-          if (msg) {
-            setLoginBonusMessage(msg);
-            setTimeout(() => router.push(routes.home), 2200);
-            return;
-          }
-        }
         router.push(routes.home);
       }
     } catch (err: unknown) {
@@ -73,14 +48,6 @@ export default function Login() {
           title='로그인'
           description='OddsCast 계정으로 로그인하세요.'
         >
-          {loginBonusMessage && (
-            <div
-              className='mb-4 p-3 rounded-lg bg-primary-muted border border-primary/20 text-success text-sm'
-              role='alert'
-            >
-              {loginBonusMessage}
-            </div>
-          )}
           <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
             <FormInput
               label='이메일'

@@ -1,7 +1,6 @@
 /**
  * Page layout / shared components
  */
-export { default as BackLink } from './BackLink';
 export { default as CompactPageTitle } from './CompactPageTitle';
 export { default as RequireLogin } from './RequireLogin';
 export { default as DataFetchState } from './DataFetchState';

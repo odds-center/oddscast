@@ -207,7 +207,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
         }} />
       )}
       {clientMounted && <NetworkStatusBanner />}
-      {clientMounted && <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />}
+      {clientMounted && pathname !== '/welcome' && <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />}
     </>
   );
 }

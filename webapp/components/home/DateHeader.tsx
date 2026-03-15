@@ -1,5 +1,5 @@
 /**
- * Home hero banner — KRA style dark banner
+ * Home hero banner — clean racetrack style
  * Copy varies by today's race count and next race day.
  * On race days, shows countdown to next race when available.
  */
@@ -75,23 +75,19 @@ export default function DateHeader() {
   const { data: nextData } = useQuery({
     queryKey: ['races', 'next-upcoming', todayYyyymmdd],
     queryFn: async () => {
-      // Tomorrow's YYYYMMDD
       const tomorrow = new Date(Date.UTC(year, month - 1, day + 1));
       const tY = tomorrow.getUTCFullYear();
       const tM = String(tomorrow.getUTCMonth() + 1).padStart(2, '0');
       const tD = String(tomorrow.getUTCDate()).padStart(2, '0');
       const dateFrom = `${tY}${tM}${tD}`;
-      // Look 30 days ahead
       const future = new Date(Date.UTC(year, month - 1, day + 30));
       const fY = future.getUTCFullYear();
       const fM = String(future.getUTCMonth() + 1).padStart(2, '0');
       const fD = String(future.getUTCDate()).padStart(2, '0');
       const dateTo = `${fY}${fM}${fD}`;
-      // Server sorts rcDate DESC, so fetch enough to find the earliest date
       const res = await RaceApi.getRaces({ limit: 100, page: 1, dateFrom, dateTo });
       const upcoming = res?.races ?? [];
       if (upcoming.length === 0) return null;
-      // Find the race with the earliest rcDate
       let earliest = upcoming[0];
       for (const r of upcoming) {
         if (r.rcDate && earliest.rcDate && r.rcDate < earliest.rcDate) earliest = r;
@@ -99,7 +95,7 @@ export default function DateHeader() {
       return earliest;
     },
     enabled: shouldFetchNext,
-    staleTime: 10 * 60 * 1000, // 10 min
+    staleTime: 10 * 60 * 1000,
   });
 
   const nextRaceDayLabel = useMemo(() => {
@@ -111,14 +107,12 @@ export default function DateHeader() {
 
   const msg = getDateHeaderMessage(todayCount, nextRaceDayLabel, todayAllEnded);
 
-  const [countdownMins, setCountdownMins] = useState<number | null>(() =>
-    getNextRaceMinutes(races),
-  );
+  const [countdownMins, setCountdownMins] = useState<number | null>(null);
   useEffect(() => {
     if (todayAllEnded || races.length === 0) return;
     const tick = () => setCountdownMins(getNextRaceMinutes(races));
+    tick();
     const id = setInterval(tick, COUNTDOWN_TICK_MS);
-    queueMicrotask(tick);
     return () => clearInterval(id);
   }, [races, todayAllEnded]);
 
@@ -126,29 +120,34 @@ export default function DateHeader() {
 
   return (
     <div className='home-hero'>
-      <div className='relative z-10 flex flex-col gap-3'>
-        <div>
-          <p className='text-stone-400 text-sm mb-1'>
-            {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDayName})
+      <div className='relative z-10 flex flex-col gap-2.5'>
+        {/* Date */}
+        <p className='text-stone-400 text-sm'>
+          {year}.{String(month).padStart(2, '0')}.{String(day).padStart(2, '0')} ({weekDayName})
+        </p>
+
+        {/* Headline */}
+        <h1 className='text-xl sm:text-2xl font-bold text-white leading-snug'>
+          {msg.title}
+        </h1>
+        <p className='text-stone-400 text-sm leading-relaxed'>
+          {msg.subtitle}
+        </p>
+
+        {/* Countdown */}
+        {showCountdown && (
+          <p className={`text-sm font-semibold flex items-center gap-1.5 ${countdownMins <= 5 ? 'text-amber-400 animate-pulse' : 'text-emerald-400'}`}>
+            <Icon name='Clock' size={14} />
+            {countdownMins <= 1 ? '다음 경주 곧 시작!' : `다음 경주 ${countdownMins}분 후`}
           </p>
-          <h1 className='text-lg sm:text-xl font-bold text-white mb-1'>
-            {msg.title}
-          </h1>
-          <p className='text-stone-400 text-sm'>
-            {msg.subtitle}
-          </p>
-          {showCountdown && (
-            <p className={`text-sm font-medium mt-1.5 flex items-center gap-1 ${countdownMins <= 5 ? 'text-amber-400 animate-pulse' : 'text-primary/90'}`}>
-              <Icon name='Clock' size={13} />
-              {countdownMins <= 1 ? '다음 경주 곧 시작!' : `다음 경주 ${countdownMins}분 후`}
-            </p>
-          )}
-        </div>
-        <div className='flex items-center gap-2'>
+        )}
+
+        {/* CTAs */}
+        <div className='flex items-center gap-2 mt-1'>
           {msg.showTodayLink && (
             <Link
               href={`${routes.races.list}?date=today`}
-              className='inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
+              className='inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
             >
               <Icon name='Flag' size={15} />
               오늘의 경주
@@ -156,7 +155,7 @@ export default function DateHeader() {
           )}
           <Link
             href={routes.predictions.matrix}
-            className='inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-white/10 text-stone-300 text-sm font-medium hover:bg-white/15 active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
+            className='inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-white/10 text-stone-200 text-sm font-semibold hover:bg-white/15 active:opacity-90 transition-colors whitespace-nowrap touch-manipulation'
           >
             <Icon name='BarChart2' size={15} />
             종합 예상

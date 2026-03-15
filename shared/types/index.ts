@@ -28,9 +28,6 @@ export * from './result.types';
 // Favorite
 export * from './favorite.types';
 
-// Point
-export * from './point.types';
-
 // Prediction
 export * from './prediction.types';
 

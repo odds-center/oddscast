@@ -5,13 +5,11 @@ import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { ResultsService } from './results.service';
 import { ResultsController } from './results.controller';
-import { PointsModule } from '../points/points.module';
 import { PredictionsModule } from '../predictions/predictions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Race, RaceResult, Prediction]),
-    PointsModule,
     PredictionsModule,
   ],
   controllers: [ResultsController],

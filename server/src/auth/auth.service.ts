@@ -16,20 +16,10 @@ import { AdminUser } from '../database/entities/admin-user.entity';
 import { PasswordResetToken } from '../database/entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
-import { PointsService } from '../points/points.service';
 import { GlobalConfigService } from '../config/config.service';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 import { DiscordService } from '../discord/discord.service';
-import { dateToKstDash, kst, yesterdayKstDash } from '../common/utils/kst';
-
-export interface LoginBonusResult {
-  dailyBonusGranted: boolean;
-  dailyBonusPoints: number;
-  consecutiveDays: number;
-  consecutiveRewardGranted: boolean;
-}
-
 export interface SanitizedUser {
   id: number;
   email: string;
@@ -40,8 +30,6 @@ export interface SanitizedUser {
   isActive: boolean;
   favoriteMeet: string | null;
   hasSeenOnboarding: boolean;
-  /** Consecutive login days (for 7-day reward display) */
-  consecutiveLoginDays?: number;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -72,7 +60,6 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly config: ConfigService,
     private readonly predictionTicketsService: PredictionTicketsService,
-    private readonly pointsService: PointsService,
     private readonly globalConfig: GlobalConfigService,
     private readonly mailService: MailService,
     private readonly discordService: DiscordService,
@@ -181,122 +168,8 @@ export class AuthService {
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
 
-    let loginBonus: LoginBonusResult | undefined;
-    try {
-      loginBonus = await this.processLoginBonuses(user.id);
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (this.config.get('NODE_ENV') !== 'test') {
-        this.logger.warn(`Login bonus failed for user ${user.id}: ${msg}`);
-      }
-    }
-
     const token = this.generateToken(user.id, user.email, user.role);
-    const result: {
-      user: SanitizedUser;
-      accessToken: string;
-      refreshToken?: string;
-      loginBonus?: LoginBonusResult;
-    } = { user: this.sanitize(user), ...token };
-    if (loginBonus) result.loginBonus = loginBonus;
-    return result;
-  }
-
-  /** KST date string YYYY-MM-DD */
-  private getDateKST(d: Date): string {
-    return dateToKstDash(d);
-  }
-
-  /**
-   * Process daily login bonus (points) and consecutive login reward (7-day ticket).
-   * Call after lastLoginAt has been updated.
-   */
-  async processLoginBonuses(userId: number): Promise<LoginBonusResult> {
-    const user = await this.userRepo.findOne({
-      where: { id: userId },
-      select: [
-        'id',
-        'lastDailyBonusAt',
-        'lastConsecutiveLoginDate',
-        'consecutiveLoginDays',
-      ],
-    });
-    if (!user) return this.emptyLoginBonus();
-
-    const now = new Date();
-    const todayKST = kst(now).format('YYYY-MM-DD');
-    const yesterdayKST = yesterdayKstDash();
-
-    let dailyBonusGranted = false;
-    let dailyBonusPoints = 0;
-    let lastDailyBonusAt: Date | null = user.lastDailyBonusAt;
-    const lastDailyDate = user.lastDailyBonusAt
-      ? this.getDateKST(user.lastDailyBonusAt)
-      : null;
-    if (lastDailyDate !== todayKST) {
-      const { points } = await this.pointsService.grantDailyLoginBonus(userId);
-      dailyBonusPoints = points;
-      dailyBonusGranted = points > 0;
-      lastDailyBonusAt = now;
-    }
-
-    let lastConsecutive = user.lastConsecutiveLoginDate ?? null;
-    let streak = user.consecutiveLoginDays ?? 0;
-    if (lastConsecutive !== todayKST) {
-      if (lastConsecutive === yesterdayKST) {
-        streak += 1;
-      } else {
-        streak = 1;
-      }
-      lastConsecutive = todayKST;
-    }
-
-    const streakThreshold = parseInt(await this.globalConfig.get('consecutive_streak_days') ?? '7', 10);
-    const streakTickets = parseInt(await this.globalConfig.get('consecutive_streak_tickets') ?? '1', 10);
-    const streakExpiresDays = parseInt(await this.globalConfig.get('consecutive_expires_days') ?? '30', 10);
-
-    let consecutiveRewardGranted = false;
-    if (streak >= streakThreshold) {
-      try {
-        await this.predictionTicketsService.grantTickets(
-          userId,
-          streakTickets,
-          streakExpiresDays,
-          'RACE',
-        );
-        consecutiveRewardGranted = true;
-        streak = 0;
-      } catch (err: unknown) {
-        if (this.config.get('NODE_ENV') !== 'test') {
-          this.logger.warn(
-            `Consecutive login ticket grant failed for user ${userId}: ${err instanceof Error ? err.message : String(err)}`,
-          );
-        }
-      }
-    }
-
-    await this.userRepo.update(userId, {
-      lastDailyBonusAt: lastDailyBonusAt ?? undefined,
-      lastConsecutiveLoginDate: lastConsecutive,
-      consecutiveLoginDays: streak,
-      updatedAt: now,
-    });
-
-    return {
-      dailyBonusGranted,
-      dailyBonusPoints,
-      consecutiveDays: streak,
-      consecutiveRewardGranted,
-    };
-  }
-
-  private emptyLoginBonus(): LoginBonusResult {
-    return {
-      dailyBonusGranted: false,
-      dailyBonusPoints: 0,
-      consecutiveDays: 0,
-      consecutiveRewardGranted: false,
-    };
+    return { user: this.sanitize(user), ...token };
   }
 
   async adminLogin(loginId: string, password: string) {
@@ -341,7 +214,6 @@ export class AuthService {
         'isActive',
         'favoriteMeet',
         'hasSeenOnboarding',
-        'consecutiveLoginDays',
         'createdAt',
         'updatedAt',
       ],
@@ -559,7 +431,6 @@ export class AuthService {
       isActive: user.isActive,
       favoriteMeet: user.favoriteMeet ?? null,
       hasSeenOnboarding: user.hasSeenOnboarding ?? false,
-      consecutiveLoginDays: user.consecutiveLoginDays ?? 0,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

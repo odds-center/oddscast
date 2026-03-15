@@ -15,7 +15,6 @@ import { AdminUser } from '../database/entities/admin-user.entity';
 import { PasswordResetToken } from '../database/entities/password-reset-token.entity';
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
-import { PointsService } from '../points/points.service';
 import { GlobalConfigService } from '../config/config.service';
 import { MailService } from '../mail/mail.service';
 import { DiscordService } from '../discord/discord.service';
@@ -43,9 +42,6 @@ describe('AuthService', () => {
 
   const mockTicketsService = {
     grantTickets: jest.fn().mockResolvedValue({ granted: 1 }),
-  };
-  const mockPointsService = {
-    grantDailyLoginBonus: jest.fn().mockResolvedValue({ points: 10 }),
   };
   const mockGlobalConfigService = {
     get: jest.fn().mockResolvedValue(null),
@@ -81,7 +77,6 @@ describe('AuthService', () => {
         { provide: JwtService, useValue: jwtService },
         { provide: ConfigService, useValue: configService },
         { provide: PredictionTicketsService, useValue: mockTicketsService },
-        { provide: PointsService, useValue: mockPointsService },
         { provide: GlobalConfigService, useValue: mockGlobalConfigService },
         { provide: MailService, useValue: mockMailService },
         { provide: DiscordService, useValue: mockDiscordService },
@@ -192,105 +187,6 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
 
-    it('should call processLoginBonuses on success for verified user', async () => {
-      const testUser = createTestUser({
-        isEmailVerified: true,
-        lastDailyBonusAt: null,
-      });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      await service.login('test@example.com', 'password123');
-
-      expect(mockPointsService.grantDailyLoginBonus).toHaveBeenCalledWith(
-        testUser.id,
-      );
-    });
-  });
-
-  describe('processLoginBonuses', () => {
-    it('should grant daily bonus when different KST day', async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const testUser = createTestUser({ lastDailyBonusAt: yesterday });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      const result = await service.processLoginBonuses(1);
-
-      expect(mockPointsService.grantDailyLoginBonus).toHaveBeenCalledWith(1);
-      expect(result.dailyBonusGranted).toBe(true);
-      expect(result.dailyBonusPoints).toBe(10);
-    });
-
-    it('should skip bonus on same KST day', async () => {
-      const now = new Date();
-      const testUser = createTestUser({ lastDailyBonusAt: now });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      const result = await service.processLoginBonuses(1);
-
-      expect(mockPointsService.grantDailyLoginBonus).not.toHaveBeenCalled();
-      expect(result.dailyBonusGranted).toBe(false);
-    });
-
-    it('should increment consecutive streak (yesterday to today)', async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayKST = yesterday.toLocaleDateString('en-CA', {
-        timeZone: 'Asia/Seoul',
-      });
-      const testUser = createTestUser({
-        lastDailyBonusAt: null,
-        lastConsecutiveLoginDate: yesterdayKST,
-        consecutiveLoginDays: 3,
-      });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      const result = await service.processLoginBonuses(1);
-
-      expect(result.consecutiveDays).toBe(4);
-      expect(userRepo.update).toHaveBeenCalledWith(
-        1,
-        expect.objectContaining({ consecutiveLoginDays: 4 }),
-      );
-    });
-
-    it('should reset streak when gap > 1 day', async () => {
-      const testUser = createTestUser({
-        lastDailyBonusAt: null,
-        lastConsecutiveLoginDate: '2025-01-01',
-        consecutiveLoginDays: 5,
-      });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      const result = await service.processLoginBonuses(1);
-
-      expect(result.consecutiveDays).toBe(1);
-    });
-
-    it('should grant ticket and reset at 7-day streak', async () => {
-      const yesterday = new Date();
-      yesterday.setDate(yesterday.getDate() - 1);
-      const yesterdayKST = yesterday.toLocaleDateString('en-CA', {
-        timeZone: 'Asia/Seoul',
-      });
-      const testUser = createTestUser({
-        lastDailyBonusAt: null,
-        lastConsecutiveLoginDate: yesterdayKST,
-        consecutiveLoginDays: 6,
-      });
-      userRepo.findOne.mockResolvedValue(testUser);
-
-      const result = await service.processLoginBonuses(1);
-
-      expect(mockTicketsService.grantTickets).toHaveBeenCalledWith(
-        1,
-        1,
-        30,
-        'RACE',
-      );
-      expect(result.consecutiveRewardGranted).toBe(true);
-      expect(result.consecutiveDays).toBe(0);
-    });
   });
 
   describe('adminLogin', () => {

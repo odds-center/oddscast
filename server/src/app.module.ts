@@ -32,10 +32,6 @@ import {
   AdminActivityLog,
   UserActivityLog,
   SinglePurchase,
-  PointTransaction,
-  PointConfig,
-  PointPromotion,
-  PointTicketPrice,
   SubscriptionPlan,
   BillingHistory,
   RaceDividend,
@@ -57,7 +53,6 @@ import { RankingsModule } from './rankings/rankings.module';
 import { PaymentsModule } from './payments/payments.module';
 import { PredictionTicketsModule } from './prediction-tickets/prediction-tickets.module';
 import { SinglePurchasesModule } from './single-purchases/single-purchases.module';
-import { PointsModule } from './points/points.module';
 import { PicksModule } from './picks/picks.module';
 import { KraModule } from './kra/kra.module';
 import { AnalysisModule } from './analysis/analysis.module';
@@ -114,10 +109,6 @@ import { DiscordModule } from './discord/discord.module';
           AdminActivityLog,
           UserActivityLog,
           SinglePurchase,
-          PointTransaction,
-          PointConfig,
-          PointPromotion,
-          PointTicketPrice,
           SubscriptionPlan,
           BillingHistory,
           RaceDividend,
@@ -156,7 +147,6 @@ import { DiscordModule } from './discord/discord.module';
     PaymentsModule,
     RankingsModule,
     SinglePurchasesModule,
-    PointsModule,
     KraModule,
     AdminModule,
     GlobalConfigModule,

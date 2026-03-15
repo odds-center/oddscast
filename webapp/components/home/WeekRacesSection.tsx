@@ -52,7 +52,10 @@ export default function WeekRacesSection() {
           </Button>
         </div>
       ) : races.length === 0 ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>이번 주 예정된 경주가 없습니다.</div>
+        <div className='py-6 text-center text-text-secondary'>
+          <p className='text-sm'>이번 주 예정된 경주가 없습니다.</p>
+          <p className='text-xs text-text-tertiary mt-1'>경주는 매주 금·토·일 진행됩니다.</p>
+        </div>
       ) : (
         <>
           {/* Mobile: card list */}
@@ -64,7 +67,7 @@ export default function WeekRacesSection() {
                 <a
                   key={row.id}
                   href={routes.races.detail(row.id)}
-                  className='flex items-center justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                  className='flex items-center justify-between py-3 px-1 active:bg-stone-50 transition-colors'
                 >
                   <span className='font-semibold text-foreground text-sm'>
                     {row.meetName ?? row.meet ?? '-'} {row.rcNo}R

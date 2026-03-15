@@ -68,34 +68,6 @@ export enum FavoritePriority {
   HIGH = 'HIGH',
 }
 
-export enum PointTransactionType {
-  EARNED = 'EARNED',
-  SPENT = 'SPENT',
-  REFUNDED = 'REFUNDED',
-  BONUS = 'BONUS',
-  PROMOTION = 'PROMOTION',
-  ADMIN_ADJUSTMENT = 'ADMIN_ADJUSTMENT',
-  EXPIRED = 'EXPIRED',
-  TRANSFER_IN = 'TRANSFER_IN',
-  TRANSFER_OUT = 'TRANSFER_OUT',
-}
-
-export enum PointStatus {
-  ACTIVE = 'ACTIVE',
-  PENDING = 'PENDING',
-  EXPIRED = 'EXPIRED',
-  CANCELLED = 'CANCELLED',
-  PROCESSING = 'PROCESSING',
-}
-
-export enum PromotionType {
-  SIGNUP_BONUS = 'SIGNUP_BONUS',
-  REFERRAL_BONUS = 'REFERRAL_BONUS',
-  DAILY_LOGIN = 'DAILY_LOGIN',
-  SPECIAL_EVENT = 'SPECIAL_EVENT',
-  CUSTOM = 'CUSTOM',
-}
-
 export enum PaymentStatus {
   SUCCESS = 'SUCCESS',
   FAILED = 'FAILED',

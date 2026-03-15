@@ -15,8 +15,6 @@ export interface User {
   favoriteMeet?: string | null;
   /** Whether user has completed onboarding tutorial */
   hasSeenOnboarding?: boolean;
-  /** Consecutive login days (for 7-day reward display) */
-  consecutiveLoginDays?: number;
   preferences?: {
     theme?: string;
     language?: string;

@@ -10,8 +10,6 @@ import {
   TicketType,
   TicketStatus,
   SubscriptionStatus,
-  PointTransactionType,
-  PointStatus,
 } from '../database/db-enums';
 
 export function createTestUser(overrides?: Record<string, unknown>) {
@@ -28,9 +26,6 @@ export function createTestUser(overrides?: Record<string, unknown>) {
     isEmailVerified: false,
     favoriteMeet: null,
     lastLoginAt: null,
-    lastDailyBonusAt: null,
-    lastConsecutiveLoginDate: null,
-    consecutiveLoginDays: 0,
     createdAt: now,
     updatedAt: now,
     ...overrides,
@@ -212,22 +207,3 @@ export function createTestSubscription(overrides?: Record<string, unknown>) {
   };
 }
 
-export function createTestPointTransaction(
-  overrides?: Record<string, unknown>,
-) {
-  const now = new Date();
-  return {
-    id: 1,
-    userId: 1,
-    transactionType: PointTransactionType.BONUS,
-    amount: 10,
-    balanceAfter: 10,
-    description: 'Daily login bonus',
-    metadata: null,
-    status: PointStatus.ACTIVE,
-    transactionTime: now,
-    createdAt: now,
-    updatedAt: now,
-    ...overrides,
-  };
-}

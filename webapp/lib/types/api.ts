@@ -12,7 +12,6 @@ export type {
 // Re-export types exported from other type files
 export type { AuthResponse, LoginRequest, RegisterRequest } from './auth';
 export type { Notification, NotificationPreferences } from './notification';
-export type { PointTransactionType, UserPointBalance, UserPoints } from './point';
 export type {
   DividendRate,
   EntryDetail,

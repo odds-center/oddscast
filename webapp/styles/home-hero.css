@@ -1,8 +1,8 @@
-/* Home hero banner */
+/* Home hero banner — clean dark turf style */
 .home-hero {
   background: linear-gradient(160deg, #1c1917 55%, #1a2b1a 100%);
   color: #fafaf9;
-  padding: 1.25rem 1rem 1.125rem;
+  padding: 1.25rem 1.25rem 1.125rem;
   border-radius: var(--radius-lg);
   position: relative;
   overflow: hidden;

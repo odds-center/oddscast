@@ -1,5 +1,5 @@
 /**
- * Recent results section — grouped 1st·2nd·3rd place compact display
+ * Recent results section — grouped 1st·2nd·3rd place with jockey info
  */
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
@@ -71,6 +71,8 @@ function groupResults(raw: RaceResult[]): GroupedRace[] {
   return list;
 }
 
+const MEDAL = ['', '🥇', '🥈', '🥉'] as const;
+
 export default function RecentResultsSection() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['results', 'recent'],
@@ -107,21 +109,33 @@ export default function RecentResultsSection() {
         <>
           {/* Mobile: card list */}
           <div className='block sm:hidden divide-y divide-border -mx-0.5'>
-            {grouped.slice(0, 6).map((row) => {
+            {grouped.slice(0, 8).map((row) => {
               const [p1, p2, p3] = ['1', '2', '3'].map((ord) => row.results.find((x) => x.ord === ord));
               return (
                 <Link
                   key={row.raceId}
                   href={routes.resultsDetail(row.raceId)}
-                  className='flex items-start justify-between py-2.5 px-0.5 active:bg-stone-50 transition-colors'
+                  className='flex items-start justify-between py-3 px-1 active:bg-stone-50 transition-colors'
                 >
-                  <span className='font-semibold text-foreground text-sm min-w-[72px]'>
+                  <span className='font-bold text-foreground text-sm min-w-[72px]'>
                     {row.meetName} {row.rcNo}경
                   </span>
-                  <div className='flex items-center gap-1 text-xs text-text-secondary flex-wrap justify-end'>
-                    {p1 && <span className='text-amber-600 font-medium'>🥇{p1.hrName}</span>}
-                    {p2 && <span className='text-stone-500'>🥈{p2.hrName}</span>}
-                    {p3 && <span className='text-stone-400'>🥉{p3.hrName}</span>}
+                  <div className='flex flex-col gap-0.5 items-end text-xs'>
+                    {p1 && (
+                      <span className='text-amber-600 font-semibold'>
+                        {MEDAL[1]} {p1.hrName} <span className='text-text-tertiary font-normal'>({p1.jkName})</span>
+                      </span>
+                    )}
+                    {p2 && (
+                      <span className='text-stone-600'>
+                        {MEDAL[2]} {p2.hrName} <span className='text-text-tertiary font-normal'>({p2.jkName})</span>
+                      </span>
+                    )}
+                    {p3 && (
+                      <span className='text-stone-500'>
+                        {MEDAL[3]} {p3.hrName}
+                      </span>
+                    )}
                   </div>
                 </Link>
               );
@@ -129,22 +143,22 @@ export default function RecentResultsSection() {
           </div>
           {/* Desktop: table */}
           <div className='hidden sm:block overflow-x-auto'>
-            <table className='data-table data-table-compact w-full min-w-[320px]'>
+            <table className='data-table data-table-compact w-full min-w-[400px]'>
               <thead>
                 <tr>
                   <th className='w-28'>경주</th>
-                  <th className='min-w-[80px]'>1위</th>
-                  <th className='min-w-[80px]'>2위</th>
+                  <th className='min-w-[100px]'>1위</th>
+                  <th className='min-w-[100px]'>2위</th>
                   <th className='min-w-[80px]'>3위</th>
                 </tr>
               </thead>
               <tbody>
-                {grouped.slice(0, 6).map((row) => (
+                {grouped.slice(0, 8).map((row) => (
                   <tr key={row.raceId}>
                     <td>
                       <Link
                         href={routes.resultsDetail(row.raceId)}
-                        className='font-medium text-stone-700 hover:text-stone-900 hover:underline'
+                        className='font-semibold text-stone-700 hover:text-stone-900 hover:underline'
                       >
                         {row.meetName} {row.rcNo}경
                       </Link>
@@ -152,9 +166,14 @@ export default function RecentResultsSection() {
                     {(['1', '2', '3'] as const).map((ord) => {
                       const r = row.results.find((x) => x.ord === ord);
                       return (
-                        <td key={ord} className='text-sm'>
+                        <td key={ord}>
                           {r ? (
-                            <span className='font-medium'>{r.hrName}</span>
+                            <div>
+                              <span className='font-semibold text-sm'>{r.hrName}</span>
+                              {ord !== '3' && r.jkName && r.jkName !== '-' && (
+                                <span className='text-text-tertiary text-xs ml-1'>({r.jkName})</span>
+                              )}
+                            </div>
                           ) : (
                             <span className='text-text-tertiary'>-</span>
                           )}

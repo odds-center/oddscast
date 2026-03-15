@@ -11,7 +11,6 @@ export * from './kra-api.types';
 export * from './race.types';
 export * from './result.types';
 export * from './favorite.types';
-export * from './point.types';
 export * from './prediction.types';
 export * from './prediction-ticket.types';
 export * from './subscription.types';

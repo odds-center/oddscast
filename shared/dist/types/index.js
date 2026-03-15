@@ -35,8 +35,6 @@ __exportStar(require("./race.types"), exports);
 __exportStar(require("./result.types"), exports);
 // Favorite
 __exportStar(require("./favorite.types"), exports);
-// Point
-__exportStar(require("./point.types"), exports);
 // Prediction
 __exportStar(require("./prediction.types"), exports);
 // Prediction Ticket

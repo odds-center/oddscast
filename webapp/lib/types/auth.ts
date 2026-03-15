@@ -10,14 +10,6 @@ export type {
   ChangePasswordRequest,
 } from '@oddscast/shared';
 
-/** Login bonus result from server (daily points + 7-day ticket) */
-export interface LoginBonusResult {
-  dailyBonusGranted: boolean;
-  dailyBonusPoints: number;
-  consecutiveDays: number;
-  consecutiveRewardGranted: boolean;
-}
-
 /** webapp AuthResponse (login/register response) */
 export interface AuthResponse {
   user: import('./user').User;
@@ -25,7 +17,6 @@ export interface AuthResponse {
   refreshToken?: string;
   expiresIn?: number;
   tokenType?: string;
-  loginBonus?: LoginBonusResult;
 }
 
 /** Returned when email verification is required (register/login with unverified email) */

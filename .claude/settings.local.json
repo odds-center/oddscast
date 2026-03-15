@@ -82,7 +82,14 @@
       "Bash(./scripts/railway-env-push.sh server:*)",
       "Bash(TZ=Asia/Seoul date +%Y-%m-%d %H:%M:%S KST:*)",
       "Bash(identify:*)",
-      "Bash(grep \"\"name\"\":*)"
+      "Bash(grep \"\"name\"\":*)",
+      "Bash(find /Users/risingcore/Desktop/project/oddscast/admin/src/lib -type f -name \"*.ts\" -o -name \"*.tsx\" 2>/dev/null | head -20)",
+      "Bash(cd /Users/risingcore/Desktop/project/oddscast && rm -rf webapp/.next)",
+      "Bash(git log:*)",
+      "Bash(GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfeat: migrate webapp UI to shadcn/ui, persist onboarding to DB, unify back navigation\n\n- Replace custom CSS components \\(buttons, cards, badges, forms, messages, links\\)\n  with shadcn/ui primitives \\(Button, Card, Badge, Input, Dialog, Select, etc.\\)\n- Add cn\\(\\) utility, components.json, and Radix UI dependencies\n- Create backward-compatible wrappers: SimpleTooltip, Toggle \\(Switch\\)\n- Delete 7 CSS files, add CSS variable aliases in globals.css for plain CSS\n- Add hasSeenOnboarding column to users table for cross-device persistence\n- Update auth service: updateProfile saves onboarding state, login allows\n  unverified users \\(verification only required at registration\\)\n- Unify back navigation: replace all BackLink with CompactPageTitle,\n  delete unused BackLink component\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline -5)",
+      "Bash(GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfeat: on-demand KRA result fetch and decouple Gemini from KRA sync\n\n- Add on-demand result fetch in RacesService.findOne\\(\\): when a user\n  views a race that has ended but has no results, trigger KRA API\n  fetch with 1-min cooldown per rcDate to prevent excessive calls\n- Decouple Gemini prediction generation from KRA result sync:\n  replace onResultsSyncedForRace \\(accuracy + Gemini\\) with\n  updateAccuracyOnly \\(accuracy only\\) in fetchRaceResults\n- Remove generatePredictionsForDate fire-and-forget call from\n  processDueBatchSchedules to prevent Gemini 429 cascading to KRA\n- Predictions are now handled independently by PredictionsScheduler\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(GIT_CONFIG_GLOBAL=/dev/null git status --short)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

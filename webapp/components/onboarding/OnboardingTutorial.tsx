@@ -29,7 +29,7 @@ const SLIDES: Slide[] = [
   {
     icon: 'User',
     title: '정보',
-    description: '포인트, 예측권, 구독을 관리하고 알림 설정을 할 수 있습니다.',
+    description: '예측권, 구독을 관리하고 알림 설정을 할 수 있습니다.',
   },
 ];
 

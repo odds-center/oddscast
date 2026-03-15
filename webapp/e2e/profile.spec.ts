@@ -4,7 +4,6 @@
 import { test, expect } from '@playwright/test';
 import {
   mockAuthMe,
-  mockPointBalance,
   mockTicketBalance,
   mockSubscriptionStatus,
   seedAuth,
@@ -13,7 +12,6 @@ import {
 
 async function setupProfile(page: import('@playwright/test').Page) {
   await mockAuthMe(page);
-  await mockPointBalance(page);
   await mockTicketBalance(page);
   await mockSubscriptionStatus(page, false);
 }
@@ -40,16 +38,6 @@ test.describe('Profile page — authenticated', () => {
     await expect(name).toBeVisible({ timeout: 8000 });
   });
 
-  test('shows point balance', async ({ page }) => {
-    await page.goto('/profile');
-    await seedAuth(page);
-    await page.reload();
-
-    // Point balance (1200pt)
-    const pts = page.locator('text=/1,200|1200|pt/i').first();
-    await expect(pts).toBeVisible({ timeout: 8000 });
-  });
-
   test('shows prediction ticket balance', async ({ page }) => {
     await page.goto('/profile');
     await seedAuth(page);
@@ -68,16 +56,6 @@ test.describe('Profile page — authenticated', () => {
     // Should have link to subscriptions
     const subLink = page.locator('a[href*="subscriptions"]').first();
     await expect(subLink).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows consecutive login days', async ({ page }) => {
-    await page.goto('/profile');
-    await seedAuth(page);
-    await page.reload();
-
-    // consecutiveLoginDays = 1
-    const streak = page.locator('text=/연속|1일|streak/i').first();
-    await expect(streak).toBeVisible({ timeout: 8000 });
   });
 
   test('has link to profile edit page', async ({ page }) => {

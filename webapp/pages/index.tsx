@@ -18,20 +18,20 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 // Below-fold sections: lazy load to reduce initial bundle
+const AIPredictionSection = dynamic(
+  () => import('@/components/home/AIPredictionSection'),
+  { ssr: false },
+);
+const AccuracyPreviewSection = dynamic(
+  () => import('@/components/home').then((m) => ({ default: m.AccuracyPreviewSection })),
+  { ssr: false },
+);
 const RecentResultsSection = dynamic(
   () => import('@/components/home').then((m) => ({ default: m.RecentResultsSection })),
   { ssr: false },
 );
-const PredictionMatrixPreviewSection = dynamic(
-  () => import('@/components/home').then((m) => ({ default: m.PredictionMatrixPreviewSection })),
-  { ssr: false },
-);
-const RacePredictionsPreviewSection = dynamic(
-  () => import('@/components/home').then((m) => ({ default: m.RacePredictionsPreviewSection })),
-  { ssr: false },
-);
-const AllRacesSection = dynamic(
-  () => import('@/components/home').then((m) => ({ default: m.AllRacesSection })),
+const WhyOddsCastSection = dynamic(
+  () => import('@/components/home/WhyOddsCastSection'),
   { ssr: false },
 );
 
@@ -55,10 +55,10 @@ export default function Home() {
 
   return (
     <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 정확도 통계를 제공합니다.'>
-      {/* Hero banner */}
+      {/* 1. Hero banner */}
       <DateHeader />
 
-      {/* Login + Quick stats bar */}
+      {/* 2. Quick stats + login */}
       <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 mb-4'>
         <HomeQuickStats />
         {!isLoggedIn && (
@@ -75,8 +75,8 @@ export default function Home() {
         )}
       </div>
 
-      {/* Race menu bar — KRA style */}
-      <div className='flex items-center gap-2 mb-4 overflow-x-auto pb-0.5 -mx-1 px-1'>
+      {/* 3. Quick menu bar */}
+      <div className='flex items-center gap-2 mb-5 overflow-x-auto pb-0.5 -mx-1 px-1'>
         {[
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주' },
           { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
@@ -87,43 +87,47 @@ export default function Home() {
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-white border border-stone-200 text-stone-600 text-sm font-medium hover:border-primary hover:text-primary active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
+            className='inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-white border border-stone-200 text-stone-700 text-sm font-semibold hover:border-primary hover:text-primary active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
           >
-            <Icon name={item.icon} size={15} />
+            <Icon name={item.icon} size={18} />
             {item.label}
           </Link>
         ))}
       </div>
 
-      {/* Main content */}
-      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
+      {/* 4. Today's races + This week */}
+      <div className='grid lg:grid-cols-2 gap-4 mb-5'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
-      <div className='mb-4'>
+      {/* 5. AI Predictions — core product, prominent placement */}
+      <div className='mb-5'>
+        <AIPredictionSection />
+      </div>
+
+      {/* 6. Recently viewed races */}
+      <div className='mb-5'>
         <RecentRacesSection />
       </div>
 
-      {isLoggedIn && (
-        <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-          <div className='lg:col-span-2'>
-            <TodaysFortuneCard />
-          </div>
-        </div>
-      )}
-      <div className='grid lg:grid-cols-2 gap-4 mb-4'>
-        <RecentResultsSection />
-        <PredictionMatrixPreviewSection />
-      </div>
-      <div className='mb-4'>
-        <RacePredictionsPreviewSection />
+      {/* 7. Accuracy + Fortune (trust & engagement) */}
+      <div className='grid lg:grid-cols-2 gap-4 mb-5'>
+        <AccuracyPreviewSection />
+        <TodaysFortuneCard />
       </div>
 
-      <div className='mb-4'>
-        <AllRacesSection />
+      {/* 8. Recent results */}
+      <div className='mb-5'>
+        <RecentResultsSection />
       </div>
+
+      {/* 9. Why OddsCast — non-logged-in only */}
+      {!isLoggedIn && (
+        <div className='mb-5'>
+          <WhyOddsCastSection />
+        </div>
+      )}
     </Layout>
   );
 }
-

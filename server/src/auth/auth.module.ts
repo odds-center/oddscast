@@ -11,7 +11,6 @@ import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
-import { PointsModule } from '../points/points.module';
 import { GlobalConfigModule } from '../config/config.module';
 
 @Module({
@@ -25,7 +24,6 @@ import { GlobalConfigModule } from '../config/config.module';
     PassportModule.register({ defaultStrategy: 'jwt' }),
     PredictionTicketsModule,
     GlobalConfigModule,
-    PointsModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({

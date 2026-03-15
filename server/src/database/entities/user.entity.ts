@@ -39,16 +39,6 @@ export class User {
   @Column({ type: 'timestamp', precision: 3, nullable: true })
   lastLoginAt!: Date | null;
 
-  @Column({ type: 'timestamp', precision: 3, nullable: true })
-  lastDailyBonusAt!: Date | null;
-
-  /** KST date YYYY-MM-DD for consecutive login streak */
-  @Column({ type: 'text', nullable: true })
-  lastConsecutiveLoginDate!: string | null;
-
-  @Column({ type: 'int', default: 0 })
-  consecutiveLoginDays!: number;
-
   @Column({ type: 'text', nullable: true })
   favoriteMeet!: string | null;
 

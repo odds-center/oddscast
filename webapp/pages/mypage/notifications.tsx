@@ -84,7 +84,7 @@ export default function NotificationsPage() {
             isEmpty={!notifications.length}
             emptyIcon='Bell'
             emptyTitle='알림이 없습니다'
-            emptyDescription='경주 결과, 포인트 알림 등이 여기에 표시됩니다.'
+            emptyDescription='경주 결과, 예측 알림 등이 여기에 표시됩니다.'
             loadingLabel='알림 준비 중...'
           >
             {/* Mobile: card list */}

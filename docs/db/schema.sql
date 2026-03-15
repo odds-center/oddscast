@@ -25,9 +25,6 @@ DO $$ BEGIN CREATE TYPE "NotificationCategory" AS ENUM ('GENERAL', 'URGENT', 'IN
 DO $$ BEGIN CREATE TYPE "FavoriteType" AS ENUM ('HORSE', 'JOCKEY', 'TRAINER', 'RACE', 'MEET'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "FavoritePriority" AS ENUM ('LOW', 'MEDIUM', 'HIGH'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PaymentStatus" AS ENUM ('SUCCESS', 'FAILED', 'REFUNDED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "PointTransactionType" AS ENUM ('EARNED', 'SPENT', 'REFUNDED', 'BONUS', 'PROMOTION', 'ADMIN_ADJUSTMENT', 'EXPIRED', 'TRANSFER_IN', 'TRANSFER_OUT'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "PointStatus" AS ENUM ('ACTIVE', 'PENDING', 'EXPIRED', 'CANCELLED', 'PROCESSING'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-DO $$ BEGIN CREATE TYPE "PromotionType" AS ENUM ('SIGNUP_BONUS', 'REFERRAL_BONUS', 'DAILY_LOGIN', 'SPECIAL_EVENT', 'CUSTOM'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "PickType" AS ENUM ('SINGLE', 'PLACE', 'QUINELLA', 'EXACTA', 'QUINELLA_PLACE', 'TRIFECTA', 'TRIPLE'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 DO $$ BEGIN CREATE TYPE "BatchScheduleStatus" AS ENUM ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'CANCELLED'); EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
@@ -43,9 +40,6 @@ CREATE TABLE IF NOT EXISTS "users" (
     "isActive" BOOLEAN NOT NULL DEFAULT true,
     "isEmailVerified" BOOLEAN NOT NULL DEFAULT false,
     "lastLoginAt" TIMESTAMP(3),
-    "lastDailyBonusAt" TIMESTAMP(3),
-    "lastConsecutiveLoginDate" TEXT,
-    "consecutiveLoginDays" INTEGER NOT NULL DEFAULT 0,
     "favoriteMeet" TEXT,
     "hasSeenOnboarding" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -437,38 +431,6 @@ CREATE TABLE IF NOT EXISTS "single_purchases" (
     CONSTRAINT "single_purchases_pkey" PRIMARY KEY ("id")
 );
 
-CREATE TABLE IF NOT EXISTS "point_transactions" (
-    "id" SERIAL NOT NULL,
-    "userId" INTEGER NOT NULL,
-    "transactionType" "PointTransactionType" NOT NULL,
-    "amount" INTEGER NOT NULL,
-    "balanceAfter" INTEGER NOT NULL,
-    "description" TEXT NOT NULL,
-    "status" "PointStatus" NOT NULL DEFAULT 'ACTIVE',
-    "metadata" JSONB,
-    "transactionTime" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "point_transactions_pkey" PRIMARY KEY ("id")
-);
-
-CREATE TABLE IF NOT EXISTS "point_promotions" (
-    "id" SERIAL NOT NULL,
-    "name" TEXT NOT NULL,
-    "description" TEXT NOT NULL,
-    "type" "PromotionType" NOT NULL,
-    "points" INTEGER NOT NULL,
-    "conditions" JSONB,
-    "startDate" TIMESTAMP(3) NOT NULL,
-    "endDate" TIMESTAMP(3) NOT NULL,
-    "maxUses" INTEGER,
-    "currentUses" INTEGER NOT NULL DEFAULT 0,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "point_promotions_pkey" PRIMARY KEY ("id")
-);
-
 CREATE TABLE IF NOT EXISTS "user_picks" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
@@ -480,28 +442,6 @@ CREATE TABLE IF NOT EXISTS "user_picks" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "user_picks_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "user_picks_userId_raceId_key" UNIQUE ("userId", "raceId")
-);
-
-CREATE TABLE IF NOT EXISTS "point_configs" (
-    "id" SERIAL NOT NULL,
-    "configKey" TEXT NOT NULL,
-    "configValue" TEXT NOT NULL,
-    "description" TEXT,
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "point_configs_pkey" PRIMARY KEY ("id"),
-    CONSTRAINT "point_configs_configKey_key" UNIQUE ("configKey")
-);
-
-CREATE TABLE IF NOT EXISTS "point_ticket_prices" (
-    "id" SERIAL NOT NULL,
-    "pointsPerTicket" INTEGER NOT NULL DEFAULT 1200,
-    "isActive" BOOLEAN NOT NULL DEFAULT true,
-    "effectiveFrom" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "effectiveTo" TIMESTAMP(3),
-    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT "point_ticket_prices_pkey" PRIMARY KEY ("id")
 );
 
 CREATE TABLE IF NOT EXISTS "kra_sync_logs" (
@@ -659,10 +599,6 @@ DO $$ BEGIN
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'single_purchases_userId_fkey' AND n.nspname = 'oddscast') THEN
     ALTER TABLE "single_purchases" ADD CONSTRAINT "single_purchases_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
-  END IF; END $$;
-DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'point_transactions_userId_fkey' AND n.nspname = 'oddscast') THEN
-    ALTER TABLE "point_transactions" ADD CONSTRAINT "point_transactions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'user_picks_userId_fkey' AND n.nspname = 'oddscast') THEN

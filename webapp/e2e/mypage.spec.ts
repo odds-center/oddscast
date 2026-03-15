@@ -6,13 +6,11 @@ import {
   mockAuthMe,
   mockNotifications,
   mockTicketHistory,
-  mockPointTransactions,
   mockPredictionHistory,
   mockTicketBalance,
   seedAuth,
   stubNotification,
   stubTicket,
-  stubPointTransaction,
   stubPredictionHistoryItem,
 } from './fixtures/api-mocks';
 
@@ -146,51 +144,6 @@ test.describe('Ticket history page', () => {
     await page.reload();
 
     const empty = page.locator('text=/티켓이 없습니다|없습니다/i').first();
-    await expect(empty).toBeVisible({ timeout: 8000 });
-  });
-});
-
-// -------------------------------------------------------------------
-// Point transactions
-// -------------------------------------------------------------------
-test.describe('Point transactions page', () => {
-  test('redirects to login when unauthenticated', async ({ page }) => {
-    await page.goto('/mypage/point-transactions');
-    await expect(page.getByRole("link", { name: "로그인" }).first()).toBeVisible({ timeout: 5000 });
-  });
-
-  test('shows transaction rows when logged in', async ({ page }) => {
-    await mockAuthMe(page);
-    await mockPointTransactions(page, [stubPointTransaction]);
-    await page.goto('/mypage/point-transactions');
-    await seedAuth(page);
-    await page.reload();
-
-    await expect(
-      page.locator('text=일일 로그인 보너스').first(),
-    ).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows balance column', async ({ page }) => {
-    await mockAuthMe(page);
-    await mockPointTransactions(page, [stubPointTransaction]);
-    await page.goto('/mypage/point-transactions');
-    await seedAuth(page);
-    await page.reload();
-
-    // balanceAfter: 110
-    const balanceEl = page.locator('text=/110|pt/i').first();
-    await expect(balanceEl).toBeVisible({ timeout: 8000 });
-  });
-
-  test('shows empty state when no transactions', async ({ page }) => {
-    await mockAuthMe(page);
-    await mockPointTransactions(page, []);
-    await page.goto('/mypage/point-transactions');
-    await seedAuth(page);
-    await page.reload();
-
-    const empty = page.locator('text=/내역이 없습니다|없습니다/i').first();
     await expect(empty).toBeVisible({ timeout: 8000 });
   });
 });

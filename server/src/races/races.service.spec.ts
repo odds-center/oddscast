@@ -9,6 +9,7 @@ import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { RaceStatus } from '../database/db-enums';
+import { KraService } from '../kra/kra.service';
 import {
   createMockRepository,
   createMockCache,
@@ -24,6 +25,9 @@ describe('RacesService', () => {
   const dividendRepo = createMockRepository();
   const predictionRepo = createMockRepository();
   const cache = createMockCache();
+  const kraService = {
+    fetchRaceResults: jest.fn().mockResolvedValue({ message: 'ok' }),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -37,6 +41,7 @@ describe('RacesService', () => {
         { provide: getRepositoryToken(RaceDividend), useValue: dividendRepo },
         { provide: getRepositoryToken(Prediction), useValue: predictionRepo },
         { provide: CACHE_MANAGER, useValue: cache },
+        { provide: KraService, useValue: kraService },
       ],
     }).compile();
 

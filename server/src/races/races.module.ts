@@ -8,11 +8,13 @@ import { Prediction } from '../database/entities/prediction.entity';
 import { RacesService } from './races.service';
 import { RacesController } from './races.controller';
 import { CacheModule } from '../cache/cache.module';
+import { KraModule } from '../kra/kra.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Race, RaceEntry, RaceResult, RaceDividend, Prediction]),
     CacheModule,
+    KraModule,
   ],
   controllers: [RacesController],
   providers: [RacesService],

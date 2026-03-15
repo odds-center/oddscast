@@ -1,4 +1,4 @@
-import { Injectable, Inject, NotFoundException } from '@nestjs/common';
+import { Injectable, Inject, NotFoundException, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import type { Cache } from '@nestjs/cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -23,6 +23,7 @@ import {
 import { toKraMeetForDb } from '@oddscast/shared';
 import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import { todayKstYyyymmdd, yesterdayKstYyyymmdd } from '../common/utils/kst';
+import { KraService } from '../kra/kra.service';
 
 type RaceRow = Record<string, unknown> & {
   id: number;
@@ -37,6 +38,20 @@ type EntryRow = Record<string, unknown> & { raceId: number };
 
 @Injectable()
 export class RacesService {
+  private readonly logger = new Logger(RacesService.name);
+
+  /** Minutes after stTime to consider a race ended. */
+  private static readonly RACE_END_BUFFER_MINUTES = 10;
+
+  /**
+   * Lock to prevent concurrent on-demand fetches for the same rcDate.
+   * Stores timestamp (ms) of the last fetch attempt per rcDate.
+   */
+  private readonly onDemandFetchLock = new Map<string, number>();
+
+  /** Minimum interval (ms) between on-demand fetch attempts for the same rcDate. */
+  private static readonly ON_DEMAND_COOLDOWN_MS = 60_000;
+
   constructor(
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
     @InjectRepository(RaceEntry)
@@ -48,7 +63,53 @@ export class RacesService {
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
     @Inject(CACHE_MANAGER) private cache: Cache,
+    private readonly kraService: KraService,
   ) {}
+
+  /**
+   * Check if a race has ended based on rcDate + stTime + buffer.
+   * Only considers today/yesterday races to avoid unnecessary API calls for old races.
+   */
+  private _isRaceEnded(race: RaceRow): boolean {
+    const today = todayKstYyyymmdd();
+    const yesterday = yesterdayKstYyyymmdd();
+    if (race.rcDate !== today && race.rcDate !== yesterday) return false;
+    if (!race.stTime) return false;
+
+    const dateStr = race.rcDate;
+    const isoDate = `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`;
+    const endMs =
+      new Date(`${isoDate}T${race.stTime}:00+09:00`).getTime() +
+      RacesService.RACE_END_BUFFER_MINUTES * 60_000;
+    return Date.now() >= endMs;
+  }
+
+  /**
+   * Try to fetch results from KRA API on-demand for the given rcDate.
+   * Uses a cooldown lock to prevent excessive API calls (max 1 per rcDate per minute).
+   * Returns true if fetch was attempted, false if skipped due to cooldown.
+   */
+  private async _tryOnDemandResultFetch(rcDate: string): Promise<boolean> {
+    const now = Date.now();
+    const lastAttempt = this.onDemandFetchLock.get(rcDate) ?? 0;
+    if (now - lastAttempt < RacesService.ON_DEMAND_COOLDOWN_MS) {
+      return false;
+    }
+    this.onDemandFetchLock.set(rcDate, now);
+
+    try {
+      this.logger.log(
+        `On-demand result fetch triggered for rcDate=${rcDate}`,
+      );
+      await this.kraService.fetchRaceResults(rcDate, false);
+      return true;
+    } catch (err: unknown) {
+      this.logger.warn(
+        `On-demand result fetch failed for rcDate=${rcDate}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+      return false;
+    }
+  }
 
   async findAll(filters: RaceFilterDto) {
     const page = Math.max(1, Number(filters.page) || 1);
@@ -207,6 +268,30 @@ export class RacesService {
       }
       const c = cached as { results?: unknown[]; status?: RaceStatus };
       const hasResults = this._hasActualFinishData(c.results);
+      if (!hasResults && this._isRaceEnded(c as RaceRow)) {
+        // Race ended but no results in cache — try on-demand fetch
+        const fetched = await this._tryOnDemandResultFetch(
+          (c as RaceRow).rcDate,
+        );
+        if (fetched) {
+          // Re-read from DB after fetch
+          const fresh = await this._findOneRaw(id);
+          if (fresh) {
+            const freshHasResults = this._hasActualFinishData(fresh.results);
+            const corrected = {
+              ...fresh,
+              status: freshHasResults
+                ? RaceStatus.COMPLETED
+                : fresh.status === RaceStatus.COMPLETED
+                  ? RaceStatus.SCHEDULED
+                  : fresh.status,
+            };
+            const serialized = serializeRace(corrected);
+            await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
+            return serialized ?? corrected;
+          }
+        }
+      }
       const corrected = {
         ...cached,
         status: hasResults
@@ -220,6 +305,29 @@ export class RacesService {
     const race = await this._findOneRaw(id);
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
     const hasResults = this._hasActualFinishData(race.results);
+
+    // On-demand fetch: race ended but no results in DB
+    if (!hasResults && this._isRaceEnded(race)) {
+      const fetched = await this._tryOnDemandResultFetch(race.rcDate);
+      if (fetched) {
+        const fresh = await this._findOneRaw(id);
+        if (fresh) {
+          const freshHasResults = this._hasActualFinishData(fresh.results);
+          const corrected = {
+            ...fresh,
+            status: freshHasResults
+              ? RaceStatus.COMPLETED
+              : fresh.status === RaceStatus.COMPLETED
+                ? RaceStatus.SCHEDULED
+                : fresh.status,
+          };
+          const serialized = serializeRace(corrected);
+          await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
+          return serialized ?? corrected;
+        }
+      }
+    }
+
     const corrected = {
       ...race,
       status: hasResults

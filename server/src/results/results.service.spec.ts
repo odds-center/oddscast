@@ -5,7 +5,6 @@ import { ResultsService } from './results.service';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { Race } from '../database/entities/race.entity';
 import { Prediction } from '../database/entities/prediction.entity';
-import { PointsService } from '../points/points.service';
 import { PredictionsService } from '../predictions/predictions.service';
 import { RaceStatus } from '../database/db-enums';
 import {
@@ -24,9 +23,6 @@ describe('ResultsService', () => {
   const raceRepo = createMockRepository();
   const predictionRepo = createMockRepository();
 
-  const mockPointsService = {
-    awardPickPointsForRace: jest.fn().mockResolvedValue({ awarded: 0 }),
-  };
   const mockPredictionsService = {
     generatePostRaceSummary: jest.fn().mockResolvedValue(undefined),
   };
@@ -40,7 +36,6 @@ describe('ResultsService', () => {
         { provide: getRepositoryToken(RaceResult), useValue: resultRepo },
         { provide: getRepositoryToken(Race), useValue: raceRepo },
         { provide: getRepositoryToken(Prediction), useValue: predictionRepo },
-        { provide: PointsService, useValue: mockPointsService },
         { provide: PredictionsService, useValue: mockPredictionsService },
       ],
     }).compile();
@@ -107,20 +102,6 @@ describe('ResultsService', () => {
         30,
         expect.objectContaining({ status: RaceStatus.COMPLETED }),
       );
-    });
-
-    it('should call awardPickPointsForRace for each raceId', async () => {
-      const dto = makeDto([10, 20]);
-      resultRepo.create.mockImplementation((e) => e);
-      resultRepo.save.mockImplementation((e: unknown) =>
-        Promise.resolve(Array.isArray(e) ? e : { id: 1, ...(e as object) }),
-      );
-      predictionRepo.findOne.mockResolvedValue(null);
-
-      await service.bulkCreate(dto);
-
-      expect(mockPointsService.awardPickPointsForRace).toHaveBeenCalledWith(10);
-      expect(mockPointsService.awardPickPointsForRace).toHaveBeenCalledWith(20);
     });
 
     it('should call updatePredictionAccuracy for each raceId', async () => {

@@ -5,7 +5,6 @@ import { PredictionStatus, RaceStatus } from '../database/db-enums';
 import { Race } from '../database/entities/race.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
-import { PointsService } from '../points/points.service';
 import { PredictionsService } from '../predictions/predictions.service';
 import { toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
@@ -52,7 +51,6 @@ export class ResultsService {
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
-    private readonly pointsService: PointsService,
     private readonly predictionsService: PredictionsService,
   ) {}
 
@@ -289,7 +287,6 @@ export class ResultsService {
         status: RaceStatus.COMPLETED,
         updatedAt: new Date(),
       });
-      await this.pointsService.awardPickPointsForRace(raceId);
       await this.updatePredictionAccuracy(raceId);
       this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
     }
@@ -299,6 +296,11 @@ export class ResultsService {
   async onResultsSyncedForRace(raceId: number): Promise<void> {
     await this.updatePredictionAccuracy(raceId);
     this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
+  }
+
+  /** Update prediction accuracy only, without triggering Gemini post-race summary. */
+  async updateAccuracyOnly(raceId: number): Promise<void> {
+    await this.updatePredictionAccuracy(raceId);
   }
 
   private async updatePredictionAccuracy(raceId: number) {

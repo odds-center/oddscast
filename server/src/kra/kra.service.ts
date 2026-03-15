@@ -453,12 +453,6 @@ export class KraService {
           updatedAt: new Date(),
         });
         this.logger.log(`[BatchSchedule] COMPLETED KRA_RESULT_FETCH ${rcDate}`);
-        // Auto-generate predictions (fire-and-forget, don't block batch job)
-        this.generatePredictionsForDate(rcDate).catch((e) =>
-          this.logger.warn(
-            `[BatchSchedule] prediction generation failed for ${rcDate}: ${e instanceof Error ? e.message : String(e)}`,
-          ),
-        );
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await this.batchScheduleRepo.update(job.id, {
@@ -2049,10 +2043,11 @@ export class KraService {
             [...racesToUpdate].map((id) => this.cache.del(`race:${id}`)),
           );
         }
-        // Update prediction accuracy and generate post-race summary
+        // Update prediction accuracy only (no Gemini calls during KRA sync).
+        // Post-race summaries are handled separately by prediction scheduler.
         await Promise.allSettled(
           Array.from(racesToUpdate).map((raceId) =>
-            this.resultsService.onResultsSyncedForRace(raceId),
+            this.resultsService.updateAccuracyOnly(raceId),
           ),
         );
 

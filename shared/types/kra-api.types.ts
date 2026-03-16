@@ -91,4 +91,5 @@ export interface KraSyncAllOutput {
   results?: { totalResults: number };
   details?: string;
   jockeys?: string;
+  warnings?: string[];
 }

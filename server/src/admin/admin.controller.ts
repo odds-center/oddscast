@@ -223,6 +223,41 @@ export class AdminController {
     }
   }
 
+  @Post('kra/sync/year-stream')
+  @ApiOperation({
+    summary: '[Admin] 연도별 전체 적재 (진행률 스트리밍)',
+    description:
+      '해당 연도 경주계획표(1~12월) + 과거 날짜 출전표·결과·배당률·상세정보 일괄 적재.',
+  })
+  async syncYearStream(
+    @Query('year') year: string,
+    @Res({ passthrough: false }) res: Response,
+  ) {
+    const yearNum = parseInt(year, 10);
+    if (Number.isNaN(yearNum) || yearNum < 2000 || yearNum > 2100) {
+      res.status(400).json({ message: 'Valid year (2000-2100) required' });
+      return;
+    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders?.();
+    const onProgress = (percent: number, message: string) => {
+      this.writeSse(res, { percent, message });
+    };
+    try {
+      const result = await this.kraService.fetchRacePlanScheduleForYear(
+        yearNum,
+        { onProgress, fullSync: true },
+      );
+      this.writeSse(res, { done: true, result });
+    } catch (e) {
+      this.writeSse(res, { done: true, error: (e as Error)?.message });
+    } finally {
+      res.end();
+    }
+  }
+
   @Post('kra/sync/historical-stream')
   @ApiOperation({ summary: '[Admin] 과거 경마 기록 적재 (진행률 스트리밍)' })
   async syncHistoricalStream(

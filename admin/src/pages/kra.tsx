@@ -186,6 +186,29 @@ export default function KraPage() {
     onError: (err: unknown) => toast.error(getErrorMessage(err)),
   });
 
+  const syncYearFullMutation = useMutation({
+    mutationFn: async (year: number) => {
+      const out = await adminKraApi.syncYearWithProgress(year, {
+        onProgress: (p, m) => setSyncProgress({ percent: p, message: m }),
+      });
+      if (out.error) throw new Error(out.error);
+      return out.result;
+    },
+    onSuccess: (res: unknown) => {
+      queryClient.invalidateQueries({ queryKey: ['kra-sync-logs'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-races'] });
+      queryClient.invalidateQueries({ queryKey: ['admin-results'] });
+      queryClient.invalidateQueries({ queryKey: ['race'] });
+      const data = res as { races?: number; backfill?: { processed?: number; totalResults?: number } };
+      const bf = data?.backfill;
+      toast.success(
+        `${data?.races ?? 0}건 경주계획표 + ${bf?.processed ?? 0}일 과거 데이터 적재 완료 (결과 ${bf?.totalResults ?? 0}건)`,
+      );
+    },
+    onError: (err: unknown) => toast.error(getErrorMessage(err)),
+    onSettled: () => setSyncProgress(null),
+  });
+
   const syncHistoricalMutation = useMutation({
     mutationFn: async ({ from, to }: { from: string; to: string }) => {
       const out = await adminKraApi.syncHistoricalWithProgress(toYyyyMmDd(from), toYyyyMmDd(to), {
@@ -241,6 +264,7 @@ export default function KraPage() {
     syncAllMutation.isPending ||
     generatePredictionsMutation.isPending ||
     seedSampleMutation.isPending ||
+    syncYearFullMutation.isPending ||
     syncHistoricalMutation.isPending;
 
   return (
@@ -403,17 +427,31 @@ export default function KraPage() {
                   className='w-20 px-2 py-1.5 border border-gray-300 rounded text-sm'
                 />
                 <Button
-                  variant='secondary'
+                  variant='primary'
+                  onClick={() => syncYearFullMutation.mutate(scheduleYear)}
+                  disabled={isAnyPending}
+                  isLoading={syncYearFullMutation.isPending}
+                >
+                  <AdminIcon icon={Calendar} className='w-4 h-4 mr-1.5 inline' />
+                  연도별 전체 적재
+                </Button>
+                <Button
+                  variant='ghost'
                   onClick={() => syncScheduleMutation.mutate({ year: scheduleYear })}
                   disabled={isAnyPending}
                   isLoading={syncScheduleMutation.isPending}
                 >
                   <AdminIcon icon={Calendar} className='w-4 h-4 mr-1.5 inline' />
-                  연도별 경주계획표 적재
+                  경주계획표만
                 </Button>
                 <span className='text-sm text-gray-500'>
-                  해당 연도 1~12월 시행일만 적재 (웹앱 시행일 달력용, 출전표 미포함)
+                  전체 적재: 경주계획+출전표+결과+상세정보 (장시간 소요) / 경주계획표만: 시행일 달력용
                 </span>
+                {syncYearFullMutation.isPending && syncProgress && (
+                  <div className='w-full max-w-md'>
+                    <SyncProgressBar percent={syncProgress.percent} message={syncProgress.message} />
+                  </div>
+                )}
               </div>
             </div>
           </Card>

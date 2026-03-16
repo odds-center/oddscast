@@ -108,6 +108,10 @@ export class KraService {
    * Build Race upsert payload from KRA item fields.
    * Race, RaceEntry[], RaceResult[] (and optionally Prediction) are one set per race;
    * use this same mapping for plan, entry sheet, and result APIs so data stays consistent.
+   *
+   * Nullable fields use conditional spread so that NULL values from one API source
+   * do not overwrite non-NULL values already stored from another source (e.g., stTime
+   * from entrySheet should not be wiped by a racePlan upsert that lacks stTime).
    */
   private buildRaceUpsertPayload(params: {
     meet: string;
@@ -134,14 +138,16 @@ export class KraService {
       rcDate: params.rcDate,
       rcNo: params.rcNo,
       rcName: params.rcName,
-      rcDist: params.rcDist ?? null,
-      rcDay: params.rcDay ?? null,
-      rank: params.rank ?? null,
-      rcPrize: params.rcPrize ?? null,
-      stTime: params.stTime ?? null,
-      rcCondition: params.rcCondition ?? null,
-      weather: params.weather ?? null,
-      track: params.track ?? null,
+      // Only include nullable fields when they have a value — prevents overwriting
+      // existing data with NULL on upsert when the current API source lacks the field.
+      ...(params.rcDist != null && { rcDist: params.rcDist }),
+      ...(params.rcDay != null && { rcDay: params.rcDay }),
+      ...(params.rank != null && { rank: params.rank }),
+      ...(params.rcPrize != null && { rcPrize: params.rcPrize }),
+      ...(params.stTime != null && { stTime: params.stTime }),
+      ...(params.rcCondition != null && { rcCondition: params.rcCondition }),
+      ...(params.weather != null && { weather: params.weather }),
+      ...(params.track != null && { track: params.track }),
       ...(params.status != null && { status: params.status }),
       createdAt: now,
       updatedAt: params.updatedAt,
@@ -279,7 +285,7 @@ export class KraService {
   private getRaceEndTimeMs(
     rcDate: string,
     stTime: string | null,
-    bufferMin = 20,
+    bufferMin = KraService.RACE_END_BUFFER_MINUTES,
   ): number {
     const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
     if (norm.length < 8) return 0;
@@ -987,29 +993,30 @@ export class KraService {
     const ent = entryData;
     const chaksunTStr = ent.chaksunT != null ? String(ent.chaksunT) : null;
     if (existingEntry) {
+      // Only update fields that have non-null values to prevent overwriting
+      // data from other API sources (e.g., rcCntT from fetchHorseDetails).
       await this.entryRepo.update(existingEntry.id, {
         hrName: ent.hrName,
-        hrNameEn: ent.hrNameEn ?? null,
-        jkNo: ent.jkNo ?? null,
+        ...(ent.hrNameEn != null && { hrNameEn: ent.hrNameEn }),
+        ...(ent.jkNo != null && { jkNo: ent.jkNo }),
         jkName: ent.jkName,
-        jkNameEn: ent.jkNameEn ?? null,
-        trNo: ent.trNo ?? null,
-        trName: ent.trName ?? null,
-        owNo: ent.owNo ?? null,
-        owName: ent.owName ?? null,
-        wgBudam: ent.wgBudam ?? null,
-        rating: ent.rating ?? null,
-        // Preserve existing chulNo — only update if new value is non-null (avoid overwriting with null)
-        ...(ent.chulNo != null ? { chulNo: ent.chulNo } : {}),
-        dusu: ent.dusu ?? null,
-        sex: ent.sex ?? null,
-        age: ent.age ?? null,
-        prd: ent.prd ?? null,
-        chaksun1: ent.chaksun1 ?? null,
-        chaksunT: chaksunTStr,
-        rcCntT: ent.rcCntT ?? null,
-        ord1CntT: ent.ord1CntT ?? null,
-        budam: ent.budam ?? null,
+        ...(ent.jkNameEn != null && { jkNameEn: ent.jkNameEn }),
+        ...(ent.trNo != null && { trNo: ent.trNo }),
+        ...(ent.trName != null && { trName: ent.trName }),
+        ...(ent.owNo != null && { owNo: ent.owNo }),
+        ...(ent.owName != null && { owName: ent.owName }),
+        ...(ent.wgBudam != null && { wgBudam: ent.wgBudam }),
+        ...(ent.rating != null && { rating: ent.rating }),
+        ...(ent.chulNo != null && { chulNo: ent.chulNo }),
+        ...(ent.dusu != null && { dusu: ent.dusu }),
+        ...(ent.sex != null && { sex: ent.sex }),
+        ...(ent.age != null && { age: ent.age }),
+        ...(ent.prd != null && { prd: ent.prd }),
+        ...(ent.chaksun1 != null && { chaksun1: ent.chaksun1 }),
+        ...(chaksunTStr != null && { chaksunT: chaksunTStr }),
+        ...(ent.rcCntT != null && { rcCntT: ent.rcCntT }),
+        ...(ent.ord1CntT != null && { ord1CntT: ent.ord1CntT }),
+        ...(ent.budam != null && { budam: ent.budam }),
       });
     } else {
       await this.entryRepo.save(
@@ -1092,6 +1099,7 @@ export class KraService {
       predictions?: { generated: number; failed: number };
     } = {
       message: '',
+      warnings: [],
     };
 
     try {
@@ -1108,19 +1116,30 @@ export class KraService {
       out.results = { totalResults: resultRes.totalResults ?? 0 };
       await this.delay(300);
 
+      // Re-run entry sheet after results to backfill entries created by result API
+      // (result API creates minimal entries; entry sheet adds dusu, rating, career stats)
+      if ((resultRes.totalResults ?? 0) > 0) {
+        opts?.onProgress?.(48, '출전표 보강 중…');
+        await this.syncEntrySheet(d);
+        await this.delay(200);
+      }
+
       opts?.onProgress?.(50, '배당률 동기화 중…');
       try {
         await this.fetchDividends(d);
       } catch (err) {
-        this.logger.warn(`[syncAll] fetchDividends failed: ${err instanceof Error ? err.message : String(err)}`);
+        const errMsg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(`[syncAll] fetchDividends failed: ${errMsg}`);
+        out.warnings!.push(`Dividend sync failed: ${errMsg}`);
+        opts?.onProgress?.(52, '⚠ 배당률 동기화 실패, 계속 진행…');
       }
       await this.delay(200);
 
       opts?.onProgress?.(60, '상세정보(훈련·장구) 동기화 중…');
-      const detailRes = await this.syncAnalysisData(d);
+      const detailRes = await this.syncAnalysisData(d, opts);
       out.details = detailRes.message;
 
-      opts?.onProgress?.(70, '기수 통산전적 동기화 중…');
+      opts?.onProgress?.(75, '기수 통산전적 동기화 중…');
       const jockeyRes = await this.fetchJockeyTotalResults();
       out.jockeys = jockeyRes.message;
 
@@ -1134,7 +1153,10 @@ export class KraService {
       const predMsg = out.predictions
         ? `, ${out.predictions.generated} predictions`
         : '';
-      out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results${predMsg}`;
+      const warnMsg = out.warnings!.length > 0
+        ? ` (${out.warnings!.length} warning(s))`
+        : '';
+      out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results${predMsg}${warnMsg}`;
     } catch (err) {
       this.logger.error('[syncAll] Failed', err);
       throw err;
@@ -1253,13 +1275,32 @@ export class KraService {
         // 3) Results (API4_3) — fetch results, create if missing
         const result = await this.fetchRaceResults(date, true);
         summary.processed++;
-        summary.totalResults +=
+        const resultsCount =
           typeof result === 'object' && result && 'totalResults' in result
             ? (result as { totalResults: number }).totalResults
             : 0;
+        summary.totalResults += resultsCount;
 
-        // 4) Track info
-        await this.fetchTrackInfo(date);
+        // 3b) Re-run entry sheet to backfill entries created by result API
+        if (resultsCount > 0) {
+          await this.syncEntrySheet(date);
+        }
+        await this.delay(200);
+
+        // 4) Dividends — payout data per race
+        try {
+          await this.fetchDividends(date);
+        } catch {
+          // Dividends may not be available for all dates
+        }
+        await this.delay(200);
+
+        // 5) Analysis data (track info, horse weight, equipment, ratings, training, horse details)
+        try {
+          await this.syncAnalysisData(date);
+        } catch {
+          // Analysis data may not be available for older dates
+        }
         await this.delay(300);
       } catch (err) {
         summary.failed.push(date);
@@ -1566,18 +1607,64 @@ export class KraService {
   /**
    * API72_2 race plan schedule — loads entire year (months 1~12).
    * Calls 12 times by month to insert all race days for that year into DB. (e.g., full year 2026)
+   *
+   * When `fullSync` is true, also loads entry sheets, results, dividends, and analysis data
+   * for past race dates (Fri/Sat/Sun) in the year. Future dates get only race plans.
    */
-  async fetchRacePlanScheduleForYear(year: number): Promise<{
+  async fetchRacePlanScheduleForYear(
+    year: number,
+    opts?: KraSyncProgressOptions & { fullSync?: boolean },
+  ): Promise<{
     races: number;
     monthsProcessed: number;
+    backfill?: { processed: number; totalResults: number };
   }> {
     this.ensureServiceKeyOrThrow();
     let totalRaces = 0;
+
+    // Phase 1: Load race plans for all 12 months
     for (let month = 1; month <= 12; month++) {
+      opts?.onProgress?.(
+        Math.round((month / 12) * (opts?.fullSync ? 30 : 95)),
+        `경주계획표 ${year}년 ${month}월 (${month}/12)`,
+      );
       const result = await this.fetchRacePlanScheduleByYearMonth(year, month);
       totalRaces += result.races;
       await this.delay(300);
     }
+
+    // Phase 2: If fullSync, backfill past race dates with entry sheets, results, analysis
+    if (opts?.fullSync) {
+      const todayStr = todayKstYyyymmdd();
+      const yearStart = `${year}0101`;
+      const yearEnd = `${year}1231`;
+      const backfillEnd = yearEnd < todayStr ? yearEnd : todayStr;
+
+      if (yearStart < todayStr) {
+        opts?.onProgress?.(35, '과거 경주 데이터 보강 중…');
+        const backfillResult = await this.syncHistoricalBackfill(
+          yearStart,
+          backfillEnd,
+          {
+            onProgress: (pct, msg) => {
+              // Remap 0-100% to 35-95%
+              opts?.onProgress?.(35 + Math.round(pct * 0.6), msg);
+            },
+          },
+        );
+        opts?.onProgress?.(100, '완료');
+        return {
+          races: totalRaces,
+          monthsProcessed: 12,
+          backfill: {
+            processed: backfillResult.processed,
+            totalResults: backfillResult.totalResults,
+          },
+        };
+      }
+    }
+
+    opts?.onProgress?.(100, '완료');
     return { races: totalRaces, monthsProcessed: 12 };
   }
 
@@ -1870,7 +1957,7 @@ export class KraService {
               where: { raceId: race.id, hrNo: hrNoStr },
               select: ['id'],
             });
-            const entryPayload = {
+            const entryPayloadForCreate = {
               hrName: sv(item.hrName ?? item.hr_name) ?? '',
               hrNameEn:
                 sv(
@@ -1891,8 +1978,7 @@ export class KraService {
                 null,
               owName: sv(item.owName ?? item.ow_name) ?? null,
               wgBudam,
-              // Preserve existing chulNo — result API includes chulNo, but only update if non-null
-              ...(sv(item.chulNo ?? item.chul_no) != null ? { chulNo: sv(item.chulNo ?? item.chul_no) } : {}),
+              chulNo: sv(item.chulNo ?? item.chul_no) ?? null,
               age: ageVal,
               sex: sv(item.sex) ?? null,
               prd: sv(item.prd) ?? null,
@@ -1907,12 +1993,36 @@ export class KraService {
                 this.entryRepo.create({
                   raceId: race.id,
                   hrNo: hrNoStr,
-                  ...entryPayload,
+                  ...entryPayloadForCreate,
                 }),
               );
               await this.cache.del(`race:${race.id}`);
             } else {
-              await this.entryRepo.update(existingEntry.id, entryPayload);
+              // Only update fields that have non-null values to prevent overwriting
+              // data enriched from other API sources (entrySheet, fetchHorseDetails, etc.)
+              const hrNameVal = sv(item.hrName ?? item.hr_name);
+              const jkNameVal = sv(item.jkName ?? item.jk_name);
+              await this.entryRepo.update(existingEntry.id, {
+                ...(hrNameVal != null && { hrName: hrNameVal }),
+                ...(sv(item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en) != null && { hrNameEn: sv(item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en) }),
+                ...(sv(item.jkNo ?? item.jk_no) != null && { jkNo: sv(item.jkNo ?? item.jk_no) }),
+                ...(jkNameVal != null && { jkName: jkNameVal }),
+                ...(sv(item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en) != null && { jkNameEn: sv(item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en) }),
+                ...(sv(item.trNo ?? (item as Record<string, unknown>).tr_no) != null && { trNo: sv(item.trNo ?? (item as Record<string, unknown>).tr_no) }),
+                ...(sv(item.trName ?? item.tr_name) != null && { trName: sv(item.trName ?? item.tr_name) }),
+                ...(sv(item.owNo ?? (item as Record<string, unknown>).ow_no) != null && { owNo: sv(item.owNo ?? (item as Record<string, unknown>).ow_no) }),
+                ...(sv(item.owName ?? item.ow_name) != null && { owName: sv(item.owName ?? item.ow_name) }),
+                ...(wgBudam != null && { wgBudam }),
+                ...(sv(item.chulNo ?? item.chul_no) != null && { chulNo: sv(item.chulNo ?? item.chul_no) }),
+                ...(ageVal != null && { age: ageVal }),
+                ...(sv(item.sex) != null && { sex: sv(item.sex) }),
+                ...(sv(item.prd) != null && { prd: sv(item.prd) }),
+                ...(chaksun1Val != null && { chaksun1: chaksun1Val }),
+                ...(chaksunTStr != null && { chaksunT: chaksunTStr }),
+                ...(rcCntTVal != null && { rcCntT: rcCntTVal }),
+                ...(ord1CntTVal != null && { ord1CntT: ord1CntTVal }),
+                ...(sv(item.budam) != null && { budam: sv(item.budam) }),
+              });
               await this.cache.del(`race:${race.id}`);
             }
           }
@@ -2405,14 +2515,16 @@ export class KraService {
             : undefined;
 
         const chaksunTStr = prizeT != null ? String(prizeT) : null;
+        // Only update fields that have non-null values to prevent overwriting
+        // data already enriched from other API sources.
         await this.entryRepo.update(entry.id, {
-          rating: rating ?? null,
-          rcCntT: rcCntT ?? null,
-          ord1CntT: ord1CntT ?? null,
-          chaksunT: chaksunTStr,
-          sex: vs('sex') ?? null,
-          age: vi('age') ?? null,
-          prd: vs('prd') ?? vs('name') ?? null,
+          ...(rating != null && { rating }),
+          ...(rcCntT != null && { rcCntT }),
+          ...(ord1CntT != null && { ord1CntT }),
+          ...(chaksunTStr != null && { chaksunT: chaksunTStr }),
+          ...(vs('sex') != null && { sex: vs('sex') }),
+          ...(vi('age') != null && { age: vi('age') }),
+          ...((vs('prd') ?? vs('name')) != null && { prd: vs('prd') ?? vs('name') }),
         });
 
         await this.delay(150);
@@ -3011,9 +3123,10 @@ export class KraService {
             ratingHistory.length > 0
               ? (ratingHistory as unknown as Record<string, unknown>)
               : null;
+          // Only update fields that have values to prevent overwriting enriched data
           await this.entryRepo.update(entry.id, {
-            rating: ratingVal,
-            ratingHistory: ratingHistoryForDb,
+            ...(ratingVal != null && { rating: ratingVal }),
+            ...(ratingHistoryForDb != null && { ratingHistory: ratingHistoryForDb }),
           } as Parameters<Repository<RaceEntry>['update']>[1]);
           needKeys.delete(key);
           updated++;
@@ -3344,9 +3457,10 @@ export class KraService {
                     medicalInfo: item.medicalInfo,
                   } as Record<string, unknown>)
                 : null;
+            // Only update fields that have values
             await this.entryRepo.update(entry.id, {
-              equipment,
-              bleedingInfo: bleedingInfoObj,
+              ...(equipment != null && { equipment }),
+              ...(bleedingInfoObj != null && { bleedingInfo: bleedingInfoObj }),
             } as Parameters<Repository<RaceEntry>['update']>[1]);
           }
         }
@@ -3504,7 +3618,7 @@ export class KraService {
     return { refreshed: true, updated: results };
   }
 
-  async syncAnalysisData(date: string) {
+  async syncAnalysisData(date: string, opts?: KraSyncProgressOptions) {
     this.ensureServiceKeyOrThrow();
     this.logger.log(
       `Syncing analysis data (Training, Equipment, etc.) for date: ${date}`,
@@ -3519,36 +3633,54 @@ export class KraService {
       return { message: `No races found for ${date}` };
     }
 
+    // Progress range: 60% → 75% (called from syncAll with these bounds)
+    const steps = 8 + races.length; // 8 global steps + per-race steps
+    let step = 0;
+    const reportProgress = (label: string) => {
+      step++;
+      const pct = 60 + Math.round((step / steps) * 15);
+      opts?.onProgress?.(pct, label);
+    };
+
     // 1. Track info (weather, track condition)
+    reportProgress('트랙 정보 동기화 중…');
     await this.fetchTrackInfo(date);
 
     // 2. Entry horse weight
+    reportProgress('마체중 동기화 중…');
     await this.fetchHorseWeight(date);
 
     // 3. Equipment & bleeding
+    reportProgress('장구·출혈 동기화 중…');
     await this.fetchEquipmentBleeding(date);
 
     // 4. Entry cancellation
+    reportProgress('출전취소 동기화 중…');
     await this.fetchHorseCancel(date);
 
     // 5. Trainer details (API19_1) — win rate/place rate
+    reportProgress('조교사 정보 동기화 중…');
     await this.fetchTrainerInfo();
 
     // 6. Race horse rating info (API77) — rating1~4 history
+    reportProgress('레이팅 정보 동기화 중…');
     await this.fetchRaceHorseRatings(date);
 
     // 6.5. Horse sectional race records (API37_1) — S1F/G3F/G1F
+    reportProgress('구간기록 동기화 중…');
     await this.fetchHorseSectionalRecords(date);
 
     // 7. Training & race horse details (by race)
     let processedCount = 0;
     for (const race of races) {
+      reportProgress(`훈련·마필정보 (${processedCount + 1}/${races.length})…`);
       await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
       await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);
       processedCount++;
     }
 
     // 8. Jockey total results (jktresult) — auto-sync within analysis pipeline
+    reportProgress('기수 전적 동기화 중…');
     try {
       await this.fetchJockeyTotalResults();
     } catch (err) {

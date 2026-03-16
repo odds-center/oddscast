@@ -744,6 +744,17 @@ export class AdminKraApi {
     return AdminKraApi.runStreamSync(`/kra/sync/all-stream?date=${d}`, callbacks);
   }
 
+  /** 연도별 전체 적재 (진행률 스트리밍) — 경주계획+출전표+결과+상세정보. */
+  static async syncYearWithProgress(
+    year: number,
+    callbacks: { onProgress?: (percent: number, message: string) => void },
+  ): Promise<{ result?: unknown; error?: string }> {
+    return AdminKraApi.runStreamSync(
+      `/kra/sync/year-stream?year=${year}`,
+      callbacks,
+    );
+  }
+
   /** 과거 데이터 적재 (진행률 스트리밍). */
   static async syncHistoricalWithProgress(
     dateFrom: string,

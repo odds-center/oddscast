@@ -94,5 +94,6 @@ export interface KraSyncAllOutput {
     };
     details?: string;
     jockeys?: string;
+    warnings?: string[];
 }
 //# sourceMappingURL=kra-api.types.d.ts.map

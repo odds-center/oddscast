@@ -318,7 +318,7 @@ export default function RacesPage() {
   const [page, setPage] = useState(1);
   const [meetFilter, setMeetFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [dateFilter, setDateFilter] = useState(() => getTodayKstDate());
+  const [dateFilter, setDateFilter] = useState('');
   const [syncDate, setSyncDate] = useState(() => getTodayKstDate().replace(/-/g, ''));
   const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
@@ -658,8 +658,8 @@ export default function RacesPage() {
                   className='h-9 min-w-[140px] rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500'
                 />
               </div>
-              {view === 'results' && (dateFilter || meetFilter) && (
-                <Button variant='ghost' size='md' onClick={() => { setDateFilter(''); setMeetFilter(''); setPage(1); }} className='h-9'>
+              {(dateFilter || meetFilter || statusFilter) && (
+                <Button variant='ghost' size='md' onClick={() => { setDateFilter(''); setMeetFilter(''); setStatusFilter(''); setPage(1); }} className='h-9'>
                   필터 초기화
                 </Button>
               )}

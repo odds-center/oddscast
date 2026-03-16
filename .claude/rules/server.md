@@ -186,14 +186,26 @@ serializeRaceResult(r)    // Hide results if status != COMPLETED
 
 ## Cron/Scheduler Jobs
 
-- KRA race plan sync: scheduled
-- KRA entry sheet sync: 2-3 days before race
-- KRA result fetch: batch_schedules table, 5-min polling for due jobs
-- Prediction generation: before race start
+- `syncDailyUpcomingRacePlans`: Daily 04:00 KST — next 7 days race plans
+- `syncFutureRacePlans`: Monday 03:00 KST — next 3 months schedules
+- `syncWeeklySchedule`: Wed/Thu 18:00 KST — weekend entry sheets + analysis data
+- `syncRaceDayMorning`: Fri/Sat/Sun 08:00 KST — final entry sheet + analysis sync
+- `generatePreRacePredictions`: Fri/Sat/Sun 06:30 KST — AI predictions for today
+- `processDueBatchSchedulesCron`: Every 5 min — batch_schedules PENDING jobs + self-healing
+- `syncPreviousDayResults`: Daily 06:00 KST — previous day results (Fri/Sat/Sun)
+- `syncOrphanedRaceResults`: Daily 05:30 KST — backfill last 14 days missing results
 - Push notifications: Fri/Sat/Sun every 15min (first race 30min before)
 - Weekly preview: Thu 20:00 KST
 - Subscription billing: monthly on nextBillingDate
-- Race end: stTime + 10min = finished (KRA standard)
+- Race end: stTime + RACE_END_BUFFER_MINUTES(10) = finished (KRA standard)
+
+## KRA Sync Data Preservation
+
+- All Race/RaceEntry upsert/update methods use **conditional spread** for nullable fields
+- Prevents NULL values from one API source overwriting non-NULL values from another
+- Applied in: `buildRaceUpsertPayload`, `processEntrySheetItem`, `fetchRaceResults` entry update, `fetchHorseDetails`, `fetchRaceHorseRatings`, `fetchEquipmentBleeding`
+- `syncAll` re-runs entry sheet after results to backfill entries created by result API
+- `syncHistoricalBackfill` includes: entry sheet + results + entry re-run + dividends + syncAnalysisData + jockey totals
 
 ## Error Handling
 

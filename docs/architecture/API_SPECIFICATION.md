@@ -6,7 +6,7 @@
 >
 > **클라이언트:** WebApp (`webapp/lib/api/`) — 메인 클라이언트. Mobile은 WebView로 WebApp 로드. Admin (`admin/src/lib/api/`).
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-17
 
 ### Admin 전용 Base URL
 

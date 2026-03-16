@@ -190,21 +190,25 @@ getDisplayRaceStatus(...)   // Smart status display
 
 ## KRA Sync Page Features
 
-- Schedule sync (year/date range)
-- Result sync (by date)
-- Detail sync (by date)
+- Schedule sync (date: entry sheet, or no params: upcoming 3 months)
+- Year-based schedule only (year: calendar dates, plan API only)
+- **Year-based full sync** (year: plans + past entry sheets + results + dividends + analysis, SSE streaming)
+- Result sync (by date, SSE streaming)
+- Detail sync (by date: training, equipment, horse weight, ratings, sectional records)
 - Jockey sync (by meet)
-- Historical bulk sync (dateFrom, dateTo)
-- Full sync (all steps combined)
-- Stream endpoints with SSE for real-time progress
-- SyncProgressBar component for visual feedback
+- Dividend sync (by date)
+- Historical bulk sync (dateFrom, dateTo: includes entry sheets + results + dividends + analysis, SSE streaming)
+- Full sync (all steps combined: plan → entry → results → **entry re-run** → dividends → analysis → jockeys → AI predictions, SSE streaming)
+- Stream endpoints with SSE for real-time progress (SyncProgressBar)
 - Batch schedules table (pending/completed/failed) with 15s auto-refresh
-- Sync log history table
+- Sync log history table (10s auto-refresh, endpoint filter)
+- `KraSyncAllOutput` includes `warnings[]` for non-fatal errors (e.g., dividend sync failure)
 
 ## Admin-Specific Business Rules
 
 - AdminUser table is separate from User table
 - Admin JWT uses same structure but role=ADMIN
+- Races page date filter defaults to empty (all races), not today (avoids 0 results on weekdays)
 - Grant tickets: can grant RACE or MATRIX type tickets to users
 - Prediction batch generate: supports SSE streaming for progress
 - Dashboard auto-refreshes every 30 seconds

@@ -2,7 +2,7 @@
 
 > **이 문서는 모든 AI 에이전트/개발자가 작업 전에 반드시 읽어야 하는 핵심 아키텍처 문서입니다.**
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-17
 
 ---
 
@@ -212,8 +212,11 @@ const handleApiResponse = <T>(response): T => {
 | 서비스             | 용도                         | 연동 방식                        |
 | ------------------ | ---------------------------- | -------------------------------- |
 | **공공데이터포털** | 경마 경기/결과 실시간 데이터 | REST API (axios)                 |
-| **KRA API72_2**    | 경주계획표 (미래 일정)       | `racePlan_2` — Cron·Admin 수동   |
-| **KRA API26_2**    | 출전표 (출전마)              | `entrySheet_2` — 경주 2~3일 전   |
+| **KRA API72_2**    | 경주계획표 (미래 일정)       | `racePlan_2` — Cron·Admin 수동. 연도별 전체 적재(year-stream) 지원 |
+| **KRA API26_2**    | 출전표 (출전마)              | `entrySheet_2` — 경주 2~3일 전. 결과 적재 후 재실행(entry 보강) |
+| **KRA API4_3**     | 경주 결과 (착순/기록/배당)   | `raceResult_3` — batch_schedules 5분 폴링 |
+| **KRA API160**     | 확정배당률 (7승식)           | `integratedInfo` — 결과 적재 후 |
+| **KRA API8_2 등**  | 마필정보/훈련/장구/레이팅    | `syncAnalysisData` — 8개 API 순차 호출 |
 | **Google Gemini**  | AI 분석 코멘트 생성          | REST API (@google/generative-ai) |
 | **Python Scripts** | 통계 분석 (12요소 정규화)    | python-shell (stdin/stdout JSON) |
 | **PostgreSQL**     | 데이터 저장소                | TypeORM                          |

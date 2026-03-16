@@ -591,8 +591,11 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `POST` | `/admin/kra/sync/results`    | KRA 경주 결과 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/details`    | KRA 상세/훈련정보 동기화 (date: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/sync/jockeys`    | KRA 기수 통산전적 동기화 (meet?: 1\|2\|3) | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/all`        | KRA 전체 적재 (경주계획표→출전표→결과→배당률→상세→기수, date: YYYYMMDD) | 🔐 Admin    |
-| `POST` | `/admin/kra/sync/historical`  | KRA 과거 데이터 일괄 적재 (dateFrom, dateTo: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/all`        | KRA 전체 적재 (경주계획표→출전표→결과→출전표재보강→배당률→상세→기수→AI예측, date: YYYYMMDD) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/all-stream` | 전체 적재 SSE 스트리밍 (date: YYYYMMDD, 진행률 실시간 전송) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/year-stream` | 연도별 전체 적재 SSE 스트리밍 (year: YYYY, 경주계획12개월+과거날짜 출전표·결과·배당률·상세정보) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/historical`  | KRA 과거 데이터 일괄 적재 (dateFrom, dateTo: YYYYMMDD, 출전표+결과+배당률+상세정보+기수전적) | 🔐 Admin    |
+| `POST` | `/admin/kra/sync/historical-stream` | 과거 데이터 적재 SSE 스트리밍 (dateFrom, dateTo: YYYYMMDD) | 🔐 Admin    |
 | `POST` | `/admin/kra/seed-sample`       | 샘플 경주 데이터 시드 (date?: YYYYMMDD) | 🔐 Admin    |
 | `GET`  | `/admin/users`                | 사용자 목록             | 🔐 Admin    |
 | `GET`  | `/admin/users/:id`            | 사용자 상세             | 🔐 Admin    |

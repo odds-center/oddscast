@@ -1,6 +1,6 @@
 # 데이터 적재 가이드
 
-**Last updated:** 2026-03-02
+**Last updated:** 2026-03-16
 
 ---
 
@@ -47,14 +47,15 @@
 | API | 설명 |
 |-----|------|
 | `POST /api/admin/kra/sync/schedule` | 미래 스케줄 전체 적재 (오늘~1년 내 금·토·일, 경주계획표+출전표) |
-| `POST /api/admin/kra/sync/schedule?year=YYYY` | 해당 연도 전체(1~12월) 경주계획표만 적재 (예: 2026년 시행일 달력용, API72_2 월별 12회 호출) |
+| `POST /api/admin/kra/sync/schedule?year=YYYY` | 해당 연도 전체(1~12월) 경주계획표만 적재 (시행일 달력용, API72_2 월별 12회) |
 | `POST /api/admin/kra/sync/schedule?date=YYYYMMDD` | 해당 날짜 적재 (경주계획표→출전표) |
+| `POST /api/admin/kra/sync/year-stream?year=YYYY` | **연도별 전체 적재** (SSE 스트리밍). 경주계획12개월 + 과거 날짜 출전표·결과·배당률·상세정보 일괄 |
 | `POST /api/admin/kra/sync/results` | 과거 1년 결과 적재 (금·토·일) |
 | `POST /api/admin/kra/sync/results?date=YYYYMMDD` | 해당 날짜 경주 결과만 적재 |
 | `POST /api/admin/kra/sync/details?date=YYYYMMDD` | 상세 분석 데이터 |
-| `POST /api/admin/kra/sync/jockeys?meet=1|2|3` | 기수 통산전적 |
-| `POST /api/admin/kra/sync/all?date=YYYYMMDD` | 전체 적재 (경주계획표→출전표→결과→상세→기수) |
-| `POST /api/admin/kra/sync/historical?dateFrom=YYYYMMDD&dateTo=YYYYMMDD` | 과거 데이터 일괄 적재 |
+| `POST /api/admin/kra/sync/jockeys?meet=1\|2\|3` | 기수 통산전적 |
+| `POST /api/admin/kra/sync/all?date=YYYYMMDD` | 전체 적재 (경주계획표→출전표→결과→**출전표재보강**→배당률→상세→기수→AI예측) |
+| `POST /api/admin/kra/sync/historical?dateFrom&dateTo` | 과거 데이터 일괄 적재 (출전표+결과+**출전표재보강**+**배당률**+**상세정보**+기수전적) |
 | `POST /api/admin/kra/seed-sample?date=YYYYMMDD` | 샘플 경주 데이터 (KRA 키 없음) |
 | `GET /api/admin/kra/sync-logs` | 동기화 로그 조회 |
 
@@ -69,13 +70,14 @@
 
 | Cron | 시각 | 동작 |
 |------|------|------|
-| `processDueBatchSchedulesCron` | 5분마다 | `batch_schedules`의 PENDING job 중 due 실행 → KRA 결과 수집 |
-| `syncFutureRacePlans` | 매주 월 03:00 | API72_2 경주계획표 → 오늘~1년 내 금·토·일 Race 적재 |
-| `syncWeeklySchedule` | 수·목 18:00 | 금·토·일 경주계획표+출전표 선적재 |
-| `syncRaceDayMorning` | 금·토·일 08:00 | 당일 출전표+상세정보 |
-| `syncResultsWhenRacesEnded` | 금·토·일 10~20시 5분 간격 | 경주 종료 시각 지난 날짜 결과 수집 (배치 미실행 시 보완) |
-| `syncRealtimeResults` | 금·토·일 10:30~19:00 (30분 간격) | 결과·상세 갱신 |
+| `syncDailyUpcomingRacePlans` | 매일 04:00 | API72_2 경주계획표 → 다음 7일 내 금·토·일 Race 적재 |
+| `syncFutureRacePlans` | 매주 월 03:00 | API72_2 경주계획표 → 다음 3개월 금·토·일 Race 적재 |
+| `syncWeeklySchedule` | 수·목 18:00 | 금·토·일 경주계획표+출전표+분석데이터 선적재 |
+| `syncRaceDayMorning` | 금·토·일 08:00 | 당일 출전표+상세정보 최종 동기화 |
+| `generatePreRacePredictions` | 금·토·일 06:30 | 당일 경주 AI 예측 자동 생성 (출전표 적재 후) |
+| `processDueBatchSchedulesCron` | 5분마다 | `batch_schedules`의 PENDING job 중 due 실행 → KRA 결과+분석데이터 수집 |
 | `syncPreviousDayResults` | 매일 06:00 | 전날(금·토·일) 결과 사후 동기화 |
+| `syncOrphanedRaceResults` | 매일 05:30 | 최근 14일 결과 없는 경주 자동 보완 |
 
 ### KRA API 2종 (경주계획표 vs 출전표)
 
@@ -86,6 +88,20 @@
 
 - **미래 스케줄**: API72_2로 Race 레코드 선생성 → API26_2로 출전마 추가(출전표 열린 날짜에만)
 - **상세 명세**: [`KRA_RACE_PLAN_SPEC.md`](specs/KRA_RACE_PLAN_SPEC.md), [`KRA_ENTRY_SHEET_SPEC.md`](specs/KRA_ENTRY_SHEET_SPEC.md)
+
+### 데이터 보존 (NULL 덮어쓰기 방지)
+
+여러 KRA API 소스(경주계획표, 출전표, 결과, 마필정보 등)가 각각 다른 필드를 제공합니다.
+`buildRaceUpsertPayload` 및 모든 entry 업데이트 메서드에서 **conditional spread** 패턴을 사용하여,
+한 API에서 제공하지 않는 필드가 NULL로 기존 데이터를 덮어쓰지 않도록 합니다.
+
+```typescript
+// Before (dangerous): stTime: params.stTime ?? null  → 항상 포함, 기존값 덮어씀
+// After (safe): ...(params.stTime != null && { stTime: params.stTime })  → 값 있을 때만
+```
+
+적용 위치: `buildRaceUpsertPayload`, `processEntrySheetItem`, `fetchRaceResults` entry update,
+`fetchHorseDetails`, `fetchRaceHorseRatings`, `fetchEquipmentBleeding` (총 6곳)
 
 ### 개선 사항 (적재 성공률 향상)
 - **날짜 정규화**: `YYYY-MM-DD` / `YYYYMMDD` 자동 변환, 빈값·잘못된 값 시 오늘 날짜 fallback

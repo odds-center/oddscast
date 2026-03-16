@@ -178,6 +178,8 @@ flowchart TD
 - **종료(COMPLETED)** 는 KRA 결과 API로 결과가 DB에 적재된 경주에만 설정된다. 날짜가 지났다고 해서 COMPLETED로 바꾸지 않는다.
 - **경주 종료 시점**: 발주 시각(stTime) + 10분을 "경주 종료"로 판단(한국마사회 기준). 경기 적재 시 `batch_schedules`에 경주별 종료 시각으로 결과 수집 job을 등록하고, 5분마다 due job을 실행해 해당 날짜 결과를 가져오면 해당 경주를 COMPLETED로 갱신. 상세: [DATA_LOADING.md](../DATA_LOADING.md) §경주 종료 판단 및 배치 스케줄.
 - 클라이언트·API는 **DB의 `race.status`** 및 목록 API에서는 **결과 존재 여부(ordInt/ordType)** 로 종료/예정을 보정해 노출한다. 상세: [RACE_STATUS_AND_KRA.md](../features/RACE_STATUS_AND_KRA.md).
+- **데이터 보존**: Race/RaceEntry의 upsert/update 시 nullable 필드는 conditional spread로 값이 있을 때만 업데이트. 서로 다른 KRA API 소스(경주계획표, 출전표, 결과, 마필정보) 간 데이터 덮어쓰기 방지.
+- **전체 적재(syncAll) 흐름**: 경주계획표 → 출전표 → 결과 → 출전표 재보강 → 배당률 → 상세정보 → 기수전적 → AI 예측. 결과 적재 후 출전표를 재실행하여 result API에서만 생성된 entry를 보충한다.
 
 ---
 

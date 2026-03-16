@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-08 (Discord 알림, 실시간 개별예측, 12요소 분석, AI 주관적 분석 강화)
+**Last updated:** 2026-03-16 (KRA 동기화 NULL 덮어쓰기 수정, 연도별 전체 적재, syncHistoricalBackfill 강화, 어드민 경주 목록 수정)
 
 ---
 
@@ -50,6 +50,11 @@
 | **Matrix previewApproved 필터 제거** | ✅ 완료 | 종합예상표는 유료 기능이므로 `previewApproved` 체크 불필요. `status=COMPLETED`인 예측 모두 표시. |
 | **실시간 개별예측** | ✅ 완료 | RACE 티켓 사용 시 KRA 실시간 데이터(마체중·날씨·장비·취소) 재조회 후 fresh 예측 생성. skipCache + realtime 프롬프트. 종합예측은 배치 캐시 유지. |
 | **종합예상표 한눈에 7승식** | ✅ 완료 | compact view에서 4승식→7승식 전체 표시. 가로 스크롤 + 68px+repeat(7,1fr) 그리드. |
+| **KRA 동기화 NULL 덮어쓰기 수정** | ✅ 완료 | buildRaceUpsertPayload 외 6곳에서 nullable 필드 conditional spread 적용. 서로 다른 API 소스 간 데이터 보존. |
+| **syncAll 출전표 재보강** | ✅ 완료 | fetchRaceResults 후 syncEntrySheet 재실행하여 결과 API에서만 생성된 entry를 출전표 데이터로 보충. |
+| **syncHistoricalBackfill 강화** | ✅ 완료 | 기존 trackInfo만 → fetchDividends + syncAnalysisData(전체) 추가. 출전표 재보강 포함. |
+| **연도별 전체 적재** | ✅ 완료 | POST /api/admin/kra/sync/year-stream — 경주계획표(12개월) + 과거 날짜 출전표·결과·배당률·상세정보 일괄 적재. SSE 스트리밍. |
+| **어드민 경주 목록 빈 화면 수정** | ✅ 완료 | 날짜 필터 기본값이 오늘(경주 없는 평일→0건)이던 것을 빈 문자열(전체)로 변경. 필터 초기화 버튼 양쪽 뷰에서 표시. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

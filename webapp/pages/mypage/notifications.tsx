@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -68,13 +69,14 @@ export default function NotificationsPage() {
       {isLoggedIn && (
         <>
           {hasUnread && (
-            <button
+            <Button
+              variant='link'
               onClick={() => markAllMutation.mutate()}
               disabled={markAllMutation.isPending}
-              className='mb-4 link-primary text-sm font-medium'
+              className='mb-4 px-0'
             >
               모두 읽음으로 표시
-            </button>
+            </Button>
           )}
 
           <DataFetchState
@@ -109,24 +111,28 @@ export default function NotificationsPage() {
                     </div>
                     <div className='flex items-center gap-0.5 shrink-0'>
                       {!n.isRead && (
-                        <button
+                        <Button
                           type='button'
+                          variant='ghost'
+                          size='icon-sm'
                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); markReadMutation.mutate(n.id); }}
-                          className='p-2 text-text-tertiary touch-manipulation'
+                          className='text-text-tertiary'
                           aria-label='읽음으로 표시'
                         >
                           <Icon name='Check' size={16} />
-                        </button>
+                        </Button>
                       )}
-                      <button
+                      <Button
                         type='button'
+                        variant='ghost'
+                        size='icon-sm'
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteMutation.mutate(n.id); }}
                         disabled={deleteMutation.isPending}
-                        className='p-2 text-text-tertiary touch-manipulation'
+                        className='text-text-tertiary'
                         aria-label='삭제'
                       >
                         <Icon name='Trash2' size={16} />
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 );
@@ -145,7 +151,7 @@ export default function NotificationsPage() {
                   {
                     key: 'read',
                     header: '읽음',
-                    headerClassName: 'w-14 cell-center',
+                    headerClassName: 'w-14 text-center',
                     align: 'center',
                     render: (n) =>
                       n.isRead ? (
@@ -190,37 +196,41 @@ export default function NotificationsPage() {
                   {
                     key: 'actions',
                     header: '액션',
-                    headerClassName: 'w-20 cell-center',
+                    headerClassName: 'w-20 text-center',
                     align: 'center',
                     render: (n) => (
                       <div className='flex items-center justify-center gap-0.5'>
                         {!n.isRead && (
-                          <button
+                          <Button
                             type='button'
+                            variant='ghost'
+                            size='icon-sm'
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
                               markReadMutation.mutate(n.id);
                             }}
-                            className='p-1.5 text-text-tertiary hover:text-stone-700 transition-colors touch-manipulation'
+                            className='text-text-tertiary hover:text-stone-700'
                             aria-label='읽음으로 표시'
                           >
                             <Icon name='Check' size={16} />
-                          </button>
+                          </Button>
                         )}
-                        <button
+                        <Button
                           type='button'
+                          variant='ghost'
+                          size='icon-sm'
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             deleteMutation.mutate(n.id);
                           }}
                           disabled={deleteMutation.isPending}
-                          className='p-1.5 text-text-tertiary hover:text-error transition-colors touch-manipulation'
+                          className='text-text-tertiary hover:text-error'
                           aria-label='삭제'
                         >
                           <Icon name='Trash2' size={16} />
-                        </button>
+                        </Button>
                       </div>
                     ),
                   },

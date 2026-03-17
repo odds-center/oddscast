@@ -116,23 +116,25 @@ export default function MatrixTicketPurchasePage() {
           {/* Purchase quantity selection */}
           <SectionCard title='구매 수량' icon='ShoppingCart'>
             <div className='flex items-center gap-3'>
-              <button
+              <Button
                 type='button'
+                variant='outline'
+                size='icon-sm'
                 onClick={() => setCount((c) => Math.max(1, c - 1))}
                 disabled={count <= 1}
-                className='w-9 h-9 rounded border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
               >
                 <Icon name='Minus' size={16} />
-              </button>
+              </Button>
               <span className='text-foreground font-bold text-xl min-w-[2.5rem] text-center'>{count}</span>
-              <button
+              <Button
                 type='button'
+                variant='outline'
+                size='icon-sm'
                 onClick={() => setCount((c) => Math.min(10, c + 1))}
                 disabled={count >= 10}
-                className='w-9 h-9 rounded border border-stone-200 flex items-center justify-center text-stone-600 hover:bg-stone-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors'
               >
                 <Icon name='Plus' size={16} />
-              </button>
+              </Button>
               <span className='text-stone-400 text-xs ml-1'>최대 10장</span>
             </div>
 
@@ -157,7 +159,7 @@ export default function MatrixTicketPurchasePage() {
 
           {/* Success message */}
           {purchaseSuccess && (
-            <div className='msg-success text-sm flex items-center gap-2'>
+            <div className='text-success text-sm flex items-center gap-2'>
               <Icon name='CheckCircle' size={16} />
               종합 예측권 구매가 완료되었습니다.
             </div>
@@ -165,7 +167,7 @@ export default function MatrixTicketPurchasePage() {
 
           {/* Error message */}
           {purchaseMutation.error && (
-            <div className='msg-error text-sm'>
+            <div className='text-error text-sm'>
               {getErrorMessage(purchaseMutation.error)}
             </div>
           )}

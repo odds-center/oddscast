@@ -35,7 +35,7 @@ export default function PredictionMatrixPreviewSection() {
         <div className='py-6 text-center text-stone-400 text-sm'>예상표 준비 중...</div>
       ) : error ? (
         <div className='py-6 text-center text-text-secondary text-sm'>
-          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
           <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
           </Button>

@@ -136,11 +136,11 @@ export default function ProfileEditPage() {
               error={profileForm.formState.errors.nickname?.message}
             />
             {profileMutation.isError && (
-              <p className='msg-error'>
+              <p className='text-error'>
                 {getErrorMessage(profileMutation.error) || '저장에 실패했습니다.'}
               </p>
             )}
-            {profileMutation.isSuccess && <p className='msg-success'>저장되었습니다.</p>}
+            {profileMutation.isSuccess && <p className='text-success'>저장되었습니다.</p>}
             <Button
               type='submit'
               disabled={profileMutation.isPending}
@@ -190,12 +190,12 @@ export default function ProfileEditPage() {
               error={passwordForm.formState.errors.newPasswordConfirm?.message}
             />
             {passwordMutation.isError && (
-              <p className='msg-error'>
+              <p className='text-error'>
                 {getErrorMessage(passwordMutation.error) || '비밀번호 변경에 실패했습니다.'}
               </p>
             )}
             {passwordMutation.isSuccess && (
-              <p className='msg-success'>비밀번호가 변경되었습니다.</p>
+              <p className='text-success'>비밀번호가 변경되었습니다.</p>
             )}
             <Button
               type='submit'

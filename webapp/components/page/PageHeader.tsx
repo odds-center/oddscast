@@ -11,7 +11,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ icon, title, description, subtitle, children }: PageHeaderProps) {
   return (
-    <div className='page-header'>
+    <div className='mb-3 pb-2 md:mb-4 md:pb-3'>
       <div className='flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between lg:gap-4'>
         <div className='min-w-0 flex-1'>
           <h1 className='font-display text-xl sm:text-2xl lg:text-[1.625rem] font-bold flex items-center gap-3 flex-wrap'>

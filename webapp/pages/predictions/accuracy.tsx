@@ -122,7 +122,7 @@ export default function PredictionAccuracyPage() {
                   ))}
                 </div>
                 {/* Desktop: table */}
-                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                <div className='hidden sm:block'>
                   <DataTable<{ month: string; count: number; averageAccuracy: number }>
                     columns={[
                       {
@@ -173,7 +173,7 @@ export default function PredictionAccuracyPage() {
                   ))}
                 </div>
                 {/* Desktop: table */}
-                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                <div className='hidden sm:block'>
                   <DataTable<{ meet: string; count: number; averageAccuracy: number }>
                     columns={[
                       {

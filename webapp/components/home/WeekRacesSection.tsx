@@ -46,7 +46,7 @@ export default function WeekRacesSection() {
         <div className='py-4 text-center text-text-secondary text-sm'>준비 중...</div>
       ) : error ? (
         <div className='py-4 text-center text-text-secondary text-sm'>
-          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
           <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
           </Button>
@@ -83,12 +83,12 @@ export default function WeekRacesSection() {
           {/* Desktop: table */}
           <div className='hidden sm:block'>
             <DataTable
-              className='data-table-kra'
+              className=''
               columns={[
                 {
                   key: 'race',
                   header: '경주',
-                  headerClassName: 'w-24 cell-center',
+                  headerClassName: 'w-24 text-center',
                   align: 'center',
                   render: (row) => (
                     <Link href={routes.races.detail(row.id)} className='text-stone-700 font-semibold hover:underline text-sm'>
@@ -99,7 +99,7 @@ export default function WeekRacesSection() {
                 {
                   key: 'date',
                   header: '날짜',
-                  headerClassName: 'w-16 cell-center',
+                  headerClassName: 'w-16 text-center',
                   align: 'center',
                   render: (row) => {
                     const d = (row.rcDate ?? '').replace(/-/g, '');
@@ -110,7 +110,7 @@ export default function WeekRacesSection() {
                 {
                   key: 'dist',
                   header: '거리',
-                  headerClassName: 'w-16 cell-center',
+                  headerClassName: 'w-16 text-center',
                   align: 'center',
                   render: (row) => (
                     <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
@@ -119,7 +119,7 @@ export default function WeekRacesSection() {
                 {
                   key: 'detail',
                   header: '',
-                  headerClassName: 'w-12 cell-center',
+                  headerClassName: 'w-12 text-center',
                   align: 'center',
                   render: (row) => (
                     <Link href={routes.races.detail(row.id)} className='text-foreground text-xs font-medium hover:underline'>

@@ -43,8 +43,8 @@ export default function PrivacyPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>제3조 (수집하는 개인정보의 항목 및 수집 방법)</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>1. 수집 항목</h3>
-            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm my-2'>
-              <table className='data-table w-full text-xs'>
+            <div className='rounded-xl border border-border overflow-hidden shadow-sm my-2'>
+              <table className='w-full text-xs'>
                 <thead>
                   <tr className='bg-stone-50 border-b border-border text-text-secondary'>
                     <th className='p-3 font-semibold text-left'>구분</th>

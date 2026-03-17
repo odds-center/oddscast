@@ -23,8 +23,6 @@ interface BetTypePredictionsSectionProps {
   horseScores?: PredictionHorseScore[];
   entries: Entry[];
   showOnlySingle?: boolean;
-  /** Show gate number alongside horse name: "3번 천리마" */
-  showNumber?: boolean;
   /** AI analysis text to display below the bet type grid */
   analysis?: string;
 }
@@ -186,7 +184,6 @@ export default function BetTypePredictionsSection({
   horseScores,
   entries,
   showOnlySingle = false,
-  showNumber = false,
   analysis,
 }: BetTypePredictionsSectionProps) {
   const derived = horseScores?.length || entries.length
@@ -201,22 +198,6 @@ export default function BetTypePredictionsSection({
     TRIFECTA: betTypePredictions?.TRIFECTA ?? derived.TRIFECTA,
     TRIPLE: betTypePredictions?.TRIPLE ?? derived.TRIPLE,
   };
-
-  /** Format a horse into "출전번호번 이름" or just "이름". Always uses chulNo, never hrNo. */
-  function formatHorse(num: string): string {
-    const e = entries.find(
-      (x) => String(x.hrNo || '').trim() === num.trim() || String(x.chulNo || '').trim() === num.trim(),
-    );
-    const chulNo = e?.chulNo ?? '';
-    const name = e?.hrName ?? '';
-    if (showNumber) {
-      if (name && chulNo) return `${name} (${chulNo}번)`;
-      if (name) return name;
-      if (chulNo) return `${chulNo}번`;
-      return num;
-    }
-    return name || num;
-  }
 
   if (showOnlySingle) {
     const pred = merged.SINGLE;

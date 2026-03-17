@@ -49,7 +49,7 @@ export default function TodayRacesSection() {
         </div>
       ) : error ? (
         <div className='py-4 text-center text-text-secondary text-sm'>
-          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
           <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
           </Button>
@@ -95,12 +95,12 @@ export default function TodayRacesSection() {
           {/* Desktop: table */}
           <div className='hidden sm:block'>
             <DataTable
-              className='data-table-kra'
+              className=''
               columns={[
                 {
                   key: 'race',
                   header: '경주',
-                  headerClassName: 'w-24 cell-center',
+                  headerClassName: 'w-24 text-center',
                   align: 'center',
                   render: (row) => (
                     <LinkBadge href={routes.races.detail(row.id)} icon='Flag' iconSize={12}>
@@ -111,7 +111,7 @@ export default function TodayRacesSection() {
                 {
                   key: 'time',
                   header: '시간',
-                  headerClassName: 'w-16 cell-center',
+                  headerClassName: 'w-16 text-center',
                   align: 'center',
                   render: (row) => (
                     <span className='text-text-secondary font-medium'>{row.stTime ?? '-'}</span>
@@ -120,7 +120,7 @@ export default function TodayRacesSection() {
                 {
                   key: 'dist',
                   header: '거리',
-                  headerClassName: 'w-16 cell-center',
+                  headerClassName: 'w-16 text-center',
                   align: 'center',
                   render: (row) => (
                     <span className='text-text-secondary'>{row.rcDist ? `${row.rcDist}M` : '-'}</span>
@@ -129,7 +129,7 @@ export default function TodayRacesSection() {
                 {
                   key: 'entries',
                   header: '두수',
-                  headerClassName: 'w-12 cell-center',
+                  headerClassName: 'w-12 text-center',
                   align: 'center',
                   render: (row) => {
                     const detail = row as RaceDetailDto;
@@ -140,7 +140,7 @@ export default function TodayRacesSection() {
                 {
                   key: 'status',
                   header: '상태',
-                  headerClassName: 'w-16 cell-center',
+                  headerClassName: 'w-16 text-center',
                   align: 'center',
                   render: (row) => (
                     <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />

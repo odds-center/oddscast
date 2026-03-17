@@ -131,7 +131,7 @@ export default function SubscriptionCheckoutPage() {
       <Layout title='구독 결제 | OddsCast'>
         <div className='max-w-md mx-auto'>
           <p className='text-text-secondary mb-6'>
-            <Link href={routes.auth.login} className='link-primary'>
+            <Link href={routes.auth.login} className='text-primary hover:underline'>
               로그인
             </Link>
             후 구독할 수 있습니다.

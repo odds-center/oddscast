@@ -8,6 +8,14 @@ import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge, SectionTitle } from '@/components/ui';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import Tooltip from '@/components/ui/SimpleTooltip';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import LoadingSpinner from '@/components/LoadingSpinner';
@@ -90,8 +98,7 @@ function useCooldown(lastUsedAt: string | null | undefined) {
 
 export default function RaceDetailPage() {
   const router = useRouter();
-  const { id, view } = router.query;
-  const isResultView = view === 'result';
+  const { id } = router.query;
   const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const {
@@ -214,6 +221,41 @@ export default function RaceDetailPage() {
     if (id && typeof id === 'string') pushRecentRaceId(id);
   }, [id]);
 
+  // Compute effectiveResults before early returns so hooks are always called in same order
+  type ResultRow = {
+    id?: number;
+    ord?: string | number;
+    ordType?: string | null;
+    chulNo?: string;
+    hrNo?: string;
+    hrName?: string;
+    jkName?: string;
+    trName?: string;
+    rcTime?: string | null;
+    diffUnit?: string | null;
+    winOdds?: number;
+    plcOdds?: number;
+    [k: string]: unknown;
+  };
+  const effectiveResults = useMemo((): ResultRow[] => {
+    if (!race) return [];
+    const r = race as { results?: ResultRow[] };
+    const resultsEmbedded = r.results ?? [];
+    if ((raceResults?.length ?? 0) > 0) return (raceResults ?? []) as unknown as ResultRow[];
+    if (Array.isArray(resultsEmbedded) && resultsEmbedded.length > 0) return resultsEmbedded;
+    return [];
+  }, [race, raceResults]);
+
+  const oddsMap = useMemo(() => {
+    if (!isRaceCompleted || effectiveResults.length === 0) return undefined;
+    const map = new Map<string, { winOdds?: number; plcOdds?: number }>();
+    for (const res of effectiveResults as Array<{ hrNo?: string; winOdds?: number; plcOdds?: number }>) {
+      if (res.hrNo && (res.winOdds != null || res.plcOdds != null)) {
+        map.set(res.hrNo, { winOdds: res.winOdds, plcOdds: res.plcOdds });
+      }
+    }
+    return map.size > 0 ? map : undefined;
+  }, [isRaceCompleted, effectiveResults]);
 
   if (isLoading) {
     return (
@@ -330,43 +372,8 @@ export default function RaceDetailPage() {
     budam?: string;
   }>;
 
-  // Prefer dedicated GET /races/:id/results; fallback to results embedded in GET /races/:id (RACE_INCLUDE_FULL)
-  const resultsEmbedded = (r.results ?? []) as Array<{
-    ord?: string | number;
-    chulNo?: string;
-    hrNo?: string;
-    hrName?: string;
-    jkName?: string;
-    diffUnit?: string | null;
-    rcTime?: string | null;
-    ordType?: string | null;
-    winOdds?: number;
-    plcOdds?: number;
-    [k: string]: unknown;
-  }>;
-  const effectiveResults =
-    (raceResults?.length ?? 0) > 0
-      ? (raceResults ?? [])
-      : Array.isArray(resultsEmbedded) && resultsEmbedded.length > 0
-        ? resultsEmbedded
-        : [];
   const hasResults = effectiveResults.length > 0;
   const firstPlaceTimeSec = getFirstPlaceTimeSec(effectiveResults);
-
-  // Build hrNo → { winOdds, plcOdds } map for completed races (passed to entry table)
-  const oddsMap = useMemo(() => {
-    if (!isRaceCompleted || effectiveResults.length === 0) return undefined;
-    const map = new Map<string, { winOdds?: number; plcOdds?: number }>();
-    for (const res of effectiveResults) {
-      if (res.hrNo) {
-        const r = res as { winOdds?: number; plcOdds?: number };
-        if (r.winOdds != null || r.plcOdds != null) {
-          map.set(res.hrNo, { winOdds: r.winOdds, plcOdds: r.plcOdds });
-        }
-      }
-    }
-    return map.size > 0 ? map : undefined;
-  }, [isRaceCompleted, effectiveResults]);
 
   // Extract entry list from results data (fallback when entries is empty)
   const entriesFromResults = hasResults
@@ -569,42 +576,42 @@ export default function RaceDetailPage() {
                 })}
               </div>
               {/* Desktop: full results table */}
-              <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
-                <table className='data-table data-table-compact w-full min-w-[640px]'>
-                  <thead>
-                    <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                      <th className='cell-center w-10 py-3 font-semibold'>순위</th>
-                      <th className='cell-center w-10 py-3 font-semibold'>번호</th>
-                      <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-                      <th className='cell-center py-3 w-12 font-semibold'>성별</th>
-                      <th className='cell-center py-3 w-12 font-semibold'>연령</th>
-                      <th className='cell-center py-3 w-12 font-semibold'>중량</th>
-                      <th className='text-left py-3 w-20 font-semibold'>기수</th>
-                      <th className='text-left py-3 w-20 font-semibold'>조교사</th>
-                      <th className='text-left py-3 w-20 font-semibold'>마주</th>
-                      <th className='cell-right py-3 font-semibold min-w-[100px]'>
+              <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+                <Table className='w-full min-w-[640px] [&_th]:py-3 [&_td]:py-2.5'>
+                  <TableHeader>
+                    <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                      <TableHead className='text-center w-10'>순위</TableHead>
+                      <TableHead className='text-center w-10'>번호</TableHead>
+                      <TableHead className='text-left min-w-[90px]'>마명</TableHead>
+                      <TableHead className='text-center w-12'>성별</TableHead>
+                      <TableHead className='text-center w-12'>연령</TableHead>
+                      <TableHead className='text-center w-12'>중량</TableHead>
+                      <TableHead className='text-left w-20'>기수</TableHead>
+                      <TableHead className='text-left w-20'>조교사</TableHead>
+                      <TableHead className='text-left w-20'>마주</TableHead>
+                      <TableHead className='text-right min-w-[100px]'>
                         <Tooltip
                           content='각 말의 완주 시간(분:초). 2등 이하는 1등과의 초 차이를 +/−로 표시.'
                           inline
                         >
                           <span>기록</span>
                         </Tooltip>
-                      </th>
-                      <th className='cell-center py-3 w-16 font-semibold'>마체중</th>
-                      <th className='cell-center py-3 w-12 font-semibold'>단승</th>
-                      <th className='cell-center py-3 w-12 font-semibold'>연승</th>
-                      <th className='text-left py-3 w-24 font-semibold'>장구</th>
-                      <th className='cell-center py-3 w-16 font-semibold'>
+                      </TableHead>
+                      <TableHead className='text-center w-16'>마체중</TableHead>
+                      <TableHead className='text-center w-12'>단승</TableHead>
+                      <TableHead className='text-center w-12'>연승</TableHead>
+                      <TableHead className='text-left w-24'>장구</TableHead>
+                      <TableHead className='text-center w-16'>
                         <Tooltip
                           content='낙마·실격·기권 등 비정상 결과를 표시합니다.'
                           inline
                         >
                           <span>비고</span>
                         </Tooltip>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {effectiveResults.map((res, i) => {
                         const row = res as {
                           ordType?: string | null;
@@ -624,14 +631,6 @@ export default function RaceDetailPage() {
                         const isAbnormalOrd = !row.ordType && ordN >= 90;
                         const displayOrdType = row.ordType ?? (isAbnormalOrd ? 'DQ' : null);
                         const ordTypeLabel = formatOrdTypeLabel(displayOrdType);
-                        const rankCls =
-                          !displayOrdType && ordN === 1
-                            ? 'text-foreground font-bold'
-                            : !displayOrdType && ordN === 2
-                              ? 'text-stone-600 font-bold'
-                              : !displayOrdType && ordN === 3
-                                ? 'text-stone-500 font-bold'
-                                : 'text-text-tertiary';
                         const rcTimeSec =
                           res.rcTime != null && res.rcTime !== ''
                             ? parseFloat(String(res.rcTime))
@@ -655,11 +654,10 @@ export default function RaceDetailPage() {
                               ? '낙마'
                               : '기권';
                       return (
-                        <tr
+                        <TableRow
                           key={typeof res.id !== 'undefined' ? String(res.id) : `result-${i}`}
-                          className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
                         >
-                          <td className='cell-center py-2.5'>
+                          <TableCell className='text-center'>
                             <span className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
                               !displayOrdType && ordN === 1 ? 'bg-amber-400 text-white' :
                               !displayOrdType && ordN === 2 ? 'bg-stone-400 text-white' :
@@ -668,15 +666,15 @@ export default function RaceDetailPage() {
                             }`}>
                               {displayOrdType ? '—' : ordStr}
                             </span>
-                          </td>
-                          <td className='cell-center py-2.5'>
+                          </TableCell>
+                          <TableCell className='text-center'>
                             {res.chulNo != null && res.chulNo !== '' ? (
                               <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-xs font-bold'>
                                 {res.chulNo}
                               </span>
                             ) : <span className='text-text-tertiary text-xs'>-</span>}
-                          </td>
-                          <td className='py-2.5 font-medium text-foreground whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='font-medium text-foreground whitespace-nowrap'>
                             {res.hrNo ? (
                               <Link
                                 href={routes.horses.detail(res.hrNo)}
@@ -687,11 +685,11 @@ export default function RaceDetailPage() {
                             ) : (
                               res.hrName
                             )}
-                          </td>
-                          <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</td>
-                          <td className='cell-center py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</td>
-                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</td>
-                          <td className='py-2.5 text-text-secondary whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='text-center text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</TableCell>
+                          <TableCell className='text-center text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</TableCell>
+                          <TableCell className='text-center text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</TableCell>
+                          <TableCell className='text-text-secondary whitespace-nowrap'>
                             {(res as { jkNo?: string }).jkNo && res.jkName ? (
                               <Link
                                 href={routes.jockeys.detail((res as { jkNo: string }).jkNo)}
@@ -702,8 +700,8 @@ export default function RaceDetailPage() {
                             ) : (
                               res.jkName ?? '-'
                             )}
-                          </td>
-                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='text-text-secondary text-sm whitespace-nowrap'>
                             {row.trName ? (
                               <Link
                                 href={routes.trainers.detail(row.trName)}
@@ -714,28 +712,28 @@ export default function RaceDetailPage() {
                             ) : (
                               '-'
                             )}
-                          </td>
-                          <td className='py-2.5 text-text-secondary text-sm whitespace-nowrap'>{row.owName ?? '-'}</td>
-                          <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='text-text-secondary text-sm whitespace-nowrap'>{row.owName ?? '-'}</TableCell>
+                          <TableCell className='text-right text-text-tertiary font-mono text-xs whitespace-nowrap'>
                             {record}
-                          </td>
-                          <td className='cell-center py-2.5 text-text-secondary text-xs whitespace-nowrap'>{row.wgHr ?? '-'}</td>
-                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='text-center text-text-secondary text-xs whitespace-nowrap'>{row.wgHr ?? '-'}</TableCell>
+                          <TableCell className='text-center text-sm whitespace-nowrap'>
                             {row.winOdds != null && !displayOrdType ? (
                               <Tooltip content='단승식 배당률' inline>
                                 <span className='cursor-help'>{row.winOdds}</span>
                               </Tooltip>
                             ) : '-'}
-                          </td>
-                          <td className='cell-center py-2.5 text-sm whitespace-nowrap'>
+                          </TableCell>
+                          <TableCell className='text-center text-sm whitespace-nowrap'>
                             {row.plcOdds != null && !displayOrdType ? (
                               <Tooltip content='연승식 배당률' inline>
                                 <span className='cursor-help'>{row.plcOdds}</span>
                               </Tooltip>
                             ) : '-'}
-                          </td>
-                          <td className='py-2.5 text-text-tertiary text-xs whitespace-nowrap'>{row.hrTool ?? '-'}</td>
-                          <td className='cell-center py-2.5'>
+                          </TableCell>
+                          <TableCell className='text-text-tertiary text-xs whitespace-nowrap'>{row.hrTool ?? '-'}</TableCell>
+                          <TableCell className='text-center'>
                             {ordTypeLabel ? (
                               <Badge
                                 variant={
@@ -759,12 +757,12 @@ export default function RaceDetailPage() {
                             ) : (
                               <span className='text-text-tertiary'>-</span>
                             )}
-                          </td>
-                        </tr>
+                          </TableCell>
+                        </TableRow>
                       );
                     })}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
 
               {/* 승식별 배당률 */}
@@ -798,8 +796,8 @@ export default function RaceDetailPage() {
                       <span className='text-xs font-semibold text-white'>승식별 배당률</span>
                       <span className='text-stone-500 text-[11px]'>파리뮤추얼 · 경주 확정 후 적용</span>
                     </div>
-                    <table className='w-full border-collapse text-xs'>
-                      <tbody>
+                    <Table className='w-full border-collapse text-xs [&_th]:py-3 [&_td]:py-2.5'>
+                      <TableBody>
                         {ordered.map((poolName, pi) => {
                           const items = byPool[poolName];
                           if (!items?.length) return null;
@@ -807,11 +805,11 @@ export default function RaceDetailPage() {
                           const oddsCls = POOL_ODDS[poolName] ?? 'text-stone-700';
                           const isOrdered = ORDERED_POOLS.has(poolName);
                           return (
-                            <tr key={poolName} className={pi % 2 === 1 ? 'bg-stone-50/60' : 'bg-white'}>
-                              <td className='pl-3 pr-2 py-2 align-top w-[72px]'>
+                            <TableRow key={poolName} className={pi % 2 === 1 ? 'bg-stone-50/60' : 'bg-white'}>
+                              <TableCell className='pl-3 pr-2 py-2 align-top w-[72px]'>
                                 <span className={`inline-block text-[11px] font-bold px-1.5 py-0.5 rounded text-white ${badgeCls}`}>{poolName}</span>
-                              </td>
-                              <td className='pr-3 py-2'>
+                              </TableCell>
+                              <TableCell className='pr-3 py-2'>
                                 <div className='flex flex-wrap gap-x-3 gap-y-1'>
                                   {items.map(({ nums, odds }, ci) => (
                                     <span key={ci} className='inline-flex items-center gap-0.5'>
@@ -826,12 +824,12 @@ export default function RaceDetailPage() {
                                     </span>
                                   ))}
                                 </div>
-                              </td>
-                            </tr>
+                              </TableCell>
+                            </TableRow>
                           );
                         })}
-                      </tbody>
-                    </table>
+                      </TableBody>
+                    </Table>
                   </div>
                 );
               })()}
@@ -841,7 +839,7 @@ export default function RaceDetailPage() {
                   href='https://race.kra.co.kr/raceScore/ScoretableDetailList.do'
                   target='_blank'
                   rel='noopener noreferrer'
-                  className='link-primary'
+                  className='text-primary hover:underline'
                 >
                   KRA 경주성적
                 </a>
@@ -911,23 +909,23 @@ export default function RaceDetailPage() {
                   oddsMap={oddsMap}
                 />
               ) : displayEntries.length > 0 ? (
-                <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
-                  <table className='data-table data-table-compact w-full min-w-[200px]'>
-                    <thead>
-                      <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                        <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-                        <th className='text-left py-3 w-20 font-semibold'>기수</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className='rounded-xl border border-border overflow-hidden shadow-sm'>
+                  <Table className='w-full min-w-[200px] [&_th]:py-3 [&_td]:py-2.5'>
+                    <TableHeader>
+                      <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                        <TableHead className='text-left min-w-[90px]'>마명</TableHead>
+                        <TableHead className='text-left w-20'>기수</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {displayEntries.map((e, i) => (
-                        <tr key={e.hrNo ?? i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
-                          <td className='py-2.5 font-medium text-foreground'>{e.hrName}</td>
-                          <td className='py-2.5 text-text-secondary'>{e.jkName ?? '-'}</td>
-                        </tr>
+                        <TableRow key={e.hrNo ?? i}>
+                          <TableCell className='font-medium text-foreground'>{e.hrName}</TableCell>
+                          <TableCell className='text-text-secondary'>{e.jkName ?? '-'}</TableCell>
+                        </TableRow>
                       ))}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
               ) : (
                 <div className='rounded-xl border border-dashed border-border bg-muted/20 p-6 text-center'>
@@ -946,15 +944,17 @@ export default function RaceDetailPage() {
               {/* Odds explanation panel — shown for completed races */}
               {isRaceCompleted && (
                 <div className='mt-3'>
-                  <button
+                  <Button
                     type='button'
+                    variant='ghost'
+                    size='sm'
                     onClick={() => setOddsExplainOpen((v) => !v)}
-                    className='inline-flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors'
+                    className='text-xs text-text-tertiary hover:text-text-secondary px-0'
                   >
                     <Icon name='AlertCircle' size={13} />
                     배당률이란 무엇인가요?
                     <Icon name={oddsExplainOpen ? 'Minus' : 'Plus'} size={12} />
-                  </button>
+                  </Button>
                   {oddsExplainOpen && (
                     <div className='mt-2 rounded-xl border border-border bg-stone-50 p-4 text-xs text-text-secondary space-y-3'>
                       <div>
@@ -990,7 +990,7 @@ export default function RaceDetailPage() {
               className='mb-2'
             />
             {jockeyLoading ? (
-              <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
+              <div className='rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
                 <div className='py-6 flex justify-center'>
                   <LoadingSpinner size={22} label='분석 중...' />
                 </div>
@@ -1057,19 +1057,19 @@ export default function RaceDetailPage() {
                   )}
                 </div>
                 {/* Desktop: table */}
-                <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
-                  <table className='data-table data-table-compact w-full min-w-[320px]'>
-                    <thead>
-                      <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                        <th className='cell-center w-10 py-3 font-semibold'>순위</th>
-                        <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-                        <th className='text-left py-3 w-20 font-semibold'>기수</th>
-                        <th className='cell-right py-3 w-14 font-semibold'>말점수</th>
-                        <th className='cell-right py-3 w-14 font-semibold'>기수점수</th>
-                        <th className='cell-right py-3 w-14 font-semibold'>통합</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+                  <Table className='w-full min-w-[320px] [&_th]:py-3 [&_td]:py-2.5'>
+                    <TableHeader>
+                      <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                        <TableHead className='text-center w-10'>순위</TableHead>
+                        <TableHead className='text-left min-w-[90px]'>마명</TableHead>
+                        <TableHead className='text-left w-20'>기수</TableHead>
+                        <TableHead className='text-right w-14'>말점수</TableHead>
+                        <TableHead className='text-right w-14'>기수점수</TableHead>
+                        <TableHead className='text-right w-14'>통합</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
                       {jockeyAnalysis.entriesWithScores
                         .slice(0, 14)
                         .map(
@@ -1094,14 +1094,13 @@ export default function RaceDetailPage() {
                                     ? 'text-stone-500 font-bold'
                                     : 'text-text-tertiary';
                             return (
-                              <tr
+                              <TableRow
                                 key={e.hrNo}
-                                className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'
                               >
-                                <td className='cell-center py-2.5'>
+                                <TableCell className='text-center'>
                                   <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                                </td>
-                                <td className='py-2.5 font-medium text-foreground'>
+                                </TableCell>
+                                <TableCell className='font-medium text-foreground'>
                                   <span className='inline-flex items-center gap-1.5 min-w-0'>
                                     {e.chulNo != null && (
                                       <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-[11px] font-bold shrink-0'>
@@ -1110,25 +1109,25 @@ export default function RaceDetailPage() {
                                     )}
                                     <span className='whitespace-nowrap'>{e.hrName ?? '-'}</span>
                                   </span>
-                                </td>
-                                <td className='py-2.5 text-text-secondary whitespace-nowrap'>
+                                </TableCell>
+                                <TableCell className='text-text-secondary whitespace-nowrap'>
                                   {e.jkName ?? '-'}
-                                </td>
-                                <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs tabular-nums'>
+                                </TableCell>
+                                <TableCell className='text-right text-text-tertiary font-mono text-xs tabular-nums'>
                                   {e.horseScore != null ? Math.round(e.horseScore) : '-'}
-                                </td>
-                                <td className='cell-right py-2.5 text-text-tertiary font-mono text-xs tabular-nums'>
+                                </TableCell>
+                                <TableCell className='text-right text-text-tertiary font-mono text-xs tabular-nums'>
                                   {e.jockeyScore != null ? Math.round(e.jockeyScore) : '-'}
-                                </td>
-                                <td className={`cell-right py-2.5 font-bold font-mono text-xs tabular-nums ${rankCls}`}>
+                                </TableCell>
+                                <TableCell className={`text-right font-bold font-mono text-xs tabular-nums ${rankCls}`}>
                                   {e.combinedScore != null ? Math.round(e.combinedScore) : '-'}
-                                </td>
-                              </tr>
+                                </TableCell>
+                              </TableRow>
                             );
                           },
                         )}
-                    </tbody>
-                  </table>
+                    </TableBody>
+                  </Table>
                 </div>
                 {jockeyAnalysis.topPickByJockey && (
                   <div className='p-3 rounded-xl border border-border bg-stone-50/50'>
@@ -1282,25 +1281,23 @@ function PredictionFullView({
               /* */
             }
             return (
-              <button
+              <Button
                 key={pid}
+                variant={isActive ? 'default' : 'outline'}
+                size='sm'
                 onClick={() => setSelectedPredictionId(pid)}
-                className={`shrink-0 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  isActive
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-stone-100 text-text-secondary hover:bg-stone-200'
-                }`}
+                className='shrink-0'
               >
                 {i === 0 ? '최신' : `${list.length - i}번째`}
                 {timeStr && <span className='ml-1 opacity-75'>{timeStr}</span>}
-              </button>
+              </Button>
             );
           })}
         </div>
       )}
 
       {useTicketMutation.isError && (
-        <p className='msg-error text-sm'>{getErrorMessage(useTicketMutation.error)}</p>
+        <p className='text-error text-sm'>{getErrorMessage(useTicketMutation.error)}</p>
       )}
 
       {prediction?.scores?.horseScores?.length ? (
@@ -1340,16 +1337,16 @@ function PredictionFullView({
               ))}
             </div>
             {/* Desktop: table */}
-            <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
-              <table className='data-table data-table-compact w-full text-sm'>
-                <thead>
-                  <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                    <th className='cell-center py-3 w-10 font-semibold'>순위</th>
-                    <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-                    <th className='cell-right py-3 w-14 font-semibold'>점수</th>
-                  </tr>
-                </thead>
-                <tbody>
+            <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+              <Table className='w-full text-sm [&_th]:py-3 [&_td]:py-2.5'>
+                <TableHeader>
+                  <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
+                    <TableHead className='text-center w-10'>순위</TableHead>
+                    <TableHead className='text-left min-w-[90px]'>마명</TableHead>
+                    <TableHead className='text-right w-14'>점수</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {prediction.scores!.horseScores!.map((h, i) => {
                     const rankCls =
                       i === 0
@@ -1360,11 +1357,11 @@ function PredictionFullView({
                             ? 'text-stone-500 font-bold'
                             : 'text-text-tertiary';
                     return (
-                      <tr key={i} className='border-b border-stone-100 last:border-0 hover:bg-stone-50/50'>
-                        <td className='cell-center py-2.5'>
+                      <TableRow key={i}>
+                        <TableCell className='text-center'>
                           <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                        </td>
-                        <td className='py-2.5'>
+                        </TableCell>
+                        <TableCell>
                           <span className='font-medium text-foreground'>
                             {h.hrName ?? h.horseName ?? '-'}
                           </span>
@@ -1373,15 +1370,15 @@ function PredictionFullView({
                               {h.reason}
                             </p>
                           )}
-                        </td>
-                        <td className={`cell-right py-2.5 font-bold ${rankCls}`}>
+                        </TableCell>
+                        <TableCell className={`text-right font-bold ${rankCls}`}>
                           {h.score != null ? Math.round(h.score) : '-'}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </div>
 
@@ -1486,7 +1483,7 @@ function PredictionLockedView({
               )}
             </Button>
             {useTicketMutation.isError && (
-              <p className='msg-error mt-3'>{getErrorMessage(useTicketMutation.error)}</p>
+              <p className='text-error mt-3'>{getErrorMessage(useTicketMutation.error)}</p>
             )}
           </>
         )}

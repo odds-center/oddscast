@@ -40,7 +40,7 @@ export default function RequireLogin({
   return (
     <div className={`space-y-3 ${className}`.trim()}>
       <p className='text-text-secondary text-[16px] leading-relaxed'>
-        <Link href={routes.auth.login} className='link-primary'>
+        <Link href={routes.auth.login} className='text-primary hover:underline'>
           {linkText}
         </Link>
         {' '}

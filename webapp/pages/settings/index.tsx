@@ -1,6 +1,7 @@
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import RequireLogin from '@/components/page/RequireLogin';
@@ -136,8 +137,9 @@ export default function SettingsPage() {
         {isLoggedIn && (
           <SectionCard title='계정' icon='User' description='로그아웃 및 회원탈퇴'>
             <div className='divide-y divide-border'>
-              <button
+              <Button
                 type='button'
+                variant='ghost'
                 onClick={handleLogout}
                 className={`${menuItemClass} w-full text-left`}
               >
@@ -145,7 +147,7 @@ export default function SettingsPage() {
                   <Icon name='LogOut' size={20} strokeWidth={2} className='text-stone-500' />
                 </span>
                 <span className='flex-1'>로그아웃</span>
-              </button>
+              </Button>
               <Link href={routes.settingsDeleteAccount} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='UserMinus' size={20} strokeWidth={2} className='text-stone-500' />

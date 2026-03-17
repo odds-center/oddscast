@@ -1,6 +1,14 @@
 import Link from 'next/link';
 import Icon from '../icons';
 import { formatRcDate, formatRaceTime } from '@/lib/utils/format';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import { routes } from '@/lib/routes';
 
 export interface Top3Item {
@@ -60,34 +68,34 @@ export default function ResultCard({ meetName, rcNo, rcDate, rcDist, top3, raceI
         {/* 1st, 2nd, 3rd place */}
         <div className='flex-1 min-w-0 overflow-x-auto'>
           {top3.length > 0 ? (
-            <table className='data-table data-table-compact w-full min-w-[200px]'>
-              <thead>
-                <tr>
-                  <th className='cell-center w-10'>순위</th>
-                  <th className='cell-center w-8'>번호</th>
-                  <th className='min-w-[60px]'>마명</th>
-                  <th>기수</th>
-                </tr>
-              </thead>
-              <tbody>
+            <Table className='min-w-[200px] [&_th]:py-1 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2'>
+              <TableHeader>
+                <TableRow className='hover:bg-transparent'>
+                  <TableHead className='text-center w-10'>순위</TableHead>
+                  <TableHead className='text-center w-8'>번호</TableHead>
+                  <TableHead className='min-w-[60px]'>마명</TableHead>
+                  <TableHead>기수</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {top3.map((p) => {
                   const style = RANK_STYLES[p.ord] ?? { bg: 'bg-card', text: 'text-text-secondary', border: 'border-border' };
                   return (
-                    <tr key={`${p.ord}-${p.hrNo}`} className={`border-b border-border last:border-0 ${style.bg} ${style.text}`}>
-                      <td className='cell-center font-bold'>{p.ord}</td>
-                      <td className='cell-center'>
+                    <TableRow key={`${p.ord}-${p.hrNo}`} className={`${style.bg} ${style.text}`}>
+                      <TableCell className='text-center font-bold'>{p.ord}</TableCell>
+                      <TableCell className='text-center'>
                         {p.chulNo != null
                           ? <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold'>{p.chulNo}</span>
                           : <span className='text-text-tertiary'>-</span>
                         }
-                      </td>
-                      <td className='font-medium'>{p.hrName}</td>
-                      <td className='text-text-tertiary'>{p.jkName}</td>
-                    </tr>
+                      </TableCell>
+                      <TableCell className='font-medium'>{p.hrName}</TableCell>
+                      <TableCell className='text-text-tertiary'>{p.jkName}</TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           ) : (
             <span className='text-text-tertiary text-sm py-1'>결과 없음</span>
           )}

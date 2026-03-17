@@ -12,6 +12,14 @@ import CompactPageTitle from '@/components/page/CompactPageTitle';
 import DataFetchState from '@/components/page/DataFetchState';
 import Icon from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import RaceApi from '@/lib/api/raceApi';
 import PredictionApi from '@/lib/api/predictionApi';
 import { routes } from '@/lib/routes';
@@ -189,14 +197,16 @@ export default function SimulatorPage() {
             <div className="rounded-xl border border-border overflow-hidden">
               <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">가중치 조절</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={resetWeights}
-                  className="text-xs text-text-secondary hover:text-foreground flex items-center gap-1 touch-manipulation"
+                  className="text-xs text-text-secondary hover:text-foreground px-2"
                 >
                   <Icon name="RefreshCw" size={13} />
                   초기화
-                </button>
+                </Button>
               </div>
               <div className="p-4 space-y-4">
                 {FACTORS.map(({ key, label, desc }, j) => {
@@ -242,14 +252,16 @@ export default function SimulatorPage() {
             <div className="rounded-xl border border-border overflow-hidden">
               <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
                 <span className="text-sm font-semibold text-foreground">재순위 결과</span>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="sm"
                   onClick={handleShare}
-                  className="text-xs text-text-secondary hover:text-foreground flex items-center gap-1 touch-manipulation"
+                  className="text-xs text-text-secondary hover:text-foreground px-2"
                 >
                   <Icon name={copied ? 'Check' : 'Copy'} size={13} />
                   {copied ? '복사됨' : '결과 복사'}
-                </button>
+                </Button>
               </div>
               <div className="divide-y divide-border">
                 {customRanked.map(({ horse, aiRank, customScore, aiScore }, i) => {
@@ -341,42 +353,40 @@ export default function SimulatorPage() {
                   <span className="text-sm font-semibold text-foreground">말별 세부 점수</span>
                   <span className="ml-2 text-xs text-text-tertiary">가중치 적용 전 원점수 (0–100)</span>
                 </div>
-                <div className="overflow-x-auto">
-                  <table className="data-table data-table-compact w-full">
-                    <thead>
-                      <tr>
-                        <th className="text-left">마명</th>
-                        {FACTORS.map((f) => (
-                          <th key={f.key} className="cell-center w-14">{f.label}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {aiRanked.map((h, i) => {
-                        const fs = factorsByHorse[i] ?? [];
-                        return (
-                          <tr key={h.hrNo ?? i}>
-                            <td className="font-medium">
-                              <span className="flex items-center gap-1.5">
-                                {h.chulNo != null && h.chulNo !== '' && (
-                                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
-                                    {h.chulNo}
-                                  </span>
-                                )}
-                                {h.hrName ?? h.hrNo ?? '-'}
-                              </span>
-                            </td>
-                            {fs.map((v, j) => (
-                              <td key={j} className="cell-center tabular-nums text-text-secondary">
-                                {v.toFixed(1)}
-                              </td>
-                            ))}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
+                <Table className='[&_th]:py-1 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2'>
+                  <TableHeader>
+                    <TableRow className='hover:bg-transparent'>
+                      <TableHead className="text-left">마명</TableHead>
+                      {FACTORS.map((f) => (
+                        <TableHead key={f.key} className="text-center w-14">{f.label}</TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {aiRanked.map((h, i) => {
+                      const fs = factorsByHorse[i] ?? [];
+                      return (
+                        <TableRow key={h.hrNo ?? i}>
+                          <TableCell className="font-medium">
+                            <span className="flex items-center gap-1.5">
+                              {h.chulNo != null && h.chulNo !== '' && (
+                                <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
+                                  {h.chulNo}
+                                </span>
+                              )}
+                              {h.hrName ?? h.hrNo ?? '-'}
+                            </span>
+                          </TableCell>
+                          {fs.map((v, j) => (
+                            <TableCell key={j} className="text-center tabular-nums text-text-secondary">
+                              {v.toFixed(1)}
+                            </TableCell>
+                          ))}
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             )}
           </div>

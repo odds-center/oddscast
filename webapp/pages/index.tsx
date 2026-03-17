@@ -70,7 +70,7 @@ export default function Home() {
               <Icon name='LogIn' size={16} />
               로그인
             </Button>
-            {loginError && <p className='msg-error text-xs mt-1'>{loginError}</p>}
+            {loginError && <p className='text-error text-xs mt-1'>{loginError}</p>}
           </div>
         )}
       </div>

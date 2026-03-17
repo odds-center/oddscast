@@ -136,12 +136,12 @@ export default function AllRacesSection() {
         {/* Desktop: table */}
         <div className='hidden sm:block'>
           <DataTable
-            className='data-table-kra'
+            className=''
             columns={[
               {
                 key: 'meet',
                 header: '지역',
-                headerClassName: 'w-16 cell-center',
+                headerClassName: 'w-16 text-center',
                 align: 'center',
                 render: (row) => (
                   <span className='font-medium text-foreground'>
@@ -152,7 +152,7 @@ export default function AllRacesSection() {
               {
                 key: 'date',
                 header: '날짜',
-                headerClassName: 'w-20 cell-center',
+                headerClassName: 'w-20 text-center',
                 align: 'center',
                 render: (row) => {
                   const d = (row.rcDate ?? '').replace(/-/g, '');
@@ -163,7 +163,7 @@ export default function AllRacesSection() {
               {
                 key: 'rcNo',
                 header: '경주번호',
-                headerClassName: 'w-20 cell-center',
+                headerClassName: 'w-20 text-center',
                 align: 'center',
                 render: (row) => (
                   <Link
@@ -177,7 +177,7 @@ export default function AllRacesSection() {
               {
                 key: 'dist',
                 header: '거리',
-                headerClassName: 'w-20 cell-center',
+                headerClassName: 'w-20 text-center',
                 align: 'center',
                 render: (row) => (
                   <Link href={routes.races.detail(row.id)} className='text-stone-700 hover:underline'>
@@ -188,7 +188,7 @@ export default function AllRacesSection() {
               {
                 key: 'entries',
                 header: '출전',
-                headerClassName: 'w-14 cell-center',
+                headerClassName: 'w-14 text-center',
                 align: 'center',
                 render: (row) => {
                   const detail = row as RaceDetailDto;
@@ -202,7 +202,7 @@ export default function AllRacesSection() {
               {
                 key: 'status',
                 header: '상태',
-                headerClassName: 'w-20 cell-center',
+                headerClassName: 'w-20 text-center',
                 align: 'center',
                 render: (row) => (
                   <StatusBadge
@@ -215,7 +215,7 @@ export default function AllRacesSection() {
               {
                 key: 'detail',
                 header: '상세',
-                headerClassName: 'w-16 cell-center',
+                headerClassName: 'w-16 text-center',
                 align: 'center',
                 render: (row) => (
                   <Link

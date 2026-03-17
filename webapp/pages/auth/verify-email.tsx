@@ -157,7 +157,7 @@ export default function VerifyEmail() {
           </div>
 
           {error && (
-            <p className='msg-error text-sm text-center mb-4'>{error}</p>
+            <p className='text-error text-sm text-center mb-4'>{error}</p>
           )}
 
           {resendMessage && (
@@ -187,16 +187,16 @@ export default function VerifyEmail() {
             <p className='text-text-secondary text-sm mb-2'>
               코드를 받지 못하셨나요?
             </p>
-            <button
+            <Button
               type='button'
+              variant='link'
               onClick={handleResend}
               disabled={resendCooldown > 0}
-              className='text-primary text-sm font-medium hover:underline disabled:opacity-50 disabled:no-underline touch-manipulation min-h-[44px] inline-flex items-center'
             >
               {resendCooldown > 0
                 ? `재발송 (${resendCooldown}초)`
                 : '인증 코드 재발송'}
-            </button>
+            </Button>
           </div>
         </AuthCard>
 

@@ -193,13 +193,15 @@ export default function PredictionMatrixPage() {
               <p className='text-sm text-foreground'>
                 <span className='font-medium text-primary'>종합 예측표</span>에서는 날짜·경마장별로 AI 예측을 한눈에 볼 수 있습니다. 종합 예측권 1장으로 해당 날짜 전체를 열람할 수 있습니다.
               </p>
-              <button
+              <Button
                 type='button'
+                variant='link'
+                size='sm'
                 onClick={dismissHint}
-                className='shrink-0 text-sm font-medium text-primary hover:underline'
+                className='shrink-0'
               >
                 확인
-              </button>
+              </Button>
             </div>
           )}
           {/* Hero header */}
@@ -319,7 +321,7 @@ export default function PredictionMatrixPage() {
                     </div>
                   </div>
                   {useMatrixMutation.isError && (
-                    <p className='msg-error text-xs mt-2'>{getErrorMessage(useMatrixMutation.error) || '사용에 실패했습니다'}</p>
+                    <p className='text-error text-xs mt-2'>{getErrorMessage(useMatrixMutation.error) || '사용에 실패했습니다'}</p>
                   )}
                 </div>
               )}

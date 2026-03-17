@@ -18,7 +18,7 @@ export default function AuthCard({
   className = '',
 }: AuthCardProps) {
   return (
-    <Card as='section' className={`auth-card ${className}`.trim()}>
+    <Card as='section' className={`px-4 py-5 md:px-6 md:py-7 ${className}`.trim()}>
       <header className='mb-6'>
         <h1 className='text-xl font-semibold text-foreground tracking-tight'>
           {title}

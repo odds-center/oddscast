@@ -8,24 +8,16 @@ import Link from 'next/link';
 import type { MatrixResponseDto, MatrixRowDto } from '@/lib/api/predictionMatrixApi';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
+import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import BetTypePredictionsSection, { deriveFromHorseScores, predToDisplayNodesList } from './BetTypePredictionsSection';
-import type { DisplayNodes } from './BetTypePredictionsSection';
-
-function HorseBadge({ no, name }: { no: string; name?: string }) {
-  const display = name || no;
-  if (!display || display === '-') return <span className='text-stone-400 text-xs'>-</span>;
-  return <span className='text-xs text-foreground font-medium whitespace-nowrap'>{display}</span>;
-}
-
-function PredictionCell({ val, horseNames }: { val: string[] | string; horseNames?: Record<string, string> }) {
-  const arr = Array.isArray(val) ? val : [val].filter(Boolean);
-  return (
-    <div className='flex items-center justify-center gap-1.5 flex-nowrap'>
-      {arr.map((v, i) => <HorseBadge key={i} no={v} name={horseNames?.[v]} />)}
-      {arr.length === 0 && <span className='text-stone-400 text-xs'>-</span>}
-    </div>
-  );
-}
 
 function RaceInfoCell({ row }: { row: MatrixRowDto }) {
   return (
@@ -75,9 +67,7 @@ export default function PredictionMatrixTable({
   data,
   locked = false,
 }: PredictionMatrixTableProps) {
-  const { raceMatrix, experts } = data;
-  const aiExpert = experts.find((e) => e.id === 'ai_consensus');
-  const expertList = experts.filter((e) => e.id !== 'ai_consensus');
+  const { raceMatrix } = data;
 
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
   const [lazyCount, setLazyCount] = useState(LAZY_INITIAL_ROWS);
@@ -119,18 +109,22 @@ export default function PredictionMatrixTable({
             <span>{raceMatrix.length}경주</span>
           </span>
           <div className='flex items-center gap-1 rounded-lg border border-border bg-stone-50 p-0.5 text-xs'>
-            <button
+            <Button
+              variant='ghost'
+              size='sm'
               onClick={() => setViewMode('detail')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${viewMode === 'detail' ? 'bg-white shadow-sm text-foreground' : 'text-stone-400 hover:text-foreground'}`}
+              className={`px-2.5 py-1 min-h-0 rounded-md text-xs ${viewMode === 'detail' ? 'bg-white shadow-sm text-foreground' : 'text-stone-400 hover:text-foreground'}`}
             >
               상세
-            </button>
-            <button
+            </Button>
+            <Button
+              variant='ghost'
+              size='sm'
               onClick={() => setViewMode('compact')}
-              className={`px-2.5 py-1 rounded-md font-medium transition-colors ${viewMode === 'compact' ? 'bg-white shadow-sm text-foreground' : 'text-stone-400 hover:text-foreground'}`}
+              className={`px-2.5 py-1 min-h-0 rounded-md text-xs ${viewMode === 'compact' ? 'bg-white shadow-sm text-foreground' : 'text-stone-400 hover:text-foreground'}`}
             >
               한눈에
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -157,7 +151,6 @@ export default function PredictionMatrixTable({
                     <BetTypePredictionsSection
                       horseScores={row.horseScores}
                       entries={entries}
-                      showNumber
                       analysis={row.analysis}
                     />
                   </div>
@@ -262,25 +255,25 @@ export default function PredictionMatrixTable({
           AI 예측 잠금
         </span>
       </div>
-      <div className='overflow-x-auto border border-t-0 border-stone-200 rounded-b bg-white'>
-        <table className='w-full min-w-[280px] border-collapse'>
-          <thead>
-            <tr className='bg-[#1c1917] text-stone-300'>
-              <th className='text-left py-2 px-3 text-xs font-semibold uppercase tracking-wider whitespace-nowrap'>경주</th>
-              <th className='text-center py-2 px-3 text-xs font-bold text-primary whitespace-nowrap'>AI 예측</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className='border border-t-0 border-stone-200 rounded-b bg-white overflow-hidden'>
+        <Table className='min-w-[280px] [&_th]:py-2 [&_th]:px-3 [&_td]:py-1.5 [&_td]:px-3'>
+          <TableHeader>
+            <TableRow className='bg-[#1c1917] hover:bg-[#1c1917]'>
+              <TableHead className='text-stone-300'>경주</TableHead>
+              <TableHead className='text-center text-primary font-bold'>AI 예측</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {raceMatrix.map((row, idx) => (
-              <tr key={row.raceId} className={`border-b border-stone-100 ${idx % 2 === 1 ? 'bg-stone-50/50' : ''}`}>
-                <td className='py-1.5 px-3 whitespace-nowrap'>
+              <TableRow key={row.raceId} className={idx % 2 === 1 ? 'bg-stone-50/50' : ''}>
+                <TableCell className='whitespace-nowrap'>
                   <RaceInfoCell row={row} />
-                </td>
-                <td className='text-center py-1.5 px-3 text-stone-300 text-xs'>-</td>
-              </tr>
+                </TableCell>
+                <TableCell className='text-center text-stone-300 text-xs'>-</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
         {raceMatrix.length === 0 && (
           <p className='text-stone-400 text-sm text-center py-8'>예상 정보가 없습니다</p>
         )}

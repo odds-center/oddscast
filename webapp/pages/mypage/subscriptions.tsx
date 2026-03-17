@@ -53,7 +53,7 @@ export default function SubscriptionsPage() {
       <CompactPageTitle title='구독 플랜' backHref={routes.profile.index} />
         {!isLoggedIn && (
           <p className='text-text-secondary text-sm mb-6'>
-            <Link href={routes.auth.login} className='link-primary'>로그인</Link> 후 구독할 수 있습니다.
+            <Link href={routes.auth.login} className='text-primary hover:underline'>로그인</Link> 후 구독할 수 있습니다.
           </p>
         )}
 
@@ -87,7 +87,7 @@ export default function SubscriptionsPage() {
 
         {status?.isActive && (
           <SectionCard title='현재 구독' accent className='mb-6'>
-            <p className='msg-success font-medium'>
+            <p className='text-success font-medium'>
               {status.planId} · 월 {status.monthlyTickets}장
             </p>
             {status.daysUntilRenewal != null && (

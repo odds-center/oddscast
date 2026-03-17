@@ -21,6 +21,17 @@ export {
 export { Tabs, TabsContent, TabsList, TabsTrigger } from './tabs';
 export { Label } from './label';
 export { Separator } from './separator';
+export { Alert, AlertTitle, AlertDescription } from './alert';
+export { Skeleton } from './skeleton';
+export {
+  AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader,
+  AlertDialogFooter, AlertDialogTitle, AlertDialogDescription,
+  AlertDialogAction, AlertDialogCancel,
+} from './alert-dialog';
+export {
+  Table, TableHeader, TableBody, TableFooter, TableHead,
+  TableRow, TableCell, TableCaption,
+} from './table';
 
 // Custom domain components
 export { default as DataTable } from './DataTable';

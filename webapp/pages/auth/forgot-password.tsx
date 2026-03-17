@@ -68,7 +68,7 @@ export default function ForgotPasswordPage() {
                 error={errors.email?.message}
               />
               {mutation.isError && (
-                <p className='msg-error text-sm'>
+                <p className='text-error text-sm'>
                   {getErrorMessage(mutation.error)}
                 </p>
               )}

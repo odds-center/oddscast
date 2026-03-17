@@ -340,7 +340,7 @@ export default function RacesPage() {
             data={races}
             getRowKey={(race) => race.id}
             getRowHref={(race) => routes.races.detail(race.id)}
-            className='data-table-kra'
+            className=''
             compact
           />
         </div>

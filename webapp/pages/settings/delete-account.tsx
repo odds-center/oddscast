@@ -4,6 +4,17 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
 import FormInput from '@/components/page/FormInput';
@@ -81,26 +92,47 @@ export default function DeleteAccountPage() {
               </span>
             </label>
             {errors.root && (
-              <p className='msg-error text-sm'>{errors.root.message}</p>
+              <p className='text-error text-sm'>{errors.root.message}</p>
             )}
-            <Button
-              type='submit'
-              variant='outline'
-              disabled={isSubmitting || !confirmChecked}
-              className='w-full py-2.5 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'
-            >
-              {isSubmitting ? (
-                <>
-                  <Icon name='Loader2' size={18} className='animate-spin' />
-                  처리 중...
-                </>
-              ) : (
-                <>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  type='button'
+                  variant='outline'
+                  disabled={isSubmitting || !confirmChecked}
+                  className='w-full py-2.5 border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300'
+                >
                   <Icon name='UserMinus' size={18} />
                   회원탈퇴
-                </>
-              )}
-            </Button>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>정말 탈퇴하시겠습니까?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    탈퇴하면 모든 데이터가 영구 삭제되며 복구할 수 없습니다.
+                    보유한 예측권, 포인트, 구독 정보가 모두 사라집니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleSubmit(onSubmit)}
+                    className='bg-red-600 hover:bg-red-700 text-white border-red-600'
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Icon name='Loader2' size={18} className='animate-spin' />
+                        처리 중...
+                      </>
+                    ) : (
+                      '탈퇴 확인'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </form>
         </SectionCard>
 

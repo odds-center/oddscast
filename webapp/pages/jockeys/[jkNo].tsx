@@ -153,7 +153,7 @@ export default function JockeyProfilePage() {
                     ))}
                   </div>
                   {/* Desktop: table */}
-                  <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
+                  <div className='hidden sm:block'>
                     <DataTable<JockeyHistoryItem>
                       columns={[
                         {

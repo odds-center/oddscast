@@ -101,7 +101,7 @@ export default function Register() {
               error={errors.nickname?.message}
             />
             {errors.root && (
-              <p className='msg-error text-sm'>{errors.root.message}</p>
+              <p className='text-error text-sm'>{errors.root.message}</p>
             )}
             <Button
               type='submit'

@@ -1,3 +1,5 @@
+import { Button } from '@/components/ui/button';
+
 interface ChipOption {
   value: string;
   label: string;
@@ -16,19 +18,21 @@ export default function FilterChips({ options, value, onChange, className = '' }
       {options.map((opt) => {
         const isActive = value === opt.value;
         return (
-          <button
+          <Button
             key={opt.value}
+            variant={isActive ? 'default' : 'outline'}
+            size='sm'
             onClick={() => onChange(opt.value)}
             type='button'
             aria-pressed={isActive}
-            className={`min-h-[44px] sm:min-h-0 px-2.5 py-2 sm:py-0.5 rounded text-xs font-medium transition-colors touch-manipulation whitespace-nowrap ${
+            className={
               isActive
-                ? 'bg-[#292524] text-white'
-                : 'bg-white border border-stone-200 text-stone-500 hover:text-stone-800 hover:border-stone-300'
-            }`}
+                ? 'bg-[#292524] border-[#292524] text-white hover:bg-[#292524]/90 text-xs px-2.5'
+                : 'bg-white text-stone-500 hover:text-stone-800 text-xs px-2.5'
+            }
           >
             {opt.label}
-          </button>
+          </Button>
         );
       })}
     </div>

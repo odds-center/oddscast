@@ -101,12 +101,12 @@ export default function NotificationSettingsPage() {
             description='푸시·경주·예측 등 알림을 켜거나 끌 수 있습니다.'
           >
           {saveSuccess && (
-            <p className='msg-success mb-4' role='status'>
+            <p className='text-success mb-4' role='status'>
               알림 설정이 저장되었습니다.
             </p>
           )}
           {updateMutation.isError && (
-            <p className='msg-error mb-4'>
+            <p className='text-error mb-4'>
               {getErrorMessage(updateMutation.error) || '설정 저장에 실패했습니다.'}
             </p>
           )}

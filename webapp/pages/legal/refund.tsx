@@ -43,8 +43,8 @@ export default function RefundPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>2. 환불 정책</h2>
             <h3 className='text-sm font-medium mt-3 mb-1'>2.1 구독 서비스 환불</h3>
-            <div className='data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm my-2'>
-              <table className='data-table w-full text-xs'>
+            <div className='rounded-xl border border-border overflow-hidden shadow-sm my-2'>
+              <table className='w-full text-xs'>
                 <thead>
                   <tr className='bg-stone-50 border-b border-border text-text-secondary'>
                     <th className='p-3 font-semibold text-left'>기간</th>

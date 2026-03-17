@@ -5,6 +5,15 @@
 import Link from 'next/link';
 import Icon from '@/components/icons';
 import Tooltip from '@/components/ui/SimpleTooltip';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils/cn';
 import { routes } from '@/lib/routes';
 
 /** Horse entry fields required for rendering */
@@ -101,11 +110,11 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
               tabIndex={onSelectHorse ? 0 : undefined}
               onClick={() => onSelectHorse?.(e.hrNo, e.hrName)}
               onKeyDown={(ev) => onSelectHorse && (ev.key === 'Enter' || ev.key === ' ') && onSelectHorse(e.hrNo, e.hrName)}
-              className={`
-                rounded-xl border overflow-hidden transition-all duration-200
-                ${onSelectHorse ? 'cursor-pointer active:scale-[0.99]' : ''}
-                ${isSelected?.(e.hrNo) ? 'ring-2 ring-primary-500 border-primary-400 bg-primary-50/30' : 'border-border bg-card hover:border-stone-300'}
-              `}
+              className={cn(
+                'rounded-xl border overflow-hidden transition-all duration-200',
+                onSelectHorse && 'cursor-pointer active:scale-[0.99]',
+                isSelected?.(e.hrNo) ? 'ring-2 ring-primary-500 border-primary-400 bg-primary-50/30' : 'border-border bg-card hover:border-stone-300',
+              )}
             >
               <div className='p-4'>
                 <div className='min-w-0'>
@@ -167,70 +176,69 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
       </div>
 
       {/* Desktop: table layout */}
-      <div className='hidden sm:block data-table-wrapper rounded-xl border border-border overflow-hidden shadow-sm'>
-        <table className='data-table data-table-compact w-full'>
-          <thead>
-            <tr className='bg-stone-50 border-b border-border text-xs text-text-secondary'>
-              <th className='cell-center py-3 w-10 font-semibold'>번호</th>
-              <th className='text-left py-3 min-w-[90px] font-semibold'>마명</th>
-              <th className='text-left py-3 font-semibold'>기수/조교사</th>
-              <th className='text-left py-3 w-20 font-semibold'>마주</th>
-              <th className='cell-center py-3 w-16 font-semibold'>
+      <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+        <Table className='min-w-max [&_th]:py-3 [&_td]:py-2.5'>
+          <TableHeader>
+            <TableRow className='bg-stone-50 border-b border-border hover:bg-stone-50'>
+              <TableHead className='text-center w-10'>번호</TableHead>
+              <TableHead className='text-left min-w-[90px]'>마명</TableHead>
+              <TableHead className='text-left'>기수/조교사</TableHead>
+              <TableHead className='text-left w-20'>마주</TableHead>
+              <TableHead className='text-center w-16'>
                 <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
-              </th>
-              <th className='cell-center py-3 w-16 font-semibold'>
+              </TableHead>
+              <TableHead className='text-center w-16'>
                 <Tooltip content='기수 포함 경주 시 짊어지는 무게 (kg)' inline>부담</Tooltip>
-              </th>
-              <th className='cell-center py-3 w-16 font-semibold'>
+              </TableHead>
+              <TableHead className='text-center w-16'>
                 <Tooltip content='경주 당일 말의 체중. 괄호 안은 전 대비 증감' inline>마체중</Tooltip>
-              </th>
-              <th className='cell-center py-3 w-14 font-semibold'>
+              </TableHead>
+              <TableHead className='text-center w-14'>
                 <Tooltip content='KRA 능력 지표. 높을수록 경쟁력 우수' inline>레이팅</Tooltip>
-              </th>
-              <th className='cell-center py-3 w-20 font-semibold'>
+              </TableHead>
+              <TableHead className='text-center w-20'>
                 <Tooltip content='통산 출전 횟수와 1위 횟수' inline>통산</Tooltip>
-              </th>
-              <th className='cell-center py-3 w-24 font-semibold'>
+              </TableHead>
+              <TableHead className='text-center w-24'>
                 <Tooltip content='최근 5경기 착순 (1위=1, 미입상=0)' inline>최근</Tooltip>
-              </th>
-              <th className='text-left py-3 w-16 hidden md:table-cell font-semibold'>
+              </TableHead>
+              <TableHead className='text-left w-16 hidden md:table-cell'>
                 <Tooltip content='경주 시 말에 장착하는 보조 장비 (차안대, 혀묶개 등)' inline>장구</Tooltip>
-              </th>
+              </TableHead>
               {showOdds && (
-                <th className='cell-center py-3 w-14 font-semibold'>
+                <TableHead className='text-center w-14'>
                   <Tooltip content='단승식 최종 배당률 (1위 적중 시 배당)' inline>단승</Tooltip>
-                </th>
+                </TableHead>
               )}
               {showOdds && (
-                <th className='cell-center py-3 w-14 font-semibold'>
+                <TableHead className='text-center w-14'>
                   <Tooltip content='연승식 최종 배당률 (3위 내 적중 시 배당)' inline>연승</Tooltip>
-                </th>
+                </TableHead>
               )}
-            </tr>
-          </thead>
-          <tbody className='divide-y divide-border'>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {entries.map((e) => {
               const { base: hwBase, delta: hwDelta } = parseHorseWeight(e.horseWeight);
               const entryOdds = oddsMap?.get(e.hrNo);
 
               return (
-                <tr
+                <TableRow
                   key={e.id ?? e.hrNo}
                   onClick={() => onSelectHorse?.(e.hrNo, e.hrName)}
-                  className={`
-                    transition-colors
-                    ${onSelectHorse ? 'cursor-pointer hover:bg-stone-50' : ''}
-                    ${isSelected?.(e.hrNo) ? 'bg-primary-50/50' : ''}
-                  `}
+                  className={cn(
+                    onSelectHorse && 'cursor-pointer',
+                    isSelected?.(e.hrNo) && 'bg-primary-50/50',
+                  )}
                 >
-                  <td className='cell-center py-2.5'>
+                  <TableCell className='text-center'>
                     {e.chulNo != null ? (
                       <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-xs font-bold'>
                         {e.chulNo}
                       </span>
                     ) : '-'}
-                  </td>
-                  <td className='py-2.5'>
+                  </TableCell>
+                  <TableCell>
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}
                       onClick={(ev) => ev.stopPropagation()}
@@ -238,21 +246,21 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     >
                       {e.hrName}
                     </Link>
-                  </td>
-                  <td className='py-2.5 text-text-secondary text-sm'>
+                  </TableCell>
+                  <TableCell className='text-text-secondary text-sm'>
                     <span>{e.jkName ?? '-'}</span>
                     {e.trName && <span className='text-text-tertiary'> / {e.trName}</span>}
-                  </td>
-                  <td className='py-2.5 text-text-secondary text-sm'>
+                  </TableCell>
+                  <TableCell className='text-text-secondary text-sm'>
                     {e.owName ?? '-'}
-                  </td>
-                  <td className='cell-center py-2.5 text-sm text-text-secondary'>
+                  </TableCell>
+                  <TableCell className='text-center text-sm text-text-secondary'>
                     {formatAgeSexOrigin(e.prd, e.age ?? undefined, e.sex)}
-                  </td>
-                  <td className='cell-center py-2.5 text-sm'>
+                  </TableCell>
+                  <TableCell className='text-center text-sm'>
                     {e.wgBudam != null ? <span className='font-medium'>{e.wgBudam}kg</span> : '-'}
-                  </td>
-                  <td className='cell-center py-2.5 text-sm'>
+                  </TableCell>
+                  <TableCell className='text-center text-sm'>
                     {hwBase != null ? (
                       <>
                         <span>{hwBase}kg</span>
@@ -265,8 +273,8 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     ) : (
                       '-'
                     )}
-                  </td>
-                  <td className='cell-center py-2.5'>
+                  </TableCell>
+                  <TableCell className='text-center'>
                     {e.rating != null ? (
                       <span className='inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800'>
                         {e.rating}
@@ -274,31 +282,31 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     ) : (
                       '-'
                     )}
-                  </td>
-                  <td className='cell-center py-2.5 text-sm text-text-secondary'>
+                  </TableCell>
+                  <TableCell className='text-center text-sm text-text-secondary'>
                     {formatRecord(e.rcCntT, e.ord1CntT)}
-                  </td>
-                  <td className='cell-center py-2.5 text-xs text-text-tertiary'>
+                  </TableCell>
+                  <TableCell className='text-center text-xs text-text-tertiary'>
                     {formatRecentRanks(e.recentRanks)}
-                  </td>
-                  <td className='py-2.5 text-xs text-text-tertiary hidden md:table-cell'>
+                  </TableCell>
+                  <TableCell className='text-xs text-text-tertiary hidden md:table-cell'>
                     {e.equipment ?? '-'}
-                  </td>
+                  </TableCell>
                   {showOdds && (
-                    <td className='cell-center py-2.5 text-sm font-medium text-emerald-700'>
+                    <TableCell className='text-center text-sm font-medium text-emerald-700'>
                       {entryOdds?.winOdds ?? '-'}
-                    </td>
+                    </TableCell>
                   )}
                   {showOdds && (
-                    <td className='cell-center py-2.5 text-sm font-medium text-teal-700'>
+                    <TableCell className='text-center text-sm font-medium text-teal-700'>
                       {entryOdds?.plcOdds ?? '-'}
-                    </td>
+                    </TableCell>
                   )}
-                </tr>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {entries.length === 0 && (

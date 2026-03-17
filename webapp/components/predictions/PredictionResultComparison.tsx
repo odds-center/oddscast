@@ -5,6 +5,14 @@
 import Link from 'next/link';
 import Icon from '@/components/icons';
 import { Badge } from '@/components/ui';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 
 export interface PredictedRow {
   rank: number;
@@ -126,36 +134,36 @@ export default function PredictionResultComparison({
         })}
       </div>
       {/* Desktop: table */}
-      <div className="hidden sm:block overflow-x-auto">
-        <table className="w-full min-w-[280px] text-sm">
-          <thead>
-            <tr className="border-b border-border text-text-secondary">
-              <th className="text-left py-2 px-3 w-12 font-medium">순위</th>
-              <th className="text-left py-2 px-3 font-medium">AI 예측</th>
-              <th className="text-left py-2 px-3 font-medium">실제 결과</th>
-              <th className="cell-center py-2 px-3 w-14 font-medium">일치</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div className="hidden sm:block">
+        <Table className='min-w-[280px] [&_th]:py-2 [&_th]:px-3 [&_td]:py-2 [&_td]:px-3'>
+          <TableHeader>
+            <TableRow className='hover:bg-transparent'>
+              <TableHead className='w-12'>순위</TableHead>
+              <TableHead>AI 예측</TableHead>
+              <TableHead>실제 결과</TableHead>
+              <TableHead className='text-center w-14'>일치</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {rows.map(({ rank, predicted, actual }) => {
               const match =
                 predicted &&
                 actual &&
                 normalizeHrNo(predicted.hrNo, actual.hrNo);
               return (
-                <tr key={rank} className="border-b border-border last:border-0">
-                  <td className="py-2 px-3 font-medium text-foreground">{rank}위</td>
-                  <td className="py-2 px-3 text-foreground">
+                <TableRow key={rank}>
+                  <TableCell className='font-medium text-foreground'>{rank}위</TableCell>
+                  <TableCell className='text-foreground'>
                     {predicted
                       ? renderName(predicted.hrName, predicted.hrNo, predicted.chulNo)
                       : '-'}
-                  </td>
-                  <td className="py-2 px-3 text-foreground">
+                  </TableCell>
+                  <TableCell className='text-foreground'>
                     {actual
                       ? renderName(actual.hrName ?? '', actual.hrNo ?? '', actual.chulNo)
                       : '-'}
-                  </td>
-                  <td className="cell-center py-2 px-3">
+                  </TableCell>
+                  <TableCell className='text-center'>
                     {predicted && actual ? (
                       match ? (
                         <span className="inline-flex text-green-600" aria-label="일치">
@@ -169,12 +177,12 @@ export default function PredictionResultComparison({
                     ) : (
                       <span className="text-text-tertiary">-</span>
                     )}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

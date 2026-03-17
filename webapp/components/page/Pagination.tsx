@@ -2,19 +2,14 @@
  * Pagination — < 1 ... 2 3 4 ... 5 > format
  * Can navigate directly to multiple pages
  */
+import { Button } from '@/components/ui/button';
+
 interface PaginationProps {
   page: number;
   totalPages: number;
   onPageChange: (page: number) => void;
   className?: string;
 }
-
-const btnClass =
-  'min-w-[2.5rem] min-h-[44px] sm:min-h-[36px] px-2.5 rounded-lg bg-card border border-border hover:border-border-gold disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-sm transition-colors flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
-const pageBtnClass =
-  'min-w-[2.5rem] min-h-[44px] sm:min-h-[36px] px-2.5 rounded-lg border font-medium text-sm transition-colors flex items-center justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2';
-const activeClass = 'bg-stone-700 text-white border-stone-700';
-const inactiveClass = 'bg-card border-border hover:border-stone-300 hover:bg-stone-50';
 
 function getPageNumbers(current: number, total: number): (number | 'ellipsis')[] {
   if (total <= 7) {
@@ -49,14 +44,16 @@ export default function Pagination({
 
   return (
     <div className={`flex justify-center items-center gap-1.5 flex-wrap ${className}`}>
-      <button
+      <Button
+        variant='outline'
+        size='sm'
         onClick={() => onPageChange(Math.max(1, page - 1))}
         disabled={page <= 1}
-        className={btnClass}
         aria-label='Previous page'
+        className='min-w-[2.5rem]'
       >
         ‹
-      </button>
+      </Button>
 
       {pageNumbers.map((p, i) =>
         p === 'ellipsis' ? (
@@ -64,26 +61,32 @@ export default function Pagination({
             …
           </span>
         ) : (
-          <button
+          <Button
             key={p}
+            variant={p === page ? 'default' : 'outline'}
+            size='sm'
             onClick={() => onPageChange(p)}
-            className={`${pageBtnClass} ${p === page ? activeClass : inactiveClass}`}
             aria-label={`Page ${p}`}
             aria-current={p === page ? 'page' : undefined}
+            className={`min-w-[2.5rem] ${
+              p === page ? 'bg-stone-700 text-white border-stone-700 hover:bg-stone-800' : ''
+            }`}
           >
             {p}
-          </button>
+          </Button>
         ),
       )}
 
-      <button
+      <Button
+        variant='outline'
+        size='sm'
         onClick={() => onPageChange(Math.min(totalPages, page + 1))}
         disabled={page >= totalPages}
-        className={btnClass}
         aria-label='Next page'
+        className='min-w-[2.5rem]'
       >
         ›
-      </button>
+      </Button>
     </div>
   );
 }

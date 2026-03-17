@@ -65,7 +65,7 @@ export default function Login() {
               error={errors.password?.message}
             />
             {errors.root && (
-              <p className='msg-error text-sm'>{errors.root.message}</p>
+              <p className='text-error text-sm'>{errors.root.message}</p>
             )}
             <div className='flex justify-end'>
               <Link

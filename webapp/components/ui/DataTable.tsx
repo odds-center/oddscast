@@ -1,10 +1,19 @@
 /**
- * Shared table component
- * data-table-wrapper + data-table styles, consistent table rendering via column definitions
+ * Shared table component built on shadcn Table primitives
+ * Consistent table rendering via column definitions
  * When getRowHref is provided, entire row is clickable for navigation
  */
 import { useRouter } from 'next/router';
 import type { ReactNode, MouseEvent } from 'react';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
+import { cn } from '@/lib/utils/cn';
 
 export type DataTableAlign = 'left' | 'center' | 'right';
 
@@ -30,9 +39,9 @@ export interface DataTableProps<T> {
 }
 
 const alignToClass: Record<DataTableAlign, string> = {
-  left: '',
-  center: 'cell-center',
-  right: 'cell-right',
+  left: 'text-left',
+  center: 'text-center',
+  right: 'text-right',
 };
 
 export default function DataTable<T>({
@@ -46,32 +55,26 @@ export default function DataTable<T>({
   rowClassName,
 }: DataTableProps<T>) {
   const router = useRouter();
-  const tableClass = compact ? 'data-table data-table-compact' : 'data-table';
 
   return (
-    <div className={`data-table-wrapper ${className}`.trim()}>
-      <table className={tableClass}>
-        <thead>
-          <tr>
-            {columns.map((col) => {
-              const alignClass = alignToClass[col.align ?? 'left'];
-              const thClass = [col.headerClassName, alignClass].filter(Boolean).join(' ');
-              return (
-                <th key={col.key} className={thClass || undefined}>
-                  {col.header}
-                </th>
-              );
-            })}
-          </tr>
-        </thead>
-        <tbody>
+    <div className={cn('rounded-[10px] border border-border bg-card overflow-hidden', className)}>
+      <Table className={cn(compact && '[&_th]:py-1 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2', 'min-w-max')}>
+        <TableHeader>
+          <TableRow className="hover:bg-transparent">
+            {columns.map((col) => (
+              <TableHead
+                key={col.key}
+                className={cn(alignToClass[col.align ?? 'left'], col.headerClassName)}
+              >
+                {col.header}
+              </TableHead>
+            ))}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
           {data.map((row, i) => {
             const key = getRowKey(row, i);
             const href = getRowHref?.(row, i);
-            const trClass = [
-              rowClassName?.(row, i),
-              href ? 'cursor-pointer hover:bg-stone-50' : '',
-            ].filter(Boolean).join(' ');
             const handleRowClick = href
               ? (e: MouseEvent<HTMLTableRowElement>) => {
                   if ((e.target as HTMLElement).closest('a')) return;
@@ -79,9 +82,12 @@ export default function DataTable<T>({
                 }
               : undefined;
             return (
-              <tr
+              <TableRow
                 key={key}
-                className={trClass || undefined}
+                className={cn(
+                  href && 'cursor-pointer',
+                  rowClassName?.(row, i),
+                )}
                 onClick={handleRowClick}
                 onKeyDown={handleRowClick && href ? (e) => e.key === 'Enter' && router.push(href) : undefined}
                 role={handleRowClick ? 'button' : undefined}
@@ -89,25 +95,26 @@ export default function DataTable<T>({
                 tabIndex={handleRowClick ? 0 : undefined}
               >
                 {columns.map((col) => {
-                  const alignClass = alignToClass[col.align ?? 'left'];
                   const cellClass =
                     typeof col.cellClassName === 'function'
                       ? col.cellClassName(row, i)
                       : col.cellClassName;
-                  const tdClass = [alignClass, cellClass].filter(Boolean).join(' ');
                   return (
-                    <td key={col.key} className={tdClass || undefined}>
+                    <TableCell
+                      key={col.key}
+                      className={cn(alignToClass[col.align ?? 'left'], cellClass)}
+                    >
                       {col.render(row, i)}
-                    </td>
+                    </TableCell>
                   );
                 })}
-              </tr>
+              </TableRow>
             );
           })}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
       {data.length === 0 && emptyMessage && (
-        <p className='text-text-secondary text-sm text-center py-8'>{emptyMessage}</p>
+        <p className="text-text-secondary text-sm text-center py-8">{emptyMessage}</p>
       )}
     </div>
   );

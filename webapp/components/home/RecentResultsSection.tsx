@@ -7,6 +7,14 @@ import Link from 'next/link';
 import ResultApi from '@/lib/api/resultApi';
 import type { RaceResult } from '@/lib/api/resultApi';
 import { Button } from '@/components/ui/button';
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from '@/components/ui/table';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 
@@ -98,7 +106,7 @@ export default function RecentResultsSection() {
         <div className='py-8 text-center text-text-secondary text-sm'>결과 준비 중...</div>
       ) : error ? (
         <div className='py-6 text-center text-text-secondary text-sm'>
-          <p className='msg-error text-xs'>일시적인 오류가 발생했습니다.</p>
+          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
           <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
             다시 시도
           </Button>
@@ -142,31 +150,31 @@ export default function RecentResultsSection() {
             })}
           </div>
           {/* Desktop: table */}
-          <div className='hidden sm:block overflow-x-auto'>
-            <table className='data-table data-table-compact w-full min-w-[400px]'>
-              <thead>
-                <tr>
-                  <th className='w-28'>경주</th>
-                  <th className='min-w-[100px]'>1위</th>
-                  <th className='min-w-[100px]'>2위</th>
-                  <th className='min-w-[80px]'>3위</th>
-                </tr>
-              </thead>
-              <tbody>
+          <div className='hidden sm:block'>
+            <Table className='min-w-[400px] [&_th]:py-1 [&_th]:px-2 [&_td]:py-1.5 [&_td]:px-2'>
+              <TableHeader>
+                <TableRow className='hover:bg-transparent'>
+                  <TableHead className='w-28'>경주</TableHead>
+                  <TableHead className='min-w-[100px]'>1위</TableHead>
+                  <TableHead className='min-w-[100px]'>2위</TableHead>
+                  <TableHead className='min-w-[80px]'>3위</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                 {grouped.slice(0, 8).map((row) => (
-                  <tr key={row.raceId}>
-                    <td>
+                  <TableRow key={row.raceId}>
+                    <TableCell>
                       <Link
                         href={routes.resultsDetail(row.raceId)}
                         className='font-semibold text-stone-700 hover:text-stone-900 hover:underline'
                       >
                         {row.meetName} {row.rcNo}경
                       </Link>
-                    </td>
+                    </TableCell>
                     {(['1', '2', '3'] as const).map((ord) => {
                       const r = row.results.find((x) => x.ord === ord);
                       return (
-                        <td key={ord}>
+                        <TableCell key={ord}>
                           {r ? (
                             <div>
                               <span className='font-semibold text-sm'>{r.hrName}</span>
@@ -177,13 +185,13 @@ export default function RecentResultsSection() {
                           ) : (
                             <span className='text-text-tertiary'>-</span>
                           )}
-                        </td>
+                        </TableCell>
                       );
                     })}
-                  </tr>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
         </>
       )}

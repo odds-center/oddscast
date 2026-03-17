@@ -2,7 +2,7 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
-apply from: file("../../node_modules/react-native-vector-icons/fonts.gradle")
+apply from: file("../../../node_modules/react-native-vector-icons/fonts.gradle")
 
 // react-native-config: reads ENVFILE (.env / .env.dev / .env.prod)
 project.ext.envConfigFiles = [
@@ -112,6 +112,7 @@ android {
 
 dependencies {
     implementation("com.facebook.react:react-android")
+    implementation("androidx.core:core-splashscreen:1.0.1")
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")
     } else {

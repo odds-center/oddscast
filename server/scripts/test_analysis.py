@@ -169,7 +169,7 @@ class TestExperienceScore:
 
 class TestTrainerScore:
     def test_no_data(self):
-        assert _trainer_score({}) == 40.0
+        assert _trainer_score({}) == 35.0  # No data = slight disadvantage
 
     def test_good_trainer(self):
         score = _trainer_score({"trainerWinRate": 15, "trainerQuRate": 40})
@@ -184,7 +184,7 @@ class TestTrainerScore:
 
 class TestJockeyScore:
     def test_no_data(self):
-        assert _jockey_score({}) == 40.0
+        assert _jockey_score({}) == 35.0  # No data = slight disadvantage
 
     def test_good_jockey(self):
         score = _jockey_score({"jockeyMeetWinRate": 15, "jockeyMeetQuRate": 40, "jockeyRcCntT": 500})

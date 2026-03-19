@@ -1224,9 +1224,12 @@ AI 예측 순위: ${predictedTop || '-'}
     // 3c-4. 당일 복수 출전 피로도 감지 — 같은 날 이전 경주 출전 여부 확인
     const raceWithFatigue =
       await this.enrichEntriesWithSameDayFatigue(raceWithTraining);
+    // 3c-5. 이전 마체중 조회 — condition score weight delta 계산용
+    const raceWithPrevWeight =
+      await this.enrichEntriesWithPrevHorseWeight(raceWithFatigue);
     // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
     const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceWithFatigue,
+      raceWithPrevWeight,
       sectionalByHorse,
     );
 
@@ -1654,6 +1657,55 @@ AI 예측 순위: ${predictedTop || '-'}
   }
 
   /**
+   * Fetch previous horse weight from the most recent prior race entry.
+   * Enables _condition_score to compute weight delta when horseWeight lacks parenthetical format.
+   */
+  private async enrichEntriesWithPrevHorseWeight(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+    const beforeRcDate = race.rcDate ?? '';
+    if (!beforeRcDate) return race;
+
+    // Find most recent entry for each horse from a previous race
+    const rows = await this.entryRepo
+      .createQueryBuilder('e')
+      .innerJoin('e.race', 'r')
+      .select(['e.hrNo', 'e.horseWeight', 'r.rcDate'])
+      .where('e.hrNo IN (:...hrNos)', { hrNos })
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .andWhere('e.horseWeight IS NOT NULL')
+      .orderBy('r.rcDate', 'DESC')
+      .limit(hrNos.length * 3)
+      .getRawMany<{ e_hrNo: string; e_horseWeight: string; r_rcDate: string }>();
+
+    const prevWeightMap = new Map<string, string>();
+    for (const row of rows) {
+      const hrNo = row.e_hrNo ?? (row as Record<string, unknown>).hrNo;
+      const hw = row.e_horseWeight ?? (row as Record<string, unknown>).horseWeight;
+      if (hrNo && hw && !prevWeightMap.has(String(hrNo))) {
+        // Extract numeric weight from "480(+2)" or "482" format
+        const numMatch = String(hw).match(/^(\d+)/);
+        if (numMatch) prevWeightMap.set(String(hrNo), numMatch[1]!);
+      }
+    }
+
+    if (!prevWeightMap.size) return race;
+
+    return {
+      ...race,
+      entries: entries.map((e) => {
+        const prevWg = prevWeightMap.get(e.hrNo);
+        if (!prevWg) return e;
+        return { ...e, prevHorseWeight: prevWg };
+      }),
+    } as RaceForPython;
+  }
+
+  /**
    * 구간별 태그(선행마/추입마/중간마) merge — Python calculate_score에서 sectionalBonus 계산에 사용
    */
   private enrichEntriesWithSectionalTag(
@@ -1737,10 +1789,13 @@ AI 예측 순위: ${predictedTop || '-'}
     ];
     if (!trNos.length) return race;
 
-    const trainers = await this.trainerResultRepo.find({
-      where: { meet: meetCode, trNo: In(trNos) },
-      select: ['trNo', 'winRateTsum', 'quRateTsum'],
-    });
+    // Primary: look up by trNo
+    const trainers = trNos.length
+      ? await this.trainerResultRepo.find({
+          where: { meet: meetCode, trNo: In(trNos) },
+          select: ['trNo', 'trName', 'winRateTsum', 'quRateTsum'],
+        })
+      : [];
     const byTrNo = new Map(
       trainers.map((t) => [
         t.trNo,
@@ -1748,10 +1803,34 @@ AI 예측 순위: ${predictedTop || '-'}
       ]),
     );
 
+    // Fallback: for entries without trNo, try trName lookup
+    const missingTrNames = [
+      ...new Set(
+        entries
+          .filter((e) => !e.trNo && e.trName)
+          .map((e) => e.trName)
+          .filter(Boolean),
+      ),
+    ];
+    const byTrName = new Map<string, { winRateTsum: number; quRateTsum: number }>();
+    if (missingTrNames.length) {
+      const nameResults = await this.trainerResultRepo
+        .createQueryBuilder('t')
+        .select(['t.trName', 't.winRateTsum', 't.quRateTsum'])
+        .where('t.meet = :meet', { meet: meetCode })
+        .andWhere('t.trName IN (:...names)', { names: missingTrNames })
+        .getMany();
+      for (const t of nameResults) {
+        if (t.trName && !byTrName.has(t.trName)) {
+          byTrName.set(t.trName, { winRateTsum: t.winRateTsum, quRateTsum: t.quRateTsum });
+        }
+      }
+    }
+
     const enrichedEntries = entries.map((e) => {
-      const trNo = e.trNo;
-      if (!trNo) return e;
-      const t = byTrNo.get(trNo);
+      // Try trNo first, then trName fallback
+      const t = (e.trNo ? byTrNo.get(e.trNo) : null)
+        ?? (e.trName ? byTrName.get(e.trName) : null);
       if (!t) return e;
       return {
         ...e,
@@ -2947,17 +3026,47 @@ ${realtimeSection}
       mergedBetType,
       entries,
     );
-    const hs = entries.length
-      ? hsRaw.map((h) => {
-          const rawId = (h.hrNo ?? (h as { chulNo?: string }).chulNo)
-            ?.toString()
-            .trim();
-          const resolved = rawId
-            ? (this.resolveToHrNo(rawId, entries) ?? rawId)
-            : undefined;
-          return { ...h, hrNo: resolved ?? h.hrNo };
-        })
-      : hsRaw;
+    // Merge Python scores (authoritative ranking) with Gemini narrative (reason/strengths/weaknesses)
+    // Python determines score ordering; Gemini provides qualitative analysis text
+    const geminiByHrNo = new Map<string, Record<string, unknown>>();
+    for (const h of hsRaw) {
+      const id = String(h.hrNo ?? (h as { chulNo?: string }).chulNo ?? '').trim();
+      const resolved = entries.length && id
+        ? (this.resolveToHrNo(id, entries) ?? id)
+        : id;
+      if (resolved) geminiByHrNo.set(resolved, h);
+    }
+
+    let hs: Array<Record<string, unknown>>;
+    if (safeHorseResult.length > 0) {
+      // Python results available — use Python scores + ordering, overlay Gemini narrative
+      hs = (safeHorseResult as Array<Record<string, unknown>>).map((py) => {
+        const pyHrNo = String(py.hrNo ?? '').trim();
+        const gemini = geminiByHrNo.get(pyHrNo) ?? {};
+        return {
+          hrNo: pyHrNo,
+          hrName: py.hrName ?? gemini.hrName ?? '',
+          score: py.score, // Python score is authoritative
+          winProb: py.winProb,
+          // Gemini narrative overlaid
+          reason: gemini.reason ?? py.reason ?? '',
+          strengths: gemini.strengths ?? [],
+          weaknesses: gemini.weaknesses ?? [],
+          confidence: gemini.confidence ?? '',
+        };
+      });
+    } else {
+      // No Python results — fallback to Gemini scores
+      hs = hsRaw.map((h) => {
+        const rawId = (h.hrNo ?? (h as { chulNo?: string }).chulNo)
+          ?.toString()
+          .trim();
+        const resolved = rawId && entries.length
+          ? (this.resolveToHrNo(rawId, entries) ?? rawId)
+          : rawId;
+        return { ...h, hrNo: resolved ?? h.hrNo };
+      });
+    }
 
     return {
       ...base,

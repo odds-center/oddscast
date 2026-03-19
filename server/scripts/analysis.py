@@ -212,7 +212,7 @@ def _trainer_score(entry):
     qu_rate = entry.get("trainerQuRate")
 
     if win_rate is None and qu_rate is None:
-        return 40.0
+        return 35.0  # No data = slight disadvantage (unknown risk)
 
     score = 30.0
     try:
@@ -239,7 +239,7 @@ def _jockey_score(entry):
     is_career_fallback = bool(entry.get("jockeyFallbackCareer"))
 
     if win_rate is None and qu_rate is None:
-        return 40.0
+        return 35.0  # No data = slight disadvantage (unknown risk)
 
     score = 20.0
     try:

@@ -10,6 +10,10 @@ dist/
 server/dist/
 .expo/
 
+# Python
+__pycache__/
+*.pyc
+
 # shared/dist is committed to git for Docker builds
 !shared/dist/
 

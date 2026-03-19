@@ -65,6 +65,7 @@ detail: (id: string) => `/races/${id}`,
 
   welcome: '/welcome',
   weeklyPreview: '/weekly-preview',
+  updateLog: '/update-log',
 
   legal: {
     terms: '/legal/terms',

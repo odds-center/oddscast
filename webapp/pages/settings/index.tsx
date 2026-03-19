@@ -82,6 +82,13 @@ export default function SettingsPage() {
                 <span className='flex-1'>알림 설정</span>
                 <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
               </Link>
+              <Link href={routes.updateLog} className={menuItemClass}>
+                <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 shrink-0'>
+                  <Icon name='Sparkles' size={20} strokeWidth={2} className='text-primary' />
+                </span>
+                <span className='flex-1'>업데이트 내역</span>
+                <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
+              </Link>
               <Link href={routes.legal.terms} className={menuItemClass}>
                 <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                   <Icon name='ScrollText' size={20} strokeWidth={2} className='text-stone-500' />
@@ -108,6 +115,13 @@ export default function SettingsPage() {
             <>
               <RequireLogin suffix='설정할 수 있습니다' showLoginButton={false} className='mb-4' />
               <div className='divide-y divide-border'>
+                <Link href={routes.updateLog} className={menuItemClass}>
+                  <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-primary/10 shrink-0'>
+                    <Icon name='Sparkles' size={20} strokeWidth={2} className='text-primary' />
+                  </span>
+                  <span className='flex-1'>업데이트 내역</span>
+                  <Icon name='ChevronRight' size={16} className='text-stone-500 shrink-0' />
+                </Link>
                 <Link href={routes.legal.terms} className={menuItemClass}>
                   <span className='flex items-center justify-center w-9 h-9 rounded-lg bg-stone-50 shrink-0'>
                     <Icon name='ScrollText' size={20} strokeWidth={2} className='text-stone-500' />

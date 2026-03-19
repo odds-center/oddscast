@@ -234,13 +234,12 @@ def _jockey_score(entry):
     except (ValueError, TypeError):
         pass
 
-    # Rookie penalty: fewer than 100 career races
-    if rc_cnt > 0 and rc_cnt < 100:
-        score *= 0.85
-
-    # Career-wide fallback is less predictive than meet-specific data
+    # Penalty: career-fallback (less predictive) takes priority over rookie penalty
+    # to avoid double-penalizing new jockeys at unfamiliar meets
     if is_career_fallback:
-        score *= 0.90
+        score *= 0.90  # career-wide stats, less predictive than meet-specific
+    elif rc_cnt > 0 and rc_cnt < 100:
+        score *= 0.85  # rookie with meet-specific data
 
     return round(min(100, max(0, score)), 2)
 

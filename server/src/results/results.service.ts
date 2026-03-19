@@ -327,7 +327,7 @@ export class ResultsService {
       .getMany();
     if (!results.length) return;
 
-    const predictedOrder = horseScores
+    const predictedOrder = [...horseScores]
       .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
       .map((h) => String(h.hrNo ?? h.hrName ?? '').trim());
     const actualTop = results

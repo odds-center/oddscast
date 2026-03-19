@@ -130,7 +130,7 @@ export function applyOddsBlend(
     const hrNo = String(hs.hrNo ?? '');
     const jScore =
       jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
-    return Math.round((hs.score ?? 50) * wH + jScore * wJ * 100) / 100;
+    return Math.round(((hs.score ?? 50) * wH + jScore * wJ) * 100) / 100;
   });
 
   const hasOdds = oddsByHrNo && Object.keys(oddsByHrNo).length > 0;

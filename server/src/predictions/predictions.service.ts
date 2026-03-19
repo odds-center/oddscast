@@ -80,10 +80,14 @@ export class PredictionsService {
   ): Promise<RaceForPython | null> {
     const race = await this.raceRepo.findOne({ where: { id: raceId } });
     if (!race) return null;
-    const entries = await this.entryRepo.find({
+    const allEntries = await this.entryRepo.find({
       where: { raceId },
       order: { id: 'ASC' },
     });
+    // Filter out scratched/withdrawn horses — they cannot race and must not be scored
+    const entries = allEntries.filter(
+      (e) => !((e as { isScratched?: boolean }).isScratched),
+    );
     const results = await this.resultRepo
       .createQueryBuilder('rr')
       .select(['rr.hrNo', 'rr.winOdds'])
@@ -267,19 +271,25 @@ export class PredictionsService {
   private async getRecent7DaysAccuracy(): Promise<
     Array<{ date: string; accuracy: number; count: number }>
   > {
+    // Fetch all predictions within the 7-day window in a single query (not 7×full-scan)
+    const rangeStart = kst().subtract(6, 'day').startOf('day').toDate();
+    const rangeEnd = kst().endOf('day').toDate();
+    const allPreds = await this.predictionRepo.find({
+      where: {
+        status: PredictionStatus.COMPLETED,
+        createdAt: Between(rangeStart, rangeEnd),
+      },
+      select: ['accuracy', 'createdAt'],
+      order: { createdAt: 'ASC' },
+    });
+
     const results: Array<{ date: string; accuracy: number; count: number }> =
       [];
     for (let i = 6; i >= 0; i--) {
       const day = kst().subtract(i, 'day');
       const start = day.startOf('day').toDate();
       const end = day.endOf('day').toDate();
-      const d = day.toDate();
-      const dayPreds = await this.predictionRepo.find({
-        where: { status: PredictionStatus.COMPLETED },
-        select: ['accuracy', 'createdAt'],
-        order: { createdAt: 'ASC' },
-      });
-      const dayPredsFiltered = dayPreds.filter(
+      const dayPredsFiltered = allPreds.filter(
         (p) => p.createdAt >= start && p.createdAt <= end && p.accuracy != null,
       );
       const count = dayPredsFiltered.length;
@@ -288,7 +298,7 @@ export class PredictionsService {
           ? dayPredsFiltered.reduce((s, p) => s + (p.accuracy ?? 0), 0) / count
           : 0;
       results.push({
-        date: kst(d).format('YYYY-MM-DD'),
+        date: kst(day.toDate()).format('YYYY-MM-DD'),
         accuracy,
         count,
       });
@@ -1182,6 +1192,8 @@ AI 예측 순위: ${predictedTop || '-'}
       }),
     );
 
+    // Wrap entire prediction flow in try/finally to guarantee lock cleanup
+    try {
     // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
     const sectionalByHorse = await this.getSectionalAnalysisByHorse(
       race as RaceForPython,
@@ -1369,6 +1381,26 @@ AI 예측 순위: ${predictedTop || '-'}
     throw new Error(
       `Failed to generate prediction: no usable model. Last error: ${lastError?.message ?? 'unknown'}`,
     );
+    } catch (err) {
+      // Ensure lock row is set to FAILED if still PROCESSING (prevents permanent lock)
+      try {
+        const current = await this.predictionRepo.findOne({
+          where: { id: lockRow.id },
+          select: ['id', 'status'],
+        });
+        if (current && current.status === PredictionStatus.PROCESSING) {
+          await this.predictionRepo.update(lockRow.id, {
+            status: PredictionStatus.FAILED,
+          });
+          this.logger.warn(
+            `Lock row ${lockRow.id} cleaned up to FAILED after error`,
+          );
+        }
+      } catch {
+        // Ignore cleanup errors
+      }
+      throw err;
+    }
   }
 
   /** entries로 최소 horseScore 배열 생성 — Python 실패 시 무조건 결과 산출 */

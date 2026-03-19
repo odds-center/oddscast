@@ -13,21 +13,24 @@ import json
 import math
 
 # ─── 말+기수 통합 가중치 (합 = 1.0) ───
-# v3.1: 12 factors (v3 + same_day_fatigue)
-# jockey: entry.jockeyMeetWinRate / jockeyMeetQuRate 사용 (Python 직접 반영)
+# v4: 15 factors (v3.1 + gate_bias, field_size, pace_scenario)
+# Rebalanced: form↑ rating↓ jockey↑ to reflect actual KRA predictive power
 W_HORSE = {
-    'rating': 0.22,
-    'form': 0.19,
-    'condition': 0.10,
-    'experience': 0.06,
-    'suitability': 0.07,
-    'trainer': 0.07,
-    'jockey': 0.09,
+    'rating': 0.17,
+    'form': 0.20,
+    'condition': 0.09,
+    'experience': 0.05,
+    'suitability': 0.06,
+    'trainer': 0.06,
+    'jockey': 0.11,
     'rest': 0.04,
-    'distance': 0.06,
+    'distance': 0.05,
     'class_change': 0.03,
-    'training_readiness': 0.04,
-    'same_day_fatigue': 0.03,
+    'training_readiness': 0.03,
+    'same_day_fatigue': 0.02,
+    'gate_bias': 0.05,
+    'field_size': 0.02,
+    'pace_scenario': 0.02,
 }
 
 
@@ -433,6 +436,147 @@ def _same_day_fatigue_score(entry):
     return round(min(100, max(0, score)), 2)
 
 
+def _gate_bias_score(chul_no, meet, rc_dist, field_size):
+    """Gate position bias → 0~100.
+    Inner gates (1-3) have advantage at Busan/Jeju (short straights).
+    Seoul is more balanced but inner still slightly favored at sprint distances.
+    Middle gates are neutral. Outer gates are disadvantaged in larger fields."""
+    if chul_no is None:
+        return 50.0
+    try:
+        gate = int(chul_no)
+    except (ValueError, TypeError):
+        return 50.0
+
+    meet_str = str(meet or "").lower()
+    is_busan = any(x in meet_str for x in ("부산", "busan", "3"))
+    is_jeju = any(x in meet_str for x in ("제주", "jeju", "2"))
+    is_sprint = rc_dist <= 1300
+
+    score = 50.0
+
+    # Inner gate advantage (1-3)
+    if gate <= 3:
+        if is_busan or is_jeju:
+            score += 18  # strong inner bias at small tracks
+        elif is_sprint:
+            score += 12  # sprint: inner saves ground
+        else:
+            score += 6   # mild advantage at Seoul middle/long
+
+    # Mid-inner (4-6): slight advantage
+    elif gate <= 6:
+        if is_busan or is_jeju:
+            score += 8
+        else:
+            score += 3
+
+    # Mid-outer (7-9): neutral to slight disadvantage
+    elif gate <= 9:
+        score -= 3
+
+    # Outer (10+): disadvantage increases with field size
+    else:
+        penalty = min(20, (gate - 9) * 4)
+        if field_size and field_size >= 12:
+            penalty += 5  # crowded field makes outer worse
+        score -= penalty
+
+    return round(min(100, max(0, score)), 2)
+
+
+def _field_size_score(entry, field_size, max_rating):
+    """Field size impact → 0~100.
+    Small fields (<=8): favorites dominate, high-rated horses benefit.
+    Large fields (>=12): more chaos, front-runners at risk, upset potential rises."""
+    if not field_size or field_size <= 0:
+        return 50.0
+
+    rating = float(entry.get('rating') or 0)
+    recent_ranks = _parse_recent_ranks(entry.get('recentRanks'))
+    avg_recent = sum(recent_ranks[:3]) / max(1, len(recent_ranks[:3])) if recent_ranks else 5
+
+    score = 50.0
+
+    if field_size <= 6:
+        # Small field: consistency and class matter most
+        if max_rating > 0 and rating >= max_rating * 0.85:
+            score += 15  # top-rated horse dominates small fields
+        if avg_recent <= 3:
+            score += 10  # consistent placers thrive
+    elif field_size <= 9:
+        # Medium field: balanced
+        if avg_recent <= 3:
+            score += 5
+    elif field_size <= 12:
+        # Large field: mild chaos
+        score -= 3  # slight disadvantage for all
+        if avg_recent <= 2:
+            score += 8  # but proven winners still cope
+    else:
+        # Very large field (13+): high chaos
+        score -= 8  # general disadvantage
+        if avg_recent <= 2:
+            score += 10  # only top performers survive chaos
+        # Front-runners suffer in crowded fields (traffic)
+        tag = str(entry.get("sectionalTag") or "").lower()
+        if "선행" in tag:
+            score -= 5
+
+    return round(min(100, max(0, score)), 2)
+
+
+def _pace_scenario_score(entry, entries, rc_dist):
+    """Pace scenario analysis → 0~100.
+    Counts front-runners in the field. If many, overpace is likely → closers benefit.
+    If few, front-runners can control pace → they benefit."""
+    if not entries:
+        return 50.0
+
+    tag = str(entry.get("sectionalTag") or "").lower()
+
+    # Count front-runners and closers in the field
+    front_count = 0
+    closer_count = 0
+    total = len(entries)
+    for e in entries:
+        t = str(e.get("sectionalTag") or "").lower()
+        if "선행" in t:
+            front_count += 1
+        elif "추입" in t:
+            closer_count += 1
+
+    front_ratio = front_count / total if total > 0 else 0
+    score = 50.0
+
+    if "선행" in tag:
+        # Front-runner: benefits when few peers, suffers when many
+        if front_count <= 2:
+            score += 15  # can control pace
+        elif front_count == 3:
+            score += 5   # manageable
+        elif front_count >= 4:
+            score -= 12  # overpace likely, burn out
+            if rc_dist >= 1600:
+                score -= 5  # overpace worse at longer distances
+    elif "추입" in tag:
+        # Closer: benefits from overpace scenario
+        if front_count >= 4:
+            score += 15  # overpace → closers swoop in
+        elif front_count >= 3:
+            score += 8
+        elif front_count <= 1:
+            score -= 8   # slow pace = no gap to close
+    else:
+        # Mid-runner: mildly benefits from chaos
+        if front_ratio >= 0.4:
+            score += 5   # chaos helps versatile runners
+        elif front_ratio <= 0.15:
+            score -= 3   # slow pace favors leaders, not mid
+
+    return round(min(100, max(0, score)), 2)
+
+
 def _fall_risk_score(entry, jockey_rc_cnt=0):
     """낙마 리스크 (0~100)."""
     risk = 0.0
@@ -505,7 +649,7 @@ def _win_probability(scores):
 
 def _build_tags(entry, rating, recent_ranks, total_runs, total_wins,
                 form_val, cnd_val, fall_risk, rest_val=50, dist_val=50,
-                cls_val=50, trng_val=50):
+                cls_val=50, trng_val=50, gate_val=50, pace_val=50):
     """Gemini 전달용 compact 태그 배열."""
     tags = []
     r = float(rating or 0)
@@ -566,6 +710,18 @@ def _build_tags(entry, rating, recent_ranks, total_runs, total_wins,
     elif dist_val <= 30:
         tags.append("거리부적합")
 
+    # v4: gate bias tags
+    if gate_val >= 65:
+        tags.append("내측유리")
+    elif gate_val <= 35:
+        tags.append("외측불리")
+
+    # v4: pace scenario tags
+    if pace_val >= 65:
+        tags.append("전개유리")
+    elif pace_val <= 35:
+        tags.append("전개불리")
+
     return tags
 
 
@@ -582,11 +738,11 @@ def _build_reason(tags, recent_ranks):
 
 def calculate_score(data):
     """
-    통합 점수 산출 v2.
-    - 모든 sub-score 0~100 정규화
-    - 가중 합산 (W_HORSE, 합=1.0)
-    - 낙마 리스크 감점
-    - softmax 승률 확률
+    통합 점수 산출 v4.
+    - 15 sub-scores (0~100 normalized)
+    - Weighted sum (W_HORSE, sum=1.0)
+    - Fall risk deduction
+    - Softmax win probability
     """
     entries = data.get('entries') or data.get('entryDetails') or []
     if not entries:
@@ -596,6 +752,8 @@ def calculate_score(data):
         race = data.get('race') or {}
         rc_dist = int(race.get('rcDist') or 0)
         track = str(race.get('track') or "")
+        meet = race.get('meet') or race.get('meetName') or ''
+        field_size = len(entries)
 
         ratings = []
         for e in entries:
@@ -633,6 +791,9 @@ def calculate_score(data):
             cls = _class_change_score(e)
             trng = _training_readiness_score(e)
             sdf = _same_day_fatigue_score(e)
+            gate = _gate_bias_score(chul_no, meet, rc_dist, field_size)
+            fsz = _field_size_score(e, field_size, max_rating)
+            pace = _pace_scenario_score(e, entries, rc_dist)
 
             composite = (
                 rat * W_HORSE['rating']
@@ -647,6 +808,9 @@ def calculate_score(data):
                 + cls * W_HORSE['class_change']
                 + trng * W_HORSE['training_readiness']
                 + sdf * W_HORSE['same_day_fatigue']
+                + gate * W_HORSE['gate_bias']
+                + fsz * W_HORSE['field_size']
+                + pace * W_HORSE['pace_scenario']
             )
 
             fall_risk = _fall_risk_score(e)
@@ -670,7 +834,7 @@ def calculate_score(data):
             composite_list.append(composite)
 
             tags = _build_tags(e, rating, recent_ranks, total_runs, total_wins,
-                               frm, cnd, fall_risk, rst, dst, cls, trng)
+                               frm, cnd, fall_risk, rst, dst, cls, trng, gate, pace)
 
             results.append({
                 'hrNo': str(hr_no),
@@ -681,7 +845,7 @@ def calculate_score(data):
                     'rat': rat, 'frm': frm, 'cnd': cnd,
                     'exp': exp, 'trn': trn, 'suit': suit, 'jky': jky,
                     'rest': rst, 'dist': dst, 'cls': cls, 'trng': trng,
-                    'sdf': sdf,
+                    'sdf': sdf, 'gate': gate, 'fsz': fsz, 'pace': pace,
                 },
                 'risk': fall_risk,
                 'recentRanks': recent_ranks[:5],

@@ -26,7 +26,8 @@ export class PredictionsScheduler {
     private readonly configService: GlobalConfigService,
   ) {}
 
-  @Cron('0 9 * * 5,6,0', { timeZone: 'Asia/Seoul' })
+  // Run at 09:30 KST (after syncRaceDayMorning 08:00 ensures final entry data is available)
+  @Cron('30 9 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async generatePredictionsForToday() {
     const raw = await this.configService.get('ai_config');
     let config: Record<string, unknown> = {};

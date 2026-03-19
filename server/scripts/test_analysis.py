@@ -17,6 +17,9 @@ from analysis import (
     _class_change_score,
     _training_readiness_score,
     _same_day_fatigue_score,
+    _gate_bias_score,
+    _field_size_score,
+    _pace_scenario_score,
     _fall_risk_score,
     _cascade_fall_risk,
     _win_probability,
@@ -34,11 +37,12 @@ class TestWeights:
     def test_weights_sum_to_one(self):
         assert abs(sum(W_HORSE.values()) - 1.0) < 1e-9
 
-    def test_all_twelve_factors(self):
+    def test_all_fifteen_factors(self):
         expected = {
             'rating', 'form', 'condition', 'experience', 'suitability',
             'trainer', 'jockey', 'rest', 'distance', 'class_change',
             'training_readiness', 'same_day_fatigue',
+            'gate_bias', 'field_size', 'pace_scenario',
         }
         assert set(W_HORSE.keys()) == expected
 
@@ -332,6 +336,117 @@ class TestSameDayFatigueScore:
         assert score == 10.0
 
 
+# ─── _gate_bias_score ───
+
+class TestGateBiasScore:
+    def test_no_gate(self):
+        assert _gate_bias_score(None, '서울', 1400, 10) == 50.0
+
+    def test_inner_gate_busan(self):
+        score = _gate_bias_score(1, '부산경남', 1200, 10)
+        assert score >= 65  # strong inner bias
+
+    def test_inner_gate_jeju(self):
+        score = _gate_bias_score(2, '제주', 1200, 8)
+        assert score >= 65
+
+    def test_inner_gate_seoul_sprint(self):
+        score = _gate_bias_score(1, '서울', 1200, 12)
+        assert score >= 60
+
+    def test_inner_gate_seoul_long(self):
+        score = _gate_bias_score(2, '서울', 1800, 10)
+        assert 50 < score < 65  # mild advantage
+
+    def test_outer_gate_penalty(self):
+        inner = _gate_bias_score(1, '부산경남', 1200, 12)
+        outer = _gate_bias_score(12, '부산경남', 1200, 12)
+        assert inner > outer
+
+    def test_very_outer_gate(self):
+        score = _gate_bias_score(14, '서울', 1400, 14)
+        assert score < 40
+
+    def test_mid_gate_neutral(self):
+        score = _gate_bias_score(5, '서울', 1600, 10)
+        assert 48 <= score <= 58
+
+
+# ─── _field_size_score ───
+
+class TestFieldSizeScore:
+    def test_no_field_size(self):
+        assert _field_size_score({}, 0, 80) == 50.0
+
+    def test_small_field_top_rated(self):
+        entry = {"rating": 80, "recentRanks": [1, 2]}
+        score = _field_size_score(entry, 6, 85)
+        assert score > 60  # top-rated in small field
+
+    def test_small_field_low_rated(self):
+        entry = {"rating": 40, "recentRanks": [7, 8]}
+        score = _field_size_score(entry, 6, 85)
+        assert score <= 55
+
+    def test_large_field_front_runner(self):
+        entry = {"recentRanks": [5, 6], "sectionalTag": "선행마"}
+        score = _field_size_score(entry, 14, 80)
+        assert score < 45  # front-runners suffer in crowded fields
+
+    def test_large_field_proven_winner(self):
+        entry = {"recentRanks": [1, 1, 2]}
+        score = _field_size_score(entry, 14, 80)
+        assert score > 45  # proven winners cope
+
+
+# ─── _pace_scenario_score ───
+
+class TestPaceScenarioScore:
+    def test_empty_entries(self):
+        assert _pace_scenario_score({}, [], 1400) == 50.0
+
+    def test_front_runner_alone(self):
+        entries = [
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "추입마"},
+            {"sectionalTag": "추입마"},
+            {"sectionalTag": "중간주행"},
+        ]
+        score = _pace_scenario_score(entries[0], entries, 1400)
+        assert score >= 60  # can control pace
+
+    def test_front_runner_crowded(self):
+        entries = [
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "추입마"},
+        ]
+        score = _pace_scenario_score(entries[0], entries, 1600)
+        assert score < 40  # overpace + long distance
+
+    def test_closer_benefits_from_overpace(self):
+        entries = [
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "선행마"},
+            {"sectionalTag": "추입마"},
+        ]
+        score = _pace_scenario_score(entries[4], entries, 1600)
+        assert score >= 60  # closers love overpace
+
+    def test_closer_slow_pace(self):
+        entries = [
+            {"sectionalTag": "추입마"},
+            {"sectionalTag": "추입마"},
+            {"sectionalTag": "중간주행"},
+        ]
+        score = _pace_scenario_score(entries[0], entries, 1400)
+        assert score < 45  # no pace to close into
+
+
 # ─── _fall_risk_score ───
 
 class TestFallRiskScore:
@@ -455,7 +570,7 @@ class TestCalculateScore:
         assert "risk" in horse
         assert "winProb" in horse
         assert "tags" in horse
-        assert len(horse["sub"]) == 12
+        assert len(horse["sub"]) == 15
 
     def test_all_sub_scores_in_range(self):
         data = {"race": {"rcDist": 1400, "track": "양"}, "entries": [self._make_entry()]}

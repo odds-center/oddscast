@@ -113,6 +113,9 @@ export interface HorseAnalysisItem {
     cls?: number;
     trng?: number;
     sdf?: number;
+    gate?: number;
+    fsz?: number;
+    pace?: number;
   };
   /** 낙마 리스크 (0~100) */
   risk?: number;

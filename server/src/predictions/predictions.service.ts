@@ -2511,6 +2511,9 @@ AI 예측 순위: ${predictedTop || '-'}
           hs.sub.cls ?? 0,
           hs.sub.trng ?? 0,
           hs.sub.sdf ?? 0,
+          hs.sub.gate ?? 0,
+          hs.sub.fsz ?? 0,
+          hs.sub.pace ?? 0,
         ];
       }
       if (entry?.rating != null) compact.r = entry.rating;
@@ -2567,7 +2570,7 @@ ${JSON.stringify(raceCtx)}
 
 ## 출전마 데이터
 필드 설명: n=출전번호, h=마명, j=기수, fs=통합점수(말+기수+배당), wp=승률확률%, hs=말점수, js=기수점수
-sub=[rat레이팅, frm폼/기세, cnd컨디션, exp경험, trn조교사, suit적합도, jky기수, rest휴식, dist거리적성, cls등급변동, trng조교상태, sdf당일피로]
+sub=[rat레이팅, frm폼/기세, cnd컨디션, exp경험, trn조교사, suit적합도, jky기수, rest휴식, dist거리적성, cls등급변동, trng조교상태, sdf당일피로, gate게이트, fsz출전두수, pace전개]
 r=KRA레이팅, wg=마체중(증감), rk=최근5경주착순, risk=낙마리스크(0~100), t=특이사항태그
 ${JSON.stringify(compactEntries)}
 ${realtimeSection}

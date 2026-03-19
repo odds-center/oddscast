@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-19 (Points 모듈 제거, 홈페이지 리디자인, Welcome 페이지, shadcn/ui 마이그레이션, 온보딩 DB 저장, Discord 알림, SEO/OG 이미지, on-demand KRA 결과)
+**Last updated:** 2026-03-19 (TDD 777+테스트, 예측 v4 15요소, 파이프라인 버그 수정, 프롬프트 강화, Points 제거, shadcn/ui, 문서 전면 갱신)
 
 ---
 

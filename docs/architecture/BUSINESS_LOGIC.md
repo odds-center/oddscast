@@ -2,7 +2,7 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
-**Last updated:** 2026-03-19 (v3: 12-factor scoring, enrichment pipeline. Points module removed)
+**Last updated:** 2026-03-19 (v4: 15-factor scoring, gate bias, field size, pace scenario. Points module removed)
 
 ---
 
@@ -25,26 +25,29 @@ flowchart TD
 
 > 상세: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md)
 
-#### 말+기수 통합 점수 (calculate_score) — 12요소 정규화 가중합
+#### 말+기수 통합 점수 (calculate_score) — 15요소 정규화 가중합
 
-> 가중치 합 = 1.0. `analysis.py` `W_HORSE` 딕셔너리 기준 (v3.1, 2026-03-08)
+> 가중치 합 = 1.0. `analysis.py` `W_HORSE` 딕셔너리 기준 (v4, 2026-03-19)
 
 | 요소 | 가중치 | 설명 |
 |------|--------|------|
-| **레이팅** (rat) | 0.22 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
-| **폼/기세** (frm) | 0.19 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
-| **컨디션** (cnd) | 0.10 | 마체중 변화·연령(4~5세 전성기)·부담중량·성별(거세 +3) |
-| **기수** (jky) | 0.09 | 경마장별 승률·복승률 직접 반영. 신인(100회 미만) ×0.85. 폴백(career-wide) ×0.90 |
-| **적합도** (suit) | 0.07 | 각질×거리 매칭 + 주로상태(습/불/중) 영향 |
-| **조교사** (trn) | 0.07 | 승률 보너스(max 35) + 복승률 보너스(max 25) |
-| **경험** (exp) | 0.06 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
-| **거리별 성적** (dist) | 0.06 | 현재 거리 구간 승률/복승률 기반. 경험 적으면 평균 회귀 |
+| **폼/기세** (frm) | 0.20 | 최근 5경기 가중평균 + 기세 추이(-6~+8) + 레이팅 추이 |
+| **레이팅** (rat) | 0.17 | sigmoid 상대비교(55%) + 로그 절대구간(45%) |
+| **기수** (jky) | 0.11 | 경마장별 승률·복승률 직접 반영. 신인/폴백 exclusive 감점 |
+| **컨디션** (cnd) | 0.09 | 마체중 변화(prevHorseWeight 폴백)·연령·부담중량·성별 |
+| **적합도** (suit) | 0.06 | 각질×거리 매칭 + 주로상태(습/불/중) 영향 |
+| **조교사** (trn) | 0.06 | 승률 보너스(max 35) + 복승률 보너스(max 25). trName 폴백 |
+| **게이트** (gate) | 0.05 | 출전번호 바이어스. 부산·제주 내측 유리, 서울 거리별 상이 |
+| **경험** (exp) | 0.05 | 로그 스케일 출전횟수(0~50) + 승률 구간(0~50) |
+| **거리별 성적** (dist) | 0.05 | 현재 거리 구간 승률/복승률 기반. 경험 적으면 평균 회귀 |
 | **휴식 기간** (rest) | 0.04 | 최적 21-42일. <14일 피로, >90일 녹슬음 |
-| **조교 준비도** (trng) | 0.04 | 최근 14일 세션 수, 강도, 빈도, 마지막 조교 경과일 |
+| **조교 준비도** (trng) | 0.03 | 최근 14일 세션 수, 강도, 빈도, 마지막 조교 경과일 |
 | **클래스 변경** (cls) | 0.03 | 등급 하향 +15~+25pt, 등급 상향 -15~-25pt |
-| **당일 다경주 피로** (sdf) | 0.03 | 같은 날 이전 경주 출전 횟수 기반. 0회=50(중립), 1회=30+gap보너스, 2회+=20이하 |
+| **출전두수** (fsz) | 0.02 | 소두수=강자유리, 다두수=이변확률↑, 선행마 트래픽 |
+| **페이스 전개** (pace) | 0.02 | 선행마 비율→오버페이스 확률→추입마 보너스 |
+| **당일 다경주 피로** (sdf) | 0.02 | 같은 날 이전 경주 출전 횟수 기반 |
 | 낙마 감점 | - | risk 50+ → ×0.88, 30+ → ×0.94, 20+ → ×0.97 |
-| **winProb** | - | softmax(T=12) 기반 승률 확률(%) |
+| **winProb** | - | softmax(T=15) 기반 승률 확률(%) — NestJS에서 odds blend 후 재계산 |
 
 #### 기수 데이터 보강 전략
 
@@ -78,7 +81,7 @@ flowchart TD
 |------|--------|------|
 | `generatePreRacePredictions()` | 금/토/일 06:30 KST | 당일 경주 예측 자동 생성 (결과 배치 의존 제거) |
 
-### 1.3 Gemini 프롬프트 구조 v3.1 (주관적 분석 + 실시간 지원)
+### 1.3 Gemini 프롬프트 구조 v4 (4단계 분석 프레임워크 + 실시간 지원)
 
 ```
 [compact 입력 (~1500 토큰)]
@@ -87,14 +90,14 @@ flowchart TD
           sub([rat,frm,cnd,exp,trn,suit,jky,rest,dist,cls,trng,sdf]), r(레이팅), wg(마체중), rk(착순), risk(낙마), t(태그)
 - Python이 처리한 raw 데이터(equipment, chaksun, ratingHistory 등)는 전송 제외
 
-[분석 방침] — v3.1 추가
+[분석 프레임워크] — v4: 4단계 구조 (경주구조→말별정밀→승부예측→신뢰도)
 - 숫자 데이터 + 경마 전문가 주관적·정성적 분석 필수
 - 기수-마필 궁합, 페이스 전개, 주로 바이어스, 날씨 영향, 마필 기질 고려
 - 당일 다경주 출전마(sdf) 체중감소·피로 반영, 클래스 승강 주관 평가
 - 승식 예측: 레이스 흐름·변수·이변 가능성 고려한 조합 추천
 
 [규칙]
-- sub 12요소+risk 수치 근거 + 주관적 판단으로 reason/strengths/weaknesses 작성
+- sub 15요소+risk 수치 근거 + 주관적 판단으로 reason/strengths/weaknesses 작성
 - risk 30+ → weaknesses에 낙마, cascade 20+ → analysis에 연쇄낙마
 - analysis: 종합예측 6~10문장, 개별예측(realtime) 8~12문장. 서사적 분석, 숫자 나열 금지
 
@@ -161,7 +164,7 @@ flowchart TD
 ```
 
 - `horseScores`: Gemini 결과 (API/UI 호환). reason, strengths, weaknesses 포함
-- `horseScoreResult`: Python calculate_score v3.1 원본 (sub 12요소, risk, winProb, tags)
+- `horseScoreResult`: Python calculate_score v4 원본 (sub 15요소, risk, winProb, tags)
 - `analysisData`: [ANALYSIS_SPEC.md](../specs/ANALYSIS_SPEC.md), [KRA_ANALYSIS_STRATEGY.md](../specs/KRA_ANALYSIS_STRATEGY.md) 참고
 - 점수에 배당 반영(배당 있으면 finalScore 블렌딩). 배당·승식 원칙: [BET_TYPE_ODDS_ALIGNMENT.md](../features/BET_TYPE_ODDS_ALIGNMENT.md) 참고
 

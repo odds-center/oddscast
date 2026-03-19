@@ -221,7 +221,7 @@ const handleApiResponse = <T>(response): T => {
 | **KRA API160**     | 확정배당률 (7승식)           | `integratedInfo` — 결과 적재 후 |
 | **KRA API8_2 등**  | 마필정보/훈련/장구/레이팅    | `syncAnalysisData` — 8개 API 순차 호출 |
 | **Google Gemini**  | AI 분석 코멘트 생성          | REST API (@google/generative-ai) |
-| **Python Scripts** | 통계 분석 (12요소 정규화)    | python-shell (stdin/stdout JSON) |
+| **Python Scripts** | 통계 분석 (15요소 정규화 v4) | python-shell (stdin/stdout JSON) |
 | **PostgreSQL**     | 데이터 저장소                | TypeORM                          |
 | **Discord API**    | 회원가입·서버에러 알림       | REST API (Bot token + channel ID) |
 

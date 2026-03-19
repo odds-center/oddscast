@@ -40,7 +40,6 @@ server/src/<module>/
 - `trainers/` - Trainer profile, history
 
 ### Monetization (P2)
-- `points/` - Point balance, purchase tickets, transactions
 - `subscriptions/` - Plans, subscribe, cancel, billing cycle
 - `payments/` - Billing key, subscribe payment, purchase, history
 - `single-purchases/` - One-time ticket purchase
@@ -48,7 +47,7 @@ server/src/<module>/
 - `notifications/` - Push notifications, preferences, FCM
 
 ### Infrastructure
-- `database/` - TypeORM entities, DataSource, db-enums, migrations
+- `database/` - TypeORM entities (30 files), DataSource, db-enums, migrations
 - `common/` - Interceptors, decorators, DTOs, utils, serializers
 - `health/` - Health check (no /api prefix)
 - `cache/` - Redis/in-memory caching (@nestjs/cache-manager, keyv)
@@ -58,7 +57,8 @@ server/src/<module>/
 - `fortune/` - Daily fortune (Gemini, 1 per user per day)
 - `weekly-preview/` - Weekly preview (Cron Thu 20:00 KST)
 - `activity-logs/` - User/admin activity tracking
-- `bets/` - Legacy (unused, sageun-seong removed)
+- `discord/` - Discord webhook notifications (signup, server errors)
+- `mail/` - Email via Resend API (password reset, email verify)
 
 ## Controller Patterns
 

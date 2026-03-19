@@ -66,7 +66,7 @@ oddscast/
 ├── webapp/          # Next.js 웹앱 (40+ pages, 70+ components)
 ├── mobile/          # React Native CLI (WebView shell -> webapp)
 ├── admin/           # Next.js 관리자 (21 pages, 14 API classes)
-├── shared/          # @oddscast/shared (15 type files, 5 DTOs)
+├── shared/          # @oddscast/shared (13 type files, 5 DTOs)
 ├── docs/            # 프로젝트 문서 (architecture/, features/, specs/, db/)
 ├── scripts/         # setup.sh (env + Docker Postgres + schema)
 ├── CLAUDE.md        # 이 파일 (Claude Code 메인 규칙)
@@ -99,7 +99,7 @@ oddscast/
 - 함수/변수: camelCase (`getRankings`, `isLoggedIn`)
 - 상수: UPPER_SNAKE (`PICK_TYPE_HORSE_COUNTS`)
 - CSS: kebab-case (`btn-primary`, `data-table`)
-- 라우트: kebab-case (`/point-transactions`)
+- 라우트: kebab-case (`/ticket-history`)
 - API 파일: camelCase (`authApi.ts`, `raceApi.ts`)
 - 주석/커밋 메시지: **영어로 작성** (한글 금지)
 - 커밋 형식: `type: short description`
@@ -119,7 +119,7 @@ oddscast/
 - **구독**: LIGHT/STANDARD/PREMIUM 3플랜, 취소 시 기간 끝까지 유지
 - **Preview 검수**: `previewApproved=true` + `status=COMPLETED`인 예측만 무료 노출
 - **경주 상태**: COMPLETED는 KRA 결과 적재 시에만 (날짜 기반 변경 금지)
-- **로그인 보너스**: 일일 포인트 + 7일 연속시 RACE 티켓 1장
+- **로그인 보너스**: 7일 연속 로그인 시 RACE 티켓 1장 (Points 모듈 제거됨, 포인트 지급 없음)
 
 ## 빌드/실행
 

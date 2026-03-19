@@ -10,10 +10,10 @@
 oddscast/
 ├── server/                     # 🖥️ NestJS 백엔드 (메인 서버, port 3001)
 ├── webapp/                     # 🌐 Next.js 웹앱 (메인 클라이언트, Desktop/Mobile 반응형, port 3000)
-├── mobile/                     # 📱 React Native Expo 앱 (WebView → WebApp 로드, Metro port 3006)
+├── mobile/                     # 📱 React Native CLI 앱 (WebView → WebApp 로드)
 ├── admin/                      # 🔧 Next.js 관리자 패널 (port 3002)
 ├── shared/                     # 📦 공유 타입 (webapp, mobile, admin, server)
-│   └── types/                  # api, auth, user, race, bet, favorite, point, result, prediction, subscription, notification
+│   └── types/                  # api, auth, user, race, favorite, kra, kra-api, result, prediction, prediction-ticket, subscription, notification
 ├── docs/                       # 📚 프로젝트 문서
 │   ├── architecture/           # 아키텍처 문서 (이 파일들)
 │   ├── specs/                  # 기술 명세
@@ -26,9 +26,9 @@ oddscast/
 ### 연동 구조
 
 ```
-Mobile (Expo)  →  WebView  →  WebApp (반응형)  →  Server (/api)
+Mobile (RN CLI)  →  WebView  →  WebApp (반응형)  →  Server (/api)
 Admin (Next.js)  →  Server (/api)
-WebApp          →  Server (/api)
+WebApp           →  Server (/api)
 ```
 
 **WebApp ↔ Mobile 상세:** [WEBAPP_MOBILE_INTEGRATION.md](./WEBAPP_MOBILE_INTEGRATION.md)
@@ -133,11 +133,6 @@ server/
 │   │   ├── picks.service.ts
 │   │   └── dto/pick.dto.ts
 │   │
-│   ├── points/                          # 💎 포인트 (적중 지급, 예측권 구매)
-│   │   ├── points.module.ts
-│   │   ├── points.controller.ts
-│   │   ├── points.service.ts
-│   │   └── dto/point.dto.ts
 │   │
 │   ├── rankings/                        # 🏆 랭킹 모듈
 │   │   ├── rankings.module.ts
@@ -149,7 +144,7 @@ server/
 │   │   ├── single-purchases.controller.ts
 │   │   └── single-purchases.service.ts
 │   │
-│   ├── bets/                            # (미사용) 베팅 — 사행성 제거로 Picks로 대체
+│   ├── mail/                            # 📧 이메일 발송 (Resend API) — 비밀번호 리셋, 이메일 인증
 │   ├── analysis/                        # KRA 통계·마칠기삼 분석 — /analysis/race/:raceId/jockey
 │   ├── horses/                          # 마필 프로필·경주 이력 — /horses/:hrNo/profile, history
 │   ├── jockeys/                         # 기수 프로필·이력 — /jockeys/:jkNo/profile, history
@@ -188,6 +183,9 @@ webapp/
 │   │   ├── forgot-password.tsx
 │   │   └── reset-password.tsx
 │   ├── 404.tsx                       # 맞춤 NotFound
+│   ├── 500.tsx                       # 서버 에러 페이지
+│   ├── _error.tsx                    # 에러 바운더리
+│   ├── welcome.tsx                   # 신규 사용자 환영 페이지
 │   ├── legal/
 │   │   ├── terms.tsx                 # 서비스 이용 약관
 │   │   ├── privacy.tsx               # 개인정보 처리방침
@@ -225,7 +223,6 @@ webapp/
 │       ├── matrix-ticket-purchase.tsx # 종합 예측권 구매
 │       ├── ticket-history.tsx        # 예측권 이력
 │       ├── prediction-history.tsx    # 열람한 예측 목록
-│       ├── point-transactions.tsx    # 포인트 거래 내역
 │       └── notifications.tsx         # 알림 목록
 ├── components/
 │   ├── Layout.tsx                    # 레이아웃 + FloatingAppBar (앱 바, _app.tsx에서 렌더)
@@ -247,18 +244,34 @@ webapp/
 │   │   ├── BackLink.tsx              # 뒤로가기 링크 (ChevronLeft 아이콘)
 │   │   ├── PageContent.tsx           # 페이지 콘텐츠 래퍼
 │   │   └── LegalFooter.tsx           # 이용약관·개인정보·환불정책 푸터 (정보 페이지용)
-│   └── ui/                           # 범용 UI 컴포넌트
-│       ├── Card.tsx
-│       ├── DataTable.tsx             # 공용 테이블 (columns 기반)
-│       ├── Badge.tsx
-│       ├── TabBar.tsx                # 세그먼트 탭 (variant: filled|subtle)
-│       ├── LinkBadge.tsx             # 테이블 내 경주/결과 링크
-│       ├── StatusBadge.tsx           # 경주 상태 배지
-│       ├── RankBadge.tsx             # 1·2·3등 배지
-│       ├── SectionTitle.tsx
-│       ├── Tooltip.tsx              # CSS 기반 경량 툴팁 (경마 용어 설명)
-│       ├── Toggle.tsx
-│       └── Dropdown.tsx
+│   └── ui/                           # 범용 UI 컴포넌트 (shadcn/ui + custom)
+│       ├── index.ts                  # Barrel export (shadcn + custom)
+│       ├── button.tsx                # shadcn Button
+│       ├── badge.tsx                 # shadcn Badge
+│       ├── card.tsx                  # shadcn Card
+│       ├── input.tsx                 # shadcn Input
+│       ├── tooltip.tsx               # shadcn Tooltip (Radix)
+│       ├── switch.tsx                # shadcn Switch
+│       ├── select.tsx                # shadcn Select
+│       ├── dialog.tsx                # shadcn Dialog
+│       ├── alert-dialog.tsx          # shadcn AlertDialog
+│       ├── tabs.tsx                  # shadcn Tabs
+│       ├── label.tsx                 # shadcn Label
+│       ├── separator.tsx             # shadcn Separator
+│       ├── alert.tsx                 # shadcn Alert
+│       ├── skeleton.tsx              # shadcn Skeleton
+│       ├── table.tsx                 # shadcn Table
+│       ├── DataTable.tsx             # Custom — 공용 테이블 (columns 기반)
+│       ├── TabBar.tsx                # Custom — 세그먼트 탭 (variant: filled|subtle)
+│       ├── LinkBadge.tsx             # Custom — 테이블 내 경주/결과 링크
+│       ├── StatusBadge.tsx           # Custom — 경주 상태 배지
+│       ├── RankBadge.tsx             # Custom — 1·2·3등 배지
+│       ├── SectionTitle.tsx          # Custom — 섹션 제목
+│       ├── SimpleTooltip.tsx         # Custom — CSS 기반 경량 툴팁
+│       ├── Toggle.tsx                # Custom — 토글 스위치
+│       ├── LinkCard.tsx              # Custom — 링크 카드
+│       ├── DatePicker.tsx            # Custom — 날짜 선택
+│       └── NetworkStatusBanner.tsx   # Custom — 네트워크 상태 배너
 │   ├── race/                         # HorseEntryTable, RaceHeaderCard, PredictionSymbol
 │   ├── results/                      # ResultCard
 │   └── predictions/                  # PredictionMatrixTable, CommentaryFeed, HitRecordBanner
@@ -279,20 +292,18 @@ webapp/
 
 ## Mobile (`mobile/`)
 
-> React Native (Expo) — WebView로 WebApp URL 로드. **모든 기능은 WebApp에서 처리.**
+> React Native CLI 0.79.5 — WebView로 WebApp URL 로드. **모든 기능은 WebApp에서 처리.**
 
 ```
 mobile/
-├── app/
-│   ├── index.tsx                # /webview로 리다이렉트
-│   ├── webview.tsx              # WebView (WebApp URL 로드, Google 로그인 토큰 전달)
-│   ├── _layout.tsx              # 최소 레이아웃 (Stack)
-│   └── +not-found.tsx
+├── src/
+│   ├── App.tsx                  # 메인 앱 (WebView 컨테이너)
+│   ├── config.ts                # 환경별 webapp URL
+│   └── ...
 │
 ├── android/                     # Android 네이티브
 ├── ios/                         # iOS 네이티브
-├── assets/                      # 앱 아이콘, 스플래시
-└── app.config.js
+└── package.json
 ```
 
 **참고:** lib/api, lib/hooks, components, context, store 등은 WebApp으로 이전되어 제거됨.

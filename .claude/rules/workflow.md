@@ -95,9 +95,9 @@ When adding/modifying types that both server and clients use:
 3. Build shared: `cd shared && pnpm run build`
 4. Import: `import type { RaceDto } from '@oddscast/shared'`
 
-### Shared Types Files (15)
-`api.types.ts`, `auth.types.ts`, `bet.types.ts`, `favorite.types.ts`,
-`kra.types.ts`, `kra-api.types.ts`, `notification.types.ts`, `point.types.ts`,
+### Shared Types Files (14)
+`api.types.ts`, `auth.types.ts`, `favorite.types.ts`,
+`kra.types.ts`, `kra-api.types.ts`, `notification.types.ts`,
 `prediction-ticket.types.ts`, `prediction.types.ts`, `race.types.ts`,
 `result.types.ts`, `subscription.types.ts`, `user.types.ts`, `index.ts`
 

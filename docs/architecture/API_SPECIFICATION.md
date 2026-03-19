@@ -6,7 +6,7 @@
 >
 > **클라이언트:** WebApp (`webapp/lib/api/`) — 메인 클라이언트. Mobile은 WebView로 WebApp 로드. Admin (`admin/src/lib/api/`).
 
-**Last updated:** 2026-03-17
+**Last updated:** 2026-03-19
 
 ### Admin 전용 Base URL
 
@@ -520,20 +520,10 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 
 ---
 
-## 13. Points (포인트) — `/api/points`
+## ~~13. Points (포인트)~~ — ❌ 제거됨
 
-> Server: `server/src/points/points.controller.ts` WebApp: `webapp/lib/api/pointApi.ts`
-
-| Method | Route                      | 설명                  | Auth |
-| ------ | -------------------------- | --------------------- | ---- |
-| `GET`  | `/points/me/balance`       | 내 포인트 잔액        | 🔐   |
-| `GET`  | `/points/ticket-price`    | 예측권 포인트 가격    | 🔓   |
-| `POST` | `/points/purchase-ticket`  | 포인트로 예측권 구매  | 🔐   |
-| `GET`  | `/points/promotions`       | 진행 중인 이벤트      | 🔓   |
-| `GET`  | `/points/expiry-settings`  | 포인트 만료 설정      | 🔓   |
-| `POST` | `/points/transfer`         | 포인트 이체           | 🔐   |
-| `GET`  | `/points/:userId/balance`  | 포인트 잔액 (특정 유저)| 🔐   |
-| `GET`  | `/points/:userId/transactions` | 포인트 거래 내역 | 🔐   |
+> Points 모듈 전체 삭제됨 (서버 모듈, 엔티티 4개, API, WebApp UI, shared 타입).
+> 로그인 보너스(포인트 지급)는 auth.service에서 직접 처리.
 
 ---
 

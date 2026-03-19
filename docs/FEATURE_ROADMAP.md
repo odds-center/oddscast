@@ -6,7 +6,7 @@
 > overall product direction. It must be read before any planning/development
 > session via `CLAUDE.md` and `.claude/rules/`.
 >
-> **Last updated:** 2026-03-02
+> **Last updated:** 2026-03-19
 
 ---
 
@@ -36,7 +36,7 @@
 | 7 | RACE ticket system | ✅ Done | Subscribe / purchase / points |
 | 8 | MATRIX ticket system | ✅ Done | ₩1,000/ticket, 1 day = 1 ticket |
 | 9 | Subscription plans (3 tiers) | ✅ Done | Light / Standard / Premium |
-| 10 | Points system | ✅ Done | Purchase tickets with points |
+| 10 | ~~Points system~~ | ❌ Removed | Module fully deleted — entities, API, types, UI all removed |
 | 11 | Ranking | ✅ Done | `/ranking` |
 | 12 | Notifications | ✅ Done | Push (mobile), in-app |
 | 13 | Profile / settings | ✅ Done | Edit, password, notification prefs |
@@ -52,7 +52,15 @@
 | 23 | 기수·조교사 프로필 (Jockey & Trainer) | ✅ Done | `/jockeys/[jkNo]`, `/trainers/[trName]` — 통산·경마장별·경주 이력 |
 | 24 | Smart Race Alerts (고신뢰도 예측 알림) | ✅ Done | 예측 생성 시 winProb≥70% → predictionEnabled 사용자에게 알림 |
 | 25 | 경주 상태(종료/예정) 정책 | ✅ Done | COMPLETED는 KRA 결과 적재 시에만 설정. UI는 출전번호·마명 표기(마번 미사용). [RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md) |
-| 26 | 일일/연속 로그인 보너스 | ✅ Done | 일일: 1일 1회 포인트(DAILY_LOGIN_BONUS_POINTS). 연속 7일: RACE 예측권 1장. [BUSINESS_LOGIC.md](architecture/BUSINESS_LOGIC.md) §2.7 |
+| 26 | 연속 로그인 보너스 | ✅ Done | 연속 7일: RACE 예측권 1장. 일일 포인트 보너스는 Points 모듈 제거로 삭제. [BUSINESS_LOGIC.md](architecture/BUSINESS_LOGIC.md) §2.7 |
+| 27 | shadcn/ui 마이그레이션 | ✅ Done | WebApp UI 컴포넌트를 shadcn/ui(Radix UI 기반)로 마이그레이션. 14개 shadcn 컴포넌트 추가 |
+| 28 | Welcome 페이지 | ✅ Done | `/welcome` — 신규 사용자 환영·온보딩 페이지 |
+| 29 | 홈페이지 리디자인 | ✅ Done | AIPredictionSection, WhyOddsCastSection 추가. 섹션 UI 개선 |
+| 30 | Discord 알림 | ✅ Done | 회원가입·서버 에러 Discord 채널 알림 (Bot API) |
+| 31 | SEO/OG 메타 태그 | ✅ Done | 전체 페이지 OG meta + 1200x630 이미지 + per-page 설명 |
+| 32 | On-demand KRA 결과 조회 | ✅ Done | 경주 상세에서 결과 없으면 KRA API on-demand fetch. Gemini 디커플링 |
+| 33 | 이메일 발송 (Resend) | ✅ Done | 비밀번호 리셋·이메일 인증 Resend API 기반 |
+| 34 | 온보딩 DB 저장 | ✅ Done | User.hasSeenOnboarding — localStorage에서 DB 기반으로 변경 |
 
 ---
 
@@ -235,15 +243,15 @@
 | Item | Detail |
 |------|--------|
 | **What** | Push → opens specific race, prediction, or subscription page |
-| **Platform** | Mobile (Expo push + deep link) |
+| **Platform** | Mobile (FCM push + deep link) |
 | **Priority** | ⭐⭐ MEDIUM |
 
 **Implemented (server):**
-- All Expo push payloads include `data.deepLink` (WEBAPP_BASE_URL env + path)
+- All FCM push payloads include `data.deepLink` (WEBAPP_BASE_URL env + path)
 - Admin send: `deepLink` = `/mypage/notifications`
-- High-confidence prediction push: `deepLink` = `/races/{raceId}`; Smart Alert now sends Expo push (not only in-app notification) so tap opens race detail
+- High-confidence prediction push: `deepLink` = `/races/{raceId}`; Smart Alert now sends FCM push (not only in-app notification) so tap opens race detail
 
-**Remaining (mobile):** Configure Expo deep linking; WebView handle `data.deepLink` on notification tap and set `window.location` / navigate to path
+**Remaining (mobile):** Configure RN CLI deep linking; WebView handle `data.deepLink` on notification tap and set `window.location` / navigate to path
 
 ---
 

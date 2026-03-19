@@ -126,7 +126,7 @@ cd server
 pnpm run migration:run
 ```
 
-- 시드 데이터(PointConfig, SubscriptionPlan 등)가 필요하면 별도 SQL 또는 시드 스크립트로 적용.
+- 시드 데이터(SubscriptionPlan, GlobalConfig 등)가 필요하면 `docs/db/seed.sql` 적용.
 
 ---
 

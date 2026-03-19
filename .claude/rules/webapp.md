@@ -22,6 +22,9 @@
 - `_document.tsx` - `<Html lang='ko'>`, fonts, favicon
 - `index.tsx` - Home (today races, matrix preview, fortune, rankings, results)
 - `404.tsx` - Custom not found
+- `500.tsx` - Server error page
+- `_error.tsx` - Error boundary
+- `welcome.tsx` - New user welcome/onboarding page
 
 ### Auth (`/auth/`)
 - `login.tsx`, `register.tsx`, `forgot-password.tsx`, `reset-password.tsx`
@@ -38,7 +41,7 @@
 - `predictions/accuracy.tsx` - Prediction accuracy dashboard
 
 ### Profile & Settings
-- `profile/index.tsx` - Profile view (points, tickets, subscription summary)
+- `profile/index.tsx` - Profile view (tickets, subscription summary)
 - `profile/edit.tsx` - Edit name, nickname
 - `settings/index.tsx` - Settings menu
 - `settings/notifications.tsx` - Notification preferences (push mobile only)
@@ -52,7 +55,7 @@
 - `matrix-ticket-purchase.tsx` - MATRIX ticket purchase (1,000won/ticket)
 - `ticket-history.tsx` - Ticket usage history
 - `prediction-history.tsx` - Viewed predictions
-- `point-transactions.tsx` - Point transaction log
+- ~~`point-transactions.tsx`~~ - Removed (Points module deleted)
 - `notifications.tsx` - Notification list
 - `picks.tsx` - (PICKS_ENABLED=false, hidden)
 
@@ -135,7 +138,7 @@ export default class RaceApi {
 `authApi.ts`, `raceApi.ts`, `resultApi.ts`, `predictionApi.ts`, `predictionMatrixApi.ts`,
 `predictionTicketApi.ts`, `analysisApi.ts`, `horseApi.ts`, `jockeyApi.ts`, `trainerApi.ts`,
 `userApi.ts`, `favoriteApi.ts (unused)`, `notificationApi.ts`, `subscriptionApi.ts`,
-`subscriptionPlansApi.ts`, `paymentApi.ts`, `singlePurchaseApi.ts`, `pointApi.ts`,
+`subscriptionPlansApi.ts`, `paymentApi.ts`, `singlePurchaseApi.ts`,
 `rankingApi.ts`, `fortuneApi.ts`, `weeklyPreviewApi.ts`,
 `configApi.ts`, `activityApi.ts`, `picksApi.ts (unused)`, `betApi.ts (unused)`,
 `serverFetch.ts` (SSR helper)

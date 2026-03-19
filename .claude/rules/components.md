@@ -19,7 +19,6 @@ webapp/components/
 │   ├── FilterDateBar.tsx
 │   ├── FilterChips.tsx
 │   ├── Pagination.tsx
-│   ├── BackLink.tsx
 │   ├── CompactPageTitle.tsx
 │   ├── RequireLogin.tsx
 │   ├── AuthCard.tsx
@@ -27,21 +26,34 @@ webapp/components/
 │   ├── MenuList.tsx
 │   └── LegalFooter.tsx
 │
-├── ui/                     # Reusable generic UI
-│   ├── DataTable.tsx
-│   ├── TabBar.tsx
-│   ├── Card.tsx
-│   ├── Badge.tsx
-│   ├── LinkBadge.tsx
-│   ├── LinkCard.tsx
-│   ├── StatusBadge.tsx
-│   ├── RankBadge.tsx
-│   ├── SectionTitle.tsx
-│   ├── Toggle.tsx
-│   ├── Dropdown.tsx
-│   ├── Tooltip.tsx
-│   ├── DatePicker.tsx
-│   └── NetworkStatusBanner.tsx
+├── ui/                     # shadcn/ui primitives + custom domain components
+│   ├── index.ts            # Barrel export (shadcn + custom)
+│   ├── button.tsx          # shadcn Button
+│   ├── badge.tsx           # shadcn Badge
+│   ├── card.tsx            # shadcn Card (CardHeader, CardContent, etc.)
+│   ├── input.tsx           # shadcn Input
+│   ├── tooltip.tsx         # shadcn Tooltip (Radix-based)
+│   ├── switch.tsx          # shadcn Switch
+│   ├── select.tsx          # shadcn Select
+│   ├── dialog.tsx          # shadcn Dialog
+│   ├── alert-dialog.tsx    # shadcn AlertDialog
+│   ├── tabs.tsx            # shadcn Tabs
+│   ├── label.tsx           # shadcn Label
+│   ├── separator.tsx       # shadcn Separator
+│   ├── alert.tsx           # shadcn Alert
+│   ├── skeleton.tsx        # shadcn Skeleton
+│   ├── table.tsx           # shadcn Table
+│   ├── DataTable.tsx       # Custom — column-based table
+│   ├── TabBar.tsx          # Custom — segment tabs
+│   ├── LinkBadge.tsx       # Custom — in-table link
+│   ├── LinkCard.tsx        # Custom — card link
+│   ├── StatusBadge.tsx     # Custom — race status
+│   ├── RankBadge.tsx       # Custom — 1st/2nd/3rd
+│   ├── SectionTitle.tsx    # Custom — section heading
+│   ├── SimpleTooltip.tsx   # Custom — CSS tooltip (lightweight)
+│   ├── Toggle.tsx          # Custom — toggle switch
+│   ├── DatePicker.tsx      # Custom — react-day-picker
+│   └── NetworkStatusBanner.tsx  # Custom — offline banner
 │
 ├── home/                   # Home page sections
 │   ├── DateHeader.tsx
@@ -53,7 +65,8 @@ webapp/components/
 │   ├── PredictionMatrixPreviewSection.tsx
 │   ├── RacePredictionsPreviewSection.tsx
 │   ├── AccuracyPreviewSection.tsx
-│   ├── RankingPreviewSection.tsx
+│   ├── AIPredictionSection.tsx
+│   ├── WhyOddsCastSection.tsx
 │   ├── TodaysFortuneCard.tsx
 │   ├── HomeQuickStats.tsx
 │   ├── QuickLinks.tsx

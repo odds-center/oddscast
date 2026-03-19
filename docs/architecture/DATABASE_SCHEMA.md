@@ -3,7 +3,7 @@
 > **TypeORM + PostgreSQL.** 스키마 DDL: `docs/db/schema.sql` (전체 SQL은 `docs/db/`에서 확인), 엔티티: `server/src/database/entities/`  
 > **KRA API 기준 정렬** (KRA_ENTRY_SHEET_SPEC, KRA_RACE_RESULT_SPEC, KRA_JOCKEY_RESULT_SPEC, KRA_TRAINING_SPEC)
 
-**Last updated:** 2026-03-10
+**Last updated:** 2026-03-19 (Points 엔티티 4개 제거, User.hasSeenOnboarding 추가)
 
 ---
 
@@ -11,7 +11,7 @@
 
 - **DDL:** `docs/db/schema.sql` — 테이블·Enum·스키마 `oddscast` 정의. 신규 DB에 `./scripts/setup.sh` 또는 수동 적용.
 - **TypeORM:** `synchronize: false`. 스키마 변경 시 `server/package.json`의 `migration:generate` / `migration:run` 사용 (선택).
-- **시드:** 초기 데이터(PointConfig, PointTicketPrice, SubscriptionPlan, GlobalConfig, AdminUser 등)는 SQL 또는 시드 스크립트로 별도 적용.
+- **시드:** 초기 데이터(SubscriptionPlan, GlobalConfig, AdminUser 등)는 SQL 또는 시드 스크립트로 별도 적용.
 
 ```bash
 # DB 스키마 적용 (수동)
@@ -290,23 +290,9 @@ SinglePurchase[]
 
 **Unique:** `[userId, raceId]`
 
-### 11. PointConfig (포인트 설정)
+### ~~11–12. PointConfig / PointTicketPrice~~ — ❌ 제거됨
 
-> 테이블명: `point_configs`
-
-| 필드        | 타입   | 설명           |
-| ----------- | ------ | -------------- |
-| `configKey` | String | BASE_POINTS 등 |
-| `configValue`| String | 값             |
-
-### 12. PointTicketPrice (포인트 예측권 가격)
-
-> 테이블명: `point_ticket_prices`
-
-| 필드             | 타입    | 설명        |
-| ---------------- | ------- | ----------- |
-| `pointsPerTicket`| Int     | 1장당 포인트|
-| `isActive`       | Boolean | 활성 여부   |
+> Points 모듈 전체 삭제 — PointConfig, PointTicketPrice, PointTransaction, PointPromotion 엔티티 모두 삭제됨.
 
 ### 13–15. 나머지 모델
 
@@ -317,7 +303,6 @@ SinglePurchase[]
 | **Favorite**                | `favorites`                    | 즐겨찾기 (RACE만 지원). Unique: [userId, type, targetId]                |
 | **BillingHistory** | `billing_histories` | 결제 이력 (SUCCESS/FAILED/REFUNDED)                                    |
 | **SinglePurchase** | `single_purchases`  | 개별 예측권 구매 기록                                                  |
-| **PointTransaction** | `point_transactions` | 포인트 적립/사용 이력                                                |
 | **GlobalConfig**     | `global_config`      | 글로벌 설정 (key-value, NoSQL 스타일). show_google_login 등          |
 | **KraSyncLog**       | `kra_sync_logs`      | KRA API 동기화 로그 (endpoint, meet, rcDate, status, recordCount 등)  |
 | **BatchSchedule**    | `batch_schedules`    | 배치 작업 스케줄 (jobType, targetRcDate, scheduledAt, status — 예정/완료/실패) |

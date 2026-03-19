@@ -2,7 +2,7 @@
 
 > **이 문서는 모든 AI 에이전트/개발자가 작업 전에 반드시 읽어야 하는 핵심 아키텍처 문서입니다.**
 
-**Last updated:** 2026-03-17
+**Last updated:** 2026-03-19
 
 ---
 
@@ -10,7 +10,7 @@
 
 ```mermaid
 graph TD
-    Mobile["📱 React Native (Expo)"] -->|WebView| WebApp["🌐 WebApp (Next.js)"]
+    Mobile["📱 React Native CLI"] -->|WebView| WebApp["🌐 WebApp (Next.js)"]
     WebApp -->|HTTP/REST| Server["🖥️ NestJS Server"]
     Admin["🖥️ Next.js Admin"] -->|HTTP/REST| Server
 
@@ -27,7 +27,7 @@ graph TD
 
 | 클라이언트 | 연동 방식        | 설명                                                   |
 | ---------- | ---------------- | ------------------------------------------------------ |
-| **Mobile** | WebView → WebApp | 앱 내 WebView에서 base URL 로드 (반응형)               |
+| **Mobile** | WebView → WebApp | React Native CLI + WebView에서 base URL 로드 (반응형)  |
 | **WebApp** | HTTP/REST        | 단일 페이지, 화면 크기에 따라 Desktop/Mobile 자동 전환 |
 | **Admin**  | HTTP/REST        | 관리자 패널 → `/api/*` 직접 호출                       |
 
@@ -88,11 +88,12 @@ graph LR
         Users["👤 Users"]
         Favorites["⭐ Favorites"]
         Tickets["🎫 PredictionTickets"]
-        Picks["📌 Picks (제외)"]
+        Horses["🐴 Horses"]
+        Jockeys["🏇 Jockeys"]
+        Trainers["👨‍🏫 Trainers"]
     end
 
     subgraph "Monetization (P2)"
-        Points["💎 Points"]
         Subscriptions["💳 Subscriptions"]
         Payments["💰 Payments"]
         SinglePurchases["🛒 SinglePurchases"]
@@ -103,6 +104,7 @@ graph LR
     subgraph "Infrastructure"
         TypeORM["📦 TypeORM"]
         Common["🔧 Common"]
+        Discord["💬 Discord"]
     end
 
     Auth --> TypeORM
@@ -112,8 +114,9 @@ graph LR
     Users --> TypeORM
     Favorites --> TypeORM
     Tickets --> TypeORM
-    Picks --> TypeORM
-    Points --> TypeORM
+    Horses --> TypeORM
+    Jockeys --> TypeORM
+    Trainers --> TypeORM
     Subscriptions --> TypeORM
     Payments --> TypeORM
     SinglePurchases --> TypeORM

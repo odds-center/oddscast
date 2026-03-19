@@ -2,7 +2,7 @@
 
 > **핵심 비즈니스 규칙과 데이터 흐름 정의 문서**
 
-**Last updated:** 2026-03-08 (v3: 12-factor scoring, enrichment pipeline)
+**Last updated:** 2026-03-19 (v3: 12-factor scoring, enrichment pipeline. Points module removed)
 
 ---
 
@@ -277,14 +277,16 @@ sequenceDiagram
 | 구독 (LIGHT/STANDARD/PREMIUM) | RACE | 플랜별: 라이트 10장, 스탠다드 20장, 프리미엄 30장 | 구독 기간 내 |
 | 구독 (STANDARD 이상) | MATRIX | 5,000원당 1장 (라이트=0, 스탠다드=1, 프리미엄=2) | 구독 기간 내 |
 | 개별 구매      | RACE | 구매 수량                  | 30일 후 만료 |
-| **포인트 구매**| RACE | 1장=1200pt                 | 30일 후 만료 |
 | **종합 예측권 구매** | MATRIX | 1장=1,000원 (1~10장) | 30일 후 만료 |
 
-### 2.7 일일/연속 로그인 보너스
+> ~~포인트 구매~~: Points 모듈 제거됨. 포인트로 예측권 구매 기능 삭제.
 
-- **일일 로그인 보너스**: 로그인 시 **해당일(KST) 최초 1회** 포인트 지급. `point_configs`의 `DAILY_LOGIN_BONUS_POINTS`(기본 10) 사용. `users.lastDailyBonusAt`으로 중복 방지.
+### 2.7 연속 로그인 보상
+
 - **연속 로그인 보상**: 매일 로그인 시 `users.lastConsecutiveLoginDate`(KST YYYY-MM-DD), `consecutiveLoginDays` 갱신. **7일 연속** 달성 시 RACE 예측권 1장 지급(30일 만료), 이후 streak 0으로 리셋. 7일 미만이면 다음 로그인 시 streak 유지/증가.
-- 로그인 API 응답에 `loginBonus: { dailyBonusGranted, dailyBonusPoints, consecutiveDays, consecutiveRewardGranted }` 포함. 프로필/내 정보에 `consecutiveLoginDays` 노출.
+- 로그인 API 응답에 `loginBonus: { consecutiveDays, consecutiveRewardGranted }` 포함. 프로필/내 정보에 `consecutiveLoginDays` 노출.
+
+> ~~일일 로그인 포인트 보너스~~: Points 모듈 제거로 포인트 지급 삭제. 연속 로그인 예측권 보상만 유지.
 
 ---
 
@@ -431,14 +433,9 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 | Unique     | `[userId, raceId]` — 경주당 1개 선택                       |
 | API        | `POST /picks`, `GET /picks`, `GET /picks/race/:raceId`, `DELETE /picks/race/:raceId` (미사용) |
 
-### 6.6 포인트 시스템
+### ~~6.6 포인트 시스템~~ — ❌ 제거됨
 
-| 구분       | 설명                                                      |
-| ---------- | --------------------------------------------------------- |
-| 적중 지급  | (내가 고른 말 제외) — 프로모션·이벤트 등으로 지급 가능    |
-| 배율       | PointConfig (BASE_POINTS, SINGLE_MULTIPLIER 등)           |
-| 예측권 구매| 포인트로 예측권 구매 (PointTicketPrice, 1장=1200pt)        |
-| API        | `GET /points/me/balance`, `POST /points/purchase-ticket`, `GET /points/ticket-price` |
+> Points 모듈 전체 삭제됨. PointTransaction, PointConfig, PointPromotion, PointTicketPrice 엔티티, API, 서비스 모두 제거.
 
 ---
 
@@ -473,8 +470,8 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 | **종합 예측권 1일 1장**      | 같은 날짜 중복 사용 방지, 1장=1,000원             |
 | **구독 취소 후 잔여 기간**   | 즉시 해지 아님. 결제 기간 끝까지 사용            |
 | **개별 구매 예측권 만료**    | 30일 후 자동 만료                                |
-| **포인트 구매 예측권**       | 1장=1200pt (현금과 별도 가격)                    |
+| ~~**포인트 구매 예측권**~~   | ~~1장=1200pt~~ **제거됨** — Points 모듈 삭제    |
 
 ---
 
-_마지막 업데이트: 2026-02-19_
+_마지막 업데이트: 2026-03-19_

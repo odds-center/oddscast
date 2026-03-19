@@ -6,7 +6,7 @@
 - Schema: `oddscast`
 - `synchronize: false` - never auto-sync
 - DDL source of truth: `docs/db/schema.sql`
-- Entities: `server/src/database/entities/` (36 entity files)
+- Entities: `server/src/database/entities/` (30 entity files)
 - DataSource: `server/src/database/data-source.ts`
 - Enums: `server/src/database/db-enums.ts`
 - Migrations: `server/src/database/migrations/`
@@ -21,7 +21,7 @@
 5. Apply: `./scripts/setup.sh` or `cd server && pnpm run migration:run`
 6. If shared types affected: update `shared/types/`
 
-## All Entities (33 files)
+## All Entities (30 files)
 
 ### User Management
 | Entity | Table | Description |
@@ -48,13 +48,8 @@
 | `BillingHistory` | `billing_histories` | Payment records (SUCCESS/FAILED/REFUNDED) |
 | `SinglePurchase` | `single_purchases` | One-time ticket purchases |
 
-### Points & Rewards
-| Entity | Table | Key Fields |
-|--------|-------|------------|
-| `PointTransaction` | `point_transactions` | userId, type(EARNED/SPENT/BONUS/...), amount, balance |
-| `PointConfig` | `point_configs` | configKey, configValue (BASE_POINTS, etc.) |
-| `PointPromotion` | `point_promotions` | type(SIGNUP_BONUS/DAILY_LOGIN/...) |
-| `PointTicketPrice` | `point_ticket_prices` | pointsPerTicket, isActive |
+### ~~Points & Rewards~~ — ❌ Removed
+> Points module fully deleted. PointTransaction, PointConfig, PointPromotion, PointTicketPrice entities removed.
 
 ### Social
 | Entity | Table |
@@ -115,11 +110,6 @@ NotificationCategory: GENERAL, URGENT, INFO, MARKETING
 FavoriteType: HORSE, JOCKEY, TRAINER, RACE, MEET
 FavoritePriority: LOW, MEDIUM, HIGH
 
-// Points
-PointTransactionType: EARNED, SPENT, REFUNDED, BONUS, PROMOTION, ADMIN_ADJUSTMENT, EXPIRED, TRANSFER_IN, TRANSFER_OUT
-PointStatus: ACTIVE, PENDING, EXPIRED, CANCELLED, PROCESSING
-PromotionType: SIGNUP_BONUS, REFERRAL_BONUS, DAILY_LOGIN, SPECIAL_EVENT, CUSTOM
-
 // Payments
 PaymentStatus: SUCCESS, FAILED, REFUNDED
 
@@ -134,7 +124,7 @@ BatchScheduleStatus: PENDING, RUNNING, COMPLETED, FAILED, CANCELLED
 
 ```
 User ->> Favorite[], Notification[], PredictionTicket[], Subscription[],
-         BillingHistory[], SinglePurchase[], PointTransaction[], UserPick[]
+         BillingHistory[], SinglePurchase[], UserPick[]
 
 Race ->> RaceEntry[], RaceResult[], Prediction[]
   Unique constraint: [meet, rcDate, rcNo]
@@ -177,8 +167,6 @@ Subscription ->> PredictionTicket[] (issues)
 ## Seed Data Required
 
 Initial data for new environments:
-- `PointConfig`: BASE_POINTS, DAILY_LOGIN_BONUS_POINTS(10), multipliers
-- `PointTicketPrice`: 1200 points per ticket
 - `SubscriptionPlan`: LIGHT(4900), STANDARD(9900), PREMIUM(14900)
 - `GlobalConfig`: show_google_login, etc.
 - `AdminUser`: Initial admin account (loginId + bcrypt password)

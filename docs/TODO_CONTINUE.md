@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-16 (KRA 동기화 NULL 덮어쓰기 수정, 연도별 전체 적재, syncHistoricalBackfill 강화, 어드민 경주 목록 수정)
+**Last updated:** 2026-03-19 (Points 모듈 제거, 홈페이지 리디자인, Welcome 페이지, shadcn/ui 마이그레이션, 온보딩 DB 저장, Discord 알림, SEO/OG 이미지, on-demand KRA 결과)
 
 ---
 
@@ -55,6 +55,17 @@
 | **syncHistoricalBackfill 강화** | ✅ 완료 | 기존 trackInfo만 → fetchDividends + syncAnalysisData(전체) 추가. 출전표 재보강 포함. |
 | **연도별 전체 적재** | ✅ 완료 | POST /api/admin/kra/sync/year-stream — 경주계획표(12개월) + 과거 날짜 출전표·결과·배당률·상세정보 일괄 적재. SSE 스트리밍. |
 | **어드민 경주 목록 빈 화면 수정** | ✅ 완료 | 날짜 필터 기본값이 오늘(경주 없는 평일→0건)이던 것을 빈 문자열(전체)로 변경. 필터 초기화 버튼 양쪽 뷰에서 표시. |
+| **Points 모듈 전체 제거** | ✅ 완료 | 서버 모듈·컨트롤러·서비스·DTO 삭제. 엔티티 4개 삭제(PointTransaction, PointConfig, PointPromotion, PointTicketPrice). shared/types/point.types.ts 삭제. webapp/pointApi.ts·point-transactions 페이지 삭제. 로그인 보너스는 auth.service에서 직접 처리. |
+| **홈페이지 리디자인** | ✅ 완료 | AIPredictionSection, WhyOddsCastSection 추가. 기존 섹션 UI 개선. |
+| **Welcome 페이지** | ✅ 완료 | `/welcome` — 신규 사용자 환영 페이지. |
+| **shadcn/ui 마이그레이션** | ✅ 완료 | webapp/components/ui/에 shadcn 컴포넌트 14개 추가 (Button, Badge, Card, Input, Tooltip, Switch, Select, Dialog, Tabs, Label, Separator, Alert, Skeleton, AlertDialog, Table). 기존 Badge.tsx, Card.tsx, Tooltip.tsx, Dropdown.tsx 제거. |
+| **온보딩 DB 저장** | ✅ 완료 | User.hasSeenOnboarding 컬럼 추가. localStorage → DB 기반 온보딩 완료 추적. 회원가입 시 hasSeenOnboarding=false, 완료 시 API로 true 갱신. |
+| **Discord 알림 모듈** | ✅ 완료 | server/src/discord/ — Global 모듈. 회원가입·서버 에러(AllExceptionsFilter) 채널별 알림. Bot token + channel ID. |
+| **OG 이미지 + SEO** | ✅ 완료 | 전체 페이지 OG meta 태그 + 1200x630 OG 이미지. 페이지별 SEO 설명 추가. |
+| **On-demand KRA 결과 조회** | ✅ 완료 | races.service에서 경주 상세 조회 시 결과 없으면 KRA API 직접 호출해 결과 on-demand fetch. Gemini AI 예측 생성은 KRA sync와 디커플링. |
+| **Resend 메일 모듈** | ✅ 완료 | server/src/mail/ — Resend API 기반 이메일 발송 (비밀번호 리셋, 이메일 인증). RESEND_API_KEY 없으면 graceful skip. |
+| **성능·SEO 최적화** | ✅ 완료 | 글자 크기·대비 감사(23 파일), 폰트 최적화, deep performance optimization. |
+| **Mobile Expo→RN CLI 전환** | ✅ 완료 | React Native CLI 0.79.5 + WebView. Expo 의존성 제거. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

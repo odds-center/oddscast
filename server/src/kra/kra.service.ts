@@ -3119,9 +3119,9 @@ export class KraService {
           }
 
           const ratingVal = rating1 ?? null;
-          const ratingHistoryForDb: Record<string, unknown> | null =
+          const ratingHistoryForDb: number[] | null =
             ratingHistory.length > 0
-              ? (ratingHistory as unknown as Record<string, unknown>)
+              ? ratingHistory
               : null;
           // Only update fields that have values to prevent overwriting enriched data
           await this.entryRepo.update(entry.id, {

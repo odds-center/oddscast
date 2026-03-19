@@ -82,10 +82,10 @@ export class RaceEntry {
   budam!: string | null;
 
   @Column({ name: 'ratingHistory', type: 'jsonb', nullable: true })
-  ratingHistory!: Record<string, unknown> | null;
+  ratingHistory!: number[] | null;
 
   @Column({ name: 'recentRanks', type: 'jsonb', nullable: true })
-  recentRanks!: Record<string, unknown> | null;
+  recentRanks!: number[] | null;
 
   @Column({ name: 'trainingData', type: 'jsonb', nullable: true })
   trainingData!: Record<string, unknown> | null;

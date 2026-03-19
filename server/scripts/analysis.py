@@ -120,22 +120,35 @@ def _condition_score(entry):
     score = 55.0
 
     hw = str(entry.get("horseWeight") or "")
+    delta = None
     if "(" in hw:
+        # Format: "480(+2)" or "480(-3)"
         try:
             delta = float(hw.split("(")[1].rstrip(")"))
-            abs_d = abs(delta)
-            if abs_d <= 2:
-                score += 15
-            elif abs_d <= 4:
-                score += 8
-            elif abs_d <= 8:
-                score -= 5
-            elif abs_d <= 12:
-                score -= 12
-            else:
-                score -= 20
         except (ValueError, IndexError):
             pass
+    elif hw:
+        # Raw weight without delta (e.g. "482") — try to compute from wgHr field
+        # If previous weight is available, compute delta
+        prev_wg = entry.get("prevHorseWeight")
+        if prev_wg:
+            try:
+                delta = float(hw) - float(prev_wg)
+            except (ValueError, TypeError):
+                pass
+
+    if delta is not None:
+        abs_d = abs(delta)
+        if abs_d <= 2:
+            score += 15
+        elif abs_d <= 4:
+            score += 8
+        elif abs_d <= 8:
+            score -= 5
+        elif abs_d <= 12:
+            score -= 12
+        else:
+            score -= 20
 
     age = int(entry.get("age") or 0)
     if age == 4:
@@ -590,8 +603,9 @@ def _fall_risk_score(entry, jockey_rc_cnt=0):
         risk += 25
     elif j_fall >= 1:
         risk += 15
-    rc_cnt = jockey_rc_cnt or int(entry.get("rcCntT") or 0)
-    if rc_cnt < 100:
+    # Use jockey's career race count (jockeyRcCntT) for experience check, not horse's rcCntT
+    jk_rc = jockey_rc_cnt or int(entry.get("jockeyRcCntT") or entry.get("rcCntT") or 0)
+    if jk_rc < 100:
         risk += 10
     equip = str(entry.get("equipment") or "").lower()
     if any(x in equip for x in ("가면", "눈가리개", "망사눈", "혀끈")):
@@ -772,7 +786,8 @@ def calculate_score(data):
             hr_no = e.get('hrNo') or e.get('chulNo') or ''
             if not hr_no:
                 continue
-            chul_no = e.get('chulNo') or (str(hr_no) if len(str(hr_no)) <= 2 else None)
+            # chulNo is the gate/starting position. Do NOT fallback to hrNo (internal horse ID).
+            chul_no = e.get('chulNo') or None
             rating = e.get('rating')
             recent_ranks = _parse_recent_ranks(e.get('recentRanks') or e.get('recent_ranks'))
             total_runs = e.get('totalRuns') or e.get('rcCntT')

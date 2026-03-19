@@ -259,4 +259,22 @@ describe('RacesService', () => {
       expect(Array.isArray(result)).toBe(true);
     });
   });
+
+  describe('on-demand result fetch', () => {
+    it('should not call KRA when race has results in cache', async () => {
+      // When cache returns a race with results, no KRA API call is needed
+      const cachedRace = {
+        ...createTestRace({ id: 1, rcDate: '20260318', status: RaceStatus.COMPLETED }),
+        entries: [createTestRaceEntry()],
+        results: [{ ordInt: 1, ordType: null, hrNo: '1' }],
+        predictions: [],
+        dividends: [],
+      };
+      cache.get.mockResolvedValue(cachedRace);
+
+      await service.findOne(1);
+
+      expect(kraService.fetchRaceResults).not.toHaveBeenCalled();
+    });
+  });
 });

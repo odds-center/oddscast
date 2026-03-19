@@ -241,4 +241,196 @@ describe('ResultsService', () => {
       );
     });
   });
+
+  describe('updatePredictionAccuracy (via updateAccuracyOnly)', () => {
+    const setupAccuracyTest = (
+      horseScores: Array<{ hrNo?: string; hrName?: string; score: number }>,
+      results: Array<{ hrNo?: string; hrName?: string; ordType?: string | null; ordInt?: number | null; ord?: string }>,
+    ) => {
+      predictionRepo.findOne.mockResolvedValue(
+        createTestPrediction({ scores: { horseScores } }),
+      );
+      const qb = createMockQueryBuilder();
+      qb.getMany.mockResolvedValue(
+        results.map((r) => createTestRaceResult(r)),
+      );
+      resultRepo.createQueryBuilder.mockReturnValue(qb);
+    };
+
+    it('should calculate 100% accuracy when all top-3 match', async () => {
+      setupAccuracyTest(
+        [
+          { hrNo: 'A', score: 90 },
+          { hrNo: 'B', score: 80 },
+          { hrNo: 'C', score: 70 },
+          { hrNo: 'D', score: 60 },
+        ],
+        [
+          { hrNo: 'A', ordInt: 1, ordType: null },
+          { hrNo: 'B', ordInt: 2, ordType: null },
+          { hrNo: 'C', ordInt: 3, ordType: null },
+          { hrNo: 'D', ordInt: 4, ordType: null },
+        ],
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ accuracy: 100 }),
+      );
+    });
+
+    it('should calculate 66.67% when 2 of top-3 match', async () => {
+      setupAccuracyTest(
+        [
+          { hrNo: 'A', score: 90 },
+          { hrNo: 'B', score: 80 },
+          { hrNo: 'C', score: 70 },
+        ],
+        [
+          { hrNo: 'A', ordInt: 1, ordType: null },
+          { hrNo: 'D', ordInt: 2, ordType: null },
+          { hrNo: 'C', ordInt: 3, ordType: null },
+        ],
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      const call = predictionRepo.update.mock.calls[0];
+      const accuracy = (call[1] as { accuracy: number }).accuracy;
+      expect(Math.round(accuracy * 100) / 100).toBeCloseTo(66.67, 1);
+    });
+
+    it('should calculate 0% when none of top-3 match', async () => {
+      setupAccuracyTest(
+        [
+          { hrNo: 'A', score: 90 },
+          { hrNo: 'B', score: 80 },
+          { hrNo: 'C', score: 70 },
+        ],
+        [
+          { hrNo: 'X', ordInt: 1, ordType: null },
+          { hrNo: 'Y', ordInt: 2, ordType: null },
+          { hrNo: 'Z', ordInt: 3, ordType: null },
+        ],
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ accuracy: 0 }),
+      );
+    });
+
+    it('should exclude FALL/DQ/WITHDRAWN from actual top-3', async () => {
+      setupAccuracyTest(
+        [
+          { hrNo: 'A', score: 90 },
+          { hrNo: 'B', score: 80 },
+          { hrNo: 'C', score: 70 },
+        ],
+        [
+          { hrNo: 'FALL_HORSE', ordType: 'FALL', ordInt: undefined as unknown as number },
+          { hrNo: 'A', ordInt: 1, ordType: null },
+          { hrNo: 'B', ordInt: 2, ordType: null },
+          { hrNo: 'X', ordInt: 3, ordType: null },
+        ],
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      const call = predictionRepo.update.mock.calls[0];
+      const accuracy = (call[1] as { accuracy: number }).accuracy;
+      // Actual top-3 = [A, B, X] (FALL excluded). Predicted top-3 = [A, B, C] → 2/3 match
+      expect(Math.round(accuracy * 100) / 100).toBeCloseTo(66.67, 1);
+    });
+
+    it('should skip when no prediction exists', async () => {
+      predictionRepo.findOne.mockResolvedValue(null);
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('should skip when prediction has no horseScores', async () => {
+      predictionRepo.findOne.mockResolvedValue(
+        createTestPrediction({ scores: {} }),
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('should skip when no results exist', async () => {
+      predictionRepo.findOne.mockResolvedValue(
+        createTestPrediction({
+          scores: { horseScores: [{ hrNo: 'A', score: 90 }] },
+        }),
+      );
+      const qb = createMockQueryBuilder();
+      qb.getMany.mockResolvedValue([]);
+      resultRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).not.toHaveBeenCalled();
+    });
+
+    it('should handle set-membership (position-agnostic) correctly', async () => {
+      // Predicted: A(1st), B(2nd), C(3rd). Actual: C(1st), A(2nd), D(3rd)
+      // A is in actual top-3 ✓, B is not ✗, C is ✓ → 2/3
+      setupAccuracyTest(
+        [
+          { hrNo: 'A', score: 90 },
+          { hrNo: 'B', score: 80 },
+          { hrNo: 'C', score: 70 },
+        ],
+        [
+          { hrNo: 'C', ordInt: 1, ordType: null },
+          { hrNo: 'A', ordInt: 2, ordType: null },
+          { hrNo: 'D', ordInt: 3, ordType: null },
+        ],
+      );
+
+      await service.updateAccuracyOnly(1);
+
+      const call = predictionRepo.update.mock.calls[0];
+      const accuracy = (call[1] as { accuracy: number }).accuracy;
+      expect(Math.round(accuracy * 100) / 100).toBeCloseTo(66.67, 1);
+    });
+
+    it('should use hrName fallback when hrNo missing', async () => {
+      // Prediction horseScores have no hrNo, only hrName
+      predictionRepo.findOne.mockResolvedValue(
+        createTestPrediction({
+          scores: {
+            horseScores: [
+              { hrName: 'Thunder', score: 90 },
+              { hrName: 'Lightning', score: 80 },
+              { hrName: 'Storm', score: 70 },
+            ],
+          },
+        }),
+      );
+      // Results also have hrNo=undefined, only hrName
+      const qb = createMockQueryBuilder();
+      qb.getMany.mockResolvedValue([
+        { ...createTestRaceResult({ ordInt: 1, ordType: null }), hrNo: undefined, hrName: 'Thunder' },
+        { ...createTestRaceResult({ ordInt: 2, ordType: null }), hrNo: undefined, hrName: 'Lightning' },
+        { ...createTestRaceResult({ ordInt: 3, ordType: null }), hrNo: undefined, hrName: 'Storm' },
+      ]);
+      resultRepo.createQueryBuilder.mockReturnValue(qb);
+
+      await service.updateAccuracyOnly(1);
+
+      expect(predictionRepo.update).toHaveBeenCalledWith(
+        expect.anything(),
+        expect.objectContaining({ accuracy: 100 }),
+      );
+    });
+  });
 });

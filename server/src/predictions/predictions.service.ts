@@ -16,6 +16,12 @@ import { sortRacesByNumericRcNo } from '../common/utils/race-sort';
 import { meetToCode, toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
 import {
+  parseGeminiResponseText,
+  computeEntriesHash as computeEntriesHashUtil,
+  computeWinProbabilities as computeWinProbabilitiesUtil,
+  applyOddsBlend as applyOddsBlendUtil,
+} from './prediction-utils';
+import {
   CreatePredictionDto,
   UpdatePredictionStatusDto,
   PredictionFilterDto,
@@ -2275,20 +2281,7 @@ AI 예측 순위: ${predictedTop || '-'}
       rating?: number | null;
     }>,
   ): string {
-    const { createHash } = require('crypto') as typeof import('crypto');
-    const normalized = [...entries]
-      .sort((a, b) => String(a.hrNo ?? '').localeCompare(String(b.hrNo ?? '')))
-      .map((e) => ({
-        hrNo: e.hrNo ?? '',
-        jkNo: e.jkNo ?? '',
-        chulNo: e.chulNo ?? '',
-        wgBudam: e.wgBudam ?? 0,
-        rating: e.rating ?? 0,
-      }));
-    return createHash('sha256')
-      .update(JSON.stringify(normalized))
-      .digest('hex')
-      .slice(0, 16);
+    return computeEntriesHashUtil(entries);
   }
 
   /**
@@ -2369,14 +2362,7 @@ AI 예측 순위: ${predictedTop || '-'}
   }
 
   private computeWinProbabilities(scores: number[]): number[] {
-    if (!scores.length) return [];
-    const T = 15;
-    const maxS = Math.max(...scores);
-    const exps = scores.map((s) => Math.exp((s - maxS) / T));
-    const total = exps.reduce((a, b) => a + b, 0);
-    if (total === 0)
-      return scores.map(() => Math.round((100 / scores.length) * 10) / 10);
-    return exps.map((e) => Math.round((e / total) * 1000) / 10);
+    return computeWinProbabilitiesUtil(scores);
   }
 
   private constructPrompt(
@@ -2566,35 +2552,7 @@ ${realtimeSection}
   }
 
   private parseGeminiResponse(text: string): GeminiPredictionJson {
-    let cleanText = text
-      // Gemini 2.5 thinking 블록 제거
-      .replace(/<think>[\s\S]*?<\/think>/gi, '')
-      .replace(/```json\s*/gi, '')
-      .replace(/```\s*/g, '')
-      .trim();
-    const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
-    if (jsonMatch) cleanText = jsonMatch[0];
-
-    try {
-      return JSON.parse(cleanText) as GeminiPredictionJson;
-    } catch {
-      try {
-        // trailing comma 수정
-        const fixed = cleanText.replace(/,\s*([\]}])/g, '$1');
-        return JSON.parse(fixed) as GeminiPredictionJson;
-      } catch {
-        try {
-          const { jsonrepair } = require('jsonrepair');
-          const repaired = jsonrepair(cleanText) as string;
-          return JSON.parse(repaired) as GeminiPredictionJson;
-        } catch (e) {
-          const msg = e instanceof Error ? e.message : String(e);
-          throw new Error(
-            `Gemini 응답 JSON 파싱 실패: ${msg}. 응답 앞 300자: ${cleanText.slice(0, 300)}...`,
-          );
-        }
-      }
-    }
+    return parseGeminiResponseText(text) as GeminiPredictionJson;
   }
 
   /**

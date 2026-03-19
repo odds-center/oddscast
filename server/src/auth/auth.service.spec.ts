@@ -286,4 +286,78 @@ describe('AuthService', () => {
       ).rejects.toThrow(BadRequestException);
     });
   });
+
+  describe('updateProfile', () => {
+    it('should update hasSeenOnboarding', async () => {
+      const user = createTestUser({ hasSeenOnboarding: false });
+      userRepo.findOne.mockResolvedValue({ ...user });
+      userRepo.save.mockImplementation((u) => Promise.resolve(u));
+
+      const result = await service.updateProfile(1, { hasSeenOnboarding: true });
+
+      expect(userRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ hasSeenOnboarding: true }),
+      );
+      expect(result).toBeDefined();
+    });
+
+    it('should not save when no fields changed', async () => {
+      const user = createTestUser();
+      userRepo.findOne.mockResolvedValue({ ...user });
+
+      await service.updateProfile(1, {});
+
+      expect(userRepo.save).not.toHaveBeenCalled();
+    });
+
+    it('should update name and nickname', async () => {
+      const user = createTestUser();
+      userRepo.findOne.mockResolvedValue({ ...user });
+      userRepo.save.mockImplementation((u) => Promise.resolve(u));
+
+      const result = await service.updateProfile(1, {
+        name: 'New Name',
+        nickname: 'newNick',
+      });
+
+      expect(userRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          name: 'New Name',
+          nickname: 'newNick',
+        }),
+      );
+      expect(result).toBeDefined();
+    });
+
+    it('should throw UnauthorizedException when user not found', async () => {
+      userRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.updateProfile(999, { name: 'test' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('verifyEmail', () => {
+    it('should throw on invalid code', async () => {
+      emailVerificationRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.verifyEmail('invalid-code'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('should throw on expired code', async () => {
+      emailVerificationRepo.findOne.mockResolvedValue({
+        id: 1,
+        userId: 1,
+        token: '123456',
+        expiresAt: new Date(Date.now() - 1000), // expired
+      });
+
+      await expect(
+        service.verifyEmail('123456'),
+      ).rejects.toThrow(BadRequestException);
+    });
+  });
 });

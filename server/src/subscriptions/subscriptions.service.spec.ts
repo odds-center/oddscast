@@ -275,4 +275,78 @@ describe('SubscriptionsService', () => {
       expect(result).toBeDefined();
     });
   });
+
+  describe('cancel (edge cases)', () => {
+    it('should throw when subscription not found', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+
+      await expect(
+        service.cancel(999, 1, { reason: 'test' }),
+      ).rejects.toThrow('구독을 찾을 수 없습니다.');
+    });
+
+    it('should throw when cancelling another users subscription', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(
+        createTestSubscription({ userId: 2 }),
+      );
+
+      await expect(
+        service.cancel(1, 1, { reason: 'test' }),
+      ).rejects.toThrow('본인의 구독만 취소할 수 있습니다.');
+    });
+
+    it('should throw when already cancelled', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(
+        createTestSubscription({ userId: 1, status: 'CANCELLED' }),
+      );
+
+      await expect(
+        service.cancel(1, 1, { reason: 'test' }),
+      ).rejects.toThrow('이미 취소된 구독입니다.');
+    });
+
+    it('should throw when subscription is not active', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(
+        createTestSubscription({ userId: 1, status: 'EXPIRED' }),
+      );
+
+      await expect(
+        service.cancel(1, 1, { reason: 'test' }),
+      ).rejects.toThrow('활성 구독만 취소할 수 있습니다.');
+    });
+
+    it('should update status to CANCELLED with reason', async () => {
+      const sub = createTestSubscription({ userId: 1, status: 'ACTIVE' });
+      subscriptionRepo.findOne
+        .mockResolvedValueOnce(sub)
+        .mockResolvedValueOnce({
+          ...sub,
+          status: 'CANCELLED',
+          cancelReason: 'Too expensive',
+          plan: createTestSubscriptionPlan(),
+        });
+
+      await service.cancel(1, 1, { reason: 'Too expensive' });
+
+      expect(subscriptionRepo.update).toHaveBeenCalledWith(
+        1,
+        expect.objectContaining({
+          status: 'CANCELLED',
+          cancelReason: 'Too expensive',
+        }),
+      );
+    });
+  });
+
+  describe('getStatus', () => {
+    it('should return inactive when no active subscription', async () => {
+      subscriptionRepo.findOne.mockResolvedValue(null);
+
+      const status = await service.getStatus(1);
+
+      expect(status.isActive).toBe(false);
+      expect(status.planId).toBeNull();
+      expect(status.monthlyTickets).toBe(0);
+    });
+  });
 });

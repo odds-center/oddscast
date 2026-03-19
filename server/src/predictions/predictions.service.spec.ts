@@ -554,4 +554,95 @@ describe('PredictionsService', () => {
       expect(callRankToLevel('')).toBe(0);
     });
   });
+
+  describe('generatePrediction', () => {
+    beforeEach(() => {
+      // Mock GlobalConfig for API key and AI config
+      mockConfigService.get.mockImplementation(async (key: string) => {
+        if (key === 'gemini_model') return 'gemini-2.0-flash';
+        if (key === 'gemini_temperature') return '0.7';
+        if (key === 'gemini_max_tokens') return '4096';
+        return null;
+      });
+    });
+
+    it('should throw when GEMINI_API_KEY is not set', async () => {
+      // Ensure env is not set
+      const original = process.env.GEMINI_API_KEY;
+      delete process.env.GEMINI_API_KEY;
+      try {
+        await expect(service.generatePrediction(1)).rejects.toThrow();
+      } finally {
+        if (original) process.env.GEMINI_API_KEY = original;
+      }
+    });
+
+    it('should return cached prediction when entriesHash matches (cache hit)', async () => {
+      process.env.GEMINI_API_KEY = 'test-key';
+      const cachedPrediction = createTestPrediction({
+        id: 99,
+        raceId: 1,
+        entriesHash: 'abc123',
+        status: PredictionStatus.COMPLETED,
+      });
+
+      // loadRaceWithEntries uses raceRepo.findOne + entryRepo.find + resultRepo.createQueryBuilder
+      raceRepo.findOne.mockResolvedValue(createTestRace());
+      entryRepo.find.mockResolvedValue([createTestRaceEntry()]);
+      const resultQb = createMockQueryBuilder();
+      resultQb.getMany.mockResolvedValue([]);
+      resultRepo.createQueryBuilder.mockReturnValue(resultQb);
+
+      // Cache hit — findOne returns a COMPLETED prediction
+      predictionRepo.findOne
+        .mockResolvedValueOnce(cachedPrediction) // cache check
+        ;
+
+      const result = await service.generatePrediction(1);
+
+      expect(result).toEqual(cachedPrediction);
+      // Should NOT create a PROCESSING lock row
+      expect(predictionRepo.save).not.toHaveBeenCalled();
+
+      delete process.env.GEMINI_API_KEY;
+    });
+
+    it('should throw PredictionInProgressException when PROCESSING lock exists', async () => {
+      process.env.GEMINI_API_KEY = 'test-key';
+      const { PredictionInProgressException } = require('./predictions.service');
+
+      // loadRaceWithEntries
+      raceRepo.findOne.mockResolvedValue(createTestRace());
+      entryRepo.find.mockResolvedValue([createTestRaceEntry()]);
+      const resultQb = createMockQueryBuilder();
+      resultQb.getMany.mockResolvedValue([]);
+      resultRepo.createQueryBuilder.mockReturnValue(resultQb);
+
+      predictionRepo.findOne
+        .mockResolvedValueOnce(null) // no cache hit
+        .mockResolvedValueOnce(createTestPrediction({ // PROCESSING lock found
+          id: 50,
+          status: PredictionStatus.PROCESSING,
+        }));
+
+      await expect(service.generatePrediction(1)).rejects.toThrow(
+        PredictionInProgressException,
+      );
+
+      delete process.env.GEMINI_API_KEY;
+    });
+
+    it('should throw NotFoundException when race does not exist', async () => {
+      process.env.GEMINI_API_KEY = 'test-key';
+
+      // loadRaceWithEntries uses raceRepo.findOne (not QB)
+      raceRepo.findOne.mockResolvedValue(null);
+
+      await expect(service.generatePrediction(999)).rejects.toThrow(
+        'Race not found',
+      );
+
+      delete process.env.GEMINI_API_KEY;
+    });
+  });
 });

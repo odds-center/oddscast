@@ -12,7 +12,7 @@ export interface DateHeaderMessage {
 
 /** Shared copy when all today's races have ended (TodayRacesSection, races list). */
 export const TODAY_ALL_ENDED_MESSAGE =
-  '오늘 경기가 모두 종료되었습니다. 결과에서 순위와 배당을 확인하세요.';
+  '오늘 경기가 모두 종료되었습니다.\n결과에서 순위와 배당을 확인하세요.';
 
 /** Format next race day label into subtitle text. Label format: "금요일 (3/7)" */
 export function formatNextRaceSubline(label: string): string {
@@ -34,7 +34,7 @@ export function getDateHeaderMessage(
   // Today's races all ended — show results CTA + next race day info
   if (todayCount > 0 && todayAllEnded) {
     const subtitle = nextRaceDayLabel
-      ? `결과를 확인하세요. ${formatNextRaceSubline(nextRaceDayLabel)}`
+      ? `결과를 확인하세요.\n${formatNextRaceSubline(nextRaceDayLabel)}`
       : '결과에서 순위와 배당을 확인하세요.';
     return {
       title: '오늘 경기가 모두 종료되었습니다',
@@ -70,7 +70,7 @@ export function getDateHeaderMessage(
 
   return {
     title: 'OddsCast',
-    subtitle: '예정된 경주가 없습니다. 경마 정보·분석 서비스를 이용해 보세요.',
+    subtitle: '예정된 경주가 없습니다.\n경마 정보·분석 서비스를 이용해 보세요.',
     showTodayLink: false,
   };
 }

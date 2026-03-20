@@ -62,7 +62,7 @@ export default function TodayRacesSection() {
       ) : (
         <>
           {allEnded && (
-            <p className='mb-3 text-center text-sm text-text-secondary'>
+            <p className='mb-3 text-center text-sm text-text-secondary whitespace-pre-line'>
               {TODAY_ALL_ENDED_MESSAGE}
             </p>
           )}

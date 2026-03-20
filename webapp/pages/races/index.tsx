@@ -222,7 +222,7 @@ export default function RacesPage() {
         errorTitle='경주 정보를 확인할 수 없습니다'
       >
         {todayRacesAllEnded && (
-          <div className='mb-4 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-text-secondary'>
+          <div className='mb-4 rounded-lg border border-border bg-muted/20 px-4 py-3 text-sm text-text-secondary whitespace-pre-line'>
             {TODAY_ALL_ENDED_MESSAGE}
           </div>
         )}

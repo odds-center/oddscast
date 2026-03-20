@@ -130,7 +130,7 @@ export default function DateHeader() {
         <h1 className='text-xl sm:text-2xl font-bold text-white leading-snug'>
           {msg.title}
         </h1>
-        <p className='text-stone-400 text-sm leading-relaxed'>
+        <p className='text-stone-400 text-sm leading-relaxed whitespace-pre-line'>
           {msg.subtitle}
         </p>
 

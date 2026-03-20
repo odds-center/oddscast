@@ -104,7 +104,7 @@ export default function ProfileEditPage() {
         <SectionCard
           title='프로필'
           icon='User'
-          description='이름·닉네임과 비밀번호를 변경할 수 있습니다.'
+          description={'이름·닉네임과 비밀번호를\n변경할 수 있습니다.'}
         >
         <TabBar
           options={[

@@ -41,7 +41,7 @@ export default function SectionCard({
             )}
           </div>
           {description && (
-            <p className='text-stone-500 text-sm mt-1 leading-relaxed'>{description}</p>
+            <p className='text-stone-500 text-sm mt-1 leading-relaxed whitespace-pre-line'>{description}</p>
           )}
         </div>
       )}

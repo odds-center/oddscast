@@ -114,7 +114,7 @@ export default function SubscriptionsPage() {
                   구독을 취소하시겠습니까?
                 </p>
                 <p className='text-text-secondary text-sm mb-3'>
-                  취소 후에도 현재 기간 만료일까지 이용 가능합니다.
+                  취소 후에도 현재 기간<br className='sm:hidden' />만료일까지 이용 가능합니다.
                 </p>
                 <div className='flex gap-2'>
                   <Button

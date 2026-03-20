@@ -190,8 +190,8 @@ export default function PredictionMatrixPage() {
         <>
           {showHint && (
             <div className='mb-3 rounded-xl border border-primary/30 bg-primary/5 px-4 py-3 flex items-start justify-between gap-3'>
-              <p className='text-sm text-foreground'>
-                <span className='font-medium text-primary'>종합 예측표</span>에서는 날짜·경마장별로 AI 예측을 한눈에 볼 수 있습니다. 종합 예측권 1장으로 해당 날짜 전체를 열람할 수 있습니다.
+              <p className='text-sm text-foreground whitespace-pre-line'>
+                <span className='font-medium text-primary'>종합 예측표</span>에서는 날짜·경마장별로{'\n'}AI 예측을 한눈에 볼 수 있습니다.{'\n'}종합 예측권 1장으로 해당 날짜 전체를 열람할 수 있습니다.
               </p>
               <Button
                 type='button'
@@ -297,8 +297,8 @@ export default function PredictionMatrixPage() {
                     </div>
                     <div className='flex-1 min-w-0'>
                       <h3 className='text-sm font-bold text-foreground'>AI 예측 열람하기</h3>
-                      <p className='text-xs text-stone-500 mt-0.5'>
-                        종합 예측권 1장으로 해당 날짜 전체 AI 예측을 열람할 수 있습니다 (1일 1장 · 1,000원)
+                      <p className='text-xs text-stone-500 mt-0.5 whitespace-pre-line'>
+                        종합 예측권 1장으로 해당 날짜 전체{'\n'}AI 예측을 열람할 수 있습니다.{'\n'}(1일 1장 · 1,000원)
                       </p>
                     </div>
                     <div className='w-full sm:w-auto flex flex-col gap-1'>
@@ -333,7 +333,7 @@ export default function PredictionMatrixPage() {
                 isEmpty={!matrixData?.raceMatrix?.length}
                 emptyIcon='BarChart2'
                 emptyTitle='예상 정보가 없습니다'
-                emptyDescription='선택한 날짜에 경주가 없거나 아직 생성되지 않았습니다. 다른 날짜를 선택해보세요.'
+                emptyDescription={'선택한 날짜에 경주가 없거나\n아직 생성되지 않았습니다.\n다른 날짜를 선택해보세요.'}
                 loadingLabel='예상표 준비 중...'
                 errorTitle='종합 예상표를 불러올 수 없습니다'
               >
@@ -359,7 +359,7 @@ export default function PredictionMatrixPage() {
               isEmpty={!commentaryData?.comments?.length}
               emptyIcon='Sparkles'
               emptyTitle='코멘트가 없습니다'
-              emptyDescription='해당 날짜에 AI 예측 코멘트가 없습니다. 다른 날짜를 선택해보세요.'
+              emptyDescription={'해당 날짜에 AI 예측 코멘트가 없습니다.\n다른 날짜를 선택해보세요.'}
               loadingLabel='코멘트 준비 중...'
               errorTitle='코멘트를 불러올 수 없습니다'
             >

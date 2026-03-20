@@ -48,7 +48,7 @@ export default function WeeklyPreviewPage() {
         isEmpty={!hasContent && !isLoading}
         emptyIcon='Calendar'
         emptyTitle='아직 프리뷰가 없습니다'
-        emptyDescription='목요일 저녁에 이번 주말 경주 요약이 생성됩니다.'
+        emptyDescription={'목요일 저녁에\n이번 주말 경주 요약이 생성됩니다.'}
         loadingLabel='불러오는 중...'
       >
         {hasContent && content && (

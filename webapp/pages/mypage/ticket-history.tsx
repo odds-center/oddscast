@@ -91,7 +91,7 @@ export default function TicketHistoryPage() {
         isEmpty={!tickets.length}
         emptyIcon='Ticket'
         emptyTitle={statusFilter === 'all' ? '예측권 이력이 없습니다' : '해당 상태의 이력이 없습니다'}
-        emptyDescription={statusFilter === 'all' ? '예측권을 구매하거나 구독하면 이력이 표시됩니다.' : '다른 필터를 선택해 보세요.'}
+        emptyDescription={statusFilter === 'all' ? '예측권을 구매하거나 구독하면\n이력이 표시됩니다.' : '다른 필터를 선택해 보세요.'}
         loadingLabel='이용 내역 준비 중...'
       >
         <div>
@@ -112,7 +112,7 @@ export default function TicketHistoryPage() {
             <div className='flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mb-3'>
               <Icon name='AlertCircle' size={15} className='text-amber-500 shrink-0' />
               <p className='text-sm text-amber-700 font-medium'>
-                7일 이내 만료 예정 예측권 {soonExpiringCount}장 — 빨리 사용하세요!
+                7일 이내 만료 예정 예측권 {soonExpiringCount}장<br className='sm:hidden' />빨리 사용하세요!
               </p>
             </div>
           )}

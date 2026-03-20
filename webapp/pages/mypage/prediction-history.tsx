@@ -52,7 +52,7 @@ export default function PredictionHistoryPage() {
         isEmpty={!list.length}
         emptyIcon='ClipboardList'
         emptyTitle='열람한 예측이 없습니다'
-        emptyDescription='경주 상세에서 예측권으로 AI 분석을 열람하면 여기에 표시됩니다.'
+        emptyDescription={'경주 상세에서 예측권으로\nAI 분석을 열람하면 여기에 표시됩니다.'}
         loadingLabel='목록 불러오는 중...'
       >
         <div>

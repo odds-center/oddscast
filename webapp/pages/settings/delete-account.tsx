@@ -68,7 +68,7 @@ export default function DeleteAccountPage() {
         <SectionCard
           title='회원탈퇴'
           icon='UserMinus'
-          description='비밀번호를 입력하면 계정이 비활성화됩니다. 복구할 수 없습니다.'
+          description={'비밀번호를 입력하면 계정이 비활성화됩니다.\n복구할 수 없습니다.'}
         >
           <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
             <FormInput
@@ -88,7 +88,7 @@ export default function DeleteAccountPage() {
                 aria-describedby='delete-confirm-desc'
               />
               <span id='delete-confirm-desc' className='text-text-secondary'>
-                탈퇴 시 모든 데이터가 삭제되며 복구할 수 없습니다. 동의합니다.
+                탈퇴 시 모든 데이터가 삭제되며<br />복구할 수 없습니다. 동의합니다.
               </span>
             </label>
             {errors.root && (
@@ -110,8 +110,7 @@ export default function DeleteAccountPage() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>정말 탈퇴하시겠습니까?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    탈퇴하면 모든 데이터가 영구 삭제되며 복구할 수 없습니다.
-                    보유한 예측권, 포인트, 구독 정보가 모두 사라집니다.
+                    탈퇴하면 모든 데이터가 영구 삭제되며<br />복구할 수 없습니다.<br />보유한 예측권, 구독 정보가 모두 사라집니다.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>

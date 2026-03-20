@@ -59,8 +59,8 @@ export default function MatrixTicketPurchasePage() {
               </div>
               <div>
                 <h3 className='text-foreground font-bold text-base'>종합 예측권</h3>
-                <p className='text-stone-500 text-sm mt-1'>
-                  하루의 모든 경주 AI 예상을 한눈에 볼 수 있는 일일 종합 가이드 열람권입니다.
+                <p className='text-stone-500 text-sm mt-1 whitespace-pre-line'>
+                  하루의 모든 경주 AI 예상을 한눈에 볼 수 있는{'\n'}일일 종합 가이드 열람권입니다.
                 </p>
               </div>
             </div>
@@ -175,10 +175,10 @@ export default function MatrixTicketPurchasePage() {
           {/* Notice */}
           <div className='bg-stone-50 rounded p-3 text-xs text-stone-500 space-y-1'>
             <p className='font-medium text-stone-600'>이용 안내</p>
-            <p>• 종합 예측권 1장으로 해당 날짜의 전체 경주 AI 예상표를 열람할 수 있습니다.</p>
-            <p>• 같은 날짜에 이미 사용한 예측권이 있으면 추가 차감되지 않습니다.</p>
-            <p>• 구매 후 30일 내에 사용하지 않으면 만료됩니다.</p>
-            <p>• 구독 플랜(스탠다드 이상)에는 종합 예측권이 포함되어 있습니다.</p>
+            <p>• 종합 예측권 1장으로 해당 날짜의 전체 경주<br className='sm:hidden' />AI 예상표를 열람할 수 있습니다.</p>
+            <p>• 같은 날짜에 이미 사용한 예측권이 있으면<br className='sm:hidden' />추가 차감되지 않습니다.</p>
+            <p>• 구매 후 30일 내에 사용하지 않으면<br className='sm:hidden' />만료됩니다.</p>
+            <p>• 구독 플랜(스탠다드 이상)에는<br className='sm:hidden' />종합 예측권이 포함되어 있습니다.</p>
           </div>
 
           {/* Go to matrix */}

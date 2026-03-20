@@ -23,7 +23,7 @@ export default function EmptyState({
         <Icon name={icon} size={28} className='text-stone-400' strokeWidth={2} />
       </div>
       <p className='font-display text-foreground font-bold text-xl sm:text-2xl leading-snug'>{title}</p>
-      {description && <p className='text-text-secondary text-[16px] sm:text-base mt-3 max-w-md leading-relaxed'>{description}</p>}
+      {description && <p className='text-text-secondary text-[16px] sm:text-base mt-3 max-w-md leading-relaxed whitespace-pre-line'>{description}</p>}
       {action && <div className='mt-8'>{action}</div>}
     </div>
   );

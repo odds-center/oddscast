@@ -2,6 +2,7 @@
 # Build from repo root: docker build -f server/Dockerfile .
 
 FROM node:20-alpine AS base
+RUN apk add --no-cache python3 py3-pip py3-numpy py3-pandas
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 

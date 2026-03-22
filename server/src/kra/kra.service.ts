@@ -1718,6 +1718,28 @@ export class KraService {
   }
 
   /**
+   * Wrap an axios call with automatic retry on 429 (Too Many Requests).
+   * Waits progressively longer between retries: 2s, 4s, 8s.
+   */
+  private async withRateRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (err: unknown) {
+        const status = (err as { response?: { status?: number } })?.response?.status;
+        if (status === 429 && attempt < maxRetries) {
+          const wait = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
+          this.logger.warn(`KRA 429 rate limit hit, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+          await this.delay(wait);
+          continue;
+        }
+        throw err;
+      }
+    }
+    throw new Error('withRateRetry: exhausted retries');
+  }
+
+  /**
    * Fetches race results (API4_3), upserts Race, ensures RaceEntry per horse, saves RaceResult.
    * Race + RaceEntry[] + RaceResult[] (+ Prediction) are one set; Race/Entry mapping matches syncEntrySheet.
    */
@@ -2480,8 +2502,8 @@ export class KraService {
           _type: 'json',
         };
 
-        const response = await firstValueFrom(
-          this.httpService.get(url, { params }),
+        const response = await this.withRateRetry(() =>
+          firstValueFrom(this.httpService.get(url, { params })),
         );
 
         let item: Record<string, unknown> | null = null;
@@ -2527,7 +2549,7 @@ export class KraService {
           ...((vs('prd') ?? vs('name')) != null && { prd: vs('prd') ?? vs('name') }),
         });
 
-        await this.delay(300);
+        await this.delay(500);
       } catch (e) {
         this.logger.warn(`Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -2575,8 +2597,8 @@ export class KraService {
           _type: 'json',
         };
 
-        const response = await firstValueFrom(
-          this.httpService.get(url, { params }),
+        const response = await this.withRateRetry(() =>
+          firstValueFrom(this.httpService.get(url, { params })),
         );
 
         let items: Record<string, unknown>[] = [];
@@ -2641,7 +2663,7 @@ export class KraService {
           });
         }
 
-        await this.delay(200);
+        await this.delay(500);
       } catch (e) {
         this.logger.warn(`Training fetch failed for horse ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -3341,8 +3363,8 @@ export class KraService {
           _type: 'json',
         };
 
-        const response = await firstValueFrom(
-          this.httpService.get(url, { params }),
+        const response = await this.withRateRetry(() =>
+          firstValueFrom(this.httpService.get(url, { params })),
         );
 
         let items: KraApiItem[] = [];

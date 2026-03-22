@@ -2527,7 +2527,7 @@ export class KraService {
           ...((vs('prd') ?? vs('name')) != null && { prd: vs('prd') ?? vs('name') }),
         });
 
-        await this.delay(150);
+        await this.delay(300);
       } catch (e) {
         this.logger.warn(`Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -3458,10 +3458,12 @@ export class KraService {
                   } as Record<string, unknown>)
                 : null;
             // Only update fields that have values
-            await this.entryRepo.update(entry.id, {
-              ...(equipment != null && { equipment }),
-              ...(bleedingInfoObj != null && { bleedingInfo: bleedingInfoObj }),
-            } as Parameters<Repository<RaceEntry>['update']>[1]);
+            const equipUpdate: Record<string, unknown> = {};
+            if (equipment != null) equipUpdate.equipment = equipment;
+            if (bleedingInfoObj != null) equipUpdate.bleedingInfo = bleedingInfoObj;
+            if (Object.keys(equipUpdate).length > 0) {
+              await this.entryRepo.update(entry.id, equipUpdate as Parameters<Repository<RaceEntry>['update']>[1]);
+            }
           }
         }
 
@@ -3677,6 +3679,8 @@ export class KraService {
       await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
       await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);
       processedCount++;
+      // Throttle between races to prevent KRA 429 rate limit
+      if (processedCount < races.length) await this.delay(500);
     }
 
     // 8. Jockey total results (jktresult) — auto-sync within analysis pipeline

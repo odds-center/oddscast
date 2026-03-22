@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-19 (TDD 777+테스트, 예측 v4 15요소, 파이프라인 버그 수정, 프롬프트 강화, Points 제거, shadcn/ui, 문서 전면 갱신)
+**Last updated:** 2026-03-22 (Android 빌드, 모바일 텍스트 개행, KRA 429 재시도, race_dividends 프로덕션 생성, Dockerfile Python, equipment empty update 수정)
 
 ---
 
@@ -66,6 +66,12 @@
 | **Resend 메일 모듈** | ✅ 완료 | server/src/mail/ — Resend API 기반 이메일 발송 (비밀번호 리셋, 이메일 인증). RESEND_API_KEY 없으면 graceful skip. |
 | **성능·SEO 최적화** | ✅ 완료 | 글자 크기·대비 감사(23 파일), 폰트 최적화, deep performance optimization. |
 | **Mobile Expo→RN CLI 전환** | ✅ 완료 | React Native CLI 0.79.5 + WebView. Expo 의존성 제거. |
+| **Android 빌드 수정** | ✅ 완료 | pnpm 모노레포 Gradle 경로 수정(settings.gradle, build.gradle). ext 블록(SDK 버전). AndroidManifest Firebase tools:replace. SplashScreen AppCompat 테마. NavigationContainer 추가. Metro monorepo watchFolders+nodeModulesPaths. |
+| **모바일 텍스트 개행** | ✅ 완료 | EmptyState·SectionCard에 whitespace-pre-line 추가. DateHeader subtitle, TodayRacesSection 종료 메시지, matrix 힌트/CTA/empty, 티켓 구매 안내, 회원탈퇴 등 25+ 한국어 문자열에 모바일 개행(\n, `<br className='sm:hidden' />`) 적용. |
+| **KRA 429 Rate Limit 대응** | ✅ 완료 | withRateRetry() 헬퍼 추가(429시 2s/4s/8s 지수 백오프 재시도). fetchHorseDetails·fetchTrainingData·fetchRaceHorseRatings에 적용. delay 500ms로 증가. syncAnalysisData 경주 간 500ms throttle. |
+| **Equipment empty update 수정** | ✅ 완료 | fetchEquipmentBleeding에서 equipment·bleedingInfo 모두 null일 때 빈 객체 update 방지(UpdateValuesMissingError). |
+| **race_dividends 프로덕션 생성** | ✅ 완료 | 프로덕션 DB에 race_dividends 테이블 + FK 생성. |
+| **Dockerfile Python 추가** | ✅ 완료 | node:20-alpine에 python3·py3-numpy·py3-pandas 설치. analysis.py 스크립트 실행 가능. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -139,10 +145,11 @@
 > 핵심 인프라(Railway, Sentry, CD, DB 백업)는 모두 완료 ✅
 > 남은 선택 작업 기준으로 우선순위 정렬:
 
-1. **앱 스토어 출시** — iOS/Google Play 배포 (별도 체크리스트)
-2. **업타임 모니터링** — BetterUptime / UptimeRobot 등 `/health` 엔드포인트 등록
-3. **E2E·통합 테스트 보강** — 중요 플로우 추가 (구독 결제, 매트릭스 잠금/해제)
-4. **Phase 3 기능** — 커뮤니티 예측, 고급 분석 대시보드 (장기)
+1. **Gemini API 키 교체** — 유출 차단된 키 교체 필요 (Google AI Studio → Railway GEMINI_API_KEY)
+2. **앱 스토어 출시** — Android APK 빌드 완료, iOS 빌드 후 iOS/Google Play 배포
+3. **업타임 모니터링** — BetterUptime / UptimeRobot 등 `/health` 엔드포인트 등록
+4. **E2E·통합 테스트 보강** — 중요 플로우 추가 (구독 결제, 매트릭스 잠금/해제)
+5. **Phase 3 기능** — 커뮤니티 예측, 고급 분석 대시보드 (장기)
 
 ---
 

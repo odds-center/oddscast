@@ -233,3 +233,17 @@ const handleApiResponse = <T>(response): T => {
 | ------------- | ---------------------------------------------------------------------------------------------------------------- |
 | **즐겨찾기**  | RACE(경기)만 지원. `POST /favorites/toggle`                                                                      |
 | **알림 설정** | UserNotificationPreference. 푸시는 mobile 전용. [NOTIFICATION_SETTINGS.md](../features/NOTIFICATION_SETTINGS.md) |
+
+---
+
+## 8. 모바일 앱 (React Native CLI)
+
+- **아키텍처**: React Native 0.79.5 + WebView → webapp(Next.js) 래핑
+- **브릿지 프로토콜**: `NATIVE_ACTION`, `AUTH_READY`, `AUTH_LOGOUT`, `ROUTE_CHANGED`, `NAVIGATE` 메시지
+- **네이티브 액션**: share, alert, confirm, haptic, clipboard, openURL, toast, deviceInfo, getAuthToken, getPushToken
+- **푸시 알림**: Firebase Cloud Messaging (FCM). 포그라운드 알림 Alert + deepLink 내비게이션
+- **딥링크**: `goldenrace://` 스킴. 알림 탭 시 WebView initialUrl로 전달
+- **환경 분기**: `.env` / `.env.dev` / `.env.prod` — Android 에뮬레이터는 `10.0.2.2`, iOS는 `localhost`
+- **Android 빌드**: pnpm 모노레포 — `settings.gradle`에서 `../../node_modules/` 참조 (루트 node_modules)
+- **Dockerfile**: `node:20-alpine` + `python3, py3-numpy, py3-pandas` (analysis.py 실행용)
+- **Metro 설정**: `nodeModulesPaths`에 mobile + 루트 node_modules, `watchFolders`에 monorepoRoot 포함

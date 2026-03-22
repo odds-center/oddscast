@@ -131,6 +131,11 @@ pnpm run dev:webapp             # WebApp (3000)
 pnpm run dev:admin              # Admin (3002)
 pnpm run build                  # 전체 빌드 (server + webapp + admin)
 cd server && pnpm test          # 서버 테스트
+
+# Mobile (Android)
+cd mobile && npx react-native run-android   # 에뮬레이터/디바이스에 설치+실행
+adb reverse tcp:3000 tcp:3000               # 에뮬레이터→호스트 webapp 포워딩
+adb reverse tcp:3001 tcp:3001               # 에뮬레이터→호스트 API 포워딩
 ```
 
 ## 세부 규칙 파일

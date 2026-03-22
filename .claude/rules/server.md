@@ -204,8 +204,23 @@ serializeRaceResult(r)    // Hide results if status != COMPLETED
 - All Race/RaceEntry upsert/update methods use **conditional spread** for nullable fields
 - Prevents NULL values from one API source overwriting non-NULL values from another
 - Applied in: `buildRaceUpsertPayload`, `processEntrySheetItem`, `fetchRaceResults` entry update, `fetchHorseDetails`, `fetchRaceHorseRatings`, `fetchEquipmentBleeding`
+- `fetchEquipmentBleeding`: guard empty update object (skip if no fields to update)
 - `syncAll` re-runs entry sheet after results to backfill entries created by result API
 - `syncHistoricalBackfill` includes: entry sheet + results + entry re-run + dividends + syncAnalysisData + jockey totals
+
+## KRA Rate Limit Protection
+
+- `withRateRetry(fn, maxRetries=3)`: auto-retry on 429 with exponential backoff (2s, 4s, 8s)
+- Applied to: `fetchHorseDetails`, `fetchTrainingData`, `fetchRaceHorseRatings` API calls
+- Per-entry delay: 500ms between sequential API calls within a race
+- Per-race delay: 500ms between races in `syncAnalysisData` training/details loop
+
+## Dockerfile
+
+- Base: `node:20-alpine`
+- Python: `python3`, `py3-numpy`, `py3-pandas` (for analysis.py scripts)
+- Build from repo root: `docker build -f server/Dockerfile .`
+- Production: `node dist/main` (PORT from Railway env)
 
 ## Error Handling
 

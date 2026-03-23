@@ -28,12 +28,29 @@ async function bootstrap() {
     ],
   });
 
-  // CORS — restrict origins in production, allow all in development
-  const allowedOrigins = process.env.CORS_ORIGINS
-    ? process.env.CORS_ORIGINS.split(',').map((o) => o.trim())
-    : true; // dev: allow all
+  // CORS — environment-aware origin whitelist
+  const env = process.env.NODE_ENV ?? 'development';
+  const CORS_ORIGINS_BY_ENV: Record<string, string[] | true> = {
+    production: [
+      'https://oddscast.up.railway.app',
+      'https://oddscast-webapp.vercel.app',
+    ],
+    development: [
+      'http://localhost:3000', // webapp
+      'http://localhost:3002', // admin
+      'http://10.0.2.2:3000', // Android emulator → host webapp
+    ],
+  };
+  // Mobile WebView: file:// and capacitor:// origins
+  const mobileOrigins = ['file://', 'capacitor://localhost'];
+  const envOrigins = CORS_ORIGINS_BY_ENV[env];
+  const allowedOrigins =
+    envOrigins === true
+      ? true
+      : [...(envOrigins ?? []), ...mobileOrigins];
+
   app.enableCors({
-    origin: allowedOrigins,
+    origin: env === 'development' ? true : allowedOrigins,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

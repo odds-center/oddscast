@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { DiscordService } from './discord.service';
+import { DiscordService, DevServerError, DevClientError, DevSignupNotification } from './discord.service';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -14,6 +14,8 @@ describe('DiscordService', () => {
       DISCORD_BOT_TOKEN: 'test-bot-token',
       DISCORD_SIGNUP_CHANNEL_ID: 'signup-ch-123',
       DISCORD_ERROR_CHANNEL_ID: 'error-ch-456',
+      DISCORD_DEV_WEBHOOK_URL: '',
+      NODE_ENV: 'production',
       ...envOverrides,
     };
     const module: TestingModule = await Test.createTestingModule({
@@ -80,10 +82,88 @@ describe('DiscordService', () => {
 
     it('should handle Discord API failure gracefully', async () => {
       mockedAxios.post.mockRejectedValue(new Error('Network error'));
-      // Should not throw
       await expect(
         service.notifyError('GET', '/api/test', 503, 'timeout'),
       ).resolves.toBeUndefined();
+    });
+  });
+
+  describe('dev webhook', () => {
+    it('should send to dev webhook when not in production', async () => {
+      service = await createService({
+        DISCORD_BOT_TOKEN: '',
+        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
+        NODE_ENV: 'development',
+      });
+
+      await service.notifyError('GET', '/api/test', 500, 'error', 'stack...');
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://discord.com/api/webhooks/test',
+        expect.objectContaining({
+          embeds: expect.arrayContaining([
+            expect.objectContaining({ title: expect.stringContaining('[DEV]') }),
+          ]),
+        }),
+        expect.objectContaining({ timeout: 5000 }),
+      );
+    });
+
+    it('should NOT send to dev webhook in production', async () => {
+      service = await createService({
+        DISCORD_BOT_TOKEN: '',
+        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
+        NODE_ENV: 'production',
+      });
+
+      await service.notifyError('GET', '/api/test', 500, 'error');
+      expect(mockedAxios.post).not.toHaveBeenCalled();
+    });
+
+    it('should send client errors to dev webhook', async () => {
+      service = await createService({
+        DISCORD_BOT_TOKEN: '',
+        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
+        NODE_ENV: 'development',
+      });
+
+      await service.notifyClientError('POST', '/api/auth/login', 401, 'Unauthorized');
+
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        'https://discord.com/api/webhooks/test',
+        expect.objectContaining({
+          embeds: expect.arrayContaining([
+            expect.objectContaining({ title: expect.stringContaining('[DEV]') }),
+          ]),
+        }),
+        expect.anything(),
+      );
+    });
+  });
+
+  describe('DevNotification classes', () => {
+    it('DevServerError should produce correct embed', () => {
+      const notification = new DevServerError('GET', '/api/test', 500, 'fail', 'Error: stack');
+      const embed = notification.toEmbed();
+      expect(embed.title).toContain('[DEV]');
+      expect(embed.title).toContain('500');
+      expect(embed.color).toBe(0xb91c1c);
+      expect(embed.footer?.text).toBe('OddsCast DEV');
+    });
+
+    it('DevClientError should produce correct embed', () => {
+      const notification = new DevClientError('POST', '/api/login', 429, 'Too many requests', '1.2.3.4');
+      const embed = notification.toEmbed();
+      expect(embed.title).toContain('[DEV]');
+      expect(embed.title).toContain('429');
+      expect(embed.color).toBe(0xea580c);
+    });
+
+    it('DevSignupNotification should produce correct embed', () => {
+      const notification = new DevSignupNotification('user@test.com', 'Nick');
+      const embed = notification.toEmbed();
+      expect(embed.title).toContain('[DEV]');
+      expect(embed.color).toBe(0x16a34a);
     });
   });
 });

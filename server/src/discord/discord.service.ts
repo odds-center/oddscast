@@ -13,29 +13,131 @@ interface DiscordEmbed {
   footer?: { text: string };
 }
 
+// ─── Dev Error Notification Classes ───
+
+abstract class DevNotification {
+  abstract toEmbed(): DiscordEmbed;
+}
+
+export class DevServerError extends DevNotification {
+  constructor(
+    readonly method: string,
+    readonly url: string,
+    readonly status: number,
+    readonly message: string,
+    readonly stack?: string,
+  ) {
+    super();
+  }
+
+  toEmbed(): DiscordEmbed {
+    const desc = this.stack
+      ? `\`\`\`\n${this.stack.slice(0, 1000)}\n\`\`\``
+      : this.message;
+
+    return {
+      title: `🚨 [DEV] 서버 에러 (${this.status})`,
+      description: desc,
+      color: 0xb91c1c,
+      fields: [
+        { name: '요청', value: `\`${this.method} ${this.url}\``, inline: false },
+      ],
+      timestamp: new Date().toISOString(),
+      footer: { text: 'OddsCast DEV' },
+    };
+  }
+}
+
+export class DevClientError extends DevNotification {
+  private static readonly STATUS_LABELS: Record<number, string> = {
+    429: '⚠️ [DEV] Rate Limit (429)',
+    401: '🔒 [DEV] Unauthorized (401)',
+    403: '🚫 [DEV] Forbidden (403)',
+    400: '❌ [DEV] Bad Request (400)',
+    404: '🔍 [DEV] Not Found (404)',
+  };
+
+  constructor(
+    readonly method: string,
+    readonly url: string,
+    readonly status: number,
+    readonly message: string,
+    readonly ip?: string,
+  ) {
+    super();
+  }
+
+  toEmbed(): DiscordEmbed {
+    const title =
+      DevClientError.STATUS_LABELS[this.status] ?? `⚠️ [DEV] Client Error (${this.status})`;
+    const color = this.status === 429 ? 0xea580c : 0xd97706;
+
+    const fields: Array<{ name: string; value: string; inline?: boolean }> = [
+      { name: '요청', value: `\`${this.method} ${this.url}\``, inline: false },
+      { name: '메시지', value: this.message.slice(0, 200), inline: false },
+    ];
+    if (this.ip) {
+      fields.push({ name: 'IP', value: `\`${this.ip}\``, inline: true });
+    }
+
+    return { title, color, fields, timestamp: new Date().toISOString(), footer: { text: 'OddsCast DEV' } };
+  }
+}
+
+export class DevSignupNotification extends DevNotification {
+  constructor(
+    readonly email: string,
+    readonly nickname?: string,
+  ) {
+    super();
+  }
+
+  toEmbed(): DiscordEmbed {
+    return {
+      title: '🎉 [DEV] 새 회원가입',
+      color: 0x16a34a,
+      fields: [
+        { name: '이메일', value: this.email, inline: true },
+        ...(this.nickname ? [{ name: '닉네임', value: this.nickname, inline: true }] : []),
+      ],
+      timestamp: new Date().toISOString(),
+      footer: { text: 'OddsCast DEV' },
+    };
+  }
+}
+
+// ─── Discord Service ───
+
 @Injectable()
 export class DiscordService {
   private readonly logger = new Logger(DiscordService.name);
   private readonly botToken: string;
   private readonly signupChannelId: string;
   private readonly errorChannelId: string;
+  private readonly devWebhookUrl: string;
+  private readonly isProduction: boolean;
 
   constructor(private readonly config: ConfigService) {
     this.botToken = this.config.get<string>('DISCORD_BOT_TOKEN', '');
     this.signupChannelId = this.config.get<string>('DISCORD_SIGNUP_CHANNEL_ID', '');
     this.errorChannelId = this.config.get<string>('DISCORD_ERROR_CHANNEL_ID', '');
+    this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
+    this.isProduction = this.config.get<string>('NODE_ENV', '') === 'production';
   }
 
-  private get enabled(): boolean {
+  private get botEnabled(): boolean {
     return this.botToken.length > 0;
   }
 
+  private get devEnabled(): boolean {
+    return !this.isProduction && this.devWebhookUrl.length > 0;
+  }
+
   /**
-   * Send embed message to a Discord channel via Bot API.
-   * Bot does NOT need to be running 24/7 — just needs to be invited to the server.
+   * Send embed message to a Discord channel via Bot API (production).
    */
   private async sendToChannel(channelId: string, embeds: DiscordEmbed[]): Promise<void> {
-    if (!this.enabled || !channelId) return;
+    if (!this.botEnabled || !channelId) return;
     try {
       await axios.post(
         `${DISCORD_API}/channels/${channelId}/messages`,
@@ -52,10 +154,27 @@ export class DiscordService {
   }
 
   /**
-   * Notify new user registration → signup channel.
+   * Send dev notification via webhook (non-production only).
+   */
+  async sendDevNotification(notification: DevNotification): Promise<void> {
+    if (!this.devEnabled) return;
+    try {
+      await axios.post(
+        this.devWebhookUrl,
+        { embeds: [notification.toEmbed()] },
+        { timeout: 5000 },
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Discord dev webhook failed: ${msg}`);
+    }
+  }
+
+  /**
+   * Notify new user registration.
    */
   async notifySignup(email: string, nickname?: string): Promise<void> {
-    await this.sendToChannel(this.signupChannelId, [
+    const embeds: DiscordEmbed[] = [
       {
         title: '🎉 새 회원가입',
         color: 0x16a34a,
@@ -66,11 +185,13 @@ export class DiscordService {
         timestamp: new Date().toISOString(),
         footer: { text: 'OddsCast' },
       },
-    ]);
+    ];
+    await this.sendToChannel(this.signupChannelId, embeds);
+    await this.sendDevNotification(new DevSignupNotification(email, nickname));
   }
 
   /**
-   * Notify server error (5xx) → error channel.
+   * Notify server error (5xx).
    */
   async notifyError(
     method: string,
@@ -83,7 +204,7 @@ export class DiscordService {
       ? `\`\`\`\n${stack.slice(0, 1000)}\n\`\`\``
       : message;
 
-    await this.sendToChannel(this.errorChannelId, [
+    const embeds: DiscordEmbed[] = [
       {
         title: `🚨 서버 에러 (${status})`,
         description: desc,
@@ -94,12 +215,13 @@ export class DiscordService {
         timestamp: new Date().toISOString(),
         footer: { text: 'OddsCast' },
       },
-    ]);
+    ];
+    await this.sendToChannel(this.errorChannelId, embeds);
+    await this.sendDevNotification(new DevServerError(method, url, status, message, stack));
   }
 
   /**
-   * Notify client error (4xx) → error channel.
-   * Covers 429 (rate limit), 401, 403, 400, 404, etc.
+   * Notify client error (4xx).
    */
   async notifyClientError(
     method: string,
@@ -116,8 +238,6 @@ export class DiscordService {
       404: '🔍 Not Found (404)',
     };
     const title = STATUS_LABELS[status] ?? `⚠️ Client Error (${status})`;
-
-    // Orange for rate limit, yellow for others
     const color = status === 429 ? 0xea580c : 0xd97706;
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
@@ -128,7 +248,7 @@ export class DiscordService {
       fields.push({ name: 'IP', value: `\`${ip}\``, inline: true });
     }
 
-    await this.sendToChannel(this.errorChannelId, [
+    const embeds: DiscordEmbed[] = [
       {
         title,
         color,
@@ -136,6 +256,8 @@ export class DiscordService {
         timestamp: new Date().toISOString(),
         footer: { text: 'OddsCast' },
       },
-    ]);
+    ];
+    await this.sendToChannel(this.errorChannelId, embeds);
+    await this.sendDevNotification(new DevClientError(method, url, status, message, ip));
   }
 }

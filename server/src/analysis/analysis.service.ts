@@ -43,11 +43,21 @@ export class AnalysisService {
         errorString += data.toString();
       });
 
-      pythonProcess.on('close', (code) => {
+      pythonProcess.on('error', (err) => {
+        reject(
+          new Error(
+            `Python process spawn error: ${err.message} (code: ${(err as NodeJS.ErrnoException).code ?? 'unknown'})`,
+          ),
+        );
+      });
+
+      pythonProcess.on('close', (code, signal) => {
         if (code !== 0) {
+          const detail = errorString || dataString || 'no output';
+          const signalInfo = signal ? `, signal: ${signal}` : '';
           reject(
             new Error(
-              `Python script failed (${code}): ${errorString || dataString}`,
+              `Python script failed (exit: ${code}${signalInfo}): ${detail}`,
             ),
           );
         } else {

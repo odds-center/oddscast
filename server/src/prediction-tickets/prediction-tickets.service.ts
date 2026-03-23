@@ -92,13 +92,36 @@ export class PredictionTicketsService {
       );
     }
 
-    // Generate real-time prediction (skipCache + realtime prompt)
+    // Generate real-time prediction with short-TTL cache (5 min).
+    // If another user just generated a prediction for the same race with the same entries,
+    // reuse it instead of making a redundant Gemini call.
+    const REALTIME_CACHE_TTL_MS = 5 * 60 * 1000;
     let pred: Prediction;
     try {
-      pred = await this.predictionsService.generatePrediction(raceId, {
-        skipCache: true,
-        realtime: true,
-      });
+      // Check for a recent realtime prediction (same race, completed within TTL)
+      const recentPred = dto.regenerate
+        ? null
+        : await this.predictionRepo
+            .createQueryBuilder('p')
+            .where('p.raceId = :raceId', { raceId })
+            .andWhere('p.status = :status', { status: PredictionStatus.COMPLETED })
+            .andWhere('p.createdAt > :cutoff', {
+              cutoff: new Date(Date.now() - REALTIME_CACHE_TTL_MS),
+            })
+            .orderBy('p.createdAt', 'DESC')
+            .getOne();
+
+      if (recentPred) {
+        this.logger.log(
+          `[useTicket] Reusing recent prediction id=${recentPred.id} (${Math.round((Date.now() - new Date(recentPred.createdAt).getTime()) / 1000)}s old)`,
+        );
+        pred = recentPred;
+      } else {
+        pred = await this.predictionsService.generatePrediction(raceId, {
+          skipCache: true,
+          realtime: true,
+        });
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (

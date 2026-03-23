@@ -1139,9 +1139,10 @@ AI 예측 순위: ${predictedTop || '-'}
       1,
       Math.max(0, Number(aiConfig.temperature) || 0.7),
     );
+    // Default 1500 tokens (actual output ~1200-1400). Output tokens cost 8x more than input.
     const maxTokens = Math.min(
       8192,
-      Math.max(500, Number(aiConfig.maxTokens) || 4096),
+      Math.max(500, Number(aiConfig.maxTokens) || 1500),
     );
 
     const { GoogleGenerativeAI } = await import('@google/generative-ai');
@@ -2402,13 +2403,14 @@ AI 예측 순위: ${predictedTop || '-'}
    * with the wp values sent to Gemini in constructPrompt.
    *
    * Blend formula (when oddsByHrNo is available):
-   *   adjustedScore = 0.8 × (hScore×wH + jScore×wJ) + 0.2 × oddsImplied×100
-   * When no odds data, applies only the horse+jockey combination.
+   *   adjustedScore = 0.8 × compositeScore + 0.2 × oddsImplied×100
+   * Python composite already includes jockey factor (W_HORSE['jky']=0.11),
+   * so we do NOT apply a separate jockey blend here to avoid double-counting.
    * Returns a new array; does not mutate input.
    */
   private applyOddsBlendToHorseScores(
     horseScores: HorseAnalysisItem[],
-    jockeyAnalysis: {
+    _jockeyAnalysis: {
       entriesWithScores?: Array<{
         hrNo?: string;
         hrName: string;
@@ -2421,20 +2423,9 @@ AI 예측 순위: ${predictedTop || '-'}
   ): HorseAnalysisItem[] {
     if (!horseScores.length) return horseScores;
 
-    const wH = jockeyAnalysis?.weightRatio?.horse ?? 0.7;
-    const wJ = jockeyAnalysis?.weightRatio?.jockey ?? 0.3;
-    const jockeyMap = new Map<string, number>();
-    for (const x of jockeyAnalysis?.entriesWithScores ?? []) {
-      const key = x.hrNo ?? x.hrName;
-      if (key) jockeyMap.set(key, x.jockeyScore);
-    }
-
-    // Combine horse + jockey scores
-    const combinedScores = horseScores.map((hs) => {
-      const hrNo = String(hs.hrNo ?? '');
-      const jScore = jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
-      return Math.round((((hs.score ?? 50) * wH + jScore * wJ) * 100)) / 100;
-    });
+    // Use Python composite scores directly (jockey already included at weight 0.11).
+    // No separate horse/jockey blend — prevents double-counting.
+    const combinedScores = horseScores.map((hs) => hs.score ?? 50);
 
     // Blend with odds-implied probability when available
     const hasOdds = oddsByHrNo && Object.keys(oddsByHrNo).length > 0;

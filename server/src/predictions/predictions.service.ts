@@ -1536,7 +1536,8 @@ AI 예측 순위: ${predictedTop || '-'}
     const entries = raceData.entries ?? [];
 
     return new Promise((resolve) => {
-      const pythonProcess = spawn('python3', [scriptPath]);
+      const pythonBin = process.env.PYTHON_BIN || 'python3';
+      const pythonProcess = spawn(pythonBin, [scriptPath]);
       let dataString = '';
       let errorString = '';
 

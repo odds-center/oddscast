@@ -27,5 +27,6 @@ RUN pnpm --filter server build
 # Run production server (PORT from env; Railway injects PORT)
 WORKDIR /app/server
 ENV NODE_ENV=production
+ENV PYTHON_BIN=/usr/bin/python3
 EXPOSE 3000
 CMD ["node", "dist/main"]

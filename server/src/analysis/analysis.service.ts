@@ -28,7 +28,8 @@ export class AnalysisService {
 
   private runPythonScript(input: object): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      const pythonProcess = spawn('python3', [this.scriptPath], {
+      const pythonBin = process.env.PYTHON_BIN || 'python3';
+      const pythonProcess = spawn(pythonBin, [this.scriptPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
 

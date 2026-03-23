@@ -58,8 +58,11 @@ export class FavoritesService {
     return this.favoriteRepo.save(favorite);
   }
 
-  async update(id: number, dto: UpdateFavoriteDto) {
-    const favorite = await this.findOne(id);
+  async update(id: number, dto: UpdateFavoriteDto, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const favorite = await this.favoriteRepo.findOne({ where });
+    if (!favorite) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
     if (dto.targetName !== undefined) favorite.targetName = dto.targetName;
     if (dto.targetData !== undefined) favorite.targetData = dto.targetData;
     if (dto.memo !== undefined) favorite.memo = dto.memo;
@@ -69,8 +72,11 @@ export class FavoritesService {
     return this.favoriteRepo.save(favorite);
   }
 
-  async remove(id: number) {
-    await this.favoriteRepo.delete(id);
+  async remove(id: number, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const result = await this.favoriteRepo.delete(where);
+    if (!result.affected) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
     return { message: '즐겨찾기가 삭제되었습니다' };
   }
 

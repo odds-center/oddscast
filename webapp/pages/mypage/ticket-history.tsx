@@ -88,10 +88,10 @@ export default function TicketHistoryPage() {
         isLoading={isLoading}
         error={error}
         onRetry={() => refetch()}
-        isEmpty={!tickets.length}
+        isEmpty={!allTickets.length}
         emptyIcon='Ticket'
-        emptyTitle={statusFilter === 'all' ? '예측권 이력이 없습니다' : '해당 상태의 이력이 없습니다'}
-        emptyDescription={statusFilter === 'all' ? '예측권을 구매하거나 구독하면\n이력이 표시됩니다.' : '다른 필터를 선택해 보세요.'}
+        emptyTitle='예측권 이력이 없습니다'
+        emptyDescription='예측권을 구매하거나 구독하면\n이력이 표시됩니다.'
         loadingLabel='이용 내역 준비 중...'
       >
         <div>
@@ -118,6 +118,9 @@ export default function TicketHistoryPage() {
           )}
           {statusFilter === 'EXPIRED' && (
             <p className='text-text-tertiary text-sm mb-3'>유효기간이 지난 예측권입니다. 사용할 수 없습니다.</p>
+          )}
+          {statusFilter !== 'all' && tickets.length === 0 && (
+            <p className='text-text-tertiary text-sm text-center py-8'>해당 상태의 이력이 없습니다. 다른 필터를 선택해 보세요.</p>
           )}
           {/* Mobile: card list */}
           <div className='block sm:hidden space-y-2'>

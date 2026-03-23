@@ -159,15 +159,22 @@ describe('AuthService', () => {
       );
     });
 
-    it('should allow login for unverified user (verification not required at login)', async () => {
+    it('should reject login for unverified user', async () => {
       const testUser = createTestUser({ isEmailVerified: false });
       userRepo.findOne.mockResolvedValue(testUser);
 
-      const result = await service.login('test@example.com', 'password123');
+      await expect(
+        service.login('test@example.com', 'password123'),
+      ).rejects.toThrow('이메일 인증이 필요합니다');
+    });
 
-      expect(result).toHaveProperty('accessToken');
-      expect(result).toHaveProperty('user');
-      expect(result.user.email).toBe('test@example.com');
+    it('should reject login for inactive user', async () => {
+      const testUser = createTestUser({ isActive: false, isEmailVerified: true });
+      userRepo.findOne.mockResolvedValue(testUser);
+
+      await expect(
+        service.login('test@example.com', 'password123'),
+      ).rejects.toThrow('비활성화된 계정입니다');
     });
 
     it('should throw UnauthorizedException on wrong email', async () => {
@@ -238,13 +245,11 @@ describe('AuthService', () => {
   describe('forgotPassword', () => {
     it('should create reset token for existing user', async () => {
       userRepo.findOne.mockResolvedValue(createTestUser());
-      passwordResetRepo.create.mockReturnValue({ userId: 1, token: 'abc' });
-      passwordResetRepo.save.mockResolvedValue({ userId: 1, token: 'abc' });
 
       const result = await service.forgotPassword('test@example.com');
 
-      expect(passwordResetRepo.delete).toHaveBeenCalledWith({ userId: 1 });
-      expect(passwordResetRepo.save).toHaveBeenCalled();
+      // Now uses transaction — manager.delete + manager.save
+      expect(dataSource.transaction).toHaveBeenCalled();
       expect(result.message).toBeDefined();
     });
 

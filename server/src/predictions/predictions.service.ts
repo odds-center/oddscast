@@ -51,9 +51,16 @@ let lastWorkingGeminiModel: string | null = null;
 let lastWorkingGeminiModelAt = 0;
 const MODEL_CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
 
+/** Default daily Gemini API call limit (overridable via global_config key 'gemini_daily_limit') */
+const DEFAULT_GEMINI_DAILY_LIMIT = 50;
+
 @Injectable()
 export class PredictionsService {
   private readonly logger = new Logger(PredictionsService.name);
+
+  /** In-memory daily Gemini call counter. Resets at midnight KST. */
+  private geminiDailyCallCount = 0;
+  private geminiDailyCountDate = ''; // YYYYMMDD string for current count day
 
   constructor(
     @InjectRepository(Prediction)
@@ -73,6 +80,52 @@ export class PredictionsService {
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
   ) {}
+
+  /**
+   * Check and increment the daily Gemini call counter.
+   * Resets at midnight KST. Returns true if under limit, false if limit reached.
+   */
+  private async checkAndIncrementGeminiDailyLimit(): Promise<boolean> {
+    const todayStr = todayKstYyyymmdd();
+
+    // Reset counter if day changed
+    if (this.geminiDailyCountDate !== todayStr) {
+      this.geminiDailyCallCount = 0;
+      this.geminiDailyCountDate = todayStr;
+    }
+
+    // Get configurable limit from global_config
+    const limitStr = await this.configService.get('gemini_daily_limit');
+    const limit = limitStr ? parseInt(limitStr, 10) : DEFAULT_GEMINI_DAILY_LIMIT;
+    const effectiveLimit = isNaN(limit) ? DEFAULT_GEMINI_DAILY_LIMIT : limit;
+
+    if (this.geminiDailyCallCount >= effectiveLimit) {
+      return false;
+    }
+
+    this.geminiDailyCallCount++;
+    return true;
+  }
+
+  /** Get current daily Gemini call count and limit for diagnostics. */
+  async getGeminiDailyUsage(): Promise<{
+    count: number;
+    limit: number;
+    date: string;
+  }> {
+    const todayStr = todayKstYyyymmdd();
+    if (this.geminiDailyCountDate !== todayStr) {
+      this.geminiDailyCallCount = 0;
+      this.geminiDailyCountDate = todayStr;
+    }
+    const limitStr = await this.configService.get('gemini_daily_limit');
+    const limit = limitStr ? parseInt(limitStr, 10) : DEFAULT_GEMINI_DAILY_LIMIT;
+    return {
+      count: this.geminiDailyCallCount,
+      limit: isNaN(limit) ? DEFAULT_GEMINI_DAILY_LIMIT : limit,
+      date: todayStr,
+    };
+  }
 
   /** Load race by id with entries for analysis. Optionally attach winOdds by hrNo from race_results (for score reflection). */
   private async loadRaceWithEntries(
@@ -105,6 +158,17 @@ export class PredictionsService {
       entries,
       ...(Object.keys(oddsByHrNo).length > 0 ? { oddsByHrNo } : {}),
     } as unknown as RaceForPython;
+  }
+
+  /** Find the latest COMPLETED prediction for a given race. Used by pre-race auto-refresh. */
+  async findLatestCompleted(
+    raceId: number,
+  ): Promise<{ id: number; entriesHash: string | null } | null> {
+    return this.predictionRepo.findOne({
+      where: { raceId, status: PredictionStatus.COMPLETED },
+      select: ['id', 'entriesHash'],
+      order: { createdAt: 'DESC' },
+    });
   }
 
   async findAll(filters: PredictionFilterDto) {
@@ -359,6 +423,23 @@ export class PredictionsService {
       order: { createdAt: 'DESC' },
     });
     if (!pred?.race) return;
+
+    // Skip if post-race summary already exists
+    if (pred.postRaceSummary && pred.postRaceSummary.trim().length > 0) {
+      this.logger.log(
+        `Post-race summary already exists for prediction ${pred.id}, skipping`,
+      );
+      return;
+    }
+
+    // Check daily Gemini call limit
+    const withinLimit = await this.checkAndIncrementGeminiDailyLimit();
+    if (!withinLimit) {
+      this.logger.warn(
+        `Daily Gemini call limit reached, skipping post-race summary for race ${raceId}`,
+      );
+      return;
+    }
     const prediction = {
       ...pred,
       race: {
@@ -1095,6 +1176,24 @@ AI 예측 순위: ${predictedTop || '-'}
     raceId: number,
     opts?: { skipCache?: boolean; realtime?: boolean },
   ) {
+    // 0. Check daily Gemini call limit
+    const withinLimit = await this.checkAndIncrementGeminiDailyLimit();
+    if (!withinLimit) {
+      const usage = await this.getGeminiDailyUsage();
+      this.logger.warn(
+        `Daily Gemini call limit reached (${usage.count}/${usage.limit}) for ${usage.date}. Skipping prediction for race ${raceId}.`,
+      );
+      // Return existing COMPLETED prediction if available
+      const existing = await this.predictionRepo.findOne({
+        where: { raceId, status: PredictionStatus.COMPLETED },
+        order: { createdAt: 'DESC' },
+      });
+      if (existing) return existing;
+      throw new Error(
+        `Daily Gemini API call limit reached (${usage.limit}). Try again tomorrow.`,
+      );
+    }
+
     // 1. Check Gemini Availability
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) {
@@ -1306,7 +1405,7 @@ AI 예측 순위: ${predictedTop || '-'}
           generationConfig,
         });
         const result = await model.generateContent(prompt);
-        const response = await result.response;
+        const response = result.response;
         const text = response.text();
 
         // 7. Parse and Save (예측 성공 시 관련 데이터 DB 저장)
@@ -1441,15 +1540,15 @@ AI 예측 순위: ${predictedTop || '-'}
       let dataString = '';
       let errorString = '';
 
-      pythonProcess.stdout.on('data', (data) => {
+      pythonProcess.stdout.on('data', (data: Buffer) => {
         dataString += data.toString();
       });
 
-      pythonProcess.stderr.on('data', (data) => {
+      pythonProcess.stderr.on('data', (data: Buffer) => {
         errorString += data.toString();
       });
 
-      pythonProcess.on('close', (code) => {
+      pythonProcess.on('close', (code: number | null) => {
         let horseScores: HorseAnalysisItem[];
         let cascadeFallRisk: number | undefined;
         try {

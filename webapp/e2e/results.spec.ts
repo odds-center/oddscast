@@ -31,10 +31,10 @@ test.describe('Results — inline on unified races page', () => {
   test('shows 1-2-3 finishing order inline', async ({ page }) => {
     await page.goto(RESULTS_URL);
 
-    // Use .last() to target desktop table (mobile card is hidden on desktop viewport)
-    await expect(page.locator('text=천리마').last()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=번개').last()).toBeVisible({ timeout: 8000 });
-    await expect(page.locator('text=바람').last()).toBeVisible({ timeout: 8000 });
+    // Content appears in both mobile cards and desktop table — use toContainText
+    await expect(page.locator('body')).toContainText('천리마', { timeout: 8000 });
+    await expect(page.locator('body')).toContainText('번개', { timeout: 8000 });
+    await expect(page.locator('body')).toContainText('바람', { timeout: 8000 });
   });
 
   test('shows date filter bar', async ({ page }) => {
@@ -57,9 +57,8 @@ test.describe('Results — inline on unified races page', () => {
   test('race card links to race detail', async ({ page }) => {
     await page.goto(RESULTS_URL);
 
-    // Use .last() to target the desktop table link (mobile card is hidden at 1280px viewport)
-    const raceLink = page.locator('a[href*="/races/1"]').last();
-    await expect(raceLink).toBeVisible({ timeout: 8000 });
+    // Link exists in both mobile and desktop — use getByRole for visible link
+    await expect(page.getByRole('link', { name: /서울|1R/ }).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('date filter changes URL query param', async ({ page }) => {

@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   ParseIntPipe,
+  ForbiddenException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -42,6 +43,8 @@ export class UsersController {
 
   @Get('search')
   @ApiOperation({ summary: '사용자 검색' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   search(@Query('q') query: string) {
     return this.usersService.findAll({ search: query });
   }
@@ -69,7 +72,11 @@ export class UsersController {
   updateProfile(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateUserDto,
+    @CurrentUser() user: JwtPayload,
   ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException('본인의 프로필만 수정할 수 있습니다.');
+    }
     return this.usersService.update(id, dto);
   }
 
@@ -127,6 +134,8 @@ export class UsersController {
 
   @Put(':id')
   @ApiOperation({ summary: '사용자 정보 수정' })
+  @UseGuards(RolesGuard)
+  @Roles(UserRole.ADMIN)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateUserDto) {
     return this.usersService.update(id, dto);
   }

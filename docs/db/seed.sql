@@ -33,5 +33,6 @@ VALUES
   ('signup_bonus_tickets',        '1'),
   ('signup_bonus_expires_days',   '30'),
   ('matrix_ticket_price',         '1000'),
-  ('race_ticket_price',           '500')
+  ('race_ticket_price',           '500'),
+  ('gemini_daily_limit',          '50')
 ON CONFLICT ("key") DO NOTHING;

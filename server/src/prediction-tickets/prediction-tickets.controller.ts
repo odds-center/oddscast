@@ -77,20 +77,19 @@ export class PredictionTicketsController {
     return this.ticketsService.getMatrixBalance(user.sub);
   }
 
-  @Post('matrix/purchase')
-  @ApiOperation({ summary: '종합 예측권 개별 구매 (1,000원/장)' })
-  purchaseMatrixTicket(
-    @CurrentUser() user: JwtPayload,
-    @Body() body: { count?: number },
-  ) {
-    const count = Math.min(10, Math.max(1, Number(body.count) || 1));
-    return this.ticketsService.purchaseMatrixTickets(user.sub, count);
-  }
-
   @Get('matrix/price')
   @ApiOperation({ summary: '종합 예측권 가격 정보' })
   getMatrixPrice() {
-    return { pricePerTicket: 1000, currency: 'KRW', maxPerPurchase: 10 };
+    return this.ticketsService.getMatrixTicketPrice();
+  }
+
+  @Get('check-race/:raceId')
+  @ApiOperation({ summary: 'Check if ticket was used for a specific race' })
+  checkRace(
+    @CurrentUser() user: JwtPayload,
+    @Param('raceId', ParseIntPipe) raceId: number,
+  ) {
+    return this.ticketsService.hasUsedForRace(user.sub, raceId).then((used) => ({ used }));
   }
 
   @Get('history')
@@ -115,7 +114,10 @@ export class PredictionTicketsController {
 
   @Get(':id')
   @ApiOperation({ summary: '예측권 상세 조회' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.ticketsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return this.ticketsService.findOne(id, user.sub);
   }
 }

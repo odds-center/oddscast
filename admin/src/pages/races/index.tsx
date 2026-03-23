@@ -751,7 +751,13 @@ export default function RacesPage() {
                   emptyMessage={hasActiveFilters ? '선택한 조건에 맞는 경주가 없습니다.' : '경주가 없습니다. KRA 동기화를 실행하세요.'}
                   onRowClick={(race) => router.push(`/races/${race.id}`)}
                 />
-                {racesData && (
+                {statusFilter && filteredRaces.length !== allRaces.length && (
+                  <p className='text-xs text-gray-500 mt-2'>현재 페이지에서 {filteredRaces.length}/{allRaces.length}건 표시 (상태 필터 적용)</p>
+                )}
+                {racesData && !statusFilter && (
+                  <Pagination currentPage={page} totalPages={racesData.meta.totalPages} onPageChange={setPage} total={racesData.meta.total} limit={20} />
+                )}
+                {racesData && statusFilter && (
                   <Pagination currentPage={page} totalPages={racesData.meta.totalPages} onPageChange={setPage} total={racesData.meta.total} limit={20} />
                 )}
               </>

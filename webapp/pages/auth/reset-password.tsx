@@ -48,7 +48,20 @@ export default function ResetPasswordPage() {
     mutation.mutate(data);
   };
 
-  if (!token && typeof window !== 'undefined' && router.isReady) {
+  if (!router.isReady) {
+    return (
+      <Layout title='비밀번호 재설정 | OddsCast'>
+        <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+          <CompactPageTitle title='비밀번호 재설정' backHref={routes.auth.login} />
+          <div className='py-16 flex justify-center'>
+            <Icon name='Loader2' size={24} className='animate-spin text-text-secondary' />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!token) {
     return (
       <Layout title='비밀번호 재설정 | OddsCast'>
         <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>

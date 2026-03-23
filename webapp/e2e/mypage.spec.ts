@@ -62,9 +62,8 @@ test.describe('Notifications page', () => {
     await seedAuth(page);
     await page.reload();
 
-    await expect(
-      page.locator('text=경주 시작 30분 전').first(),
-    ).toBeVisible({ timeout: 8000 });
+    // Notification title appears in both mobile card and desktop table — use toContainText
+    await expect(page.locator('body')).toContainText('경주 시작 30분 전', { timeout: 8000 });
   });
 
   test('shows unread badge on notification', async ({ page }) => {
@@ -74,8 +73,7 @@ test.describe('Notifications page', () => {
     await seedAuth(page);
     await page.reload();
 
-    const unreadEl = page.locator('text=서울 1경주가 곧 시작됩니다.').first();
-    await expect(unreadEl).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('body')).toContainText('서울 1경주가 곧 시작됩니다.', { timeout: 8000 });
   });
 
   test('shows empty state when no notifications', async ({ page }) => {
@@ -164,10 +162,8 @@ test.describe('Prediction history page', () => {
     await seedAuth(page);
     await page.reload();
 
-    // raceLabel renders: "{meet} {rcDate} {rcNo}경주" = "서울 2025.03.01 1경주"
-    await expect(
-      page.locator('text=/1경주|서울.*경주/').first(),
-    ).toBeVisible({ timeout: 8000 });
+    // raceLabel renders in both mobile card and desktop table — use toContainText
+    await expect(page.locator('body')).toContainText('1경주', { timeout: 8000 });
   });
 
   test('shows meet and race number', async ({ page }) => {
@@ -177,7 +173,6 @@ test.describe('Prediction history page', () => {
     await seedAuth(page);
     await page.reload();
 
-    // meetName: 서울, rcNo: 1
-    await expect(page.locator('text=서울').first()).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('body')).toContainText('서울', { timeout: 8000 });
   });
 });

@@ -16,6 +16,7 @@ type PredictionRow = {
   id: number;
   raceId: number;
   status: string;
+  previewApproved?: boolean;
   accuracy: number | null;
   createdAt: string;
   race: {
@@ -184,6 +185,22 @@ export default function PredictionsListPage() {
           }`}
         >
           {row.status}
+        </span>
+      ),
+    },
+    {
+      key: 'previewApproved',
+      header: '공개',
+      className: 'w-16',
+      render: (row: PredictionRow) => (
+        <span
+          className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${
+            row.previewApproved
+              ? 'bg-green-100 text-green-800'
+              : 'bg-gray-100 text-gray-500'
+          }`}
+        >
+          {row.previewApproved ? 'ON' : 'OFF'}
         </span>
       ),
     },

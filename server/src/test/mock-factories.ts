@@ -33,6 +33,7 @@ export function createMockQueryBuilder(overrides?: Record<string, unknown>) {
     'values',
     'delete',
     'from',
+    'setLock',
   ];
   for (const m of chainable) {
     qb[m] = jest.fn().mockReturnThis();

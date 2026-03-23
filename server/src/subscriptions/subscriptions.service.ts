@@ -93,6 +93,17 @@ export class SubscriptionsService {
         '이미 활성 구독이 있습니다. 취소 후 다시 신청해 주세요.',
       );
     }
+    const hasPending = await this.subscriptionRepo.findOne({
+      where: { userId, status: SubscriptionStatus.PENDING },
+    });
+    if (hasPending) {
+      // Return existing pending subscription instead of creating duplicate
+      const withPlan = await this.subscriptionRepo.findOne({
+        where: { id: hasPending.id },
+        relations: ['plan'],
+      });
+      return withPlan ? this.toSubWithPlan(withPlan) : hasPending;
+    }
 
     const plan = await this.resolvePlan(dto.planId);
     if (!plan.isActive) {

@@ -51,9 +51,8 @@ test.describe('Notification settings', () => {
     await seedAuth(page);
     await page.reload();
 
-    // Should render toggle switches for notification categories
-    const toggles = page.locator('label[role="switch"], input[type="checkbox"], [data-testid*="toggle"]');
-    // At least one toggle should be present
+    // Radix Switch renders as button[role="switch"]
+    const toggles = page.locator('button[role="switch"], [data-slot="switch"]');
     await expect(toggles.first()).toBeVisible({ timeout: 8000 });
   });
 

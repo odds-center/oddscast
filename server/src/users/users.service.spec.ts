@@ -161,12 +161,14 @@ describe('UsersService', () => {
       ticketRepo.count
         .mockResolvedValueOnce(10) // totalTickets
         .mockResolvedValueOnce(3); // usedTickets
+      // availableTickets now uses createQueryBuilder.getCount
+      ticketRepo._qb.getCount.mockResolvedValue(6);
       favoriteRepo.count.mockResolvedValue(5);
 
       const result = await service.getStats(1);
       expect(result.totalTickets).toBe(10);
       expect(result.usedTickets).toBe(3);
-      expect(result.availableTickets).toBe(7);
+      expect(result.availableTickets).toBe(6);
       expect(result.totalFavorites).toBe(5);
     });
 

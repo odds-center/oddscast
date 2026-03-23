@@ -15,6 +15,7 @@ import { useAuthStore } from '@/lib/store/authStore';
 type RegisterForm = {
   email: string;
   password: string;
+  confirmPassword: string;
   name: string;
   nickname: string;
 };
@@ -27,6 +28,7 @@ export default function Register() {
     register,
     handleSubmit,
     setError,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<RegisterForm>();
 
@@ -81,6 +83,18 @@ export default function Register() {
                 minLength: { value: 6, message: '6자 이상 입력하세요.' },
               })}
               error={errors.password?.message}
+            />
+            <FormInput
+              label='비밀번호 확인'
+              type='password'
+              autoComplete='new-password'
+              placeholder='비밀번호를 다시 입력하세요'
+              {...register('confirmPassword', {
+                required: '비밀번호를 다시 입력하세요.',
+                validate: (v) =>
+                  v === getValues('password') || '비밀번호가 일치하지 않습니다.',
+              })}
+              error={errors.confirmPassword?.message}
             />
             <FormInput
               label='이름'

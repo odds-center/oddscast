@@ -769,10 +769,26 @@ export class AdminKraApi {
     );
   }
 
+  /** AbortController for the current SSE stream — call abort() on unmount */
+  static currentStreamController: AbortController | null = null;
+
+  /** Abort any running SSE stream (call from component cleanup) */
+  static abortStream(): void {
+    if (AdminKraApi.currentStreamController) {
+      AdminKraApi.currentStreamController.abort();
+      AdminKraApi.currentStreamController = null;
+    }
+  }
+
   private static async runStreamSync(
     path: string,
     callbacks: { onProgress?: (percent: number, message: string) => void },
   ): Promise<{ result?: unknown; error?: string }> {
+    // Abort any previous stream
+    AdminKraApi.abortStream();
+    const controller = new AbortController();
+    AdminKraApi.currentStreamController = controller;
+
     const base = (axiosInstance.defaults.baseURL ?? '').replace(/\/$/, '');
     const token =
       typeof window !== 'undefined'
@@ -781,7 +797,7 @@ export class AdminKraApi {
     const url = `${base}${path.startsWith('/') ? path : `/${path}`}`;
     const headers: Record<string, string> = { Accept: 'text/event-stream' };
     if (token) headers['Authorization'] = `Bearer ${token}`;
-    const res = await fetch(url, { method: 'POST', headers });
+    const res = await fetch(url, { method: 'POST', headers, signal: controller.signal });
     if (!res.ok) throw new Error(await res.text().catch(() => res.statusText));
     const reader = res.body?.getReader();
     if (!reader) throw new Error('No response body');

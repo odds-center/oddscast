@@ -38,17 +38,15 @@ test.describe('Prediction accuracy page', () => {
   test('shows monthly breakdown table', async ({ page }) => {
     await page.goto('/predictions/accuracy');
 
-    // byMonth entry: 2025-02
-    const monthEl = page.locator('text=/2025|2월/i').first();
-    await expect(monthEl).toBeVisible({ timeout: 8000 });
+    // byMonth entry rendered in both mobile rows and desktop table — use toContainText
+    await expect(page.locator('body')).toContainText('2025년 02월', { timeout: 8000 });
   });
 
   test('shows meet breakdown table', async ({ page }) => {
     await page.goto('/predictions/accuracy');
 
-    // byMeet entry: 서울
-    const meetEl = page.locator('text=서울').first();
-    await expect(meetEl).toBeVisible({ timeout: 8000 });
+    // byMeet entry rendered in both mobile rows and desktop table — use toContainText
+    await expect(page.locator('body')).toContainText(/서울/, { timeout: 8000 });
   });
 
   test('shows error state when API fails', async ({ page }) => {
@@ -100,7 +98,7 @@ test.describe('Prediction matrix page — authenticated, unlocked', () => {
     await seedAuth(page);
     await page.reload();
 
-    await expect(page.locator('text=천리마').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('body')).toContainText('천리마', { timeout: 10000 });
   });
 
   test('shows race number and meet in matrix row', async ({ page }) => {
@@ -109,7 +107,7 @@ test.describe('Prediction matrix page — authenticated, unlocked', () => {
     await page.reload();
 
     // stubMatrixPrediction.race.rcNo = '1' → '1R', meetName = '서울'
-    await expect(page.locator('text=/1R|서울/i').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('body')).toContainText(/1R|서울/, { timeout: 10000 });
   });
 
   test('shows 2nd horse name in AI consensus column', async ({ page }) => {
@@ -118,7 +116,7 @@ test.describe('Prediction matrix page — authenticated, unlocked', () => {
     await page.reload();
 
     // stubMatrixPrediction.scores.horseScores[1].hrName = '번개'
-    await expect(page.locator('text=번개').first()).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('body')).toContainText('번개', { timeout: 10000 });
   });
 });
 

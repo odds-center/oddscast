@@ -71,6 +71,13 @@ export default function KraPage() {
   const [scheduleYear, setScheduleYear] = useState(() => parseInt(getTodayKstDate().slice(0, 4), 10));
   const [syncProgress, setSyncProgress] = useState<{ percent: number; message: string } | null>(null);
 
+  // Abort SSE streams on unmount to prevent memory leaks
+  useEffect(() => {
+    return () => {
+      adminKraApi.abortStream();
+    };
+  }, []);
+
   const syncScheduleMutation = useMutation({
     mutationFn: (params?: { date?: string; year?: number }) =>
       adminKraApi.syncSchedule(
@@ -500,7 +507,7 @@ export default function KraPage() {
                   isLoading={syncResultsMutation.isPending}
                 >
                   <AdminIcon icon={Trophy} className='w-4 h-4 mr-1.5 inline' />
-                  과거 1년 결과 적재
+                  오늘 결과 적재
                 </Button>
               </div>
             </div>

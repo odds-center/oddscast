@@ -60,18 +60,20 @@ describe('PredictionTicketsService', () => {
     it('should refresh KRA data, generate real-time prediction, and mark ticket USED', async () => {
       // No rate limit (no previous usage)
       ticketRepo.findOne.mockResolvedValueOnce(null);
-      // Available ticket via QB
+      // Available ticket via transaction manager QB
       const ticket = createTestPredictionTicket();
-      const qb = createMockQueryBuilder();
-      qb.getOne.mockResolvedValue(ticket);
-      ticketRepo.createQueryBuilder.mockReturnValue(qb);
+      const managerRepo = dataSource._manager.getRepository();
+      const managerQb = createMockQueryBuilder();
+      managerQb.getOne.mockResolvedValue(ticket);
+      managerRepo.createQueryBuilder.mockReturnValue(managerQb);
+      managerRepo.update.mockResolvedValue({ affected: 1 });
       // Generated prediction
       const pred = createTestPrediction();
       mockPredictionsService.generatePrediction.mockResolvedValue(pred);
-      // After update, return updated ticket
+      // After linking prediction, return updated ticket
       ticketRepo.findOne
         .mockResolvedValueOnce(null) // rate limit check
-        .mockResolvedValueOnce({ ...ticket, status: TicketStatus.USED }); // after update
+        .mockResolvedValueOnce({ ...ticket, status: TicketStatus.USED, predictionId: pred.id }); // after link
 
       const result = await service.useTicket(1, { raceId: '1' });
 
@@ -80,13 +82,10 @@ describe('PredictionTicketsService', () => {
         skipCache: true,
         realtime: true,
       });
+      // Ticket is consumed in transaction, then prediction is linked separately
       expect(ticketRepo.update).toHaveBeenCalledWith(
         ticket.id,
-        expect.objectContaining({
-          status: TicketStatus.USED,
-          predictionId: pred.id,
-          raceId: 1,
-        }),
+        expect.objectContaining({ predictionId: pred.id }),
       );
       expect(result.status).toBe('LINKED');
       expect(result.prediction).toBeDefined();
@@ -94,9 +93,11 @@ describe('PredictionTicketsService', () => {
 
     it('should throw when no available tickets', async () => {
       ticketRepo.findOne.mockResolvedValue(null); // no rate limit
-      const qb = createMockQueryBuilder();
-      qb.getOne.mockResolvedValue(null); // no available tickets
-      ticketRepo.createQueryBuilder.mockReturnValue(qb);
+      // Transaction manager's repo QB returns no ticket
+      const managerRepo = dataSource._manager.getRepository();
+      const managerQb = createMockQueryBuilder();
+      managerQb.getOne.mockResolvedValue(null); // no available tickets
+      managerRepo.createQueryBuilder.mockReturnValue(managerQb);
 
       await expect(service.useTicket(1, { raceId: '1' })).rejects.toThrow(
         BadRequestException,

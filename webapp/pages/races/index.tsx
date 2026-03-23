@@ -53,7 +53,9 @@ function dateToResultParam(dateFilter: string): string | undefined {
   }
   if (dateFilter === 'yesterday') {
     const kst = getTodayKstDate();
-    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
+    // Use Date with UTC to correctly handle month boundaries
+    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day));
+    d.setUTCDate(d.getUTCDate() - 1);
     return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
   }
   if (dateFilter) return dateFilter.replace(/-/g, '');
@@ -105,7 +107,8 @@ export default function RacesPage() {
         { shallow: true },
       );
     }
-  }, [isLoggedIn, currentUser, qMeet, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn, currentUser, qMeet]);
 
   const { weekDay } = getTodayKstDate();
   const isTodayRaceDay = dateFilter === 'today' && RACE_DAYS.includes(weekDay);

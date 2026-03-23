@@ -17,6 +17,8 @@ import { PasswordResetToken } from '../database/entities/password-reset-token.en
 import { EmailVerificationToken } from '../database/entities/email-verification-token.entity';
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { GlobalConfigService } from '../config/config.service';
+import { Subscription } from '../database/entities/subscription.entity';
+import { SubscriptionStatus } from '../database/db-enums';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 import { DiscordService } from '../discord/discord.service';
@@ -165,6 +167,11 @@ export class AuthService {
     if (!valid)
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
 
+    if (!user.isActive)
+      throw new UnauthorizedException('비활성화된 계정입니다. 고객센터에 문의하세요.');
+    if (!user.isEmailVerified)
+      throw new UnauthorizedException('이메일 인증이 필요합니다. 이메일을 확인해 주세요.');
+
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
 
@@ -245,6 +252,10 @@ export class AuthService {
     if (dto.name !== undefined) { user.name = dto.name; changed = true; }
     if (dto.nickname !== undefined) { user.nickname = dto.nickname; changed = true; }
     if (dto.hasSeenOnboarding !== undefined) { user.hasSeenOnboarding = dto.hasSeenOnboarding; changed = true; }
+    if ((dto as Record<string, unknown>).favoriteMeet !== undefined) {
+      user.favoriteMeet = (dto as Record<string, unknown>).favoriteMeet as string | null;
+      changed = true;
+    }
     if (!changed) return this.sanitize(user);
 
     await this.userRepo.save(user);
@@ -283,9 +294,28 @@ export class AuthService {
     if (!valid) {
       throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
     }
-    await this.userRepo.update(userId, {
-      isActive: false,
-      updatedAt: new Date(),
+    const now = new Date();
+    await this.dataSource.transaction(async (manager) => {
+      await manager.update(User, { id: userId }, {
+        isActive: false,
+        updatedAt: now,
+      });
+      // Cancel any active subscriptions and clear billing key
+      await manager
+        .createQueryBuilder()
+        .update(Subscription)
+        .set({
+          status: SubscriptionStatus.CANCELLED,
+          billingKey: null as unknown as string,
+          cancelledAt: now,
+          cancelReason: 'Account deleted by user',
+          updatedAt: now,
+        })
+        .where('userId = :userId AND status = :status', {
+          userId,
+          status: SubscriptionStatus.ACTIVE,
+        })
+        .execute();
     });
     return { message: '계정이 비활성화되었습니다' };
   }
@@ -321,14 +351,16 @@ export class AuthService {
     const token = crypto.randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + 60 * 60 * 1000);
 
-    await this.passwordResetRepo.delete({ userId: user.id });
-    await this.passwordResetRepo.save(
-      this.passwordResetRepo.create({
-        userId: user.id,
-        token,
-        expiresAt,
-      }),
-    );
+    await this.dataSource.transaction(async (manager) => {
+      await manager.delete(PasswordResetToken, { userId: user.id });
+      await manager.save(
+        manager.create(PasswordResetToken, {
+          userId: user.id,
+          token,
+          expiresAt,
+        }),
+      );
+    });
 
     const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
     return {
@@ -375,6 +407,13 @@ export class AuthService {
       throw new BadRequestException('유효하지 않거나 만료된 인증 코드입니다.');
     }
 
+    // Check if already verified to prevent duplicate bonus grants
+    const existingUser = await this.userRepo.findOne({
+      where: { id: record.userId },
+      select: ['id', 'isEmailVerified'],
+    });
+    const alreadyVerified = existingUser?.isEmailVerified ?? false;
+
     await this.dataSource.transaction(async (manager) => {
       await manager.update(
         User,
@@ -384,8 +423,10 @@ export class AuthService {
       await manager.delete(EmailVerificationToken, { userId: record.userId });
     });
 
-    // Grant signup bonus on first verification
-    await this.completeRegistration(record.userId);
+    // Grant signup bonus only on first verification
+    if (!alreadyVerified) {
+      await this.completeRegistration(record.userId);
+    }
 
     // Return JWT so user is logged in immediately
     const user = await this.userRepo.findOne({ where: { id: record.userId } });

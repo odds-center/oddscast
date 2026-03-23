@@ -51,6 +51,10 @@ export default function UsersPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
+    onError: (err: unknown) => {
+      const msg = err instanceof Error ? err.message : '상태 변경에 실패했습니다.';
+      toast.error(msg);
+    },
   });
 
   const grantTicketsMutation = useMutation({

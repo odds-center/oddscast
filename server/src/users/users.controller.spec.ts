@@ -103,15 +103,23 @@ describe('UsersController', () => {
   });
 
   describe('updateProfile', () => {
-    it('should update user profile', async () => {
+    it('should update user profile when user owns the profile', async () => {
       const dto = { nickname: 'NewNick' };
-      const updated = { id: 5, nickname: 'NewNick' };
+      const updated = { id: 1, nickname: 'NewNick' };
       mockUsersService.update.mockResolvedValue(updated);
 
-      const result = await controller.updateProfile(5, dto as never);
+      const result = await controller.updateProfile(1, dto as never, mockUser);
 
-      expect(mockUsersService.update).toHaveBeenCalledWith(5, dto);
+      expect(mockUsersService.update).toHaveBeenCalledWith(1, dto);
       expect(result).toBe(updated);
+    });
+
+    it('should throw ForbiddenException when user does not own the profile', () => {
+      const dto = { nickname: 'NewNick' };
+
+      expect(() =>
+        controller.updateProfile(5, dto as never, mockUser),
+      ).toThrow('본인의 프로필만 수정할 수 있습니다.');
     });
   });
 

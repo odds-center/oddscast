@@ -14,7 +14,7 @@ const CODE_LENGTH = 6;
 
 export default function VerifyEmail() {
   const router = useRouter();
-  const email = (router.query.email as string) || '';
+  const email = router.isReady ? ((router.query.email as string) || '') : '';
   const setAuth = useAuthStore((s) => s.setAuth);
 
   const [digits, setDigits] = useState<string[]>(Array(CODE_LENGTH).fill(''));
@@ -45,7 +45,7 @@ export default function VerifyEmail() {
     }
 
     // Auto-submit when all digits filled
-    if (digit && index === CODE_LENGTH - 1 && newDigits.every((d) => d)) {
+    if (digit && index === CODE_LENGTH - 1 && newDigits.every((d) => d) && !isSubmitting) {
       submitCode(newDigits.join(''));
     }
   };
@@ -103,11 +103,25 @@ export default function VerifyEmail() {
   };
 
   const handleManualSubmit = () => {
+    if (isSubmitting) return;
     const code = digits.join('');
     if (code.length === CODE_LENGTH) {
       submitCode(code);
     }
   };
+
+  if (!router.isReady) {
+    return (
+      <Layout title='이메일 인증 | OddsCast'>
+        <div className='max-w-[400px] mx-auto px-4 py-6 sm:py-8'>
+          <CompactPageTitle title='이메일 인증' backHref={routes.auth.register} />
+          <div className='py-16 flex justify-center'>
+            <Icon name='Loader2' size={24} className='animate-spin text-text-secondary' />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!email) {
     return (

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../database/entities/user.entity';
 import { UserDailyFortune } from '../database/entities/user-daily-fortune.entity';
+import { todayKstYyyymmdd } from '../common/utils/kst';
 import {
   MESSAGE_OVERALL_POOL,
   MESSAGE_RACE_POOL,
@@ -42,11 +43,7 @@ export class FortuneService {
   ) {}
 
   private getTodayDate(): string {
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = String(now.getMonth() + 1).padStart(2, '0');
-    const d = String(now.getDate()).padStart(2, '0');
-    return `${y}${m}${d}`;
+    return todayKstYyyymmdd();
   }
 
   async getOrCreateToday(userId: number): Promise<TodaysFortuneDto> {

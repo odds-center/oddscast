@@ -185,10 +185,10 @@ describe('FavoritesController', () => {
       const result = { id: 3, priority: 'HIGH' };
       mockService.update.mockResolvedValue(result);
 
-      const response = await controller.update(3, dto);
+      const response = await controller.update(mockUser, 3, dto);
 
       expect(response).toEqual(result);
-      expect(mockService.update).toHaveBeenCalledWith(3, dto);
+      expect(mockService.update).toHaveBeenCalledWith(3, dto, 1);
     });
   });
 
@@ -196,9 +196,9 @@ describe('FavoritesController', () => {
     it('should delegate to service with id', async () => {
       mockService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(7);
+      await controller.remove(mockUser as never, 7);
 
-      expect(mockService.remove).toHaveBeenCalledWith(7);
+      expect(mockService.remove).toHaveBeenCalledWith(7, 1);
     });
   });
 });

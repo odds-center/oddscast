@@ -5,6 +5,7 @@ import { test, expect } from '@playwright/test';
 import {
   mockAuthMe,
   mockTicketBalance,
+  mockMatrixBalance,
   mockSubscriptionStatus,
   seedAuth,
   stubUser,
@@ -13,6 +14,7 @@ import {
 async function setupProfile(page: import('@playwright/test').Page) {
   await mockAuthMe(page);
   await mockTicketBalance(page);
+  await mockMatrixBalance(page);
   await mockSubscriptionStatus(page, false);
 }
 
@@ -34,8 +36,7 @@ test.describe('Profile page — authenticated', () => {
     await seedAuth(page);
     await page.reload();
 
-    const name = page.locator(`text=${stubUser.name}`).first();
-    await expect(name).toBeVisible({ timeout: 8000 });
+    await expect(page.locator('body')).toContainText(stubUser.name, { timeout: 8000 });
   });
 
   test('shows prediction ticket balance', async ({ page }) => {
@@ -53,9 +54,8 @@ test.describe('Profile page — authenticated', () => {
     await seedAuth(page);
     await page.reload();
 
-    // Should have link to subscriptions
-    const subLink = page.locator('a[href*="subscriptions"]').first();
-    await expect(subLink).toBeVisible({ timeout: 8000 });
+    // MenuList renders <a> links — use getByRole to target visible links
+    await expect(page.getByRole('link', { name: /구독/ }).first()).toBeVisible({ timeout: 8000 });
   });
 
   test('has link to profile edit page', async ({ page }) => {
@@ -63,8 +63,7 @@ test.describe('Profile page — authenticated', () => {
     await seedAuth(page);
     await page.reload();
 
-    const editLink = page.locator('a[href*="/profile/edit"]').first();
-    await expect(editLink).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole('link', { name: /프로필 수정/ }).first()).toBeVisible({ timeout: 8000 });
   });
 });
 

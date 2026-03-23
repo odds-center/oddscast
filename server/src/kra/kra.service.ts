@@ -39,6 +39,7 @@ import {
 } from '../common/utils/kst';
 import { KRA_MEETS, meetToCode, toKraMeetName } from './constants';
 import { parseOrd } from './ord-parser';
+import { computeEntriesHash } from '../predictions/prediction-utils';
 import type { KraApiItem, KraSyncAllOutput } from '@oddscast/shared';
 
 const DEFAULT_KRA_BASE_URL = 'http://apis.data.go.kr/B551015';
@@ -51,6 +52,9 @@ export interface KraSyncProgressOptions {
 export class KraService {
   private readonly logger = new Logger(KraService.name);
   private readonly serviceKey: string;
+
+  /** Tracks the last refreshRaceDayRealtime call time per date to avoid redundant refreshes. */
+  private lastRealtimeRefreshAt: Map<string, number> = new Map();
 
   constructor(
     private httpService: HttpService,
@@ -186,7 +190,7 @@ export class KraService {
     for (const d of dates) {
       try {
         await this.fetchRacePlanSchedule(d);
-        await this.delay(200);
+        await this.delay(1000);
       } catch (err) {
         this.logger.warn(`[syncDailyUpcomingRacePlans] ${d} failed`, err);
       }
@@ -210,21 +214,25 @@ export class KraService {
    * Fetches race plan + entry sheet for the upcoming weekend.
    * Entry sheets (API26_2) are usually available 2-3 days before race day.
    */
-  @Cron('0 18 * * 3,4', { timeZone: 'Asia/Seoul' }) // Wed, Thu 18:00 KST
+  @Cron('0 18 * * 4', { timeZone: 'Asia/Seoul' }) // Thu 18:00 KST
   async syncWeeklySchedule() {
     if (!this.ensureServiceKey()) return;
     this.logger.log('Running Weekly Schedule Sync (Pre-fetch)');
     const dates = this.getUpcomingWeekendDates();
     for (const date of dates) {
       await this.fetchRacePlanSchedule(date);
+      await this.delay(1000);
       await this.syncEntrySheet(date);
-      // Also attempt analysis data (horse weight, ratings, equipment) — available 2-3 days before race day
+      await this.delay(1000);
+      // Analysis data (horse weight, ratings, equipment) — available 2-3 days before race day.
+      // syncAnalysisData heavy step (training+details) is skipped if already done for this date.
       try {
         await this.syncAnalysisData(date);
       } catch (err) {
         this.logger.warn(`[syncWeeklySchedule] Analysis data not yet available for ${date}`, err);
       }
-      await this.delay(300);
+      // 5s gap between dates to avoid KRA rate limit accumulation
+      await this.delay(5000);
     }
   }
 
@@ -235,11 +243,14 @@ export class KraService {
   @Cron('0 8 * * 5,6,0', { timeZone: 'Asia/Seoul' }) // Fri, Sat, Sun 08:00 KST
   async syncRaceDayMorning() {
     if (!this.ensureServiceKey()) return;
-    this.logger.log('Running Race Day Morning Sync (Finalization)');
+    this.logger.log('Running Race Day Morning Sync (Lightweight)');
     const today = todayKstYyyymmdd();
 
     await this.syncEntrySheet(today);
-    await this.syncAnalysisData(today);
+    // Only fetch fast-changing data (weight, track, equipment, cancellations).
+    // Heavy data (training, horse details, ratings) already synced at 04:00 daily
+    // or Wed/Thu 18:00 weekly schedule sync.
+    await this.refreshRaceDayRealtime(today);
   }
 
   /**
@@ -269,6 +280,102 @@ export class KraService {
         'Pre-Race Prediction Generation failed:',
         err instanceof Error ? err.message : String(err),
       );
+    }
+  }
+
+  /**
+   * 2c. Pre-race auto-refresh (Fri, Sat, Sun every 10 min, 09:00-18:00 KST only)
+   * Finds SCHEDULED races starting in the next 15 minutes, refreshes volatile KRA data,
+   * and regenerates prediction if entry data has changed.
+   */
+  @Cron('*/10 9-17 * * 5,6,0', { timeZone: 'Asia/Seoul' })
+  async preRaceAutoRefresh() {
+    if (!this.ensureServiceKey()) return;
+    const now = kst();
+    const today = this.formatYyyyMmDd(now);
+    const nowMinutes = now.hour() * 60 + now.minute();
+
+    // Find SCHEDULED races for today with stTime in the next 15 minutes
+    const races = await this.raceRepo.find({
+      where: { rcDate: today, status: RaceStatus.SCHEDULED },
+      select: ['id', 'rcDate', 'rcNo', 'meet', 'stTime'],
+    });
+
+    const upcomingRaces = races.filter((race) => {
+      if (!race.stTime) return false;
+      const t = String(race.stTime).trim().replace(/:/g, '');
+      if (t.length < 3) return false;
+      const hour = parseInt(t.slice(0, t.length - 2), 10);
+      const minute = parseInt(t.slice(-2), 10);
+      if (isNaN(hour) || isNaN(minute)) return false;
+      const raceMinutes = hour * 60 + minute;
+      const diff = raceMinutes - nowMinutes;
+      return diff >= 0 && diff <= 15;
+    });
+
+    if (upcomingRaces.length === 0) return;
+
+    this.logger.log(
+      `[preRaceAutoRefresh] Found ${upcomingRaces.length} race(s) starting in 10-15 min`,
+    );
+
+    // Refresh realtime data for today if not refreshed in the last 10 minutes
+    const lastRefresh = this.lastRealtimeRefreshAt.get(today) ?? 0;
+    const tenMinutesMs = 10 * 60 * 1000;
+    if (Date.now() - lastRefresh > tenMinutesMs) {
+      try {
+        await this.refreshRaceDayRealtime(today);
+        this.lastRealtimeRefreshAt.set(today, Date.now());
+        this.logger.log(
+          `[preRaceAutoRefresh] Refreshed realtime data for ${today}`,
+        );
+      } catch (err: unknown) {
+        this.logger.warn(
+          `[preRaceAutoRefresh] refreshRaceDayRealtime failed: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        return;
+      }
+    } else {
+      this.logger.log(
+        `[preRaceAutoRefresh] Skipping refresh — last refresh was ${Math.round((Date.now() - lastRefresh) / 1000)}s ago`,
+      );
+    }
+
+    // Check each upcoming race for entry changes and regenerate if needed
+    for (const race of upcomingRaces) {
+      const raceLabel = `${race.meet} ${today} R${race.rcNo}`;
+      try {
+        // Compute current entries hash
+        const entries = await this.entryRepo.find({
+          where: { raceId: race.id },
+          order: { id: 'ASC' },
+        });
+        const currentHash = computeEntriesHash(entries);
+
+        // Find existing COMPLETED prediction
+        const existingPred = await this.predictionsService.findLatestCompleted(
+          race.id,
+        );
+
+        if (existingPred && existingPred.entriesHash === currentHash) {
+          this.logger.log(
+            `[preRaceAutoRefresh] ${raceLabel}: no changes detected (hash=${currentHash})`,
+          );
+          continue;
+        }
+
+        this.logger.log(
+          `[preRaceAutoRefresh] ${raceLabel}: entries changed (old=${existingPred?.entriesHash ?? 'none'}, new=${currentHash}), regenerating prediction`,
+        );
+        await this.predictionsService.generatePrediction(race.id);
+        this.logger.log(
+          `[preRaceAutoRefresh] ${raceLabel}: prediction regenerated successfully`,
+        );
+      } catch (err: unknown) {
+        this.logger.warn(
+          `[preRaceAutoRefresh] ${raceLabel}: failed — ${err instanceof Error ? err.message : String(err)}`,
+        );
+      }
     }
   }
 
@@ -330,32 +437,6 @@ export class KraService {
       if (endMs > 0 && endMs < now) dates.add(r.rcDate);
     }
     return Array.from(dates);
-  }
-
-  /**
-   * Latest race end time (start + buffer) for the given rcDate. Used to schedule result fetch.
-   * Returns end of rcDate day (23:59 KST) if no races or no stTime.
-   */
-  private async getLastRaceEndTimeForRcDate(rcDate: string): Promise<Date> {
-    const norm = String(rcDate).replace(/-/g, '').slice(0, 8);
-    if (norm.length < 8) {
-      return new Date(
-        `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
-      );
-    }
-    const races = await this.raceRepo.find({
-      where: { rcDate: norm },
-      select: ['stTime'],
-    });
-    const bufferMin = KraService.RACE_END_BUFFER_MINUTES;
-    let maxMs = new Date(
-      `${norm.slice(0, 4)}-${norm.slice(4, 6)}-${norm.slice(6, 8)}T23:59:00+09:00`,
-    ).getTime();
-    for (const r of races) {
-      const endMs = this.getRaceEndTimeMs(norm, r.stTime, bufferMin);
-      if (endMs > 0 && endMs > maxMs) maxMs = endMs;
-    }
-    return new Date(maxMs);
   }
 
   /**
@@ -526,7 +607,7 @@ export class KraService {
    * Jobs are enqueued when race plans are loaded (scheduleResultFetchForRcDate).
    * Also auto-creates jobs for any ended races that slipped through (self-healing).
    */
-  @Cron('*/5 * * * *', { timeZone: 'Asia/Seoul' })
+  @Cron('*/10 9-19 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async processDueBatchSchedulesCron() {
     if (!this.ensureServiceKey()) return;
     await this.ensureResultFetchJobsForEndedRaces();
@@ -552,26 +633,21 @@ export class KraService {
   }
 
   /**
-   * 4. Data consistency check (daily 05:30 KST)
-   * Finds past races (in last 14 days) that have a race row but no result rows (orphaned),
+   * 4. Data consistency check (Mon 05:30 KST)
+   * Finds past races (in last 7 days) that have a race row but no result rows (orphaned),
    * and attempts to backfill their results from KRA API.
    * Does not filter by status so that SCHEDULED races that never received result sync are included.
    */
-  @Cron('0 30 5 * * *', { timeZone: 'Asia/Seoul' })
+  @Cron('0 30 5 * * 1', { timeZone: 'Asia/Seoul' })
   async syncOrphanedRaceResults() {
     if (!this.ensureServiceKey()) return;
-    this.logger.log('Running orphaned race results check (last 14 days)');
+    this.logger.log('Running orphaned race results check (last 7 days)');
 
     const today = kst();
-    const twoWeeksAgo = today.subtract(14, 'day');
+    const twoWeeksAgo = today.subtract(7, 'day');
     const todayStr = this.formatYyyyMmDd(today);
     const fromStr = this.formatYyyyMmDd(twoWeeksAgo);
 
-    const raceIdsWithResults = await this.resultRepo
-      .createQueryBuilder('rr')
-      .select('DISTINCT rr.raceId')
-      .getRawMany<{ rr_raceId: number }>()
-      .then((rows) => rows.map((r) => r.rr_raceId));
     const allInRange = await this.raceRepo
       .createQueryBuilder('r')
       .select(['r.id', 'r.rcDate', 'r.meet', 'r.rcNo'])
@@ -579,8 +655,19 @@ export class KraService {
       .andWhere('r.rcDate < :to', { to: todayStr })
       .orderBy('r.rcDate', 'ASC')
       .getMany();
+    if (allInRange.length === 0) {
+      this.logger.log('No races in range — data is consistent');
+      return;
+    }
+    const raceIdsInRange = allInRange.map((r) => r.id);
+    const raceIdsWithResults = await this.resultRepo
+      .createQueryBuilder('rr')
+      .select('DISTINCT rr."raceId"', 'raceId')
+      .where('rr."raceId" IN (:...ids)', { ids: raceIdsInRange })
+      .getRawMany<{ raceId: number }>()
+      .then((rows) => new Set(rows.map((r) => r.raceId)));
     const orphanedRaces = allInRange.filter(
-      (r) => !raceIdsWithResults.includes(r.id),
+      (r) => !raceIdsWithResults.has(r.id),
     );
 
     if (orphanedRaces.length === 0) {
@@ -596,7 +683,7 @@ export class KraService {
     for (const date of dates) {
       try {
         await this.fetchRaceResults(String(date), true);
-        await this.delay(500);
+        await this.delay(3000);
       } catch (err) {
         this.logger.warn(`[syncOrphanedRaceResults] Failed for ${date}`, err);
       }
@@ -1699,7 +1786,7 @@ export class KraService {
         totalRaces += Math.max(planRes.races ?? 0, entryRes.races ?? 0);
         totalEntries += entryRes.entries ?? 0;
 
-        await this.delay(300);
+        await this.delay(2000);
       } catch (err) {
         this.logger.warn(`[syncUpcomingSchedules] ${d} failed`, err);
       }
@@ -2549,7 +2636,7 @@ export class KraService {
           ...((vs('prd') ?? vs('name')) != null && { prd: vs('prd') ?? vs('name') }),
         });
 
-        await this.delay(500);
+        await this.delay(1000);
       } catch (e) {
         this.logger.warn(`Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -2663,7 +2750,7 @@ export class KraService {
           });
         }
 
-        await this.delay(500);
+        await this.delay(1000);
       } catch (e) {
         this.logger.warn(`Training fetch failed for horse ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
       }
@@ -3695,14 +3782,33 @@ export class KraService {
     await this.fetchHorseSectionalRecords(date);
 
     // 7. Training & race horse details (by race)
+    // This is the heaviest step: ~10-16 horses × 2 API calls × N races = 200-500+ requests.
+    // Only run once per date — check kra_sync_logs for previous success.
+    const alreadySynced = await this.kraSyncLogRepo.findOne({
+      where: { endpoint: 'analysisTrainingDetails', rcDate: normalizedDate, status: 'SUCCESS' },
+      select: ['id'],
+    });
+
     let processedCount = 0;
-    for (const race of races) {
-      reportProgress(`훈련·마필정보 (${processedCount + 1}/${races.length})…`);
-      await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
-      await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);
-      processedCount++;
-      // Throttle between races to prevent KRA 429 rate limit
-      if (processedCount < races.length) await this.delay(500);
+    if (alreadySynced) {
+      this.logger.log(`[syncAnalysisData] Training/details already synced for ${normalizedDate}, skipping`);
+      processedCount = races.length;
+    } else {
+      for (const race of races) {
+        reportProgress(`훈련·마필정보 (${processedCount + 1}/${races.length})…`);
+        await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
+        await this.delay(2000); // 2s gap between training and details
+        await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);
+        processedCount++;
+        // 3s gap between races to stay under KRA rate limit
+        if (processedCount < races.length) await this.delay(3000);
+      }
+      // Mark as done for this date
+      await this.logKraSync('analysisTrainingDetails', {
+        rcDate: normalizedDate,
+        status: 'SUCCESS',
+        recordCount: processedCount,
+      });
     }
 
     // 8. Jockey total results (jktresult) — auto-sync within analysis pipeline

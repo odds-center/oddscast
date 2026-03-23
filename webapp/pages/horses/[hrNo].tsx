@@ -2,6 +2,7 @@
  * Horse performance profile — race history, win rate, recent form
  */
 import { useRouter } from 'next/router';
+import Link from 'next/link';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import SectionCard from '@/components/page/SectionCard';
@@ -118,8 +119,8 @@ export default function HorseProfilePage() {
                   {/* Mobile: card list */}
                   <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden mb-0'>
                     {historyItems.map((r) => (
-                      <a
-                        key={`${r.raceId}-${r.rcDate}`}
+                      <Link
+                        key={String(r.raceId)}
                         href={routes.races.detail(String(r.raceId))}
                         className='flex items-center justify-between py-2.5 px-3 active:bg-stone-50 transition-colors bg-card'
                       >
@@ -140,7 +141,7 @@ export default function HorseProfilePage() {
                           )}
                           {r.rcTime && <span className='font-mono text-xs text-text-secondary'>{formatRaceTime(r.rcTime)}</span>}
                         </div>
-                      </a>
+                      </Link>
                     ))}
                   </div>
                   {/* Desktop: table */}

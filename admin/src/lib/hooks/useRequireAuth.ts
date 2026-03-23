@@ -38,6 +38,28 @@ export function useRequireAuth(): { isAuthenticated: boolean; isChecking: boolea
 
     const token = accessToken ?? fromStorage;
 
+    // Verify admin role from stored user data
+    if (token) {
+      try {
+        const authRaw = localStorage.getItem('auth-storage');
+        if (authRaw) {
+          const parsed = JSON.parse(authRaw) as { state?: { user?: { role?: string } } };
+          const role = parsed?.state?.user?.role;
+          if (role && role !== 'ADMIN') {
+            // Non-admin user — reject access
+            localStorage.removeItem('auth-storage');
+            localStorage.removeItem('accessToken');
+            window.location.href = LOGIN_PATH;
+            setHasToken(false);
+            setIsChecking(false);
+            return;
+          }
+        }
+      } catch {
+        // Ignore parse errors — proceed with token check
+      }
+    }
+
     if (!token) {
       const current = router.pathname;
       if (current !== LOGIN_PATH) {

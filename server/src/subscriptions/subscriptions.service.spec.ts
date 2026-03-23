@@ -50,6 +50,7 @@ describe('SubscriptionsService', () => {
     it('should create PENDING subscription', async () => {
       subscriptionRepo.findOne
         .mockResolvedValueOnce(null) // hasActive check
+        .mockResolvedValueOnce(null) // hasPending check
         .mockResolvedValueOnce({
           ...createTestSubscription(),
           plan: createTestSubscriptionPlan(),
@@ -76,7 +77,9 @@ describe('SubscriptionsService', () => {
     });
 
     it('should throw when plan is inactive', async () => {
-      subscriptionRepo.findOne.mockResolvedValue(null);
+      subscriptionRepo.findOne
+        .mockResolvedValueOnce(null) // hasActive check
+        .mockResolvedValueOnce(null); // hasPending check
       planRepo.findOne.mockResolvedValue(
         createTestSubscriptionPlan({ isActive: false }),
       );

@@ -36,9 +36,7 @@ const MATRIX_HINT_STORAGE_KEY = 'oddscast_matrix_hint_seen';
 function getDateParam(filter: string): string | undefined {
   if (!filter || filter === 'today') return undefined;
   if (filter === 'yesterday') {
-    const kst = getTodayKstDate();
-    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day - 1));
-    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+    return dayjsKST().subtract(1, 'day').format('YYYY-MM-DD');
   }
   if (/^\d{4}-?\d{2}-?\d{2}$/.test(filter.replace(/-/g, ''))) {
     return filter.includes('-') ? filter : `${filter.slice(0, 4)}-${filter.slice(4, 6)}-${filter.slice(6, 8)}`;
@@ -389,8 +387,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     if (apiDateStr) params.date = apiDateStr;
     if (meetFilter) params.meet = meetFilter;
     await queryClient.prefetchQuery({
-      queryKey: ['predictions', 'matrix', dateFilter, meetFilter],
-      queryFn: () => serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix', { params       }),
+      queryKey: ['predictions', 'matrix', dateFilter, meetFilter, false],
+      queryFn: () => serverGet<{ raceMatrix?: unknown[]; experts?: unknown[] }>('/predictions/matrix', { params }),
     });
   } catch {
     // Fetch on client if SSR fails

@@ -22,11 +22,21 @@ export const stubUser = {
 
 export const stubToken = 'mock-jwt-token-abc123';
 
+/** Use a future date to prevent isRaceActuallyEnded() from returning true */
+function getFutureRcDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + 7);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
 export const stubRace = {
   id: '1',
   meet: 'SEOUL',
   meetName: '서울',
-  rcDate: '20250301',
+  rcDate: getFutureRcDate(),
   rcNo: '1',
   rcName: '봄 개막 특별경주',
   stTime: '11:00',
@@ -444,20 +454,29 @@ export async function mockMatrixPredictions(
 
   await page.route(`${API}/predictions/matrix**`, async (route) => {
     // Build correct MatrixResponseDto format from stubMatrixPrediction shape
-    const raceMatrix = predictions.map((p) => ({
-      raceId: String(p.raceId ?? p.id),
-      meet: (p.race as { meet?: string })?.meet ?? 'SEOUL',
-      meetName: p.race?.meetName ?? '서울',
-      rcNo: p.race?.rcNo ?? '1',
-      stTime: p.race?.stTime,
-      predictions: {
-        ai_consensus: (p.scores?.horseScores ?? []).slice(0, 2).map((h: { hrNo: string }) => h.hrNo),
-      },
-      horseNames: Object.fromEntries(
-        (p.scores?.horseScores ?? []).map((h: { hrNo: string; hrName: string }) => [h.hrNo, h.hrName]),
-      ),
-      aiConsensus: p.scores?.horseScores?.[0]?.hrNo ?? '-',
-    }));
+    const raceMatrix = predictions.map((p) => {
+      const horses = p.scores?.horseScores ?? [];
+      return {
+        raceId: String(p.raceId ?? p.id),
+        meet: (p.race as { meet?: string })?.meet ?? 'SEOUL',
+        meetName: p.race?.meetName ?? '서울',
+        rcNo: p.race?.rcNo ?? '1',
+        stTime: p.race?.stTime,
+        predictions: {
+          ai_consensus: horses.slice(0, 2).map((h: { hrNo: string }) => h.hrNo),
+        },
+        horseNames: Object.fromEntries(
+          horses.map((h: { hrNo: string; hrName: string }) => [h.hrNo, h.hrName]),
+        ),
+        entries: horses.map((h: { hrNo: string; hrName: string }, i: number) => ({
+          hrNo: h.hrNo,
+          hrName: h.hrName,
+          chulNo: String(i + 1),
+        })),
+        horseScores: horses,
+        aiConsensus: horses[0]?.hrNo ?? '-',
+      };
+    });
     await route.fulfill({
       status: 200,
       contentType: 'application/json',

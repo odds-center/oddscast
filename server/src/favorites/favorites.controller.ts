@@ -108,15 +108,19 @@ export class FavoritesController {
   @Put(':id')
   @ApiOperation({ summary: '즐겨찾기 수정' })
   update(
+    @CurrentUser() user: JwtPayload,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateFavoriteDto,
   ) {
-    return this.favoritesService.update(id, dto);
+    return this.favoritesService.update(id, dto, user.sub);
   }
 
   @Delete(':id')
   @ApiOperation({ summary: '즐겨찾기 삭제' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.favoritesService.remove(id);
+  remove(
+    @CurrentUser() user: JwtPayload,
+    @Param('id', ParseIntPipe) id: number,
+  ) {
+    return this.favoritesService.remove(id, user.sub);
   }
 }

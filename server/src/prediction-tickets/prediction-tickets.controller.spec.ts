@@ -11,7 +11,8 @@ const mockTicketsService = {
   checkMatrixAccess: jest.fn(),
   useMatrixTicket: jest.fn(),
   getMatrixBalance: jest.fn(),
-  purchaseMatrixTickets: jest.fn(),
+  issueMatrixTicketsAfterPayment: jest.fn(),
+  getMatrixTicketPrice: jest.fn(),
   getHistory: jest.fn(),
   getMyPredictionsHistory: jest.fn(),
   findOne: jest.fn(),
@@ -138,48 +139,19 @@ describe('PredictionTicketsController', () => {
     });
   });
 
-  describe('purchaseMatrixTicket', () => {
-    it('should delegate to service.purchaseMatrixTickets with userId and count', async () => {
-      const expected = { purchased: 3 };
-      mockTicketsService.purchaseMatrixTickets.mockResolvedValue(expected);
-
-      const result = await controller.purchaseMatrixTicket(mockUser as never, {
-        count: 3,
-      });
-
-      expect(mockTicketsService.purchaseMatrixTickets).toHaveBeenCalledWith(
-        mockUser.sub,
-        3,
-      );
-      expect(result).toBe(expected);
-    });
-
-    it('should clamp count between 1 and 10', async () => {
-      mockTicketsService.purchaseMatrixTickets.mockResolvedValue({});
-
-      await controller.purchaseMatrixTicket(mockUser as never, { count: 50 });
-      expect(mockTicketsService.purchaseMatrixTickets).toHaveBeenCalledWith(
-        mockUser.sub,
-        10,
-      );
-
-      await controller.purchaseMatrixTicket(mockUser as never, { count: -5 });
-      expect(mockTicketsService.purchaseMatrixTickets).toHaveBeenCalledWith(
-        mockUser.sub,
-        1,
-      );
-    });
-  });
-
   describe('getMatrixPrice', () => {
-    it('should return static price info', () => {
-      const result = controller.getMatrixPrice();
-
-      expect(result).toEqual({
+    it('should delegate to service.getMatrixTicketPrice', () => {
+      const expected = {
         pricePerTicket: 1000,
         currency: 'KRW',
         maxPerPurchase: 10,
-      });
+      };
+      mockTicketsService.getMatrixTicketPrice.mockReturnValue(expected);
+
+      const result = controller.getMatrixPrice();
+
+      expect(mockTicketsService.getMatrixTicketPrice).toHaveBeenCalled();
+      expect(result).toEqual(expected);
     });
   });
 
@@ -224,9 +196,9 @@ describe('PredictionTicketsController', () => {
       const expected = { id: 1, type: 'RACE' };
       mockTicketsService.findOne.mockResolvedValue(expected);
 
-      const result = await controller.findOne(1);
+      const result = await controller.findOne(1, mockUser as never);
 
-      expect(mockTicketsService.findOne).toHaveBeenCalledWith(1);
+      expect(mockTicketsService.findOne).toHaveBeenCalledWith(1, mockUser.sub);
       expect(result).toBe(expected);
     });
   });

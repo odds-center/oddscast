@@ -3,7 +3,7 @@
  * Query: subscriptionId (we set), customerKey & authKey (Toss appends).
  * Calls POST /payments/billing-key then shows result.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
@@ -25,8 +25,12 @@ export default function SubscriptionCheckoutSuccessPage() {
   const [status, setStatus] = useState<Status>('loading');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
+  const hasCalledRef = useRef(false);
+
   useEffect(() => {
     if (!router.isReady) return;
+    // Prevent duplicate API calls on re-render or back/forward navigation
+    if (hasCalledRef.current) return;
 
     const subId =
       typeof subscriptionId === 'string' ? subscriptionId : Array.isArray(subscriptionId) ? subscriptionId[0] : '';
@@ -35,12 +39,12 @@ export default function SubscriptionCheckoutSuccessPage() {
     const aKey = typeof authKey === 'string' ? authKey : Array.isArray(authKey) ? authKey[0] : '';
 
     if (!subId || !cKey || !aKey) {
-      queueMicrotask(() => {
-        setStatus('error');
-        setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
-      });
+      setStatus('error');
+      setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
       return;
     }
+
+    hasCalledRef.current = true;
 
     (async () => {
       try {

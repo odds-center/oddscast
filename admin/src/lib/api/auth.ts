@@ -40,6 +40,7 @@ export const authApi = {
       localStorage.removeItem('accessToken');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('admin_token');
+      localStorage.removeItem('auth-storage');
       document.cookie = 'accessToken=; path=/; max-age=0';
     }
   },

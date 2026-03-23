@@ -56,8 +56,10 @@ export interface MyPredictionHistoryItem {
  * Prediction ticket usage result
  */
 export interface UseTicketResult {
+  status?: 'LINKED' | 'PREPARING';
   prediction: PredictionResultDto;
   ticketUsed: boolean;
+  retryAfterSeconds?: number;
   ticket: {
     id: string;
     usedAt: string;
@@ -85,6 +87,18 @@ export default class PredictionTicketsApi {
       return handleApiResponse(response);
     } catch (err: unknown) {
       throw handleApiError(err);
+    }
+  }
+
+  /**
+   * Check if a ticket was already used for a specific race
+   */
+  static async checkRaceUsage(raceId: string): Promise<{ used: boolean }> {
+    try {
+      const response = await axiosInstance.get(`/prediction-tickets/check-race/${raceId}`);
+      return handleApiResponse(response) as { used: boolean };
+    } catch {
+      return { used: false };
     }
   }
 

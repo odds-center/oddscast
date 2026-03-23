@@ -114,6 +114,7 @@ export class DiscordService {
   private readonly botToken: string;
   private readonly signupChannelId: string;
   private readonly errorChannelId: string;
+  private readonly errorWebhookUrl: string;
   private readonly devWebhookUrl: string;
   private readonly isProduction: boolean;
 
@@ -121,6 +122,7 @@ export class DiscordService {
     this.botToken = this.config.get<string>('DISCORD_BOT_TOKEN', '');
     this.signupChannelId = this.config.get<string>('DISCORD_SIGNUP_CHANNEL_ID', '');
     this.errorChannelId = this.config.get<string>('DISCORD_ERROR_CHANNEL_ID', '');
+    this.errorWebhookUrl = this.config.get<string>('DISCORD_ERROR_WEBHOOK_URL', '');
     this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
     this.isProduction = this.config.get<string>('NODE_ENV', '') === 'production';
   }
@@ -154,20 +156,24 @@ export class DiscordService {
   }
 
   /**
+   * Send embed message via webhook URL.
+   */
+  private async sendToWebhook(webhookUrl: string, embeds: DiscordEmbed[]): Promise<void> {
+    if (!webhookUrl) return;
+    try {
+      await axios.post(webhookUrl, { embeds }, { timeout: 5000 });
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.warn(`Discord webhook failed: ${msg}`);
+    }
+  }
+
+  /**
    * Send dev notification via webhook (non-production only).
    */
   async sendDevNotification(notification: DevNotification): Promise<void> {
     if (!this.devEnabled) return;
-    try {
-      await axios.post(
-        this.devWebhookUrl,
-        { embeds: [notification.toEmbed()] },
-        { timeout: 5000 },
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.warn(`Discord dev webhook failed: ${msg}`);
-    }
+    await this.sendToWebhook(this.devWebhookUrl, [notification.toEmbed()]);
   }
 
   /**
@@ -217,6 +223,7 @@ export class DiscordService {
       },
     ];
     await this.sendToChannel(this.errorChannelId, embeds);
+    await this.sendToWebhook(this.errorWebhookUrl, embeds);
     await this.sendDevNotification(new DevServerError(method, url, status, message, stack));
   }
 
@@ -258,6 +265,7 @@ export class DiscordService {
       },
     ];
     await this.sendToChannel(this.errorChannelId, embeds);
+    await this.sendToWebhook(this.errorWebhookUrl, embeds);
     await this.sendDevNotification(new DevClientError(method, url, status, message, ip));
   }
 }

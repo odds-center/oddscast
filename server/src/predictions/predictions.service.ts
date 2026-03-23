@@ -1113,13 +1113,11 @@ AI 예측 순위: ${predictedTop || '-'}
       'gemini-2.0-flash-exp',
       'gemini-1.5-flash',
       'gemini-1.5-flash-8b',
+      'gemini-pro',
     ];
     const fallbackModels = [
-      'gemini-2.5-flash', // 우선 (현재 사용 가능)
+      'gemini-2.5-flash',
       'gemini-2.0-flash',
-      'gemini-1.5-flash',
-      'gemini-1.5-flash-8b',
-      'gemini-pro',
     ];
     let modelsToTry = deprecatedOrUnavailable.includes(rawModel)
       ? [...fallbackModels]
@@ -1195,42 +1193,56 @@ AI 예측 순위: ${predictedTop || '-'}
 
     // Wrap entire prediction flow in try/finally to guarantee lock cleanup
     try {
-    // 3a. 과거 구간별 성적 (선행마/추입마) — RaceEntry.sectionalStats 우선, 없으면 RaceResult
-    const sectionalByHorse = await this.getSectionalAnalysisByHorse(
-      race as RaceForPython,
-    );
+    // 3. Enrich entries with historical data — parallelized for performance.
+    // Each enrichment method mutates entry fields independently, so they can run concurrently.
+    // Group 1: sectional + race_results based enrichments (independent DB tables)
+    const raceForEnrich = race as RaceForPython;
+    const [sectionalByHorse, raceWithRecentRanks] = await Promise.all([
+      this.getSectionalAnalysisByHorse(raceForEnrich),
+      this.enrichEntriesWithRecentRanks(raceForEnrich),
+    ]);
 
-    // 3b. recentRanks 보강 — DB에 없으면 RaceResult에서 과거 착순 조회 (KRA_API_ANALYSIS_SPEC §4.2)
-    const raceWithRecentRanks = await this.enrichEntriesWithRecentRanks(
-      race as RaceForPython,
-    );
-    // 3b-2. 낙마 이력 보강 — 말/기수별 과거 낙마 횟수 (fall risk·연쇄 낙마 산출용)
-    const raceWithFallHistory =
-      await this.enrichEntriesWithFallHistory(raceWithRecentRanks);
-    // 3b-3. 거리별 성적 보강 — 현재 경주 거리 구간의 승률/복승률
-    const raceWithDist =
-      await this.enrichEntriesWithDistanceStats(raceWithFallHistory);
-    // 3b-5. 클래스 변경 감지 — 이전 경주 대비 등급 상/하향
-    const raceWithClass =
-      await this.enrichEntriesWithClassChange(raceWithDist);
-    // 3c. 조교사 승률/복승률 보강 — TrainerResult (API19_1)
-    const raceWithTrainer =
-      await this.enrichEntriesWithTrainerResults(raceWithClass);
-    // 3c-2. 기수 meet-level 승률/복승률 보강 — JockeyResult → Python jockey weight 직접 반영
-    const raceWithJockey =
-      await this.enrichEntriesWithJockeyResults(raceWithTrainer);
-    // 3c-3. 조교 데이터 구조화 — trainings 테이블에서 최근 14일 메트릭 추출
-    const raceWithTraining =
-      await this.enrichEntriesWithTrainingMetrics(raceWithJockey);
-    // 3c-4. 당일 복수 출전 피로도 감지 — 같은 날 이전 경주 출전 여부 확인
-    const raceWithFatigue =
-      await this.enrichEntriesWithSameDayFatigue(raceWithTraining);
-    // 3c-5. 이전 마체중 조회 — condition score weight delta 계산용
-    const raceWithPrevWeight =
-      await this.enrichEntriesWithPrevHorseWeight(raceWithFatigue);
-    // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score 입력용
+    // Group 2: fall, distance, class (chain on recentRanks result, but independent of each other)
+    // These all add fields to entries and read from race_results — can run in parallel
+    const [raceWithFallHistory, raceWithDist, raceWithClass] = await Promise.all([
+      this.enrichEntriesWithFallHistory(raceWithRecentRanks),
+      this.enrichEntriesWithDistanceStats(raceWithRecentRanks),
+      this.enrichEntriesWithClassChange(raceWithRecentRanks),
+    ]);
+
+    // Merge results from parallel group 2 (each added different fields to entries)
+    const mergedEntries = (raceWithRecentRanks.entries ?? []).map((entry, i) => ({
+      ...entry,
+      ...(raceWithFallHistory.entries?.[i] ?? {}),
+      ...(raceWithDist.entries?.[i] ?? {}),
+      ...(raceWithClass.entries?.[i] ?? {}),
+    }));
+    const raceAfterGroup2 = { ...raceWithRecentRanks, entries: mergedEntries };
+
+    // Group 3: trainer, jockey, training, fatigue, prevWeight (independent tables)
+    const [raceWithTrainer, raceWithJockey, raceWithTraining, raceWithFatigue, raceWithPrevWeight] =
+      await Promise.all([
+        this.enrichEntriesWithTrainerResults(raceAfterGroup2),
+        this.enrichEntriesWithJockeyResults(raceAfterGroup2),
+        this.enrichEntriesWithTrainingMetrics(raceAfterGroup2),
+        this.enrichEntriesWithSameDayFatigue(raceAfterGroup2),
+        this.enrichEntriesWithPrevHorseWeight(raceAfterGroup2),
+      ]);
+
+    // Merge results from parallel group 3
+    const finalEntries = (raceAfterGroup2.entries ?? []).map((entry, i) => ({
+      ...entry,
+      ...(raceWithTrainer.entries?.[i] ?? {}),
+      ...(raceWithJockey.entries?.[i] ?? {}),
+      ...(raceWithTraining.entries?.[i] ?? {}),
+      ...(raceWithFatigue.entries?.[i] ?? {}),
+      ...(raceWithPrevWeight.entries?.[i] ?? {}),
+    }));
+    const raceEnriched = { ...raceAfterGroup2, entries: finalEntries };
+
+    // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score input
     const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceWithPrevWeight,
+      raceEnriched,
       sectionalByHorse,
     );
 
@@ -1471,8 +1483,14 @@ AI 예측 순위: ${predictedTop || '-'}
         resolve({ horseScores, cascadeFallRisk });
       });
 
+      // Strip fields that Python analysis.py never reads to reduce IPC payload
+      const slimEntries = (raceData.entries ?? []).map((e) => {
+        const { trainings, trainingData, prd, isScratched, trNo, ...rest } = e as unknown as Record<string, unknown>;
+        return rest;
+      });
+      const slimRaceData = { ...raceData, entries: slimEntries };
       pythonProcess.stdin.write(
-        JSON.stringify(raceData, (_, value) =>
+        JSON.stringify(slimRaceData, (_, value) =>
           typeof value === 'bigint' ? value.toString() : value,
         ),
       );

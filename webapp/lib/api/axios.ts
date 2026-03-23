@@ -39,15 +39,20 @@ export const axiosInstance: AxiosInstance = axios.create({
 
 // --- Token refresh state (shared across interceptor calls) ---
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: { resolve: (token: string) => void; reject: (err: unknown) => void }[] = [];
 
 function onRefreshed(token: string) {
-  refreshSubscribers.forEach((cb) => cb(token));
+  refreshSubscribers.forEach((s) => s.resolve(token));
   refreshSubscribers = [];
 }
 
-function addRefreshSubscriber(callback: (token: string) => void) {
-  refreshSubscribers.push(callback);
+function onRefreshFailed(error: unknown) {
+  refreshSubscribers.forEach((s) => s.reject(error));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(resolve: (token: string) => void, reject: (err: unknown) => void) {
+  refreshSubscribers.push({ resolve, reject });
 }
 
 /**
@@ -144,19 +149,24 @@ axiosInstance.interceptors.response.use(
           config.headers.Authorization = `Bearer ${newToken}`;
           return axiosInstance(config);
         } else {
-          // Refresh failed — logout
-          refreshSubscribers = [];
+          // Refresh failed — reject all queued requests and logout
+          onRefreshFailed(error);
           emitUnauthorized();
           return Promise.reject(error);
         }
       }
 
       // Another request hit 401 while refresh is in progress — queue it
-      return new Promise((resolve) => {
-        addRefreshSubscriber((token: string) => {
-          config.headers.Authorization = `Bearer ${token}`;
-          resolve(axiosInstance(config));
-        });
+      return new Promise((resolve, reject) => {
+        addRefreshSubscriber(
+          (token: string) => {
+            config.headers.Authorization = `Bearer ${token}`;
+            resolve(axiosInstance(config));
+          },
+          (err: unknown) => {
+            reject(err);
+          },
+        );
       });
     }
 

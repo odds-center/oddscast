@@ -146,6 +146,7 @@ export default function PredictionMatrixPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['predictions', 'matrix-access'] });
       queryClient.invalidateQueries({ queryKey: ['predictions', 'matrix-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['predictions', 'matrix'] });
       trackCTA('MATRIX_TICKET_USE');
     },
   });

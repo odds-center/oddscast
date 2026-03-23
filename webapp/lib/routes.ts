@@ -26,7 +26,6 @@ settings: '/settings',
 
   mypage: {
     index: '/mypage',
-    picks: '/mypage/picks',
     subscriptions: '/mypage/subscriptions',
     subscriptionsCheckout: (planId: string) => `/mypage/subscription-checkout?planId=${planId}`,
     subscriptionCheckoutSuccess: '/mypage/subscription-checkout/success',

@@ -176,19 +176,23 @@ export default class ResultApi {
     if (filters?.page) params.append('page', String(filters.page ?? 1));
     if (filters?.limit) params.append('limit', String(filters.limit ?? 20));
 
-    const response = await axiosInstance.get<
-      ApiResponseDto<{
-        raceGroups: Array<{
-          race: { id: string; meet?: string; meetName?: string; rcDate: string; rcNo?: string; rcDist?: string };
-          results: RaceResult[];
-        }>;
-        total: number;
-        page: number;
-        totalPages: number;
-      }>
-    >(`${ResultApi.baseUrl}?${params.toString()}`);
+    try {
+      const response = await axiosInstance.get<
+        ApiResponseDto<{
+          raceGroups: Array<{
+            race: { id: string; meet?: string; meetName?: string; rcDate: string; rcNo?: string; rcDist?: string };
+            results: RaceResult[];
+          }>;
+          total: number;
+          page: number;
+          totalPages: number;
+        }>
+      >(`${ResultApi.baseUrl}?${params.toString()}`);
 
-    return handleApiResponse(response);
+      return handleApiResponse(response);
+    } catch (error) {
+      throw handleApiError(error);
+    }
   }
 
   // Get individual race result

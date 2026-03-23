@@ -176,7 +176,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
       </div>
 
       {/* Desktop: table layout */}
-      <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+      <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
         <Table className='min-w-max [&_th]:py-3 [&_td]:py-2.5'>
           <TableHeader>
             <TableRow className='bg-stone-50 border-b border-border hover:bg-stone-50'>

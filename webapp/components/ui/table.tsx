@@ -3,13 +3,49 @@ import * as React from 'react';
 import { cn } from '@/lib/utils/cn';
 
 function Table({ className, ...props }: React.ComponentProps<'table'>) {
+  const wrapperRef = React.useRef<HTMLDivElement>(null);
+  const [canScroll, setCanScroll] = React.useState(false);
+  const [isScrolledEnd, setIsScrolledEnd] = React.useState(false);
+
+  React.useEffect(() => {
+    const el = wrapperRef.current;
+    if (!el) return;
+
+    const check = () => {
+      const hasOverflow = el.scrollWidth > el.clientWidth + 2;
+      setCanScroll(hasOverflow);
+      setIsScrolledEnd(hasOverflow && el.scrollLeft + el.clientWidth >= el.scrollWidth - 2);
+    };
+
+    check();
+    el.addEventListener('scroll', check, { passive: true });
+    const ro = new ResizeObserver(check);
+    ro.observe(el);
+    return () => {
+      el.removeEventListener('scroll', check);
+      ro.disconnect();
+    };
+  }, []);
+
   return (
-    <div data-slot="table-wrapper" className="relative w-full overflow-x-auto -webkit-overflow-scrolling-touch">
-      <table
-        data-slot="table"
-        className={cn('w-full caption-bottom text-sm', className)}
-        {...props}
-      />
+    <div className="relative">
+      <div
+        ref={wrapperRef}
+        data-slot="table-wrapper"
+        className="relative w-full overflow-x-auto -webkit-overflow-scrolling-touch"
+      >
+        <table
+          data-slot="table"
+          className={cn('w-full caption-bottom text-sm', className)}
+          {...props}
+        />
+      </div>
+      {canScroll && !isScrolledEnd && (
+        <div
+          className="pointer-events-none absolute top-0 right-0 bottom-0 w-8 bg-gradient-to-l from-white/90 to-transparent"
+          aria-hidden="true"
+        />
+      )}
     </div>
   );
 }

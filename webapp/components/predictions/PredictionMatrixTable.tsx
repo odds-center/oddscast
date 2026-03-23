@@ -81,8 +81,13 @@ export default function PredictionMatrixTable({
 
   const hasMoreLazy = !locked && lazyCount < raceMatrix.length;
 
+  // Reset lazy count when data changes (date/meet filter switch)
   useEffect(() => {
-    if (locked || raceMatrix.length <= LAZY_INITIAL_ROWS) return;
+    setLazyCount(LAZY_INITIAL_ROWS);
+  }, [raceMatrix]);
+
+  useEffect(() => {
+    if (locked || viewMode !== 'detail' || raceMatrix.length <= LAZY_INITIAL_ROWS) return;
     const sentinel = sentinelRef.current;
     if (!sentinel) return;
     const observer = new IntersectionObserver(
@@ -94,7 +99,7 @@ export default function PredictionMatrixTable({
     );
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [locked, raceMatrix.length]);
+  }, [locked, raceMatrix.length, viewMode]);
 
   // Unlocked: expanded per-race cards or compact overview table
   if (!locked) {

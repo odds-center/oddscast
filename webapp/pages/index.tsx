@@ -41,9 +41,10 @@ export default function Home() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
+    // Prefetch with same key as RecentResultsSection to share cache
     queryClient.prefetchQuery({
-      queryKey: ['results', 1, ''],
-      queryFn: () => ResultApi.getResults({ limit: 40, page: 1 }),
+      queryKey: ['results', 'recent'],
+      queryFn: () => ResultApi.getResults({ limit: 60, page: 1 }),
       staleTime: 60 * 1000,
     });
   }, [queryClient]);

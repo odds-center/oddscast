@@ -9,8 +9,17 @@ import DataTable from '@/components/ui/DataTable';
 import { Button } from '@/components/ui/button';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
+import Icon from '@/components/icons';
 import { getTodayKstDate } from '@/lib/utils/format';
 import type { RaceDto } from '@/lib/types/race';
+
+const WEEKDAY_TIPS = [
+  { icon: 'ClipboardList' as const, text: '경주 전 출전마의 최근 5경기 성적을 확인하세요.' },
+  { icon: 'BarChart2' as const, text: '종합예상표는 한눈에 모든 경주를 비교할 수 있어요.' },
+  { icon: 'Medal' as const, text: '기수 성적은 경마장별로 다릅니다. 홈 경마장 기수를 주목하세요.' },
+  { icon: 'Flag' as const, text: '비 오는 날은 주로 상태가 달라져요. 습주로 적성마를 확인하세요.' },
+  { icon: 'Clock' as const, text: '휴식 21~42일이 최적. 너무 짧거나 긴 휴식은 성적에 영향을 줍니다.' },
+];
 
 function getWeekRange(): { dateFrom: string; dateTo: string } {
   const kst = getTodayKstDate();
@@ -19,6 +28,28 @@ function getWeekRange(): { dateFrom: string; dateTo: string } {
   const fmt = (d: Date) =>
     `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
   return { dateFrom: fmt(from), dateTo: fmt(to) };
+}
+
+/** Rotating racing tips for weekday visitors */
+function WeekdayTipsView() {
+  const { day } = getTodayKstDate();
+  // Rotate tips based on day of month
+  const tipIndex = day % WEEKDAY_TIPS.length;
+  const tip = WEEKDAY_TIPS[tipIndex];
+  const nextTip = WEEKDAY_TIPS[(tipIndex + 1) % WEEKDAY_TIPS.length];
+  return (
+    <div className='py-3'>
+      <p className='text-xs text-text-tertiary text-center mb-3'>경주는 매주 금·토·일 진행됩니다</p>
+      <div className='space-y-2'>
+        {[tip, nextTip].map((t, i) => (
+          <div key={i} className='flex items-start gap-2.5 px-3 py-2.5 rounded-lg bg-stone-50 border border-stone-100'>
+            <Icon name={t.icon} size={16} className='text-primary shrink-0 mt-0.5' />
+            <p className='text-xs text-text-secondary leading-relaxed'>{t.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function WeekRacesSection() {
@@ -52,10 +83,7 @@ export default function WeekRacesSection() {
           </Button>
         </div>
       ) : races.length === 0 ? (
-        <div className='py-6 text-center text-text-secondary'>
-          <p className='text-sm'>이번 주 예정된 경주가 없습니다.</p>
-          <p className='text-xs text-text-tertiary mt-1'>경주는 매주 금·토·일 진행됩니다.</p>
-        </div>
+        <WeekdayTipsView />
       ) : (
         <>
           {/* Mobile: card list */}

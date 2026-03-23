@@ -137,21 +137,32 @@ export default function RaceDetailPage() {
     placeholderData: keepPreviousData,
   });
 
-  const hasUsedTicketForRace = !!ticketHistory?.tickets?.some(
+  // Optimistic lock: prevent double ticket consumption between mutation settle and query refetch
+  const [ticketConsumedForRace, setTicketConsumedForRace] = useState(false);
+
+  // Reset local state when race id changes (prevents stale data across navigation)
+  useEffect(() => {
+    setFullPredictionFromUse(null);
+    setTicketConsumedForRace(false);
+    setSelectedPredictionId(null);
+  }, [id]);
+
+  const hasUsedTicketFromHistory = !!ticketHistory?.tickets?.some(
     (t) => String(t.raceId) === String(id) && t.status === 'USED',
   );
+  const hasUsedTicketForRace = hasUsedTicketFromHistory || ticketConsumedForRace;
 
   const { data: fullPredictionData } = useQuery({
     queryKey: ['prediction', 'full', id],
     queryFn: () => PredictionApi.getByRaceId(id as string),
-    enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
+    enabled: !!id && (isRaceCompleted || (isLoggedIn && hasUsedTicketForRace)),
     placeholderData: keepPreviousData,
   });
 
   const { data: predictionHistory } = useQuery({
     queryKey: ['prediction', 'history', id],
     queryFn: () => PredictionApi.getHistoryByRaceId(id as string),
-    enabled: !!id && (isRaceCompleted || (isLoggedIn && !!hasUsedTicketForRace)),
+    enabled: !!id && (isRaceCompleted || (isLoggedIn && hasUsedTicketForRace)),
     placeholderData: keepPreviousData,
   });
 
@@ -172,6 +183,9 @@ export default function RaceDetailPage() {
   const useTicketMutation = useMutation({
     mutationFn: ({ raceId, regenerate }: { raceId: string; regenerate?: boolean }) =>
       PredictionTicketApi.redeem(raceId, { regenerate }),
+    onMutate: () => {
+      setTicketConsumedForRace(true);
+    },
     onSuccess: (data) => {
       setFullPredictionFromUse(data.prediction);
       setSelectedPredictionId(null);
@@ -179,6 +193,10 @@ export default function RaceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['prediction', 'history', id] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'history'] });
+    },
+    onError: () => {
+      // Revert optimistic lock on failure so user can retry
+      setTicketConsumedForRace(false);
     },
   });
 
@@ -576,7 +594,7 @@ export default function RaceDetailPage() {
                 })}
               </div>
               {/* Desktop: full results table */}
-              <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+              <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                 <Table className='w-full min-w-[640px] [&_th]:py-3 [&_td]:py-2.5'>
                   <TableHeader>
                     <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
@@ -1057,7 +1075,7 @@ export default function RaceDetailPage() {
                   )}
                 </div>
                 {/* Desktop: table */}
-                <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
+                <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm overflow-x-auto'>
                   <Table className='w-full min-w-[320px] [&_th]:py-3 [&_td]:py-2.5'>
                     <TableHeader>
                       <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>

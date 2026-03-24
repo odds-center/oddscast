@@ -34,6 +34,7 @@ async function bootstrap() {
     production: [
       'https://oddscast.up.railway.app',
       'https://oddscast-webapp.vercel.app',
+      'https://oddscast-admin.vercel.app',
     ],
     development: [
       'http://localhost:3000', // webapp

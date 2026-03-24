@@ -99,15 +99,15 @@ export default function MatrixTicketPurchasePage() {
                 </Button>
               </div>
             ) : (
-              <div className='flex items-center gap-4'>
+              <div className='flex items-center gap-6'>
                 <div>
                   <span className='text-stone-500 text-xs'>사용 가능</span>
-                  <p className='text-foreground font-bold text-lg'>{balance?.available ?? 0}<span className='text-sm font-normal text-stone-400'>장</span></p>
+                  <p className='text-foreground font-bold text-lg'>{balance?.available ?? 0}<span className='text-sm font-normal text-stone-400 ml-0.5'>장</span></p>
                 </div>
                 <div className='w-px h-8 bg-stone-200' />
                 <div>
                   <span className='text-stone-500 text-xs'>사용 완료</span>
-                  <p className='text-stone-500 font-medium text-lg'>{balance?.used ?? 0}<span className='text-sm font-normal text-stone-400'>장</span></p>
+                  <p className='text-stone-500 font-medium text-lg'>{balance?.used ?? 0}<span className='text-sm font-normal text-stone-400 ml-0.5'>장</span></p>
                 </div>
               </div>
             )}
@@ -167,8 +167,9 @@ export default function MatrixTicketPurchasePage() {
 
           {/* Error message */}
           {purchaseMutation.error && (
-            <div className='text-error text-sm'>
-              {getErrorMessage(purchaseMutation.error)}
+            <div className='bg-red-50 border border-red-200 rounded-lg p-3 flex items-start gap-2'>
+              <Icon name='AlertCircle' size={16} className='text-red-500 mt-0.5 shrink-0' />
+              <p className='text-red-600 text-sm'>{getErrorMessage(purchaseMutation.error)}</p>
             </div>
           )}
 

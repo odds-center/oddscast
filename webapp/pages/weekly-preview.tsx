@@ -47,9 +47,11 @@ export default function WeeklyPreviewPage() {
         onRetry={() => refetch()}
         isEmpty={!hasContent && !isLoading}
         emptyIcon='Calendar'
-        emptyTitle='아직 프리뷰가 없습니다'
-        emptyDescription={'목요일 저녁에\n이번 주말 경주 요약이 생성됩니다.'}
-        loadingLabel='불러오는 중...'
+        emptyTitle='프리뷰 준비 중입니다'
+        emptyDescription={'이번 주말 경주 일정이 확정되면\n프리뷰가 자동으로 생성됩니다.\n매주 목요일 저녁에 업데이트됩니다.'}
+        loadingLabel='프리뷰 확인 중...'
+        errorTitle='프리뷰를 확인하는 중입니다'
+        errorDescription='경주 일정이 아직 반영되지 않았을 수 있습니다. 잠시 후 다시 확인해 주세요.'
       >
         {hasContent && content && (
           <div className='space-y-5'>

@@ -3,6 +3,7 @@ import { axiosInstance, handleApiResponse } from '@/lib/api/axios';
 export interface JockeyAnalysisEntry {
   hrNo: string;
   hrName: string;
+  chulNo?: string;
   jkNo: string;
   jkName: string;
   horseScore: number;

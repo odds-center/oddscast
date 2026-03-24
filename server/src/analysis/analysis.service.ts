@@ -5,8 +5,10 @@ import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
+import { TrainerResult } from '../database/entities/trainer-result.entity';
 import * as path from 'path';
-import { spawn } from 'child_process';
+import * as fs from 'fs';
+import { spawn, execSync } from 'child_process';
 
 @Injectable()
 export class AnalysisService {
@@ -16,6 +18,20 @@ export class AnalysisService {
     'analysis.py',
   );
 
+  private static readonly MEET_CODE_MAP: Record<string, string> = {
+    서울: '1',
+    제주: '2',
+    부산경남: '3',
+    부산: '3',
+    부경: '3',
+    Seoul: '1',
+    Jeju: '2',
+    Busan: '3',
+    SEOUL: '1',
+    JEJU: '2',
+    BUSAN: '3',
+  };
+
   constructor(
     @InjectRepository(Race) private readonly raceRepo: Repository<Race>,
     @InjectRepository(RaceEntry)
@@ -24,11 +40,27 @@ export class AnalysisService {
     private readonly resultRepo: Repository<RaceResult>,
     @InjectRepository(JockeyResult)
     private readonly jockeyResultRepo: Repository<JockeyResult>,
+    @InjectRepository(TrainerResult)
+    private readonly trainerResultRepo: Repository<TrainerResult>,
   ) {}
+
+  /** Resolve python3 binary path: env var → well-known paths → PATH lookup */
+  private static resolvePythonBin(): string {
+    if (process.env.PYTHON_BIN) return process.env.PYTHON_BIN;
+    const candidates = ['/usr/bin/python3', '/usr/local/bin/python3'];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) return p;
+    }
+    try {
+      return execSync('which python3', { encoding: 'utf8' }).trim();
+    } catch {
+      return 'python3';
+    }
+  }
 
   private runPythonScript(input: object): Promise<unknown> {
     return new Promise((resolve, reject) => {
-      const pythonBin = process.env.PYTHON_BIN || 'python3';
+      const pythonBin = AnalysisService.resolvePythonBin();
       const pythonProcess = spawn(pythonBin, [this.scriptPath], {
         stdio: ['pipe', 'pipe', 'pipe'],
       });
@@ -85,6 +117,7 @@ export class AnalysisService {
     entriesWithScores: Array<{
       hrNo: string;
       hrName: string;
+      chulNo: string | null;
       jkNo: string;
       jkName: string;
       horseScore: number;
@@ -115,9 +148,9 @@ export class AnalysisService {
     });
     if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
 
+    // Fetch ALL entry fields for rich analysis
     const entries = await this.entryRepo.find({
-      where: { raceId },
-      select: ['hrNo', 'hrName', 'jkNo', 'jkName', 'rating'],
+      where: { raceId, isScratched: false },
     });
 
     const results = await this.resultRepo
@@ -129,53 +162,96 @@ export class AnalysisService {
       .addOrderBy('rr.ord', 'ASC')
       .getMany();
 
-    const meetMap: Record<string, string> = {
-      서울: '1',
-      제주: '2',
-      부산경남: '3',
-      부산: '3',
-      부경: '3',
-      Seoul: '1',
-      Jeju: '2',
-      Busan: '3',
-    };
     const meet =
-      meetMap[String(race.meet)] ??
+      AnalysisService.MEET_CODE_MAP[String(race.meet)] ??
       (String(race.meet).replace(/[^123]/g, '') || '1');
+
+    // Fetch jockey stats (meet-specific + career fallback)
     const jockeyNos = [
       ...new Set(entries.map((e) => e.jkNo).filter(Boolean)),
     ] as string[];
-    let jockeys: Array<{
-      meet: string;
-      jkNo: string;
-      winRateTsum: number;
-      quRateTsum: number;
-      rcCntT: number;
-    }> = [];
-    if (jockeyNos.length > 0) {
-      const jockeyRows = await this.jockeyResultRepo.find({
-        where: { meet, jkNo: In(jockeyNos) },
-        select: ['meet', 'jkNo', 'winRateTsum', 'quRateTsum', 'rcCntT'],
-      });
-      jockeys = jockeyRows.map((j) => ({
-        meet: j.meet,
-        jkNo: j.jkNo,
-        winRateTsum: j.winRateTsum,
-        quRateTsum: j.quRateTsum,
-        rcCntT: j.rcCntT,
-      }));
-    }
-
     const jockeyMap: Record<
       string,
-      { winRateTsum: number; quRateTsum: number; rcCntT: number }
+      {
+        winRateTsum: number;
+        quRateTsum: number;
+        rcCntT: number;
+        isFallback: boolean;
+      }
     > = {};
-    for (const j of jockeys) {
-      jockeyMap[`${j.meet}_${j.jkNo}`] = {
-        winRateTsum: j.winRateTsum,
-        quRateTsum: j.quRateTsum,
-        rcCntT: j.rcCntT,
-      };
+
+    if (jockeyNos.length > 0) {
+      const meetRows = await this.jockeyResultRepo.find({
+        where: { meet, jkNo: In(jockeyNos) },
+        select: ['jkNo', 'rcCntT', 'winRateTsum', 'quRateTsum'],
+      });
+      for (const j of meetRows) {
+        jockeyMap[j.jkNo] = {
+          winRateTsum: j.winRateTsum,
+          quRateTsum: j.quRateTsum,
+          rcCntT: j.rcCntT,
+          isFallback: false,
+        };
+      }
+
+      // Career-wide fallback for jockeys missing from this meet
+      const foundNos = new Set(meetRows.map((j) => j.jkNo));
+      const missingNos = jockeyNos.filter((n) => !foundNos.has(n));
+      if (missingNos.length > 0) {
+        const careerRows = await this.jockeyResultRepo.find({
+          where: { jkNo: In(missingNos) },
+          select: [
+            'jkNo',
+            'rcCntT',
+            'ord1CntT',
+            'ord2CntT',
+            'ord3CntT',
+          ],
+        });
+        // Aggregate across all meets per jockey
+        const agg: Record<
+          string,
+          { rc: number; o1: number; o2: number; o3: number }
+        > = {};
+        for (const row of careerRows) {
+          const a = (agg[row.jkNo] ??= { rc: 0, o1: 0, o2: 0, o3: 0 });
+          a.rc += row.rcCntT ?? 0;
+          a.o1 += row.ord1CntT ?? 0;
+          a.o2 += row.ord2CntT ?? 0;
+          a.o3 += row.ord3CntT ?? 0;
+        }
+        for (const [jkNo, a] of Object.entries(agg)) {
+          if (a.rc > 0) {
+            jockeyMap[jkNo] = {
+              winRateTsum: (a.o1 / a.rc) * 100,
+              quRateTsum: ((a.o1 + a.o2 + a.o3) / a.rc) * 100,
+              rcCntT: a.rc,
+              isFallback: true,
+            };
+          }
+        }
+      }
+    }
+
+    // Fetch trainer stats
+    const trainerNos = [
+      ...new Set(entries.map((e) => e.trNo).filter(Boolean)),
+    ] as string[];
+    const trainerMap: Record<
+      string,
+      { winRateTsum: number; quRateTsum: number }
+    > = {};
+    if (trainerNos.length > 0) {
+      const trainerRows = await this.trainerResultRepo.find({
+        where: { meet, trNo: In(trainerNos) },
+        select: ['trNo', 'winRateTsum', 'quRateTsum'],
+      });
+      for (const t of trainerRows) {
+        trainerMap[t.trNo] = {
+          winRateTsum: t.winRateTsum,
+          quRateTsum: t.quRateTsum,
+        };
+      }
     }
 
     const input = {
@@ -189,14 +265,37 @@ export class AnalysisService {
         weather: race.weather,
         track: race.track ?? undefined,
       },
-      entries: entries.map((e) => ({
-        hrNo: e.hrNo,
-        hrName: e.hrName,
-        jkNo: e.jkNo,
-        jkName: e.jkName,
-        rating: e.rating,
-      })),
-      jockeyMap,
+      entries: entries.map((e) => {
+        const jk = e.jkNo ? jockeyMap[e.jkNo] : undefined;
+        const tr = e.trNo ? trainerMap[e.trNo] : undefined;
+        return {
+          hrNo: e.hrNo,
+          hrName: e.hrName,
+          chulNo: e.chulNo,
+          jkNo: e.jkNo,
+          jkName: e.jkName,
+          rating: e.rating,
+          ratingHistory: e.ratingHistory,
+          recentRanks: e.recentRanks,
+          age: e.age,
+          sex: e.sex,
+          wgBudam: e.wgBudam,
+          horseWeight: e.horseWeight,
+          equipment: e.equipment,
+          rcCntT: e.rcCntT,
+          ord1CntT: e.ord1CntT,
+          trainingData: e.trainingData,
+          sectionalStats: e.sectionalStats,
+          // Enriched jockey stats
+          jockeyMeetWinRate: jk?.winRateTsum ?? null,
+          jockeyMeetQuRate: jk?.quRateTsum ?? null,
+          jockeyRcCntT: jk?.rcCntT ?? null,
+          jockeyFallbackCareer: jk?.isFallback ?? false,
+          // Enriched trainer stats
+          trainerWinRate: tr?.winRateTsum ?? null,
+          trainerQuRate: tr?.quRateTsum ?? null,
+        };
+      }),
       results: results.map((r) => ({ rcTime: r.rcTime, ord: r.ord })),
     };
 
@@ -204,6 +303,7 @@ export class AnalysisService {
       entriesWithScores?: Array<{
         hrNo: string;
         hrName: string;
+        chulNo: string | null;
         jkNo: string;
         jkName: string;
         horseScore: number;

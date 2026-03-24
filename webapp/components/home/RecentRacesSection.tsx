@@ -8,6 +8,7 @@ import { useQueries, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import RaceApi from '@/lib/api/raceApi';
 import { getRecentRaceIds } from '@/lib/utils/recentRaces';
+import { formatRcDate } from '@/lib/utils/format';
 import HomeSection from './HomeSection';
 import { routes } from '@/lib/routes';
 
@@ -54,22 +55,21 @@ export default function RecentRacesSection() {
       {races.length === 0 ? (
         <p className="text-sm text-text-secondary">불러오는 중...</p>
       ) : (
-        <ul className="space-y-2">
+        <div className="divide-y divide-border/60">
           {races.map((race) => (
-            <li key={race.id}>
-              <Link
-                href={routes.races.detail(race.id)}
-                className="block rounded-lg border border-border bg-muted/10 px-3 py-2 text-sm hover:bg-muted/20 transition-colors"
-              >
-                <span className="font-medium text-foreground">{race.meetName}</span>
-                <span className="text-text-secondary"> 제{race.rcNo}경주</span>
-                {race.rcDate && (
-                  <span className="text-text-tertiary text-xs ml-1">{race.rcDate}</span>
-                )}
-              </Link>
-            </li>
+            <Link
+              key={race.id}
+              href={routes.races.detail(race.id)}
+              className="flex items-center py-2 text-sm hover:bg-muted/10 transition-colors gap-3"
+            >
+              <span className="font-medium text-foreground shrink-0 w-16">{race.meetName}</span>
+              <span className="text-foreground tabular-nums shrink-0 w-8">{race.rcNo}R</span>
+              {race.rcDate && (
+                <span className="text-text-tertiary text-xs tabular-nums">{formatRcDate(race.rcDate)}</span>
+              )}
+            </Link>
           ))}
-        </ul>
+        </div>
       )}
     </HomeSection>
   );

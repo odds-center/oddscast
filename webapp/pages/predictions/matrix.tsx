@@ -351,21 +351,59 @@ export default function PredictionMatrixPage() {
           )}
 
           {activeTab === 'commentary' && (
-            <DataFetchState
-              isLoading={commentaryLoading}
-              error={commentaryError}
-              onRetry={() => commentaryRefetch()}
-              isEmpty={!commentaryData?.comments?.length}
-              emptyIcon='Sparkles'
-              emptyTitle='코멘트가 없습니다'
-              emptyDescription={'해당 날짜에 AI 예측 코멘트가 없습니다.\n다른 날짜를 선택해보세요.'}
-              loadingLabel='코멘트 준비 중...'
-              errorTitle='코멘트를 불러올 수 없습니다'
-            >
-              {commentaryData?.comments && commentaryData.comments.length > 0 ? (
-                <CommentaryFeed comments={commentaryData.comments} />
-              ) : null}
-            </DataFetchState>
+            <>
+              {!hasAccess && isLoggedIn && (
+                <div className='rounded border border-[rgba(22,163,74,0.2)] bg-[rgba(22,163,74,0.04)] p-4 mb-3'>
+                  <div className='flex flex-wrap items-center gap-3'>
+                    <div className='w-9 h-9 rounded bg-primary flex items-center justify-center shrink-0'>
+                      <Icon name='Sparkles' size={18} className='text-white' />
+                    </div>
+                    <div className='flex-1 min-w-0'>
+                      <h3 className='text-sm font-bold text-foreground'>AI 코멘트 열람하기</h3>
+                      <p className='text-xs text-stone-500 mt-0.5 whitespace-pre-line'>
+                        종합 예측권 1장으로 해당 날짜 전체{'\n'}AI 코멘트를 열람할 수 있습니다.{'\n'}(1일 1장 · 1,000원)
+                      </p>
+                    </div>
+                    <div className='w-full sm:w-auto flex flex-col gap-1'>
+                      {availableMatrixTickets > 0 ? (
+                        <Button
+                          onClick={() => useMatrixMutation.mutate()}
+                          disabled={useMatrixMutation.isPending}
+                          className='w-full sm:w-auto'
+                        >
+                          {useMatrixMutation.isPending ? '열람 중...' : `예측권 사용 (${availableMatrixTickets}장 보유)`}
+                        </Button>
+                      ) : (
+                        <Button asChild className='w-full sm:w-auto'>
+                          <Link href={routes.mypage.matrixTicketPurchase}>
+                            <Icon name='CreditCard' size={16} />
+                            종합 예측권 구매
+                          </Link>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                  {useMatrixMutation.isError && (
+                    <p className='text-error text-xs mt-2'>{getErrorMessage(useMatrixMutation.error) || '사용에 실패했습니다'}</p>
+                  )}
+                </div>
+              )}
+              <DataFetchState
+                isLoading={commentaryLoading}
+                error={commentaryError}
+                onRetry={() => commentaryRefetch()}
+                isEmpty={!commentaryData?.comments?.length}
+                emptyIcon='Sparkles'
+                emptyTitle='코멘트가 없습니다'
+                emptyDescription={'해당 날짜에 AI 예측 코멘트가 없습니다.\n다른 날짜를 선택해보세요.'}
+                loadingLabel='코멘트 준비 중...'
+                errorTitle='코멘트를 불러올 수 없습니다'
+              >
+                {commentaryData?.comments && commentaryData.comments.length > 0 ? (
+                  <CommentaryFeed comments={commentaryData.comments} locked={!hasAccess} />
+                ) : null}
+              </DataFetchState>
+            </>
           )}
         </>
       )}

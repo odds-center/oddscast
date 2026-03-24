@@ -944,46 +944,58 @@ def get_weight_ratio(race: dict, entries: list, results: list = None) -> tuple:
 
 
 def analyze_jockey(data: dict) -> dict:
-    """2단계 필터링 통합 분석."""
+    """Multi-factor horse+jockey integrated analysis using all available entry data.
+    Horse score: rating, form, condition, experience, trainer, suitability (6 factors).
+    Jockey score: meet-specific or career-wide win/place rate + experience.
+    Combined: weighted by race context (close race, special conditions, normal)."""
     race = data.get("race", {})
     entries = data.get("entries", [])
-    jockey_map = data.get("jockeyMap", {})
     results = data.get("results", [])
 
-    meet = str(race.get("meet", "1"))
-    if meet in ("서울", "Seoul"):
-        meet = "1"
-    elif meet in ("제주", "Jeju"):
-        meet = "2"
-    elif meet in ("부산", "부경", "Busan"):
-        meet = "3"
+    rc_dist = int(race.get("rcDist") or 0)
+    track = str(race.get("track") or "")
 
     horse_weight, jockey_weight = get_weight_ratio(race, entries, results)
 
-    def _rating_to_score(r):
-        if r is None or r <= 0:
-            return 50.0
-        v = float(r)
-        return min(100, max(0, (v - 45) / 45 * 100))
+    # Compute max rating across field for relative scoring
+    ratings = [float(e.get("rating") or 0) for e in entries if e.get("rating")]
+    max_rating = max(ratings) if ratings else 0
 
     entries_with_scores = []
     for e in entries:
-        jk_no = e.get("jkNo") or ""
-        key = f"{meet}_{jk_no}"
-        jockey = jockey_map.get(key)
-
-        jockey_score = 0.0
-        if jockey:
-            jockey_score = calculate_jockey_score(jockey)
-
+        # ── Horse score: multi-factor (reuse existing sub-score functions) ──
+        recent_ranks = _parse_recent_ranks(e.get("recentRanks"))
         rating = e.get("rating")
-        horse_score = _rating_to_score(rating)
+        rating_history = e.get("ratingHistory")
 
+        rat = _rating_score(rating, max_rating)
+        frm = _form_score(recent_ranks, rating, rating_history)
+        cnd = _condition_score(e)
+        exp = _experience_score(e.get("rcCntT"), e.get("ord1CntT"))
+        trn = _trainer_score(e)
+        suit = _suitability_score(e, rc_dist, track)
+
+        # Weighted horse composite (sum=1.0)
+        horse_score = (
+            rat * 0.25 +
+            frm * 0.30 +
+            cnd * 0.15 +
+            exp * 0.10 +
+            trn * 0.10 +
+            suit * 0.10
+        )
+
+        # ── Jockey score: enriched stats from server ──
+        jockey_score = _jockey_score(e)
+
+        # ── Combined ──
         combined = horse_score * horse_weight + jockey_score * jockey_weight
+
         entries_with_scores.append({
             "hrNo": e.get("hrNo"),
             "hrName": e.get("hrName"),
-            "jkNo": jk_no,
+            "chulNo": e.get("chulNo"),
+            "jkNo": e.get("jkNo") or "",
             "jkName": e.get("jkName"),
             "horseScore": round(horse_score, 2),
             "jockeyScore": round(jockey_score, 2),
@@ -996,6 +1008,9 @@ def analyze_jockey(data: dict) -> dict:
             "weightRatio": {"horse": horse_weight, "jockey": jockey_weight},
             "topPickByJockey": None,
         }
+
+    # Sort by combined score descending
+    entries_with_scores.sort(key=lambda x: x["combinedScore"], reverse=True)
 
     by_jockey = sorted(entries_with_scores, key=lambda x: x["jockeyScore"], reverse=True)
     top_by_jockey = by_jockey[0] if by_jockey else None

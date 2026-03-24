@@ -14,9 +14,12 @@ export default function HitRecordBanner({ records }: HitRecordBannerProps) {
 
   return (
     <div className='rounded-xl border border-stone-200 bg-stone-50 overflow-hidden mb-4'>
-      <div className='flex items-center gap-2 px-4 py-2.5 border-b border-border'>
-        <Icon name='Trophy' size={18} className='text-stone-600 shrink-0' />
-        <span className='font-bold text-stone-800 text-sm'>적중 내역</span>
+      <div className='flex items-center gap-2.5 px-4 py-2.5 border-b border-border'>
+        <span className='inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold shadow-sm'>
+          <Icon name='Trophy' size={13} />
+          HIT
+        </span>
+        <span className='font-semibold text-stone-700 text-sm'>최근 적중 기록</span>
       </div>
       <div className='divide-y divide-border'>
         {records.map((r) => (

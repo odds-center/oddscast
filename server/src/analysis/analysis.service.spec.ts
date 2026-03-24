@@ -6,6 +6,7 @@ import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
+import { TrainerResult } from '../database/entities/trainer-result.entity';
 
 const mockRaceRepo = { findOne: jest.fn() };
 const mockEntryRepo = { find: jest.fn() };
@@ -13,6 +14,7 @@ const mockResultRepo = {
   createQueryBuilder: jest.fn(),
 };
 const mockJockeyResultRepo = { find: jest.fn() };
+const mockTrainerResultRepo = { find: jest.fn() };
 
 // QueryBuilder chain mock
 function buildQbMock(results: unknown[]) {
@@ -41,6 +43,10 @@ describe('AnalysisService', () => {
         {
           provide: getRepositoryToken(JockeyResult),
           useValue: mockJockeyResultRepo,
+        },
+        {
+          provide: getRepositoryToken(TrainerResult),
+          useValue: mockTrainerResultRepo,
         },
       ],
     }).compile();
@@ -93,6 +99,7 @@ describe('AnalysisService', () => {
       const qb = buildQbMock([]);
       mockResultRepo.createQueryBuilder.mockReturnValue(qb);
       mockJockeyResultRepo.find.mockResolvedValue([]);
+      mockTrainerResultRepo.find.mockResolvedValue([]);
 
       // Mock the private runPythonScript method
       const expectedResult = {
@@ -143,6 +150,7 @@ describe('AnalysisService', () => {
       mockEntryRepo.find.mockResolvedValue([]);
       mockResultRepo.createQueryBuilder.mockReturnValue(buildQbMock([]));
       mockJockeyResultRepo.find.mockResolvedValue([]);
+      mockTrainerResultRepo.find.mockResolvedValue([]);
 
       jest
         .spyOn(
@@ -167,6 +175,7 @@ describe('AnalysisService', () => {
       mockEntryRepo.find.mockResolvedValue([]);
       mockResultRepo.createQueryBuilder.mockReturnValue(buildQbMock([]));
       mockJockeyResultRepo.find.mockResolvedValue([]);
+      mockTrainerResultRepo.find.mockResolvedValue([]);
 
       jest
         .spyOn(
@@ -203,6 +212,7 @@ describe('AnalysisService', () => {
       ]);
       mockResultRepo.createQueryBuilder.mockReturnValue(buildQbMock([]));
       mockJockeyResultRepo.find.mockResolvedValue([]);
+      mockTrainerResultRepo.find.mockResolvedValue([]);
 
       const spy = jest
         .spyOn(

@@ -16,6 +16,7 @@ interface DataFetchStateProps {
   emptyAction?: ReactNode;
   loadingLabel?: string;
   errorTitle?: string;
+  errorDescription?: string;
   children: ReactNode;
 }
 
@@ -34,6 +35,7 @@ export default function DataFetchState({
   emptyAction,
   loadingLabel = '준비 중...',
   errorTitle = '일시적인 오류가 발생했습니다',
+  errorDescription,
   children,
 }: DataFetchStateProps) {
   if (isLoading) {
@@ -49,7 +51,7 @@ export default function DataFetchState({
       <EmptyState
         icon='AlertCircle'
         title={errorTitle}
-        description={getErrorMessage(error)}
+        description={errorDescription ?? getErrorMessage(error)}
         action={
           onRetry ? (
             <Button onClick={onRetry} variant='outline' size='sm' aria-label='다시 시도'>

@@ -433,19 +433,18 @@ export default function RaceDetailPage() {
             track={(r as { track?: string }).track}
           />
 
-          {/* ── AI prediction (above the fold so ticket use CTA is visible) ── */}
+          {/* ── AI prediction (hidden for completed races) ── */}
+          {!isRaceCompleted && (
           <section>
             <SectionTitle
               title='AI 예측'
               icon='Target'
               badge={
-                isRaceCompleted
-                  ? displayPrediction ? 'AI 결과' : undefined
-                  : isLoggedIn && availableTickets > 0
-                    ? `예측권 ${availableTickets}장`
-                    : displayPrediction
-                      ? '열람 중'
-                      : undefined
+                isLoggedIn && availableTickets > 0
+                  ? `예측권 ${availableTickets}장`
+                  : displayPrediction
+                    ? '열람 중'
+                    : undefined
               }
               className='mb-2'
             />
@@ -471,17 +470,6 @@ export default function RaceDetailPage() {
                 lastUsedAt={lastUsedTicket?.usedAt ?? null}
                 isRaceCompleted={isRaceCompleted}
               />
-            ) : isRaceCompleted ? (
-              <div className='rounded-md border border-stone-200 bg-stone-50 p-4 text-center flex flex-col items-center'>
-                <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2'>
-                  <Icon name='Target' size={20} className='text-stone-400' />
-                </div>
-                <p className='text-text-secondary text-sm'>
-                  {isServerCompleted
-                    ? '이 경주에 대한 AI 예측이 없습니다.'
-                    : '경주가 종료되었습니다. 결과 반영 후 AI 분석이 표시됩니다.'}
-                </p>
-              </div>
             ) : (
               <PredictionLockedView
                 predictionPreview={predictionPreview}
@@ -492,6 +480,7 @@ export default function RaceDetailPage() {
               />
             )}
           </section>
+          )}
 
           {/* ── Race results (same section/table style as 출전마) ── */}
           {(isRaceCompleted || hasResults) && (
@@ -603,7 +592,7 @@ export default function RaceDetailPage() {
                       <TableHead className='text-left min-w-[90px]'>마명</TableHead>
                       <TableHead className='text-center w-12'>성별</TableHead>
                       <TableHead className='text-center w-12'>연령</TableHead>
-                      <TableHead className='text-center w-12'>중량</TableHead>
+                      <TableHead className='text-right w-12'>중량</TableHead>
                       <TableHead className='text-left w-20'>기수</TableHead>
                       <TableHead className='text-left w-20'>조교사</TableHead>
                       <TableHead className='text-left w-20'>마주</TableHead>
@@ -615,9 +604,9 @@ export default function RaceDetailPage() {
                           <span>기록</span>
                         </Tooltip>
                       </TableHead>
-                      <TableHead className='text-center w-16'>마체중</TableHead>
-                      <TableHead className='text-center w-12'>단승</TableHead>
-                      <TableHead className='text-center w-12'>연승</TableHead>
+                      <TableHead className='text-right w-16'>마체중</TableHead>
+                      <TableHead className='text-right w-14'>단승</TableHead>
+                      <TableHead className='text-right w-14'>연승</TableHead>
                       <TableHead className='text-left w-24'>장구</TableHead>
                       <TableHead className='text-center w-16'>
                         <Tooltip
@@ -706,7 +695,7 @@ export default function RaceDetailPage() {
                           </TableCell>
                           <TableCell className='text-center text-text-secondary text-sm whitespace-nowrap'>{row.sex ?? '-'}</TableCell>
                           <TableCell className='text-center text-text-secondary text-sm whitespace-nowrap'>{row.age ?? '-'}</TableCell>
-                          <TableCell className='text-center text-sm whitespace-nowrap'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</TableCell>
+                          <TableCell className='text-right text-sm whitespace-nowrap tabular-nums'>{row.wgBudam != null ? `${row.wgBudam}` : '-'}</TableCell>
                           <TableCell className='text-text-secondary whitespace-nowrap'>
                             {(res as { jkNo?: string }).jkNo && res.jkName ? (
                               <Link
@@ -732,18 +721,18 @@ export default function RaceDetailPage() {
                             )}
                           </TableCell>
                           <TableCell className='text-text-secondary text-sm whitespace-nowrap'>{row.owName ?? '-'}</TableCell>
-                          <TableCell className='text-right text-text-tertiary font-mono text-xs whitespace-nowrap'>
+                          <TableCell className='text-right text-text-tertiary font-mono text-xs whitespace-nowrap tabular-nums'>
                             {record}
                           </TableCell>
-                          <TableCell className='text-center text-text-secondary text-xs whitespace-nowrap'>{row.wgHr ?? '-'}</TableCell>
-                          <TableCell className='text-center text-sm whitespace-nowrap'>
+                          <TableCell className='text-right text-text-secondary text-xs whitespace-nowrap tabular-nums'>{row.wgHr ?? '-'}</TableCell>
+                          <TableCell className='text-right text-sm whitespace-nowrap tabular-nums'>
                             {row.winOdds != null && !displayOrdType ? (
                               <Tooltip content='단승식 배당률' inline>
                                 <span className='cursor-help'>{row.winOdds}</span>
                               </Tooltip>
                             ) : '-'}
                           </TableCell>
-                          <TableCell className='text-center text-sm whitespace-nowrap'>
+                          <TableCell className='text-right text-sm whitespace-nowrap tabular-nums'>
                             {row.plcOdds != null && !displayOrdType ? (
                               <Tooltip content='연승식 배당률' inline>
                                 <span className='cursor-help'>{row.plcOdds}</span>
@@ -1389,7 +1378,7 @@ function PredictionFullView({
                             </p>
                           )}
                         </TableCell>
-                        <TableCell className={`text-right font-bold ${rankCls}`}>
+                        <TableCell className={`text-right font-bold tabular-nums ${rankCls}`}>
                           {h.score != null ? Math.round(h.score) : '-'}
                         </TableCell>
                       </TableRow>

@@ -4,7 +4,6 @@
  */
 import Link from 'next/link';
 import Icon from '@/components/icons';
-import { Badge } from '@/components/ui';
 import {
   Table,
   TableHeader,
@@ -93,9 +92,18 @@ export default function PredictionResultComparison({
     <div className="rounded-xl border border-border overflow-hidden bg-muted/10">
       <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2.5 border-b border-border bg-stone-50/80">
         <span className="text-sm font-semibold text-foreground">예측 vs 결과</span>
-        <Badge variant={hits === 3 ? 'success' : hits >= 1 ? 'primary' : 'error'} size="sm">
-          이 경주 적중: {hits}/3
-        </Badge>
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-tight shadow-sm ${
+          hits === 3
+            ? 'bg-gradient-to-r from-emerald-500 to-green-500 text-white'
+            : hits >= 2
+              ? 'bg-gradient-to-r from-primary to-emerald-500 text-white'
+              : hits === 1
+                ? 'bg-primary/10 text-primary border border-primary/20'
+                : 'bg-stone-100 text-stone-400 border border-stone-200'
+        }`}>
+          {hits >= 2 && <Icon name='Sparkles' size={12} />}
+          {hits === 3 ? 'PERFECT' : hits >= 1 ? `${hits}/3` : 'MISS'}
+        </span>
       </div>
       {/* Mobile: stacked comparison rows */}
       <div className="block sm:hidden divide-y divide-border">

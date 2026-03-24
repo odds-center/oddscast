@@ -1533,10 +1533,21 @@ AI 예측 순위: ${predictedTop || '-'}
     raceData: RaceForPython,
   ): Promise<{ horseScores: HorseAnalysisItem[]; cascadeFallRisk?: number }> {
     const { spawn } = require('child_process');
+    const fs = require('fs');
+    const { execSync } = require('child_process');
     const entries = raceData.entries ?? [];
 
     return new Promise((resolve) => {
-      const pythonBin = process.env.PYTHON_BIN || 'python3';
+      let pythonBin = process.env.PYTHON_BIN || '';
+      if (!pythonBin) {
+        const candidates = ['/usr/bin/python3', '/usr/local/bin/python3'];
+        for (const p of candidates) {
+          if (fs.existsSync(p)) { pythonBin = p; break; }
+        }
+        if (!pythonBin) {
+          try { pythonBin = execSync('which python3', { encoding: 'utf8' }).trim(); } catch { pythonBin = 'python3'; }
+        }
+      }
       const pythonProcess = spawn(pythonBin, [scriptPath]);
       let dataString = '';
       let errorString = '';

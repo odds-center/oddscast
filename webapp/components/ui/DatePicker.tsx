@@ -49,7 +49,7 @@ export default function DatePicker({
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-haspopup='dialog'
-        className='inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-xs font-medium border border-stone-200 bg-white text-foreground hover:border-stone-300 hover:bg-stone-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0.5 min-w-[7rem] touch-manipulation transition-[border-color,background-color,box-shadow]'
+        className='inline-flex items-center gap-1.5 px-3 min-h-[36px] rounded-lg text-xs font-medium border border-stone-200 bg-white text-foreground hover:border-stone-300 hover:bg-stone-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-0.5 min-w-[7rem] touch-manipulation transition-[border-color,background-color,box-shadow]'
       >
         <Icon name='Calendar' size={13} className='text-text-tertiary shrink-0' />
         <span className={displayText ? 'text-foreground' : 'text-text-tertiary'}>

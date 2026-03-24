@@ -187,13 +187,13 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
               <TableHead className='text-center w-16'>
                 <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
               </TableHead>
-              <TableHead className='text-center w-16'>
+              <TableHead className='text-right w-16'>
                 <Tooltip content='기수 포함 경주 시 짊어지는 무게 (kg)' inline>부담</Tooltip>
               </TableHead>
-              <TableHead className='text-center w-16'>
+              <TableHead className='text-right w-16'>
                 <Tooltip content='경주 당일 말의 체중. 괄호 안은 전 대비 증감' inline>마체중</Tooltip>
               </TableHead>
-              <TableHead className='text-center w-14'>
+              <TableHead className='text-right w-14'>
                 <Tooltip content='KRA 능력 지표. 높을수록 경쟁력 우수' inline>레이팅</Tooltip>
               </TableHead>
               <TableHead className='text-center w-20'>
@@ -206,12 +206,12 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                 <Tooltip content='경주 시 말에 장착하는 보조 장비 (차안대, 혀묶개 등)' inline>장구</Tooltip>
               </TableHead>
               {showOdds && (
-                <TableHead className='text-center w-14'>
+                <TableHead className='text-right w-14'>
                   <Tooltip content='단승식 최종 배당률 (1위 적중 시 배당)' inline>단승</Tooltip>
                 </TableHead>
               )}
               {showOdds && (
-                <TableHead className='text-center w-14'>
+                <TableHead className='text-right w-14'>
                   <Tooltip content='연승식 최종 배당률 (3위 내 적중 시 배당)' inline>연승</Tooltip>
                 </TableHead>
               )}
@@ -257,10 +257,10 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                   <TableCell className='text-center text-sm text-text-secondary'>
                     {formatAgeSexOrigin(e.prd, e.age ?? undefined, e.sex)}
                   </TableCell>
-                  <TableCell className='text-center text-sm'>
+                  <TableCell className='text-right text-sm tabular-nums'>
                     {e.wgBudam != null ? <span className='font-medium'>{e.wgBudam}kg</span> : '-'}
                   </TableCell>
-                  <TableCell className='text-center text-sm'>
+                  <TableCell className='text-right text-sm tabular-nums'>
                     {hwBase != null ? (
                       <>
                         <span>{hwBase}kg</span>
@@ -274,7 +274,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className='text-center'>
+                  <TableCell className='text-right tabular-nums'>
                     {e.rating != null ? (
                       <span className='inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800'>
                         {e.rating}
@@ -283,22 +283,22 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                       '-'
                     )}
                   </TableCell>
-                  <TableCell className='text-center text-sm text-text-secondary'>
+                  <TableCell className='text-center text-sm text-text-secondary tabular-nums'>
                     {formatRecord(e.rcCntT, e.ord1CntT)}
                   </TableCell>
-                  <TableCell className='text-center text-xs text-text-tertiary'>
+                  <TableCell className='text-center text-xs text-text-tertiary tabular-nums'>
                     {formatRecentRanks(e.recentRanks)}
                   </TableCell>
                   <TableCell className='text-xs text-text-tertiary hidden md:table-cell'>
                     {e.equipment ?? '-'}
                   </TableCell>
                   {showOdds && (
-                    <TableCell className='text-center text-sm font-medium text-emerald-700'>
+                    <TableCell className='text-right text-sm font-medium text-emerald-700 tabular-nums'>
                       {entryOdds?.winOdds ?? '-'}
                     </TableCell>
                   )}
                   {showOdds && (
-                    <TableCell className='text-center text-sm font-medium text-teal-700'>
+                    <TableCell className='text-right text-sm font-medium text-teal-700 tabular-nums'>
                       {entryOdds?.plcOdds ?? '-'}
                     </TableCell>
                   )}

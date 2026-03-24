@@ -68,6 +68,7 @@ export default function RacesPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
+  const qStatus = (router.query?.status as string) || '';
   const dateFilter = parseDateFilter(qDate);
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
   const hasAppliedFavoriteMeet = useRef(false);
@@ -115,7 +116,7 @@ export default function RacesPage() {
 
   // Primary: paginated races list
   const { data: scheduleData, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'list', dateFilter, qMeet, page],
+    queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
     queryFn: () => {
@@ -125,6 +126,7 @@ export default function RacesPage() {
         page,
         ...(date && { date }),
         ...(qMeet && { meet: qMeet }),
+        ...(qStatus && { status: qStatus }),
       });
     },
   });
@@ -211,6 +213,9 @@ export default function RacesPage() {
           updateQuery({ meet: v || undefined, page: 1 });
           if (isLoggedIn) updateProfileMutation.mutate(v || null);
         }}
+        showStatusFilter
+        statusValue={qStatus}
+        onStatusChange={(v) => updateQuery({ status: v || undefined, page: 1 })}
       />
 
       <DataFetchState
@@ -306,13 +311,42 @@ export default function RacesPage() {
                 ),
               },
               {
-                key: 'info',
-                header: '결과 / 정보',
+                key: 'time',
+                header: '출발',
+                headerClassName: 'w-16 whitespace-nowrap',
+                cellClassName: 'whitespace-nowrap tabular-nums',
+                render: (race) => (
+                  <span className='text-text-secondary'>{race.stTime ?? '-'}</span>
+                ),
+              },
+              {
+                key: 'dist',
+                header: '거리',
+                align: 'right' as const,
+                headerClassName: 'w-16 whitespace-nowrap',
+                cellClassName: 'whitespace-nowrap tabular-nums',
+                render: (race) => (
+                  <span className='text-text-tertiary'>{race.rcDist ? `${race.rcDist}m` : '-'}</span>
+                ),
+              },
+              {
+                key: 'status',
+                header: '상태',
+                align: 'center' as const,
+                headerClassName: 'w-16 whitespace-nowrap',
+                cellClassName: 'whitespace-nowrap',
+                render: (race) => {
+                  const raceStatus = getRaceStatus(race);
+                  return <StatusBadge status={raceStatus} rcDate={race.rcDate} stTime={race.stTime} />;
+                },
+              },
+              {
+                key: 'result',
+                header: '결과',
                 headerClassName: 'min-w-[220px]',
                 render: (race) => {
                   const completed = raceIsCompleted(race);
                   const raceResults = resultsByRaceId.get(race.id) ?? [];
-                  const raceStatus = getRaceStatus(race);
                   if (completed && raceResults.length > 0) {
                     return (
                       <span className='inline-flex items-center gap-4 text-sm'>
@@ -330,13 +364,7 @@ export default function RacesPage() {
                       </span>
                     );
                   }
-                  return (
-                    <span className='inline-flex items-center gap-2 text-sm text-text-secondary'>
-                      {race.stTime && <span>{race.stTime}</span>}
-                      {race.rcDist && <span className='text-text-tertiary'>{race.rcDist}m</span>}
-                      <StatusBadge status={raceStatus} rcDate={race.rcDate} stTime={race.stTime} />
-                    </span>
-                  );
+                  return <span className='text-text-tertiary text-sm'>-</span>;
                 },
               },
             ]}

@@ -12,8 +12,6 @@ import LoadingSpinner from '@/components/LoadingSpinner';
 import { Button } from '@/components/ui/button';
 import { getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
-import Icon from '@/components/icons';
-import Link from 'next/link';
 import type { RaceDto } from '@/lib/types/race';
 import type { RaceDetailDto } from '@oddscast/shared';
 
@@ -60,22 +58,6 @@ export default function TodayRacesSection() {
         <div className='py-4 text-text-secondary'>
           <p className='text-sm text-center'>오늘은 예정된 경주가 없습니다.</p>
           <p className='text-xs text-text-tertiary mt-1 text-center'>경주는 매주 금·토·일 진행됩니다.</p>
-          <div className='mt-3 grid grid-cols-2 gap-2'>
-            <Link
-              href={routes.results}
-              className='flex items-center gap-2 px-3 py-2.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 active:bg-stone-100 transition-colors touch-manipulation'
-            >
-              <Icon name='TrendingUp' size={16} className='text-primary shrink-0' />
-              <span className='text-xs font-medium text-foreground'>최근 경주 결과</span>
-            </Link>
-            <Link
-              href={routes.predictions.accuracy}
-              className='flex items-center gap-2 px-3 py-2.5 rounded-lg border border-stone-200 bg-stone-50 hover:bg-stone-100 active:bg-stone-100 transition-colors touch-manipulation'
-            >
-              <Icon name='Target' size={16} className='text-accent shrink-0' />
-              <span className='text-xs font-medium text-foreground'>AI 적중률 확인</span>
-            </Link>
-          </div>
         </div>
       ) : (
         <>

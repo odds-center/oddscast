@@ -2,10 +2,18 @@
  * Daily race comprehensive guide — Yongsan comprehensive style
  * View all daily race AI predictions with matrix ticket (1,000 KRW)
  */
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/router';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Layout from '@/components/Layout';
+import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
+import { matrixTourSteps } from '@/lib/coachMark/tours/matrixTour';
+
+const CoachMarkTour = dynamic(
+  () => import('@/components/coach-mark/CoachMarkTour'),
+  { ssr: false },
+);
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import { TabBar } from '@/components/ui';
 import FilterDateBar from '@/components/page/FilterDateBar';
@@ -58,6 +66,13 @@ export default function PredictionMatrixPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const { shouldAutoStart, startTour } = useCoachMarkStore();
+
+  useEffect(() => {
+    if (!shouldAutoStart('matrixTour', isLoggedIn)) return;
+    const timer = setTimeout(() => startTour('matrixTour'), 800);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, shouldAutoStart, startTour]);
   const qDate = (router.query?.date as string) ?? 'today';
   const qMeet = (router.query?.meet as string) ?? '';
   const qTab = (router.query?.tab as TabId) ?? 'matrix';
@@ -162,6 +177,7 @@ export default function PredictionMatrixPage() {
 
   return (
     <Layout title='종합 예상 | OddsCast' description='AI가 분석한 당일 전 경주 종합 예상표. 7가지 승식별 추천마를 한눈에 확인하세요.'>
+      <CoachMarkTour tourId='matrixTour' steps={matrixTourSteps} />
       <CompactPageTitle title='일일 종합 가이드' backHref={routes.home} />
       <div className='mb-2 flex justify-end'>
         <Link
@@ -240,6 +256,7 @@ export default function PredictionMatrixPage() {
 
           {hitRecords && hitRecords.length > 0 && <HitRecordBanner records={hitRecords} />}
 
+          <div data-tour="matrix-filter">
           <FilterDateBar
             filterOptions={[
               { value: 'today', label: '오늘' },
@@ -273,6 +290,7 @@ export default function PredictionMatrixPage() {
             meetValue={meetFilter}
             onMeetChange={(v) => updateQuery({ date: dateFilter || undefined, meet: v || undefined })}
           />
+          </div>
 
           <TabBar
             options={[
@@ -337,7 +355,7 @@ export default function PredictionMatrixPage() {
                 errorTitle='종합 예상표를 불러올 수 없습니다'
               >
                 {matrixData && (
-                  <div className='space-y-3'>
+                  <div data-tour="matrix-table" className='space-y-3'>
                     <PredictionMatrixTable
                       data={matrixData}
                       date={dateFilter}

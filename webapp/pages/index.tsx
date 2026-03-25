@@ -16,6 +16,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import ResultApi from '@/lib/api/resultApi';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
+import { homeTourSteps } from '@/lib/coachMark/tours/homeTour';
+
+const CoachMarkTour = dynamic(
+  () => import('@/components/coach-mark/CoachMarkTour'),
+  { ssr: false },
+);
 
 // Below-fold sections: lazy load to reduce initial bundle
 const AIPredictionSection = dynamic(
@@ -39,6 +46,7 @@ export default function Home() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const queryClient = useQueryClient();
+  const { shouldAutoStart, startTour } = useCoachMarkStore();
 
   useEffect(() => {
     // Prefetch with same key as RecentResultsSection to share cache
@@ -49,6 +57,12 @@ export default function Home() {
     });
   }, [queryClient]);
 
+  useEffect(() => {
+    if (!shouldAutoStart('homeTour', isLoggedIn)) return;
+    const timer = setTimeout(() => startTour('homeTour'), 800);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, shouldAutoStart, startTour]);
+
   const handleLoginClick = () => {
     setLoginError(null);
     window.location.href = routes.auth.login;
@@ -56,6 +70,8 @@ export default function Home() {
 
   return (
     <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 정확도 통계를 제공합니다.'>
+      <CoachMarkTour tourId='homeTour' steps={homeTourSteps} />
+
       {/* 1. Hero banner */}
       <DateHeader />
 
@@ -77,7 +93,7 @@ export default function Home() {
       </div>
 
       {/* 3. Quick menu bar */}
-      <div className='flex items-center gap-2 mb-5 overflow-x-auto pb-0.5 -mx-1 px-1'>
+      <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-5 overflow-x-auto pb-0.5 -mx-1 px-1'>
         {[
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주' },
           { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
@@ -97,13 +113,13 @@ export default function Home() {
       </div>
 
       {/* 4. Today's races + This week */}
-      <div className='grid lg:grid-cols-2 gap-4 mb-5'>
+      <div data-tour="home-today-races" className='grid lg:grid-cols-2 gap-4 mb-5'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
       {/* 5. AI Predictions — core product, prominent placement */}
-      <div className='mb-5'>
+      <div data-tour="home-ai-prediction" className='mb-5'>
         <AIPredictionSection />
       </div>
 

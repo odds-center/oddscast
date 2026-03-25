@@ -3,6 +3,14 @@
  * inline results for completed races. No separate tabs.
  */
 import { useMemo, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
+import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
+import { raceTourSteps } from '@/lib/coachMark/tours/raceTour';
+
+const CoachMarkTour = dynamic(
+  () => import('@/components/coach-mark/CoachMarkTour'),
+  { ssr: false },
+);
 import Link from 'next/link';
 import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
@@ -66,12 +74,19 @@ export default function RacesPage() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const { shouldAutoStart, startTour } = useCoachMarkStore();
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
   const qStatus = (router.query?.status as string) || '';
   const dateFilter = parseDateFilter(qDate);
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
   const hasAppliedFavoriteMeet = useRef(false);
+
+  useEffect(() => {
+    if (!shouldAutoStart('raceTour', isLoggedIn)) return;
+    const timer = setTimeout(() => startTour('raceTour'), 800);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, shouldAutoStart, startTour]);
 
   const updateQuery = (updates: Record<string, string | number | undefined>) => {
     const next = { ...router.query, ...updates };
@@ -187,7 +202,9 @@ export default function RacesPage() {
 
   return (
     <Layout title='경주 | OddsCast' description='서울, 부산, 제주 경마장 경주 일정과 출전마 정보를 확인하세요.'>
+      <CoachMarkTour tourId='raceTour' steps={raceTourSteps} />
       <CompactPageTitle title='경주' backHref={routes.home} />
+      <div data-tour="race-filter">
       <FilterDateBar
         filterOptions={[
           { value: '', label: '전체' },
@@ -217,6 +234,7 @@ export default function RacesPage() {
         statusValue={qStatus}
         onStatusChange={(v) => updateQuery({ status: v || undefined, page: 1 })}
       />
+      </div>
 
       <DataFetchState
         isLoading={isLoading}
@@ -236,7 +254,7 @@ export default function RacesPage() {
         )}
 
         {/* Mobile: card list */}
-        <div className='block lg:hidden space-y-2'>
+        <div data-tour="race-list" className='block lg:hidden space-y-2'>
           {races.map((race) => {
             const completed = raceIsCompleted(race);
             const raceResults = resultsByRaceId.get(race.id) ?? [];

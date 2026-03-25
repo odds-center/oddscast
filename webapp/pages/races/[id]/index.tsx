@@ -1,6 +1,14 @@
 import { useRouter } from 'next/router';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
+import { raceDetailTourSteps } from '@/lib/coachMark/tours/raceDetailTour';
+
+const CoachMarkTour = dynamic(
+  () => import('@/components/coach-mark/CoachMarkTour'),
+  { ssr: false },
+);
 import type { GetServerSideProps } from 'next';
 import { QueryClient, dehydrate } from '@tanstack/react-query';
 import { serverGet } from '@/lib/api/serverFetch';
@@ -101,6 +109,13 @@ export default function RaceDetailPage() {
   const { id } = router.query;
   const queryClient = useQueryClient();
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+  const { shouldAutoStart, startTour } = useCoachMarkStore();
+
+  useEffect(() => {
+    if (!shouldAutoStart('raceDetailTour', isLoggedIn)) return;
+    const timer = setTimeout(() => startTour('raceDetailTour'), 800);
+    return () => clearTimeout(timer);
+  }, [isLoggedIn, shouldAutoStart, startTour]);
   const {
     data: race,
     isLoading,
@@ -410,6 +425,7 @@ export default function RaceDetailPage() {
 
   return (
     <Layout title='경주 상세 | OddsCast' description='경주 출전마 정보, AI 예측 분석, 경주 결과를 상세히 확인하세요.'>
+      <CoachMarkTour tourId='raceDetailTour' steps={raceDetailTourSteps} />
       <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
         <div className='flex-1 min-w-0 w-full space-y-4'>
           <CompactPageTitle
@@ -435,7 +451,7 @@ export default function RaceDetailPage() {
 
           {/* ── AI prediction (hidden for completed races) ── */}
           {!isRaceCompleted && (
-          <section>
+          <section data-tour="race-detail-ai">
             <SectionTitle
               title='AI 예측'
               icon='Target'
@@ -902,7 +918,7 @@ export default function RaceDetailPage() {
 
           {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
-            <section>
+            <section data-tour="race-detail-entries">
               <SectionTitle
                 title='출전마'
                 icon='ClipboardList'

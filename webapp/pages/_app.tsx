@@ -16,13 +16,6 @@ import CONFIG from '@/lib/config';
 import { routes } from '@/lib/routes';
 import { FloatingAppBar } from '@/components/Layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import { hasSeenOnboardingLocal } from '@/components/onboarding';
-import AuthApi from '@/lib/api/authApi';
-
-const OnboardingTutorial = dynamic(
-  () => import('@/components/onboarding/OnboardingTutorial'),
-  { ssr: false }
-);
 
 const NetworkStatusBanner = dynamic(
   () => import('@/components/ui/NetworkStatusBanner'),
@@ -39,7 +32,6 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
 
   const [clientMounted, setClientMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
@@ -49,30 +41,13 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     return () => window.removeEventListener('resize', check);
   }, []);
 
-  // Post-mount initialization: accessibility + onboarding
+  // Post-mount initialization: accessibility
   const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   useEffect(() => {
     if (!clientMounted) return;
     hydrateAccessibility();
-
-    // Logged-in: check DB; non-logged-in: check localStorage
-    if (isLoggedIn) {
-      AuthApi.getCurrentUser()
-        .then((user) => {
-          const u = user as { hasSeenOnboarding?: boolean };
-          if (!u.hasSeenOnboarding && !hasSeenOnboardingLocal()) {
-            setShowOnboarding(true);
-          }
-        })
-        .catch(() => {
-          // Fallback to localStorage on API failure
-          if (!hasSeenOnboardingLocal()) setShowOnboarding(true);
-        });
-    } else {
-      if (!hasSeenOnboardingLocal()) setShowOnboarding(true);
-    }
-  }, [clientMounted, hydrateAccessibility, isLoggedIn]);
+  }, [clientMounted, hydrateAccessibility]);
 
   // GA page view tracking — register event listener once, not on every route change
   useEffect(() => {
@@ -197,17 +172,12 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           </HydrationBoundary>
         </QueryClientProvider>
       </Sentry.ErrorBoundary>
-      {clientMounted && showOnboarding && (
-        <OnboardingTutorial onComplete={() => {
-          setShowOnboarding(false);
-          // Persist to DB for logged-in users (fire-and-forget)
-          if (isLoggedIn) {
-            AuthApi.updateProfile({ hasSeenOnboarding: true } as Record<string, unknown>).catch(() => {});
-          }
-        }} />
-      )}
       {clientMounted && <NetworkStatusBanner />}
-      {clientMounted && pathname !== '/welcome' && <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />}
+      {clientMounted && pathname !== '/welcome' && (
+        <div data-tour="home-appbar">
+          <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
+        </div>
+      )}
     </>
   );
 }

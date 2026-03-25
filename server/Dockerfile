@@ -29,4 +29,6 @@ WORKDIR /app/server
 ENV NODE_ENV=production
 ENV PYTHON_BIN=/usr/bin/python3
 EXPOSE 3000
-CMD ["node", "dist/main"]
+# Run pending TypeORM migrations before starting the server.
+# TypeORM tracks applied migrations in the migrations table — safe to run on every startup.
+CMD ["sh", "-c", "node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js && node dist/main"]

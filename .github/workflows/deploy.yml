@@ -1,6 +1,12 @@
-# Deploy to Railway on push to main. Requires repo secrets: RAILWAY_TOKEN.
-# Optional: RAILWAY_SERVICE_ID (or use --service <name> in run).
+# Deploy to Railway on push to master.
+# Requires repo secrets: RAILWAY_TOKEN.
+# Optional: PROD_DATABASE_URL — if set, runs TypeORM migrations before deploy.
 # See: docs/RAILWAY_DEPLOYMENT.md, docs/TODO_CONTINUE.md
+#
+# Migration strategy:
+#   1. (Optional) GitHub Actions runs migrations via PROD_DATABASE_URL before Railway deploy.
+#   2. Dockerfile CMD always runs migrations on startup (typeorm migration:run is idempotent).
+# This dual approach ensures migrations run even on Railway restarts without a new push.
 
 name: Deploy
 
@@ -10,7 +16,56 @@ on:
   workflow_dispatch:
 
 jobs:
+  migrate:
+    name: Run DB migrations
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    # Skip silently if PROD_DATABASE_URL secret is not configured
+    env:
+      PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check if PROD_DATABASE_URL is configured
+        id: check_db
+        run: |
+          if [ -z "$PROD_DATABASE_URL" ]; then
+            echo "skip=true" >> $GITHUB_OUTPUT
+            echo "⚠️  PROD_DATABASE_URL not set — skipping pre-deploy migration (Dockerfile CMD will handle it on startup)"
+          else
+            echo "skip=false" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: pnpm/action-setup@v4
+        if: steps.check_db.outputs.skip == 'false'
+        with:
+          version: latest
+
+      - uses: actions/setup-node@v4
+        if: steps.check_db.outputs.skip == 'false'
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        if: steps.check_db.outputs.skip == 'false'
+        run: pnpm install --frozen-lockfile
+
+      - name: Build server (required for data-source.js)
+        if: steps.check_db.outputs.skip == 'false'
+        run: pnpm --filter server build
+
+      - name: Run TypeORM migrations
+        if: steps.check_db.outputs.skip == 'false'
+        working-directory: server
+        env:
+          DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
+          NODE_ENV: production
+        run: node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js
+
   deploy:
+    name: Deploy to Railway
+    needs: migrate
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     container: ghcr.io/railwayapp/cli:latest

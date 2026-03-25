@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://oddscast:oddscast@localhost:5432/oddscast?options=-csearch_path%3Doddscast"
+      ]
+    }
+  }
+}

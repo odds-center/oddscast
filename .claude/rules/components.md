@@ -1,3 +1,9 @@
+---
+paths:
+  - "webapp/components/**"
+  - "webapp/pages/**/*.tsx"
+---
+
 # Component Catalog & Usage Patterns
 
 ## WebApp Component Architecture

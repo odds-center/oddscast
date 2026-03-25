@@ -1,3 +1,9 @@
+---
+paths:
+  - "server/src/**"
+  - "server/**/*.ts"
+---
+
 # Server (NestJS) Development Rules
 
 ## Bootstrap (main.ts)

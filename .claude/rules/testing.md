@@ -1,3 +1,11 @@
+---
+paths:
+  - "**/*.spec.ts"
+  - "**/*.test.ts"
+  - "e2e/**"
+  - ".github/workflows/**"
+---
+
 # Testing & CI Rules
 
 ## Server Tests

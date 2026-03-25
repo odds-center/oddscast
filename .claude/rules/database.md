@@ -1,3 +1,10 @@
+---
+paths:
+  - "server/src/database/**"
+  - "docs/db/**"
+  - "docs/architecture/DATABASE_SCHEMA.md"
+---
+
 # Database & TypeORM Rules
 
 ## Core Setup

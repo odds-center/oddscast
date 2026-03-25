@@ -1,3 +1,11 @@
+---
+paths:
+  - "webapp/pages/**"
+  - "webapp/components/**"
+  - "webapp/lib/**"
+  - "webapp/**/*.{ts,tsx}"
+---
+
 # WebApp (Next.js) Development Rules
 
 ## Tech Stack

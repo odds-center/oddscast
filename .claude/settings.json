@@ -6,5 +6,39 @@
     "commit-commands@claude-plugins-official": true,
     "feature-dev@claude-plugins-official": true,
     "typescript-lsp@claude-plugins-official": true
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(cat | jq -r \".file_path // empty\" 2>/dev/null); if [[ \"$FILE\" =~ \\.(ts|tsx)$ ]] && [ -f \"$FILE\" ]; then PRETTIER=/Users/risingcore/Desktop/work/oddscast/server/node_modules/.bin/prettier; [ -f \"$PRETTIER\" ] && \"$PRETTIER\" --write \"$FILE\" 2>/dev/null || true; fi; exit 0'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash -c 'FILE=$(cat | jq -r \".file_path // empty\" 2>/dev/null); [ -z \"$FILE\" ] && exit 0; for pat in \".env\" \".env.local\" \".env.production\" \".env.railway\"; do if [[ \"$FILE\" == *\"$pat\" ]]; then echo \"⛔ Protected file blocked: $FILE\" >&2; exit 2; fi; done; exit 0'"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo '\\n📋 Docs 갱신 체크리스트 (변경사항 있을 경우):\\n  - [ ] docs/TODO_CONTINUE.md\\n  - [ ] docs/architecture/API_SPECIFICATION.md  (API 변경 시)\\n  - [ ] docs/architecture/DATABASE_SCHEMA.md   (스키마 변경 시)\\n  - [ ] docs/architecture/BUSINESS_LOGIC.md    (로직 변경 시)\\n  - [ ] docs/WEBAPP_ADMIN_GAPS.md              (Gap 해결 시)\\n'"
+          }
+        ]
+      }
+    ]
   }
 }

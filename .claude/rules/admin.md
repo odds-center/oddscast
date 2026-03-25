@@ -1,3 +1,10 @@
+---
+paths:
+  - "admin/pages/**"
+  - "admin/src/**"
+  - "admin/**/*.{ts,tsx}"
+---
+
 # Admin Panel (Next.js) Development Rules
 
 ## Tech Stack

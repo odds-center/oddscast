@@ -77,3 +77,63 @@ jobs:
       - name: Deploy server to Railway
         run: railway up --service server
         continue-on-error: true
+
+  notify:
+    name: Notify Discord
+    needs: [migrate, deploy]
+    runs-on: ubuntu-latest
+    if: always() && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Notify success
+        if: needs.deploy.result == 'success'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+          COMMIT_MSG: ${{ github.event.head_commit.message }}
+        run: |
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          FIRST_LINE=$(echo "$COMMIT_MSG" | head -1)
+          curl -s -H "Content-Type: application/json" -X POST "$DISCORD_WEBHOOK" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"✅ 배포 완료 — OddsCast\",
+                \"description\": \"Railway 서버 배포가 완료되었습니다.\\nVercel(webapp/admin)은 자동 배포 중입니다.\",
+                \"color\": 3066993,
+                \"fields\": [
+                  {\"name\": \"Branch\", \"value\": \"\`$REF_NAME\`\", \"inline\": true},
+                  {\"name\": \"Commit\", \"value\": \"\`$SHORT_SHA\`\", \"inline\": true},
+                  {\"name\": \"By\", \"value\": \"$ACTOR\", \"inline\": true},
+                  {\"name\": \"Message\", \"value\": \"$FIRST_LINE\", \"inline\": false}
+                ],
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }"
+
+      - name: Notify failure
+        if: needs.deploy.result == 'failure' || needs.migrate.result == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+          REF_NAME: ${{ github.ref_name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          FAILED_JOB: ${{ needs.migrate.result == 'failure' && 'migrate' || 'deploy' }}
+        run: |
+          SHORT_SHA="${COMMIT_SHA:0:7}"
+          curl -s -H "Content-Type: application/json" -X POST "$DISCORD_WEBHOOK" \
+            -d "{
+              \"embeds\": [{
+                \"title\": \"❌ 배포 실패 — OddsCast\",
+                \"description\": \"**$FAILED_JOB** 단계에서 실패했습니다.\",
+                \"color\": 15158332,
+                \"fields\": [
+                  {\"name\": \"Branch\", \"value\": \"\`$REF_NAME\`\", \"inline\": true},
+                  {\"name\": \"Commit\", \"value\": \"\`$SHORT_SHA\`\", \"inline\": true},
+                  {\"name\": \"By\", \"value\": \"$ACTOR\", \"inline\": true},
+                  {\"name\": \"로그 확인\", \"value\": \"[Actions 열기]($RUN_URL)\", \"inline\": false}
+                ],
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }]
+            }"

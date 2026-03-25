@@ -42,11 +42,14 @@ CREATE TABLE IF NOT EXISTS "users" (
     "lastLoginAt" TIMESTAMP(3),
     "favoriteMeet" TEXT,
     "hasSeenOnboarding" BOOLEAN NOT NULL DEFAULT false,
+    "completedTours" TEXT[] NOT NULL DEFAULT '{}',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "users_email_key" UNIQUE ("email")
 );
+-- Migration helper: add completedTours if upgrading from older schema
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "completedTours" TEXT[] NOT NULL DEFAULT '{}';
 
 CREATE TABLE IF NOT EXISTS "weekly_previews" (
     "id" SERIAL NOT NULL,

@@ -9,8 +9,28 @@ import 'pretendard/dist/web/static/pretendard.css';
 import '@/styles/globals.css';
 import bridge from '@/lib/bridge';
 import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useAccessibilityStore } from '@/lib/store/accessibilityStore';
+import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
+import AuthApi from '@/lib/api/authApi';
+
+/** Hydrates coach mark completed state from server — must run inside QueryClientProvider. */
+function CoachMarkHydration() {
+  const token = useAuthStore((s) => s.token);
+  const hydrateCoachMark = useCoachMarkStore((s) => s.hydrateFromServer);
+  const { data: profile } = useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: () => AuthApi.getCurrentUser(),
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
+  });
+  useEffect(() => {
+    const tours = (profile as { completedTours?: string[] })?.completedTours;
+    if (tours?.length) hydrateCoachMark(tours);
+  }, [profile, hydrateCoachMark]);
+  return null;
+}
 import { trackPageView } from '@/lib/analytics';
 import CONFIG from '@/lib/config';
 import { routes } from '@/lib/routes';
@@ -165,6 +185,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
       )}
       <Sentry.ErrorBoundary fallback={<p>An error occurred. Please refresh the page.</p>}>
         <QueryClientProvider client={queryClient}>
+          <CoachMarkHydration />
           <HydrationBoundary state={dehydratedState ?? undefined}>
             <TooltipProvider>
               <Component {...restPageProps} />

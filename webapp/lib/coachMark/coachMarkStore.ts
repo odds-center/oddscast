@@ -32,6 +32,8 @@ interface CoachMarkState {
   skipTour: (id: TourId) => void;
   shouldAutoStart: (id: TourId, isLoggedIn: boolean) => boolean;
   resetTour: (id: TourId) => void;
+  /** Hydrate completed tour state from server (called after user profile loads). */
+  hydrateFromServer: (tourIds: string[]) => void;
 }
 
 export const useCoachMarkStore = create<CoachMarkState>((set) => ({
@@ -61,6 +63,19 @@ export const useCoachMarkStore = create<CoachMarkState>((set) => ({
       window.localStorage.removeItem(getTourKey(id));
     } catch {
       // ignore
+    }
+  },
+
+  // Sync completed tours from server into localStorage so shouldAutoStart works correctly
+  hydrateFromServer: (tourIds) => {
+    for (const id of tourIds) {
+      try {
+        if (!window.localStorage.getItem(`${STORAGE_PREFIX}${id}`)) {
+          window.localStorage.setItem(`${STORAGE_PREFIX}${id}`, '1');
+        }
+      } catch {
+        // ignore
+      }
     }
   },
 }));

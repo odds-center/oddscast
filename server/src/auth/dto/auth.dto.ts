@@ -77,6 +77,11 @@ export class UpdateProfileDto {
   @IsOptional()
   @IsBoolean()
   hasSeenOnboarding?: boolean;
+
+  @ApiPropertyOptional({ description: 'Coach mark tour ID to mark as completed (appended to completedTours array)' })
+  @IsOptional()
+  @IsString()
+  completedTour?: string;
 }
 
 export class ChangePasswordDto {

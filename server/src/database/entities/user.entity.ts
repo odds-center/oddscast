@@ -45,6 +45,9 @@ export class User {
   @Column({ type: 'boolean', default: false })
   hasSeenOnboarding!: boolean;
 
+  @Column({ type: 'text', array: true, default: '{}' })
+  completedTours!: string[];
+
   @CreateDateColumn({ type: 'timestamp', precision: 3 })
   createdAt!: Date;
 

@@ -32,6 +32,7 @@ export interface SanitizedUser {
   isActive: boolean;
   favoriteMeet: string | null;
   hasSeenOnboarding: boolean;
+  completedTours: string[];
   createdAt: Date;
   updatedAt: Date;
 }
@@ -221,6 +222,7 @@ export class AuthService {
         'isActive',
         'favoriteMeet',
         'hasSeenOnboarding',
+        'completedTours',
         'createdAt',
         'updatedAt',
       ],
@@ -242,6 +244,7 @@ export class AuthService {
         'isActive',
         'favoriteMeet',
         'hasSeenOnboarding',
+        'completedTours',
         'createdAt',
         'updatedAt',
       ],
@@ -255,6 +258,13 @@ export class AuthService {
     if ((dto as Record<string, unknown>).favoriteMeet !== undefined) {
       user.favoriteMeet = (dto as Record<string, unknown>).favoriteMeet as string | null;
       changed = true;
+    }
+    if (dto.completedTour !== undefined) {
+      const existing = user.completedTours ?? [];
+      if (!existing.includes(dto.completedTour)) {
+        user.completedTours = [...existing, dto.completedTour];
+        changed = true;
+      }
     }
     if (!changed) return this.sanitize(user);
 
@@ -472,6 +482,7 @@ export class AuthService {
       isActive: user.isActive,
       favoriteMeet: user.favoriteMeet ?? null,
       hasSeenOnboarding: user.hasSeenOnboarding ?? false,
+      completedTours: user.completedTours ?? [],
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

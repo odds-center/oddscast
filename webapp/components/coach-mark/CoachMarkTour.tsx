@@ -1,6 +1,8 @@
 import Joyride, { type CallBackProps, STATUS } from 'react-joyride';
 import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
 import type { CoachMarkStep, TourId } from '@/lib/coachMark/coachMarkTypes';
+import { useAuthStore } from '@/lib/store/authStore';
+import AuthApi from '@/lib/api/authApi';
 
 interface CoachMarkTourProps {
   tourId: TourId;
@@ -13,13 +15,21 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
   const running = useCoachMarkStore((s) => s.running);
   const completeTour = useCoachMarkStore((s) => s.completeTour);
   const skipTour = useCoachMarkStore((s) => s.skipTour);
+  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+
+  const syncToServer = (id: TourId) => {
+    if (!isLoggedIn) return;
+    AuthApi.updateProfile({ completedTour: id }).catch(() => {});
+  };
 
   const handleCallback = (data: CallBackProps) => {
     const { status } = data;
     if (status === STATUS.FINISHED) {
       completeTour(tourId);
+      syncToServer(tourId);
     } else if (status === STATUS.SKIPPED) {
       skipTour(tourId);
+      syncToServer(tourId);
     }
   };
 

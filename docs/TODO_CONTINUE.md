@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-22 (Android 빌드, 모바일 텍스트 개행, KRA 429 재시도, race_dividends 프로덕션 생성, Dockerfile Python, equipment empty update 수정)
+**Last updated:** 2026-03-25 (CORS 화이트리스트, Python 바이너리 자동 탐지, Admin Vercel 도메인, Discord 웹훅 dev/prod 분리, Auth 토큰 리프레시, 테이블 UI 개선, Analysis 서비스 강화)
 
 ---
 
@@ -72,6 +72,15 @@
 | **Equipment empty update 수정** | ✅ 완료 | fetchEquipmentBleeding에서 equipment·bleedingInfo 모두 null일 때 빈 객체 update 방지(UpdateValuesMissingError). |
 | **race_dividends 프로덕션 생성** | ✅ 완료 | 프로덕션 DB에 race_dividends 테이블 + FK 생성. |
 | **Dockerfile Python 추가** | ✅ 완료 | node:20-alpine에 python3·py3-numpy·py3-pandas 설치. analysis.py 스크립트 실행 가능. |
+| **Python 바이너리 자동 탐지** | ✅ 완료 | `AnalysisService.resolvePythonBin()` 정적 메서드 — `PYTHON_BIN` env → `/usr/bin/python3` → `/usr/local/bin/python3` → `which python3` 순서로 탐지. Railway spawn ENOENT 수정. |
+| **CORS 명시적 화이트리스트** | ✅ 완료 | production: Railway URL + Vercel webapp/admin URL + mobile origins. development: true (모두 허용). `server/src/main.ts` |
+| **Admin Vercel 도메인 CORS** | ✅ 완료 | `oddscast-admin.vercel.app` CORS 허용 추가 (프로덕션 Admin 패널 접근 가능). |
+| **Discord 웹훅 dev/prod 분리** | ✅ 완료 | 비프로덕션 환경용 dev 웹훅(`DISCORD_DEV_WEBHOOK_URL`) 추가. 에러 로그 채널 별도 분리. Python 에러 핸들링 개선. |
+| **Auth 토큰 리프레시 + 티켓 확인 API** | ✅ 완료 | 토큰 자동 갱신 로직. 티켓 보유 여부 확인 API 추가. Admin 개선. |
+| **테이블 UI 개선** | ✅ 완료 | 경주 목록 컬럼 분리(시간/거리/상태/결과). `tabular-nums` + 우측 정렬 숫자 셀. 공용 컬럼 너비 표준화. |
+| **DataFetchState errorDescription 추가** | ✅ 완료 | 에러 상태에 친절한 설명 메시지 표시 prop 추가. weekly-preview 등 적용. |
+| **Analysis 서비스 강화** | ✅ 완료 | TrainerResult 통합. MEET_CODE_MAP(서울·제주·부산경남 → 1·2·3). 완료 경주 AI 예측 섹션 숨김. RecentRacesSection divider 기반 레이아웃. |
+| **Vercel + Railway 배포 완료** | ✅ 완료 | WebApp: `oddscast-webapp.vercel.app`, Admin: `oddscast-admin.vercel.app` (Vercel 무료). Server+PostgreSQL: Railway. CD: master push → 자동 배포. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -81,10 +90,11 @@
 
 | 순서 | 항목 | 상태 | 상세 |
 |------|------|------|------|
-| 1 | **Railway 배포** | ✅ 완료 | Server + DB Railway 배포 완료. KRA 데이터 적재, 어드민 계정 설정 완료. |
-| 2 | **CD 파이프라인** | ✅ 완료 | `.github/workflows/deploy.yml` + `RAILWAY_TOKEN` 설정 완료. push 시 자동 배포 동작 확인. |
-| 3 | **DB 백업** | ✅ 완료 | `.github/workflows/db-backup.yml` — 매일 03:00 KST `pg_dump` → GitHub Artifacts(90일). GitHub Secret `PROD_DATABASE_URL` 등록 필요. S3 선택적. [guides/DB_BACKUP.md](guides/DB_BACKUP.md) |
-| 4 | **앱 스토어** | 중기 | iOS / Google Play 출시 (필요 시 별도 체크리스트) |
+| 1 | **Railway 배포** | ✅ 완료 | Server + PostgreSQL Railway 배포 완료. KRA 데이터 적재, 어드민 계정 설정 완료. |
+| 2 | **Vercel 배포** | ✅ 완료 | WebApp(`oddscast-webapp.vercel.app`) + Admin(`oddscast-admin.vercel.app`) Vercel 무료 플랜 배포 완료. master push 시 자동 배포. |
+| 3 | **CD 파이프라인** | ✅ 완료 | `.github/workflows/deploy.yml` + `RAILWAY_TOKEN` 설정 완료. push 시 자동 배포 동작 확인. |
+| 4 | **DB 백업** | ✅ 완료 | `.github/workflows/db-backup.yml` — 매일 03:00 KST `pg_dump` → GitHub Artifacts(90일). GitHub Secret `PROD_DATABASE_URL` 등록 필요. S3 선택적. [guides/DB_BACKUP.md](guides/DB_BACKUP.md) |
+| 5 | **앱 스토어** | 중기 | iOS / Google Play 출시 (필요 시 별도 체크리스트) |
 
 ---
 
@@ -142,10 +152,10 @@
 
 ## 5. 지금 당장 추천 순서
 
-> 핵심 인프라(Railway, Sentry, CD, DB 백업)는 모두 완료 ✅
+> 핵심 인프라(Railway server, Vercel webapp/admin, Sentry, CD, DB 백업)는 모두 완료 ✅
 > 남은 선택 작업 기준으로 우선순위 정렬:
 
-1. **Gemini API 키 교체** — 유출 차단된 키 교체 필요 (Google AI Studio → Railway GEMINI_API_KEY)
+1. **Gemini API 키 확인** — 유출 차단 여부 확인 후 필요시 교체 (Google AI Studio → Railway GEMINI_API_KEY)
 2. **앱 스토어 출시** — Android APK 빌드 완료, iOS 빌드 후 iOS/Google Play 배포
 3. **업타임 모니터링** — BetterUptime / UptimeRobot 등 `/health` 엔드포인트 등록
 4. **E2E·통합 테스트 보강** — 중요 플로우 추가 (구독 결제, 매트릭스 잠금/해제)

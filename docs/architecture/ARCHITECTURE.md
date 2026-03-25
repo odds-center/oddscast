@@ -2,7 +2,7 @@
 
 > **이 문서는 모든 AI 에이전트/개발자가 작업 전에 반드시 읽어야 하는 핵심 아키텍처 문서입니다.**
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-03-25
 
 ---
 
@@ -10,18 +10,28 @@
 
 ```mermaid
 graph TD
-    Mobile["📱 React Native CLI"] -->|WebView| WebApp["🌐 WebApp (Next.js)"]
-    WebApp -->|HTTP/REST| Server["🖥️ NestJS Server"]
-    Admin["🖥️ Next.js Admin"] -->|HTTP/REST| Server
+    Mobile["📱 React Native CLI"] -->|WebView| WebApp["🌐 WebApp (Vercel)"]
+    WebApp -->|HTTP/REST| Server["🖥️ NestJS Server (Railway)"]
+    Admin["🖥️ Admin (Vercel)"] -->|HTTP/REST| Server
 
-    subgraph "Backend System"
-        Server -->|TypeORM| DB[("🐘 PostgreSQL")]
-        Server -->|python-shell| Python["🐍 Python Scripts"]
+    subgraph "Backend System (Railway)"
+        Server -->|TypeORM| DB[("🐘 PostgreSQL (Railway)")]
+        Server -->|child_process.spawn| Python["🐍 Python Scripts"]
         Server -->|HTTP| KRA["🏇 공공데이터포털 API"]
         Server -->|HTTP| Gemini["🤖 Google Gemini API"]
         Server -->|Cron Scheduler| Server
     end
 ```
+
+### 프로덕션 배포 현황
+
+| 구분 | 플랫폼 | URL |
+|------|--------|-----|
+| Server (NestJS) | Railway | https://oddscast.up.railway.app |
+| PostgreSQL | Railway | Railway 내부 연결 |
+| WebApp | Vercel (무료) | https://oddscast-webapp.vercel.app |
+| Admin | Vercel (무료) | https://oddscast-admin.vercel.app |
+| Mobile | 미출시 | React Native CLI (iOS/Android 빌드 예정) |
 
 ### 아키텍처 정리
 
@@ -51,7 +61,7 @@ Cron Scheduler (경기 시작 전)
     ↓
 1. NestJS가 공공데이터포털에서 경기/출전마 데이터 수집
     ↓
-2. 데이터를 JSON으로 Python Script에 전달 (python-shell)
+2. 데이터를 JSON으로 Python Script에 전달 (child_process.spawn, PYTHON_BIN env로 바이너리 자동 탐지)
     ↓
 3. Python이 3가지 점수 계산:
    - Speed Index (보정 주파 기록)

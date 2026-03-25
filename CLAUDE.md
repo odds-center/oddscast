@@ -12,7 +12,7 @@ pnpm 모노레포 구조. 패키지 매니저는 반드시 pnpm 사용.
 - 새 기능, 버그픽스, 리팩토링 등 모든 변경은 `develop` 브랜치에 커밋/푸시
 - `master` 브랜치에는 절대 직접 푸시하지 않는다
 - `master` 업데이트는 사용자가 명시적으로 "master에 머지해줘" 요청할 때만 `develop → master` 머지
-- `master`는 Railway 프로덕션 배포 브랜치이므로 함부로 변경 금지
+- `master`는 프로덕션 배포 브랜치 (Railway: server/DB, Vercel: webapp/admin) — 함부로 변경 금지
 
 ## 필수 원칙 (Documentation First)
 
@@ -46,7 +46,7 @@ pnpm 모노레포 구조. 패키지 매니저는 반드시 pnpm 사용.
 | Mobile | React Native CLI + WebView | RN 0.79.5 |
 | DB | PostgreSQL + TypeORM | TypeORM 0.3.28 |
 | AI | Google Gemini API | @google/generative-ai 0.24.1 |
-| Analysis | Python (pandas, numpy) | python-shell |
+| Analysis | Python (pandas, numpy) | child_process.spawn (PYTHON_BIN env) |
 | Shared | `@oddscast/shared` 공용 타입/DTO | workspace |
 | State | Zustand (webapp 5.0, admin 4.5) | Redux 사용 금지 |
 | Data | TanStack React Query | v5.90 |
@@ -76,13 +76,14 @@ oddscast/
 ## 핵심 아키텍처 규칙
 
 1. **NestJS = Control Tower**: Python/Gemini/KRA API 호출은 모두 NestJS가 관리
-2. **Python은 순수 계산**: DB 접근 없이 JSON 입출력만
+2. **Python은 순수 계산**: DB 접근 없이 JSON 입출력만. `AnalysisService.resolvePythonBin()` 으로 바이너리 자동 탐지 (`PYTHON_BIN` env → `/usr/bin/python3` → `which python3`)
 3. **Server-Side Caching**: Cron으로 Gemini 분석 미리 실행 -> DB 캐싱 -> 사용자는 DB만 읽음
 4. **Global API Prefix**: `app.setGlobalPrefix('api')` - 모든 라우트에 `/api` prefix (health 제외)
 5. **응답 포맷**: ResponseInterceptor가 `{ data, status, message? }` 래핑
 6. **사행성 제거**: 베팅/배팅 없음. AI 분석 콘텐츠 제공 서비스
 7. **TypeORM**: `synchronize: false`, DDL은 `docs/db/schema.sql`
 8. **Rate Limiting**: @nestjs/throttler (120 req/min, 2000 req/hour)
+9. **CORS**: production 환경에서 명시적 origin 화이트리스트 (Railway URL + Vercel webapp/admin URL + mobile file://)
 
 ## 코드 규칙 (필수)
 
@@ -120,6 +121,18 @@ oddscast/
 - **Preview 검수**: `previewApproved=true` + `status=COMPLETED`인 예측만 무료 노출
 - **경주 상태**: COMPLETED는 KRA 결과 적재 시에만 (날짜 기반 변경 금지)
 - **로그인 보너스**: 7일 연속 로그인 시 RACE 티켓 1장 (Points 모듈 제거됨, 포인트 지급 없음)
+
+## 배포 인프라
+
+| 구분 | 플랫폼 | 브랜치 | URL |
+|------|--------|--------|-----|
+| Server (NestJS) | Railway | master | https://oddscast.up.railway.app |
+| PostgreSQL | Railway | — | Railway 내부 연결 |
+| WebApp (Next.js) | Vercel (무료) | master | https://oddscast-webapp.vercel.app |
+| Admin (Next.js) | Vercel (무료) | master | https://oddscast-admin.vercel.app |
+| Mobile | 앱 스토어 (미출시) | — | React Native CLI |
+
+> CD: master push → Railway 자동 배포 (server), Vercel 자동 배포 (webapp/admin)
 
 ## 빌드/실행
 

@@ -60,6 +60,7 @@
 - [`WEBAPP_DEVELOPMENT.md`](guides/WEBAPP_DEVELOPMENT.md) — WebApp 개발 가이드 (Quick start, 테마·환경변수·라우트, 페이지 컴포넌트, 모바일 최적화, 구독 플로우)
 - [`ADMIN_GUIDE.md`](guides/ADMIN_GUIDE.md) — Admin 대시보드 가이드
 - [`MOBILE_GUIDE.md`](guides/MOBILE_GUIDE.md) — Mobile (WebView) 앱 가이드
+- [`APP_STORE_PUBLISH.md`](APP_STORE_PUBLISH.md) — 앱 스토어 출시 가이드 (Google Play $25 일회, Apple $99/년)
 - [`GOOGLE_OAUTH_SETUP.md`](guides/GOOGLE_OAUTH_SETUP.md) — Google 로그인 제거 안내 (현재 이메일/비밀번호만 사용)
 
 ### ⚖️ Legal (법적 고지)

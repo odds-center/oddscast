@@ -76,7 +76,6 @@ jobs:
 
       - name: Deploy server to Railway
         run: railway up --service server
-        continue-on-error: true
 
   notify:
     name: Notify Discord

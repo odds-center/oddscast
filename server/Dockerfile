@@ -14,7 +14,9 @@ COPY . .
 # Install all workspace deps (required for pnpm workspace resolution)
 RUN pnpm install --frozen-lockfile
 
-# shared/dist is pre-built and committed to git.
+# Build shared package (types + utils used by server)
+RUN pnpm --filter @oddscast/shared build
+
 # Explicitly link @oddscast/shared into server node_modules for TypeScript resolution.
 RUN mkdir -p /app/server/node_modules/@oddscast && \
     rm -rf /app/server/node_modules/@oddscast/shared && \

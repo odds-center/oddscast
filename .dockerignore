@@ -1,7 +1,10 @@
 # Dependencies and build outputs (reinstalled in image)
 node_modules
 **/node_modules
-**/dist
+server/dist
+admin/dist
+webapp/dist
+mobile/dist
 .next
 out
 

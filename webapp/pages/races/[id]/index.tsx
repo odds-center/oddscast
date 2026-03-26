@@ -1348,64 +1348,50 @@ function PredictionFullView({
               horseScores={prediction.scores!.horseScores!}
               className='mb-4 rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'
             />
-            {/* Mobile: card list */}
-            <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
-              {prediction.scores!.horseScores!.map((h, i) => (
-                <div key={i} className='flex items-center gap-3 py-2.5 px-3 bg-card'>
-                  <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                  <div className='flex-1 min-w-0'>
-                    <p className='text-sm font-medium text-foreground'>{h.hrName ?? h.horseName ?? '-'}</p>
-                    {h.reason && <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>{h.reason}</p>}
-                  </div>
-                  <span className={`text-sm font-bold tabular-nums ${i === 0 ? 'text-foreground' : i === 1 ? 'text-stone-600' : i === 2 ? 'text-stone-500' : 'text-text-tertiary'}`}>
-                    {h.score != null ? Math.round(h.score) : '-'}
-                  </span>
-                </div>
-              ))}
-            </div>
-            {/* Desktop: table */}
-            <div className='hidden sm:block rounded-xl border border-border overflow-hidden shadow-sm'>
-              <Table className='w-full text-sm [&_th]:py-3 [&_td]:py-2.5'>
-                <TableHeader>
-                  <TableRow className='hover:bg-transparent bg-stone-50 border-b border-border text-xs text-text-secondary'>
-                    <TableHead className='text-center w-10'>순위</TableHead>
-                    <TableHead className='text-left min-w-[90px]'>마명</TableHead>
-                    <TableHead className='text-right w-14'>점수</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {prediction.scores!.horseScores!.map((h, i) => {
-                    const rankCls =
-                      i === 0
-                        ? 'text-foreground font-bold'
-                        : i === 1
-                          ? 'text-stone-600 font-bold'
-                          : i === 2
-                            ? 'text-stone-500 font-bold'
-                            : 'text-text-tertiary';
-                    return (
-                      <TableRow key={i}>
-                        <TableCell className='text-center'>
-                          <PredictionSymbol type={scoreToSymbol(i + 1)} size='sm' />
-                        </TableCell>
-                        <TableCell>
-                          <span className='font-medium text-foreground'>
-                            {h.hrName ?? h.horseName ?? '-'}
-                          </span>
-                          {h.reason && (
-                            <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>
-                              {h.reason}
-                            </p>
+            {/* Unified ranking list */}
+            <div className='rounded-xl border border-border overflow-hidden shadow-sm'>
+              {/* Header */}
+              <div className='flex items-center px-4 py-2.5 bg-stone-50/80 border-b border-border text-[11px] text-text-tertiary font-medium uppercase tracking-wider'>
+                <span className='w-9 text-center shrink-0'>순위</span>
+                <span className='flex-1 ml-2'>마명</span>
+                <span className='w-10 text-right shrink-0'>점수</span>
+              </div>
+              {/* Rows */}
+              <div className='divide-y divide-border/60'>
+                {prediction.scores!.horseScores!.map((h, i) => {
+                  const rank = i + 1;
+                  const isTop3 = rank <= 3;
+                  const score = h.score ?? 0;
+                  const maxScore = Math.max(1, ...(prediction.scores!.horseScores!.map(x => x.score ?? 0)));
+                  const barPct = Math.round((score / maxScore) * 100);
+                  return (
+                    <div key={i} className={`flex items-center gap-2 px-4 py-3 transition-colors ${isTop3 ? 'bg-primary/[0.03]' : 'bg-card'}`}>
+                      <PredictionSymbol type={scoreToSymbol(rank)} size='sm' />
+                      <div className='flex-1 min-w-0'>
+                        <div className='flex items-center gap-1.5'>
+                          {h.chulNo != null && (
+                            <span className='text-[11px] text-text-tertiary tabular-nums'>{h.chulNo}번</span>
                           )}
-                        </TableCell>
-                        <TableCell className={`text-right font-bold tabular-nums ${rankCls}`}>
-                          {h.score != null ? Math.round(h.score) : '-'}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          <span className='text-sm font-medium text-foreground truncate'>{h.hrName ?? h.horseName ?? '-'}</span>
+                        </div>
+                        {h.reason && (
+                          <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>{h.reason}</p>
+                        )}
+                        {/* Mini inline bar */}
+                        <div className='mt-1.5 h-1 rounded-full bg-stone-100 overflow-hidden'>
+                          <div
+                            className={`h-full rounded-full transition-all duration-300 ${isTop3 ? 'bg-primary/60' : 'bg-stone-300'}`}
+                            style={{ width: `${barPct}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className={`w-10 text-right tabular-nums text-sm shrink-0 ${isTop3 ? 'font-bold text-foreground' : 'font-semibold text-text-secondary'}`}>
+                        {score > 0 ? Math.round(score) : '—'}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
 

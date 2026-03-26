@@ -194,9 +194,12 @@ export default function SimulatorPage() {
             </div>
 
             {/* Weight sliders */}
-            <div className="rounded-xl border border-border overflow-hidden">
+            <div className="rounded-xl border border-border overflow-hidden shadow-sm">
               <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">가중치 조절</span>
+                <div className="flex items-center gap-2">
+                  <Icon name="Settings" size={15} className="text-primary" />
+                  <span className="text-sm font-semibold text-foreground">가중치 조절</span>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -208,36 +211,46 @@ export default function SimulatorPage() {
                   초기화
                 </Button>
               </div>
-              <div className="p-4 space-y-4">
+              <div className="p-4 space-y-5">
                 {FACTORS.map(({ key, label, desc }, j) => {
                   const w = weights[j] ?? SLIDER_DEFAULT;
                   const isHigh = w > 1.3;
                   const isLow = w < 0.7;
+                  const pctFromCenter = ((w - SLIDER_MIN) / (SLIDER_MAX - SLIDER_MIN)) * 100;
                   return (
-                    <div key={key}>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div>
-                          <span className="text-sm font-medium text-foreground">{label}</span>
-                          <span className="ml-1.5 text-xs text-text-tertiary">{desc}</span>
+                    <div key={key} className="group">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-foreground">{label}</span>
+                          <span className="text-[11px] text-text-tertiary">{desc}</span>
                         </div>
-                        <span className={`text-sm font-semibold tabular-nums w-10 text-right ${isHigh ? 'text-primary' : isLow ? 'text-text-tertiary' : 'text-foreground'}`}>
+                        <span className={`text-sm font-bold tabular-nums px-2 py-0.5 rounded-md ${isHigh ? 'text-primary bg-primary/8' : isLow ? 'text-text-tertiary bg-stone-100' : 'text-foreground bg-stone-50'}`}>
                           ×{w.toFixed(1)}
                         </span>
                       </div>
-                      <input
-                        type="range"
-                        min={SLIDER_MIN}
-                        max={SLIDER_MAX}
-                        step={0.1}
-                        value={w}
-                        onChange={(e) => {
-                          const v = parseFloat(e.target.value);
-                          setWeights((prev) => { const next = [...prev]; next[j] = v; return next; });
-                        }}
-                        className="w-full h-2 rounded-full appearance-none bg-stone-200 accent-primary"
-                        aria-label={`${label} 가중치`}
-                      />
-                      <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5">
+                      <div className="relative">
+                        <div className="absolute top-1/2 -translate-y-1/2 left-0 right-0 h-2 rounded-full overflow-hidden pointer-events-none">
+                          <div className="absolute inset-0 bg-gradient-to-r from-stone-200 via-stone-200 to-stone-200" />
+                          <div
+                            className={`absolute top-0 left-0 h-full rounded-full transition-all duration-150 ${isHigh ? 'bg-primary/40' : isLow ? 'bg-stone-300' : 'bg-primary/25'}`}
+                            style={{ width: `${pctFromCenter}%` }}
+                          />
+                        </div>
+                        <input
+                          type="range"
+                          min={SLIDER_MIN}
+                          max={SLIDER_MAX}
+                          step={0.1}
+                          value={w}
+                          onChange={(e) => {
+                            const v = parseFloat(e.target.value);
+                            setWeights((prev) => { const next = [...prev]; next[j] = v; return next; });
+                          }}
+                          className="relative w-full h-6 appearance-none bg-transparent cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-5 [&::-webkit-slider-thumb]:h-5 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:border-2 [&::-webkit-slider-thumb]:border-white [&::-webkit-slider-thumb]:shadow-md [&::-webkit-slider-thumb]:transition-transform [&::-webkit-slider-thumb]:hover:scale-110 [&::-moz-range-thumb]:w-5 [&::-moz-range-thumb]:h-5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-2 [&::-moz-range-thumb]:border-white [&::-moz-range-thumb]:shadow-md"
+                          aria-label={`${label} 가중치`}
+                        />
+                      </div>
+                      <div className="flex justify-between text-[10px] text-text-tertiary mt-0.5 px-0.5">
                         <span>무시</span>
                         <span>기본</span>
                         <span>강조</span>
@@ -249,9 +262,12 @@ export default function SimulatorPage() {
             </div>
 
             {/* Re-ranked results */}
-            <div className="rounded-xl border border-border overflow-hidden">
+            <div className="rounded-xl border border-border overflow-hidden shadow-sm">
               <div className="px-4 py-3 border-b border-border bg-stone-50/80 flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">재순위 결과</span>
+                <div className="flex items-center gap-2">
+                  <Icon name="Trophy" size={15} className="text-amber-500" />
+                  <span className="text-sm font-semibold text-foreground">재순위 결과</span>
+                </div>
                 <Button
                   type="button"
                   variant="ghost"
@@ -263,69 +279,68 @@ export default function SimulatorPage() {
                   {copied ? '복사됨' : '결과 복사'}
                 </Button>
               </div>
-              <div className="divide-y divide-border">
+              <div className="divide-y divide-border/60">
                 {customRanked.map(({ horse, aiRank, customScore, aiScore }, i) => {
                   const rank = i + 1;
-                  const rankDiff = aiRank - rank; // positive = moved up
+                  const rankDiff = aiRank - rank;
                   const horseName = horse.hrName ?? horse.horseName ?? horse.hrNo ?? '-';
                   const isTop3 = rank <= 3;
                   const barPct = Math.round((customScore / maxCustomScore) * 100);
                   const aiBarPct = Math.round((aiScore / (Math.max(1, ...customRanked.map(r => r.aiScore)))) * 100);
 
                   return (
-                    <div key={horse.hrNo ?? i} className={`px-4 py-3 ${isTop3 ? 'bg-primary/3' : ''}`}>
-                      <div className="flex items-center gap-3">
-                        {/* Rank badge */}
-                        <div className="shrink-0 flex flex-col items-center gap-0.5 w-8">
-                          <span className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-bold ${
-                            rank === 1 ? 'bg-amber-400 text-white' :
-                            rank === 2 ? 'bg-stone-400 text-white' :
-                            rank === 3 ? 'bg-amber-700 text-white' :
-                            'bg-stone-100 text-text-tertiary'
+                    <div key={horse.hrNo ?? i} className={`px-4 py-3.5 transition-colors ${isTop3 ? 'bg-primary/[0.03]' : 'bg-card'}`}>
+                      <div className="flex items-start gap-3">
+                        {/* Rank badge + change */}
+                        <div className="shrink-0 flex flex-col items-center gap-1 w-9 pt-0.5">
+                          <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold shadow-sm ${
+                            rank === 1 ? 'bg-amber-400 text-amber-950 ring-2 ring-amber-300/40' :
+                            rank === 2 ? 'bg-stone-300 text-stone-800 ring-2 ring-stone-200/40' :
+                            rank === 3 ? 'bg-amber-700/80 text-amber-50 ring-2 ring-amber-600/30' :
+                            'bg-stone-100 text-stone-500'
                           }`}>
                             {rank}
                           </span>
-                          {rankDiff !== 0 && (
-                            <span className={`text-[11px] font-semibold leading-none ${rankDiff > 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+                          {rankDiff !== 0 ? (
+                            <span className={`text-[11px] font-bold leading-none px-1 py-0.5 rounded ${rankDiff > 0 ? 'text-emerald-600 bg-emerald-50' : 'text-red-500 bg-red-50'}`}>
                               {rankDiff > 0 ? `▲${rankDiff}` : `▼${Math.abs(rankDiff)}`}
                             </span>
-                          )}
-                          {rankDiff === 0 && (
+                          ) : (
                             <span className="text-[11px] text-text-tertiary leading-none">—</span>
                           )}
                         </div>
 
-                        {/* Horse info */}
+                        {/* Horse info + bars */}
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 flex-wrap">
+                          <div className="flex items-center gap-1.5 flex-wrap mb-2">
                             {horse.chulNo != null && horse.chulNo !== '' && (
-                              <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-700 text-white text-[11px] font-bold shrink-0">
+                              <span className="inline-flex items-center justify-center w-5.5 h-5.5 rounded-full bg-stone-700 text-white text-[10px] font-bold shrink-0">
                                 {horse.chulNo}
                               </span>
                             )}
                             <Link
                               href={horse.hrNo ? routes.horses.detail(horse.hrNo) : '#'}
-                              className="font-semibold text-foreground text-sm hover:text-primary"
+                              className="font-semibold text-foreground text-sm hover:text-primary transition-colors"
                             >
                               {horseName}
                             </Link>
                             {horse.winProb != null && (
-                              <span className="text-xs text-text-tertiary">
+                              <span className="text-[11px] text-text-tertiary bg-stone-100 px-1.5 py-0.5 rounded">
                                 승률 {horse.winProb.toFixed(1)}%
                               </span>
                             )}
                           </div>
                           {/* Score bars */}
-                          <div className="mt-1.5 space-y-1">
+                          <div className="space-y-1.5">
                             <div className="flex items-center gap-2">
-                              <span className="text-[11px] text-text-tertiary w-12 shrink-0">커스텀</span>
-                              <div className="flex-1 h-2 rounded-full bg-stone-100 overflow-hidden">
+                              <span className="text-[11px] font-medium text-primary w-12 shrink-0">커스텀</span>
+                              <div className="flex-1 h-2.5 rounded-full bg-stone-100 overflow-hidden">
                                 <div
-                                  className="h-full rounded-full bg-primary transition-all duration-300"
+                                  className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-400 transition-all duration-300"
                                   style={{ width: `${barPct}%` }}
                                 />
                               </div>
-                              <span className="text-xs tabular-nums text-foreground font-medium w-9 text-right">{customScore.toFixed(1)}</span>
+                              <span className="text-xs tabular-nums text-foreground font-bold w-10 text-right">{customScore.toFixed(1)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="text-[11px] text-text-tertiary w-12 shrink-0">AI</span>
@@ -335,7 +350,7 @@ export default function SimulatorPage() {
                                   style={{ width: `${aiBarPct}%` }}
                                 />
                               </div>
-                              <span className="text-xs tabular-nums text-text-tertiary w-9 text-right">{aiScore.toFixed(1)}</span>
+                              <span className="text-xs tabular-nums text-text-tertiary w-10 text-right">{aiScore.toFixed(1)}</span>
                             </div>
                           </div>
                         </div>

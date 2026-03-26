@@ -58,6 +58,7 @@ import {
   Wifi,
   WifiOff,
   Copy,
+  HelpCircle,
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -120,6 +121,7 @@ export const Icons = {
   ReceiptText,
   Smartphone,
   Copy,
+  HelpCircle,
 } as const;
 
 export type IconName = keyof typeof Icons;

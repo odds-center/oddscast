@@ -19,7 +19,15 @@ import {
 } from '@/components/ui/table';
 import BetTypePredictionsSection, { deriveFromHorseScores, predToDisplayNodesList } from './BetTypePredictionsSection';
 
+/** Clean stTime from KRA format like "출발 :10:50" → "10:50" */
+function formatStTime(raw?: string | null): string | null {
+  if (!raw) return null;
+  const cleaned = raw.replace(/^[^\d]*/, '').replace(/^:/, '');
+  return cleaned || null;
+}
+
 function RaceInfoCell({ row }: { row: MatrixRowDto }) {
+  const stTime = formatStTime(row.stTime);
   return (
     <Link
       href={routes.races.detail(row.raceId)}
@@ -34,7 +42,7 @@ function RaceInfoCell({ row }: { row: MatrixRowDto }) {
         </span>
       </div>
       <div className='flex items-center gap-2 text-xs text-stone-500 mt-0.5'>
-        {row.stTime && <span className='whitespace-nowrap'>{row.stTime}</span>}
+        {stTime && <span className='whitespace-nowrap'>출발 {stTime}</span>}
         {row.rcDist && <span className='whitespace-nowrap'>{row.rcDist}m</span>}
         {row.rank && <span className='whitespace-nowrap'>{row.rank}</span>}
         {row.entryCount != null && row.entryCount > 0 && (
@@ -261,20 +269,20 @@ export default function PredictionMatrixTable({
         </span>
       </div>
       <div className='border border-t-0 border-stone-200 rounded-b bg-white overflow-hidden'>
-        <Table className='min-w-[280px] [&_th]:py-2 [&_th]:px-3 [&_td]:py-1.5 [&_td]:px-3'>
+        <Table className='min-w-[280px] table-fixed [&_th]:py-2 [&_th]:px-3 [&_td]:py-1.5 [&_td]:px-3'>
           <TableHeader>
             <TableRow className='bg-[#1c1917] hover:bg-[#1c1917]'>
-              <TableHead className='text-stone-300'>경주</TableHead>
-              <TableHead className='text-center text-primary font-bold'>AI 예측</TableHead>
+              <TableHead className='text-stone-300 w-auto'>경주</TableHead>
+              <TableHead className='text-center text-primary font-bold w-24'>AI 예측</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {raceMatrix.map((row, idx) => (
               <TableRow key={row.raceId} className={idx % 2 === 1 ? 'bg-stone-50/50' : ''}>
-                <TableCell className='whitespace-nowrap'>
+                <TableCell>
                   <RaceInfoCell row={row} />
                 </TableCell>
-                <TableCell className='text-center text-stone-300 text-xs'>-</TableCell>
+                <TableCell className='text-center text-stone-300 text-xs w-24'>-</TableCell>
               </TableRow>
             ))}
           </TableBody>

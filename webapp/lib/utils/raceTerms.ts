@@ -97,16 +97,40 @@ export function getWeatherTerm(weather: string | null | undefined): TermOption |
   return map[w] ?? { label: w, tooltip: `날씨: ${w}` };
 }
 
-/** 주로 상태 (track) — 건조, 양호 등 */
+/** 주로 상태 (track) — 건조, 양호 등
+ * Raw DB values: "양호 (7%)", "건조 (moisture -%)", "- (moisture -%)", " (%)" etc.
+ * Extracts Korean condition label and moisture percentage separately.
+ */
 export function getTrackTerm(track: string | null | undefined): TermOption | null {
   if (!track || !track.trim()) return null;
-  const t = track.trim();
-  const map: Record<string, TermOption> = {
-    건조: { label: '건조', tooltip: '주로(트랙) 상태: 건조' },
-    양호: { label: '양호', tooltip: '주로 상태: 양호' },
-    다습: { label: '다습', tooltip: '주로 상태: 다습' },
-    포화: { label: '포화', tooltip: '주로 상태: 포화(젖음)' },
-    불량: { label: '불량', tooltip: '주로 상태: 불량' },
+  const raw = track.trim();
+
+  // Skip meaningless values
+  if (raw === '(%)' || raw === '- (moisture -%)' || raw === '-') return null;
+
+  // Extract condition name (Korean part before parentheses)
+  const condMatch = raw.match(/^([가-힣]+)/);
+  const condition = condMatch?.[1] ?? '';
+
+  // Extract moisture percentage if present (e.g., "7%" from "(7%)")
+  const moistMatch = raw.match(/\((\d+)%\)/);
+  const moisture = moistMatch?.[1] ? `${moistMatch[1]}%` : null;
+
+  const conditionMap: Record<string, { label: string; desc: string }> = {
+    건조: { label: '건조', desc: '건조 (수분 적음)' },
+    양호: { label: '양호', desc: '양호 (적당한 수분)' },
+    다습: { label: '다습', desc: '다습 (수분 많음)' },
+    포화: { label: '포화', desc: '포화 (젖은 주로)' },
+    불량: { label: '불량', desc: '불량 (매우 젖음)' },
   };
-  return map[t] ?? { label: t, tooltip: `주로(트랙) 상태: ${t}` };
+
+  const info = condition ? conditionMap[condition] : null;
+  if (!info) return null;
+
+  const label = moisture ? `${info.label} (${moisture})` : info.label;
+  const tooltip = moisture
+    ? `주로 상태: ${info.desc} — 함수율 ${moisture}`
+    : `주로 상태: ${info.desc}`;
+
+  return { label, tooltip };
 }

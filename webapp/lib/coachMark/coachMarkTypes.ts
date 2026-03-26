@@ -8,5 +8,6 @@ export type TourId =
   | 'profileTour';
 
 export interface CoachMarkStep extends Step {
-  // Extends react-joyride Step with our defaults applied in CoachMarkTour
+  /** Hide beacon and auto-show tooltip (v3: removed from Step but still works at runtime) */
+  disableBeacon?: boolean;
 }

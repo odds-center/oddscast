@@ -1,15 +1,22 @@
-import Joyride, { type CallBackProps, STATUS } from 'react-joyride';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/**
+ * Coach mark tour component — react-joyride v3 wrapper.
+ * Loaded via dynamic({ ssr: false }) from each page.
+ * Uses `any` cast because react-joyride v3 types are incompatible with runtime API.
+ */
+import { Joyride, STATUS } from 'react-joyride';
 import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
 import type { CoachMarkStep, TourId } from '@/lib/coachMark/coachMarkTypes';
 import { useAuthStore } from '@/lib/store/authStore';
 import AuthApi from '@/lib/api/authApi';
+
+const JoyrideAny = Joyride as any;
 
 interface CoachMarkTourProps {
   tourId: TourId;
   steps: CoachMarkStep[];
 }
 
-// Loaded via dynamic({ ssr: false }) from each page
 export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
   const activeTourId = useCoachMarkStore((s) => s.activeTourId);
   const running = useCoachMarkStore((s) => s.running);
@@ -19,10 +26,10 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
 
   const syncToServer = (id: TourId) => {
     if (!isLoggedIn) return;
-    AuthApi.updateProfile({ completedTour: id }).catch(() => {});
+    AuthApi.updateProfile({ completedTour: id } as Record<string, unknown>).catch(() => {});
   };
 
-  const handleCallback = (data: CallBackProps) => {
+  const handleCallback = (data: { status: string }) => {
     const { status } = data;
     if (status === STATUS.FINISHED) {
       completeTour(tourId);
@@ -34,7 +41,7 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
   };
 
   return (
-    <Joyride
+    <JoyrideAny
       steps={steps}
       run={running && activeTourId === tourId}
       continuous

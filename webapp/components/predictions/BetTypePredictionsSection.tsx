@@ -4,7 +4,15 @@
  * full: complete table of 7 bet types
  */
 import { ArrowRight, Circle } from 'lucide-react';
-import { PICK_TYPE_POOL_NAMES, PICK_TYPE_COMBO_DESC } from '@/lib/api/picksApi';
+const PICK_TYPE_POOL_NAMES: Record<string, string> = {
+  SINGLE: '단승', PLACE: '연승', QUINELLA: '복승',
+  EXACTA: '쌍승', QUINELLA_PLACE: '복연승', TRIFECTA: '삼복승', TRIPLE: '삼쌍승',
+};
+const PICK_TYPE_COMBO_DESC: Record<string, string> = {
+  SINGLE: '1착 예측', PLACE: '1~3착 중 1두', QUINELLA: '1·2착 (순서 무관)',
+  EXACTA: '1·2착 (순서 적중)', QUINELLA_PLACE: '1·2·3착 중 2두',
+  TRIFECTA: '1·2·3착 (순서 무관)', TRIPLE: '1·2·3착 (순서 적중)',
+};
 import type { BetTypePredictions, PredictionHorseScore } from '@/lib/types/predictions';
 
 const BET_TYPE_ORDER: (keyof BetTypePredictions)[] = [

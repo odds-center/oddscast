@@ -4,6 +4,8 @@ import {
   UnauthorizedException,
   ConflictException,
   BadRequestException,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
@@ -50,6 +52,42 @@ export interface SanitizedAdminUser {
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
+  // In-memory login attempt tracker: email -> { count, lockedUntil }
+  // Resets on successful login or after lock expires
+  private readonly loginAttempts = new Map<string, { count: number; lockedUntil?: Date }>();
+  private static readonly MAX_LOGIN_ATTEMPTS = 5;
+  private static readonly LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+  private checkLoginLock(key: string): void {
+    const entry = this.loginAttempts.get(key);
+    if (entry?.lockedUntil && entry.lockedUntil > new Date()) {
+      const minutesLeft = Math.ceil((entry.lockedUntil.getTime() - Date.now()) / 60000);
+      throw new HttpException(
+        `로그인 시도 횟수를 초과했습니다. ${minutesLeft}분 후 다시 시도해주세요.`,
+        HttpStatus.TOO_MANY_REQUESTS,
+      );
+    }
+    // Clear expired lock
+    if (entry?.lockedUntil && entry.lockedUntil <= new Date()) {
+      this.loginAttempts.delete(key);
+    }
+  }
+
+  private recordFailedAttempt(key: string): void {
+    const entry = this.loginAttempts.get(key) ?? { count: 0 };
+    entry.count += 1;
+    if (entry.count >= AuthService.MAX_LOGIN_ATTEMPTS) {
+      entry.lockedUntil = new Date(Date.now() + AuthService.LOCK_DURATION_MS);
+      entry.count = 0;
+      this.logger.warn(`Login locked for ${key} after ${AuthService.MAX_LOGIN_ATTEMPTS} failed attempts`);
+    }
+    this.loginAttempts.set(key, entry);
+  }
+
+  private clearLoginAttempts(key: string): void {
+    this.loginAttempts.delete(key);
+  }
 
   constructor(
     @InjectRepository(User) private readonly userRepo: Repository<User>,
@@ -160,19 +198,26 @@ export class AuthService {
   }
 
   async login(email: string, password: string) {
+    this.checkLoginLock(email);
+
     const user = await this.userRepo.findOne({ where: { email } });
-    if (!user)
+    if (!user) {
+      this.recordFailedAttempt(email);
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+    }
 
     const valid = await bcrypt.compare(password, user.password);
-    if (!valid)
+    if (!valid) {
+      this.recordFailedAttempt(email);
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+    }
 
     if (!user.isActive)
       throw new UnauthorizedException('비활성화된 계정입니다. 고객센터에 문의하세요.');
     if (!user.isEmailVerified)
       throw new UnauthorizedException('이메일 인증이 필요합니다. 이메일을 확인해 주세요.');
 
+    this.clearLoginAttempts(email);
     const now = new Date();
     await this.userRepo.update(user.id, { lastLoginAt: now, updatedAt: now });
 

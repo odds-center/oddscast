@@ -35,6 +35,7 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: '회원가입' })
+  @Throttle({ short: { limit: 5, ttl: 60000 } })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
@@ -120,6 +121,7 @@ export class AuthController {
 
   @Post('forgot-password')
   @ApiOperation({ summary: '비밀번호 찾기' })
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto.email);
   }
@@ -138,6 +140,7 @@ export class AuthController {
 
   @Post('resend-verification')
   @ApiOperation({ summary: '인증 메일 재발송' })
+  @Throttle({ short: { limit: 3, ttl: 60000 } })
   resendVerification(@Body() dto: ResendVerificationDto) {
     return this.authService.resendVerification(dto.email);
   }

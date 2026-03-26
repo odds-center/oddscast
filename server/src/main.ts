@@ -6,6 +6,7 @@ import * as Sentry from '@sentry/node';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/winston.config';
 import helmet from 'helmet';
+import * as express from 'express';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -22,6 +23,10 @@ async function bootstrap() {
 
   // Security headers
   app.use(helmet());
+
+  // Request body size limit — prevent large payload attacks
+  app.use(express.json({ limit: '500kb' }));
+  app.use(express.urlencoded({ extended: true, limit: '500kb' }));
 
   // Global API Prefix — 모바일 앱의 baseURL이 /api를 사용
   // health는 nginx/LB 헬스체크용으로 /health에 노출 (prefix 제외)

@@ -1337,12 +1337,16 @@ function PredictionFullView({
 
           {/* Horse rankings */}
           <div>
-            <p className='text-xs text-text-secondary font-semibold mb-1.5'>
-              AI 추천 순위 <span className='text-text-tertiary font-normal'>(참고용)</span>
-            </p>
+            <div className='flex items-center gap-2 mb-2'>
+              <div className='w-1 h-4 rounded-full bg-primary' />
+              <p className='text-sm text-foreground font-semibold'>
+                AI 추천 순위
+              </p>
+              <span className='text-[11px] text-text-tertiary'>(참고용)</span>
+            </div>
             <HorseScoresBarChart
               horseScores={prediction.scores!.horseScores!}
-              className='mb-4 rounded-xl border border-border bg-background-elevated p-3 shadow-sm'
+              className='mb-4 rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'
             />
             {/* Mobile: card list */}
             <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>

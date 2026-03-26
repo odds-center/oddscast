@@ -176,54 +176,57 @@ describe('UsersController', () => {
   });
 
   describe('getAchievements', () => {
-    it('should return empty array (stub)', () => {
-      const result = controller.getAchievements('1');
-
+    it('should return empty array for own user', () => {
+      const result = controller.getAchievements(1, mockUser);
       expect(result).toEqual([]);
+    });
+
+    it('should throw ForbiddenException for other user', () => {
+      expect(() => controller.getAchievements(5, mockUser)).toThrow();
     });
   });
 
   describe('getActivities', () => {
-    it('should return empty activities (stub)', () => {
-      const result = controller.getActivities('1');
+    it('should return empty activities for own user', () => {
+      const result = controller.getActivities(1, mockUser);
+      expect(result).toEqual({ activities: [], total: 0, page: 1, totalPages: 1 });
+    });
 
-      expect(result).toEqual({
-        activities: [],
-        total: 0,
-        page: 1,
-        totalPages: 1,
-      });
+    it('should throw ForbiddenException for other user', () => {
+      expect(() => controller.getActivities(5, mockUser)).toThrow();
     });
   });
 
   describe('getNotifications', () => {
-    it('should return empty notifications (stub)', () => {
-      const result = controller.getNotifications('1');
+    it('should return empty notifications for own user', () => {
+      const result = controller.getNotifications(1, mockUser);
+      expect(result).toEqual({ notifications: [], total: 0, page: 1, totalPages: 1 });
+    });
 
-      expect(result).toEqual({
-        notifications: [],
-        total: 0,
-        page: 1,
-        totalPages: 1,
-      });
+    it('should throw ForbiddenException for other user', () => {
+      expect(() => controller.getNotifications(5, mockUser)).toThrow();
     });
   });
 
   describe('getPreferences', () => {
-    it('should return default preferences (stub)', () => {
-      const result = controller.getPreferences('1');
-
+    it('should return preferences for own user', () => {
+      const result = controller.getPreferences(1, mockUser);
       expect(result).toEqual({ marketing: true, notifications: true });
+    });
+
+    it('should throw ForbiddenException for other user', () => {
+      expect(() => controller.getPreferences(5, mockUser)).toThrow();
     });
   });
 
   describe('updatePreferences', () => {
-    it('should return default preferences (stub)', () => {
-      const result = controller.updatePreferences('1', {
-        marketing: false,
-      });
-
+    it('should update preferences for own user', () => {
+      const result = controller.updatePreferences(1, { marketing: false }, mockUser);
       expect(result).toEqual({ marketing: true, notifications: true });
+    });
+
+    it('should throw ForbiddenException for other user', () => {
+      expect(() => controller.updatePreferences(5, {}, mockUser)).toThrow();
     });
   });
 

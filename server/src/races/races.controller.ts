@@ -14,6 +14,9 @@ import {
 import { RacesService } from './races.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../database/db-enums';
 import {
   CreateRaceDto,
   UpdateRaceDto,
@@ -119,7 +122,8 @@ export class RacesController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '경주 생성' })
   create(@Body() dto: CreateRaceDto) {
     return this.racesService.create(dto);
@@ -127,7 +131,8 @@ export class RacesController {
 
   @Put(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '경주 수정' })
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateRaceDto) {
     return this.racesService.update(id, dto);
@@ -135,7 +140,8 @@ export class RacesController {
 
   @Delete(':id')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '경주 삭제' })
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.racesService.remove(id);
@@ -175,7 +181,8 @@ export class RacesController {
 
   @Post(':id/entries')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '출전마 등록' })
   createEntry(
     @Param('id', ParseIntPipe) raceId: number,
@@ -186,7 +193,8 @@ export class RacesController {
 
   @Post(':id/entries/bulk')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '출전마 일괄 등록' })
   createBulkEntries(
     @Param('id', ParseIntPipe) raceId: number,

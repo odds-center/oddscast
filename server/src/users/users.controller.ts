@@ -124,35 +124,62 @@ export class UsersController {
 
   @Get(':id/achievements')
   @ApiOperation({ summary: '사용자 업적 조회' })
-  getAchievements(@Param('id') _id: string) {
-    // 임시 구현: 실제 서비스 메서드 필요. 일단 빈 배열 반환
+  getAchievements(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return [];
   }
 
   @Get(':id/activities')
   @ApiOperation({ summary: '사용자 활동 내역 조회' })
-  getActivities(@Param('id') _id: string) {
+  getActivities(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return { activities: [], total: 0, page: 1, totalPages: 1 };
   }
 
   @Get(':id/notifications')
   @ApiOperation({ summary: '사용자 알림 조회' })
-  getNotifications(@Param('id') _id: string) {
+  getNotifications(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return { notifications: [], total: 0, page: 1, totalPages: 1 };
   }
 
   @Get(':id/preferences')
   @ApiOperation({ summary: '사용자 설정 조회' })
-  getPreferences(@Param('id') _id: string) {
+  getPreferences(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return { marketing: true, notifications: true };
   }
 
   @Put(':id/preferences')
   @ApiOperation({ summary: '사용자 설정 수정' })
   updatePreferences(
-    @Param('id') _id: string,
+    @Param('id', ParseIntPipe) id: number,
     @Body() _body: Record<string, unknown>,
+    @CurrentUser() user: JwtPayload,
   ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return { marketing: true, notifications: true };
   }
 

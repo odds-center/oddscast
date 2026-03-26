@@ -12,6 +12,9 @@ import {
 import { PredictionsService } from './predictions.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../database/db-enums';
 import {
   CreatePredictionDto,
   UpdatePredictionStatusDto,
@@ -137,7 +140,8 @@ export class PredictionsController {
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '예측 생성' })
   create(@Body() dto: CreatePredictionDto) {
     return this.predictionsService.create(dto);
@@ -145,7 +149,8 @@ export class PredictionsController {
 
   @Post('analytics/daily-stats')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '일일 통계 계산' })
   calculateDailyStats() {
     return this.predictionsService.getDashboard();
@@ -153,7 +158,8 @@ export class PredictionsController {
 
   @Patch(':id/status')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '예측 상태 업데이트' })
   updateStatus(
     @Param('id', ParseIntPipe) id: number,
@@ -164,7 +170,8 @@ export class PredictionsController {
 
   @Post('generate/:raceId')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
   @ApiOperation({ summary: '예측 생성 (AI)' })
   generate(@Param('raceId', ParseIntPipe) raceId: number) {
     return this.predictionsService.generatePrediction(raceId);

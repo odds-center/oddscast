@@ -63,7 +63,13 @@ export class UsersController {
 
   @Get(':id/profile')
   @ApiOperation({ summary: '사용자 프로필 조회' })
-  getProfile(@Param('id', ParseIntPipe) id: number) {
+  getProfile(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return this.usersService.findOne(id);
   }
 
@@ -82,19 +88,37 @@ export class UsersController {
 
   @Get(':id')
   @ApiOperation({ summary: '사용자 상세 조회' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return this.usersService.findOne(id);
   }
 
   @Get(':id/stats')
   @ApiOperation({ summary: '사용자 통계 조회' })
-  getStats(@Param('id', ParseIntPipe) id: number) {
+  getStats(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return this.usersService.getStats(id);
   }
 
   @Get(':id/statistics')
   @ApiOperation({ summary: '사용자 통계 조회 (alias)' })
-  getStatistics(@Param('id', ParseIntPipe) id: number) {
+  getStatistics(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (user.sub !== id && user.role !== UserRole.ADMIN) {
+      throw new ForbiddenException();
+    }
     return this.usersService.getStats(id);
   }
 

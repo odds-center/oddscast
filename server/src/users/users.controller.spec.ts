@@ -91,14 +91,18 @@ describe('UsersController', () => {
   });
 
   describe('getProfile', () => {
-    it('should return user profile by id', async () => {
-      const user = { id: 5, email: 'other@test.com' };
+    it('should return user profile when accessing own profile', async () => {
+      const user = { id: 1, email: 'test@test.com' };
       mockUsersService.findOne.mockResolvedValue(user);
 
-      const result = await controller.getProfile(5);
+      const result = await controller.getProfile(1, mockUser);
 
-      expect(mockUsersService.findOne).toHaveBeenCalledWith(5);
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(1);
       expect(result).toBe(user);
+    });
+
+    it('should throw ForbiddenException when accessing another user profile', () => {
+      expect(() => controller.getProfile(5, mockUser)).toThrow();
     });
   });
 
@@ -124,38 +128,50 @@ describe('UsersController', () => {
   });
 
   describe('findOne', () => {
-    it('should return user by id', async () => {
-      const user = { id: 3 };
+    it('should return user when accessing own record', async () => {
+      const user = { id: 1 };
       mockUsersService.findOne.mockResolvedValue(user);
 
-      const result = await controller.findOne(3);
+      const result = await controller.findOne(1, mockUser);
 
-      expect(mockUsersService.findOne).toHaveBeenCalledWith(3);
+      expect(mockUsersService.findOne).toHaveBeenCalledWith(1);
       expect(result).toBe(user);
+    });
+
+    it('should throw ForbiddenException when accessing another user', () => {
+      expect(() => controller.findOne(3, mockUser)).toThrow();
     });
   });
 
   describe('getStats', () => {
-    it('should return user stats by id', async () => {
+    it('should return user stats when accessing own stats', async () => {
       const stats = { totalPredictions: 5 };
       mockUsersService.getStats.mockResolvedValue(stats);
 
-      const result = await controller.getStats(7);
+      const result = await controller.getStats(1, mockUser);
 
-      expect(mockUsersService.getStats).toHaveBeenCalledWith(7);
+      expect(mockUsersService.getStats).toHaveBeenCalledWith(1);
       expect(result).toBe(stats);
+    });
+
+    it('should throw ForbiddenException when accessing another user stats', () => {
+      expect(() => controller.getStats(7, mockUser)).toThrow();
     });
   });
 
   describe('getStatistics', () => {
-    it('should return user statistics (alias for getStats)', async () => {
+    it('should return user statistics when accessing own record', async () => {
       const stats = { totalPredictions: 5 };
       mockUsersService.getStats.mockResolvedValue(stats);
 
-      const result = await controller.getStatistics(7);
+      const result = await controller.getStatistics(1, mockUser);
 
-      expect(mockUsersService.getStats).toHaveBeenCalledWith(7);
+      expect(mockUsersService.getStats).toHaveBeenCalledWith(1);
       expect(result).toBe(stats);
+    });
+
+    it('should throw ForbiddenException when accessing another user statistics', () => {
+      expect(() => controller.getStatistics(7, mockUser)).toThrow();
     });
   });
 

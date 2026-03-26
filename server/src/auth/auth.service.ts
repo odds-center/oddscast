@@ -85,7 +85,7 @@ export class AuthService {
       throw new ConflictException('이미 등록된 이메일입니다');
     }
 
-    const hashed = await bcrypt.hash(dto.password, 10);
+    const hashed = await bcrypt.hash(dto.password, 12);
     const now = new Date();
     const user = this.userRepo.create({
       email: dto.email,
@@ -115,7 +115,7 @@ export class AuthService {
     userId: number,
     email: string,
   ): Promise<void> {
-    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const code = String(crypto.randomInt(100000, 1000000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
     await this.emailVerificationRepo.delete({ userId });

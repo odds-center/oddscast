@@ -27,7 +27,7 @@ import { GlobalConfigModule } from '../config/config.module';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: (config: ConfigService) => ({
-        secret: config.get('JWT_SECRET', 'oddscast-secret'),
+        secret: config.getOrThrow('JWT_SECRET'),
         signOptions: { expiresIn: '7d' },
       }),
       inject: [ConfigService],

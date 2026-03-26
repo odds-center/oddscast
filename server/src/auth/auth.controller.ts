@@ -7,6 +7,7 @@ import {
   Delete,
   UseGuards,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -40,12 +41,14 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: '로그인 (이메일/비밀번호)' })
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto.email, dto.password);
   }
 
   @Post('admin/login')
   @ApiOperation({ summary: '관리자 로그인 (아이디/비밀번호)' })
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
   adminLogin(@Body() dto: AdminLoginDto) {
     return this.authService.adminLogin(dto.loginId, dto.password);
   }

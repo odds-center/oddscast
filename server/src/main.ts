@@ -5,6 +5,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import * as Sentry from '@sentry/node';
 import { WinstonModule } from 'nest-winston';
 import { winstonConfig } from './common/logger/winston.config';
+import helmet from 'helmet';
 
 if (process.env.SENTRY_DSN) {
   Sentry.init({
@@ -18,6 +19,9 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: WinstonModule.createLogger(winstonConfig),
   });
+
+  // Security headers
+  app.use(helmet());
 
   // Global API Prefix — 모바일 앱의 baseURL이 /api를 사용
   // health는 nginx/LB 헬스체크용으로 /health에 노출 (prefix 제외)
@@ -66,15 +70,17 @@ async function bootstrap() {
     }),
   );
 
-  // Swagger (Global prefix와 충돌 방지를 위해 /docs로 설정)
-  const config = new DocumentBuilder()
-    .setTitle('OddsCast API')
-    .setDescription('AI 경마 승부예측 서비스 API')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('docs', app, document);
+  // Swagger — disabled in production
+  if (env !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('OddsCast API')
+      .setDescription('AI 경마 승부예측 서비스 API')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('docs', app, document);
+  }
 
   const port = process.env.PORT || 3001;
   await app.listen(port);

@@ -1,17 +1,41 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
+import * as crypto from 'crypto';
+import * as path from 'path';
+import * as fs from 'fs';
+import { spawn, execSync } from 'child_process';
 import { Race } from '../database/entities/race.entity';
 import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
-import * as path from 'path';
-import * as fs from 'fs';
-import { spawn, execSync } from 'child_process';
+import { RaceAnalysisCache } from '../database/entities/race-analysis-cache.entity';
+
+export interface AnalyzeJockeyResult {
+  entriesWithScores: Array<{
+    hrNo: string;
+    hrName: string;
+    chulNo: string | null;
+    jkNo: string;
+    jkName: string;
+    horseScore: number;
+    jockeyScore: number;
+    combinedScore: number;
+  }>;
+  weightRatio: { horse: number; jockey: number };
+  topPickByJockey: {
+    hrNo: string;
+    hrName: string;
+    jkNo: string;
+    jkName: string;
+    jockeyScore: number;
+  } | null;
+}
 
 @Injectable()
 export class AnalysisService {
+  private readonly logger = new Logger(AnalysisService.name);
   private readonly scriptPath = path.join(
     process.cwd(),
     'scripts',
@@ -42,6 +66,8 @@ export class AnalysisService {
     private readonly jockeyResultRepo: Repository<JockeyResult>,
     @InjectRepository(TrainerResult)
     private readonly trainerResultRepo: Repository<TrainerResult>,
+    @InjectRepository(RaceAnalysisCache)
+    private readonly cacheRepo: Repository<RaceAnalysisCache>,
   ) {}
 
   /** Resolve python3 binary path: env var → well-known paths → PATH lookup */
@@ -107,32 +133,22 @@ export class AnalysisService {
     });
   }
 
+  private computeDataHash(input: object): string {
+    return crypto
+      .createHash('sha256')
+      .update(JSON.stringify(input))
+      .digest('hex')
+      .slice(0, 16);
+  }
+
   async calculateScore(raceData: {
     entries: Array<{ hrNo?: string; rating?: number }>;
   }): Promise<unknown> {
     return this.runPythonScript(raceData);
   }
 
-  async analyzeJockey(raceId: number): Promise<{
-    entriesWithScores: Array<{
-      hrNo: string;
-      hrName: string;
-      chulNo: string | null;
-      jkNo: string;
-      jkName: string;
-      horseScore: number;
-      jockeyScore: number;
-      combinedScore: number;
-    }>;
-    weightRatio: { horse: number; jockey: number };
-    topPickByJockey: {
-      hrNo: string;
-      hrName: string;
-      jkNo: string;
-      jkName: string;
-      jockeyScore: number;
-    } | null;
-  }> {
+  /** Build the full input object for jockey analysis (no Python call) */
+  private async buildJockeyAnalysisInput(raceId: number) {
     const race = await this.raceRepo.findOne({
       where: { id: raceId },
       select: [
@@ -146,9 +162,8 @@ export class AnalysisService {
         'track',
       ],
     });
-    if (!race) throw new NotFoundException('경주를 찾을 수 없습니다');
+    if (!race) throw new NotFoundException('Race not found');
 
-    // Fetch ALL entry fields for rich analysis
     const entries = await this.entryRepo.find({
       where: { raceId, isScratched: false },
     });
@@ -194,7 +209,6 @@ export class AnalysisService {
         };
       }
 
-      // Career-wide fallback for jockeys missing from this meet
       const foundNos = new Set(meetRows.map((j) => j.jkNo));
       const missingNos = jockeyNos.filter((n) => !foundNos.has(n));
       if (missingNos.length > 0) {
@@ -208,7 +222,6 @@ export class AnalysisService {
             'ord3CntT',
           ],
         });
-        // Aggregate across all meets per jockey
         const agg: Record<
           string,
           { rc: number; o1: number; o2: number; o3: number }
@@ -254,7 +267,7 @@ export class AnalysisService {
       }
     }
 
-    const input = {
+    return {
       command: 'analyze_jockey',
       race: {
         meet: race.meet,
@@ -286,49 +299,78 @@ export class AnalysisService {
           ord1CntT: e.ord1CntT,
           trainingData: e.trainingData,
           sectionalStats: e.sectionalStats,
-          // Enriched jockey stats
           jockeyMeetWinRate: jk?.winRateTsum ?? null,
           jockeyMeetQuRate: jk?.quRateTsum ?? null,
           jockeyRcCntT: jk?.rcCntT ?? null,
           jockeyFallbackCareer: jk?.isFallback ?? false,
-          // Enriched trainer stats
           trainerWinRate: tr?.winRateTsum ?? null,
           trainerQuRate: tr?.quRateTsum ?? null,
         };
       }),
       results: results.map((r) => ({ rcTime: r.rcTime, ord: r.ord })),
     };
+  }
 
-    const result = (await this.runPythonScript(input)) as {
-      entriesWithScores?: Array<{
-        hrNo: string;
-        hrName: string;
-        chulNo: string | null;
-        jkNo: string;
-        jkName: string;
-        horseScore: number;
-        jockeyScore: number;
-        combinedScore: number;
-      }>;
-      weightRatio?: { horse: number; jockey: number };
-      topPickByJockey?: {
-        hrNo: string;
-        hrName: string;
-        jkNo: string;
-        jkName: string;
-        jockeyScore: number;
-      } | null;
-      error?: string;
-    };
+  async analyzeJockey(raceId: number): Promise<AnalyzeJockeyResult> {
+    // Step 1: Build input
+    const input = await this.buildJockeyAnalysisInput(raceId);
 
-    if (result && typeof result === 'object' && 'error' in result) {
-      throw new Error(`Analysis error: ${result.error}`);
+    // Step 2: Compute hash of input data
+    const dataHash = this.computeDataHash(input);
+
+    // Step 3: Check cache
+    const cached = await this.cacheRepo.findOne({
+      where: { raceId, analysisType: 'jockey' },
+    });
+
+    if (cached && cached.dataHash === dataHash) {
+      this.logger.debug(`Analysis cache HIT for race ${raceId}`);
+      return cached.result as unknown as AnalyzeJockeyResult;
     }
 
-    return {
-      entriesWithScores: result.entriesWithScores || [],
-      weightRatio: result.weightRatio || { horse: 0.7, jockey: 0.3 },
-      topPickByJockey: result.topPickByJockey ?? null,
+    // Step 4: Cache MISS or stale — run Python
+    this.logger.log(
+      `Analysis cache ${cached ? 'STALE' : 'MISS'} for race ${raceId}, running Python`,
+    );
+    const rawResult = (await this.runPythonScript(input)) as Record<
+      string,
+      unknown
+    >;
+
+    if (rawResult && typeof rawResult === 'object' && 'error' in rawResult) {
+      throw new Error(`Analysis error: ${rawResult.error}`);
+    }
+
+    const result: AnalyzeJockeyResult = {
+      entriesWithScores:
+        (rawResult.entriesWithScores as AnalyzeJockeyResult['entriesWithScores']) ||
+        [],
+      weightRatio:
+        (rawResult.weightRatio as AnalyzeJockeyResult['weightRatio']) || {
+          horse: 0.7,
+          jockey: 0.3,
+        },
+      topPickByJockey:
+        (rawResult.topPickByJockey as AnalyzeJockeyResult['topPickByJockey']) ??
+        null,
     };
+
+    // Step 5: Upsert cache
+    if (cached) {
+      cached.dataHash = dataHash;
+      cached.result = result as unknown as Record<string, unknown>;
+      await this.cacheRepo.save(cached);
+    } else {
+      await this.cacheRepo.save(
+        this.cacheRepo.create({
+          raceId,
+          analysisType: 'jockey',
+          dataHash,
+          result: result as unknown as Record<string, unknown>,
+        }),
+      );
+    }
+
+    return result;
   }
 }

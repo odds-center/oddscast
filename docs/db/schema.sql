@@ -511,7 +511,20 @@ CREATE TABLE IF NOT EXISTS "global_config" (
     CONSTRAINT "global_config_key_key" UNIQUE ("key")
 );
 
+CREATE TABLE IF NOT EXISTS "race_analysis_cache" (
+    "id" SERIAL NOT NULL,
+    "raceId" INTEGER NOT NULL,
+    "analysisType" TEXT NOT NULL,
+    "dataHash" TEXT NOT NULL,
+    "result" JSONB NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "race_analysis_cache_pkey" PRIMARY KEY ("id"),
+    CONSTRAINT "race_analysis_cache_raceId_analysisType_key" UNIQUE ("raceId", "analysisType")
+);
+
 -- Non-unique indexes (PostgreSQL has no inline syntax for these in CREATE TABLE)
+CREATE INDEX IF NOT EXISTS "idx_race_analysis_cache_raceId_type" ON "race_analysis_cache" ("raceId", "analysisType");
 CREATE INDEX IF NOT EXISTS "trainings_horseNo_idx" ON "trainings"("horseNo");
 CREATE INDEX IF NOT EXISTS "trainings_trDate_idx" ON "trainings"("trDate");
 CREATE INDEX IF NOT EXISTS "kra_sync_logs_endpoint_rcDate_idx" ON "kra_sync_logs"("endpoint", "rcDate");
@@ -610,4 +623,8 @@ DO $$ BEGIN
 DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'user_picks_raceId_fkey' AND n.nspname = 'oddscast') THEN
     ALTER TABLE "user_picks" ADD CONSTRAINT "user_picks_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF; END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint c JOIN pg_namespace n ON c.connamespace = n.oid WHERE c.conname = 'race_analysis_cache_raceId_fkey' AND n.nspname = 'oddscast') THEN
+    ALTER TABLE "race_analysis_cache" ADD CONSTRAINT "race_analysis_cache_raceId_fkey" FOREIGN KEY ("raceId") REFERENCES "races"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF; END $$;

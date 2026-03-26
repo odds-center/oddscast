@@ -462,7 +462,86 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 
 ---
 
-## 8. 핵심 비즈니스 규칙 요약
+## 8. 보안 규칙 (Security)
+
+### 8.1 인증 보안
+
+| 항목 | 규칙 |
+|------|------|
+| **bcrypt rounds** | 12 (성능상 최소 12 유지, 낮추지 말 것) |
+| **JWT_SECRET** | `config.getOrThrow('JWT_SECRET')` — 미설정 시 서버 기동 불가. 폴백 문자열 사용 금지 |
+| **이메일 인증 코드** | `crypto.randomInt(100000, 1000000)` — `Math.random()` 사용 금지 |
+| **Swagger** | production 환경에서 비활성화 (`env !== 'production'`만 `/docs` 노출) |
+
+### 8.2 로그인 잠금 (Account Lockout)
+
+`auth.service.ts` 내 인메모리 `Map<string, { count: number; lockedUntil?: Date }>`:
+
+- **키**: 이메일 주소
+- **임계값**: 5회 연속 실패 → 15분 잠금
+- **성공 시**: 카운터 즉시 초기화
+- **서버 재시작 시**: 카운터 리셋 (인메모리 한계, 분산 환경에서는 Redis로 대체 권장)
+
+```typescript
+// auth.service.ts 핵심 로직
+private static readonly MAX_LOGIN_ATTEMPTS = 5;
+private static readonly LOCK_DURATION_MS = 15 * 60 * 1000; // 15분
+```
+
+### 8.3 Rate Limiting (엔드포인트별)
+
+`@nestjs/throttler` — 글로벌(120/min, 2000/hour) 외에 민감 엔드포인트에 개별 제한:
+
+| 엔드포인트 | 제한 |
+|-----------|------|
+| `POST /auth/login` | 10회/분 |
+| `POST /auth/register` | 5회/분 |
+| `POST /auth/forgot-password` | 3회/분 |
+| `POST /auth/resend-verification` | 3회/분 |
+| `GET /fortune` | 5회/분 |
+
+데코레이터 패턴: `@Throttle({ short: { limit: N, ttl: 60000 } })`
+
+### 8.4 HTTP 보안 헤더
+
+`helmet()` 미들웨어가 `main.ts`에서 전역 적용:
+
+| 헤더 | 목적 |
+|------|------|
+| `X-Content-Type-Options: nosniff` | MIME 스니핑 방지 |
+| `X-Frame-Options: SAMEORIGIN` | Clickjacking 방지 |
+| `Strict-Transport-Security` | HTTPS 강제 |
+| `Content-Security-Policy` | XSS 방지 |
+
+### 8.5 요청 크기 제한
+
+`main.ts`에서 `express.json({ limit: '500kb' })` + `urlencoded({ limit: '500kb' })` — 대형 페이로드 공격 방어.
+
+### 8.6 ADMIN 전용 엔드포인트 가드 원칙
+
+관리자 전용 엔드포인트는 반드시 `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` 적용:
+
+| 모듈 | ADMIN 전용 메서드 |
+|------|-----------------|
+| `users.controller` | `findAll`, `search`, `update`, `remove` |
+| `races.controller` | `create`, `update`, `remove`, `createEntry`, `createBulkEntries` |
+| `predictions.controller` | `create`, `updateStatus`, `generate`, `calculateDailyStats` |
+
+### 8.7 IDOR(Insecure Direct Object Reference) 방지
+
+사용자 데이터를 ID로 조회하는 엔드포인트(`/users/:id/*`)는 반드시 소유자 검증:
+
+```typescript
+if (user.sub !== id && user.role !== UserRole.ADMIN) {
+  throw new ForbiddenException();
+}
+```
+
+적용 대상: `getProfile`, `updateProfile`, `findOne`, `getStats`, `getStatistics`, `getAchievements`, `getActivities`, `getNotifications`, `getPreferences`, `updatePreferences`
+
+---
+
+## 9. 핵심 비즈니스 규칙 요약
 
 | 규칙                         | 설명                                             |
 | ---------------------------- | ------------------------------------------------ |
@@ -477,4 +556,4 @@ DTO 검증: @IsIn(['RACE']) — type은 RACE만 허용
 
 ---
 
-_마지막 업데이트: 2026-03-19_
+_마지막 업데이트: 2026-03-26_

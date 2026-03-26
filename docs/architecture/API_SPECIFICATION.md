@@ -6,7 +6,7 @@
 >
 > **클라이언트:** WebApp (`webapp/lib/api/`) — 메인 클라이언트. Mobile은 WebView로 WebApp 로드. Admin (`admin/src/lib/api/`).
 
-**Last updated:** 2026-03-19
+**Last updated:** 2026-03-26
 
 ### Admin 전용 Base URL
 
@@ -34,6 +34,26 @@ Admin은 `/api/admin` prefix로 별도 base URL 사용:
 
 - `🔓` = 인증 불필요 (Public)
 - `🔐` = JWT Bearer Token 필요 (`Authorization: Bearer <token>`)
+- `🛡️` = ADMIN 전용 (`JwtAuthGuard + RolesGuard + @Roles(UserRole.ADMIN)`)
+
+### Rate Limiting
+
+글로벌: **120 req/min, 2000 req/hour** per IP (`@nestjs/throttler`).
+민감 엔드포인트에는 개별 `@Throttle` 추가:
+
+| 엔드포인트 | 엔드포인트별 제한 |
+|-----------|-----------------|
+| `POST /auth/login` | 10회/분 |
+| `POST /auth/register` | 5회/분 |
+| `POST /auth/forgot-password` | 3회/분 |
+| `POST /auth/resend-verification` | 3회/분 |
+| `GET /fortune` | 5회/분 |
+
+### 보안 헤더
+
+`helmet()` 전역 적용 (X-Content-Type-Options, X-Frame-Options, HSTS, CSP 등).
+요청 본문 크기 제한: **500 KB** (`express.json({ limit: '500kb' })`).
+Swagger(`/docs`): **production 환경에서 비활성화**.
 
 ### 페이지네이션 (공통)
 

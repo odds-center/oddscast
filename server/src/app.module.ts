@@ -35,6 +35,7 @@ import {
   SubscriptionPlan,
   BillingHistory,
   RaceDividend,
+  RaceAnalysisCache,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -112,6 +113,7 @@ import { DiscordModule } from './discord/discord.module';
           SubscriptionPlan,
           BillingHistory,
           RaceDividend,
+          RaceAnalysisCache,
         ],
         logging: config.get<string>('NODE_ENV') === 'development',
         synchronize: false,

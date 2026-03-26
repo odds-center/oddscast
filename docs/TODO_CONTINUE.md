@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-03-25 (코치마크 온보딩 시스템, CORS 화이트리스트, Python 바이너리 자동 탐지, Admin Vercel 도메인, Discord 웹훅 dev/prod 분리, Auth 토큰 리프레시, 테이블 UI 개선, Analysis 서비스 강화)
+**Last updated:** 2026-03-26 (보안 강화: helmet, bcrypt 12라운드, JWT getOrThrow, 로그인 잠금, 엔드포인트별 rate limiting, ADMIN 가드 전수점검, IDOR 방지, Swagger 프로덕션 비활성화, 배포 Discord 알림, Claude Code 훅/MCP/커스텀 커맨드 설정)
 
 ---
 
@@ -82,6 +82,9 @@
 | **Analysis 서비스 강화** | ✅ 완료 | TrainerResult 통합. MEET_CODE_MAP(서울·제주·부산경남 → 1·2·3). 완료 경주 AI 예측 섹션 숨김. RecentRacesSection divider 기반 레이아웃. |
 | **Vercel + Railway 배포 완료** | ✅ 완료 | WebApp: `oddscast-webapp.vercel.app`, Admin: `oddscast-admin.vercel.app` (Vercel 무료). Server+PostgreSQL: Railway. CD: master push → 자동 배포. |
 | **코치마크 온보딩 시스템** | ✅ 완료 | react-joyride 기반. coachMarkStore(Zustand+localStorage). 5개 투어(홈/경주/경주상세/종합예상/프로필). 기존 OnboardingTutorial 제거. 프로필 페이지에 "이용 가이드 보기" CoachMarkButton 배치. |
+| **보안 강화** | ✅ 완료 | helmet 헤더, bcrypt 12라운드, JWT getOrThrow, 로그인 5회 잠금(15분), 엔드포인트별 @Throttle, ADMIN 가드 전수점검, IDOR 방지(users/:id/*), 요청 500kb 제한, Swagger 프로덕션 비활성화. |
+| **배포 Discord 알림** | ✅ 완료 | `.github/workflows/deploy.yml` notify job — 배포 성공/실패 시 Discord 웹훅(`DISCORD_WEBHOOK_DEPLOY` secret) 전송. |
+| **Claude Code 설정 최적화** | ✅ 완료 | `.claude/rules/` path frontmatter 추가, hooks(prettier/env보호/docs체크리스트), MCP postgres, 커스텀 커맨드(new-module/new-page/check-docs), CLAUDE.md `@docs/TODO_CONTINUE.md` import. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 

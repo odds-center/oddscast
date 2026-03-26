@@ -90,26 +90,26 @@
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline -5)",
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfeat: on-demand KRA result fetch and decouple Gemini from KRA sync\n\n- Add on-demand result fetch in RacesService.findOne\\(\\): when a user\n  views a race that has ended but has no results, trigger KRA API\n  fetch with 1-min cooldown per rcDate to prevent excessive calls\n- Decouple Gemini prediction generation from KRA result sync:\n  replace onResultsSyncedForRace \\(accuracy + Gemini\\) with\n  updateAccuracyOnly \\(accuracy only\\) in fetchRaceResults\n- Remove generatePredictionsForDate fire-and-forget call from\n  processDueBatchSchedules to prevent Gemini 429 cascading to KRA\n- Predictions are now handled independently by PredictionsScheduler\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\")",
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git status --short)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline -10)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git branch -a | head -20)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline develop..master | head -20)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline master..develop | head -20)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git checkout develop)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git log --oneline master..develop | head -5; echo \"---\"; GIT_CONFIG_GLOBAL=/dev/null git log --oneline develop..master | head -5)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null docker build -f server/Dockerfile . --no-cache 2>&1 | tail -30)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null docker build -f server/Dockerfile . --no-cache 2>&1 | tail -20)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git diff)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git add .dockerignore server/Dockerfile .github/workflows/deploy.yml && GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfix: Docker build failure — shared package not compiled in container\n\n- .dockerignore excluded **/dist which stripped shared/dist \\(compiled\n  types/utils\\) from the Docker context, causing TS2307 on @oddscast/shared\n- Replace **/dist with per-package dist exclusions to preserve shared/dist\n- Add explicit shared build step in Dockerfile before server build\n- Remove continue-on-error on deploy step so failures are reported\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\")",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git checkout master && GIT_CONFIG_GLOBAL=/dev/null git merge develop --no-edit)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git push origin master && GIT_CONFIG_GLOBAL=/dev/null git push origin develop)",
-      "Bash(GIT_CONFIG_GLOBAL=/dev/null git -C /Users/risingcore/Desktop/project/oddscast config user.name \"advanced-risingcore\" && GIT_CONFIG_GLOBAL=/dev/null git -C /Users/risingcore/Desktop/project/oddscast config user.email \"vcjsm2283@users.noreply.github.com\")"
+      "Bash(grep -n \"<table\" /Users/risingcore/Desktop/work/oddscast/webapp/pages/races/[id]/index.tsx)",
+      "Bash(brew list:*)",
+      "Bash(diffstat)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast -path */scripts/*.py -o -path */python/*.py)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast -name analysis.py -o -name *.py)",
+      "Bash(pip3 install:*)",
+      "Skill(commit-commands:commit-push-pr)",
+      "Bash(docker build:*)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast -name *simulation* -o -name *persona*)",
+      "Bash(ps -p 42948 -o command)",
+      "Bash(kill 31342 31389)",
+      "Bash(docker start:*)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast -name prettier -path */node_modules/.bin/*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"
     ]
   },
-  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "postgres"
-  ]
+  ],
+  "enableAllProjectMcpServers": true
 }

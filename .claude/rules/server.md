@@ -10,8 +10,10 @@ paths:
 
 - Global prefix: `/api` (health endpoints excluded)
 - ValidationPipe: `whitelist: true`, `transform: true`, `enableImplicitConversion: true`
-- CORS: enabled with credentials
-- Swagger: `/docs` with Bearer Auth
+- CORS: production = explicit whitelist (Railway + Vercel + `file://`), development = `true`
+- **Security headers**: `helmet()` applied globally (XSS, clickjacking, MIME sniff, HSTS)
+- **Body size limit**: `express.json({ limit: '500kb' })` + `urlencoded` — blocks oversized payloads
+- **Swagger**: only active when `env !== 'production'` (disabled in Railway)
 - Sentry: conditional via `SENTRY_DSN` env (10% trace sampling)
 - Port: 3001 (default)
 
@@ -97,11 +99,34 @@ export class RacesController {
 ### Decorator Usage
 - `@ApiTags()`, `@ApiOperation()`, `@ApiBearerAuth()` - Swagger
 - `@UseGuards(JwtAuthGuard)` - Auth required
-- `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` - Admin only
+- `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` - Admin only (**always both guards**)
+- `@Throttle({ short: { limit: N, ttl: 60000 } })` - Per-endpoint rate limit override
 - `@CurrentUser()` - Extract JwtPayload from request
 - `@Param('id', ParseIntPipe)` - Auto-parse + validate params
 - `@Query()` - DTO-validated query params
 - `@Body()` - DTO-validated request body
+
+### ADMIN Guard Checklist
+
+Any endpoint that mutates data or accesses all-users data **must** have ADMIN guard. Verified endpoints:
+
+| Controller | ADMIN-guarded methods |
+|------------|----------------------|
+| `users.controller` | `findAll`, `search`, `update`, `remove` |
+| `races.controller` | `create`, `update`, `remove`, `createEntry`, `createBulkEntries` |
+| `predictions.controller` | `create`, `updateStatus`, `generate`, `calculateDailyStats` |
+
+### IDOR Prevention Pattern
+
+For any `/:id/` endpoint where the resource belongs to a user:
+
+```typescript
+if (user.sub !== id && user.role !== UserRole.ADMIN) {
+  throw new ForbiddenException();
+}
+```
+
+Applied to all `users.controller` per-user routes: `getProfile`, `updateProfile`, `findOne`, `getStats`, `getStatistics`, `getAchievements`, `getActivities`, `getNotifications`, `getPreferences`, `updatePreferences`.
 
 ## Service Patterns
 
@@ -171,8 +196,29 @@ class JwtPayload {
 - Token extraction: Bearer token from Authorization header
 - User login: `auth.controller.ts` -> `/api/auth/login`
 - Admin login: `admin-auth.controller.ts` -> `/api/admin/auth/login` (separate AdminUser table)
-- Password hashing: bcrypt (10 rounds)
+- **Password hashing: bcrypt 12 rounds** (never lower)
+- **JWT_SECRET: `config.getOrThrow('JWT_SECRET')`** — no fallback, server refuses to start if unset
 - Signup bonus: 1 RACE ticket (30-day expiry)
+
+### Account Lockout (auth.service.ts)
+
+In-memory `Map<email, { count; lockedUntil? }>`:
+- **5 failed logins** → 15-minute lock (throws `HttpException 429`)
+- Success → `clearLoginAttempts(email)`
+- Note: resets on server restart; use Redis for distributed environments
+
+```typescript
+private static readonly MAX_LOGIN_ATTEMPTS = 5;
+private static readonly LOCK_DURATION_MS = 15 * 60 * 1000;
+```
+
+### Auth Rate Limits (auth.controller.ts)
+
+```typescript
+@Throttle({ short: { limit: 10, ttl: 60000 } })  // login, admin-login
+@Throttle({ short: { limit: 5,  ttl: 60000 } })  // register
+@Throttle({ short: { limit: 3,  ttl: 60000 } })  // forgot-password, resend-verification
+```
 
 ### Guards
 - `JwtAuthGuard` - Verifies JWT token
@@ -227,6 +273,15 @@ serializeRaceResult(r)    // Hide results if status != COMPLETED
 - Python: `python3`, `py3-numpy`, `py3-pandas` (for analysis.py scripts)
 - Build from repo root: `docker build -f server/Dockerfile .`
 - Production: `node dist/main` (PORT from Railway env)
+
+## Security Checklist (Before Merging)
+
+- [ ] New auth/sensitive endpoints have `@Throttle` decorator
+- [ ] Admin-only mutations have `@UseGuards(JwtAuthGuard, RolesGuard)` + `@Roles(UserRole.ADMIN)` (**both guards**)
+- [ ] Per-user resource endpoints (`/:id/`) have IDOR check (`user.sub !== id && role !== ADMIN`)
+- [ ] No `Math.random()` for security tokens — use `crypto.randomInt()`
+- [ ] No hardcoded JWT secret fallback — always `getOrThrow`
+- [ ] No new `bcrypt` calls with < 12 rounds
 
 ## Error Handling
 

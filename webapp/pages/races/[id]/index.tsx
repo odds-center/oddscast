@@ -142,9 +142,17 @@ export default function RaceDetailPage() {
     placeholderData: keepPreviousData,
   });
 
+  // Direct check: has the user already used a ticket for THIS race?
+  const { data: raceTicketCheck } = useQuery({
+    queryKey: ['prediction-tickets', 'check-race', id],
+    queryFn: () => PredictionTicketApi.checkRaceUsage(id as string),
+    enabled: !!id && isLoggedIn && !isRaceCompleted,
+  });
+
+  // Ticket history for cooldown tracking (usedAt timestamp)
   const { data: ticketHistory } = useQuery({
-    queryKey: ['prediction-tickets', 'history'],
-    queryFn: () => PredictionTicketApi.getHistory(100, 0, 1),
+    queryKey: ['prediction-tickets', 'history', id],
+    queryFn: () => PredictionTicketApi.getHistory(10, 0, 1),
     enabled: !!id && isLoggedIn && !isRaceCompleted,
     placeholderData: keepPreviousData,
   });
@@ -159,10 +167,7 @@ export default function RaceDetailPage() {
     setSelectedPredictionId(null);
   }, [id]);
 
-  const hasUsedTicketFromHistory = !!ticketHistory?.tickets?.some(
-    (t) => String(t.raceId) === String(id) && t.status === 'USED',
-  );
-  const hasUsedTicketForRace = hasUsedTicketFromHistory || ticketConsumedForRace;
+  const hasUsedTicketForRace = raceTicketCheck?.used === true || ticketConsumedForRace;
 
   const { data: fullPredictionData } = useQuery({
     queryKey: ['prediction', 'full', id],
@@ -204,7 +209,7 @@ export default function RaceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['prediction', 'full', id] });
       queryClient.invalidateQueries({ queryKey: ['prediction', 'history', id] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
-      queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'history'] });
+      queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'check-race', id] });
     },
     onError: () => {
       // Revert optimistic lock on failure so user can retry

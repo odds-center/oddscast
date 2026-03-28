@@ -997,8 +997,11 @@ export default function RaceDetailPage() {
               </div>
             </section>
           )}
+        </div>
 
-          {/* ── Entries (same section/table style as 경주 결과) ── */}
+        {/* ══ RIGHT COLUMN: entries + analysis (sticky on desktop) ══ */}
+        <div className='w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:sticky lg:top-4 space-y-4'>
+          {/* ── Entries ── */}
           {showEntriesSection && (
             <section>
               <span data-tour="race-detail-entries" className='block h-0' />
@@ -1261,7 +1264,6 @@ export default function RaceDetailPage() {
             )}
           </section>
         </div>
-
       </div>
     </Layout>
   );

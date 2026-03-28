@@ -232,7 +232,7 @@ export default function SimulatorPage() {
                 </button>
               </div>
               <div className='divide-y divide-border/50'>
-                {customRanked.map(({ horse, aiRank, customScore, aiScore }, i) => {
+                {customRanked.map(({ horse, aiRank, customScore }, i) => {
                   const rank = i + 1;
                   const rankDiff = aiRank - rank;
                   const horseName = horse.hrName ?? horse.horseName ?? horse.hrNo ?? '-';
@@ -276,12 +276,6 @@ export default function SimulatorPage() {
                             className={`h-full rounded bg-gradient-to-r ${isTop3 ? 'from-primary/80 to-emerald-400/80' : 'from-stone-400/60 to-stone-300/60'} transition-all duration-300`}
                             style={{ width: `${barPct}%` }}
                           />
-                          {/* AI score marker line */}
-                          <div
-                            className='absolute top-0 h-full w-px bg-stone-500/40'
-                            style={{ left: `${Math.round((aiScore / maxCustomScore) * 100)}%` }}
-                            title={`AI: ${aiScore.toFixed(1)}`}
-                          />
                         </div>
                       </div>
 
@@ -298,10 +292,6 @@ export default function SimulatorPage() {
                 <span className='flex items-center gap-1'>
                   <span className='w-3 h-3 rounded bg-gradient-to-r from-primary/80 to-emerald-400/80' />
                   커스텀 점수
-                </span>
-                <span className='flex items-center gap-1'>
-                  <span className='w-px h-3 bg-stone-500/40' />
-                  AI 원점수
                 </span>
                 <span>▲▼ AI 순위 대비 변동</span>
               </div>

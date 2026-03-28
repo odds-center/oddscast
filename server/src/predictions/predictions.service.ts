@@ -593,7 +593,7 @@ AI 예측 순위: ${predictedTop || '-'}
     const predsWithScores = await this.predictionRepo
       .createQueryBuilder('p')
       .innerJoin('p.race', 'r')
-      .select(['p.id', 'p.scores', 'p.raceId'])
+      .select(['p.id', 'p.scores', 'p.raceId', 'p.createdAt'])
       .where("p.status = 'COMPLETED'")
       .andWhere('p.accuracy IS NOT NULL')
       .andWhere('p.scores IS NOT NULL')

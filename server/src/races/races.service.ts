@@ -85,6 +85,21 @@ export class RacesService {
   }
 
   /**
+   * Whether a race is definitively in the past (date-based + time-based).
+   * Used to guard status correction: don't mark COMPLETED if race hasn't started.
+   */
+  private _isRacePast(race: RaceRow): boolean {
+    const today = todayKstYyyymmdd();
+    // Past date = definitely over
+    if (race.rcDate < today) return true;
+    // Future date = definitely not over
+    if (race.rcDate > today) return false;
+    // Today: check stTime + buffer
+    if (!race.stTime) return false;
+    return this._isRaceEnded(race);
+  }
+
+  /**
    * Try to fetch results from KRA API on-demand for the given rcDate.
    * Uses a cooldown lock to prevent excessive API calls (max 1 per rcDate per minute).
    * Returns true if fetch was attempted, false if skipped due to cooldown.
@@ -165,10 +180,15 @@ export class RacesService {
     const merged = races.map((r) => {
       const hasResults = raceIdsWithResults.has(r.id);
       let correctedStatus = r.status;
-      if (hasResults && r.status !== RaceStatus.COMPLETED) {
+      // Only mark COMPLETED if results exist AND race time has actually passed
+      if (hasResults && r.status !== RaceStatus.COMPLETED && this._isRacePast(r as unknown as RaceRow)) {
         correctedStatus = RaceStatus.COMPLETED;
         statusFixups.push({ id: r.id, status: correctedStatus });
       } else if (!hasResults && r.status === RaceStatus.COMPLETED) {
+        correctedStatus = RaceStatus.SCHEDULED;
+        statusFixups.push({ id: r.id, status: correctedStatus });
+      } else if (hasResults && !this._isRacePast(r as unknown as RaceRow) && r.status !== RaceStatus.SCHEDULED) {
+        // Results exist but race hasn't started yet — revert to SCHEDULED
         correctedStatus = RaceStatus.SCHEDULED;
         statusFixups.push({ id: r.id, status: correctedStatus });
       }
@@ -228,6 +248,18 @@ export class RacesService {
     return new Set(rows.map((r) => r.raceId));
   }
 
+  /**
+   * Compute corrected status: COMPLETED only if results exist AND race is past.
+   * Prevents showing results for races that haven't started yet.
+   */
+  private _correctStatus(race: RaceRow, hasResults: boolean): RaceStatus {
+    const isPast = this._isRacePast(race);
+    if (hasResults && isPast) return RaceStatus.COMPLETED;
+    const s = race.status ?? RaceStatus.SCHEDULED;
+    if (s === RaceStatus.COMPLETED && (!hasResults || !isPast)) return RaceStatus.SCHEDULED;
+    return s as RaceStatus;
+  }
+
   /** True only when at least one result row has finish data (ordInt or ordType). */
   private _hasActualFinishData(results: unknown[] | undefined): boolean {
     if (!Array.isArray(results) || results.length === 0) return false;
@@ -255,11 +287,7 @@ export class RacesService {
           const hasResults = this._hasActualFinishData(fresh.results);
           const corrected = {
             ...fresh,
-            status: hasResults
-              ? RaceStatus.COMPLETED
-              : fresh.status === RaceStatus.COMPLETED
-                ? RaceStatus.SCHEDULED
-                : fresh.status,
+            status: this._correctStatus(fresh as unknown as RaceRow, hasResults),
           };
           const serialized = serializeRace(corrected);
           await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -269,22 +297,16 @@ export class RacesService {
       const c = cached as { results?: unknown[]; status?: RaceStatus };
       const hasResults = this._hasActualFinishData(c.results);
       if (!hasResults && this._isRaceEnded(c as RaceRow)) {
-        // Race ended but no results in cache — try on-demand fetch
         const fetched = await this._tryOnDemandResultFetch(
           (c as RaceRow).rcDate,
         );
         if (fetched) {
-          // Re-read from DB after fetch
           const fresh = await this._findOneRaw(id);
           if (fresh) {
             const freshHasResults = this._hasActualFinishData(fresh.results);
             const corrected = {
               ...fresh,
-              status: freshHasResults
-                ? RaceStatus.COMPLETED
-                : fresh.status === RaceStatus.COMPLETED
-                  ? RaceStatus.SCHEDULED
-                  : fresh.status,
+              status: this._correctStatus(fresh as unknown as RaceRow, freshHasResults),
             };
             const serialized = serializeRace(corrected);
             await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -294,11 +316,7 @@ export class RacesService {
       }
       const corrected = {
         ...cached,
-        status: hasResults
-          ? RaceStatus.COMPLETED
-          : c.status === RaceStatus.COMPLETED
-            ? RaceStatus.SCHEDULED
-            : c.status,
+        status: this._correctStatus(cached as unknown as RaceRow, hasResults),
       };
       return serializeRace(corrected) ?? corrected;
     }
@@ -315,11 +333,7 @@ export class RacesService {
           const freshHasResults = this._hasActualFinishData(fresh.results);
           const corrected = {
             ...fresh,
-            status: freshHasResults
-              ? RaceStatus.COMPLETED
-              : fresh.status === RaceStatus.COMPLETED
-                ? RaceStatus.SCHEDULED
-                : fresh.status,
+            status: this._correctStatus(fresh as unknown as RaceRow, freshHasResults),
           };
           const serialized = serializeRace(corrected);
           await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -330,11 +344,7 @@ export class RacesService {
 
     const corrected = {
       ...race,
-      status: hasResults
-        ? RaceStatus.COMPLETED
-        : race.status === RaceStatus.COMPLETED
-          ? RaceStatus.SCHEDULED
-          : race.status,
+      status: this._correctStatus(race as unknown as RaceRow, hasResults),
     };
     const serialized = serializeRace(corrected);
     await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);

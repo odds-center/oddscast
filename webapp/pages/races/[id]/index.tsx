@@ -128,15 +128,12 @@ export default function RaceDetailPage() {
     placeholderData: keepPreviousData,
   });
 
-  const raceStatus =
-    (race as { status?: string; raceStatus?: string })?.status ??
-    (race as { status?: string; raceStatus?: string })?.raceStatus;
   const rcDate = (race as { rcDate?: string })?.rcDate;
   const stTime = (race as { stTime?: string })?.stTime;
-  // Race is over when server says COMPLETED, OR when start time + buffer has passed (even if results not yet synced).
-  const isServerCompleted = raceStatus === 'COMPLETED';
+  // Race is over only when time has actually elapsed (stTime + buffer passed).
+  // Server COMPLETED alone is not trusted — it may be set prematurely if results were synced early.
   const isTimeElapsed = isRaceActuallyEnded(rcDate, stTime);
-  const isRaceCompleted = isServerCompleted || isTimeElapsed;
+  const isRaceCompleted = isTimeElapsed;
 
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],

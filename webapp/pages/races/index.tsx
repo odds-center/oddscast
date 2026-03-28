@@ -196,8 +196,7 @@ export default function RacesPage() {
     );
 
   function raceIsCompleted(race: RaceDto): boolean {
-    const s = getRaceStatus(race);
-    return s === 'COMPLETED' || isRaceActuallyEnded(race.rcDate, race.stTime);
+    return isRaceActuallyEnded(race.rcDate, race.stTime);
   }
 
   return (

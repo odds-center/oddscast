@@ -113,13 +113,15 @@ export default function Home() {
       </div>
 
       {/* 4. Today's races + This week */}
-      <div data-tour="home-today-races" className='grid lg:grid-cols-2 gap-4 mb-5'>
+      <span data-tour="home-today-races" className='block h-0 -mb-0' />
+      <div className='grid lg:grid-cols-2 gap-4 mb-5'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
       {/* 5. AI Predictions — core product, prominent placement */}
-      <div data-tour="home-ai-prediction" className='mb-5'>
+      <span data-tour="home-ai-prediction" className='block h-0 -mb-0' />
+      <div className='mb-5'>
         <AIPredictionSection />
       </div>
 

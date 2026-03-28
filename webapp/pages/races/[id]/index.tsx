@@ -451,7 +451,8 @@ export default function RaceDetailPage() {
 
           {/* ── AI prediction (hidden for completed races) ── */}
           {!isRaceCompleted && (
-          <section data-tour="race-detail-ai">
+          <section>
+            <span data-tour="race-detail-ai" className='block h-0' />
             <SectionTitle
               title='AI 예측'
               icon='Target'
@@ -918,7 +919,8 @@ export default function RaceDetailPage() {
 
           {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
-            <section data-tour="race-detail-entries">
+            <section>
+              <span data-tour="race-detail-entries" className='block h-0' />
               <SectionTitle
                 title='출전마'
                 icon='ClipboardList'
@@ -1220,39 +1222,86 @@ function PredictionFullView({
 }: PredictionFullViewProps) {
   const cooldownRemaining = useCooldown(lastUsedAt);
   const isCoolingDown = cooldownRemaining > 0;
+  const [showGuide, setShowGuide] = useState(false);
 
   const horseScores = prediction?.scores?.horseScores ?? [];
   const maxWinProb =
     horseScores.length > 0
       ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
       : 0;
-  const confidenceLabel =
-    maxWinProb >= 70 ? '높음' : maxWinProb >= 50 ? '보통' : maxWinProb > 0 ? '낮음' : null;
+
+  /* Top 3 horse names for confidence summary */
+  const top3Names = horseScores.slice(0, 3).map((h) => h.hrName ?? h.horseName ?? '-');
+  const topScore = horseScores[0]?.score ?? 0;
+  const secondScore = horseScores[1]?.score ?? 0;
+  const scoreDiff = topScore - secondScore;
 
   return (
     <div className='space-y-4'>
-      {/* Confidence badge */}
-      {confidenceLabel && (
-        <div className='flex items-center gap-2 text-sm'>
-          <span className='text-text-secondary'>신뢰도:</span>
-          <span
-            className={`inline-flex items-center rounded-full px-2.5 py-0.5 font-medium ${
-              confidenceLabel === '높음'
-                ? 'bg-emerald-100 text-emerald-800'
-                : confidenceLabel === '보통'
-                  ? 'bg-amber-100 text-amber-800'
-                  : 'bg-stone-100 text-stone-600'
-            }`}
-          >
-            {confidenceLabel}
-            {maxWinProb > 0 && (
-              <span className='ml-1 font-normal opacity-90'>({Math.round(maxWinProb)}%)</span>
-            )}
-          </span>
+      {/* Prediction confidence card — explains the prediction at a glance */}
+      {maxWinProb > 0 && (
+        <div className={`rounded-xl border p-3.5 ${
+          maxWinProb >= 70
+            ? 'border-emerald-200 bg-emerald-50/50'
+            : maxWinProb >= 50
+              ? 'border-amber-200 bg-amber-50/40'
+              : 'border-stone-200 bg-stone-50/40'
+        }`}>
+          <div className='flex items-start gap-3'>
+            {/* Confidence gauge */}
+            <div className='shrink-0 relative w-12 h-12'>
+              <svg viewBox='0 0 36 36' className='w-12 h-12 -rotate-90'>
+                <circle cx='18' cy='18' r='15.5' fill='none' strokeWidth='3' className='stroke-stone-200/60' />
+                <circle
+                  cx='18' cy='18' r='15.5' fill='none' strokeWidth='3'
+                  strokeLinecap='round'
+                  strokeDasharray={`${maxWinProb} ${100 - maxWinProb}`}
+                  className={maxWinProb >= 70 ? 'stroke-emerald-500' : maxWinProb >= 50 ? 'stroke-amber-500' : 'stroke-stone-400'}
+                />
+              </svg>
+              <span className='absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums'>
+                {Math.round(maxWinProb)}%
+              </span>
+            </div>
+
+            {/* Confidence description */}
+            <div className='flex-1 min-w-0'>
+              <div className='flex items-center gap-1.5 mb-1'>
+                <span className={`text-sm font-bold ${
+                  maxWinProb >= 70 ? 'text-emerald-800' : maxWinProb >= 50 ? 'text-amber-800' : 'text-stone-700'
+                }`}>
+                  {maxWinProb >= 70 ? '예측 신뢰도 높음' : maxWinProb >= 50 ? '예측 신뢰도 보통' : '예측 신뢰도 낮음 (혼전)'}
+                </span>
+              </div>
+              <p className='text-xs text-text-secondary leading-relaxed'>
+                {maxWinProb >= 70 ? (
+                  <>
+                    <span className='font-medium text-foreground'>{top3Names[0]}</span>
+                    이(가) {Math.round(maxWinProb)}% 확률로 가장 유력합니다.
+                    {scoreDiff >= 15 && ' 2위와 점수 차이가 커 독주 가능성이 높습니다.'}
+                  </>
+                ) : maxWinProb >= 50 ? (
+                  <>
+                    <span className='font-medium text-foreground'>{top3Names[0]}</span>
+                    이(가) 가장 유력하지만,
+                    {top3Names[1] && <> <span className='font-medium text-foreground'>{top3Names[1]}</span>도 가능성이 있습니다.</>}
+                    {' '}상위권 경합이 예상됩니다.
+                  </>
+                ) : (
+                  <>
+                    상위 마필 간 점수 차이가 적어 결과를 예측하기 어렵습니다.
+                    {top3Names.length >= 3 && (
+                      <> {top3Names.slice(0, 3).join(', ')} 모두 가능성이 있습니다.</>
+                    )}
+                  </>
+                )}
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Toolbar: prediction count + regenerate (section title "AI 예측" is above) */}
+      {/* Toolbar: prediction count + regenerate */}
       <div className='flex items-center justify-between gap-2'>
         <div className='flex items-center gap-1.5'>
           {list.length > 1 && <span className='text-text-tertiary text-sm'>({list.length}건)</span>}
@@ -1325,7 +1374,7 @@ function PredictionFullView({
 
       {prediction?.scores?.horseScores?.length ? (
         <>
-          {/* 3 types of recommended bets */}
+          {/* Bet type predictions */}
           {(prediction.scores?.betTypePredictions || prediction.scores?.horseScores?.length) &&
             entries.length > 0 && (
               <BetTypePredictionsSection
@@ -1335,7 +1384,7 @@ function PredictionFullView({
               />
             )}
 
-          {/* Horse rankings */}
+          {/* Horse score bar chart (single unified view — replaces redundant ranking list) */}
           <div>
             <div className='flex items-center gap-2 mb-2'>
               <div className='w-1 h-4 rounded-full bg-primary' />
@@ -1346,60 +1395,49 @@ function PredictionFullView({
             </div>
             <HorseScoresBarChart
               horseScores={prediction.scores!.horseScores!}
-              className='mb-4 rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'
+              className='rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'
             />
-            {/* Unified ranking list */}
-            <div className='rounded-xl border border-border overflow-hidden shadow-sm'>
-              {/* Header */}
-              <div className='flex items-center px-4 py-2.5 bg-stone-50/80 border-b border-border text-[11px] text-text-tertiary font-medium uppercase tracking-wider'>
-                <span className='w-9 text-center shrink-0'>순위</span>
-                <span className='flex-1 ml-2'>마명</span>
-                <span className='w-10 text-right shrink-0'>점수</span>
+          </div>
+
+          {/* Top 3 reason cards — shows WHY each horse is ranked */}
+          {horseScores.some((h) => h.reason) && (
+            <div>
+              <div className='flex items-center gap-2 mb-2'>
+                <div className='w-1 h-4 rounded-full bg-accent' />
+                <p className='text-sm text-foreground font-semibold'>
+                  AI 추천 이유
+                </p>
               </div>
-              {/* Rows */}
-              <div className='divide-y divide-border/60'>
-                {prediction.scores!.horseScores!.map((h, i) => {
+              <div className='space-y-2'>
+                {horseScores.slice(0, 3).map((h, i) => {
+                  if (!h.reason) return null;
                   const rank = i + 1;
-                  const isTop3 = rank <= 3;
-                  const score = h.score ?? 0;
-                  const maxScore = Math.max(1, ...(prediction.scores!.horseScores!.map(x => x.score ?? 0)));
-                  const barPct = Math.round((score / maxScore) * 100);
+                  const name = h.hrName ?? h.horseName ?? '-';
                   return (
-                    <div key={i} className={`flex items-center gap-2 px-4 py-3 transition-colors ${isTop3 ? 'bg-primary/[0.03]' : 'bg-card'}`}>
+                    <div key={i} className='flex items-start gap-2.5 p-3 rounded-lg bg-stone-50/80 border border-border/50'>
                       <PredictionSymbol type={scoreToSymbol(rank)} size='sm' />
                       <div className='flex-1 min-w-0'>
-                        <div className='flex items-center gap-1.5'>
-                          {h.chulNo != null && (
-                            <span className='text-[11px] text-text-tertiary tabular-nums'>{h.chulNo}번</span>
-                          )}
-                          <span className='text-sm font-medium text-foreground truncate'>{h.hrName ?? h.horseName ?? '-'}</span>
-                        </div>
-                        {h.reason && (
-                          <p className='text-text-tertiary text-xs line-clamp-1 mt-0.5'>{h.reason}</p>
-                        )}
-                        {/* Mini inline bar */}
-                        <div className='mt-1.5 h-1 rounded-full bg-stone-100 overflow-hidden'>
-                          <div
-                            className={`h-full rounded-full transition-all duration-300 ${isTop3 ? 'bg-primary/60' : 'bg-stone-300'}`}
-                            style={{ width: `${barPct}%` }}
-                          />
-                        </div>
+                        <span className='text-sm font-medium text-foreground'>
+                          {h.chulNo != null && <span className='text-text-tertiary mr-1'>{h.chulNo}번</span>}
+                          {name}
+                        </span>
+                        <p className='text-xs text-text-secondary mt-0.5 leading-relaxed'>{h.reason}</p>
                       </div>
-                      <span className={`w-10 text-right tabular-nums text-sm shrink-0 ${isTop3 ? 'font-bold text-foreground' : 'font-semibold text-text-secondary'}`}>
-                        {score > 0 ? Math.round(score) : '—'}
-                      </span>
                     </div>
                   );
                 })}
               </div>
             </div>
-          </div>
+          )}
 
           {/* AI analysis */}
           {prediction.analysis && (
             <div>
-              <p className='text-xs text-text-secondary font-semibold mb-1.5'>AI 상세 분석</p>
-              <div className='p-3 rounded-md bg-stone-50 border border-stone-200'>
+              <div className='flex items-center gap-2 mb-1.5'>
+                <div className='w-1 h-4 rounded-full bg-teal-500' />
+                <p className='text-sm text-foreground font-semibold'>AI 상세 분석</p>
+              </div>
+              <div className='p-3 rounded-xl bg-stone-50 border border-stone-200'>
                 <p className='text-text-secondary text-sm leading-relaxed whitespace-pre-wrap'>
                   {prediction.analysis}
                 </p>
@@ -1410,14 +1448,55 @@ function PredictionFullView({
           {/* Post-race summary (Gemini-generated after results) */}
           {prediction.postRaceSummary && (
             <div className='mt-4'>
-              <p className='text-xs text-text-secondary font-semibold mb-1.5'>경주 후 분석</p>
-              <div className='p-3 rounded-md bg-primary-muted border border-border'>
+              <div className='flex items-center gap-2 mb-1.5'>
+                <div className='w-1 h-4 rounded-full bg-blue-500' />
+                <p className='text-sm text-foreground font-semibold'>경주 후 분석</p>
+              </div>
+              <div className='p-3 rounded-xl bg-primary-muted border border-border'>
                 <p className='text-foreground text-sm leading-relaxed whitespace-pre-wrap'>
                   {prediction.postRaceSummary}
                 </p>
               </div>
             </div>
           )}
+
+          {/* Score interpretation guide — collapsible */}
+          <div className='border-t border-border/50 pt-3'>
+            <button
+              type='button'
+              onClick={() => setShowGuide(!showGuide)}
+              className='flex items-center gap-1.5 text-xs text-text-tertiary hover:text-text-secondary transition-colors'
+            >
+              <Icon name='HelpCircle' size={14} />
+              <span className='underline decoration-dotted underline-offset-2'>
+                점수 읽는 법
+              </span>
+              <svg
+                className={`w-3 h-3 transition-transform duration-200 ${showGuide ? 'rotate-180' : ''}`}
+                fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.5}
+              >
+                <path strokeLinecap='round' strokeLinejoin='round' d='m19 9-7 7-7-7' />
+              </svg>
+            </button>
+            {showGuide && (
+              <div className='mt-2.5 p-3 rounded-lg bg-stone-50/80 border border-border/40 text-xs text-text-secondary space-y-2 leading-relaxed'>
+                <p>
+                  <span className='font-semibold text-foreground'>AI 종합 점수 (0~100)</span>
+                  {' — '}레이팅, 폼/기세, 기수 능력, 컨디션, 거리 적합도 등 <span className='font-medium'>15가지 분석 요소</span>를 종합한 점수입니다.
+                </p>
+                <p>
+                  <span className='font-semibold text-foreground'>예측 신뢰도</span>
+                  {' — '}1위 예상마의 승리 확률입니다. 높을수록 AI가 해당 경주의 결과를 확신합니다.
+                  낮으면 여러 말이 비슷한 실력이라 변수가 많은 경주입니다.
+                </p>
+                <p>
+                  <span className='font-semibold text-foreground'>세부 점수</span>
+                  {' — '}막대 차트에서 말 이름을 탭하면 각 요소별(레이팅, 폼, 컨디션 등) 세부 점수를 확인할 수 있습니다.
+                  강점은 <span className='text-emerald-700 font-medium'>초록색</span>, 약점은 <span className='text-stone-400 font-medium'>회색</span>으로 표시됩니다.
+                </p>
+              </div>
+            )}
+          </div>
         </>
       ) : (
         <p className='text-text-secondary text-sm'>

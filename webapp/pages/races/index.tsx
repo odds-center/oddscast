@@ -254,7 +254,8 @@ export default function RacesPage() {
         )}
 
         {/* Mobile: card list */}
-        <div data-tour="race-list" className='block lg:hidden space-y-2'>
+        <span data-tour="race-list" className='block h-0' />
+        <div className='block lg:hidden space-y-2'>
           {races.map((race) => {
             const completed = raceIsCompleted(race);
             const raceResults = resultsByRaceId.get(race.id) ?? [];

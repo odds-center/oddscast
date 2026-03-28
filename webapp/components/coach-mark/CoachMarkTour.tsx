@@ -48,8 +48,12 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
       showSkipButton
       showProgress
       disableOverlayClose
+      scrollToFirstStep
+      scrollOffset={150}
       spotlightClicks={false}
+      spotlightPadding={6}
       callback={handleCallback}
+      floaterProps={{ disableAnimation: true, offset: 12 }}
       locale={{
         back: '이전',
         close: '닫기',
@@ -64,49 +68,50 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
           zIndex: 9000,
           arrowColor: '#ffffff',
           backgroundColor: '#ffffff',
-          overlayColor: 'rgba(0, 0, 0, 0.55)',
+          overlayColor: 'rgba(0, 0, 0, 0.45)',
         },
         tooltip: {
-          borderRadius: '12px',
-          fontSize: '15px',
-          padding: '20px 22px',
-          maxWidth: '320px',
+          borderRadius: '14px',
+          fontSize: '14px',
+          padding: '16px 18px',
+          maxWidth: '280px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)',
         },
         tooltipTitle: {
-          fontSize: '17px',
+          fontSize: '15px',
           fontWeight: 700,
-          marginBottom: '6px',
+          marginBottom: '4px',
         },
         tooltipContent: {
-          fontSize: '15px',
+          fontSize: '13px',
           lineHeight: 1.6,
           padding: '0',
           color: '#44403c',
         },
         tooltipFooter: {
-          marginTop: '16px',
+          marginTop: '12px',
         },
         buttonNext: {
           borderRadius: '8px',
-          padding: '10px 20px',
-          fontSize: '15px',
+          padding: '8px 16px',
+          fontSize: '13px',
           fontWeight: 600,
-          minHeight: '44px',
+          minHeight: '38px',
           backgroundColor: '#16a34a',
         },
         buttonBack: {
           color: '#57534e',
-          fontSize: '14px',
+          fontSize: '13px',
           fontWeight: 500,
-          minHeight: '44px',
-          marginRight: '8px',
+          minHeight: '38px',
+          marginRight: '6px',
         },
         buttonSkip: {
           color: '#a8a29e',
-          fontSize: '13px',
+          fontSize: '12px',
         },
         spotlight: {
-          borderRadius: '10px',
+          borderRadius: '12px',
         },
       }}
     />

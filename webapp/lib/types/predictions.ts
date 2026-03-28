@@ -130,6 +130,8 @@ export interface PredictionResultDto {
   llmProvider: string;
   cost: number;
   responseTime: number;
+  /** Gemini-generated post-race summary (optional) */
+  postRaceSummary?: string | null;
   firstCorrect?: boolean;
   inTop3?: boolean;
   exactOrder?: boolean;

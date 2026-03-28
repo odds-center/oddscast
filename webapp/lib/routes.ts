@@ -62,6 +62,10 @@ detail: (id: string) => `/races/${id}`,
     accuracy: '/predictions/accuracy',
   },
 
+  about: {
+    ai: '/about/ai',
+  },
+
   welcome: '/welcome',
   weeklyPreview: '/weekly-preview',
   updateLog: '/update-log',

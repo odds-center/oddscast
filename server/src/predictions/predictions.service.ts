@@ -9,6 +9,7 @@ import { RaceResult } from '../database/entities/race-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { Training } from '../database/entities/training.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -76,6 +77,8 @@ export class PredictionsService {
     private readonly jockeyResultRepo: Repository<JockeyResult>,
     @InjectRepository(Training)
     private readonly trainingRepo: Repository<Training>,
+    @InjectRepository(RaceDividend)
+    private readonly dividendRepo: Repository<RaceDividend>,
     private readonly analysisService: AnalysisService,
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
@@ -523,6 +526,7 @@ AI 예측 순위: ${predictedTop || '-'}
     overall: { totalCount: number; hitCount: number; averageAccuracy: number };
     byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
     byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
+    byBetType: Array<{ type: string; label: string; total: number; hit: number; rate: number }>;
   }> {
     const completedRows = await this.predictionRepo
       .createQueryBuilder('p')
@@ -585,10 +589,90 @@ AI 예측 순위: ${predictedTop || '-'}
       }),
     );
 
+    // --- Bet-type accuracy: compute from top picks vs actual results ---
+    const predsWithScores = await this.predictionRepo
+      .createQueryBuilder('p')
+      .innerJoin('p.race', 'r')
+      .select(['p.id', 'p.scores', 'p.raceId'])
+      .where("p.status = 'COMPLETED'")
+      .andWhere('p.accuracy IS NOT NULL')
+      .andWhere('p.scores IS NOT NULL')
+      .orderBy('p.createdAt', 'DESC')
+      .take(500)
+      .getMany();
+
+    const raceIdsForBetType = predsWithScores.map((p) => p.raceId).filter(Boolean);
+    const results = raceIdsForBetType.length
+      ? await this.resultRepo.find({
+          where: { raceId: In(raceIdsForBetType) },
+          select: ['raceId', 'hrNo', 'chulNo', 'ord'],
+        })
+      : [];
+    const resultsByRace = new Map<number, Array<{ chulNo: string; ord: number }>>();
+    for (const r of results) {
+      const ord = parseInt(String(r.ord ?? ''), 10);
+      if (!Number.isFinite(ord) || !r.chulNo) continue;
+      const arr = resultsByRace.get(r.raceId) ?? [];
+      arr.push({ chulNo: String(r.chulNo), ord });
+      resultsByRace.set(r.raceId, arr);
+    }
+
+    // Count hit/total for each bet-type style
+    const betTypeStats = {
+      win: { total: 0, hit: 0 },    // 1st place match (단승)
+      place: { total: 0, hit: 0 },   // Any of top 2 in top 3 (연승)
+      quinella: { total: 0, hit: 0 }, // Top 2 in any order (복승)
+      trifecta: { total: 0, hit: 0 }, // Top 3 in any order (삼복)
+    };
+
+    for (const pred of predsWithScores) {
+      const picks = this.extractTopPickChulNos(pred.scores, 3);
+      if (picks.length < 2) continue;
+      const actuals = resultsByRace.get(pred.raceId);
+      if (!actuals?.length) continue;
+      const sorted = [...actuals].sort((a, b) => a.ord - b.ord);
+      const actual1 = sorted[0]?.chulNo;
+      const actual2 = sorted[1]?.chulNo;
+      const actual3 = sorted[2]?.chulNo;
+      if (!actual1) continue;
+
+      // Win (단승): AI's #1 pick = actual 1st
+      betTypeStats.win.total++;
+      if (picks[0] === actual1) betTypeStats.win.hit++;
+
+      // Place (연승): AI's #1 pick in actual top 3
+      betTypeStats.place.total++;
+      if ([actual1, actual2, actual3].includes(picks[0])) betTypeStats.place.hit++;
+
+      // Quinella (복승): AI's top 2 both in actual top 3
+      if (actual2) {
+        betTypeStats.quinella.total++;
+        const top3 = [actual1, actual2, actual3].filter(Boolean);
+        if (top3.includes(picks[0]) && top3.includes(picks[1])) betTypeStats.quinella.hit++;
+      }
+
+      // Trifecta (삼복): AI's top 3 all in actual top 3
+      if (actual3 && picks.length >= 3) {
+        betTypeStats.trifecta.total++;
+        const top3 = [actual1, actual2, actual3];
+        if (top3.includes(picks[0]) && top3.includes(picks[1]) && top3.includes(picks[2])) {
+          betTypeStats.trifecta.hit++;
+        }
+      }
+    }
+
+    const byBetType = [
+      { type: 'win', label: '단승', ...betTypeStats.win, rate: betTypeStats.win.total > 0 ? Math.round((betTypeStats.win.hit / betTypeStats.win.total) * 1000) / 10 : 0 },
+      { type: 'place', label: '연승', ...betTypeStats.place, rate: betTypeStats.place.total > 0 ? Math.round((betTypeStats.place.hit / betTypeStats.place.total) * 1000) / 10 : 0 },
+      { type: 'quinella', label: '복승', ...betTypeStats.quinella, rate: betTypeStats.quinella.total > 0 ? Math.round((betTypeStats.quinella.hit / betTypeStats.quinella.total) * 1000) / 10 : 0 },
+      { type: 'trifecta', label: '삼복승', ...betTypeStats.trifecta, rate: betTypeStats.trifecta.total > 0 ? Math.round((betTypeStats.trifecta.hit / betTypeStats.trifecta.total) * 1000) / 10 : 0 },
+    ];
+
     return {
       overall: { totalCount, hitCount, averageAccuracy },
       byMonth,
       byMeet,
+      byBetType,
     };
   }
 
@@ -1137,37 +1221,77 @@ AI 예측 순위: ${predictedTop || '-'}
     const predsList = await this.predictionRepo.find({
       where: { status: PredictionStatus.COMPLETED },
       relations: ['race'],
-      select: ['id', 'accuracy', 'createdAt'],
+      select: ['id', 'accuracy', 'scores', 'createdAt'],
       order: { createdAt: 'DESC' },
-      take: Math.min(limit, 20),
+      take: Math.min(limit * 3, 60),
     });
-    type HitPred = {
-      id: number;
-      accuracy: number | null;
-      createdAt: Date;
-      race: { rcDate?: string; meet?: string };
-    };
-    const preds: HitPred[] = predsList
+
+    const preds = predsList
       .filter((p) => p.accuracy != null && p.accuracy >= 33)
-      .map((p) => ({
-        id: p.id,
-        accuracy: p.accuracy,
-        createdAt: p.createdAt,
-        race: p.race ? { rcDate: p.race.rcDate, meet: p.race.meet } : {},
-      }));
+      .slice(0, limit);
+
+    // Fetch dividends for hit races in bulk
+    const raceIds = preds.map((p) => p.raceId).filter(Boolean);
+    const dividends = raceIds.length
+      ? await this.dividendRepo.find({ where: { raceId: In(raceIds) } })
+      : [];
+    const divByRace = new Map<number, RaceDividend[]>();
+    for (const d of dividends) {
+      const arr = divByRace.get(d.raceId) ?? [];
+      arr.push(d);
+      divByRace.set(d.raceId, arr);
+    }
 
     return preds.map((p) => {
-      const d = p.race?.rcDate
-        ? `${p.race.rcDate.slice(0, 4)}-${p.race.rcDate.slice(4, 6)}-${p.race.rcDate.slice(6, 8)}`
+      const rcDate = p.race?.rcDate;
+      const d = rcDate
+        ? `${rcDate.slice(0, 4)}-${rcDate.slice(4, 6)}-${rcDate.slice(6, 8)}`
         : kst(p.createdAt).format('YYYY-MM-DD');
       const acc = Math.round((p.accuracy ?? 0) as number);
+      const meet = p.race?.meet ?? '';
+      const rcNo = p.race?.rcNo ?? '';
+
+      // Find the highest dividend where AI's top picks matched
+      const raceDivs = divByRace.get(p.raceId) ?? [];
+      const topPicks = this.extractTopPickChulNos(p.scores, 3);
+      let bestDividend: { pool: string; poolName: string; odds: number } | null = null;
+      for (const div of raceDivs) {
+        const nums = [div.chulNo, div.chulNo2, div.chulNo3].filter(Boolean);
+        const matched = nums.filter((n) => topPicks.includes(n));
+        if (matched.length >= Math.min(nums.length, 2) && div.odds > (bestDividend?.odds ?? 0)) {
+          bestDividend = { pool: div.pool, poolName: div.poolName, odds: div.odds };
+        }
+      }
+
       return {
         id: `hit-${p.id}`,
+        raceId: p.raceId,
         hitDate: d,
-        description: `${acc}% 적중! ${d} ${p.race?.meet ?? ''} 경주`,
-        details: p.race?.meet ? `${p.race.meet}` : undefined,
+        meet,
+        rcNo,
+        accuracy: acc,
+        description: `${acc}% 적중! ${d} ${meet} ${rcNo ? rcNo + 'R' : ''}`,
+        details: meet || undefined,
+        // Dividend highlight fields
+        betType: bestDividend?.poolName ?? null,
+        betTypeCode: bestDividend?.pool ?? null,
+        dividendOdds: bestDividend?.odds ?? null,
       };
     });
+  }
+
+  /** Extract top N horse chulNo strings from prediction scores JSON */
+  private extractTopPickChulNos(
+    scores: Record<string, unknown> | null,
+    topN: number,
+  ): string[] {
+    if (!scores) return [];
+    const hs = scores['horseScores'];
+    if (!Array.isArray(hs)) return [];
+    return hs
+      .slice(0, topN)
+      .map((h: Record<string, unknown>) => String(h?.['chulNo'] ?? ''))
+      .filter(Boolean);
   }
 
   // --- Gemini Integration ---

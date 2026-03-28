@@ -917,6 +917,85 @@ export default function RaceDetailPage() {
             </section>
           )}
 
+          {/* ── AI Replay / Review for completed races ── */}
+          {isRaceCompleted && displayPrediction?.scores?.horseScores && displayPrediction.scores.horseScores.length > 0 && (
+            <section>
+              <SectionTitle
+                title='AI 예측 복기'
+                icon='Sparkles'
+                badge='학습'
+                className='mb-2'
+              />
+              <div className='space-y-3'>
+                {/* AI's prediction summary for this completed race */}
+                <div className='rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'>
+                  <div className='flex items-center gap-2 mb-2'>
+                    <div className='w-1 h-4 rounded-full bg-primary' />
+                    <p className='text-sm text-foreground font-semibold'>
+                      AI가 예측한 순위
+                    </p>
+                  </div>
+                  <HorseScoresBarChart
+                    horseScores={displayPrediction.scores.horseScores}
+                  />
+                </div>
+
+                {/* AI reasoning for completed race */}
+                {displayPrediction.scores.horseScores.some((h) => h.reason) && (
+                  <div className='rounded-xl border border-border bg-stone-50/50 p-3.5'>
+                    <p className='text-xs font-semibold text-text-secondary mb-2'>AI가 주목한 포인트</p>
+                    <div className='space-y-2'>
+                      {displayPrediction.scores.horseScores.slice(0, 3).map((h, i) => {
+                        if (!h.reason) return null;
+                        const name = h.hrName ?? h.horseName ?? '-';
+                        return (
+                          <div key={i} className='flex items-start gap-2 text-xs'>
+                            <span className='shrink-0 font-bold text-text-secondary tabular-nums'>{i + 1}위</span>
+                            <div>
+                              <span className='font-medium text-foreground'>{name}</span>
+                              <span className='text-text-secondary'> — {h.reason}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Full AI analysis text */}
+                {displayPrediction.analysis && (
+                  <div className='rounded-xl border border-border bg-stone-50/50 p-3.5'>
+                    <p className='text-xs font-semibold text-text-secondary mb-1.5'>AI 상세 분석 (경주 전)</p>
+                    <p className='text-text-secondary text-sm leading-relaxed whitespace-pre-wrap'>
+                      {displayPrediction.analysis}
+                    </p>
+                  </div>
+                )}
+
+                {/* Post-race Gemini summary */}
+                {displayPrediction.postRaceSummary && (
+                  <div className='rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5'>
+                    <p className='text-xs font-semibold text-primary mb-1.5'>경주 후 AI 분석</p>
+                    <p className='text-foreground text-sm leading-relaxed whitespace-pre-wrap'>
+                      {displayPrediction.postRaceSummary}
+                    </p>
+                  </div>
+                )}
+
+                {/* Learning tip */}
+                <div className='rounded-lg bg-stone-50/60 border border-border/30 px-3.5 py-3'>
+                  <div className='flex items-start gap-2'>
+                    <Icon name='AlertCircle' size={14} className='text-text-tertiary shrink-0 mt-0.5' />
+                    <p className='text-[11px] text-text-tertiary leading-relaxed'>
+                      복기를 통해 AI의 분석 근거와 실제 결과를 비교하면 경마 분석 감각을 키울 수 있습니다.
+                      AI가 놓친 요소(당일 컨디션, 주로 상태 등)를 함께 생각해보세요.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          )}
+
           {/* ── Entries (same section/table style as 경주 결과) ── */}
           {showEntriesSection && (
             <section>
@@ -1496,6 +1575,41 @@ function PredictionFullView({
                 </p>
               </div>
             )}
+          </div>
+
+          {/* Simulator shortcut */}
+          {!isRaceCompleted && (
+            <div className='rounded-xl border border-primary/20 bg-primary/[0.03] p-3.5'>
+              <div className='flex items-center justify-between gap-3'>
+                <div className='min-w-0'>
+                  <p className='text-sm font-semibold text-foreground'>내가 직접 분석해보기</p>
+                  <p className='text-xs text-text-secondary mt-0.5'>
+                    분석 요소별 가중치를 조절해서 나만의 예측을 만들어보세요
+                  </p>
+                </div>
+                <Link href={routes.races.simulator(raceId)} className='shrink-0'>
+                  <Button variant='outline' size='sm'>
+                    <Icon name='Target' size={14} />
+                    시뮬레이터
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          )}
+
+          {/* AI limitation disclaimer */}
+          <div className='rounded-lg bg-stone-50/60 border border-border/30 px-3.5 py-3'>
+            <div className='flex items-start gap-2'>
+              <Icon name='AlertCircle' size={14} className='text-text-tertiary shrink-0 mt-0.5' />
+              <div>
+                <p className='text-[11px] text-text-tertiary leading-relaxed'>
+                  AI 예측은 과거 경주 데이터를 기반으로 한 통계적 분석이며, 경주 당일의 마체중 변화, 기수·경주마 컨디션, 날씨, 주로 상태 등은 사전에 완벽히 반영할 수 없습니다. 참고 자료로만 활용해 주세요.
+                </p>
+                <Link href={routes.about.ai} className='text-[11px] text-primary hover:underline mt-1 inline-block'>
+                  AI 분석 시스템 자세히 보기 &rarr;
+                </Link>
+              </div>
+            </div>
           </div>
         </>
       ) : (

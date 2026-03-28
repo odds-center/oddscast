@@ -4,10 +4,19 @@ import type {
   PredictionPreview,
 } from '../types/predictions';
 
+export interface BetTypeAccuracy {
+  type: string;
+  label: string;
+  total: number;
+  hit: number;
+  rate: number;
+}
+
 export interface AccuracyStatsResponse {
   overall: { totalCount: number; hitCount: number; averageAccuracy: number };
   byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
   byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
+  byBetType?: BetTypeAccuracy[];
 }
 
 /**

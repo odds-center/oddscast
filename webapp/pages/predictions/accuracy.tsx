@@ -28,6 +28,7 @@ export default function PredictionAccuracyPage() {
   const overall = stats?.overall;
   const byMonth = stats?.byMonth ?? [];
   const byMeet = stats?.byMeet ?? [];
+  const byBetType = stats?.byBetType ?? [];
 
   return (
     <Layout title='예측 정확도 | OddsCast' description='OddsCast AI 예측의 적중률과 정확도 통계를 경마장별, 월별로 확인하세요.'>
@@ -73,6 +74,45 @@ export default function PredictionAccuracyPage() {
                 </div>
               </div>
             </SectionCard>
+
+            {byBetType.length > 0 && (
+              <SectionCard
+                title='승식별 적중률'
+                icon='Target'
+                description='AI 추천마 기준'
+                className='mb-6'
+              >
+                <div className='grid grid-cols-2 sm:grid-cols-4 gap-3'>
+                  {byBetType.map((bt) => {
+                    const isGood = bt.rate >= 40;
+                    return (
+                      <div
+                        key={bt.type}
+                        className='rounded-xl border border-border bg-background p-4 text-center'
+                      >
+                        <p className='text-xs text-text-tertiary mb-1'>{bt.label}</p>
+                        <p className={`text-2xl font-bold tabular-nums ${isGood ? 'text-emerald-600' : 'text-foreground'}`}>
+                          {bt.rate}%
+                        </p>
+                        <p className='text-[11px] text-text-tertiary mt-1'>
+                          {bt.hit.toLocaleString()}/{bt.total.toLocaleString()}건
+                        </p>
+                        {/* Mini progress bar */}
+                        <div className='mt-2 h-1.5 rounded-full bg-stone-100 overflow-hidden'>
+                          <div
+                            className={`h-full rounded-full transition-all ${isGood ? 'bg-emerald-500' : 'bg-stone-400'}`}
+                            style={{ width: `${Math.min(100, bt.rate)}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className='text-[11px] text-text-tertiary mt-3 leading-relaxed'>
+                  단승: AI 1순위가 실제 1위 | 연승: AI 1순위가 3착 이내 | 복승: AI 상위 2마가 모두 3착 이내 | 삼복승: AI 상위 3마가 모두 3착 이내
+                </p>
+              </SectionCard>
+            )}
 
             {byMonth.length > 0 && (
               <SectionCard

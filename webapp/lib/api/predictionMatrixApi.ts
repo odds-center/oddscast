@@ -59,9 +59,19 @@ export interface CommentaryResponseDto {
 /** Hit records */
 export interface HitRecordDto {
   id: string;
+  raceId?: number;
   hitDate: string;
+  meet?: string;
+  rcNo?: string;
+  accuracy?: number;
   description: string;
   details?: string;
+  /** Bet type name (e.g. 단승식, 복승식) when dividend matched */
+  betType?: string | null;
+  /** Bet type code (WIN, PLC, QNL, etc.) */
+  betTypeCode?: string | null;
+  /** Matched dividend odds multiplier */
+  dividendOdds?: number | null;
 }
 
 export default class PredictionMatrixApi {

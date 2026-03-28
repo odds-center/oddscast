@@ -1382,42 +1382,52 @@ function PredictionFullView({
         </div>
       )}
 
-      {/* Toolbar: prediction count + regenerate */}
-      <div className='flex items-center justify-between gap-2'>
-        <div className='flex items-center gap-1.5'>
-          {list.length > 1 && <span className='text-text-tertiary text-sm'>({list.length}건)</span>}
+      {/* Toolbar row: ticket info + prediction count + regenerate */}
+      {(!isRaceCompleted || list.length > 1) && (
+        <div className='flex items-center gap-2 rounded-lg bg-stone-50/80 border border-border/40 px-3 py-2'>
+          {/* Ticket balance */}
+          {!isRaceCompleted && availableTickets >= 0 && (
+            <div className='flex items-center gap-1.5 text-xs text-text-secondary'>
+              <Icon name='Ticket' size={13} className='text-text-tertiary' />
+              <span>예측권 <span className='font-semibold text-foreground tabular-nums'>{availableTickets}</span>장</span>
+            </div>
+          )}
+          {list.length > 1 && (
+            <span className='text-text-tertiary text-xs'>· {list.length}건 예측</span>
+          )}
+          <div className='flex-1' />
+          {!isRaceCompleted && availableTickets > 0 && (
+            <Button
+              type='button'
+              variant='outline'
+              size='sm'
+              onClick={() => {
+                trackCTA('PREDICTION_REGENERATE', raceId);
+                useTicketMutation.mutate({ raceId, regenerate: true });
+              }}
+              disabled={useTicketMutation.isPending || isCoolingDown}
+              className='shrink-0'
+            >
+              {useTicketMutation.isPending ? (
+                <>
+                  <Icon name='Loader2' size={14} className='animate-spin' />
+                  생성 중...
+                </>
+              ) : isCoolingDown ? (
+                <>
+                  <Icon name='Clock' size={14} />
+                  {cooldownRemaining}초
+                </>
+              ) : (
+                <>
+                  <Icon name='RefreshCw' size={14} />
+                  다시 예측
+                </>
+              )}
+            </Button>
+          )}
         </div>
-        {!isRaceCompleted && availableTickets > 0 && (
-          <Button
-            type='button'
-            variant='outline'
-            size='sm'
-            onClick={() => {
-              trackCTA('PREDICTION_REGENERATE', raceId);
-              useTicketMutation.mutate({ raceId, regenerate: true });
-            }}
-            disabled={useTicketMutation.isPending || isCoolingDown}
-            className='shrink-0'
-          >
-            {useTicketMutation.isPending ? (
-              <>
-                <Icon name='Loader2' size={14} className='animate-spin' />
-                생성 중...
-              </>
-            ) : isCoolingDown ? (
-              <>
-                <Icon name='Clock' size={14} />
-                {cooldownRemaining}초 후 가능
-              </>
-            ) : (
-              <>
-                <Icon name='RefreshCw' size={14} />
-                다시 예측
-              </>
-            )}
-          </Button>
-        )}
-      </div>
+      )}
 
       {/* Prediction history tabs (2 or more) */}
       {list.length > 1 && (
@@ -1641,75 +1651,88 @@ function PredictionLockedView({
   raceId,
 }: PredictionLockedViewProps) {
   return (
-    <div className='relative overflow-hidden rounded-md border border-stone-200 bg-stone-50'>
-      <div className='absolute inset-0 p-3 opacity-15' aria-hidden>
-        <div className='space-y-2'>
+    <div className='relative overflow-hidden rounded-xl border border-stone-200 bg-stone-50'>
+      {/* Blurred skeleton background */}
+      <div className='absolute inset-0 p-4 opacity-10' aria-hidden>
+        <div className='space-y-2.5'>
           {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className='h-4 bg-stone-200 rounded w-full'
-              style={{ maxWidth: `${90 - i * 8}%` }}
-            />
+            <div key={i} className='h-4 bg-stone-300 rounded w-full' style={{ maxWidth: `${90 - i * 8}%` }} />
           ))}
         </div>
       </div>
       <div className='absolute inset-0 backdrop-blur-sm bg-white/60' aria-hidden />
-      <div className='relative z-10 p-4 text-center flex flex-col items-center'>
-        <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center mb-2'>
-          <Icon name='Target' size={20} className='text-stone-500' />
-        </div>
+
+      <div className='relative z-10 p-4'>
+        {/* Preview text */}
         {predictionPreview?.preview && (
-          <div className='mb-3 p-2.5 rounded-md bg-white border border-border max-w-md'>
+          <div className='mb-3 p-2.5 rounded-lg bg-white border border-border'>
             <p className='text-foreground text-sm leading-relaxed line-clamp-2'>
               {predictionPreview.preview}
             </p>
           </div>
         )}
-        <p className='text-foreground font-bold text-sm mb-0.5'>AI 예측 분석</p>
-        <p className='text-text-secondary text-xs mb-3'>승률 점수 · 추천식 · 상세 분석</p>
-        {isLoggedIn && availableTickets > 0 && (
-          <>
-            <p className='text-text-secondary text-sm mb-3'>개별 예측권 {availableTickets}장 보유</p>
+
+        {/* Main row: icon + info + action */}
+        <div className='flex items-center gap-3'>
+          <div className='w-10 h-10 rounded-full bg-stone-100 flex items-center justify-center shrink-0'>
+            <Icon name='Lock' size={18} className='text-stone-400' />
+          </div>
+          <div className='flex-1 min-w-0'>
+            <p className='text-foreground font-semibold text-sm'>AI 예측 분석</p>
+            <p className='text-text-tertiary text-xs'>승률 점수 · 추천식 · 상세 분석</p>
+          </div>
+
+          {/* Action area */}
+          {isLoggedIn && availableTickets > 0 && (
             <Button
               onClick={() => {
                 trackCTA('PREDICTION_TICKET_USE', raceId);
                 useTicketMutation.mutate({ raceId });
               }}
               disabled={useTicketMutation.isPending}
-              className='w-full sm:w-auto px-5 py-2.5'
+              size='sm'
+              className='shrink-0'
             >
               {useTicketMutation.isPending ? (
                 <>
-                  <Icon name='Loader2' size={18} className='animate-spin' />
-                  AI 분석 생성 중...
+                  <Icon name='Loader2' size={14} className='animate-spin' />
+                  생성 중...
                 </>
               ) : (
                 <>
-                  <Icon name='Target' size={18} />
-                  예측권 1장 사용
+                  <Icon name='Unlock' size={14} />
+                  예측권 사용
                 </>
               )}
             </Button>
-            {useTicketMutation.isError && (
-              <p className='text-error mt-3'>{getErrorMessage(useTicketMutation.error)}</p>
-            )}
-          </>
-        )}
-        {isLoggedIn && availableTickets === 0 && (
-          <p className='text-text-secondary text-sm'>
-            예측권이 없습니다.{' '}
-            <Link href={routes.profile.index} className='text-primary hover:underline font-medium'>
-              충전하기
+          )}
+          {isLoggedIn && availableTickets === 0 && (
+            <Link href={routes.mypage.matrixTicketPurchase}>
+              <Button variant='outline' size='sm' className='shrink-0'>
+                <Icon name='Ticket' size={14} />
+                충전하기
+              </Button>
             </Link>
+          )}
+          {!isLoggedIn && (
+            <Link href={routes.auth.login}>
+              <Button variant='outline' size='sm' className='shrink-0'>
+                <Icon name='LogIn' size={14} />
+                로그인
+              </Button>
+            </Link>
+          )}
+        </div>
+
+        {/* Ticket balance hint */}
+        {isLoggedIn && availableTickets > 0 && (
+          <p className='text-[11px] text-text-tertiary mt-2 ml-[52px]'>
+            예측권 {availableTickets}장 보유 · 1장 차감됩니다
           </p>
         )}
-        {!isLoggedIn && (
-          <p className='text-text-secondary text-sm'>
-            <Link href={routes.auth.login} className='text-primary font-medium hover:underline'>
-              로그인
-            </Link>
-            후 예측권으로 AI 분석을 확인하세요.
-          </p>
+
+        {useTicketMutation.isError && (
+          <p className='text-error text-sm mt-2'>{getErrorMessage(useTicketMutation.error)}</p>
         )}
       </div>
     </div>

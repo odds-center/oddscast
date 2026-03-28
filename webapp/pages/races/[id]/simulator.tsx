@@ -271,9 +271,9 @@ export default function SimulatorPage() {
 
                       {/* Score bar */}
                       <div className='flex-1 min-w-0'>
-                        <div className='h-5 rounded bg-stone-100/80 overflow-hidden relative'>
+                        <div className='h-2.5 rounded-full bg-stone-100/80 overflow-hidden relative'>
                           <div
-                            className={`h-full rounded bg-gradient-to-r ${isTop3 ? 'from-primary/80 to-emerald-400/80' : 'from-stone-400/60 to-stone-300/60'} transition-all duration-300`}
+                            className={`h-full rounded-full bg-gradient-to-r ${isTop3 ? 'from-primary/80 to-emerald-400/80' : 'from-stone-400/60 to-stone-300/60'} transition-all duration-300`}
                             style={{ width: `${barPct}%` }}
                           />
                         </div>

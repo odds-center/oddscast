@@ -30,7 +30,8 @@ ON CONFLICT ("planName") DO NOTHING;
 INSERT INTO "global_config" ("key","value")
 VALUES
   ('kra_base_url_override',       ''),
-  ('signup_bonus_tickets',        '1'),
+  ('signup_bonus_race_tickets',   '5'),
+  ('signup_bonus_matrix_tickets', '1'),
   ('signup_bonus_expires_days',   '30'),
   ('matrix_ticket_price',         '1000'),
   ('race_ticket_price',           '500'),

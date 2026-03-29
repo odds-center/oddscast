@@ -111,6 +111,24 @@ export class AuthService {
       where: { email: dto.email },
     });
     if (existing) {
+      // Soft-deleted account: reactivate with new password, require re-verification
+      if (!existing.isActive) {
+        const hashed = await bcrypt.hash(dto.password, 12);
+        await this.userRepo.update(existing.id, {
+          password: hashed,
+          name: dto.name,
+          nickname: dto.nickname ?? existing.nickname,
+          isActive: true,
+          isEmailVerified: false,
+          updatedAt: new Date(),
+        });
+        await this.sendVerificationCode(existing.id, existing.email);
+        return {
+          requireVerification: true,
+          email: existing.email,
+          message: '인증 코드가 이메일로 발송되었습니다.',
+        };
+      }
       // If user exists but not verified, allow re-registration
       if (!existing.isEmailVerified) {
         await this.sendVerificationCode(existing.id, existing.email);
@@ -172,29 +190,51 @@ export class AuthService {
    * Grants signup bonus and returns JWT.
    */
   private async completeRegistration(userId: number) {
-    try {
-      const bonusTickets = parseInt(await this.globalConfig.get('signup_bonus_tickets') ?? '1', 10);
-      const bonusDays = parseInt(await this.globalConfig.get('signup_bonus_expires_days') ?? '30', 10);
-      await this.predictionTicketsService.grantTickets(
-        userId,
-        bonusTickets,
-        bonusDays,
-        'RACE',
-      );
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      if (this.config.get('NODE_ENV') !== 'test') {
-        this.logger.warn(
-          `Signup bonus ticket grant failed for user ${userId}: ${msg}`,
-        );
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return;
+
+    // Anti-abuse: check if this email has ever received signup bonus before
+    // (covers re-registration after soft-delete / account deactivation)
+    const previousAccount = await this.userRepo
+      .createQueryBuilder('u')
+      .where('u.email = :email', { email: user.email })
+      .andWhere('u.id != :id', { id: userId })
+      .getOne();
+    const hasReceivedBonusBefore = !!previousAccount;
+
+    // Also check if this user already has any tickets (re-verification guard)
+    const existingTickets = await this.predictionTicketsService.getBalance(userId);
+    const alreadyHasTickets = (existingTickets?.available ?? 0) > 0;
+
+    if (!hasReceivedBonusBefore && !alreadyHasTickets) {
+      try {
+        const raceCount = parseInt(await this.globalConfig.get('signup_bonus_race_tickets') ?? '5', 10);
+        const matrixCount = parseInt(await this.globalConfig.get('signup_bonus_matrix_tickets') ?? '1', 10);
+        const bonusDays = parseInt(await this.globalConfig.get('signup_bonus_expires_days') ?? '30', 10);
+
+        // Grant RACE tickets
+        if (raceCount > 0) {
+          await this.predictionTicketsService.grantTickets(userId, raceCount, bonusDays, 'RACE');
+        }
+        // Grant MATRIX tickets
+        if (matrixCount > 0) {
+          await this.predictionTicketsService.grantTickets(userId, matrixCount, bonusDays, 'MATRIX');
+        }
+        this.logger.log(`Signup bonus granted to user ${userId}: ${raceCount} RACE + ${matrixCount} MATRIX`);
+      } catch (err: unknown) {
+        const msg = err instanceof Error ? err.message : String(err);
+        if (this.config.get('NODE_ENV') !== 'test') {
+          this.logger.warn(`Signup bonus grant failed for user ${userId}: ${msg}`);
+        }
       }
+    } else {
+      this.logger.log(
+        `Signup bonus skipped for user ${userId}: ${hasReceivedBonusBefore ? 'previous account exists' : 'already has tickets'}`,
+      );
     }
 
     // Discord notification (fire-and-forget)
-    const user = await this.userRepo.findOne({ where: { id: userId } });
-    if (user) {
-      this.discordService.notifySignup(user.email, user.nickname ?? undefined).catch(() => {});
-    }
+    this.discordService.notifySignup(user.email, user.nickname ?? undefined).catch(() => {});
   }
 
   async login(email: string, password: string) {

@@ -34,10 +34,12 @@ interface InlineResult {
 
 function parseDateFilter(qDate: string | undefined): string {
   if (qDate === 'today' || qDate === 'yesterday') return qDate;
+  if (qDate === 'all') return '';
   if (qDate && /^\d{4}-?\d{2}-?\d{2}$/.test(qDate.replace(/-/g, ''))) {
     return qDate.includes('-') ? qDate : `${qDate.slice(0, 4)}-${qDate.slice(4, 6)}-${qDate.slice(6, 8)}`;
   }
-  return '';
+  // Default to today when no date filter specified
+  return 'today';
 }
 
 function dateToScheduleParam(dateFilter: string): string | undefined {
@@ -191,12 +193,12 @@ export default function RacesPage() {
       <div>
       <FilterDateBar
         filterOptions={[
-          { value: '', label: '전체' },
+          { value: 'all', label: '전체' },
           { value: 'today', label: '오늘' },
           { value: 'yesterday', label: '어제' },
         ]}
         filterValue={
-          dateFilter === 'today' ? 'today' : dateFilter === 'yesterday' ? 'yesterday' : dateFilter || ''
+          dateFilter === 'today' ? 'today' : dateFilter === 'yesterday' ? 'yesterday' : dateFilter || 'all'
         }
         onFilterChange={(v) => updateQuery({ date: v || undefined, page: 1 })}
         dateValue={

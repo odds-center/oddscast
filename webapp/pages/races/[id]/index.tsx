@@ -412,7 +412,7 @@ export default function RaceDetailPage() {
 
   return (
     <Layout title='경주 상세 | OddsCast' description='경주 출전마 정보, AI 예측 분석, 경주 결과를 상세히 확인하세요.'>
-      <div className='max-w-2xl mx-auto'>
+      <div className='max-w-4xl mx-auto'>
         <div className='space-y-4'>
           <CompactPageTitle
             title={r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : '경주 상세'}

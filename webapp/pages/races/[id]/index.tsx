@@ -1477,51 +1477,18 @@ function PredictionFullView({
               />
             )}
 
-          {/* Horse score bar chart (single unified view — replaces redundant ranking list) */}
+          {/* AI Horse Rankings — bar chart with integrated reasons */}
           <div>
             <div className='flex items-center gap-2 mb-2'>
               <div className='w-1 h-4 rounded-full bg-primary' />
-              <p className='text-sm text-foreground font-semibold'>
-                AI 추천 순위
-              </p>
+              <p className='text-sm text-foreground font-semibold'>AI 종합 점수</p>
               <span className='text-[11px] text-text-tertiary'>(참고용)</span>
             </div>
             <HorseScoresBarChart
               horseScores={prediction.scores!.horseScores!}
-              className='rounded-xl border border-border bg-background-elevated p-3.5 shadow-sm'
+              className='rounded-xl border border-border bg-background-elevated p-3 shadow-sm'
             />
           </div>
-
-          {/* Top 3 reason cards — shows WHY each horse is ranked */}
-          {horseScores.some((h) => h.reason) && (
-            <div>
-              <div className='flex items-center gap-2 mb-2'>
-                <div className='w-1 h-4 rounded-full bg-accent' />
-                <p className='text-sm text-foreground font-semibold'>
-                  AI 추천 이유
-                </p>
-              </div>
-              <div className='space-y-2'>
-                {horseScores.slice(0, 3).map((h, i) => {
-                  if (!h.reason) return null;
-                  const rank = i + 1;
-                  const name = h.hrName ?? h.horseName ?? '-';
-                  return (
-                    <div key={i} className='flex items-start gap-2.5 p-3 rounded-lg bg-stone-50/80 border border-border/50'>
-                      <PredictionSymbol type={scoreToSymbol(rank)} size='sm' />
-                      <div className='flex-1 min-w-0'>
-                        <span className='text-sm font-medium text-foreground'>
-                          {h.chulNo != null && <span className='text-text-tertiary mr-1'>{h.chulNo}번</span>}
-                          {name}
-                        </span>
-                        <p className='text-xs text-text-secondary mt-0.5 leading-relaxed'>{h.reason}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* AI analysis */}
           {prediction.analysis && (

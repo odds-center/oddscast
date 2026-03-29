@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import dynamic from 'next/dynamic';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -13,24 +11,9 @@ import PredictionTicketApi from '@/lib/api/predictionTicketApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
-import { profileTourSteps } from '@/lib/coachMark/tours/profileTour';
-import CoachMarkButton from '@/components/coach-mark/CoachMarkButton';
-
-const CoachMarkTour = dynamic(
-  () => import('@/components/coach-mark/CoachMarkTour'),
-  { ssr: false },
-);
 
 export default function Profile() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
-  const { shouldAutoStart, startTour } = useCoachMarkStore();
-
-  useEffect(() => {
-    if (!shouldAutoStart('profileTour', isLoggedIn)) return;
-    const timer = setTimeout(() => startTour('profileTour'), 800);
-    return () => clearTimeout(timer);
-  }, [isLoggedIn, shouldAutoStart, startTour]);
   const storeUser = useAuthStore((s) => s.user);
   const { data: currentUser } = useQuery({
     queryKey: ['auth', 'me'],
@@ -83,7 +66,6 @@ export default function Profile() {
 
   return (
     <Layout title='내 정보 | OddsCast'>
-      <CoachMarkTour tourId='profileTour' steps={profileTourSteps} />
       <div>
         <CompactPageTitle title='내 정보' backHref={routes.home} />
         <DataFetchState
@@ -93,7 +75,7 @@ export default function Profile() {
         >
           <div className='space-y-4'>
             {/* Profile summary card */}
-            <div data-tour="profile-stats" className='rounded-xl bg-white border border-stone-200 p-4'>
+            <div className='rounded-xl bg-white border border-stone-200 p-4'>
               <div className='flex items-center gap-3'>
                 <div className='w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0'>
                   <Icon name='User' size={20} className='text-primary' />
@@ -132,7 +114,7 @@ export default function Profile() {
             </div>
 
             {/* Menu */}
-            <div data-tour="profile-menu">
+            <div>
             <MenuList
               title='메뉴'
               items={[
@@ -147,7 +129,6 @@ export default function Profile() {
             />
             </div>
 
-            <CoachMarkButton tourId='profileTour' label='이용 가이드 보기' />
 
             <LegalFooter />
           </div>

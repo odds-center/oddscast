@@ -6,3 +6,5 @@ dockerfilePath = "server/Dockerfile"
 healthcheckPath = "/health"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3
+# Limit memory to 512MB (down from default ~8GB unbounded)
+numReplicas = 1

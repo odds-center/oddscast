@@ -20,7 +20,8 @@ import { EmailVerificationToken } from '../database/entities/email-verification-
 import { PredictionTicketsService } from '../prediction-tickets/prediction-tickets.service';
 import { GlobalConfigService } from '../config/config.service';
 import { Subscription } from '../database/entities/subscription.entity';
-import { SubscriptionStatus } from '../database/db-enums';
+import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
+import { SubscriptionStatus, TicketStatus } from '../database/db-enums';
 import { RegisterDto, UpdateProfileDto } from './dto/auth.dto';
 import { MailService } from '../mail/mail.service';
 import { DiscordService } from '../discord/discord.service';
@@ -395,6 +396,17 @@ export class AuthService {
         isActive: false,
         updatedAt: now,
       });
+      // Expire all available tickets
+      await manager
+        .createQueryBuilder()
+        .update(PredictionTicket)
+        .set({ status: TicketStatus.EXPIRED, updatedAt: now })
+        .where('userId = :userId AND status = :status', {
+          userId,
+          status: TicketStatus.AVAILABLE,
+        })
+        .execute();
+
       // Cancel any active subscriptions and clear billing key
       await manager
         .createQueryBuilder()

@@ -1016,6 +1016,7 @@ export default function RaceDetailPage() {
                   entries={entries}
                   raceId={typeof id === 'string' ? id : undefined}
                   oddsMap={oddsMap}
+                  horseScores={displayPrediction?.scores?.horseScores}
                 />
               ) : displayEntries.length > 0 ? (
                 <div className='rounded-xl border border-border overflow-hidden shadow-sm'>

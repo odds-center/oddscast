@@ -412,8 +412,8 @@ export default function RaceDetailPage() {
 
   return (
     <Layout title='경주 상세 | OddsCast' description='경주 출전마 정보, AI 예측 분석, 경주 결과를 상세히 확인하세요.'>
-      <div className='flex flex-col lg:flex-row lg:gap-6 lg:items-start'>
-        <div className='flex-1 min-w-0 w-full space-y-4'>
+      <div className='max-w-2xl mx-auto'>
+        <div className='space-y-4'>
           <CompactPageTitle
             title={r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : '경주 상세'}
             backHref={routes.races.list}
@@ -983,18 +983,22 @@ export default function RaceDetailPage() {
           )}
         </div>
 
-        {/* ══ RIGHT COLUMN: entries + analysis (sticky on desktop) ══ */}
-        <div className='w-full lg:w-[380px] xl:w-[420px] lg:shrink-0 lg:sticky lg:top-4 space-y-4'>
-          {/* ── Entries ── */}
+          {/* ── Entries (collapsible) ── */}
           {showEntriesSection && (
-            <section>
-
-              <SectionTitle
-                title='출전마'
-                icon='ClipboardList'
-                badge={displayEntries.length ? `${displayEntries.length}두` : undefined}
-                className='mb-2'
-              />
+            <details className='rounded-xl border border-border overflow-hidden group'>
+              <summary className='flex items-center gap-2 px-3.5 py-3 bg-stone-50/80 hover:bg-stone-100/80 transition-colors cursor-pointer list-none [&::-webkit-details-marker]:hidden'>
+                <Icon name='ClipboardList' size={15} className='text-primary shrink-0' />
+                <span className='text-sm font-semibold text-foreground'>출전마</span>
+                <span className='text-[11px] text-text-tertiary bg-stone-100 px-1.5 py-0.5 rounded'>{displayEntries.length}두</span>
+                <span className='flex-1' />
+                <span className='text-xs text-text-tertiary truncate max-w-[180px] hidden sm:inline group-open:hidden'>
+                  {displayEntries.slice(0, 3).map((e) => e.hrName ?? '-').join(', ')}{displayEntries.length > 3 ? ' ...' : ''}
+                </span>
+                <svg className='w-4 h-4 text-text-tertiary shrink-0 transition-transform duration-200 group-open:rotate-180' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                  <path strokeLinecap='round' strokeLinejoin='round' d='m19 9-7 7-7-7' />
+                </svg>
+              </summary>
+              <div className='border-t border-border'>
               {entries.length > 0 ? (
                 <HorseEntryTable
                   entries={entries}
@@ -1072,17 +1076,29 @@ export default function RaceDetailPage() {
                   )}
                 </div>
               )}
-            </section>
+              </div>
+            </details>
           )}
 
-          {/* ── Jockey·horse integrated analysis (same section/table style as 경주 결과·출전마) ── */}
-          <section>
-            <SectionTitle
-              title='기수·말 통합 분석'
-              icon='BarChart2'
-              badge={jockeyAnalysis?.entriesWithScores?.length ? `${jockeyAnalysis.entriesWithScores.length}두` : undefined}
-              className='mb-2'
-            />
+          {/* ── Jockey·horse integrated analysis (collapsible) ── */}
+          <details className='rounded-xl border border-border overflow-hidden group'>
+            <summary className='flex items-center gap-2 px-3.5 py-3 bg-stone-50/80 hover:bg-stone-100/80 transition-colors cursor-pointer list-none [&::-webkit-details-marker]:hidden'>
+              <Icon name='BarChart2' size={15} className='text-primary shrink-0' />
+              <span className='text-sm font-semibold text-foreground'>기수·말 통합 분석</span>
+              {jockeyAnalysis?.entriesWithScores?.length && (
+                <span className='text-[11px] text-text-tertiary bg-stone-100 px-1.5 py-0.5 rounded'>{jockeyAnalysis.entriesWithScores.length}두</span>
+              )}
+              <span className='flex-1' />
+              {jockeyAnalysis?.topPickByJockey && (
+                <span className='text-xs text-text-tertiary truncate max-w-[180px] hidden sm:inline group-open:hidden'>
+                  1위: {jockeyAnalysis.topPickByJockey.hrName}
+                </span>
+              )}
+              <svg className='w-4 h-4 text-text-tertiary shrink-0 transition-transform duration-200 group-open:rotate-180' fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2}>
+                <path strokeLinecap='round' strokeLinejoin='round' d='m19 9-7 7-7-7' />
+              </svg>
+            </summary>
+            <div className='border-t border-border p-3'>
             {jockeyLoading ? (
               <div className='rounded-xl border border-border overflow-hidden shadow-sm bg-white'>
                 <div className='py-6 flex justify-center'>
@@ -1247,8 +1263,8 @@ export default function RaceDetailPage() {
                 <p className='text-text-secondary text-sm'>분석 결과가 없습니다.</p>
               </div>
             )}
-          </section>
-        </div>
+            </div>
+          </details>
       </div>
     </Layout>
   );

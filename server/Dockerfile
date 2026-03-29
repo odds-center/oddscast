@@ -31,6 +31,8 @@ RUN pnpm install --frozen-lockfile --prod
 # ── Stage 3: Production runtime ──
 FROM node:20-alpine AS prod
 
+# pnpm required by Railway (reads packageManager from package.json)
+RUN corepack enable && corepack prepare pnpm@latest --activate
 # Python for analysis scripts
 RUN apk add --no-cache python3 py3-numpy py3-pandas
 WORKDIR /app

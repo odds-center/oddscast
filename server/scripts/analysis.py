@@ -648,15 +648,38 @@ def _cascade_fall_risk(entries):
 
 
 def _win_probability(scores):
-    """softmax → 승률 확률(%). T=12 (충분한 분산, 상위마 차별화)."""
+    """Adaptive softmax win probability.
+
+    Stretches scores to [0, 100] range to amplify differences,
+    then applies softmax with adaptive temperature based on spread.
+    """
     if not scores:
         return []
-    T = 12.0
+    n = len(scores)
+    if n == 1:
+        return [100.0]
     max_s = max(scores)
-    exp_s = [math.exp((s - max_s) / T) for s in scores]
+    min_s = min(scores)
+    spread = max_s - min_s
+
+    # Stretch to [0, 100] to amplify small differences
+    if spread > 0.01:
+        stretched = [((s - min_s) / spread) * 100 for s in scores]
+    else:
+        stretched = [50.0] * n
+
+    # Adaptive T: narrow spread → lower T (more decisive)
+    if spread > 15:
+        T = 10.0
+    elif spread > 8:
+        T = 7.0
+    else:
+        T = 5.0
+
+    s_max = max(stretched)
+    exp_s = [math.exp((s - s_max) / T) for s in stretched]
     total = sum(exp_s)
     if total == 0:
-        n = len(scores)
         return [round(100 / n, 1)] * n
     return [round(e / total * 100, 1) for e in exp_s]
 

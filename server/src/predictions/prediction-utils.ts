@@ -78,17 +78,44 @@ export function computeEntriesHash(
 
 /**
  * Compute softmax win probabilities from composite scores.
- * Temperature T=15 (NestJS layer, slightly more distributed than Python T=12).
+ *
+ * Adaptive temperature: when score spread is narrow (close race),
+ * use lower T to amplify differences so top horse still shows
+ * meaningfully higher probability. When spread is wide, use moderate T.
+ *
+ * Also applies score stretching: maps [min, max] → [0, 100] before
+ * softmax to ensure even tight races produce differentiated probabilities.
  */
 export function computeWinProbabilities(scores: number[]): number[] {
   if (!scores.length) return [];
-  const T = 15;
+  const n = scores.length;
+  if (n === 1) return [100];
+
   const maxS = Math.max(...scores);
-  const exps = scores.map((s) => Math.exp((s - maxS) / T));
+  const minS = Math.min(...scores);
+  const spread = maxS - minS;
+
+  // Stretch scores to [0, 100] range to amplify differences
+  const stretched =
+    spread > 0.01
+      ? scores.map((s) => ((s - minS) / spread) * 100)
+      : scores.map(() => 50);
+
+  // Adaptive temperature: narrow spread → lower T (more decisive)
+  // Wide spread → moderate T (avoid over-confidence)
+  const T = spread > 15 ? 10 : spread > 8 ? 7 : 5;
+
+  const stretchedMax = Math.max(...stretched);
+  const exps = stretched.map((s) => Math.exp((s - stretchedMax) / T));
   const total = exps.reduce((a, b) => a + b, 0);
   if (total === 0)
-    return scores.map(() => Math.round((100 / scores.length) * 10) / 10);
-  return exps.map((e) => Math.round((e / total) * 1000) / 10);
+    return scores.map(() => Math.round((100 / n) * 10) / 10);
+  // Ensure minimum 0.1% per horse so no horse shows exactly 0%
+  const raw = exps.map((e) => (e / total) * 100);
+  const MIN_PROB = 0.1;
+  const clamped = raw.map((p) => Math.max(MIN_PROB, p));
+  const clampedTotal = clamped.reduce((a, b) => a + b, 0);
+  return clamped.map((p) => Math.round((p / clampedTotal) * 1000) / 10);
 }
 
 export interface HorseScoreItem {

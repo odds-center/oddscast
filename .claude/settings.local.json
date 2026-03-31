@@ -102,14 +102,18 @@
       "Bash(ps -p 42948 -o command)",
       "Bash(kill 31342 31389)",
       "Bash(docker start:*)",
-      "Bash(find /Users/risingcore/Desktop/work/oddscast -name prettier -path */node_modules/.bin/*)"
+      "Bash(find /Users/risingcore/Desktop/work/oddscast -name prettier -path */node_modules/.bin/*)",
+      "mcp__postgres__query",
+      "Bash(docker compose:*)",
+      "Bash(docker stop:*)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast/node_modules -name *.js)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"
     ]
   },
+  "enableAllProjectMcpServers": true,
   "enabledMcpjsonServers": [
     "postgres"
-  ],
-  "enableAllProjectMcpServers": true
+  ]
 }

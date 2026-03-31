@@ -512,22 +512,40 @@ export class KraService {
     return { items, byStatus };
   }
 
-  /** Process due batch jobs (scheduledAt <= now, status = PENDING). */
+  /** Max retry count for FAILED batch jobs before giving up. */
+  private static readonly BATCH_MAX_RETRIES = 3;
+
+  /** Process due batch jobs (scheduledAt <= now, status = PENDING or retryable FAILED). */
   async processDueBatchSchedules(): Promise<void> {
     const now = new Date();
-    const due = await this.batchScheduleRepo
+
+    // Find PENDING jobs that are due
+    const pending = await this.batchScheduleRepo
       .createQueryBuilder('b')
       .where('b.status = :status', { status: BatchScheduleStatus.PENDING })
       .andWhere('b.scheduledAt <= :now', { now })
       .orderBy('b.scheduledAt', 'ASC')
       .take(20)
       .getMany();
+
+    // Also retry FAILED jobs (up to BATCH_MAX_RETRIES attempts)
+    const failed = await this.batchScheduleRepo
+      .createQueryBuilder('b')
+      .where('b.status = :status', { status: BatchScheduleStatus.FAILED })
+      .andWhere('b.retryCount < :max', { max: KraService.BATCH_MAX_RETRIES })
+      .orderBy('b.updatedAt', 'ASC')
+      .take(5)
+      .getMany();
+
+    const due = [...pending, ...failed];
     for (const job of due) {
       if (job.jobType !== BATCH_JOB_KRA_RESULT_FETCH) continue;
       const rcDate = job.targetRcDate;
+      const retryCount = (job.retryCount ?? 0) + (job.status === BatchScheduleStatus.FAILED ? 1 : 0);
       await this.batchScheduleRepo.update(job.id, {
         status: BatchScheduleStatus.RUNNING,
         startedAt: now,
+        retryCount,
         updatedAt: now,
       });
       try {
@@ -539,17 +557,18 @@ export class KraService {
           errorMessage: null,
           updatedAt: new Date(),
         });
-        this.logger.log(`[BatchSchedule] COMPLETED KRA_RESULT_FETCH ${rcDate}`);
+        this.logger.log(`[BatchSchedule] COMPLETED KRA_RESULT_FETCH ${rcDate} (attempt ${retryCount + 1})`);
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err);
         await this.batchScheduleRepo.update(job.id, {
           status: BatchScheduleStatus.FAILED,
           completedAt: new Date(),
           errorMessage: msg.slice(0, 1000),
+          retryCount,
           updatedAt: new Date(),
         });
         this.logger.warn(
-          `[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`,
+          `[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate} (attempt ${retryCount + 1}/${KraService.BATCH_MAX_RETRIES})`,
           err,
         );
       }
@@ -566,39 +585,41 @@ export class KraService {
     if (endedDates.length === 0) return;
 
     const now = new Date();
+    const jobType = BATCH_JOB_KRA_RESULT_FETCH;
     for (const rcDate of endedDates) {
-      const existing = await this.batchScheduleRepo.findOne({
+      // Check for active or completed jobs
+      const activeOrDone = await this.batchScheduleRepo.findOne({
         where: [
-          {
-            jobType: BATCH_JOB_KRA_RESULT_FETCH,
-            targetRcDate: rcDate,
-            status: BatchScheduleStatus.PENDING,
-          },
-          {
-            jobType: BATCH_JOB_KRA_RESULT_FETCH,
-            targetRcDate: rcDate,
-            status: BatchScheduleStatus.RUNNING,
-          },
-          {
-            jobType: BATCH_JOB_KRA_RESULT_FETCH,
-            targetRcDate: rcDate,
-            status: BatchScheduleStatus.COMPLETED,
-          },
+          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.PENDING },
+          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.RUNNING },
+          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.COMPLETED },
         ],
       });
-      if (!existing) {
-        this.logger.log(
-          `[BatchSchedule] Auto-creating result fetch job for ended race date ${rcDate}`,
-        );
-        await this.batchScheduleRepo.save(
-          this.batchScheduleRepo.create({
-            jobType: BATCH_JOB_KRA_RESULT_FETCH,
-            targetRcDate: rcDate,
-            scheduledAt: now,
-            status: BatchScheduleStatus.PENDING,
-          }),
-        );
-      }
+      if (activeOrDone) continue;
+
+      // Check if all jobs for this date are FAILED and exhausted retries
+      const failedExhausted = await this.batchScheduleRepo
+        .createQueryBuilder('b')
+        .where('b.jobType = :jobType', { jobType })
+        .andWhere('b.targetRcDate = :rcDate', { rcDate })
+        .andWhere('b.status = :status', { status: BatchScheduleStatus.FAILED })
+        .andWhere('b.retryCount >= :max', { max: KraService.BATCH_MAX_RETRIES })
+        .getCount();
+
+      // Don't create new jobs if we already exhausted retries
+      if (failedExhausted > 0) continue;
+
+      this.logger.log(
+        `[BatchSchedule] Auto-creating result fetch job for ended race date ${rcDate}`,
+      );
+      await this.batchScheduleRepo.save(
+        this.batchScheduleRepo.create({
+          jobType,
+          targetRcDate: rcDate,
+          scheduledAt: now,
+          status: BatchScheduleStatus.PENDING,
+        }),
+      );
     }
   }
 
@@ -607,7 +628,7 @@ export class KraService {
    * Jobs are enqueued when race plans are loaded (scheduleResultFetchForRcDate).
    * Also auto-creates jobs for any ended races that slipped through (self-healing).
    */
-  @Cron('*/10 9-19 * * 5,6,0', { timeZone: 'Asia/Seoul' })
+  @Cron('*/10 9-21 * * 5,6,0', { timeZone: 'Asia/Seoul' })
   async processDueBatchSchedulesCron() {
     if (!this.ensureServiceKey()) return;
     await this.ensureResultFetchJobsForEndedRaces();

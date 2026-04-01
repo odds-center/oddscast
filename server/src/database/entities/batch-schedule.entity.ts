@@ -51,10 +51,6 @@ export class BatchSchedule {
   @Column({ name: 'errorMessage', type: 'text', nullable: true })
   errorMessage!: string | null;
 
-  /** Number of retry attempts (incremented on each FAILED → RUNNING transition). */
-  @Column({ name: 'retryCount', type: 'int', default: 0 })
-  retryCount!: number;
-
   @Column({ type: 'jsonb', nullable: true })
   metadata!: Record<string, unknown> | null;
 

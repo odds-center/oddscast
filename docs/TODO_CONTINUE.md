@@ -85,7 +85,7 @@
 | **보안 강화** | ✅ 완료 | helmet 헤더, bcrypt 12라운드, JWT getOrThrow, 로그인 5회 잠금(15분), 엔드포인트별 @Throttle, ADMIN 가드 전수점검, IDOR 방지(users/:id/*), 요청 500kb 제한, Swagger 프로덕션 비활성화. |
 | **배포 Discord 알림** | ✅ 완료 | `.github/workflows/deploy.yml` notify job — 배포 성공/실패 시 Discord 웹훅(`DISCORD_WEBHOOK_DEPLOY` secret) 전송. |
 | **Claude Code 설정 최적화** | ✅ 완료 | `.claude/rules/` path frontmatter 추가, hooks(prettier/env보호/docs체크리스트), MCP postgres, 커스텀 커맨드(new-module/new-page/check-docs), CLAUDE.md `@docs/TODO_CONTINUE.md` import. |
-| **BatchSchedule 자동 재시도** | ✅ 완료 | `retryCount` 컬럼 추가(migration). FAILED 잡 `retryCount < 3`이면 자동 재시도. 3회 소진 시 신규 잡 생성 건너뜀. Cron 윈도우 9-19 → 9-21 KST 연장. |
+| **BatchSchedule Cron 윈도우 연장** | ✅ 완료 | Cron 윈도우 9-19 → 9-21 KST 연장. Self-healing으로 FAILED 잡 → 새 PENDING 잡 자동 생성. retryCount 컬럼 제거(불필요). |
 | **Python 분석 결과 캐싱** | ✅ 완료 | `race_analysis_cache` 테이블. raceId+analysisType+dataHash로 캐시 키 구성. 동일 데이터 해시면 Python 재실행 없이 캐시 반환. |
 | **Railway 배포 오류 수정** | ✅ 완료 | `railway.toml`에 `startCommand` 명시. pnpm 자동 감지로 `pnpm start` 실행 → "No projects found" 오류 방지. |
 | **Storybook gitignore** | ✅ 완료 | `webapp/.gitignore`에 `/storybook-static` 추가. 빌드 결과물 레포 제외. |

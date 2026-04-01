@@ -469,7 +469,6 @@ CREATE TABLE IF NOT EXISTS "batch_schedules" (
     "startedAt" TIMESTAMP(3),
     "completedAt" TIMESTAMP(3),
     "errorMessage" TEXT,
-    "retryCount" INTEGER NOT NULL DEFAULT 0,
     "metadata" JSONB,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

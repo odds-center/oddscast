@@ -117,6 +117,8 @@ import { DiscordModule } from './discord/discord.module';
         ],
         logging: config.get<string>('NODE_ENV') === 'development',
         synchronize: false,
+        connectTimeoutMS: 10000,
+        extra: { connectionTimeoutMillis: 10000 },
       }),
       inject: [ConfigService],
     }),

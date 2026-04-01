@@ -1,12 +1,12 @@
-# Deploy to Railway on push to master.
-# Requires repo secrets: RAILWAY_TOKEN.
-# Optional: PROD_DATABASE_URL — if set, runs TypeORM migrations before deploy.
-# See: docs/RAILWAY_DEPLOYMENT.md, docs/TODO_CONTINUE.md
+# Deploy workflow for master branch.
+# Railway auto-deploys via its own GitHub integration on master push.
+# This workflow only handles:
+#   1. (Optional) Pre-deploy TypeORM migrations via PROD_DATABASE_URL secret
+#   2. Discord notification
 #
 # Migration strategy:
 #   1. (Optional) GitHub Actions runs migrations via PROD_DATABASE_URL before Railway deploy.
-#   2. Dockerfile CMD always runs migrations on startup (typeorm migration:run is idempotent).
-# This dual approach ensures migrations run even on Railway restarts without a new push.
+#   2. Railway startCommand always runs migrations on startup (idempotent).
 
 name: Deploy
 
@@ -35,7 +35,7 @@ jobs:
         run: |
           if [ -z "$PROD_DATABASE_URL" ]; then
             echo "skip=true" >> $GITHUB_OUTPUT
-            echo "⚠️  PROD_DATABASE_URL not set — skipping pre-deploy migration (Dockerfile CMD will handle it on startup)"
+            echo "⚠️  PROD_DATABASE_URL not set — skipping pre-deploy migration (Railway startCommand handles it on startup)"
           else
             echo "skip=false" >> $GITHUB_OUTPUT
           fi
@@ -65,26 +65,14 @@ jobs:
           NODE_ENV: production
         run: node node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js
 
-  deploy:
-    name: Deploy to Railway
-    needs: migrate
-    runs-on: ubuntu-latest
-    env:
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Deploy server to Railway
-        run: npx --yes @railway/cli@latest up --service server
-
   notify:
     name: Notify Discord
-    needs: [migrate, deploy]
+    needs: [migrate]
     runs-on: ubuntu-latest
     if: always()
     steps:
-      - name: Notify success
-        if: needs.deploy.result == 'success'
+      - name: Notify deploy triggered
+        if: secrets.DISCORD_WEBHOOK_DEPLOY != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
           COMMIT_SHA: ${{ github.sha }}
@@ -97,41 +85,14 @@ jobs:
           curl -s -H "Content-Type: application/json" -X POST "$DISCORD_WEBHOOK" \
             -d "{
               \"embeds\": [{
-                \"title\": \"✅ 배포 완료 — OddsCast\",
-                \"description\": \"Railway 서버 배포가 완료되었습니다.\\nVercel(webapp/admin)은 자동 배포 중입니다.\",
+                \"title\": \"🚀 배포 트리거 — OddsCast\",
+                \"description\": \"master 푸시 완료. Railway가 자동 배포를 시작합니다.\",
                 \"color\": 3066993,
                 \"fields\": [
                   {\"name\": \"Branch\", \"value\": \"\`$REF_NAME\`\", \"inline\": true},
                   {\"name\": \"Commit\", \"value\": \"\`$SHORT_SHA\`\", \"inline\": true},
                   {\"name\": \"By\", \"value\": \"$ACTOR\", \"inline\": true},
                   {\"name\": \"Message\", \"value\": \"$FIRST_LINE\", \"inline\": false}
-                ],
-                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
-              }]
-            }"
-
-      - name: Notify failure
-        if: needs.deploy.result == 'failure' || needs.migrate.result == 'failure'
-        env:
-          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
-          COMMIT_SHA: ${{ github.sha }}
-          ACTOR: ${{ github.actor }}
-          REF_NAME: ${{ github.ref_name }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          FAILED_JOB: ${{ needs.migrate.result == 'failure' && 'migrate' || 'deploy' }}
-        run: |
-          SHORT_SHA="${COMMIT_SHA:0:7}"
-          curl -s -H "Content-Type: application/json" -X POST "$DISCORD_WEBHOOK" \
-            -d "{
-              \"embeds\": [{
-                \"title\": \"❌ 배포 실패 — OddsCast\",
-                \"description\": \"**$FAILED_JOB** 단계에서 실패했습니다.\",
-                \"color\": 15158332,
-                \"fields\": [
-                  {\"name\": \"Branch\", \"value\": \"\`$REF_NAME\`\", \"inline\": true},
-                  {\"name\": \"Commit\", \"value\": \"\`$SHORT_SHA\`\", \"inline\": true},
-                  {\"name\": \"By\", \"value\": \"$ACTOR\", \"inline\": true},
-                  {\"name\": \"로그 확인\", \"value\": \"[Actions 열기]($RUN_URL)\", \"inline\": false}
                 ],
                 \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
               }]

@@ -75,7 +75,6 @@ export default function RacesPage() {
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
   const hasAppliedFavoriteMeet = useRef(false);
 
-
   const updateQuery = (updates: Record<string, string | number | undefined>) => {
     const next = { ...router.query, ...updates };
     Object.keys(updates).forEach((k) => {

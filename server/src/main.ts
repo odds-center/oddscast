@@ -17,12 +17,9 @@ if (process.env.SENTRY_DSN) {
 }
 
 async function bootstrap() {
-  process.stdout.write(`[bootstrap] main.ts executing, NODE_ENV=${process.env.NODE_ENV}, PORT=${process.env.PORT}\n`);
-  process.stdout.write('[bootstrap] Calling NestFactory.create...\n');
   const app = await NestFactory.create(AppModule, {
     logger: WinstonModule.createLogger(winstonConfig),
   });
-  process.stdout.write('[bootstrap] NestFactory.create complete\n');
 
   // Security headers
   app.use(helmet());

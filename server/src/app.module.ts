@@ -115,13 +115,14 @@ import { DiscordModule } from './discord/discord.module';
           RaceDividend,
           RaceAnalysisCache,
         ],
-        // Temporarily enable logging in production to diagnose startup hang
-        logging: ['error', 'warn', 'schema', 'migration'],
+        logging: false,
         synchronize: false,
+        migrationsRun: true,
+        migrations: [__dirname + '/database/migrations/*{.ts,.js}'],
         connectTimeoutMS: 10000,
         extra: {
           connectionTimeoutMillis: 10000,
-          max: 5, // reduce pool size to avoid connection saturation
+          max: 5,
           idleTimeoutMillis: 30000,
         },
       }),

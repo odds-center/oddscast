@@ -47,8 +47,10 @@ jobs:
 
       - name: Notify success
         if: success()
-        run: echo "Backup completed successfully: $BACKUP_FILENAME"
+        run: |
+          echo "Backup completed successfully: $BACKUP_FILENAME"
 
       - name: Notify failure
         if: failure()
-        run: echo "::error::DB backup failed. Check logs above."
+        run: |
+          echo "::error::DB backup failed. Check logs above."

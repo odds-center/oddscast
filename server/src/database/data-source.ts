@@ -17,4 +17,7 @@ export default new DataSource({
   entities: [resolve(__dirname, 'entities/**/*.entity{.ts,.js}')],
   migrations: [resolve(__dirname, 'migrations/*{.ts,.js}')],
   logging: process.env.NODE_ENV === 'development',
+  // Prevent hanging indefinitely if DB is unreachable during migration CLI
+  extra: { connectionTimeoutMillis: 10000 },
+  connectTimeoutMS: 10000,
 });

@@ -115,10 +115,15 @@ import { DiscordModule } from './discord/discord.module';
           RaceDividend,
           RaceAnalysisCache,
         ],
-        logging: config.get<string>('NODE_ENV') === 'development',
+        // Temporarily enable logging in production to diagnose startup hang
+        logging: ['error', 'warn', 'schema', 'migration'],
         synchronize: false,
         connectTimeoutMS: 10000,
-        extra: { connectionTimeoutMillis: 10000 },
+        extra: {
+          connectionTimeoutMillis: 10000,
+          max: 5, // reduce pool size to avoid connection saturation
+          idleTimeoutMillis: 30000,
+        },
       }),
       inject: [ConfigService],
     }),

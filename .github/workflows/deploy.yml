@@ -38,8 +38,6 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         if: steps.check_db.outputs.skip == 'false'
-        with:
-          version: latest
 
       - uses: actions/setup-node@v4
         if: steps.check_db.outputs.skip == 'false'

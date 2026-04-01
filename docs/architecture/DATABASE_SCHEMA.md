@@ -305,7 +305,8 @@ SinglePurchase[]
 | **SinglePurchase** | `single_purchases`  | 개별 예측권 구매 기록                                                  |
 | **GlobalConfig**     | `global_config`      | 글로벌 설정 (key-value, NoSQL 스타일). show_google_login 등          |
 | **KraSyncLog**       | `kra_sync_logs`      | KRA API 동기화 로그 (endpoint, meet, rcDate, status, recordCount 등)  |
-| **BatchSchedule**    | `batch_schedules`    | 배치 작업 스케줄 (jobType, targetRcDate, scheduledAt, status — 예정/완료/실패) |
+| **BatchSchedule**    | `batch_schedules`    | 배치 작업 스케줄 (jobType, targetRcDate, scheduledAt, status, retryCount — 예정/완료/실패/자동재시도) |
+| **RaceAnalysisCache**| `race_analysis_cache`| Python 분석 결과 캐시 (raceId+analysisType 키, dataHash로 변경 감지) |
 | **RaceDividend**     | `race_dividends`     | 경주별 확정배당률 (7승식: WIN/PLC/QNL/EXA/QPL/TLA/TRI). KRA API160 결과 적재 후 갱신. |
 
 ---
@@ -361,9 +362,31 @@ SinglePurchase[]
 | `startedAt`    | DateTime?     | 실행 시작 시각       |
 | `completedAt` | DateTime?     | 완료/실패 시각       |
 | `errorMessage` | Text?         | 실패 시 메시지       |
+| `retryCount`   | Int           | 재시도 횟수 (default 0, max 3) |
 | `metadata`     | JSONB?        | 부가 정보            |
 | `createdAt`    | DateTime      | 생성일               |
 | `updatedAt`    | DateTime      | 수정일               |
+
+**재시도 정책:** FAILED 상태이고 `retryCount < 3`이면 `processDueBatchSchedules` Cron이 자동 재시도. 3회 소진 시 `ensureResultFetchJobsForEndedRaces`에서 신규 잡 생성 건너뜀.
+
+---
+
+### RaceAnalysisCache (분석 결과 캐시)
+
+> 테이블명: `race_analysis_cache` — Python 분석 결과를 raceId + analysisType 키로 캐싱. 동일 dataHash이면 Python 재실행 없이 캐시 반환.
+
+| 필드           | 타입     | 설명                                       |
+| -------------- | -------- | ------------------------------------------ |
+| `id`           | Int      | PK (auto increment)                        |
+| `raceId`       | Int      | 경주 FK → Race.id (CASCADE)                |
+| `analysisType` | Text     | 분석 종류 (예: `jockey_analysis`)          |
+| `dataHash`     | Text     | 입력 데이터 해시 (변경 감지용)             |
+| `result`       | JSONB    | Python 분석 결과                           |
+| `createdAt`    | DateTime | 생성일                                     |
+| `updatedAt`    | DateTime | 수정일                                     |
+
+**Unique:** `[raceId, analysisType]`
+**Index:** `idx_race_analysis_cache_raceId_type` on `(raceId, analysisType)`
 
 ---
 

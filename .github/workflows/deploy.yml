@@ -72,11 +72,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
       - name: Deploy server to Railway
-        run: railway up --service server
+        run: npx --yes @railway/cli@latest up --service server
 
   notify:
     name: Notify Discord

@@ -20,7 +20,6 @@ import {
   parseGeminiResponseText,
   computeEntriesHash as computeEntriesHashUtil,
   computeWinProbabilities as computeWinProbabilitiesUtil,
-  applyOddsBlend as applyOddsBlendUtil,
 } from './prediction-utils';
 import {
   CreatePredictionDto,
@@ -1720,7 +1719,7 @@ AI 예측 순위: ${predictedTop || '-'}
 
       // Strip fields that Python analysis.py never reads to reduce IPC payload
       const slimEntries = (raceData.entries ?? []).map((e) => {
-        const { trainings, trainingData, prd, isScratched, trNo, ...rest } = e as unknown as Record<string, unknown>;
+        const { trainings: _trainings, trainingData: _trainingData, prd: _prd, isScratched: _isScratched, trNo: _trNo, ...rest } = e as unknown as Record<string, unknown>;
         return rest;
       });
       const slimRaceData = { ...raceData, entries: slimEntries };

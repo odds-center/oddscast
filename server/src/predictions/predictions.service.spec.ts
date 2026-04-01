@@ -217,7 +217,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithRecentRanks (+ rest period)', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, Function>)[
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
         'enrichEntriesWithRecentRanks'
       ](race);
 
@@ -308,7 +308,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithDistanceStats', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, Function>)[
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
         'enrichEntriesWithDistanceStats'
       ](race);
 
@@ -364,7 +364,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithClassChange', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, Function>)[
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
         'enrichEntriesWithClassChange'
       ](race);
 
@@ -428,7 +428,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithTrainingMetrics', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, Function>)[
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
         'enrichEntriesWithTrainingMetrics'
       ](race);
 
@@ -472,7 +472,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithSameDayFatigue', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, Function>)[
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
         'enrichEntriesWithSameDayFatigue'
       ](race);
 
@@ -528,7 +528,7 @@ describe('PredictionsService', () => {
 
   describe('rankToLevel', () => {
     const callRankToLevel = (rank: string) =>
-      (service as unknown as Record<string, Function>)['rankToLevel'](rank);
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)['rankToLevel'](rank);
 
     it('should map Korean class hierarchy correctly', () => {
       expect(callRankToLevel('국제')).toBe(7);

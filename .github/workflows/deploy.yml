@@ -22,7 +22,6 @@ jobs:
   migrate:
     name: Run DB migrations
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
     # Skip silently if PROD_DATABASE_URL secret is not configured
     env:
       PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
@@ -68,12 +67,13 @@ jobs:
     name: Deploy to Railway
     needs: migrate
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
-    container: ghcr.io/railwayapp/cli:latest
     env:
       RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
     steps:
       - uses: actions/checkout@v4
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
 
       - name: Deploy server to Railway
         run: railway up --service server
@@ -82,7 +82,7 @@ jobs:
     name: Notify Discord
     needs: [migrate, deploy]
     runs-on: ubuntu-latest
-    if: always() && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch')
+    if: always()
     steps:
       - name: Notify success
         if: needs.deploy.result == 'success'

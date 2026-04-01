@@ -22,7 +22,9 @@ jobs:
   migrate:
     name: Run DB migrations
     runs-on: ubuntu-latest
-    # Skip silently if PROD_DATABASE_URL secret is not configured
+    # Optional: skip silently if PROD_DATABASE_URL secret is not configured.
+    # Railway startCommand always runs migrations on startup, so this is best-effort only.
+    continue-on-error: true
     env:
       PROD_DATABASE_URL: ${{ secrets.PROD_DATABASE_URL }}
     steps:

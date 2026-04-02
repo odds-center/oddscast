@@ -76,7 +76,7 @@ export default function Home() {
       <DateHeader />
 
       {/* 2. Quick stats + login */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-4 mb-4'>
+      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mt-5 mb-5'>
         <HomeQuickStats />
         {!isLoggedIn && (
           <div className='flex items-center gap-2'>
@@ -93,7 +93,7 @@ export default function Home() {
       </div>
 
       {/* 3. Quick menu bar */}
-      <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1'>
+      <div data-tour="home-quickmenu" className='flex items-center gap-3 mb-7 overflow-x-auto pb-1 -mx-1 px-1'>
         {[
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', color: 'text-emerald-600 bg-emerald-50' },
           { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', color: 'text-blue-600 bg-blue-50' },
@@ -104,10 +104,10 @@ export default function Home() {
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white border border-stone-200 hover:border-stone-300 active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation shrink-0 min-w-[68px]'
+            className='inline-flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-white border border-stone-200 hover:border-stone-300 hover:shadow-sm active:bg-stone-50 transition-all whitespace-nowrap touch-manipulation shrink-0 min-w-[76px]'
           >
-            <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${item.color}`}>
-              <Icon name={item.icon} size={18} />
+            <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${item.color}`}>
+              <Icon name={item.icon} size={20} />
             </span>
             <span className='text-xs font-semibold text-stone-700'>{item.label}</span>
           </Link>
@@ -116,19 +116,19 @@ export default function Home() {
 
       {/* 4. Today's races + This week */}
       <span data-tour="home-today-races" className='block h-0 -mb-0' />
-      <div className='grid lg:grid-cols-2 gap-4 mb-5'>
+      <div className='grid lg:grid-cols-2 gap-4 mb-6'>
         <TodayRacesSection />
         <WeekRacesSection />
       </div>
 
       {/* 5. AI Predictions — core product, prominent placement */}
       <span data-tour="home-ai-prediction" className='block h-0 -mb-0' />
-      <div className='mb-5'>
+      <div className='mb-6'>
         <AIPredictionSection />
       </div>
 
       {/* 6. Recently viewed races */}
-      <div className='mb-5'>
+      <div className='mb-6'>
         <RecentRacesSection />
       </div>
 
@@ -139,13 +139,13 @@ export default function Home() {
       </div>
 
       {/* 8. Recent results */}
-      <div className='mb-5'>
+      <div className='mb-6'>
         <RecentResultsSection />
       </div>
 
       {/* 9. Why OddsCast — non-logged-in only */}
       {!isLoggedIn && (
-        <div className='mb-5'>
+        <div className='mb-6'>
           <WhyOddsCastSection />
         </div>
       )}

@@ -15,6 +15,7 @@ import { PaymentStatus, TicketStatus } from '../database/db-enums';
 import { TossPaymentsBillingClient } from '../payments/toss-payments.client';
 import { CreateRefundRequestDto, ProcessRefundDto } from './dto/refund.dto';
 import { ConfigService } from '@nestjs/config';
+import { DiscordService } from '../discord/discord.service';
 
 /** Result shape for calculateRefund */
 interface RefundCalculation {
@@ -41,6 +42,7 @@ export class RefundsService {
     @InjectRepository(PredictionTicket)
     private readonly ticketRepo: Repository<PredictionTicket>,
     private readonly config: ConfigService,
+    private readonly discordService: DiscordService,
   ) {
     const secret = this.config.get<string>('TOSSPAYMENTS_SECRET_KEY');
     this.tossClient = secret ? new TossPaymentsBillingClient(secret) : null;
@@ -180,6 +182,17 @@ export class RefundsService {
 
     const saved = await this.refundRepo.save(refundRequest);
     this.logger.log(`[RefundRequest] Created id=${saved.id} userId=${userId} amount=${calc.requestedAmount}`);
+
+    void this.discordService.notifyRefundRequest({
+      requestId: saved.id,
+      userId,
+      originalAmount: billing.amount,
+      requestedAmount: calc.requestedAmount,
+      isEligible: calc.isEligible,
+      ineligibilityReason: calc.ineligibilityReason,
+      userReason: dto.userReason,
+    });
+
     return saved;
   }
 
@@ -265,6 +278,15 @@ export class RefundsService {
     });
 
     const updated = await this.refundRepo.findOne({ where: { id: refundRequestId } });
+
+    void this.discordService.notifyRefundProcessed({
+      requestId: refundRequestId,
+      userId: request.userId!,
+      status: 'APPROVED',
+      approvedAmount: finalAmount,
+      adminNote: dto.adminNote,
+    });
+
     return updated!;
   }
 
@@ -294,6 +316,14 @@ export class RefundsService {
 
     const updated = await this.refundRepo.findOne({ where: { id: refundRequestId } });
     this.logger.log(`[RefundRequest] Rejected id=${refundRequestId} by adminId=${adminId}`);
+
+    void this.discordService.notifyRefundProcessed({
+      requestId: refundRequestId,
+      userId: request.userId!,
+      status: 'REJECTED',
+      adminNote: dto.adminNote,
+    });
+
     return updated!;
   }
 

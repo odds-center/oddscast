@@ -69,7 +69,7 @@ export default function Home() {
   };
 
   return (
-    <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 정확도 통계를 제공합니다.'>
+    <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 예측 적중률을 제공합니다.'>
       <CoachMarkTour tourId='homeTour' steps={homeTourSteps} />
 
       {/* 1. Hero banner */}
@@ -93,23 +93,21 @@ export default function Home() {
       </div>
 
       {/* 3. Quick menu bar */}
-      <div data-tour="home-quickmenu" className='flex items-center gap-3 mb-7 overflow-x-auto pb-1 -mx-1 px-1'>
+      <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-7 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide'>
         {[
-          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', color: 'text-emerald-600 bg-emerald-50' },
-          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', color: 'text-blue-600 bg-blue-50' },
-          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', color: 'text-violet-600 bg-violet-50' },
-          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '정확도', color: 'text-amber-600 bg-amber-50' },
-          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', color: 'text-rose-600 bg-rose-50' },
+          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', iconColor: 'text-emerald-600', pillColor: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' },
+          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', iconColor: 'text-blue-600', pillColor: 'bg-blue-50 border-blue-200 hover:bg-blue-100' },
+          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', iconColor: 'text-violet-600', pillColor: 'bg-violet-50 border-violet-200 hover:bg-violet-100' },
+          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 적중률', iconColor: 'text-amber-600', pillColor: 'bg-amber-50 border-amber-200 hover:bg-amber-100' },
+          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', iconColor: 'text-rose-600', pillColor: 'bg-rose-50 border-rose-200 hover:bg-rose-100' },
         ].map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-white border border-stone-200 hover:border-stone-300 hover:shadow-sm active:bg-stone-50 transition-all whitespace-nowrap touch-manipulation shrink-0 min-w-[76px]'
+            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full border shrink-0 transition-all touch-manipulation active:opacity-70 ${item.pillColor}`}
           >
-            <span className={`inline-flex items-center justify-center w-10 h-10 rounded-xl ${item.color}`}>
-              <Icon name={item.icon} size={20} />
-            </span>
-            <span className='text-xs font-semibold text-stone-700'>{item.label}</span>
+            <Icon name={item.icon} size={15} className={item.iconColor} />
+            <span className='text-sm font-semibold text-stone-700 whitespace-nowrap'>{item.label}</span>
           </Link>
         ))}
       </div>

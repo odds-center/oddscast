@@ -51,7 +51,7 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
       scrollToFirstStep
       scrollOffset={150}
       spotlightClicks={false}
-      spotlightPadding={6}
+      spotlightPadding={4}
       callback={handleCallback}
       floaterProps={{ disableAnimation: true, offset: 12 }}
       locale={{
@@ -71,44 +71,44 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
           overlayColor: 'rgba(0, 0, 0, 0.45)',
         },
         tooltip: {
-          borderRadius: '14px',
-          fontSize: '14px',
-          padding: '16px 18px',
-          maxWidth: '280px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.08)',
+          borderRadius: '12px',
+          fontSize: '13px',
+          padding: '12px 14px',
+          maxWidth: '240px',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.10), 0 1px 6px rgba(0,0,0,0.06)',
         },
         tooltipTitle: {
-          fontSize: '15px',
+          fontSize: '13px',
           fontWeight: 700,
-          marginBottom: '4px',
+          marginBottom: '3px',
         },
         tooltipContent: {
-          fontSize: '13px',
-          lineHeight: 1.6,
+          fontSize: '12px',
+          lineHeight: 1.55,
           padding: '0',
           color: '#44403c',
         },
         tooltipFooter: {
-          marginTop: '12px',
+          marginTop: '10px',
         },
         buttonNext: {
-          borderRadius: '8px',
-          padding: '8px 16px',
-          fontSize: '13px',
+          borderRadius: '7px',
+          padding: '6px 14px',
+          fontSize: '12px',
           fontWeight: 600,
-          minHeight: '38px',
+          minHeight: '32px',
           backgroundColor: '#16a34a',
         },
         buttonBack: {
           color: '#57534e',
-          fontSize: '13px',
+          fontSize: '12px',
           fontWeight: 500,
-          minHeight: '38px',
-          marginRight: '6px',
+          minHeight: '32px',
+          marginRight: '4px',
         },
         buttonSkip: {
           color: '#a8a29e',
-          fontSize: '12px',
+          fontSize: '11px',
         },
         spotlight: {
           borderRadius: '12px',

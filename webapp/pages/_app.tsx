@@ -196,9 +196,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
       </Sentry.ErrorBoundary>
       {clientMounted && <NetworkStatusBanner />}
       {clientMounted && pathname !== '/welcome' && (
-        <div data-tour="home-appbar">
-          <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
-        </div>
+        <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
       )}
       {clientMounted && pathname !== '/welcome' && <BugReportButton />}
     </>

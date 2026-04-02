@@ -27,6 +27,7 @@ import {
   TossPaymentsBillingClient,
   type TossBillingPaymentRequest,
 } from './toss-payments.client';
+import { DiscordService } from '../discord/discord.service';
 
 const PG_PROVIDER_TOSSPAYMENTS = 'TOSSPAYMENTS';
 
@@ -45,6 +46,7 @@ export class PaymentsService {
     private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private config: ConfigService,
     private subscriptionsService: SubscriptionsService,
+    private readonly discordService: DiscordService,
   ) {
     const secret = this.config.get<string>('TOSSPAYMENTS_SECRET_KEY');
     if (secret) {
@@ -150,6 +152,15 @@ export class PaymentsService {
         userId,
         { billingKey: billingKeyResult.billingKey },
       );
+
+      void this.discordService.notifySubscriptionPayment({
+        userId: sub.userId,
+        email: customerEmail,
+        planName: orderName,
+        amount,
+        paymentKey: paymentResult.paymentKey,
+        orderId: paymentResult.orderId,
+      });
 
       return {
         success: true,
@@ -326,6 +337,13 @@ export class PaymentsService {
           }),
         );
       }
+
+      void this.discordService.notifyRecurringBilling({
+        userId: sub.userId,
+        subscriptionId: sub.id,
+        planName: orderName,
+        amount,
+      });
 
       return true;
     } catch (err: unknown) {

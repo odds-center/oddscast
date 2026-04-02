@@ -116,6 +116,7 @@ export class DiscordService {
   private readonly errorChannelId: string;
   private readonly errorWebhookUrl: string;
   private readonly devWebhookUrl: string;
+  private readonly notificationWebhookUrl: string;
   private readonly isProduction: boolean;
 
   constructor(private readonly config: ConfigService) {
@@ -124,6 +125,7 @@ export class DiscordService {
     this.errorChannelId = this.config.get<string>('DISCORD_ERROR_CHANNEL_ID', '');
     this.errorWebhookUrl = this.config.get<string>('DISCORD_ERROR_WEBHOOK_URL', '');
     this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
+    this.notificationWebhookUrl = this.config.get<string>('DISCORD_NOTIFICATION_WEBHOOK_URL', '');
     this.isProduction = this.config.get<string>('NODE_ENV', '') === 'production';
   }
 
@@ -262,6 +264,205 @@ export class DiscordService {
     ];
 
     await this.sendToWebhook(webhookUrl, embeds);
+  }
+
+  /**
+   * Send to the general notification webhook (DISCORD_NOTIFICATION_WEBHOOK_URL).
+   */
+  private async sendNotification(embeds: DiscordEmbed[]): Promise<void> {
+    await this.sendToWebhook(this.notificationWebhookUrl, embeds);
+  }
+
+  /**
+   * Notify subscription payment success.
+   */
+  async notifySubscriptionPayment(data: {
+    userId: number;
+    email: string;
+    planName: string;
+    amount: number;
+    paymentKey: string;
+    orderId: string;
+  }): Promise<void> {
+    await this.sendNotification([
+      {
+        title: '💳 구독 결제 완료',
+        color: 0x16a34a,
+        fields: [
+          { name: '사용자', value: `#${data.userId} ${data.email}`, inline: true },
+          { name: '플랜', value: data.planName, inline: true },
+          { name: '금액', value: `${data.amount.toLocaleString()}원`, inline: true },
+          { name: 'OrderId', value: data.orderId, inline: false },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify recurring billing success.
+   */
+  async notifyRecurringBilling(data: {
+    userId: number;
+    subscriptionId: number;
+    planName: string;
+    amount: number;
+  }): Promise<void> {
+    await this.sendNotification([
+      {
+        title: '🔄 정기 결제 완료',
+        color: 0x0ea5e9,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          { name: '플랜', value: data.planName, inline: true },
+          { name: '금액', value: `${data.amount.toLocaleString()}원`, inline: true },
+          { name: '구독 ID', value: String(data.subscriptionId), inline: true },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify ticket (예측권) single purchase.
+   */
+  async notifyTicketPurchase(data: {
+    userId: number;
+    quantity: number;
+    totalAmount: number;
+    pgTransactionId?: string | null;
+  }): Promise<void> {
+    await this.sendNotification([
+      {
+        title: '🎟️ 예측권 구매',
+        color: 0x7c3aed,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          { name: '수량', value: `${data.quantity}장`, inline: true },
+          { name: '결제금액', value: `${data.totalAmount.toLocaleString()}원`, inline: true },
+          ...(data.pgTransactionId
+            ? [{ name: 'PG 거래ID', value: data.pgTransactionId, inline: false }]
+            : []),
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify prediction ticket (RACE) used.
+   */
+  async notifyRaceTicketUsed(data: {
+    userId: number;
+    raceId: number;
+    predictionId?: number | null;
+  }): Promise<void> {
+    await this.sendNotification([
+      {
+        title: '🏇 예측권 사용',
+        color: 0x16a34a,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          { name: '경주 ID', value: String(data.raceId), inline: true },
+          ...(data.predictionId != null
+            ? [{ name: '예측 ID', value: String(data.predictionId), inline: true }]
+            : []),
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify matrix ticket (종합예상) used.
+   */
+  async notifyMatrixTicketUsed(data: {
+    userId: number;
+    date: string;
+  }): Promise<void> {
+    await this.sendNotification([
+      {
+        title: '📊 종합예상권 사용',
+        color: 0x7c3aed,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          { name: '날짜', value: data.date, inline: true },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify refund request submitted by user.
+   */
+  async notifyRefundRequest(data: {
+    requestId: string;
+    userId: number;
+    originalAmount: number;
+    requestedAmount: number;
+    isEligible: boolean;
+    ineligibilityReason: string | null;
+    userReason?: string | null;
+  }): Promise<void> {
+    const eligibilityText = data.isEligible
+      ? `✅ 환불 가능 (${data.requestedAmount.toLocaleString()}원)`
+      : `❌ 환불 불가 — ${data.ineligibilityReason ?? '사유 없음'}`;
+
+    await this.sendNotification([
+      {
+        title: '📋 환불 요청 접수',
+        color: 0xf59e0b,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          { name: '원 결제금액', value: `${data.originalAmount.toLocaleString()}원`, inline: true },
+          { name: '요청금액', value: `${data.requestedAmount.toLocaleString()}원`, inline: true },
+          { name: '자격 여부', value: eligibilityText, inline: false },
+          ...(data.userReason
+            ? [{ name: '사용자 사유', value: data.userReason.substring(0, 300), inline: false }]
+            : []),
+          { name: '요청 ID', value: data.requestId, inline: false },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast — 어드민에서 처리 필요' },
+      },
+    ]);
+  }
+
+  /**
+   * Notify refund approved or rejected by admin.
+   */
+  async notifyRefundProcessed(data: {
+    requestId: string;
+    userId: number;
+    status: 'APPROVED' | 'REJECTED';
+    approvedAmount?: number | null;
+    adminNote?: string | null;
+  }): Promise<void> {
+    const isApproved = data.status === 'APPROVED';
+    await this.sendNotification([
+      {
+        title: isApproved ? '✅ 환불 승인' : '🚫 환불 거절',
+        color: isApproved ? 0x16a34a : 0xb91c1c,
+        fields: [
+          { name: '사용자', value: `#${data.userId}`, inline: true },
+          ...(isApproved && data.approvedAmount != null
+            ? [{ name: '승인금액', value: `${data.approvedAmount.toLocaleString()}원`, inline: true }]
+            : []),
+          ...(data.adminNote
+            ? [{ name: '관리자 메모', value: data.adminNote.substring(0, 300), inline: false }]
+            : []),
+          { name: '요청 ID', value: data.requestId, inline: false },
+        ],
+        timestamp: new Date().toISOString(),
+        footer: { text: 'OddsCast' },
+      },
+    ]);
   }
 
   /**

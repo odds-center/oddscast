@@ -21,6 +21,7 @@ import {
 import { KraService } from '../kra/kra.service';
 import { GlobalConfigService } from '../config/config.service';
 import { UseTicketDto } from '../common/dto/payment.dto';
+import { DiscordService } from '../discord/discord.service';
 
 export type UseTicketResult =
   | { status: 'LINKED'; ticket: PredictionTicket; prediction: Prediction }
@@ -41,6 +42,7 @@ export class PredictionTicketsService {
     private readonly predictionsService: PredictionsService,
     private readonly kraService: KraService,
     private readonly globalConfig: GlobalConfigService,
+    private readonly discordService: DiscordService,
   ) {}
 
   async useTicket(userId: number, dto: UseTicketDto): Promise<UseTicketResult> {
@@ -186,6 +188,13 @@ export class PredictionTicketsService {
     const updated = await this.ticketRepo.findOne({
       where: { id: ticketToUse.id },
     });
+
+    void this.discordService.notifyRaceTicketUsed({
+      userId,
+      raceId,
+      predictionId: pred.id,
+    });
+
     return { status: 'LINKED', ticket: updated!, prediction: pred };
   }
 
@@ -354,6 +363,9 @@ export class PredictionTicketsService {
     const updated = await this.ticketRepo.findOne({
       where: { id: ticketEntity.id },
     });
+
+    void this.discordService.notifyMatrixTicketUsed({ userId, date: normalized });
+
     return { ticket: updated, alreadyUsed: false };
   }
 

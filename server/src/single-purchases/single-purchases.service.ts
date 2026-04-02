@@ -6,6 +6,7 @@ import { PredictionTicket } from '../database/entities/prediction-ticket.entity'
 import { GlobalConfigService } from '../config/config.service';
 import { TicketStatus, TicketType } from '../database/db-enums';
 import { PurchaseDto } from '../common/dto/payment.dto';
+import { DiscordService } from '../discord/discord.service';
 
 @Injectable()
 export class SinglePurchasesService {
@@ -15,6 +16,7 @@ export class SinglePurchasesService {
     @InjectRepository(PredictionTicket)
     private readonly predictionTicketRepo: Repository<PredictionTicket>,
     private readonly configService: GlobalConfigService,
+    private readonly discordService: DiscordService,
   ) {}
 
   private readonly DEFAULT_PRICE_PER_TICKET = 550;
@@ -66,6 +68,13 @@ export class SinglePurchasesService {
         }),
       );
     }
+
+    void this.discordService.notifyTicketPurchase({
+      userId,
+      quantity,
+      totalAmount,
+      pgTransactionId: dto.pgTransactionId ?? null,
+    });
 
     return { purchase, ticketsIssued: quantity };
   }

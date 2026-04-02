@@ -23,7 +23,7 @@ export default function AccuracyPreviewSection() {
 
   return (
     <HomeSection
-      title='예측 정확도'
+      title='예측 적중률'
       icon='Target'
       viewAllHref={routes.predictions.accuracy}
       viewAllLabel='상세보기'

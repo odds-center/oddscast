@@ -257,6 +257,7 @@ function FloatingAppBar({
   if (isMobile) {
     return (
       <div
+        data-tour="home-appbar"
         className={`fixed bottom-0 left-0 right-0 z-10 px-4 transition-transform duration-300 ease-in-out ${isAppBarHidden ? "translate-y-full" : "translate-y-0"}`}
         style={{ paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
       >
@@ -304,6 +305,7 @@ function FloatingAppBar({
     <nav aria-label="메뉴" className="pointer-events-none fixed inset-0 z-10">
       <div
         ref={barRef}
+        data-tour="home-appbar"
         className={`pointer-events-auto fixed z-10 ${navOrientation === "vertical" ? "w-[72px] px-1.5 pb-1.5 pt-1" : "max-w-[400px] px-2 pb-2 pt-1.5"} ${isDragging ? "transition-none" : "transition-[left,bottom] duration-150 ease-out"}`}
         style={{
           left: navPosition.left,

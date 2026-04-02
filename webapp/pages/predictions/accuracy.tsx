@@ -1,5 +1,5 @@
 /**
- * AI 예측 정확도 대시보드 — 전체/월별/경마장별 통계 (공개)
+ * AI 예측 적중률 대시보드 — 전체/월별/경마장별 통계 (공개)
  */
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -31,13 +31,13 @@ export default function PredictionAccuracyPage() {
   const byBetType = stats?.byBetType ?? [];
 
   return (
-    <Layout title='예측 정확도 | OddsCast' description='OddsCast AI 예측의 적중률과 정확도 통계를 경마장별, 월별로 확인하세요.'>
+    <Layout title='예측 적중률 | OddsCast' description='OddsCast AI 예측의 적중률을 경마장별, 월별로 확인하세요.'>
       <CompactPageTitle
-        title='예측 정확도'
+        title='예측 적중률'
         backHref={routes.predictions.matrix}
       />
       <p className='text-sm text-text-secondary mb-4'>
-        AI 예측 결과의 전체·월별·경마장별 정확도 통계입니다.
+        AI 예측 결과의 전체·월별·경마장별 적중률 통계입니다.
       </p>
       <DataFetchState
         isLoading={isLoading}
@@ -69,7 +69,7 @@ export default function PredictionAccuracyPage() {
                   </p>
                 </div>
                 <div className='rounded-xl border border-border bg-background p-4'>
-                  <p className='text-xs text-text-tertiary mb-0.5'>평균 정확도</p>
+                  <p className='text-xs text-text-tertiary mb-0.5'>평균 적중률</p>
                   <p className='text-xl font-semibold'>{overall.averageAccuracy}%</p>
                 </div>
               </div>
@@ -123,11 +123,11 @@ export default function PredictionAccuracyPage() {
               >
                 {/* Simple trend bar chart: height = averageAccuracy (0–100%) */}
                 <div className='mb-4 rounded-xl border border-border bg-stone-50/50 p-4'>
-                  <p className='text-xs text-text-tertiary font-semibold mb-3'>월별 평균 정확도</p>
+                  <p className='text-xs text-text-tertiary font-semibold mb-3'>월별 평균 적중률</p>
                   <div
                     className='flex items-end gap-1'
                     style={{ height: 96 }}
-                    aria-label='월별 정확도 막대 그래프'
+                    aria-label='월별 적중률 막대 그래프'
                   >
                     {byMonth.map((row) => {
                       const pct = Math.min(100, Math.max(0, row.averageAccuracy));
@@ -180,7 +180,7 @@ export default function PredictionAccuracyPage() {
                       },
                       {
                         key: 'averageAccuracy',
-                        header: '평균 정확도',
+                        header: '평균 적중률',
                         align: 'right',
                         headerClassName: 'w-28',
                         render: (r) => `${r.averageAccuracy}%`,
@@ -198,7 +198,7 @@ export default function PredictionAccuracyPage() {
               <SectionCard
                 title='경마장별'
                 icon='MapPin'
-                description='시행 경마장별 정확도'
+                description='시행 경마장별 적중률'
               >
                 {/* Mobile: stat rows */}
                 <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
@@ -231,7 +231,7 @@ export default function PredictionAccuracyPage() {
                       },
                       {
                         key: 'averageAccuracy',
-                        header: '평균 정확도',
+                        header: '평균 적중률',
                         align: 'right',
                         headerClassName: 'w-28',
                         render: (r) => `${r.averageAccuracy}%`,

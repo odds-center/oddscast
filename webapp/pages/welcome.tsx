@@ -223,19 +223,25 @@ export default function LandingPage() {
       </Head>
 
       <div
-        className="min-h-dvh bg-white text-stone-900"
+        className="min-h-screen bg-white text-stone-900"
         style={{
           fontFamily:
             "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
         }}
       >
         {/* ─── NAV ─── */}
-        <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
+        <header
+          className={`fixed z-50 transition-all duration-300 ease-in-out ${
+            scrolled
+              ? 'top-3 left-4 right-4 sm:left-6 sm:right-6 lg:left-8 lg:right-8'
+              : 'top-0 left-0 right-0'
+          }`}
+        >
           <div
-            className={`pointer-events-auto transition-all duration-300 ease-in-out w-full ${
+            className={`mx-auto transition-all duration-300 ease-in-out ${
               scrolled
-                ? 'mt-3 mx-4 sm:mx-6 lg:mx-8 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100 max-w-[1060px]'
-                : 'mt-0 rounded-none bg-white border-b border-stone-100 max-w-none'
+                ? 'rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100 max-w-[1060px]'
+                : 'rounded-none bg-white border-b border-stone-100 max-w-none'
             }`}
           >
             <div className="px-5 sm:px-6 h-14 flex items-center justify-between">

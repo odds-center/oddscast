@@ -17,15 +17,15 @@ import math
 # Rebalanced: form↑ rating↓ jockey↑ to reflect actual KRA predictive power
 W_HORSE = {
     'rating': 0.17,
-    'form': 0.20,
-    'condition': 0.09,
+    'form': 0.18,       # 0.20 → 0.18: form alone can be noisy over 1 race
+    'condition': 0.07,  # 0.09 → 0.07: weight change signal is weaker than jockey/class
     'experience': 0.05,
     'suitability': 0.06,
     'trainer': 0.06,
-    'jockey': 0.11,
+    'jockey': 0.13,     # 0.11 → 0.13: meet-specific jockey record is strong predictor
     'rest': 0.04,
     'distance': 0.05,
-    'class_change': 0.03,
+    'class_change': 0.05,  # 0.03 → 0.05: dropping class is one of the strongest signals
     'training_readiness': 0.03,
     'same_day_fatigue': 0.02,
     'gate_bias': 0.05,

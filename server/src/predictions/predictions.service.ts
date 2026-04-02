@@ -2681,7 +2681,7 @@ AI 예측 순위: ${predictedTop || '-'}
 
     // Blend with odds-implied probability when available
     const hasOdds = oddsByHrNo && Object.keys(oddsByHrNo).length > 0;
-    const ODDS_WEIGHT = 0.2;
+    const ODDS_WEIGHT = 0.3;
     let blendedScores = combinedScores;
     const oddsImpliedByIdx: number[] = horseScores.map(() => 0);
 
@@ -2765,7 +2765,7 @@ AI 예측 순위: ${predictedTop || '-'}
     const oddsByHrNo = (
       race as RaceForPython & { oddsByHrNo?: Record<string, number> }
     ).oddsByHrNo;
-    const ODDS_WEIGHT = 0.2; // 20% weight to market odds when reflecting in score
+    const ODDS_WEIGHT = 0.3; // 30% weight to market odds — market encodes strong signal
 
     for (const hs of horseScores) {
       const hrNo = String(hs.hrNo);
@@ -2914,17 +2914,25 @@ ${realtimeSection}
 - **등급(cls)**: "등급↓유리" 태그 = 하위 클래스로 내려가 경쟁력 우위
 - **낙마(risk)**: 30 이상이면 반드시 약점에 언급. 50+ = 심각한 리스크
 
-## 3단계: 승부 예측
-- **단승(SINGLE)**: 1위 최유력 후보. fs·wp 최상위이되 페이스·주로 적합성까지 고려
+## 3단계: 가치마(value) 식별
+배당률이 제공된 경우, 모델 wp(%)와 시장 내재 확률(1/배당)을 비교하라.
+- **모델 wp > 시장 내재 확률**: 시장이 저평가한 말 → 실제 승률 대비 배당이 높음 → 가치마
+- **모델 wp < 시장 내재 확률**: 시장이 과대평가 → 인기마라도 배당 대비 기대값 낮음
+- 가치마가 존재하면 SINGLE·QUINELLA·TRIFECTA 예측에서 우선 고려할 것.
+- 배당률 미제공 시 이 단계는 생략.
+
+## 4단계: 승부 예측
+- **단승(SINGLE)**: 1위 최유력 후보. fs·wp 최상위이되 페이스·주로 적합성·가치마 여부까지 고려
 - **연승(PLACE)**: 3위 이내 가능한 안정적 후보 (폼 안정+경험 풍부한 말)
 - **쌍승(QUINELLA)**: 1·2위 조합 (순서 무관). 상위 2마리의 시너지와 페이스 전개 고려
 - **복승(EXACTA)**: 1위→2위 순서 지정. 선행마 vs 추입마 역전 가능성 분석
 - **복연(QUINELLA_PLACE)**: 상위 3마리 중 2마리 조합
 - **삼복(TRIFECTA)**: 1·2·3위 조합 (순서 무관). 안정권 3마리
 - **삼쌍(TRIPLE)**: 1위→2위→3위 순서. 가장 어려운 예측 — 변수·이변 고려
-★ 점수 1~3위 그대로 나열하지 말 것. 페이스 전개·이변·역전 가능성을 반영해 전략적 조합 추천.
+★ 점수 1~3위 그대로 나열하지 말 것. 페이스 전개·이변·가치마·역전 가능성을 반영해 전략적 조합 추천.
+★ 상위 fs 말이 명확하지 않은 경우(상위 3마리 fs 차이 <5p), 반드시 이변 가능성을 높게 보고 분석할 것.
 
-## 4단계: confidence 판정 기준
+## 5단계: confidence 판정 기준
 - "높음": wp 30%+ 이고 sub 대부분 60+ 이고 risk<20. 압도적 우위마
 - "보통": wp 15~30% 또는 강점과 약점이 혼재. 경쟁 가능한 마
 - "낮음": wp <15% 또는 risk 30+ 또는 핵심 요소(rat·frm) 하위권

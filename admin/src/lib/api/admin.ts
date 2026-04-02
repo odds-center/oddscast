@@ -1289,6 +1289,53 @@ export class AdminWeeklyPreviewApi {
   }
 }
 
+// ─── Bug Reports API ───
+
+export interface BugReportItem {
+  id: string;
+  userId: number | null;
+  user: { email: string; nickname: string | null } | null;
+  title: string;
+  description: string;
+  category: string;
+  status: string;
+  pageUrl: string | null;
+  userAgent: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export class AdminBugReportsApi {
+  /** GET /api/bug-reports — admin guarded on server side */
+  static async getAll(status?: string): Promise<{ data: BugReportItem[]; total: number }> {
+    try {
+      const params = status ? { status } : undefined;
+      // Bug reports live at /api/bug-reports (not /api/admin/bug-reports)
+      // The admin Next.js rewrite maps /api/* -> backend /api/*
+      const response = await axiosInstance.get<{ data: BugReportItem[]; total: number }>(
+        '/bug-reports',
+        { params, baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api' },
+      );
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
+  /** PATCH /api/bug-reports/:id/status */
+  static async updateStatus(id: string, status: string): Promise<void> {
+    try {
+      await axiosInstance.patch(
+        `/bug-reports/${id}/status`,
+        { status },
+        { baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api' },
+      );
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+}
+
 export const adminDashboardApi = AdminDashboardApi;
 export const adminUsersApi = AdminUsersApi;
 export const adminSubscriptionsApi = AdminSubscriptionsApi;
@@ -1302,4 +1349,5 @@ export const adminRacesApi = AdminRacesApi;
 export const adminResultsApi = AdminResultsApi;
 export const adminNotificationsApi = AdminNotificationsApi;
 export const adminRevenueApi = AdminRevenueApi;
+export const adminBugReportsApi = AdminBugReportsApi;
 export const adminStatisticsApi = AdminStatisticsApi;

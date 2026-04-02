@@ -228,6 +228,43 @@ export class DiscordService {
   }
 
   /**
+   * Notify a new bug report submission.
+   * Sends to the DISCORD_BUG_WEBHOOK_URL channel if configured.
+   */
+  async notifyBugReport(report: {
+    id: string;
+    title: string;
+    description: string;
+    category: string;
+    pageUrl?: string | null;
+    userId?: number | null;
+  }): Promise<void> {
+    const webhookUrl = this.config.get<string>('DISCORD_BUG_WEBHOOK_URL', '');
+    if (!webhookUrl) return;
+
+    const fields: Array<{ name: string; value: string; inline?: boolean }> = [
+      { name: '분류', value: report.category, inline: true },
+      { name: '사용자', value: report.userId ? `#${report.userId}` : '비로그인', inline: true },
+    ];
+    if (report.pageUrl) {
+      fields.push({ name: '페이지', value: report.pageUrl.substring(0, 200), inline: false });
+    }
+    fields.push({ name: '내용', value: report.description.substring(0, 500), inline: false });
+
+    const embeds: DiscordEmbed[] = [
+      {
+        title: `🐛 버그 신고: ${report.title}`,
+        color: 0xf59e0b,
+        fields,
+        timestamp: new Date().toISOString(),
+        footer: { text: `ID: ${report.id}` },
+      },
+    ];
+
+    await this.sendToWebhook(webhookUrl, embeds);
+  }
+
+  /**
    * Notify client error (4xx).
    */
   async notifyClientError(

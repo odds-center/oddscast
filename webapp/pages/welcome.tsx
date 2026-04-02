@@ -5,6 +5,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Icon from "@/components/icons";
 import { routes } from "@/lib/routes";
@@ -146,6 +147,14 @@ function PlanCard({
 }
 
 export default function LandingPage() {
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 40);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const { data: accuracyData } = useQuery({
     queryKey: ["predictions", "accuracy-stats", "landing"],
     queryFn: () => PredictionApi.getAccuracyStats(),
@@ -221,27 +230,35 @@ export default function LandingPage() {
         }}
       >
         {/* ─── NAV ─── */}
-        <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100">
-          <div className="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 h-14 flex items-center justify-between">
-            <Link
-              href={routes.home}
-              className="text-lg font-extrabold text-primary tracking-tight"
-            >
-              OddsCast
-            </Link>
-            <div className="flex items-center gap-2">
+        <header className="fixed top-0 left-0 right-0 z-50 flex justify-center pointer-events-none">
+          <div
+            className={`pointer-events-auto transition-all duration-300 ease-in-out w-full ${
+              scrolled
+                ? 'mt-3 mx-4 sm:mx-6 lg:mx-8 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100 max-w-[1060px]'
+                : 'mt-0 rounded-none bg-white/80 backdrop-blur-md border-b border-stone-100 max-w-none'
+            }`}
+          >
+            <div className="px-5 sm:px-6 h-14 flex items-center justify-between">
               <Link
-                href={routes.auth.login}
-                className="text-sm font-semibold text-stone-600 hover:text-stone-900 transition-colors px-3 py-2 touch-manipulation"
+                href={routes.home}
+                className="text-lg font-extrabold text-primary tracking-tight"
               >
-                로그인
+                OddsCast
               </Link>
-              <Link
-                href={routes.auth.register}
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors touch-manipulation"
-              >
-                무료 시작
-              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={routes.auth.login}
+                  className="text-sm font-semibold text-stone-600 hover:text-stone-900 transition-colors px-3 py-2 touch-manipulation"
+                >
+                  로그인
+                </Link>
+                <Link
+                  href={routes.auth.register}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-primary text-white text-sm font-bold hover:bg-primary-dark transition-colors touch-manipulation"
+                >
+                  무료 시작
+                </Link>
+              </div>
             </div>
           </div>
         </header>

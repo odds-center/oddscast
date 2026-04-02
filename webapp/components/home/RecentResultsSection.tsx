@@ -141,7 +141,7 @@ export default function RecentResultsSection() {
                     )}
                     {p3 && (
                       <span className='text-stone-500'>
-                        {MEDAL[3]} {p3.hrName}
+                        {MEDAL[3]} {p3.hrName} <span className='text-text-tertiary font-normal'>({p3.jkName})</span>
                       </span>
                     )}
                   </div>
@@ -178,7 +178,7 @@ export default function RecentResultsSection() {
                           {r ? (
                             <div>
                               <span className='font-semibold text-sm'>{r.hrName}</span>
-                              {ord !== '3' && r.jkName && r.jkName !== '-' && (
+                              {r.jkName && r.jkName !== '-' && (
                                 <span className='text-text-tertiary text-xs ml-1'>({r.jkName})</span>
                               )}
                             </div>

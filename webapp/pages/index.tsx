@@ -93,21 +93,23 @@ export default function Home() {
       </div>
 
       {/* 3. Quick menu bar */}
-      <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-5 overflow-x-auto pb-0.5 -mx-1 px-1'>
+      <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-5 overflow-x-auto pb-1 -mx-1 px-1'>
         {[
-          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주' },
-          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적' },
-          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상' },
-          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 정확도' },
-          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰' },
+          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', color: 'text-emerald-600 bg-emerald-50' },
+          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', color: 'text-blue-600 bg-blue-50' },
+          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', color: 'text-violet-600 bg-violet-50' },
+          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '정확도', color: 'text-amber-600 bg-amber-50' },
+          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', color: 'text-rose-600 bg-rose-50' },
         ].map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className='inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-lg bg-white border border-stone-200 text-stone-700 text-sm font-semibold hover:border-primary hover:text-primary active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation'
+            className='inline-flex flex-col items-center gap-1.5 px-4 py-3 rounded-xl bg-white border border-stone-200 hover:border-stone-300 active:bg-stone-50 transition-colors whitespace-nowrap touch-manipulation shrink-0 min-w-[68px]'
           >
-            <Icon name={item.icon} size={18} />
-            {item.label}
+            <span className={`inline-flex items-center justify-center w-9 h-9 rounded-lg ${item.color}`}>
+              <Icon name={item.icon} size={18} />
+            </span>
+            <span className='text-xs font-semibold text-stone-700'>{item.label}</span>
           </Link>
         ))}
       </div>

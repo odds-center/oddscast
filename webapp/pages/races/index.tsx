@@ -259,21 +259,25 @@ export default function RacesPage() {
                   <span className='text-text-tertiary text-xs'>{formatRcDate(race.rcDate)}</span>
                 </div>
                 {showResults ? (
-                  <div className='flex items-center gap-3 text-xs flex-wrap'>
+                  <div className='flex flex-col gap-0.5 mt-0.5'>
                     {(['1', '2', '3'] as const).map((ord) => {
                       const r = raceResults.find((x) => x.ord === ord);
-                      const cls =
+                      if (!r) return null;
+                      const nameCls =
                         ord === '1'
                           ? 'text-primary font-bold'
                           : ord === '2'
-                            ? 'text-stone-600 font-semibold'
+                            ? 'text-stone-700 font-semibold'
                             : 'text-stone-500 font-semibold';
+                      const rankCls =
+                        ord === '1' ? 'text-amber-500' : ord === '2' ? 'text-stone-400' : 'text-stone-300';
                       return (
-                        <span key={ord} className='inline-flex items-center gap-0.5'>
-                          <span className={`text-xs ${cls}`}>{ord}위</span>
-                          <span className='font-medium text-foreground'>
-                            {r ? r.hrName : '-'}
-                          </span>
+                        <span key={ord} className='inline-flex items-center gap-1 text-sm'>
+                          <span className={`text-xs font-bold w-5 shrink-0 ${rankCls}`}>{ord}위</span>
+                          <span className={nameCls}>{r.hrName}</span>
+                          {r.jkName && (
+                            <span className='text-xs text-text-tertiary'>({r.jkName})</span>
+                          )}
                         </span>
                       );
                     })}

@@ -95,16 +95,16 @@ export default function Home() {
       {/* 3. Quick menu bar */}
       <div data-tour="home-quickmenu" className='flex items-center gap-2 mb-7 overflow-x-auto pb-1 -mx-1 px-1 scrollbar-hide'>
         {[
-          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', iconColor: 'text-emerald-600', pillColor: 'bg-emerald-50 border-emerald-200 hover:bg-emerald-100' },
-          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', iconColor: 'text-blue-600', pillColor: 'bg-blue-50 border-blue-200 hover:bg-blue-100' },
-          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', iconColor: 'text-violet-600', pillColor: 'bg-violet-50 border-violet-200 hover:bg-violet-100' },
-          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 적중률', iconColor: 'text-amber-600', pillColor: 'bg-amber-50 border-amber-200 hover:bg-amber-100' },
-          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', iconColor: 'text-rose-600', pillColor: 'bg-rose-50 border-rose-200 hover:bg-rose-100' },
+          { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', iconColor: 'text-emerald-600' },
+          { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', iconColor: 'text-blue-600' },
+          { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', iconColor: 'text-violet-600' },
+          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 적중률', iconColor: 'text-amber-600' },
+          { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', iconColor: 'text-rose-600' },
         ].map((item) => (
           <Link
             key={item.label}
             href={item.href}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 rounded-full border shrink-0 transition-all touch-manipulation active:opacity-70 ${item.pillColor}`}
+            className='inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-stone-200 bg-white hover:bg-stone-50 hover:border-stone-300 shrink-0 transition-all touch-manipulation active:opacity-70'
           >
             <Icon name={item.icon} size={15} className={item.iconColor} />
             <span className='text-sm font-semibold text-stone-700 whitespace-nowrap'>{item.label}</span>

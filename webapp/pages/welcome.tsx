@@ -235,7 +235,7 @@ export default function LandingPage() {
             className={`pointer-events-auto transition-all duration-300 ease-in-out w-full ${
               scrolled
                 ? 'mt-3 mx-4 sm:mx-6 lg:mx-8 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100 max-w-[1060px]'
-                : 'mt-0 rounded-none bg-white/80 backdrop-blur-md border-b border-stone-100 max-w-none'
+                : 'mt-0 rounded-none bg-white border-b border-stone-100 max-w-none'
             }`}
           >
             <div className="px-5 sm:px-6 h-14 flex items-center justify-between">

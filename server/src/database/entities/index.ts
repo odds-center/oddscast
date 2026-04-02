@@ -32,3 +32,4 @@ export { SubscriptionPlan } from './subscription-plan.entity';
 export { BillingHistory } from './billing-history.entity';
 export { RaceDividend } from './race-dividend.entity';
 export { RaceAnalysisCache } from './race-analysis-cache.entity';
+export { BugReport, BugReportStatus, BugReportCategory } from './bug-report.entity';

@@ -36,6 +36,7 @@ import {
   BillingHistory,
   RaceDividend,
   RaceAnalysisCache,
+  BugReport,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -69,6 +70,7 @@ import { CacheModule } from './cache/cache.module';
 import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { MailModule } from './mail/mail.module';
 import { DiscordModule } from './discord/discord.module';
+import { BugReportsModule } from './bug-reports/bug-reports.module';
 
 @Module({
   imports: [
@@ -114,6 +116,7 @@ import { DiscordModule } from './discord/discord.module';
           BillingHistory,
           RaceDividend,
           RaceAnalysisCache,
+          BugReport,
         ],
         logging: false,
         synchronize: false,
@@ -161,6 +164,7 @@ import { DiscordModule } from './discord/discord.module';
     AdminModule,
     GlobalConfigModule,
     ActivityLogsModule,
+    BugReportsModule,
   ],
   providers: [
     {

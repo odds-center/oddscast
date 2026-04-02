@@ -36,6 +36,7 @@ import CONFIG from '@/lib/config';
 import { routes } from '@/lib/routes';
 import { FloatingAppBar } from '@/components/Layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import BugReportButton from '@/components/BugReportButton';
 
 const NetworkStatusBanner = dynamic(
   () => import('@/components/ui/NetworkStatusBanner'),
@@ -199,6 +200,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
           <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
         </div>
       )}
+      {clientMounted && pathname !== '/welcome' && <BugReportButton />}
     </>
   );
 }

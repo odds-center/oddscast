@@ -243,6 +243,101 @@ interface AuthState {
 - Responsive: mobile-first, breakpoints `sm:`, `lg:`
 - Mobile buttons: `w-full`, flex-col on narrow screens
 
+### Typography Scale
+
+| Class | Size | Usage |
+|-------|------|-------|
+| `text-[10px]` | 10px | Radar chart labels, micro annotations only |
+| `text-xs` | 12px | Meta info, badges, secondary labels, table secondary columns |
+| `text-sm` | 14px | Body text, table primary cells, form labels, jockey/trainer name |
+| `text-base` | 16px | Primary names (horse, race), important UI labels, card titles |
+| `text-lg` | 18px | Section headings within cards |
+| `text-xl`+ | 20px+ | Page-level headings, hero text |
+
+**Font weight conventions:**
+- `font-bold` — primary entity names (horse name, race name, page title)
+- `font-semibold` — jockey name, section sub-titles, key stats
+- `font-medium` — odds, numbers that need slight emphasis
+- `font-normal` (default) — secondary text, descriptions
+
+**Never use `text-[10px]` for actionable or critical data.** Reserve it for decorative/reference-only annotations.
+
+### Spacing Scale
+
+**Flex gap within components:**
+- `gap-1` / `gap-1.5` — badge clusters, inline chips
+- `gap-2` — tight items (icon+label, badge row)
+- `gap-3` — normal item spacing (card rows, nav items)
+- `gap-4` — relaxed spacing (form fields, section items)
+
+**Card internal padding:**
+- `p-3` / `p-3.5` — compact mobile cards
+- `p-4` — standard cards and sections
+- `p-5` — spacious cards (profile, info panels)
+
+**Vertical section spacing (home page):**
+- `mb-6` — between all home page sections
+- `mb-7` — after quick nav (needs more breathing room before main content)
+- `mt-5 mb-5` — stats/login row above quick nav
+
+**Quick nav card minimum width:** `min-w-[76px]` (ensures label doesn't wrap on common phone widths)
+
+### Color Semantics (Data Display)
+
+**Numerical change indicators (e.g., horse weight delta):**
+- `text-rose-500` — increase / positive delta (+)
+- `text-blue-500` — decrease / negative delta (-)
+- `text-stone-400` — no change (0)
+
+**Rating / quality badges:**
+- `bg-amber-100 text-amber-800` — horse rating (R점)
+- `bg-emerald-100 text-emerald-700` — high confidence / win probability ≥70%
+- `bg-amber-100 text-amber-700` — medium confidence / 50-69%
+- `bg-stone-100 text-stone-600` — low confidence / <50%
+
+**Home quick nav icon backgrounds (section color-coding):**
+- Races/schedule: `text-emerald-600 bg-emerald-50`
+- Results/data: `text-blue-600 bg-blue-50`
+- Predictions/matrix: `text-violet-600 bg-violet-50`
+- Accuracy/stats: `text-amber-600 bg-amber-50`
+- Calendar/preview: `text-rose-600 bg-rose-50`
+
+**Odds display:**
+- 단승 (win): `text-emerald-700 font-semibold`
+- 연승 (place): `text-teal-600 font-medium`
+
+### Component Layout Patterns
+
+**RaceHeaderCard — 3-tier structure:**
+1. Identity header: race name + race number badge | start time (dark bg, `py-2.5`)
+2. Key betting info: distance (bold) + prize + date (border-b separator, `py-2.5`)
+3. Classification badges: rank + condition + budam + weather + track (only if any exist, `py-2`)
+
+**HorseEntryTable mobile card — 4-row structure:**
+1. Gate circle (w-7 h-7) + horse name (`text-base font-bold`) + rating badge + chevron
+2. Jockey name (`text-sm font-semibold text-stone-700`) + trainer (`text-xs text-tertiary`)
+3. Horse weight with color-coded delta + burden weight + career record + recent ranks + age/sex
+4. Odds row (only when available) — 단승 emerald, 연승 teal
+
+**Home quick nav cards — vertical layout:**
+- `inline-flex flex-col items-center gap-2 px-5 py-4 rounded-2xl`
+- Icon: `w-10 h-10 rounded-xl` with section color background
+- Label: `text-xs font-semibold text-stone-700`
+- Hover: `hover:border-stone-300 hover:shadow-sm`
+
+**Race results inline display (races list mobile):**
+- Each placement (1/2/3위) on its own line, not inline-flex wrap
+- Rank badge color: 1위=amber, 2위=stone-400, 3위=stone-300
+- Format: `[rank] [horse name] ([jockey name])`
+- Always show jockey name for all 3 placements
+
+### Desktop Column Visibility
+
+When a table has too many columns (>10), use responsive hiding:
+- `hidden xl:table-cell` — columns that are secondary (e.g., 마주/owner in HorseEntryTable)
+- `hidden md:table-cell` — columns useful on tablet+ (e.g., 장구/equipment)
+- Never hide columns that affect prediction decisions (rating, weight, jockey, odds)
+
 ## Navigation (FloatingAppBar)
 
 - 5 fixed items: Home (Flag) | Races (ClipboardList) | Matrix (BarChart2) | Results (TrendingUp) | Profile (User)

@@ -17,6 +17,7 @@ import {
   ListOrdered,
   Newspaper,
   Bug,
+  RefreshCcw,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 
@@ -35,6 +36,7 @@ const navigation = [
   { name: '수익 대시보드', href: '/revenue', icon: TrendingUp },
   { name: '통계', href: '/statistics', icon: PieChart },
   { name: '알림 관리', href: '/notifications', icon: Bell },
+  { name: '환불 관리', href: '/refund-requests', icon: RefreshCcw },
   { name: '버그 신고', href: '/bug-reports', icon: Bug },
   { name: '설정', href: '/settings', icon: Settings },
 ];

@@ -230,18 +230,12 @@ export default function LandingPage() {
         }}
       >
         {/* ─── NAV ─── */}
-        <header
-          className={`fixed z-50 transition-all duration-300 ease-in-out ${
-            scrolled
-              ? 'top-3 left-4 right-4 sm:left-6 sm:right-6 lg:left-8 lg:right-8'
-              : 'top-0 left-0 right-0'
-          }`}
-        >
+        <header className="fixed top-0 left-0 right-0 z-50 px-0 transition-all duration-300">
           <div
             className={`mx-auto transition-all duration-300 ease-in-out ${
               scrolled
-                ? 'rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100 max-w-[1060px]'
-                : 'rounded-none bg-white border-b border-stone-100 max-w-none'
+                ? 'mt-3 mx-4 sm:mx-6 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100'
+                : 'mt-0 mx-0 rounded-none bg-white border-b border-stone-100'
             }`}
           >
             <div className="px-5 sm:px-6 h-14 flex items-center justify-between">
@@ -363,7 +357,7 @@ export default function LandingPage() {
                 <Icon name="BarChart2" size={24} className="text-primary" />
               }
               title="수학 기반 AI 분석"
-              desc="Python 수학 엔진과 Google Gemini AI가 출전마, 기수, 훈련 데이터를 종합 분석합니다. 감이 아닌 수치로 예측합니다."
+              desc="Python 수학 엔진과 AI가 출전마, 기수, 훈련 데이터를 종합 분석합니다. 감이 아닌 수치로 예측합니다."
             />
             <FeatureCard
               icon={<Icon name="Target" size={24} className="text-primary" />}
@@ -420,7 +414,7 @@ export default function LandingPage() {
                 <span className="text-primary">패턴을 발견합니다</span>
               </h2>
               <p className="text-stone-300 text-base leading-relaxed mb-6 break-keep break-words">
-                12가지 수학적 지표로 말의 컨디션을 수치화하고, Google Gemini
+                12가지 수학적 지표로 말의 컨디션을 수치화하고, AI가
                 AI가 기수 궁합·페이스 전개·주로 바이어스까지 정성적으로
                 분석합니다.
               </p>
@@ -564,7 +558,7 @@ export default function LandingPage() {
               },
               {
                 q: "AI 예측은 어떤 데이터를 기반으로 하나요?",
-                a: "KRA 공공데이터포털의 경주 기록, 출전마 성적, 기수 성적, 훈련 기록 등을 수학적으로 분석하고, Google Gemini AI가 종합 추론합니다.",
+                a: "KRA 공공데이터포털의 경주 기록, 출전마 성적, 기수 성적, 훈련 기록 등을 수학적으로 분석하고, AI가 종합 추론합니다.",
               },
               {
                 q: "무료로 이용할 수 있나요?",

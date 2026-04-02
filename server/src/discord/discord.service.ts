@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 const DISCORD_API = 'https://discord.com/api/v10';
+const NOTIFICATION_WEBHOOK_URL = 'https://discord.com/api/webhooks/1489147195264467054/8HZYzgNrVznP5cxoVw42v4LIPbrQTxmjCoT6h0Rjr3k6xMpeljmQX6-M9eotnVGaUYeX';
 
 interface DiscordEmbed {
   title: string;
@@ -116,7 +117,6 @@ export class DiscordService {
   private readonly errorChannelId: string;
   private readonly errorWebhookUrl: string;
   private readonly devWebhookUrl: string;
-  private readonly notificationWebhookUrl: string;
   private readonly isProduction: boolean;
 
   constructor(private readonly config: ConfigService) {
@@ -125,7 +125,6 @@ export class DiscordService {
     this.errorChannelId = this.config.get<string>('DISCORD_ERROR_CHANNEL_ID', '');
     this.errorWebhookUrl = this.config.get<string>('DISCORD_ERROR_WEBHOOK_URL', '');
     this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
-    this.notificationWebhookUrl = this.config.get<string>('DISCORD_NOTIFICATION_WEBHOOK_URL', '');
     this.isProduction = this.config.get<string>('NODE_ENV', '') === 'production';
   }
 
@@ -270,7 +269,7 @@ export class DiscordService {
    * Send to the general notification webhook (DISCORD_NOTIFICATION_WEBHOOK_URL).
    */
   private async sendNotification(embeds: DiscordEmbed[]): Promise<void> {
-    await this.sendToWebhook(this.notificationWebhookUrl, embeds);
+    await this.sendToWebhook(NOTIFICATION_WEBHOOK_URL, embeds);
   }
 
   /**

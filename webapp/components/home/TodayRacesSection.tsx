@@ -78,13 +78,13 @@ export default function TodayRacesSection() {
                   className='flex items-center justify-between py-3 px-1 active:bg-stone-50 transition-colors'
                 >
                   <div>
-                    <span className='font-bold text-foreground text-sm'>
+                    <span className='font-bold text-foreground text-base'>
                       {row.meetName ?? row.meet ?? '-'} {row.rcNo}R
                     </span>
-                    <div className='flex items-center gap-2.5 mt-1 text-xs text-text-secondary'>
-                      {row.rcDist && <span>{row.rcDist}M</span>}
+                    <div className='flex items-center gap-3 mt-1 text-sm text-text-secondary'>
+                      {row.stTime && <span className='font-semibold text-stone-600'>{row.stTime}</span>}
+                      {row.rcDist && <span>{row.rcDist}m</span>}
                       {entries.length > 0 && <span>{entries.length}두</span>}
-                      {row.stTime && <span className='font-medium'>{row.stTime}</span>}
                     </div>
                   </div>
                   <StatusBadge status={row.status ?? row.raceStatus ?? ''} rcDate={row.rcDate} stTime={row.stTime} />

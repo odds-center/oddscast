@@ -233,67 +233,86 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                 tabIndex={hasRadar || onSelectHorse ? 0 : undefined}
                 onClick={() => toggleExpand(e.hrNo)}
                 onKeyDown={(ev) => (hasRadar || onSelectHorse) && (ev.key === 'Enter' || ev.key === ' ') && toggleExpand(e.hrNo)}
-                className='p-4'
+                className='p-3.5'
               >
-                <div className='min-w-0'>
-                  <div className='flex items-center gap-2 flex-wrap'>
-                    {e.chulNo != null && (
-                      <span className='inline-flex items-center justify-center w-6 h-6 rounded-full bg-stone-800 text-white text-xs font-bold shrink-0'>
-                        {e.chulNo}
-                      </span>
-                    )}
-                    <Link
-                      href={horseProfileHref(e.hrNo, raceId)}
-                      onClick={(ev) => ev.stopPropagation()}
-                      className='font-semibold text-foreground hover:text-primary hover:underline'
+                {/* Row 1: gate number + horse name + rating + chevron */}
+                <div className='flex items-center gap-2 mb-1.5'>
+                  {e.chulNo != null && (
+                    <span className='inline-flex items-center justify-center w-7 h-7 rounded-full bg-stone-800 text-white text-sm font-bold shrink-0'>
+                      {e.chulNo}
+                    </span>
+                  )}
+                  <Link
+                    href={horseProfileHref(e.hrNo, raceId)}
+                    onClick={(ev) => ev.stopPropagation()}
+                    className='font-bold text-base text-foreground hover:text-primary hover:underline leading-tight'
+                  >
+                    {e.hrName}
+                  </Link>
+                  {e.rating != null && (
+                    <span className='inline-flex items-center px-1.5 py-0.5 rounded text-xs font-semibold bg-amber-100 text-amber-800 shrink-0'>
+                      R{e.rating}
+                    </span>
+                  )}
+                  {hasRadar && (
+                    <svg
+                      className={`w-4 h-4 text-text-tertiary ml-auto shrink-0 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
+                      fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.5}
                     >
-                      {e.hrName}
-                    </Link>
-                    {e.rating != null && (
-                      <span className='inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800'>
-                        R{e.rating}
-                      </span>
-                    )}
-                    {hasRadar && (
-                      <svg
-                        className={`w-3.5 h-3.5 text-text-tertiary ml-auto transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`}
-                        fill='none' viewBox='0 0 24 24' stroke='currentColor' strokeWidth={2.5}
-                      >
-                        <path strokeLinecap='round' strokeLinejoin='round' d='m19 9-7 7-7-7' />
-                      </svg>
-                    )}
-                  </div>
-                  <div className='flex items-center gap-2 mt-0.5 text-text-secondary text-sm'>
-                    {e.jkName && <span>{e.jkName}</span>}
-                    {e.trName && <span className='text-text-tertiary'>/ {e.trName}</span>}
-                    {e.owName && <span className='text-text-tertiary'>/ {e.owName}</span>}
-                  </div>
-                  <div className='flex flex-wrap gap-x-3 gap-y-1 mt-2 text-xs text-text-tertiary'>
-                    {ageSex !== '-' && <span>{ageSex}</span>}
-                    {e.wgBudam != null && <span>부담 {e.wgBudam}kg</span>}
-                    {hwBase != null && (
-                      <span>
-                        마체중 {hwBase}kg
-                        {hwDelta != null && (
-                          <span className={hwDelta > 0 ? ' text-stone-700' : hwDelta < 0 ? ' text-stone-500' : ''}>
-                            {' '}({hwDelta >= 0 ? '+' : ''}{hwDelta})
-                          </span>
-                        )}
-                      </span>
-                    )}
-                    {record !== '-' && <span>{record}</span>}
-                    {recentStr !== '-' && <span>최근 {recentStr}</span>}
-                    {e.equipment && <span>장구 {e.equipment}</span>}
-                    {odds?.winOdds != null && (
-                      <span className='text-emerald-700 font-medium'>단승 {odds.winOdds}</span>
-                    )}
-                    {odds?.plcOdds != null && (
-                      <span className='text-teal-700 font-medium'>연승 {odds.plcOdds}</span>
-                    )}
-                  </div>
+                      <path strokeLinecap='round' strokeLinejoin='round' d='m19 9-7 7-7-7' />
+                    </svg>
+                  )}
+                  {onSelectHorse && isSelected?.(e.hrNo) && (
+                    <Icon name='Check' size={18} className='shrink-0 text-primary ml-auto' />
+                  )}
                 </div>
-                {onSelectHorse && isSelected?.(e.hrNo) && (
-                  <Icon name='Check' size={20} className='shrink-0 text-primary-600' />
+
+                {/* Row 2: jockey (prominent) + trainer */}
+                <div className='flex items-center gap-1.5 mb-2 pl-9'>
+                  {e.jkName && (
+                    <span className='text-sm font-semibold text-stone-700'>{e.jkName}</span>
+                  )}
+                  {e.trName && (
+                    <span className='text-xs text-text-tertiary'>/ {e.trName}</span>
+                  )}
+                </div>
+
+                {/* Row 3: weight info (horse weight prominent) + career + recent */}
+                <div className='flex flex-wrap items-center gap-x-3 gap-y-1 pl-9'>
+                  {hwBase != null && (
+                    <span className='text-sm font-medium text-stone-700 tabular-nums'>
+                      {hwBase}kg
+                      {hwDelta != null && (
+                        <span className={`text-xs ml-0.5 ${hwDelta > 0 ? 'text-rose-500' : hwDelta < 0 ? 'text-blue-500' : 'text-stone-400'}`}>
+                          ({hwDelta >= 0 ? '+' : ''}{hwDelta})
+                        </span>
+                      )}
+                    </span>
+                  )}
+                  {e.wgBudam != null && (
+                    <span className='text-xs text-text-secondary tabular-nums'>부담 {e.wgBudam}kg</span>
+                  )}
+                  {record !== '-' && (
+                    <span className='text-xs text-text-secondary tabular-nums'>{record}</span>
+                  )}
+                  {recentStr !== '-' && (
+                    <span className='text-xs text-text-tertiary tabular-nums'>최근 {recentStr}</span>
+                  )}
+                  {ageSex !== '-' && (
+                    <span className='text-xs text-text-tertiary'>{ageSex}</span>
+                  )}
+                </div>
+
+                {/* Row 4: odds (only when available) */}
+                {(odds?.winOdds != null || odds?.plcOdds != null) && (
+                  <div className='flex items-center gap-3 mt-2 pl-9'>
+                    {odds.winOdds != null && (
+                      <span className='text-sm font-semibold text-emerald-700 tabular-nums'>단승 {odds.winOdds}</span>
+                    )}
+                    {odds.plcOdds != null && (
+                      <span className='text-sm font-medium text-teal-600 tabular-nums'>연승 {odds.plcOdds}</span>
+                    )}
+                  </div>
                 )}
               </div>
               {/* Expanded radar chart */}
@@ -311,7 +330,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
               <TableHead className='text-center w-10'>번호</TableHead>
               <TableHead className='text-left min-w-[90px]'>마명</TableHead>
               <TableHead className='text-left'>기수/조교사</TableHead>
-              <TableHead className='text-left w-20'>마주</TableHead>
+              <TableHead className='text-left w-20 hidden xl:table-cell'>마주</TableHead>
               <TableHead className='text-center w-16'>
                 <Tooltip content='산지(한/미/일) + 연령 + 성별(수/암/거)' inline>마령</Tooltip>
               </TableHead>
@@ -371,16 +390,16 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                     <Link
                       href={horseProfileHref(e.hrNo, raceId)}
                       onClick={(ev) => ev.stopPropagation()}
-                      className='font-semibold text-foreground hover:text-primary hover:underline'
+                      className='font-bold text-base text-foreground hover:text-primary hover:underline'
                     >
                       {e.hrName}
                     </Link>
                   </TableCell>
-                  <TableCell className='text-text-secondary text-sm'>
-                    <span>{e.jkName ?? '-'}</span>
+                  <TableCell className='text-sm'>
+                    <span className='font-semibold text-stone-700'>{e.jkName ?? '-'}</span>
                     {e.trName && <span className='text-text-tertiary'> / {e.trName}</span>}
                   </TableCell>
-                  <TableCell className='text-text-secondary text-sm'>
+                  <TableCell className='text-text-secondary text-sm hidden xl:table-cell'>
                     {e.owName ?? '-'}
                   </TableCell>
                   <TableCell className='text-center text-sm text-text-secondary'>
@@ -394,7 +413,7 @@ export default function HorseEntryTable({ entries, onSelectHorse, isSelected, ra
                       <>
                         <span>{hwBase}kg</span>
                         {hwDelta != null && (
-                          <span className={`ml-0.5 ${hwDelta > 0 ? 'text-stone-700' : hwDelta < 0 ? 'text-stone-500' : 'text-text-tertiary'}`}>
+                          <span className={`ml-0.5 text-xs ${hwDelta > 0 ? 'text-rose-500' : hwDelta < 0 ? 'text-blue-500' : 'text-text-tertiary'}`}>
                             ({hwDelta >= 0 ? '+' : ''}{hwDelta})
                           </span>
                         )}

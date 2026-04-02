@@ -1,5 +1,7 @@
 /**
- * Race header — key info as badges with tooltips for jargon
+ * Race header — key info with clear visual hierarchy
+ * Primary: distance + prize (key betting info)
+ * Secondary: rank + condition + budam + weather + track (race classification)
  */
 import type { ReactNode } from 'react';
 import Icon from '@/components/icons';
@@ -31,20 +33,16 @@ export interface RaceHeaderProps {
   track?: string;
 }
 
-function InfoBadge({
-  label,
+function ClassBadge({
   tooltip,
   children,
 }: {
-  label: string;
   tooltip: string;
-  children?: ReactNode;
+  children: ReactNode;
 }) {
   return (
     <Tooltip content={tooltip} inline>
-      <Badge variant='muted' size='sm'>
-        {children ?? label}
-      </Badge>
+      <Badge variant='muted' size='sm'>{children}</Badge>
     </Tooltip>
   );
 }
@@ -69,9 +67,12 @@ export default function RaceHeaderCard({
   const weatherTerm = getWeatherTerm(weather);
   const trackTerm = getTrackTerm(track);
 
+  const hasClassBadges = rankTerm || rcConditionTerm || budamTerm || weatherTerm || trackTerm;
+
   return (
     <div className='rounded border border-stone-200 bg-white overflow-hidden'>
-      <div className='flex items-center justify-between px-3 py-2 bg-stone-50 border-b border-stone-200'>
+      {/* Top row: race identity + start time */}
+      <div className='flex items-center justify-between px-3 py-2.5 bg-stone-50 border-b border-stone-200'>
         <div className='flex items-center gap-2'>
           <span className='font-bold text-foreground text-sm whitespace-nowrap'>
             {rcDay ? `${rcDay} ` : ''}{meetName ?? '-'}
@@ -85,44 +86,49 @@ export default function RaceHeaderCard({
           </span>
         )}
       </div>
-      <div className='px-3 py-2 flex flex-wrap items-center gap-1.5'>
+
+      {/* Primary info: distance + prize + date — key betting context */}
+      <div className='flex items-center gap-4 px-3 py-2.5 border-b border-stone-100'>
+        {rcDist && (
+          <span className='flex items-center gap-1 text-sm font-bold text-foreground'>
+            <Icon name='Ruler' size={14} className='text-stone-400 shrink-0' />
+            {rcDist}m
+          </span>
+        )}
+        {rcPrize != null && rcPrize > 0 && (
+          <span className='flex items-center gap-1 text-sm font-semibold text-stone-600'>
+            <Icon name='Trophy' size={13} className='text-amber-500 shrink-0' />
+            1착 {formatNumber(rcPrize)}만원
+          </span>
+        )}
         {rcDate && (
-          <span className='inline-flex items-center gap-1 text-xs text-stone-500 whitespace-nowrap'>
-            <Icon name='Calendar' size={14} className='text-stone-500' />
+          <span className='flex items-center gap-1 text-xs text-stone-400 ml-auto whitespace-nowrap'>
+            <Icon name='Calendar' size={13} className='text-stone-400' />
             {formatRcDate(rcDate)}
           </span>
         )}
-        {rcDist && <Badge variant='muted' size='sm'>{rcDist}m</Badge>}
-        {rcPrize != null && rcPrize > 0 && (
-          <Badge variant='muted' size='sm'>1착 {formatNumber(rcPrize)}만원</Badge>
-        )}
-        {rankTerm && (
-          <InfoBadge label={rankTerm.label} tooltip={rankTerm.tooltip}>
-            {rankTerm.label}
-          </InfoBadge>
-        )}
-        {rcConditionTerm && (
-          <InfoBadge label={rcConditionTerm.label} tooltip={rcConditionTerm.tooltip}>
-            {rcConditionTerm.label}
-          </InfoBadge>
-        )}
-        {budamTerm && (
-          <InfoBadge label={budamTerm.label} tooltip={budamTerm.tooltip}>
-            {budamTerm.label}
-          </InfoBadge>
-        )}
-        {weatherTerm && (
-          <InfoBadge label={weatherTerm.label} tooltip={weatherTerm.tooltip}>
-            날씨 {weatherTerm.label}
-          </InfoBadge>
-        )}
-        {trackTerm && (
-          <InfoBadge label={trackTerm.label} tooltip={trackTerm.tooltip}>
-            주로 {trackTerm.label}
-          </InfoBadge>
-        )}
       </div>
+
+      {/* Secondary info: classification badges */}
+      {hasClassBadges && (
+        <div className='px-3 py-2 flex flex-wrap items-center gap-1.5'>
+          {rankTerm && (
+            <ClassBadge tooltip={rankTerm.tooltip}>{rankTerm.label}</ClassBadge>
+          )}
+          {rcConditionTerm && (
+            <ClassBadge tooltip={rcConditionTerm.tooltip}>{rcConditionTerm.label}</ClassBadge>
+          )}
+          {budamTerm && (
+            <ClassBadge tooltip={budamTerm.tooltip}>{budamTerm.label}</ClassBadge>
+          )}
+          {weatherTerm && (
+            <ClassBadge tooltip={`날씨: ${weatherTerm.tooltip}`}>날씨 {weatherTerm.label}</ClassBadge>
+          )}
+          {trackTerm && (
+            <ClassBadge tooltip={`주로: ${trackTerm.tooltip}`}>주로 {trackTerm.label}</ClassBadge>
+          )}
+        </div>
+      )}
     </div>
   );
 }
-

@@ -342,3 +342,51 @@ try {
 5. Ensure touch targets >= 44px on mobile
 6. Add `className` prop for customization
 7. Use existing components (Badge, Card, etc.) instead of raw HTML
+
+## Race Domain Component Patterns
+
+### RaceHeaderCard (`components/race/RaceHeaderCard.tsx`)
+3-tier information hierarchy:
+1. **Identity** (dark bg, `py-2.5`): `meetName rcNo R` | `stTime`
+2. **Key betting info** (`py-2.5`, border-b): `rcDist m` + `1착 rcPrize만원` + `rcDate` (right-aligned)
+3. **Classification** (`py-2`, only rendered if any badge exists): rank, condition, budam, weather, track — all wrapped in `<ClassBadge tooltip=...>`
+
+### HorseEntryTable (`components/race/HorseEntryTable.tsx`)
+**Mobile card — 4-row layout** (`p-3.5`):
+- Row 1: gate circle (w-7 h-7 bg-stone-800) + horse name (`text-base font-bold`) + rating badge + chevron
+- Row 2 (pl-9): jockey (`text-sm font-semibold text-stone-700`) + trainer (`text-xs text-tertiary`)
+- Row 3 (pl-9): horse weight + color-coded delta + burden + career + recent + age
+- Row 4 (pl-9, conditional): odds — 단승 `text-emerald-700`, 연승 `text-teal-600`
+
+Horse weight delta color rule:
+- `+N` → `text-rose-500`
+- `-N` → `text-blue-500`
+- `0` → `text-stone-400`
+
+**Desktop table — column visibility:**
+- Always visible: 번호, 마명, 기수/조교사, 마령, 부담, 마체중, 레이팅, 통산, 최근
+- `hidden md:table-cell`: 장구 (equipment)
+- `hidden xl:table-cell`: 마주 (owner) — not useful for prediction decisions
+- 단승/연승 columns: only when `showOdds === true` (completed races)
+
+**Expandable radar panel:** triggered by tap/click on row. Shows HorseRadarChart (160px) + 6 sub-score mini bars (rat/frm/cnd/exp/trn/suit) + win probability badge.
+
+### RecentResultsSection (`components/home/RecentResultsSection.tsx`)
+**Always show jockey name for ALL placements (1st, 2nd, AND 3rd).**
+Format: `[medal] [hrName] ([jkName])`
+Previously had a bug where `ord !== '3'` condition excluded 3rd place jockey — this is fixed.
+
+## Home Page Quick Nav (`pages/index.tsx`)
+Inline in `index.tsx` — NOT a separate component.
+Card layout: `inline-flex flex-col items-center gap-2 px-5 py-4 rounded-2xl bg-white border border-stone-200`
+Icon container: `w-10 h-10 rounded-xl` with section-specific color class (see webapp.md Color Semantics)
+Label: `text-xs font-semibold text-stone-700`
+Nav items (fixed order): 발매경주 (emerald) | 경주성적 (blue) | 종합예상 (violet) | 정확도 (amber) | 주간프리뷰 (rose)
+
+## BugReport Components (`components/BugReportButton.tsx`, `components/BugReportModal.tsx`)
+- `BugReportButton`: fixed floating `bottom-24 right-4 z-40`, hidden on `/welcome` page
+- `BugReportModal`: Dialog with pre-filled description template (location / steps / actual / expected)
+- Description textarea `rows={9}` + `font-mono` for template readability
+- Categories: UI | PREDICTION | PAYMENT | LOGIN | NOTIFICATION | OTHER
+- On submit: POST `/api/bug-reports`, captures `window.location.href` as pageUrl
+- Discord notification via `DISCORD_BUG_WEBHOOK_URL` env var

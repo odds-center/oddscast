@@ -37,6 +37,7 @@ import {
   RaceDividend,
   RaceAnalysisCache,
   BugReport,
+  RefundRequest,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -71,6 +72,7 @@ import { ActivityLogsModule } from './activity-logs/activity-logs.module';
 import { MailModule } from './mail/mail.module';
 import { DiscordModule } from './discord/discord.module';
 import { BugReportsModule } from './bug-reports/bug-reports.module';
+import { RefundsModule } from './refunds/refunds.module';
 
 @Module({
   imports: [
@@ -117,6 +119,7 @@ import { BugReportsModule } from './bug-reports/bug-reports.module';
           RaceDividend,
           RaceAnalysisCache,
           BugReport,
+          RefundRequest,
         ],
         logging: false,
         synchronize: false,
@@ -165,6 +168,7 @@ import { BugReportsModule } from './bug-reports/bug-reports.module';
     GlobalConfigModule,
     ActivityLogsModule,
     BugReportsModule,
+    RefundsModule,
   ],
   providers: [
     {

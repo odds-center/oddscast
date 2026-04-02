@@ -9,15 +9,31 @@ import SubscriptionPlansApi from '@/lib/api/subscriptionPlansApi';
 import type { SubscriptionPlan } from '@/lib/api/subscriptionPlansApi';
 import SubscriptionApi from '@/lib/api/subscriptionApi';
 import type { SubscriptionHistoryItem } from '@/lib/api/subscriptionApi';
+import PaymentsApi from '@/lib/api/paymentApi';
+import type { BillingHistory } from '@/lib/api/paymentApi';
+import RefundApi from '@/lib/api/refundApi';
+import type { RefundRequestItem } from '@/lib/api/refundApi';
 import { useAuthStore } from '@/lib/store/authStore';
 import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import Icon from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
+import { getErrorMessage } from '@/lib/utils/error';
 
 export default function SubscriptionsPage() {
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   const queryClient = useQueryClient();
   const [confirmCancel, setConfirmCancel] = React.useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = React.useState(false);
+  const [refundReason, setRefundReason] = React.useState('');
+  const [refundError, setRefundError] = React.useState<string | null>(null);
 
   const { data: plans, isLoading, error: plansError, refetch: refetchPlans } = useQuery({
     queryKey: ['subscriptions', 'plans'],
@@ -39,12 +55,53 @@ export default function SubscriptionsPage() {
     placeholderData: keepPreviousData,
   });
 
+  const { data: billingHistory } = useQuery({
+    queryKey: ['payments', 'history'],
+    queryFn: () => PaymentsApi.getHistory(),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
+  const { data: myRefunds } = useQuery({
+    queryKey: ['refunds', 'my'],
+    queryFn: () => RefundApi.getMyRefunds(),
+    enabled: isLoggedIn,
+    placeholderData: keepPreviousData,
+  });
+
+  // Most recent successful billing entry for refund eligibility
+  const latestBilling: BillingHistory | null =
+    billingHistory?.find((b) => b.status === 'SUCCESS') ?? null;
+
+  // Check if there is already a pending refund request
+  const pendingRefund: RefundRequestItem | null =
+    (myRefunds ?? []).find(
+      (r) => r.status === 'PENDING' && r.billingHistoryId === Number(latestBilling?.id),
+    ) ?? null;
+
   const cancelMutation = useMutation({
     mutationFn: () => SubscriptionApi.cancel(),
     onSuccess: () => {
       setConfirmCancel(false);
       queryClient.invalidateQueries({ queryKey: ['subscription', 'status'] });
       queryClient.invalidateQueries({ queryKey: ['subscription', 'history'] });
+    },
+  });
+
+  const refundMutation = useMutation({
+    mutationFn: () =>
+      RefundApi.requestRefund({
+        billingHistoryId: Number(latestBilling!.id),
+        userReason: refundReason,
+      }),
+    onSuccess: () => {
+      setRefundDialogOpen(false);
+      setRefundReason('');
+      setRefundError(null);
+      queryClient.invalidateQueries({ queryKey: ['refunds', 'my'] });
+    },
+    onError: (err: unknown) => {
+      setRefundError(getErrorMessage(err));
     },
   });
 
@@ -137,8 +194,122 @@ export default function SubscriptionsPage() {
                 </div>
               </div>
             )}
+
+            {/* Refund request section */}
+            {latestBilling && (
+              <div className='mt-4 pt-4 border-t border-border'>
+                <p className='text-sm font-medium text-foreground mb-1'>환불 신청</p>
+                <p className='text-xs text-text-secondary mb-3'>
+                  결제일로부터 7일 이내, 미사용 티켓 비율에 따라 부분 환불이 가능합니다.
+                </p>
+                {pendingRefund ? (
+                  <div className='flex items-center gap-2 text-sm text-text-secondary'>
+                    <Icon name='Clock' size={14} className='text-warning shrink-0' />
+                    <span>환불 심사 중입니다. 영업일 기준 3~5일 내 처리됩니다.</span>
+                  </div>
+                ) : (
+                  <Button
+                    variant='outline'
+                    size='sm'
+                    onClick={() => {
+                      setRefundError(null);
+                      setRefundReason('');
+                      setRefundDialogOpen(true);
+                    }}
+                  >
+                    환불 신청
+                  </Button>
+                )}
+              </div>
+            )}
           </SectionCard>
         )}
+
+        {/* Refund history for non-active subscriptions */}
+        {isLoggedIn && !status?.isActive && (myRefunds ?? []).length > 0 && (
+          <SectionCard title='환불 내역' icon='RefreshCw' className='mb-6'>
+            <div className='space-y-2'>
+              {(myRefunds ?? []).slice(0, 5).map((r: RefundRequestItem) => (
+                <div
+                  key={r.id}
+                  className='flex items-center justify-between py-2 border-b border-border last:border-0 text-sm'
+                >
+                  <span className='text-text-secondary'>
+                    {new Date(r.createdAt).toLocaleDateString('ko-KR')}
+                  </span>
+                  <span
+                    className={
+                      r.status === 'APPROVED'
+                        ? 'text-success font-medium'
+                        : r.status === 'REJECTED'
+                          ? 'text-error'
+                          : 'text-warning'
+                    }
+                  >
+                    {r.status === 'APPROVED'
+                      ? `승인 (${(r.approvedAmount ?? 0).toLocaleString()}원)`
+                      : r.status === 'REJECTED'
+                        ? '거절'
+                        : '심사 중'}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {/* Refund request dialog */}
+        <Dialog open={refundDialogOpen} onOpenChange={setRefundDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>환불 신청</DialogTitle>
+              <DialogDescription>
+                {latestBilling && (
+                  <>
+                    결제 금액: <strong>{latestBilling.amount.toLocaleString()}원</strong>
+                    <br />
+                    미사용 티켓 비율에 따라 환불 금액이 계산됩니다.
+                    <br />
+                    결제일로부터 7일 초과 또는 티켓 전량 사용 시 환불이 불가합니다.
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className='mt-2'>
+              <label className='block text-sm font-medium text-foreground mb-1'>
+                환불 사유 <span className='text-error'>*</span>
+              </label>
+              <textarea
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+                rows={4}
+                placeholder='환불 사유를 10자 이상 입력해 주세요.'
+                className='w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none'
+              />
+              <p className='text-xs text-text-secondary mt-1'>{refundReason.length}자 (최소 10자)</p>
+              {refundError && (
+                <p className='text-xs text-error mt-2'>{refundError}</p>
+              )}
+            </div>
+            <DialogFooter className='mt-2 flex gap-2'>
+              <Button
+                variant='outline'
+                size='sm'
+                onClick={() => setRefundDialogOpen(false)}
+                disabled={refundMutation.isPending}
+              >
+                취소
+              </Button>
+              <Button
+                size='sm'
+                onClick={() => refundMutation.mutate()}
+                disabled={refundReason.length < 10 || refundMutation.isPending}
+              >
+                {refundMutation.isPending ? '제출 중...' : '환불 신청'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <DataFetchState
           isLoading={isLoading}

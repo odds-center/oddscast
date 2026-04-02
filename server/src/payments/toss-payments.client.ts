@@ -81,6 +81,36 @@ export class TossPaymentsBillingClient {
   }
 
   /**
+   * Cancel (refund) a payment using its paymentKey.
+   * POST /v1/payments/{paymentKey}/cancel
+   * @see https://docs.tosspayments.com/reference#결제-취소
+   */
+  async cancelPayment(
+    paymentKey: string,
+    cancelAmount: number,
+    cancelReason: string,
+  ): Promise<unknown> {
+    const res = await fetch(
+      `https://api.tosspayments.com/v1/payments/${encodeURIComponent(paymentKey)}/cancel`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: this.authHeader,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cancelReason, cancelAmount }),
+      },
+    );
+
+    if (!res.ok) {
+      const err: TossErrorBody = await res.json().catch(() => ({}));
+      throw new Error(err?.message || `Toss cancel payment failed: ${res.status}`);
+    }
+
+    return res.json();
+  }
+
+  /**
    * Request a billing payment with existing billingKey.
    * POST /v1/billing/{billingKey}
    */

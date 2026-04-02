@@ -167,11 +167,12 @@ export default function LandingPage() {
     staleTime: 30 * 60 * 1000,
   });
 
-  const pct = accuracyData?.overall
-    ? Math.round(accuracyData.overall.averageAccuracy)
-    : null;
   const totalPredictions = accuracyData?.overall?.totalCount ?? 0;
   const hitCount = accuracyData?.overall?.hitCount ?? 0;
+  // Hit rate: races where at least 1 predicted horse finished top-3
+  // More intuitive than averageAccuracy (partial overlap score)
+  const pct =
+    totalPredictions > 0 ? Math.round((hitCount / totalPredictions) * 100) : null;
 
   const activePlans = (plans ?? [])
     .filter((p) => p.isActive)
@@ -302,7 +303,7 @@ export default function LandingPage() {
                     {pct}%
                   </p>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    3착 이내 적중률
+                    예측 적중률
                   </p>
                 </div>
                 <div className="w-px bg-stone-700" />
@@ -494,7 +495,7 @@ export default function LandingPage() {
                   <p className="text-5xl sm:text-6xl font-extrabold text-primary leading-none">
                     {pct}%
                   </p>
-                  <p className="text-stone-400 text-sm mt-2">3착 이내 적중률</p>
+                  <p className="text-stone-400 text-sm mt-2">예측 적중률</p>
                 </div>
                 <div className="text-center">
                   <p className="text-5xl sm:text-6xl font-extrabold text-white leading-none">

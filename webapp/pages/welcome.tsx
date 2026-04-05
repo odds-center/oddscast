@@ -303,7 +303,7 @@ export default function LandingPage() {
                     {pct}%
                   </p>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    예측 적중률
+                    예측률
                   </p>
                 </div>
                 <div className="w-px bg-stone-700" />
@@ -495,7 +495,7 @@ export default function LandingPage() {
                   <p className="text-5xl sm:text-6xl font-extrabold text-primary leading-none">
                     {pct}%
                   </p>
-                  <p className="text-stone-400 text-sm mt-2">예측 적중률</p>
+                  <p className="text-stone-400 text-sm mt-2">예측률</p>
                 </div>
                 <div className="text-center">
                   <p className="text-5xl sm:text-6xl font-extrabold text-white leading-none">

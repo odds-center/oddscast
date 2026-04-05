@@ -1,5 +1,5 @@
 /**
- * AI 예측 적중률 대시보드 — 전체/월별/경마장별 통계 (공개)
+ * AI 예측률 대시보드 — 전체/월별/경마장별 통계 (공개)
  */
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
@@ -31,9 +31,9 @@ export default function PredictionAccuracyPage() {
   const byBetType = stats?.byBetType ?? [];
 
   return (
-    <Layout title='예측 적중률 | OddsCast' description='OddsCast AI 예측의 적중률을 경마장별, 월별로 확인하세요.'>
+    <Layout title='예측률 | OddsCast' description='OddsCast AI 예측의 적중률을 경마장별, 월별로 확인하세요.'>
       <CompactPageTitle
-        title='예측 적중률'
+        title='예측률'
         backHref={routes.predictions.matrix}
       />
       <p className='text-sm text-text-secondary mb-4'>

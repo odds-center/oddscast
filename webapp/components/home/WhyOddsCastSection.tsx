@@ -14,7 +14,7 @@ const FEATURES = [
   },
   {
     icon: 'Target' as const,
-    title: '예측 적중률 공개',
+    title: '예측률 공개',
     desc: '모든 예측 결과를 투명하게 공개하고, 정확도를 실시간 집계합니다.',
   },
   {

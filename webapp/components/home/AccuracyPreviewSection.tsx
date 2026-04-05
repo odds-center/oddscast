@@ -23,7 +23,7 @@ export default function AccuracyPreviewSection() {
 
   return (
     <HomeSection
-      title='예측 적중률'
+      title='예측률'
       icon='Target'
       viewAllHref={routes.predictions.accuracy}
       viewAllLabel='상세보기'
@@ -45,7 +45,7 @@ export default function AccuracyPreviewSection() {
           <div className='rounded-xl bg-primary/8 border border-primary/15 px-5 py-4 text-center'>
             <div className='flex items-center justify-center gap-1.5 mb-1.5'>
               <Icon name='Trophy' size={16} className='text-primary' />
-              <span className='text-sm font-semibold text-primary'>3착 이내 적중률</span>
+              <span className='text-sm font-semibold text-primary'>예측률</span>
             </div>
             <p className='text-4xl font-extrabold text-primary leading-none'>{pct}<span className='text-2xl'>%</span></p>
           </div>

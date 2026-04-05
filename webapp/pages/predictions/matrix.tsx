@@ -168,7 +168,7 @@ export default function PredictionMatrixPage() {
           href={routes.predictions.accuracy}
           className='text-xs text-text-tertiary hover:text-primary transition-colors'
         >
-          예측 적중률 통계 →
+          예측률 통계 →
         </Link>
       </div>
 

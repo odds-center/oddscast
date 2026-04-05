@@ -69,7 +69,7 @@ export default function Home() {
   };
 
   return (
-    <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 예측 적중률을 제공합니다.'>
+    <Layout title='OddsCast' description='AI 데이터 분석 기반 경마 예측 서비스. 실시간 경주 정보, 종합 예상표, 예측률을 제공합니다.'>
       <CoachMarkTour tourId='homeTour' steps={homeTourSteps} />
 
       {/* 1. Hero banner */}
@@ -98,7 +98,7 @@ export default function Home() {
           { href: `${routes.races.list}?date=today`, icon: 'Flag' as const, label: '발매경주', iconColor: 'text-emerald-600' },
           { href: routes.results, icon: 'TrendingUp' as const, label: '경주성적', iconColor: 'text-blue-600' },
           { href: routes.predictions.matrix, icon: 'BarChart2' as const, label: '종합예상', iconColor: 'text-violet-600' },
-          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측 적중률', iconColor: 'text-amber-600' },
+          { href: routes.predictions.accuracy, icon: 'Target' as const, label: '예측률', iconColor: 'text-amber-600' },
           { href: routes.weeklyPreview, icon: 'Calendar' as const, label: '주간프리뷰', iconColor: 'text-rose-600' },
         ].map((item) => (
           <Link

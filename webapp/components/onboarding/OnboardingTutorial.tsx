@@ -24,7 +24,7 @@ const SLIDES: Slide[] = [
   {
     icon: 'Trophy',
     title: '결과',
-    description: '경주 결과와 순위를 확인하고, AI 예측 적중률도 함께 볼 수 있습니다.',
+    description: '경주 결과와 순위를 확인하고, AI 예측률도 함께 볼 수 있습니다.',
   },
   {
     icon: 'User',

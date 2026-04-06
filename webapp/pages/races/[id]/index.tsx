@@ -7,7 +7,7 @@ import { serverGet } from '@/lib/api/serverFetch';
 import Layout from '@/components/Layout';
 import Icon from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { Badge, SectionTitle } from '@/components/ui';
+import { Badge, SectionTitle, Skeleton } from '@/components/ui';
 import {
   Table,
   TableHeader,
@@ -287,8 +287,22 @@ export default function RaceDetailPage() {
   if (isLoading) {
     return (
       <Layout>
-        <div className='flex justify-center items-center h-[40vh] md:h-[50vh]'>
-          <LoadingSpinner size={28} label='경주 정보 준비 중...' />
+        <div className='max-w-4xl mx-auto px-4 pb-8 pt-2 space-y-3'>
+          {/* CompactPageTitle bar */}
+          <div className='flex items-center gap-2 py-2'>
+            <Skeleton className='w-8 h-8 rounded-lg' />
+            <Skeleton className='h-5 w-32' />
+          </div>
+          {/* RaceHeaderCard — tier 1: meet + race no + time */}
+          <Skeleton className='h-10 w-full rounded-xl' />
+          {/* RaceHeaderCard — tier 2: distance + prize */}
+          <Skeleton className='h-10 w-full rounded-xl' />
+          {/* Section title */}
+          <Skeleton className='h-5 w-24 mt-4' />
+          {/* Horse entry rows × 6 */}
+          {Array.from({ length: 6 }).map((_, i) => (
+            <Skeleton key={i} className='h-24 w-full rounded-xl' />
+          ))}
         </div>
       </Layout>
     );

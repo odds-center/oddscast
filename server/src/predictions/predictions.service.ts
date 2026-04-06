@@ -1,3 +1,4 @@
+import * as crypto from 'crypto';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Between, In, Not, Repository } from 'typeorm';
@@ -10,6 +11,7 @@ import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { Training } from '../database/entities/training.entity';
 import { RaceDividend } from '../database/entities/race-dividend.entity';
+import { RaceAnalysisCache } from '../database/entities/race-analysis-cache.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
@@ -88,6 +90,8 @@ export class PredictionsService {
     private readonly trainingRepo: Repository<Training>,
     @InjectRepository(RaceDividend)
     private readonly dividendRepo: Repository<RaceDividend>,
+    @InjectRepository(RaceAnalysisCache)
+    private readonly analysisCacheRepo: Repository<RaceAnalysisCache>,
     private readonly analysisService: AnalysisService,
     private readonly configService: GlobalConfigService,
     private readonly notificationsService: NotificationsService,
@@ -538,6 +542,7 @@ export class PredictionsService {
   async generateRaceCommentary(
     raceId: number,
     type: 'pre-race' | 'post-race',
+    force = false,
   ): Promise<void> {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return;
@@ -547,13 +552,13 @@ export class PredictionsService {
 
     // Skip if commentary of this type already exists
     const existingCommentary = race.commentary;
-    if (type === 'pre-race' && existingCommentary?.preRace) {
+    if (!force && type === 'pre-race' && existingCommentary?.preRace) {
       this.logger.log(
         `Pre-race commentary already exists for race ${raceId}, skipping`,
       );
       return;
     }
-    if (type === 'post-race' && existingCommentary?.postRace) {
+    if (!force && type === 'post-race' && existingCommentary?.postRace) {
       this.logger.log(
         `Post-race commentary already exists for race ${raceId}, skipping`,
       );
@@ -1633,6 +1638,34 @@ export class PredictionsService {
     const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
     const { horseScores: horseScoreResult, cascadeFallRisk } =
       await this.runPythonScript(scriptPath, raceWithSectional);
+
+    // Cache Python sub-scores for factor weight validation (validate_weights.py)
+    try {
+      const scoreHash = crypto
+        .createHash('sha256')
+        .update(JSON.stringify(raceWithSectional))
+        .digest('hex')
+        .slice(0, 16);
+      const cachedScores = await this.analysisCacheRepo.findOne({
+        where: { raceId, analysisType: 'scores' },
+      });
+      if (cachedScores) {
+        cachedScores.dataHash = scoreHash;
+        cachedScores.result = { scores: horseScoreResult } as unknown as Record<string, unknown>;
+        await this.analysisCacheRepo.save(cachedScores);
+      } else {
+        await this.analysisCacheRepo.save(
+          this.analysisCacheRepo.create({
+            raceId,
+            analysisType: 'scores',
+            dataHash: scoreHash,
+            result: { scores: horseScoreResult } as unknown as Record<string, unknown>,
+          }),
+        );
+      }
+    } catch {
+      // Cache failure should not block prediction generation
+    }
 
     let jockeyAnalysis: {
       entriesWithScores?: Array<{

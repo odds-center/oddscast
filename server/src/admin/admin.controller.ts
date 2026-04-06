@@ -29,6 +29,7 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { WeeklyPreviewService } from '../weekly-preview/weekly-preview.service';
+import { PredictionsService } from '../predictions/predictions.service';
 import { UpdateUserDto } from '../users/dto/user.dto';
 import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
@@ -50,6 +51,7 @@ export class AdminController {
     private readonly predictionTicketsService: PredictionTicketsService,
     private readonly activityLogsService: ActivityLogsService,
     private readonly weeklyPreviewService: WeeklyPreviewService,
+    private readonly predictionsService: PredictionsService,
   ) {}
 
   /** Write SSE event (progress or done). */
@@ -786,5 +788,17 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] Get latest weekly preview' })
   async getLatestWeeklyPreview() {
     return this.weeklyPreviewService.getLatest();
+  }
+
+  // --- AI Commentary ---
+
+  @Post('predictions/:raceId/regenerate-commentary')
+  @ApiOperation({ summary: '[Admin] Force-regenerate AI race commentary for a specific race' })
+  async regenerateCommentary(
+    @Param('raceId', ParseIntPipe) raceId: number,
+    @Query('type') type: 'pre-race' | 'post-race' = 'pre-race',
+  ) {
+    await this.predictionsService.generateRaceCommentary(raceId, type, true);
+    return { success: true, message: `Commentary (${type}) regenerated for race ${raceId}` };
   }
 }

@@ -448,6 +448,23 @@ export class AdminAIApi {
     }
   }
 
+  /** [Admin] Force-regenerate AI race commentary for a race */
+  static async regenerateCommentary(
+    raceId: number,
+    type: 'pre-race' | 'post-race' = 'pre-race',
+  ): Promise<{ success: boolean; message: string }> {
+    try {
+      const response = await axiosInstance.post(
+        `/predictions/${raceId}/regenerate-commentary`,
+        {},
+        { params: { type } },
+      );
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
   /**
    * [Admin] 미생성 예측 일괄 생성 (SSE 진행률 스트림).
    * onProgress receives progress events and final { done: true, ...result }.

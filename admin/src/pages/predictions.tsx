@@ -135,6 +135,14 @@ export default function PredictionsListPage() {
     },
   });
 
+  const regenCommentaryMutation = useMutation({
+    mutationFn: ({ raceId, type }: { raceId: number; type: 'pre-race' | 'post-race' }) =>
+      AdminAIApi.regenerateCommentary(raceId, type),
+    onSuccess: (_, vars) =>
+      toast.success(`해설 재생성 완료 (${vars.type === 'pre-race' ? '경주 전' : '경주 후'})`),
+    onError: (err: Error) => toast.error(err.message || '해설 재생성 실패'),
+  });
+
   const handleForDateGenerate = () => {
     const date = forDateDate.replace(/-/g, '').slice(0, 8);
     if (!date) {
@@ -229,6 +237,38 @@ export default function PredictionsListPage() {
       header: '생성 일시',
       className: 'min-w-[140px]',
       render: (row: PredictionRow) => formatDateTime(row.createdAt),
+    },
+    {
+      key: 'actions',
+      header: '해설',
+      className: 'w-32',
+      render: (row: PredictionRow) => {
+        const raceId = row.race?.id;
+        if (!raceId) return null;
+        const isLoading = regenCommentaryMutation.isPending;
+        return (
+          <div className='flex gap-1'>
+            <Button
+              size='sm'
+              variant='ghost'
+              disabled={isLoading}
+              onClick={() => regenCommentaryMutation.mutate({ raceId, type: 'pre-race' })}
+              title='경주 전 해설 재생성'
+            >
+              전
+            </Button>
+            <Button
+              size='sm'
+              variant='ghost'
+              disabled={isLoading}
+              onClick={() => regenCommentaryMutation.mutate({ raceId, type: 'post-race' })}
+              title='경주 후 해설 재생성'
+            >
+              후
+            </Button>
+          </div>
+        );
+      },
     },
   ];
 

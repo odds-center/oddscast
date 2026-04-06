@@ -8,6 +8,7 @@ import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { Training } from '../database/entities/training.entity';
 import { RaceDividend } from '../database/entities/race-dividend.entity';
+import { RaceAnalysisCache } from '../database/entities/race-analysis-cache.entity';
 import { PredictionsService } from './predictions.service';
 import { PredictionsController } from './predictions.controller';
 import { PredictionsScheduler } from './predictions.scheduler';
@@ -26,6 +27,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
       JockeyResult,
       Training,
       RaceDividend,
+      RaceAnalysisCache,
     ]),
     AnalysisModule,
     GlobalConfigModule,

@@ -1,5 +1,6 @@
 # Multi-stage build for NestJS server (monorepo: needs shared package).
 # Build from repo root: docker build -f server/Dockerfile .
+# cache-bust: 2026-04-06
 #
 # Stage 1 (build): install all deps, compile TS
 # Stage 2 (deps):  install production-only deps

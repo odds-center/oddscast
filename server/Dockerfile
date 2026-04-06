@@ -33,7 +33,7 @@ FROM node:24-alpine AS prod
 
 # pnpm required by Railway (reads packageManager from package.json)
 RUN corepack enable && corepack prepare pnpm@latest --activate
-# Python for analysis scripts + LightGBM (libgomp required for OpenMP threading)
+# Python for analysis scripts + LightGBM/XGBoost (libgomp required for OpenMP threading)
 RUN apk add --no-cache python3 py3-numpy py3-pandas py3-pip libgomp && \
     pip3 install --no-cache-dir --break-system-packages lightgbm xgboost
 WORKDIR /app

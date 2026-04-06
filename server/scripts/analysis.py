@@ -1,12 +1,47 @@
 """
-KRA 경마 예측 분석 v3 — 정규화·변수 보강·토큰 최적화
-- 모든 하위 점수 0~100 정규화
-- 가중치 합 = 1.0 (경마 학술 연구 기반 배분, v3: 11 factors)
-- v2 → v3: 휴식기간(rest), 거리별성적(distance), 클래스변경(class_change),
-  조교메트릭(training_readiness) 추가 — 기존 7요소에서 11요소로 확장
-- 낙마 리스크 → 감점 적용 (별도 출력도 유지)
-- softmax 승률 확률 산출
-- compact tags 출력 (토큰 절감)
+KRA 경마 예측 분석 v4 — 15요소 정규화·LightGBM 블렌드
+
+Factor inventory (15 total, all normalized 0-100):
+  1.  rating          — KRA 공식 레이팅 (sigmoid relative + log absolute blend)
+  2.  form            — 최근 5경주 착순 가중평균 + 기세(추이) + 레이팅 추이
+  3.  condition       — 마체중 변화 + 연령 + 부담중량 + 성별 보정
+  4.  experience      — 총 출전 횟수(log scale) + 통산 승률
+  5.  suitability     — 각질(선행/추입)×거리×주로상태 적합도
+  6.  trainer         — 조교사 통산 승률 + 복승률 (TrainerResult API)
+  7.  jockey          — 경마장별 기수 승률/복승률 (meet-specific preferred over career-wide)
+  8.  rest            — 최종 출전일로부터 경과일수 (21-42일 최적 구간)
+  9.  distance        — 현재 경주 거리 브래킷에서의 과거 성적(승률+복승률)
+  10. class_change    — 등급 변동 (하향: 유리, 상향: 불리)
+  11. training_readiness — 조교 세션수·강도·최신성 (Training 테이블)
+  12. same_day_fatigue   — 당일 다경주 누적 피로 (sameDayRacesBefore)
+  13. gate_bias          — 출발 게이트 위치 편향 (경마장·거리·출전두수 가중)
+  14. field_size         — 출전두수에 따른 혼잡도·레이팅 우위 효과
+  15. pace_scenario      — 선행마 비율 기반 페이스 전개 예측 (선행/추입 유불리)
+
+WEIGHT CALIBRATION NOTE:
+  W_HORSE values below are heuristic starting points, not statistically-derived coefficients.
+  They were set based on qualitative domain knowledge and iterative manual tuning.
+  To improve prediction accuracy, these should be validated via:
+    - Logistic regression on historical KRA results (top-3 finish as target variable)
+    - LightGBM feature importance from the optional model.pkl blend
+    - Walk-forward validation: train on past seasons, evaluate on most recent season
+  The LightGBM blend (60% rule-based + 40% model) partially compensates, but the
+  rule-based weights still dominate when model.pkl is absent (Railway/Docker default).
+
+MISSING FACTOR (identified gap, not yet implemented):
+  track_condition_history — per-horse win/place rate on wet (불·습·중) vs dry (양호) track.
+  Currently _suitability_score uses only the running-style × track bias (선행 loses on wet).
+  A dedicated factor using historical results filtered by rcCondition would capture horses
+  that consistently outperform on off-track conditions, independent of running style.
+  Data source: race_results JOIN races WHERE races.track IN ('불','습','중').
+  Suggested weight: 0.03 (shift 0.01 each from condition and suitability).
+
+Changes in v4 (2026):
+  - Added gate_bias (0.05), field_size (0.02), pace_scenario (0.02)
+  - Added same_day_fatigue (0.02)
+  - Rebalanced: form 0.20→0.18, condition 0.09→0.07, jockey 0.11→0.13,
+    class_change 0.03→0.05
+  - Added optional LightGBM blend (model.pkl): 60% rule + 40% model
 """
 import sys
 import json
@@ -25,9 +60,10 @@ if os.path.exists(_MODEL_PATH):
     except Exception:
         _lgb_bundle = None
 
-# ─── 말+기수 통합 가중치 (합 = 1.0) ───
-# v4: 15 factors (v3.1 + gate_bias, field_size, pace_scenario)
-# Rebalanced: form↑ rating↓ jockey↑ to reflect actual KRA predictive power
+# ─── Horse factor weights (sum = 1.0) ───
+# v4: 15 factors. See module docstring for factor descriptions and calibration notes.
+# IMPORTANT: These weights are heuristic, not statistically validated.
+# See WEIGHT CALIBRATION NOTE in the module docstring for validation approach.
 W_HORSE = {
     'rating': 0.17,
     'form': 0.18,       # 0.20 → 0.18: form alone can be noisy over 1 race

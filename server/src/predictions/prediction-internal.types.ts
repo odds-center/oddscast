@@ -207,10 +207,19 @@ export interface GeminiPredictionJson {
       strengths?: string[];
       weaknesses?: string[];
       confidence?: string;
+      /** Top 2-3 factors most decisive for this horse's prediction (CoT metadata). */
+      keyFactors?: string[];
+      /** User-facing one-sentence confidence explanation without raw numbers. */
+      confidenceExplanation?: string;
     }>;
   };
   /** 승식별 별도 AI 예측 — 각 승식마다 구체적 추천 */
   betTypePredictions?: BetTypePredictions;
   analysis?: string;
   preview?: string;
+  /**
+   * Chain-of-Thought summary: 2-3 sentence reasoning for the overall prediction.
+   * Race-level (not per horse). Populated by buildRacePredictionPrompt CoT template.
+   */
+  reasoning?: string;
 }

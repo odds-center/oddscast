@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Brackets, Repository } from 'typeorm';
 import { PredictionStatus, RaceStatus } from '../database/db-enums';
@@ -45,6 +45,8 @@ type ResultWithRace = Record<string, unknown> & {
 
 @Injectable()
 export class ResultsService {
+  private readonly logger = new Logger(ResultsService.name);
+
   constructor(
     @InjectRepository(RaceResult)
     private readonly resultRepo: Repository<RaceResult>,
@@ -341,6 +343,15 @@ export class ResultsService {
       if (actualTop.includes(predictedOrder[i]!)) matchCount++;
     }
     const accuracy = topN > 0 ? (matchCount / topN) * 100 : 0;
+
+    // Evaluation logger: structured output for tracking prediction accuracy over time.
+    // Format: [EVAL] Race {raceId}: predicted {top3}, actual {top3}, match={n}/{topN}
+    // Used to measure Gemini prediction quality without requiring a separate monitoring system.
+    const predictedTop3 = predictedOrder.slice(0, 3).join(',');
+    const actualTop3 = actualTop.join(',');
+    this.logger.log(
+      `[EVAL] Race ${raceId}: predicted [${predictedTop3}], actual [${actualTop3}], match=${matchCount}/${topN}, accuracy=${Math.round(accuracy)}%`,
+    );
 
     await this.predictionRepo.update(prediction.id, {
       accuracy,

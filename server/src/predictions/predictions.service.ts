@@ -35,6 +35,10 @@ import type {
   BetTypePredictions,
 } from './prediction-internal.types';
 import { todayKstYyyymmdd, kst } from '../common/utils/kst';
+import {
+  buildRacePredictionPrompt,
+  buildPostRacePrompt,
+} from './prompts/race-prediction.prompts';
 
 /** Thrown when a generatePrediction call finds a PROCESSING row for the same race+entriesHash. */
 export class PredictionInProgressException extends Error {
@@ -486,14 +490,14 @@ export class PredictionsService {
         : 0;
     const { meet, rcDate, rcNo } = prediction.race;
 
-    const prompt = `다음 경주 결과와 AI 예측을 바탕으로 2~3문장의 경주 후 분석 요약을 한국어로 작성해 주세요. 감탄사나 과장 없이 사실 위주로.
-
-경주: ${meet} ${rcDate} ${rcNo}경주
-실제 결과(상위3): ${topResults || '-'}
-AI 예측 순위: ${predictedTop || '-'}
-예측 적중률: ${acc}%
-
-요약:`;
+    const prompt = buildPostRacePrompt({
+      meet,
+      rcDate,
+      rcNo,
+      topResults: topResults || '-',
+      predictedTop: predictedTop || '-',
+      accuracy: acc,
+    });
 
     try {
       const { GoogleGenerativeAI } = await import('@google/generative-ai');
@@ -2721,6 +2725,14 @@ AI 예측 순위: ${predictedTop || '-'}
     return computeWinProbabilitiesUtil(scores);
   }
 
+  /**
+   * Constructs the Gemini prediction prompt using the dedicated template from
+   * server/src/predictions/prompts/race-prediction.prompts.ts.
+   *
+   * Uses Chain-of-Thought (CoT) structure with two few-shot examples so that
+   * Gemini reasons step-by-step before producing the final JSON output.
+   * Output now includes `keyFactors`, `confidenceExplanation`, and `reasoning` fields.
+   */
   private constructPrompt(
     race: RaceForPython,
     horseAnalysis: HorseAnalysisItem[] | unknown,
@@ -2854,104 +2866,35 @@ AI 예측 순위: ${predictedTop || '-'}
       if (probs[i] != null) compactEntries[i].wp = probs[i];
     }
 
-    const raceCtx: Record<string, unknown> = {
-      meet: race.meetName ?? race.meet,
-      date: race.rcDate,
-      no: race.rcNo,
-      dist: race.rcDist,
-      rank: race.rank,
-      weather: race.weather ?? '미상',
-      track: race.track ?? '미상',
-    };
-    if (cascadeFallRisk != null && cascadeFallRisk >= 10) {
-      raceCtx.cascade = cascadeFallRisk;
-    }
-
     const topJ = jockeyAnalysis?.topPickByJockey;
     const weightH = Math.round(wH * 100);
     const weightJ = Math.round(wJ * 100);
 
-    const realtimeSection = realtime
-      ? `
-## 실시간 분석 (개별예측)
-이 분석은 경주 직전 최신 KRA 데이터를 반영한 실시간 개별예측입니다.
-- wg 필드는 당일 마체중(kg, 증감 포함). 체중 급변(-10kg이상 감소 또는 +8kg이상 증가)은 컨디션 이상 신호.
-- 날씨·주로상태는 당일 실시간 기상 반영. 우천시 습주로 경험마 우선 평가.
-- 배당률이 있으면 시장 평가와 모델 평가의 괴리를 분석해 저평가마(가치마) 발굴.
-- 종합예측보다 더 깊고 구체적인 분석을 제공할 것. analysis는 8~12문장으로 상세하게.
-`
-      : '';
+    // Build the typed race context for the prompt template
+    const raceCtxForPrompt = {
+      meet: (race.meet ?? '') as string,
+      rcDate: (race.rcDate ?? '') as string,
+      rcNo: (race.rcNo ?? '') as string,
+      rcDist: race.rcDist ?? null,
+      rank: race.rank ?? null,
+      weather: race.weather ?? '미상',
+      track: race.track ?? '미상',
+      ...(cascadeFallRisk != null && cascadeFallRisk >= 10
+        ? { cascadeFallRisk }
+        : {}),
+    };
 
-    return `# 역할
-당신은 30년 경력의 한국경마 전문 예측분석가입니다. 한국마사회(KRA) 서울·부산·제주 3개 경마장의 경주 패턴, 기수 성향, 마필 혈통·기질, 주로 특성을 모두 숙지하고 있습니다.
-Python 통계모델(12요소 정규화 0~100)의 수치 분석을 기반으로, 데이터만으로는 포착할 수 없는 전문가적 통찰을 더해 최종 예측을 완성합니다.
+    // Build compact entries array for the prompt template
+    // (compactEntries is already built above and has the correct shape)
 
-# 입력 데이터
-가중치: 말${weightH}% / 기수${weightJ}%${topJ ? ` | 기수 최고점: ${topJ.hrName}(${topJ.jkName}, ${Math.round(topJ.jockeyScore)}점)` : ''}
-
-## 경주 정보
-${JSON.stringify(raceCtx)}
-
-## 출전마 데이터
-필드 설명: n=출전번호, h=마명, j=기수, fs=통합점수(말+기수+배당), wp=승률확률%, hs=말점수, js=기수점수
-sub=[rat레이팅, frm폼/기세, cnd컨디션, exp경험, trn조교사, suit적합도, jky기수, rest휴식, dist거리적성, cls등급변동, trng조교상태, sdf당일피로, gate게이트, fsz출전두수, pace전개]
-r=KRA레이팅, wg=마체중(증감), rk=최근5경주착순, risk=낙마리스크(0~100), t=특이사항태그
-${JSON.stringify(compactEntries)}
-${realtimeSection}
-# 분석 프레임워크 (이 순서로 분석할 것)
-
-## 1단계: 경주 구조 분석
-- **페이스 판단**: 선행마(sub[5]suit 높고 t에 "선행" 포함) 비율 → 선행마 3마리 이상이면 오버페이스 가능성 → 추입마 유리
-- **거리 적합성**: ${Number(race.rcDist) <= 1200 ? '단거리(스피드·게이트 반응 중시)' : Number(race.rcDist) <= 1600 ? '마일(스피드+지구력 균형)' : Number(race.rcDist) >= 1800 ? '중장거리(지구력·페이스배분·추입각질 유리)' : '중거리(밸런스)'}
-- **주로·날씨**: ${race.track === '불' || race.track === '습' ? '불량/습주로 — 선행마 미끄러짐 위험, 중위·후방 추입마에게 유리. 발잡음 좋은 마필 선호' : race.track === '중' ? '약간 습한 주로 — 선행마 소폭 불리, 경험 많은 마필 유리' : '양호 주로 — 정상 조건'}
-- **경마장 특성**: ${race.meetName === '서울' || race.meet === 'SEOUL' ? '서울(좌회전, 잔디 1800m 주로) — 코너워크 능력 중요, 내측 주로 유불리 있음' : race.meetName === '부산경남' || race.meet === 'BUSAN' ? '부산(좌회전, 모래 1500m 주로) — 직선 짧아 선행마 유리 경향, 게이트 반응 중요' : '제주(좌회전, 모래 1200m 주로) — 소규모 경마장, 선행마 압도적 유리'}
-
-## 2단계: 말별 정밀 분석 (fs·sub·rk·risk 종합)
-각 말에 대해:
-- **레이팅(rat)+폼(frm)** 조합: 고레이팅+상승폼 = 핵심 우승후보. 고레이팅+하락폼 = 슬럼프 주의
-- **최근착순(rk)**: [1,2,3...]이면 상승세. [8,7,6...]이면 하락세. 최근 1경주가 가장 중요
-- **컨디션(cnd)+마체중(wg)**: 체중 ±2kg 이내 = 안정. 급감(-5kg↓) = 컨디션 이상 의심
-- **기수(jky)+기수점수(js)**: 해당 경마장 실적이 핵심. 타장 이적 기수는 주로 적응 필요
-- **휴식(rest)**: 21~42일 최적. 14일 미만 = 피로, 90일+ = 실전감각 부족
-- **등급(cls)**: "등급↓유리" 태그 = 하위 클래스로 내려가 경쟁력 우위
-- **낙마(risk)**: 30 이상이면 반드시 약점에 언급. 50+ = 심각한 리스크
-
-## 3단계: 가치마(value) 식별
-배당률이 제공된 경우, 모델 wp(%)와 시장 내재 확률(1/배당)을 비교하라.
-- **모델 wp > 시장 내재 확률**: 시장이 저평가한 말 → 실제 승률 대비 배당이 높음 → 가치마
-- **모델 wp < 시장 내재 확률**: 시장이 과대평가 → 인기마라도 배당 대비 기대값 낮음
-- 가치마가 존재하면 SINGLE·QUINELLA·TRIFECTA 예측에서 우선 고려할 것.
-- 배당률 미제공 시 이 단계는 생략.
-
-## 4단계: 승부 예측
-- **단승(SINGLE)**: 1위 최유력 후보. fs·wp 최상위이되 페이스·주로 적합성·가치마 여부까지 고려
-- **연승(PLACE)**: 3위 이내 가능한 안정적 후보 (폼 안정+경험 풍부한 말)
-- **쌍승(QUINELLA)**: 1·2위 조합 (순서 무관). 상위 2마리의 시너지와 페이스 전개 고려
-- **복승(EXACTA)**: 1위→2위 순서 지정. 선행마 vs 추입마 역전 가능성 분석
-- **복연(QUINELLA_PLACE)**: 상위 3마리 중 2마리 조합
-- **삼복(TRIFECTA)**: 1·2·3위 조합 (순서 무관). 안정권 3마리
-- **삼쌍(TRIPLE)**: 1위→2위→3위 순서. 가장 어려운 예측 — 변수·이변 고려
-★ 점수 1~3위 그대로 나열하지 말 것. 페이스 전개·이변·가치마·역전 가능성을 반영해 전략적 조합 추천.
-★ 상위 fs 말이 명확하지 않은 경우(상위 3마리 fs 차이 <5p), 반드시 이변 가능성을 높게 보고 분석할 것.
-
-## 5단계: confidence 판정 기준
-- "높음": wp 30%+ 이고 sub 대부분 60+ 이고 risk<20. 압도적 우위마
-- "보통": wp 15~30% 또는 강점과 약점이 혼재. 경쟁 가능한 마
-- "낮음": wp <15% 또는 risk 30+ 또는 핵심 요소(rat·frm) 하위권
-
-# 출력 규칙
-- reason: 해당 말의 핵심 포인트 1문장 (데이터 근거 + 전문가 판단). 말마다 다른 표현 사용.
-- strengths: 강점 1~2개. 구체적 수치 포함 (예: "레이팅 82로 출전마 중 최고", "최근3연속 3위내 입선")
-- weaknesses: 약점/리스크 1개. risk 30+ → 반드시 낙마위험 언급.
-- analysis: 경주 전체 흐름을 서사적으로 분석. ${realtime ? '8~12' : '6~10'}문장. 숫자만 나열 금지.
-  ★ 필수 포함: ①페이스전개 시나리오 ②핵심변수(날씨·주로·게이트순서) ③승부포인트 ④이변가능성
-  ${(cascadeFallRisk ?? 0) >= 20 ? '★ cascade=' + cascadeFallRisk + ' — 연쇄낙마 가능성을 analysis에 반드시 언급' : ''}
-- preview: 단승식 1위 예상마 중심 2~3문장. 다른 승식 언급 금지.
-- 7승식 모두 출력. hrNo에는 출전번호(n값)를 사용.
-- score: fs값을 기반으로 하되, 전문가 판단으로 ±5점 이내 조정 가능 (조정 이유를 reason에 명시)
-
-# 출력 형식 (JSON만, 다른 텍스트 없이)
-{"scores":{"horseScores":[{"hrNo":"","hrName":"","score":0,"reason":"","strengths":[""],"weaknesses":[""],"confidence":"높음|보통|낮음"}]},"betTypePredictions":{"SINGLE":{"hrNo":"","reason":""},"PLACE":{"hrNo":"","reason":""},"QUINELLA":{"hrNos":["",""],"reason":""},"EXACTA":{"first":"","second":"","reason":""},"QUINELLA_PLACE":{"hrNos":["",""],"reason":""},"TRIFECTA":{"hrNos":["","",""],"reason":""},"TRIPLE":{"first":"","second":"","third":"","reason":""}},"analysis":"","preview":""}`;
+    return buildRacePredictionPrompt({
+      raceCtx: raceCtxForPrompt,
+      compactEntries: compactEntries as unknown as import('./prompts/race-prediction.prompts').HorseCompactEntry[],
+      weightH,
+      weightJ,
+      topJockey: topJ as { hrName: string; jkName: string; jockeyScore: number } | null | undefined,
+      realtime,
+    });
   }
 
   private parseGeminiResponse(text: string): GeminiPredictionJson {
@@ -3301,11 +3244,18 @@ ${realtimeSection}
           hrName: py.hrName ?? gemini.hrName ?? '',
           score: py.score, // Python score is authoritative
           winProb: py.winProb,
-          // Gemini narrative overlaid
+          // Gemini narrative overlaid (including new CoT metadata fields)
           reason: gemini.reason ?? py.reason ?? '',
           strengths: gemini.strengths ?? [],
           weaknesses: gemini.weaknesses ?? [],
           confidence: gemini.confidence ?? '',
+          // New fields from CoT prompt: preserve when Gemini returns them
+          ...(Array.isArray(gemini.keyFactors) && gemini.keyFactors.length
+            ? { keyFactors: gemini.keyFactors }
+            : {}),
+          ...(typeof gemini.confidenceExplanation === 'string' && gemini.confidenceExplanation
+            ? { confidenceExplanation: gemini.confidenceExplanation }
+            : {}),
         };
       });
     } else {
@@ -3321,10 +3271,17 @@ ${realtimeSection}
       });
     }
 
+    // Preserve top-level reasoning from CoT prompt (race-level, not per horse)
+    const geminiReasoning = typeof (base as GeminiPredictionJson).reasoning === 'string'
+      ? (base as GeminiPredictionJson).reasoning
+      : undefined;
+
     return {
       ...base,
       horseScores: hs,
       betTypePredictions: normalizedBet,
+      // CoT reasoning field (2-3 sentences summarizing why this prediction was made)
+      ...(geminiReasoning ? { reasoning: geminiReasoning } : {}),
       analysisData: {
         horseScoreResult: safeHorseResult,
         jockeyAnalysis: jockeyAnalysis

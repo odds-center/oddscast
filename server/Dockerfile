@@ -1,10 +1,10 @@
 # Multi-stage build for NestJS server (monorepo: needs shared package).
 # Build from repo root: docker build -f server/Dockerfile .
-# cache-bust: 2026-04-06
+# cache-bust: 2026-04-06b
 #
-# Stage 1 (build): install all deps, compile TS
-# Stage 2 (deps):  install production-only deps
-# Stage 3 (prod):  copy compiled output + prod deps + python
+# Stage 1 (build): install all deps, compile TS  [node:24-alpine]
+# Stage 2 (deps):  install production-only deps   [node:24-alpine]
+# Stage 3 (prod):  runtime + python + lightgbm    [node:24-slim / glibc — pre-built wheels]
 
 # ── Stage 1: Build ──
 FROM node:24-alpine AS build
@@ -30,13 +30,17 @@ COPY shared/package.json shared/
 RUN pnpm install --frozen-lockfile --prod
 
 # ── Stage 3: Production runtime ──
-FROM node:24-alpine AS prod
+# Use node:24-slim (Debian/glibc) so lightgbm pre-built wheels install without a C compiler.
+# Alpine (musl libc) has no pre-built lightgbm musllinux wheels and requires cmake to compile.
+FROM node:24-slim AS prod
 
 # pnpm required by Railway (reads packageManager from package.json)
 RUN corepack enable && corepack prepare pnpm@latest --activate
-# Python for analysis scripts + LightGBM/XGBoost (libgomp required for OpenMP threading)
-RUN apk add --no-cache python3 py3-numpy py3-pandas py3-pip libgomp && \
-    pip3 install --no-cache-dir --break-system-packages --prefer-binary lightgbm
+# Python for analysis scripts + LightGBM (libgomp1 required for OpenMP threading)
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3 python3-numpy python3-pandas python3-pip libgomp1 && \
+    rm -rf /var/lib/apt/lists/* && \
+    pip3 install --no-cache-dir --break-system-packages lightgbm
 WORKDIR /app
 
 # Production node_modules from deps stage

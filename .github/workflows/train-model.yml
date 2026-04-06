@@ -1,12 +1,12 @@
-name: Train LightGBM Model
+name: Train Prediction Model
 
 on:
   workflow_dispatch:
     inputs:
-      min_samples:
-        description: 'Minimum training samples required (default: 100)'
+      branch:
+        description: 'Branch to commit model.pkl to'
         required: false
-        default: '100'
+        default: 'master'
 
 jobs:
   train:
@@ -15,6 +15,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.inputs.branch || 'master' }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - uses: actions/setup-python@v5
@@ -40,8 +41,8 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add server/scripts/model.pkl
           if git diff --cached --quiet; then
-            echo "No model changes."
+            echo "Model unchanged — nothing to commit."
           else
-            git commit -m "chore: update trained LightGBM model [skip ci]"
+            git commit -m "chore: update trained prediction model (LightGBM/XGBoost) [skip ci]"
             git push
           fi

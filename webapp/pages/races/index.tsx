@@ -24,6 +24,13 @@ const RACES_PER_PAGE = 20;
 const RACE_DAYS = [5, 6, 0]; // Fri, Sat, Sun (KST)
 const LIVE_REFETCH_MS = 5 * 60 * 1000;
 
+/** Returns Tailwind color classes for rank badge text based on placement (ord = '1'|'2'|'3') */
+function getRankStyle(ord: string): { rankCls: string; nameCls: string } {
+  if (ord === '1') return { rankCls: 'text-amber-500', nameCls: 'text-primary font-bold' };
+  if (ord === '2') return { rankCls: 'text-stone-400', nameCls: 'text-stone-700 font-semibold' };
+  return { rankCls: 'text-stone-300', nameCls: 'text-stone-500 font-semibold' };
+}
+
 interface InlineResult {
   ord: string;
   chulNo?: string;
@@ -101,7 +108,7 @@ export default function RacesPage() {
 
   useEffect(() => {
     if (!isLoggedIn || hasAppliedFavoriteMeet.current || qMeet) return;
-    const fav = (currentUser as { favoriteMeet?: string | null })?.favoriteMeet;
+    const fav = currentUser?.favoriteMeet;
     if (fav && ['서울', '제주', '부산경남'].includes(fav)) {
       hasAppliedFavoriteMeet.current = true;
       router.replace(
@@ -263,14 +270,7 @@ export default function RacesPage() {
                     {(['1', '2', '3'] as const).map((ord) => {
                       const r = raceResults.find((x) => x.ord === ord);
                       if (!r) return null;
-                      const nameCls =
-                        ord === '1'
-                          ? 'text-primary font-bold'
-                          : ord === '2'
-                            ? 'text-stone-700 font-semibold'
-                            : 'text-stone-500 font-semibold';
-                      const rankCls =
-                        ord === '1' ? 'text-amber-500' : ord === '2' ? 'text-stone-400' : 'text-stone-300';
+                      const { rankCls, nameCls } = getRankStyle(ord);
                       return (
                         <span key={ord} className='inline-flex items-center gap-1 text-sm'>
                           <span className={`text-xs font-bold w-5 shrink-0 ${rankCls}`}>{ord}위</span>

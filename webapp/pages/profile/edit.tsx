@@ -78,8 +78,8 @@ export default function ProfileEditPage() {
   };
 
   const onPasswordSubmit = (data: PasswordForm) => {
-    if (data.newPassword !== data.newPasswordConfirm) return;
-    if (data.newPassword.length < 6) return;
+    // Validation is handled by react-hook-form rules (minLength, validate).
+    // This callback is only reached when all rules pass.
     passwordMutation.mutate({ oldPassword: data.currentPassword, newPassword: data.newPassword });
   };
 

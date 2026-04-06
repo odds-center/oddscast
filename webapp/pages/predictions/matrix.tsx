@@ -418,8 +418,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   const dateFilter = query?.date ?? 'today';
   const meetFilter = query?.meet ?? '';
   const apiDate = getDateParam(dateFilter);
-  const kstToday = dayjsKST().format('YYYY-MM-DD');
-  const apiDateStr = apiDate ?? kstToday;
+  const kst = getTodayKstDate();
+  const apiDateStr = apiDate ?? `${kst.year}-${String(kst.month).padStart(2, '0')}-${String(kst.day).padStart(2, '0')}`;
 
   const queryClient = new QueryClient();
   try {

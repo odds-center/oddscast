@@ -6,8 +6,8 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
-import { Button } from '@/components/ui/button';
 import HomeSection from './HomeSection';
+import DataFetchState from '@/components/page/DataFetchState';
 import { routes } from '@/lib/routes';
 import Icon from '@/components/icons';
 import { getTodayKstDate } from '@/lib/utils/format';
@@ -73,18 +73,16 @@ export default function WeekRacesSection() {
       viewAllLabel='더보기'
       badge={races.length > 0 ? `${races.length}경` : undefined}
     >
-      {isLoading ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>준비 중...</div>
-      ) : error ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>
-          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
-            다시 시도
-          </Button>
-        </div>
-      ) : races.length === 0 ? (
-        <WeekdayTipsView />
-      ) : (
+      <DataFetchState
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => refetch()}
+        loadingLabel='준비 중...'
+      >
+        {/* When no races this week, show rotating racing tips instead of empty state */}
+        {races.length === 0 ? (
+          <WeekdayTipsView />
+        ) : (
         <>
           {/* Mobile: card list */}
           <div className='block sm:hidden divide-y divide-border -mx-0.5'>
@@ -163,7 +161,8 @@ export default function WeekRacesSection() {
             />
           </div>
         </>
-      )}
+        )}
+      </DataFetchState>
     </HomeSection>
   );
 }

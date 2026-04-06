@@ -5,8 +5,8 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import Link from 'next/link';
 import PredictionMatrixApi from '@/lib/api/predictionMatrixApi';
 import type { MatrixRowDto } from '@/lib/api/predictionMatrixApi';
-import { Button } from '@/components/ui/button';
 import HomeSection from './HomeSection';
+import DataFetchState from '@/components/page/DataFetchState';
 import { routes } from '@/lib/routes';
 function HorseBadge({ no, name }: { no: string; name?: string }) {
   const display = name || no;
@@ -31,18 +31,15 @@ export default function PredictionMatrixPreviewSection() {
       viewAllLabel='더보기'
       badge={rows.length > 0 ? `${rows.length}경` : undefined}
     >
-      {isLoading ? (
-        <div className='py-6 text-center text-stone-400 text-sm'>예상표 준비 중...</div>
-      ) : error ? (
-        <div className='py-6 text-center text-text-secondary text-sm'>
-          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
-            다시 시도
-          </Button>
-        </div>
-      ) : rows.length === 0 ? (
-        <div className='py-6 text-center text-stone-400 text-sm'>오늘 예상 정보가 없습니다.</div>
-      ) : (
+      <DataFetchState
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => refetch()}
+        isEmpty={rows.length === 0}
+        emptyIcon='BarChart2'
+        emptyTitle='오늘 예상 정보가 없습니다'
+        loadingLabel='예상표 준비 중...'
+      >
         <ul className='divide-y divide-border'>
           {rows.map((row: MatrixRowDto) => (
             <li key={row.raceId}>
@@ -67,7 +64,7 @@ export default function PredictionMatrixPreviewSection() {
             </li>
           ))}
         </ul>
-      )}
+      </DataFetchState>
     </HomeSection>
   );
 }

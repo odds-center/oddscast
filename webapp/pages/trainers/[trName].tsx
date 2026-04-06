@@ -114,11 +114,14 @@ export default function TrainerProfilePage() {
             )}
 
             <SectionCard title='경주 이력' icon='ClipboardList' description='조교사 출주 경기 목록'>
-              {historyLoading && !historyData ? (
-                <p className='text-sm text-text-secondary py-4'>불러오는 중...</p>
-              ) : historyItems.length === 0 ? (
-                <p className='text-sm text-text-secondary py-4'>경주 이력이 없습니다.</p>
-              ) : (
+              <DataFetchState
+                isLoading={historyLoading && !historyData}
+                error={null}
+                isEmpty={historyItems.length === 0}
+                emptyIcon='ClipboardList'
+                emptyTitle='경주 이력이 없습니다'
+                loadingLabel='불러오는 중...'
+              >
                 <>
                   {/* Mobile: card list */}
                   <div className='block sm:hidden divide-y divide-border rounded-xl border border-border overflow-hidden'>
@@ -206,7 +209,7 @@ export default function TrainerProfilePage() {
                     className='mt-4'
                   />
                 </>
-              )}
+              </DataFetchState>
             </SectionCard>
           </>
         )}

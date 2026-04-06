@@ -6,7 +6,7 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import ResultApi from '@/lib/api/resultApi';
 import type { RaceResult } from '@/lib/api/resultApi';
-import { Button } from '@/components/ui/button';
+import DataFetchState from '@/components/page/DataFetchState';
 import {
   Table,
   TableHeader,
@@ -102,18 +102,15 @@ export default function RecentResultsSection() {
       viewAllLabel='더보기'
       badge={grouped.length > 0 ? `${grouped.length}경기` : undefined}
     >
-      {isLoading ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>결과 준비 중...</div>
-      ) : error ? (
-        <div className='py-6 text-center text-text-secondary text-sm'>
-          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
-            다시 시도
-          </Button>
-        </div>
-      ) : grouped.length === 0 ? (
-        <div className='py-8 text-center text-text-secondary text-sm'>최근 결과가 없습니다.</div>
-      ) : (
+      <DataFetchState
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => refetch()}
+        isEmpty={grouped.length === 0}
+        emptyIcon='TrendingUp'
+        emptyTitle='최근 결과가 없습니다'
+        loadingLabel='결과 준비 중...'
+      >
         <>
           {/* Mobile: card list */}
           <div className='block sm:hidden divide-y divide-border -mx-0.5'>
@@ -194,7 +191,7 @@ export default function RecentResultsSection() {
             </Table>
           </div>
         </>
-      )}
+      </DataFetchState>
     </HomeSection>
   );
 }

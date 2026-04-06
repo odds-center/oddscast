@@ -286,7 +286,7 @@ export default function SubscriptionsPage() {
                 placeholder='환불 사유를 10자 이상 입력해 주세요.'
                 className='w-full rounded-lg border border-border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary resize-none'
               />
-              <p className='text-xs text-text-secondary mt-1'>{refundReason.length}자 (최소 10자)</p>
+              <p className={`text-xs mt-1 transition-colors duration-200 ${refundReason.length < 10 ? 'text-rose-500' : 'text-green-600'}`}>{refundReason.length}자 (최소 10자)</p>
               {refundError && (
                 <p className='text-xs text-error mt-2'>{refundError}</p>
               )}

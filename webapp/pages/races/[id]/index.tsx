@@ -115,10 +115,13 @@ export default function RaceDetailPage() {
 
   const rcDate = (race as { rcDate?: string })?.rcDate;
   const stTime = (race as { stTime?: string })?.stTime;
+  const raceStatus = (race as { status?: string })?.status;
   // Race is over only when time has actually elapsed (stTime + buffer passed).
   // Server COMPLETED alone is not trusted — it may be set prematurely if results were synced early.
   const isTimeElapsed = isRaceActuallyEnded(rcDate, stTime);
   const isRaceCompleted = isTimeElapsed;
+  // True when time has elapsed but the server has not yet set status to COMPLETED (results pending sync)
+  const isPendingResults = isTimeElapsed && raceStatus !== 'COMPLETED';
 
   const { data: ticketBalance } = useQuery({
     queryKey: ['prediction-tickets', 'balance'],
@@ -193,6 +196,8 @@ export default function RaceDetailPage() {
       queryClient.invalidateQueries({ queryKey: ['prediction', 'history', id] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'balance'] });
       queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'check-race', id] });
+      // Refetch ticket history so cooldown timer and usedAt timestamp update immediately
+      queryClient.invalidateQueries({ queryKey: ['prediction-tickets', 'history', id] });
     },
     onError: () => {
       // Revert optimistic lock on failure so user can retry
@@ -508,7 +513,11 @@ export default function RaceDetailPage() {
 
               {!hasResults ? (
                 <div className='rounded-xl border border-border bg-muted/20 px-4 py-6 text-center text-text-secondary'>
-                  <p className='text-sm'>결과를 불러오는 중이거나 아직 반영되지 않았습니다.</p>
+                  <p className='text-sm'>
+                    {isPendingResults
+                      ? '경주가 종료되었습니다. 결과 집계 중...'
+                      : '결과를 불러오는 중이거나 아직 반영되지 않았습니다.'}
+                  </p>
                   <Button
                     type='button'
                     variant='outline'

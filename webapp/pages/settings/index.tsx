@@ -13,7 +13,7 @@ import AuthApi from '@/lib/api/authApi';
 import Link from 'next/link';
 
 const menuItemClass =
-  'flex items-center gap-4 py-4 px-4 rounded-xl text-foreground hover:bg-stone-50 active:bg-stone-100 transition-colors min-h-[56px] touch-manipulation font-medium text-[16px] -webkit-tap-highlight-color-transparent';
+  'flex items-center gap-4 py-4 px-4 rounded-xl text-foreground hover:bg-stone-50 active:bg-stone-100 transition-colors min-h-[56px] touch-manipulation font-medium text-[16px]';
 
 export default function SettingsPage() {
   const router = useRouter();

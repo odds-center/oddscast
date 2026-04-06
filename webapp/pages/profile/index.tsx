@@ -61,7 +61,8 @@ export default function Profile() {
   }
 
   const isLoading = ticketBalanceLoading || subscriptionLoading;
-  const raceTicketsCount = ticketBalance?.availableTickets ?? ticketBalance?.available ?? 0;
+  // getBalance() always normalizes to availableTickets — no need for fallback
+  const raceTicketsCount = ticketBalance?.availableTickets ?? 0;
   const matrixTicketsCount = matrixBalance?.available ?? 0;
 
   return (

@@ -6,10 +6,9 @@ import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import RaceApi from '@/lib/api/raceApi';
 import DataTable from '@/components/ui/DataTable';
 import HomeSection from './HomeSection';
+import DataFetchState from '@/components/page/DataFetchState';
 import { routes } from '@/lib/routes';
 import { StatusBadge, LinkBadge } from '@/components/ui';
-import LoadingSpinner from '@/components/LoadingSpinner';
-import { Button } from '@/components/ui/button';
 import { getTodayKstDate, isRaceActuallyEnded } from '@/lib/utils/format';
 import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
 import type { RaceDto } from '@/lib/types/race';
@@ -43,23 +42,16 @@ export default function TodayRacesSection() {
       viewAllLabel='더보기'
       badge={races.length > 0 ? `${races.length}경` : undefined}
     >
-      {isLoading ? (
-        <div className='py-6'>
-          <LoadingSpinner size={24} label='준비 중...' />
-        </div>
-      ) : error ? (
-        <div className='py-4 text-center text-text-secondary text-sm'>
-          <p className='text-error text-xs'>일시적인 오류가 발생했습니다.</p>
-          <Button type='button' variant='outline' size='sm' onClick={() => refetch()} className='mt-2'>
-            다시 시도
-          </Button>
-        </div>
-      ) : races.length === 0 ? (
-        <div className='py-4 text-text-secondary'>
-          <p className='text-sm text-center'>오늘은 예정된 경주가 없습니다.</p>
-          <p className='text-xs text-text-tertiary mt-1 text-center'>경주는 매주 금·토·일 진행됩니다.</p>
-        </div>
-      ) : (
+      <DataFetchState
+        isLoading={isLoading}
+        error={error}
+        onRetry={() => refetch()}
+        isEmpty={races.length === 0}
+        emptyIcon='Flag'
+        emptyTitle='오늘은 예정된 경주가 없습니다'
+        emptyDescription='경주는 매주 금·토·일 진행됩니다'
+        loadingLabel='준비 중...'
+      >
         <>
           {allEnded && (
             <p className='mb-3 text-center text-sm text-text-secondary whitespace-pre-line'>
@@ -154,7 +146,7 @@ export default function TodayRacesSection() {
             />
           </div>
         </>
-      )}
+      </DataFetchState>
     </HomeSection>
   );
 }

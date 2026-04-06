@@ -328,11 +328,22 @@ export class AdminService {
       await Promise.all([
         this.userRepo.count(),
         this.userRepo.count({
-          where: { createdAt: Between(now.startOf('day').toDate(), now.endOf('day').toDate()) },
+          where: {
+            createdAt: Between(
+              now.startOf('day').toDate(),
+              now.endOf('day').toDate(),
+            ),
+          },
         }),
-        this.userRepo.count({ where: { createdAt: Between(weekAgo, new Date()) } }),
-        this.userRepo.count({ where: { createdAt: Between(monthStart, monthEnd) } }),
-        this.subscriptionRepo.count({ where: { status: SubscriptionStatus.ACTIVE } }),
+        this.userRepo.count({
+          where: { createdAt: Between(weekAgo, new Date()) },
+        }),
+        this.userRepo.count({
+          where: { createdAt: Between(monthStart, monthEnd) },
+        }),
+        this.subscriptionRepo.count({
+          where: { status: SubscriptionStatus.ACTIVE },
+        }),
       ]);
 
     // Subscriptions by plan (active only)
@@ -370,7 +381,8 @@ export class AdminService {
     const totalActivePlusCancelled = activeSubscribers + cancelledThisMonth;
     const churnRate =
       totalActivePlusCancelled > 0
-        ? Math.round((cancelledThisMonth / totalActivePlusCancelled) * 10000) / 100
+        ? Math.round((cancelledThisMonth / totalActivePlusCancelled) * 10000) /
+          100
         : 0;
 
     // --- Prediction metrics ---
@@ -388,7 +400,9 @@ export class AdminService {
     const avgAccuracy =
       accuracyValues.length > 0
         ? Math.round(
-            (accuracyValues.reduce((s, v) => s + v, 0) / accuracyValues.length) * 100,
+            (accuracyValues.reduce((s, v) => s + v, 0) /
+              accuracyValues.length) *
+              100,
           ) / 100
         : 0;
 
@@ -404,7 +418,10 @@ export class AdminService {
     const monthAccVals = monthPredictions.map((p) => parseFloat(p.accuracy));
     const accuracyThisMonth =
       monthAccVals.length > 0
-        ? Math.round((monthAccVals.reduce((s, v) => s + v, 0) / monthAccVals.length) * 100) / 100
+        ? Math.round(
+            (monthAccVals.reduce((s, v) => s + v, 0) / monthAccVals.length) *
+              100,
+          ) / 100
         : 0;
 
     // High-confidence predictions: winProb >= 70 in scores JSONB
@@ -418,11 +435,15 @@ export class AdminService {
     // --- Operations metrics ---
     const [totalBatch, completedBatch, failedToday] = await Promise.all([
       this.batchScheduleRepo.count(),
-      this.batchScheduleRepo.count({ where: { status: BatchScheduleStatus.COMPLETED } }),
+      this.batchScheduleRepo.count({
+        where: { status: BatchScheduleStatus.COMPLETED },
+      }),
       this.batchScheduleRepo
         .createQueryBuilder('bs')
         .where('bs.status = :status', { status: BatchScheduleStatus.FAILED })
-        .andWhere('bs.updatedAt >= :start', { start: now.startOf('day').toDate() })
+        .andWhere('bs.updatedAt >= :start', {
+          start: now.startOf('day').toDate(),
+        })
         .getCount(),
     ]);
     const batchSuccessRate =

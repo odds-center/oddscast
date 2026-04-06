@@ -214,13 +214,7 @@ export class AnalysisService {
       if (missingNos.length > 0) {
         const careerRows = await this.jockeyResultRepo.find({
           where: { jkNo: In(missingNos) },
-          select: [
-            'jkNo',
-            'rcCntT',
-            'ord1CntT',
-            'ord2CntT',
-            'ord3CntT',
-          ],
+          select: ['jkNo', 'rcCntT', 'ord1CntT', 'ord2CntT', 'ord3CntT'],
         });
         const agg: Record<
           string,

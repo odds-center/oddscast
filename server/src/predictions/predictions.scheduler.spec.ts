@@ -11,7 +11,9 @@ function makeQb(races: unknown[] = []) {
   const qb = createMockQueryBuilder();
   qb.getMany.mockResolvedValue(races);
   // setParameter is called after andWhere in scheduler
-  (qb as Record<string, jest.Mock>).setParameter = jest.fn().mockReturnValue(qb);
+  (qb as Record<string, jest.Mock>).setParameter = jest
+    .fn()
+    .mockReturnValue(qb);
   // subQuery returns a mini-builder that terminates with getQuery
   const subQb = {
     select: jest.fn().mockReturnThis(),
@@ -88,7 +90,9 @@ describe('PredictionsScheduler', () => {
 
       await scheduler.generatePredictionsForToday();
 
-      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledTimes(2);
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledTimes(
+        2,
+      );
       expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(1);
       expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(2);
     });
@@ -111,7 +115,9 @@ describe('PredictionsScheduler', () => {
       await scheduler.generatePredictionsForToday();
 
       // All 3 should be attempted despite race 2 failing
-      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledTimes(3);
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledTimes(
+        3,
+      );
     });
 
     it('should handle malformed ai_config gracefully', async () => {
@@ -142,7 +148,9 @@ describe('PredictionsScheduler', () => {
 
       await scheduler.generatePredictionsForCompletedRaces();
 
-      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(10);
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(
+        10,
+      );
     });
 
     it('should do nothing when all completed races have predictions', async () => {

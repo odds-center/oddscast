@@ -1,4 +1,10 @@
-import { IsString, IsEnum, IsOptional, MaxLength, MinLength } from 'class-validator';
+import {
+  IsString,
+  IsEnum,
+  IsOptional,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { BugReportCategory } from '../../database/entities';
 
@@ -14,7 +20,11 @@ export class CreateBugReportDto {
   @MinLength(10)
   description!: string;
 
-  @ApiProperty({ enum: BugReportCategory, default: BugReportCategory.OTHER, required: false })
+  @ApiProperty({
+    enum: BugReportCategory,
+    default: BugReportCategory.OTHER,
+    required: false,
+  })
   @IsEnum(BugReportCategory)
   @IsOptional()
   category?: BugReportCategory;

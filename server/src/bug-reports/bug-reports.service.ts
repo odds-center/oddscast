@@ -1,7 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { BugReport, BugReportCategory, BugReportStatus } from '../database/entities';
+import {
+  BugReport,
+  BugReportCategory,
+  BugReportStatus,
+} from '../database/entities';
 import { DiscordService } from '../discord/discord.service';
 import { CreateBugReportDto } from './dto/create-bug-report.dto';
 
@@ -10,7 +14,8 @@ export class BugReportsService {
   private readonly logger = new Logger(BugReportsService.name);
 
   constructor(
-    @InjectRepository(BugReport) private readonly bugReportRepo: Repository<BugReport>,
+    @InjectRepository(BugReport)
+    private readonly bugReportRepo: Repository<BugReport>,
     private readonly discordService: DiscordService,
   ) {}
 
@@ -36,7 +41,9 @@ export class BugReportsService {
     return saved;
   }
 
-  async findAll(status?: BugReportStatus): Promise<{ data: BugReport[]; total: number }> {
+  async findAll(
+    status?: BugReportStatus,
+  ): Promise<{ data: BugReport[]; total: number }> {
     const qb = this.bugReportRepo
       .createQueryBuilder('br')
       .leftJoinAndSelect('br.user', 'user')

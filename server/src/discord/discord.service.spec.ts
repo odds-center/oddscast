@@ -1,6 +1,11 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
-import { DiscordService, DevServerError, DevClientError, DevSignupNotification } from './discord.service';
+import {
+  DiscordService,
+  DevServerError,
+  DevClientError,
+  DevSignupNotification,
+} from './discord.service';
 import axios from 'axios';
 
 jest.mock('axios');
@@ -24,7 +29,9 @@ describe('DiscordService', () => {
         {
           provide: ConfigService,
           useValue: {
-            get: jest.fn((key: string, fallback: string) => defaults[key] ?? fallback),
+            get: jest.fn(
+              (key: string, fallback: string) => defaults[key] ?? fallback,
+            ),
           },
         },
       ],
@@ -46,7 +53,9 @@ describe('DiscordService', () => {
         expect.stringContaining('/channels/signup-ch-123/messages'),
         expect.objectContaining({
           embeds: expect.arrayContaining([
-            expect.objectContaining({ title: expect.stringContaining('회원가입') }),
+            expect.objectContaining({
+              title: expect.stringContaining('회원가입'),
+            }),
           ]),
         }),
         expect.objectContaining({
@@ -64,7 +73,13 @@ describe('DiscordService', () => {
 
   describe('notifyError', () => {
     it('should send error embed with stack trace', async () => {
-      await service.notifyError('POST', '/api/test', 500, 'Server error', 'Error: stack...');
+      await service.notifyError(
+        'POST',
+        '/api/test',
+        500,
+        'Server error',
+        'Error: stack...',
+      );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         expect.stringContaining('/channels/error-ch-456/messages'),
@@ -102,7 +117,9 @@ describe('DiscordService', () => {
         'https://discord.com/api/webhooks/test',
         expect.objectContaining({
           embeds: expect.arrayContaining([
-            expect.objectContaining({ title: expect.stringContaining('[DEV]') }),
+            expect.objectContaining({
+              title: expect.stringContaining('[DEV]'),
+            }),
           ]),
         }),
         expect.objectContaining({ timeout: 5000 }),
@@ -127,13 +144,20 @@ describe('DiscordService', () => {
         NODE_ENV: 'development',
       });
 
-      await service.notifyClientError('POST', '/api/auth/login', 401, 'Unauthorized');
+      await service.notifyClientError(
+        'POST',
+        '/api/auth/login',
+        401,
+        'Unauthorized',
+      );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
         'https://discord.com/api/webhooks/test',
         expect.objectContaining({
           embeds: expect.arrayContaining([
-            expect.objectContaining({ title: expect.stringContaining('[DEV]') }),
+            expect.objectContaining({
+              title: expect.stringContaining('[DEV]'),
+            }),
           ]),
         }),
         expect.anything(),
@@ -143,7 +167,13 @@ describe('DiscordService', () => {
 
   describe('DevNotification classes', () => {
     it('DevServerError should produce correct embed', () => {
-      const notification = new DevServerError('GET', '/api/test', 500, 'fail', 'Error: stack');
+      const notification = new DevServerError(
+        'GET',
+        '/api/test',
+        500,
+        'fail',
+        'Error: stack',
+      );
       const embed = notification.toEmbed();
       expect(embed.title).toContain('[DEV]');
       expect(embed.title).toContain('500');
@@ -152,7 +182,13 @@ describe('DiscordService', () => {
     });
 
     it('DevClientError should produce correct embed', () => {
-      const notification = new DevClientError('POST', '/api/login', 429, 'Too many requests', '1.2.3.4');
+      const notification = new DevClientError(
+        'POST',
+        '/api/login',
+        429,
+        'Too many requests',
+        '1.2.3.4',
+      );
       const embed = notification.toEmbed();
       expect(embed.title).toContain('[DEV]');
       expect(embed.title).toContain('429');

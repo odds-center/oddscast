@@ -7,7 +7,8 @@ import {
 
 describe('parseGeminiResponseText', () => {
   it('should parse clean JSON', () => {
-    const input = '{"horseScores": [{"hrNo": "1", "score": 80}], "analysis": "test"}';
+    const input =
+      '{"horseScores": [{"hrNo": "1", "score": 80}], "analysis": "test"}';
     const result = parseGeminiResponseText(input);
     expect(result.horseScores).toHaveLength(1);
     expect(result.analysis).toBe('test');

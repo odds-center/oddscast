@@ -494,13 +494,13 @@ export class AdminController {
   async getSystemConfig() {
     const all = await this.configService.getAll();
     return {
-      kra_base_url_override:       all.kra_base_url_override || '',
-      signup_bonus_tickets:        all.signup_bonus_tickets || '1',
-      signup_bonus_expires_days:   all.signup_bonus_expires_days || '30',
-      consecutive_streak_days:     all.consecutive_streak_days || '7',
-      consecutive_streak_tickets:  all.consecutive_streak_tickets || '1',
-      consecutive_expires_days:    all.consecutive_expires_days || '30',
-      matrix_ticket_price:         all.matrix_ticket_price || '1000',
+      kra_base_url_override: all.kra_base_url_override || '',
+      signup_bonus_tickets: all.signup_bonus_tickets || '1',
+      signup_bonus_expires_days: all.signup_bonus_expires_days || '30',
+      consecutive_streak_days: all.consecutive_streak_days || '7',
+      consecutive_streak_tickets: all.consecutive_streak_tickets || '1',
+      consecutive_expires_days: all.consecutive_expires_days || '30',
+      matrix_ticket_price: all.matrix_ticket_price || '1000',
     };
   }
 
@@ -778,7 +778,9 @@ export class AdminController {
   // --- Weekly Preview ---
 
   @Post('weekly-preview/generate')
-  @ApiOperation({ summary: '[Admin] Manually trigger weekly preview generation' })
+  @ApiOperation({
+    summary: '[Admin] Manually trigger weekly preview generation',
+  })
   async generateWeeklyPreview(@Query('date') date?: string) {
     const fromDate = date ? new Date(date) : undefined;
     return this.weeklyPreviewService.generate({ fromDate });
@@ -793,12 +795,17 @@ export class AdminController {
   // --- AI Commentary ---
 
   @Post('predictions/:raceId/regenerate-commentary')
-  @ApiOperation({ summary: '[Admin] Force-regenerate AI race commentary for a specific race' })
+  @ApiOperation({
+    summary: '[Admin] Force-regenerate AI race commentary for a specific race',
+  })
   async regenerateCommentary(
     @Param('raceId', ParseIntPipe) raceId: number,
     @Query('type') type: 'pre-race' | 'post-race' = 'pre-race',
   ) {
     await this.predictionsService.generateRaceCommentary(raceId, type, true);
-    return { success: true, message: `Commentary (${type}) regenerated for race ${raceId}` };
+    return {
+      success: true,
+      message: `Commentary (${type}) regenerated for race ${raceId}`,
+    };
   }
 }

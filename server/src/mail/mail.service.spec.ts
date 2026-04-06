@@ -36,14 +36,19 @@ describe('MailService', () => {
 
     service = module.get<MailService>(MailService);
     // Access the mock send function
-    mockSend = (service as unknown as { resend: { emails: { send: jest.Mock } } }).resend.emails.send;
+    mockSend = (
+      service as unknown as { resend: { emails: { send: jest.Mock } } }
+    ).resend.emails.send;
   });
 
   describe('sendVerificationCode', () => {
     it('should send verification email successfully', async () => {
       mockSend.mockResolvedValue({ error: null });
 
-      const result = await service.sendVerificationCode('user@test.com', '123456');
+      const result = await service.sendVerificationCode(
+        'user@test.com',
+        '123456',
+      );
 
       expect(result.success).toBe(true);
       expect(mockSend).toHaveBeenCalledWith(
@@ -58,7 +63,10 @@ describe('MailService', () => {
     it('should return error when Resend API fails', async () => {
       mockSend.mockResolvedValue({ error: { message: 'Invalid API key' } });
 
-      const result = await service.sendVerificationCode('user@test.com', '123456');
+      const result = await service.sendVerificationCode(
+        'user@test.com',
+        '123456',
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Invalid API key');
@@ -67,7 +75,10 @@ describe('MailService', () => {
     it('should handle thrown exceptions', async () => {
       mockSend.mockRejectedValue(new Error('Network timeout'));
 
-      const result = await service.sendVerificationCode('user@test.com', '123456');
+      const result = await service.sendVerificationCode(
+        'user@test.com',
+        '123456',
+      );
 
       expect(result.success).toBe(false);
       expect(result.error).toBe('Network timeout');

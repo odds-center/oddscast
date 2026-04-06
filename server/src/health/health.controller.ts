@@ -21,7 +21,9 @@ export class HealthController {
     if (process.env.NODE_ENV === 'production') {
       return { status: 'disabled in production' };
     }
-    throw new InternalServerErrorException('Test error: Sentry + Winston logging check');
+    throw new InternalServerErrorException(
+      'Test error: Sentry + Winston logging check',
+    );
   }
 
   @Get('detailed')

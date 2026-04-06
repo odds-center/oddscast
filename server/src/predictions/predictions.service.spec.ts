@@ -448,10 +448,30 @@ describe('PredictionsService', () => {
     it('should compute training metrics from sessions', async () => {
       const qb = createMockQueryBuilder();
       qb.getMany.mockResolvedValue([
-        { horseNo: 'H001', trDate: '20260228', intensity: '강', trContent: null },
-        { horseNo: 'H001', trDate: '20260226', intensity: '중', trContent: null },
-        { horseNo: 'H001', trDate: '20260224', intensity: '상', trContent: null },
-        { horseNo: 'H001', trDate: '20260222', intensity: '하', trContent: null },
+        {
+          horseNo: 'H001',
+          trDate: '20260228',
+          intensity: '강',
+          trContent: null,
+        },
+        {
+          horseNo: 'H001',
+          trDate: '20260226',
+          intensity: '중',
+          trContent: null,
+        },
+        {
+          horseNo: 'H001',
+          trDate: '20260224',
+          intensity: '상',
+          trContent: null,
+        },
+        {
+          horseNo: 'H001',
+          trDate: '20260222',
+          intensity: '하',
+          trContent: null,
+        },
       ]);
       trainingRepo.createQueryBuilder.mockReturnValue(qb);
 
@@ -528,7 +548,9 @@ describe('PredictionsService', () => {
 
   describe('rankToLevel', () => {
     const callRankToLevel = (rank: string) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)['rankToLevel'](rank);
+      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+        'rankToLevel'
+      ](rank);
 
     it('should map Korean class hierarchy correctly', () => {
       expect(callRankToLevel('국제')).toBe(7);
@@ -594,9 +616,7 @@ describe('PredictionsService', () => {
       resultRepo.createQueryBuilder.mockReturnValue(resultQb);
 
       // Cache hit — findOne returns a COMPLETED prediction
-      predictionRepo.findOne
-        .mockResolvedValueOnce(cachedPrediction) // cache check
-        ;
+      predictionRepo.findOne.mockResolvedValueOnce(cachedPrediction); // cache check
 
       const result = await service.generatePrediction(1);
 
@@ -609,7 +629,9 @@ describe('PredictionsService', () => {
 
     it('should throw PredictionInProgressException when PROCESSING lock exists', async () => {
       process.env.GEMINI_API_KEY = 'test-key';
-      const { PredictionInProgressException } = require('./predictions.service');
+      const {
+        PredictionInProgressException,
+      } = require('./predictions.service');
 
       // loadRaceWithEntries
       raceRepo.findOne.mockResolvedValue(createTestRace());
@@ -620,10 +642,13 @@ describe('PredictionsService', () => {
 
       predictionRepo.findOne
         .mockResolvedValueOnce(null) // no cache hit
-        .mockResolvedValueOnce(createTestPrediction({ // PROCESSING lock found
-          id: 50,
-          status: PredictionStatus.PROCESSING,
-        }));
+        .mockResolvedValueOnce(
+          createTestPrediction({
+            // PROCESSING lock found
+            id: 50,
+            status: PredictionStatus.PROCESSING,
+          }),
+        );
 
       await expect(service.generatePrediction(1)).rejects.toThrow(
         PredictionInProgressException,

@@ -245,15 +245,19 @@ describe('ResultsService', () => {
   describe('updatePredictionAccuracy (via updateAccuracyOnly)', () => {
     const setupAccuracyTest = (
       horseScores: Array<{ hrNo?: string; hrName?: string; score: number }>,
-      results: Array<{ hrNo?: string; hrName?: string; ordType?: string | null; ordInt?: number | null; ord?: string }>,
+      results: Array<{
+        hrNo?: string;
+        hrName?: string;
+        ordType?: string | null;
+        ordInt?: number | null;
+        ord?: string;
+      }>,
     ) => {
       predictionRepo.findOne.mockResolvedValue(
         createTestPrediction({ scores: { horseScores } }),
       );
       const qb = createMockQueryBuilder();
-      qb.getMany.mockResolvedValue(
-        results.map((r) => createTestRaceResult(r)),
-      );
+      qb.getMany.mockResolvedValue(results.map((r) => createTestRaceResult(r)));
       resultRepo.createQueryBuilder.mockReturnValue(qb);
     };
 
@@ -332,7 +336,11 @@ describe('ResultsService', () => {
           { hrNo: 'C', score: 70 },
         ],
         [
-          { hrNo: 'FALL_HORSE', ordType: 'FALL', ordInt: undefined as unknown as number },
+          {
+            hrNo: 'FALL_HORSE',
+            ordType: 'FALL',
+            ordInt: undefined as unknown as number,
+          },
           { hrNo: 'A', ordInt: 1, ordType: null },
           { hrNo: 'B', ordInt: 2, ordType: null },
           { hrNo: 'X', ordInt: 3, ordType: null },
@@ -419,9 +427,21 @@ describe('ResultsService', () => {
       // Results also have hrNo=undefined, only hrName
       const qb = createMockQueryBuilder();
       qb.getMany.mockResolvedValue([
-        { ...createTestRaceResult({ ordInt: 1, ordType: null }), hrNo: undefined, hrName: 'Thunder' },
-        { ...createTestRaceResult({ ordInt: 2, ordType: null }), hrNo: undefined, hrName: 'Lightning' },
-        { ...createTestRaceResult({ ordInt: 3, ordType: null }), hrNo: undefined, hrName: 'Storm' },
+        {
+          ...createTestRaceResult({ ordInt: 1, ordType: null }),
+          hrNo: undefined,
+          hrName: 'Thunder',
+        },
+        {
+          ...createTestRaceResult({ ordInt: 2, ordType: null }),
+          hrNo: undefined,
+          hrName: 'Lightning',
+        },
+        {
+          ...createTestRaceResult({ ordInt: 3, ordType: null }),
+          hrNo: undefined,
+          hrName: 'Storm',
+        },
       ]);
       resultRepo.createQueryBuilder.mockReturnValue(qb);
 

@@ -291,11 +291,13 @@ export class ResultsService {
       });
       await this.updatePredictionAccuracy(raceId);
       this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
-      this.predictionsService.generateRaceCommentary(raceId, 'post-race').catch((err: unknown) => {
-        this.logger.warn(
-          `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
-        );
-      });
+      this.predictionsService
+        .generateRaceCommentary(raceId, 'post-race')
+        .catch((err: unknown) => {
+          this.logger.warn(
+            `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
     }
     return { count };
   }
@@ -303,11 +305,13 @@ export class ResultsService {
   async onResultsSyncedForRace(raceId: number): Promise<void> {
     await this.updatePredictionAccuracy(raceId);
     this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
-    this.predictionsService.generateRaceCommentary(raceId, 'post-race').catch((err: unknown) => {
-      this.logger.warn(
-        `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
-      );
-    });
+    this.predictionsService
+      .generateRaceCommentary(raceId, 'post-race')
+      .catch((err: unknown) => {
+        this.logger.warn(
+          `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
   }
 
   /** Update prediction accuracy only, without triggering Gemini post-race summary. */

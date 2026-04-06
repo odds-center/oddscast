@@ -162,7 +162,8 @@ export class NotificationsService {
     const where: Record<string, unknown> = { id };
     if (userId !== undefined) where.userId = userId;
     const result = await this.notificationRepo.delete(where);
-    if (!result.affected) throw new NotFoundException('알림을 찾을 수 없습니다');
+    if (!result.affected)
+      throw new NotFoundException('알림을 찾을 수 없습니다');
     return { message: '알림이 삭제되었습니다' };
   }
 

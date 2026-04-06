@@ -90,8 +90,19 @@ describe('AdminResultsController', () => {
 
   describe('create', () => {
     it('should delegate to resultsService.create', async () => {
-      const dto = { raceId: 1, ord: 1, hrNo: '100', hrName: 'Horse A' } as never;
-      const expected = { id: '1', raceId: 1, ord: 1, hrNo: '100', hrName: 'Horse A' };
+      const dto = {
+        raceId: 1,
+        ord: 1,
+        hrNo: '100',
+        hrName: 'Horse A',
+      } as never;
+      const expected = {
+        id: '1',
+        raceId: 1,
+        ord: 1,
+        hrNo: '100',
+        hrName: 'Horse A',
+      };
       mockResultsService.create.mockResolvedValue(expected);
 
       const result = await controller.create(dto);
@@ -103,7 +114,10 @@ describe('AdminResultsController', () => {
 
   describe('bulkCreate', () => {
     it('should delegate to resultsService.bulkCreate', async () => {
-      const dto = { raceId: 1, results: [{ ord: 1, hrNo: '100', hrName: 'A' }] } as never;
+      const dto = {
+        raceId: 1,
+        results: [{ ord: 1, hrNo: '100', hrName: 'A' }],
+      } as never;
       const expected = { created: 1 };
       mockResultsService.bulkCreate.mockResolvedValue(expected);
 

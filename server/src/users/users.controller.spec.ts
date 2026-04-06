@@ -121,9 +121,9 @@ describe('UsersController', () => {
     it('should throw ForbiddenException when user does not own the profile', () => {
       const dto = { nickname: 'NewNick' };
 
-      expect(() =>
-        controller.updateProfile(5, dto as never, mockUser),
-      ).toThrow('본인의 프로필만 수정할 수 있습니다.');
+      expect(() => controller.updateProfile(5, dto as never, mockUser)).toThrow(
+        '본인의 프로필만 수정할 수 있습니다.',
+      );
     });
   });
 
@@ -189,7 +189,12 @@ describe('UsersController', () => {
   describe('getActivities', () => {
     it('should return empty activities for own user', () => {
       const result = controller.getActivities(1, mockUser);
-      expect(result).toEqual({ activities: [], total: 0, page: 1, totalPages: 1 });
+      expect(result).toEqual({
+        activities: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      });
     });
 
     it('should throw ForbiddenException for other user', () => {
@@ -200,7 +205,12 @@ describe('UsersController', () => {
   describe('getNotifications', () => {
     it('should return empty notifications for own user', () => {
       const result = controller.getNotifications(1, mockUser);
-      expect(result).toEqual({ notifications: [], total: 0, page: 1, totalPages: 1 });
+      expect(result).toEqual({
+        notifications: [],
+        total: 0,
+        page: 1,
+        totalPages: 1,
+      });
     });
 
     it('should throw ForbiddenException for other user', () => {
@@ -221,7 +231,11 @@ describe('UsersController', () => {
 
   describe('updatePreferences', () => {
     it('should update preferences for own user', () => {
-      const result = controller.updatePreferences(1, { marketing: false }, mockUser);
+      const result = controller.updatePreferences(
+        1,
+        { marketing: false },
+        mockUser,
+      );
       expect(result).toEqual({ marketing: true, notifications: true });
     });
 

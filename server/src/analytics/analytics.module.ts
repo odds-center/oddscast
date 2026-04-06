@@ -8,7 +8,9 @@ import { AnalyticsController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Race, RaceEntry, RaceResult, Prediction])],
+  imports: [
+    TypeOrmModule.forFeature([Race, RaceEntry, RaceResult, Prediction]),
+  ],
   controllers: [AnalyticsController],
   providers: [AnalyticsService],
 })

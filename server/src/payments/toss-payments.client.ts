@@ -104,7 +104,9 @@ export class TossPaymentsBillingClient {
 
     if (!res.ok) {
       const err: TossErrorBody = await res.json().catch(() => ({}));
-      throw new Error(err?.message || `Toss cancel payment failed: ${res.status}`);
+      throw new Error(
+        err?.message || `Toss cancel payment failed: ${res.status}`,
+      );
     }
 
     return res.json();

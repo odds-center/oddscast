@@ -113,9 +113,7 @@ export class RacesService {
     this.onDemandFetchLock.set(rcDate, now);
 
     try {
-      this.logger.log(
-        `On-demand result fetch triggered for rcDate=${rcDate}`,
-      );
+      this.logger.log(`On-demand result fetch triggered for rcDate=${rcDate}`);
       await this.kraService.fetchRaceResults(rcDate, false);
       return true;
     } catch (err: unknown) {
@@ -191,13 +189,21 @@ export class RacesService {
       const hasResults = raceIdsWithResults.has(r.id);
       let correctedStatus = r.status;
       // Only mark COMPLETED if results exist AND race time has actually passed
-      if (hasResults && r.status !== RaceStatus.COMPLETED && this._isRacePast(r as unknown as RaceRow)) {
+      if (
+        hasResults &&
+        r.status !== RaceStatus.COMPLETED &&
+        this._isRacePast(r as unknown as RaceRow)
+      ) {
         correctedStatus = RaceStatus.COMPLETED;
         statusFixups.push({ id: r.id, status: correctedStatus });
       } else if (!hasResults && r.status === RaceStatus.COMPLETED) {
         correctedStatus = RaceStatus.SCHEDULED;
         statusFixups.push({ id: r.id, status: correctedStatus });
-      } else if (hasResults && !this._isRacePast(r as unknown as RaceRow) && r.status !== RaceStatus.SCHEDULED) {
+      } else if (
+        hasResults &&
+        !this._isRacePast(r as unknown as RaceRow) &&
+        r.status !== RaceStatus.SCHEDULED
+      ) {
         // Results exist but race hasn't started yet — revert to SCHEDULED
         correctedStatus = RaceStatus.SCHEDULED;
         statusFixups.push({ id: r.id, status: correctedStatus });
@@ -266,7 +272,8 @@ export class RacesService {
     const isPast = this._isRacePast(race);
     if (hasResults && isPast) return RaceStatus.COMPLETED;
     const s = race.status ?? RaceStatus.SCHEDULED;
-    if (s === RaceStatus.COMPLETED && (!hasResults || !isPast)) return RaceStatus.SCHEDULED;
+    if (s === RaceStatus.COMPLETED && (!hasResults || !isPast))
+      return RaceStatus.SCHEDULED;
     return s as RaceStatus;
   }
 
@@ -297,7 +304,10 @@ export class RacesService {
           const hasResults = this._hasActualFinishData(fresh.results);
           const corrected = {
             ...fresh,
-            status: this._correctStatus(fresh as unknown as RaceRow, hasResults),
+            status: this._correctStatus(
+              fresh as unknown as RaceRow,
+              hasResults,
+            ),
           };
           const serialized = serializeRace(corrected);
           await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -316,7 +326,10 @@ export class RacesService {
             const freshHasResults = this._hasActualFinishData(fresh.results);
             const corrected = {
               ...fresh,
-              status: this._correctStatus(fresh as unknown as RaceRow, freshHasResults),
+              status: this._correctStatus(
+                fresh as unknown as RaceRow,
+                freshHasResults,
+              ),
             };
             const serialized = serializeRace(corrected);
             await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);
@@ -343,7 +356,10 @@ export class RacesService {
           const freshHasResults = this._hasActualFinishData(fresh.results);
           const corrected = {
             ...fresh,
-            status: this._correctStatus(fresh as unknown as RaceRow, freshHasResults),
+            status: this._correctStatus(
+              fresh as unknown as RaceRow,
+              freshHasResults,
+            ),
           };
           const serialized = serializeRace(corrected);
           await this.cache.set(cacheKey, corrected, 60 * 5 * 1000);

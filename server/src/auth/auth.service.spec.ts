@@ -150,7 +150,10 @@ describe('AuthService', () => {
       const result = await service.login('test@example.com', 'password123');
 
       expect('accessToken' in result).toBe(true);
-      const loginResult = result as { accessToken: string; user: { email: string } };
+      const loginResult = result as {
+        accessToken: string;
+        user: { email: string };
+      };
       expect(loginResult.accessToken).toBe('mock-jwt-token');
       expect(loginResult.user.email).toBe('test@example.com');
       expect(userRepo.update).toHaveBeenCalledWith(
@@ -169,7 +172,10 @@ describe('AuthService', () => {
     });
 
     it('should reject login for inactive user', async () => {
-      const testUser = createTestUser({ isActive: false, isEmailVerified: true });
+      const testUser = createTestUser({
+        isActive: false,
+        isEmailVerified: true,
+      });
       userRepo.findOne.mockResolvedValue(testUser);
 
       await expect(
@@ -193,7 +199,6 @@ describe('AuthService', () => {
         service.login('test@example.com', 'wrongpass'),
       ).rejects.toThrow(UnauthorizedException);
     });
-
   });
 
   describe('adminLogin', () => {
@@ -298,7 +303,9 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue({ ...user });
       userRepo.save.mockImplementation((u) => Promise.resolve(u));
 
-      const result = await service.updateProfile(1, { hasSeenOnboarding: true });
+      const result = await service.updateProfile(1, {
+        hasSeenOnboarding: true,
+      });
 
       expect(userRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({ hasSeenOnboarding: true }),
@@ -347,9 +354,9 @@ describe('AuthService', () => {
     it('should throw on invalid code', async () => {
       emailVerificationRepo.findOne.mockResolvedValue(null);
 
-      await expect(
-        service.verifyEmail('invalid-code'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.verifyEmail('invalid-code')).rejects.toThrow(
+        BadRequestException,
+      );
     });
 
     it('should throw on expired code', async () => {
@@ -360,9 +367,9 @@ describe('AuthService', () => {
         expiresAt: new Date(Date.now() - 1000), // expired
       });
 
-      await expect(
-        service.verifyEmail('123456'),
-      ).rejects.toThrow(BadRequestException);
+      await expect(service.verifyEmail('123456')).rejects.toThrow(
+        BadRequestException,
+      );
     });
   });
 });

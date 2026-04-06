@@ -55,9 +55,7 @@ async function bootstrap() {
   const mobileOrigins = ['file://', 'capacitor://localhost'];
   const envOrigins = CORS_ORIGINS_BY_ENV[env];
   const allowedOrigins =
-    envOrigins === true
-      ? true
-      : [...(envOrigins ?? []), ...mobileOrigins];
+    envOrigins === true ? true : [...(envOrigins ?? []), ...mobileOrigins];
 
   app.enableCors({
     origin: env === 'development' ? true : allowedOrigins,

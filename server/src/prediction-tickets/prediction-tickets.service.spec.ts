@@ -32,13 +32,19 @@ describe('PredictionTicketsService', () => {
   };
 
   const mockKraService = {
-    refreshRaceDayRealtime: jest.fn().mockResolvedValue({ refreshed: true, updated: ['track', 'weight'] }),
+    refreshRaceDayRealtime: jest
+      .fn()
+      .mockResolvedValue({ refreshed: true, updated: ['track', 'weight'] }),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
     // Default: raceRepo.findOne returns a race
-    raceRepo.findOne.mockResolvedValue({ id: 1, rcDate: '20260308', meet: '서울' });
+    raceRepo.findOne.mockResolvedValue({
+      id: 1,
+      rcDate: '20260308',
+      meet: '서울',
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -49,7 +55,10 @@ describe('PredictionTicketsService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: PredictionsService, useValue: mockPredictionsService },
         { provide: KraService, useValue: mockKraService },
-        { provide: GlobalConfigService, useValue: { get: jest.fn().mockResolvedValue('1000') } },
+        {
+          provide: GlobalConfigService,
+          useValue: { get: jest.fn().mockResolvedValue('1000') },
+        },
       ],
     }).compile();
 
@@ -73,15 +82,24 @@ describe('PredictionTicketsService', () => {
       // After linking prediction, return updated ticket
       ticketRepo.findOne
         .mockResolvedValueOnce(null) // rate limit check
-        .mockResolvedValueOnce({ ...ticket, status: TicketStatus.USED, predictionId: pred.id }); // after link
+        .mockResolvedValueOnce({
+          ...ticket,
+          status: TicketStatus.USED,
+          predictionId: pred.id,
+        }); // after link
 
       const result = await service.useTicket(1, { raceId: '1' });
 
-      expect(mockKraService.refreshRaceDayRealtime).toHaveBeenCalledWith('20260308');
-      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(1, {
-        skipCache: true,
-        realtime: true,
-      });
+      expect(mockKraService.refreshRaceDayRealtime).toHaveBeenCalledWith(
+        '20260308',
+      );
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(
+        1,
+        {
+          skipCache: true,
+          realtime: true,
+        },
+      );
       // Ticket is consumed in transaction, then prediction is linked separately
       expect(ticketRepo.update).toHaveBeenCalledWith(
         ticket.id,

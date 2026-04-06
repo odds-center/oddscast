@@ -108,8 +108,7 @@ export function computeWinProbabilities(scores: number[]): number[] {
   const stretchedMax = Math.max(...stretched);
   const exps = stretched.map((s) => Math.exp((s - stretchedMax) / T));
   const total = exps.reduce((a, b) => a + b, 0);
-  if (total === 0)
-    return scores.map(() => Math.round((100 / n) * 10) / 10);
+  if (total === 0) return scores.map(() => Math.round((100 / n) * 10) / 10);
   // Ensure minimum 0.1% per horse so no horse shows exactly 0%
   const raw = exps.map((e) => (e / total) * 100);
   const MIN_PROB = 0.1;
@@ -155,8 +154,7 @@ export function applyOddsBlend(
 
   const combinedScores = horseScores.map((hs) => {
     const hrNo = String(hs.hrNo ?? '');
-    const jScore =
-      jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
+    const jScore = jockeyMap.get(hrNo) ?? jockeyMap.get(hs.hrName ?? '') ?? 0;
     return Math.round(((hs.score ?? 50) * wH + jScore * wJ) * 100) / 100;
   });
 
@@ -176,7 +174,11 @@ export function applyOddsBlend(
         if (invOdds[i]! <= 0) return cs;
         const impliedPct = (invOdds[i]! / sumInv) * 100;
         oddsImpliedByIdx[i] = Math.round(impliedPct * 100) / 100;
-        return Math.round(((1 - ODDS_WEIGHT) * cs + ODDS_WEIGHT * impliedPct) * 100) / 100;
+        return (
+          Math.round(
+            ((1 - ODDS_WEIGHT) * cs + ODDS_WEIGHT * impliedPct) * 100,
+          ) / 100
+        );
       });
     }
   }

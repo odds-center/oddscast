@@ -78,7 +78,8 @@ export class FavoritesService {
     const where: Record<string, unknown> = { id };
     if (userId !== undefined) where.userId = userId;
     const result = await this.favoriteRepo.delete(where);
-    if (!result.affected) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
+    if (!result.affected)
+      throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
     return { message: '즐겨찾기가 삭제되었습니다' };
   }
 

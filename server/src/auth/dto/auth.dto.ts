@@ -1,4 +1,10 @@
-import { IsEmail, IsString, MinLength, IsOptional, IsBoolean } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  MinLength,
+  IsOptional,
+  IsBoolean,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class RegisterDto {
@@ -73,12 +79,17 @@ export class UpdateProfileDto {
   @IsString()
   favoriteMeet?: string | null;
 
-  @ApiPropertyOptional({ description: 'Whether user has completed onboarding tutorial' })
+  @ApiPropertyOptional({
+    description: 'Whether user has completed onboarding tutorial',
+  })
   @IsOptional()
   @IsBoolean()
   hasSeenOnboarding?: boolean;
 
-  @ApiPropertyOptional({ description: 'Coach mark tour ID to mark as completed (appended to completedTours array)' })
+  @ApiPropertyOptional({
+    description:
+      'Coach mark tour ID to mark as completed (appended to completedTours array)',
+  })
   @IsOptional()
   @IsString()
   completedTour?: string;

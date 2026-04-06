@@ -26,13 +26,20 @@ export class KakaoStrategy extends PassportStrategy(Strategy, 'kakao') {
     try {
       const kakaoId = String(profile.id);
       const email: string | undefined =
-        (profile._json as Record<string, unknown> | undefined)?.['kakao_account'] !== undefined
-          ? ((profile._json as Record<string, Record<string, unknown>>)['kakao_account']['email'] as string | undefined)
+        (profile._json as Record<string, unknown> | undefined)?.[
+          'kakao_account'
+        ] !== undefined
+          ? ((profile._json as Record<string, Record<string, unknown>>)[
+              'kakao_account'
+            ]['email'] as string | undefined)
           : undefined;
       const nickname: string =
         profile.displayName ??
-        ((profile._json as Record<string, Record<string, Record<string, string>>> | undefined)
-          ?.['kakao_account']?.['profile']?.['nickname']) ??
+        (
+          profile._json as
+            | Record<string, Record<string, Record<string, string>>>
+            | undefined
+        )?.['kakao_account']?.['profile']?.['nickname'] ??
         '카카오사용자';
 
       const user = await this.authService.findOrCreateKakaoUser({

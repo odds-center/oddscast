@@ -113,7 +113,10 @@ export class CreateRaceEntryDto {
 }
 
 export class RaceFilterDto {
-  @ApiPropertyOptional({ description: 'Search term — matches race name, meet, rcNo, or any entry horse/jockey name' })
+  @ApiPropertyOptional({
+    description:
+      'Search term — matches race name, meet, rcNo, or any entry horse/jockey name',
+  })
   @IsOptional()
   @IsString()
   q?: string;

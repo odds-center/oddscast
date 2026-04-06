@@ -1,5 +1,10 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiQuery, ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiQuery,
+  ApiBearerAuth,
+} from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import {
   AnalyticsService,
@@ -17,7 +22,11 @@ export class AnalyticsController {
 
   @Get('track-condition')
   @ApiOperation({ summary: 'Win rates by track surface condition (public)' })
-  @ApiQuery({ name: 'meet', required: false, description: '서울 | 제주 | 부산경남' })
+  @ApiQuery({
+    name: 'meet',
+    required: false,
+    description: '서울 | 제주 | 부산경남',
+  })
   async getTrackConditionStats(
     @Query('meet') meet?: string,
   ): Promise<TrackConditionStat[]> {
@@ -27,8 +36,14 @@ export class AnalyticsController {
   @Get('post-position')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Win rates by starting gate number (auth required)' })
-  @ApiQuery({ name: 'meet', required: false, description: '서울 | 제주 | 부산경남' })
+  @ApiOperation({
+    summary: 'Win rates by starting gate number (auth required)',
+  })
+  @ApiQuery({
+    name: 'meet',
+    required: false,
+    description: '서울 | 제주 | 부산경남',
+  })
   async getPostPositionStats(
     @Query('meet') meet?: string,
   ): Promise<PostPositionStat[]> {
@@ -38,8 +53,14 @@ export class AnalyticsController {
   @Get('jockey-trainer-combos')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Top 20 jockey-trainer combinations by win rate (auth required)' })
-  @ApiQuery({ name: 'meet', required: false, description: '서울 | 제주 | 부산경남' })
+  @ApiOperation({
+    summary: 'Top 20 jockey-trainer combinations by win rate (auth required)',
+  })
+  @ApiQuery({
+    name: 'meet',
+    required: false,
+    description: '서울 | 제주 | 부산경남',
+  })
   async getJockeyTrainerComboStats(
     @Query('meet') meet?: string,
   ): Promise<JockeyTrainerComboStat[]> {
@@ -47,7 +68,9 @@ export class AnalyticsController {
   }
 
   @Get('prediction-accuracy')
-  @ApiOperation({ summary: 'AI prediction accuracy grouped by race meet (public)' })
+  @ApiOperation({
+    summary: 'AI prediction accuracy grouped by race meet (public)',
+  })
   async getPredictionAccuracyByMeet(): Promise<PredictionAccuracyByMeet[]> {
     return this.analyticsService.getPredictionAccuracyByMeet();
   }
@@ -55,8 +78,14 @@ export class AnalyticsController {
   @Get('distance-win-rates')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Win rates by distance range bucket (auth required)' })
-  @ApiQuery({ name: 'meet', required: false, description: '서울 | 제주 | 부산경남' })
+  @ApiOperation({
+    summary: 'Win rates by distance range bucket (auth required)',
+  })
+  @ApiQuery({
+    name: 'meet',
+    required: false,
+    description: '서울 | 제주 | 부산경남',
+  })
   async getDistanceWinRates(
     @Query('meet') meet?: string,
   ): Promise<DistanceWinRate[]> {

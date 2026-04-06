@@ -113,7 +113,10 @@
       "Read(//Users/risingcore/Desktop/work/oddscast/agents/$d/.claude/**)",
       "Skill(commit-commands:commit)",
       "WebFetch(domain:developers.kakao.com)",
-      "Bash(npm show:*)"
+      "Bash(npm show:*)",
+      "Bash(find webapp/pages -name update-log* 2)",
+      "Bash(/dev/null grep:*)",
+      "Bash(find /Users/risingcore/Desktop/work/oddscast/webapp/pages -name \"update-log*\" grep -rn \"localStorage\\\\|window\\\\.\" /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/login.tsx /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/register.tsx)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

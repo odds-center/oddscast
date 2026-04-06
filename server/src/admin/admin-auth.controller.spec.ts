@@ -49,7 +49,10 @@ describe('AdminAuthController', () => {
 
       const result = controller.login(dto);
 
-      expect(mockAuthService.adminLogin).toHaveBeenCalledWith('admin', 'admin1234');
+      expect(mockAuthService.adminLogin).toHaveBeenCalledWith(
+        'admin',
+        'admin1234',
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -61,7 +64,10 @@ describe('AdminAuthController', () => {
 
       const result = controller.getMe(mockAdminUser);
 
-      expect(mockAuthService.getProfile).toHaveBeenCalledWith(99, UserRole.ADMIN);
+      expect(mockAuthService.getProfile).toHaveBeenCalledWith(
+        99,
+        UserRole.ADMIN,
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -73,7 +79,10 @@ describe('AdminAuthController', () => {
 
       const result = controller.refreshToken(mockAdminUser);
 
-      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(99, UserRole.ADMIN);
+      expect(mockAuthService.refreshToken).toHaveBeenCalledWith(
+        99,
+        UserRole.ADMIN,
+      );
       expect(result).toEqual(expected);
     });
   });

@@ -156,19 +156,20 @@ export class UsersService {
 
   async getStats(id: number) {
     const now = new Date();
-    const [totalTickets, usedTickets, availableTickets, totalFavorites] = await Promise.all([
-      this.ticketRepo.count({ where: { userId: id } }),
-      this.ticketRepo.count({
-        where: { userId: id, status: TicketStatus.USED },
-      }),
-      this.ticketRepo
-        .createQueryBuilder('t')
-        .where('t.userId = :id', { id })
-        .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
-        .andWhere('t.expiresAt >= :now', { now })
-        .getCount(),
-      this.favoriteRepo.count({ where: { userId: id } }),
-    ]);
+    const [totalTickets, usedTickets, availableTickets, totalFavorites] =
+      await Promise.all([
+        this.ticketRepo.count({ where: { userId: id } }),
+        this.ticketRepo.count({
+          where: { userId: id, status: TicketStatus.USED },
+        }),
+        this.ticketRepo
+          .createQueryBuilder('t')
+          .where('t.userId = :id', { id })
+          .andWhere('t.status = :status', { status: TicketStatus.AVAILABLE })
+          .andWhere('t.expiresAt >= :now', { now })
+          .getCount(),
+        this.favoriteRepo.count({ where: { userId: id } }),
+      ]);
     return {
       totalTickets,
       usedTickets,

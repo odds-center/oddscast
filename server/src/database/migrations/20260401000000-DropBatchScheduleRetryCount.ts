@@ -1,8 +1,6 @@
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class DropBatchScheduleRetryCount20260401000000
-  implements MigrationInterface
-{
+export class DropBatchScheduleRetryCount20260401000000 implements MigrationInterface {
   name = 'DropBatchScheduleRetryCount20260401000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -75,10 +75,7 @@ export class AnalyticsService {
       .innerJoin(Race, 'r', 'r.id = rr.raceId')
       .select('rr.track', 'track')
       .addSelect('COUNT(DISTINCT rr.raceId)', 'totalRaces')
-      .addSelect(
-        `COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`,
-        'winnerCount',
-      )
+      .addSelect(`COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`, 'winnerCount')
       .where('rr.track IS NOT NULL')
       .groupBy('rr.track')
       .orderBy('"totalRaces"', 'DESC');
@@ -130,10 +127,7 @@ export class AnalyticsService {
       )
       .select('re."chulNo"', 'chulNo')
       .addSelect('COUNT(re.id)', 'totalStarts')
-      .addSelect(
-        `COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`,
-        'wins',
-      )
+      .addSelect(`COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`, 'wins')
       .where('re."chulNo" IS NOT NULL')
       .andWhere('re."isScratched" = false')
       .groupBy('re."chulNo"')
@@ -157,9 +151,7 @@ export class AnalyticsService {
         totalStarts,
         wins,
         winRate:
-          totalStarts > 0
-            ? Math.round((wins / totalStarts) * 10000) / 100
-            : 0,
+          totalStarts > 0 ? Math.round((wins / totalStarts) * 10000) / 100 : 0,
       };
     });
 
@@ -190,10 +182,7 @@ export class AnalyticsService {
       .addSelect('re."jkName"', 'jkName')
       .addSelect('re."trName"', 'trName')
       .addSelect('COUNT(re.id)', 'totalStarts')
-      .addSelect(
-        `COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`,
-        'wins',
-      )
+      .addSelect(`COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`, 'wins')
       .where('re."jkNo" IS NOT NULL')
       .andWhere('re."trName" IS NOT NULL')
       .andWhere('re."isScratched" = false')
@@ -229,9 +218,7 @@ export class AnalyticsService {
         totalStarts,
         wins,
         winRate:
-          totalStarts > 0
-            ? Math.round((wins / totalStarts) * 10000) / 100
-            : 0,
+          totalStarts > 0 ? Math.round((wins / totalStarts) * 10000) / 100 : 0,
       };
     });
 
@@ -302,10 +289,7 @@ export class AnalyticsService {
         'distanceRange',
       )
       .addSelect('COUNT(re.id)', 'totalStarts')
-      .addSelect(
-        `COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`,
-        'wins',
-      )
+      .addSelect(`COUNT(CASE WHEN rr."ordInt" = 1 THEN 1 END)`, 'wins')
       .where('r."rcDist" IS NOT NULL')
       .andWhere(`r."rcDist" ~ '^[0-9]+$'`)
       .andWhere('re."isScratched" = false')
@@ -337,9 +321,7 @@ export class AnalyticsService {
         totalStarts,
         wins,
         winRate:
-          totalStarts > 0
-            ? Math.round((wins / totalStarts) * 10000) / 100
-            : 0,
+          totalStarts > 0 ? Math.round((wins / totalStarts) * 10000) / 100 : 0,
       };
     });
 

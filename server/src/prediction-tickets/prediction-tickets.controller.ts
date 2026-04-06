@@ -89,7 +89,9 @@ export class PredictionTicketsController {
     @CurrentUser() user: JwtPayload,
     @Param('raceId', ParseIntPipe) raceId: number,
   ) {
-    return this.ticketsService.hasUsedForRace(user.sub, raceId).then((used) => ({ used }));
+    return this.ticketsService
+      .hasUsedForRace(user.sub, raceId)
+      .then((used) => ({ used }));
   }
 
   @Get('history')

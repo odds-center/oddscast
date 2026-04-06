@@ -112,7 +112,9 @@ export class PredictionsService {
 
     // Get configurable limit from global_config
     const limitStr = await this.configService.get('gemini_daily_limit');
-    const limit = limitStr ? parseInt(limitStr, 10) : DEFAULT_GEMINI_DAILY_LIMIT;
+    const limit = limitStr
+      ? parseInt(limitStr, 10)
+      : DEFAULT_GEMINI_DAILY_LIMIT;
     const effectiveLimit = isNaN(limit) ? DEFAULT_GEMINI_DAILY_LIMIT : limit;
 
     if (this.geminiDailyCallCount >= effectiveLimit) {
@@ -135,7 +137,9 @@ export class PredictionsService {
       this.geminiDailyCountDate = todayStr;
     }
     const limitStr = await this.configService.get('gemini_daily_limit');
-    const limit = limitStr ? parseInt(limitStr, 10) : DEFAULT_GEMINI_DAILY_LIMIT;
+    const limit = limitStr
+      ? parseInt(limitStr, 10)
+      : DEFAULT_GEMINI_DAILY_LIMIT;
     return {
       count: this.geminiDailyCallCount,
       limit: isNaN(limit) ? DEFAULT_GEMINI_DAILY_LIMIT : limit,
@@ -155,7 +159,7 @@ export class PredictionsService {
     });
     // Filter out scratched/withdrawn horses — they cannot race and must not be scored
     const entries = allEntries.filter(
-      (e) => !((e as { isScratched?: boolean }).isScratched),
+      (e) => !(e as { isScratched?: boolean }).isScratched,
     );
     const results = await this.resultRepo
       .createQueryBuilder('rr')
@@ -688,7 +692,13 @@ export class PredictionsService {
     overall: { totalCount: number; hitCount: number; averageAccuracy: number };
     byMonth: Array<{ month: string; count: number; averageAccuracy: number }>;
     byMeet: Array<{ meet: string; count: number; averageAccuracy: number }>;
-    byBetType: Array<{ type: string; label: string; total: number; hit: number; rate: number }>;
+    byBetType: Array<{
+      type: string;
+      label: string;
+      total: number;
+      hit: number;
+      rate: number;
+    }>;
   }> {
     const completedRows = await this.predictionRepo
       .createQueryBuilder('p')
@@ -763,14 +773,19 @@ export class PredictionsService {
       .take(500)
       .getMany();
 
-    const raceIdsForBetType = predsWithScores.map((p) => p.raceId).filter(Boolean);
+    const raceIdsForBetType = predsWithScores
+      .map((p) => p.raceId)
+      .filter(Boolean);
     const results = raceIdsForBetType.length
       ? await this.resultRepo.find({
           where: { raceId: In(raceIdsForBetType) },
           select: ['raceId', 'hrNo', 'chulNo', 'ord'],
         })
       : [];
-    const resultsByRace = new Map<number, Array<{ chulNo: string; ord: number }>>();
+    const resultsByRace = new Map<
+      number,
+      Array<{ chulNo: string; ord: number }>
+    >();
     for (const r of results) {
       const ord = parseInt(String(r.ord ?? ''), 10);
       if (!Number.isFinite(ord) || !r.chulNo) continue;
@@ -781,8 +796,8 @@ export class PredictionsService {
 
     // Count hit/total for each bet-type style
     const betTypeStats = {
-      win: { total: 0, hit: 0 },    // 1st place match (단승)
-      place: { total: 0, hit: 0 },   // Any of top 2 in top 3 (연승)
+      win: { total: 0, hit: 0 }, // 1st place match (단승)
+      place: { total: 0, hit: 0 }, // Any of top 2 in top 3 (연승)
       quinella: { total: 0, hit: 0 }, // Top 2 in any order (복승)
       trifecta: { total: 0, hit: 0 }, // Top 3 in any order (삼복)
     };
@@ -804,30 +819,78 @@ export class PredictionsService {
 
       // Place (연승): AI's #1 pick in actual top 3
       betTypeStats.place.total++;
-      if ([actual1, actual2, actual3].includes(picks[0])) betTypeStats.place.hit++;
+      if ([actual1, actual2, actual3].includes(picks[0]))
+        betTypeStats.place.hit++;
 
       // Quinella (복승): AI's top 2 both in actual top 3
       if (actual2) {
         betTypeStats.quinella.total++;
         const top3 = [actual1, actual2, actual3].filter(Boolean);
-        if (top3.includes(picks[0]) && top3.includes(picks[1])) betTypeStats.quinella.hit++;
+        if (top3.includes(picks[0]) && top3.includes(picks[1]))
+          betTypeStats.quinella.hit++;
       }
 
       // Trifecta (삼복): AI's top 3 all in actual top 3
       if (actual3 && picks.length >= 3) {
         betTypeStats.trifecta.total++;
         const top3 = [actual1, actual2, actual3];
-        if (top3.includes(picks[0]) && top3.includes(picks[1]) && top3.includes(picks[2])) {
+        if (
+          top3.includes(picks[0]) &&
+          top3.includes(picks[1]) &&
+          top3.includes(picks[2])
+        ) {
           betTypeStats.trifecta.hit++;
         }
       }
     }
 
     const byBetType = [
-      { type: 'win', label: '단승', ...betTypeStats.win, rate: betTypeStats.win.total > 0 ? Math.round((betTypeStats.win.hit / betTypeStats.win.total) * 1000) / 10 : 0 },
-      { type: 'place', label: '연승', ...betTypeStats.place, rate: betTypeStats.place.total > 0 ? Math.round((betTypeStats.place.hit / betTypeStats.place.total) * 1000) / 10 : 0 },
-      { type: 'quinella', label: '복승', ...betTypeStats.quinella, rate: betTypeStats.quinella.total > 0 ? Math.round((betTypeStats.quinella.hit / betTypeStats.quinella.total) * 1000) / 10 : 0 },
-      { type: 'trifecta', label: '삼복승', ...betTypeStats.trifecta, rate: betTypeStats.trifecta.total > 0 ? Math.round((betTypeStats.trifecta.hit / betTypeStats.trifecta.total) * 1000) / 10 : 0 },
+      {
+        type: 'win',
+        label: '단승',
+        ...betTypeStats.win,
+        rate:
+          betTypeStats.win.total > 0
+            ? Math.round(
+                (betTypeStats.win.hit / betTypeStats.win.total) * 1000,
+              ) / 10
+            : 0,
+      },
+      {
+        type: 'place',
+        label: '연승',
+        ...betTypeStats.place,
+        rate:
+          betTypeStats.place.total > 0
+            ? Math.round(
+                (betTypeStats.place.hit / betTypeStats.place.total) * 1000,
+              ) / 10
+            : 0,
+      },
+      {
+        type: 'quinella',
+        label: '복승',
+        ...betTypeStats.quinella,
+        rate:
+          betTypeStats.quinella.total > 0
+            ? Math.round(
+                (betTypeStats.quinella.hit / betTypeStats.quinella.total) *
+                  1000,
+              ) / 10
+            : 0,
+      },
+      {
+        type: 'trifecta',
+        label: '삼복승',
+        ...betTypeStats.trifecta,
+        rate:
+          betTypeStats.trifecta.total > 0
+            ? Math.round(
+                (betTypeStats.trifecta.hit / betTypeStats.trifecta.total) *
+                  1000,
+              ) / 10
+            : 0,
+      },
     ];
 
     return {
@@ -1116,7 +1179,12 @@ export class PredictionsService {
   async generatePredictionsForDate(
     date: string,
     meet?: string,
-  ): Promise<{ requested: number; generated: number; failed: number; errors: string[] }> {
+  ): Promise<{
+    requested: number;
+    generated: number;
+    failed: number;
+    errors: string[];
+  }> {
     const rcDate = date.replace(/-/g, '').slice(0, 8);
     const kraMeetName = meet ? toKraMeetName(meet) : undefined;
     const races = await this.raceRepo.find({
@@ -1174,7 +1242,11 @@ export class PredictionsService {
       });
       for (const e of entriesList) {
         if (!entriesMap.has(e.raceId)) entriesMap.set(e.raceId, []);
-        entriesMap.get(e.raceId)!.push({ hrNo: e.hrNo, hrName: e.hrName, chulNo: (e as { chulNo?: string }).chulNo ?? undefined });
+        entriesMap.get(e.raceId)!.push({
+          hrNo: e.hrNo,
+          hrName: e.hrName,
+          chulNo: (e as { chulNo?: string }).chulNo ?? undefined,
+        });
       }
     }
     const rawRaces = rawRacesList.map((r) => ({
@@ -1189,8 +1261,17 @@ export class PredictionsService {
     });
 
     // Batch-load all COMPLETED predictions for these races (avoid N+1)
-    type HorseScore = { hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number };
-    const predsByRaceId = new Map<number, { scores: unknown; analysis?: string }>();
+    type HorseScore = {
+      hrNo?: string;
+      hrName?: string;
+      chulNo?: string;
+      score?: number;
+      winProb?: number;
+    };
+    const predsByRaceId = new Map<
+      number,
+      { scores: unknown; analysis?: string }
+    >();
     if (raceIds.length > 0) {
       const allPreds = await this.predictionRepo
         .createQueryBuilder('p')
@@ -1202,7 +1283,10 @@ export class PredictionsService {
       // Keep only the most recent prediction per race
       for (const p of allPreds) {
         if (!predsByRaceId.has(p.raceId)) {
-          predsByRaceId.set(p.raceId, { scores: p.scores, analysis: p.analysis ?? undefined });
+          predsByRaceId.set(p.raceId, {
+            scores: p.scores,
+            analysis: p.analysis ?? undefined,
+          });
         }
       }
     }
@@ -1221,7 +1305,13 @@ export class PredictionsService {
       horseNames: Record<string, string>;
       aiConsensus: string;
       consensusLabel?: string;
-      horseScores?: Array<{ hrNo?: string; hrName?: string; chulNo?: string; score?: number; winProb?: number }>;
+      horseScores?: Array<{
+        hrNo?: string;
+        hrName?: string;
+        chulNo?: string;
+        score?: number;
+        winProb?: number;
+      }>;
       analysis?: string;
     }> = [];
 
@@ -1236,8 +1326,15 @@ export class PredictionsService {
 
       const horseNames: Record<string, string> = {};
       const entryList =
-        (race as { entries?: Array<{ hrNo?: string; hrName?: string; chulNo?: string }> })
-          .entries ?? [];
+        (
+          race as {
+            entries?: Array<{
+              hrNo?: string;
+              hrName?: string;
+              chulNo?: string;
+            }>;
+          }
+        ).entries ?? [];
       for (const e of entryList) {
         if (e.hrNo && e.hrName) horseNames[e.hrNo] = e.hrName;
       }
@@ -1416,12 +1513,23 @@ export class PredictionsService {
       // Find the highest dividend where AI's top picks matched
       const raceDivs = divByRace.get(p.raceId) ?? [];
       const topPicks = this.extractTopPickChulNos(p.scores, 3);
-      let bestDividend: { pool: string; poolName: string; odds: number } | null = null;
+      let bestDividend: {
+        pool: string;
+        poolName: string;
+        odds: number;
+      } | null = null;
       for (const div of raceDivs) {
         const nums = [div.chulNo, div.chulNo2, div.chulNo3].filter(Boolean);
         const matched = nums.filter((n) => topPicks.includes(n));
-        if (matched.length >= Math.min(nums.length, 2) && div.odds > (bestDividend?.odds ?? 0)) {
-          bestDividend = { pool: div.pool, poolName: div.poolName, odds: div.odds };
+        if (
+          matched.length >= Math.min(nums.length, 2) &&
+          div.odds > (bestDividend?.odds ?? 0)
+        ) {
+          bestDividend = {
+            pool: div.pool,
+            poolName: div.poolName,
+            odds: div.odds,
+          };
         }
       }
 
@@ -1500,10 +1608,7 @@ export class PredictionsService {
       'gemini-1.5-flash-8b',
       'gemini-pro',
     ];
-    const fallbackModels = [
-      'gemini-2.5-flash',
-      'gemini-2.0-flash',
-    ];
+    const fallbackModels = ['gemini-2.5-flash', 'gemini-2.0-flash'];
     let modelsToTry = deprecatedOrUnavailable.includes(rawModel)
       ? [...fallbackModels]
       : [rawModel, ...fallbackModels.filter((m) => m !== rawModel)];
@@ -1578,35 +1683,47 @@ export class PredictionsService {
 
     // Wrap entire prediction flow in try/finally to guarantee lock cleanup
     try {
-    // 3. Enrich entries with historical data — parallelized for performance.
-    // Each enrichment method mutates entry fields independently, so they can run concurrently.
-    // Group 1: sectional + race_results based enrichments (independent DB tables)
-    const raceForEnrich = race as RaceForPython;
-    const [sectionalByHorse, raceWithRecentRanks] = await Promise.all([
-      this.getSectionalAnalysisByHorse(raceForEnrich),
-      this.enrichEntriesWithRecentRanks(raceForEnrich),
-    ]);
+      // 3. Enrich entries with historical data — parallelized for performance.
+      // Each enrichment method mutates entry fields independently, so they can run concurrently.
+      // Group 1: sectional + race_results based enrichments (independent DB tables)
+      const raceForEnrich = race as RaceForPython;
+      const [sectionalByHorse, raceWithRecentRanks] = await Promise.all([
+        this.getSectionalAnalysisByHorse(raceForEnrich),
+        this.enrichEntriesWithRecentRanks(raceForEnrich),
+      ]);
 
-    // Group 2: fall, distance, class (chain on recentRanks result, but independent of each other)
-    // These all add fields to entries and read from race_results — can run in parallel
-    const [raceWithFallHistory, raceWithDist, raceWithClass] = await Promise.all([
-      this.enrichEntriesWithFallHistory(raceWithRecentRanks),
-      this.enrichEntriesWithDistanceStats(raceWithRecentRanks),
-      this.enrichEntriesWithClassChange(raceWithRecentRanks),
-    ]);
+      // Group 2: fall, distance, class (chain on recentRanks result, but independent of each other)
+      // These all add fields to entries and read from race_results — can run in parallel
+      const [raceWithFallHistory, raceWithDist, raceWithClass] =
+        await Promise.all([
+          this.enrichEntriesWithFallHistory(raceWithRecentRanks),
+          this.enrichEntriesWithDistanceStats(raceWithRecentRanks),
+          this.enrichEntriesWithClassChange(raceWithRecentRanks),
+        ]);
 
-    // Merge results from parallel group 2 (each added different fields to entries)
-    const mergedEntries = (raceWithRecentRanks.entries ?? []).map((entry, i) => ({
-      ...entry,
-      ...(raceWithFallHistory.entries?.[i] ?? {}),
-      ...(raceWithDist.entries?.[i] ?? {}),
-      ...(raceWithClass.entries?.[i] ?? {}),
-    }));
-    const raceAfterGroup2 = { ...raceWithRecentRanks, entries: mergedEntries };
+      // Merge results from parallel group 2 (each added different fields to entries)
+      const mergedEntries = (raceWithRecentRanks.entries ?? []).map(
+        (entry, i) => ({
+          ...entry,
+          ...(raceWithFallHistory.entries?.[i] ?? {}),
+          ...(raceWithDist.entries?.[i] ?? {}),
+          ...(raceWithClass.entries?.[i] ?? {}),
+        }),
+      );
+      const raceAfterGroup2 = {
+        ...raceWithRecentRanks,
+        entries: mergedEntries,
+      };
 
-    // Group 3: trainer, jockey, training, fatigue, prevWeight, trackConditionHistory (independent tables)
-    const [raceWithTrainer, raceWithJockey, raceWithTraining, raceWithFatigue, raceWithPrevWeight, raceWithTch] =
-      await Promise.all([
+      // Group 3: trainer, jockey, training, fatigue, prevWeight, trackConditionHistory (independent tables)
+      const [
+        raceWithTrainer,
+        raceWithJockey,
+        raceWithTraining,
+        raceWithFatigue,
+        raceWithPrevWeight,
+        raceWithTch,
+      ] = await Promise.all([
         this.enrichEntriesWithTrainerResults(raceAfterGroup2),
         this.enrichEntriesWithJockeyResults(raceAfterGroup2),
         this.enrichEntriesWithTrainingMetrics(raceAfterGroup2),
@@ -1615,210 +1732,218 @@ export class PredictionsService {
         this.enrichEntriesWithTrackConditionHistory(raceAfterGroup2),
       ]);
 
-    // Merge results from parallel group 3
-    const finalEntries = (raceAfterGroup2.entries ?? []).map((entry, i) => ({
-      ...entry,
-      ...(raceWithTrainer.entries?.[i] ?? {}),
-      ...(raceWithJockey.entries?.[i] ?? {}),
-      ...(raceWithTraining.entries?.[i] ?? {}),
-      ...(raceWithFatigue.entries?.[i] ?? {}),
-      ...(raceWithPrevWeight.entries?.[i] ?? {}),
-      ...(raceWithTch.entries?.[i] ?? {}),
-    }));
-    const raceEnriched = { ...raceAfterGroup2, entries: finalEntries };
+      // Merge results from parallel group 3
+      const finalEntries = (raceAfterGroup2.entries ?? []).map((entry, i) => ({
+        ...entry,
+        ...(raceWithTrainer.entries?.[i] ?? {}),
+        ...(raceWithJockey.entries?.[i] ?? {}),
+        ...(raceWithTraining.entries?.[i] ?? {}),
+        ...(raceWithFatigue.entries?.[i] ?? {}),
+        ...(raceWithPrevWeight.entries?.[i] ?? {}),
+        ...(raceWithTch.entries?.[i] ?? {}),
+      }));
+      const raceEnriched = { ...raceAfterGroup2, entries: finalEntries };
 
-    // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score input
-    const raceWithSectional = this.enrichEntriesWithSectionalTag(
-      raceEnriched,
-      sectionalByHorse,
-    );
+      // 3d. 구간별 태그(선행마/추입마) merge — Python calculate_score input
+      const raceWithSectional = this.enrichEntriesWithSectionalTag(
+        raceEnriched,
+        sectionalByHorse,
+      );
 
-    // 3. Run Python Analysis (말 기준 점수 + 기수 통합 분석)
-    const path = require('path');
-    const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
-    const { horseScores: horseScoreResult, cascadeFallRisk } =
-      await this.runPythonScript(scriptPath, raceWithSectional);
+      // 3. Run Python Analysis (말 기준 점수 + 기수 통합 분석)
+      const path = require('path');
+      const scriptPath = path.join(process.cwd(), 'scripts', 'analysis.py');
+      const { horseScores: horseScoreResult, cascadeFallRisk } =
+        await this.runPythonScript(scriptPath, raceWithSectional);
 
-    // Cache Python sub-scores for factor weight validation (validate_weights.py)
-    try {
-      const scoreHash = crypto
-        .createHash('sha256')
-        .update(JSON.stringify(raceWithSectional))
-        .digest('hex')
-        .slice(0, 16);
-      const cachedScores = await this.analysisCacheRepo.findOne({
-        where: { raceId, analysisType: 'scores' },
-      });
-      if (cachedScores) {
-        cachedScores.dataHash = scoreHash;
-        cachedScores.result = { scores: horseScoreResult } as unknown as Record<string, unknown>;
-        await this.analysisCacheRepo.save(cachedScores);
-      } else {
-        await this.analysisCacheRepo.save(
-          this.analysisCacheRepo.create({
-            raceId,
-            analysisType: 'scores',
-            dataHash: scoreHash,
-            result: { scores: horseScoreResult } as unknown as Record<string, unknown>,
-          }),
-        );
-      }
-    } catch {
-      // Cache failure should not block prediction generation
-    }
-
-    let jockeyAnalysis: {
-      entriesWithScores?: Array<{
-        hrName: string;
-        jockeyScore: number;
-        combinedScore: number;
-      }>;
-      weightRatio?: { horse: number; jockey: number };
-      topPickByJockey?: {
-        hrName: string;
-        jkName: string;
-        jockeyScore: number;
-      } | null;
-    } | null = null;
-    try {
-      jockeyAnalysis = await this.analysisService.analyzeJockey(raceId);
-    } catch (e) {
-      this.logger.warn(`Jockey analysis skipped: ${(e as Error).message}`);
-    }
-
-    // 4. Apply odds blend to horseScoreResult so saved winProb reflects market odds when available.
-    //    Uses same 80% model / 20% odds-implied logic as constructPrompt, but applied to the
-    //    Python output before saving — keeps DB winProb consistent with Gemini context.
-    const oddsMap = (
-      race as RaceForPython & { oddsByHrNo?: Record<string, number> }
-    ).oddsByHrNo;
-    const patchedHorseScoreResult = this.applyOddsBlendToHorseScores(
-      horseScoreResult,
-      jockeyAnalysis,
-      oddsMap,
-    );
-
-    // 5. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
-    const prompt = this.constructPrompt(
-      raceWithSectional,
-      patchedHorseScoreResult,
-      jockeyAnalysis,
-      sectionalByHorse,
-      cascadeFallRisk,
-      opts?.realtime,
-    );
-
-    // 6. Call Gemini (404 시 fallback 모델로 재시도)
-    const generationConfig = {
-      temperature,
-      maxOutputTokens: maxTokens,
-    };
-    let lastError: Error | null = null;
-    for (const modelName of modelsToTry) {
+      // Cache Python sub-scores for factor weight validation (validate_weights.py)
       try {
-        const model = genAI.getGenerativeModel({
-          model: modelName,
-          generationConfig,
+        const scoreHash = crypto
+          .createHash('sha256')
+          .update(JSON.stringify(raceWithSectional))
+          .digest('hex')
+          .slice(0, 16);
+        const cachedScores = await this.analysisCacheRepo.findOne({
+          where: { raceId, analysisType: 'scores' },
         });
-        const result = await model.generateContent(prompt);
-        const response = result.response;
-        const text = response.text();
-
-        // 7. Parse and Save (예측 성공 시 관련 데이터 DB 저장)
-        const predictionData = this.parseGeminiResponse(text);
-        const geminiScores = predictionData?.scores ?? predictionData;
-
-        const scoresToSave = this.buildScoresForSave(
-          geminiScores,
-          patchedHorseScoreResult,
-          jockeyAnalysis,
-          (race as { entries?: Array<{ hrNo?: string; chulNo?: string }> })
-            .entries ?? [],
-        );
-
-        lastWorkingGeminiModel = modelName;
-        lastWorkingGeminiModelAt = Date.now();
-
-        // Update lock row to COMPLETED (same row, preserving id for referential integrity).
-        await this.predictionRepo
-          .createQueryBuilder()
-          .update()
-          .set({
-            scores: () =>
-              `'${JSON.stringify(scoresToSave)}'::jsonb`,
-            analysis: predictionData?.analysis ?? '',
-            preview: predictionData?.preview ?? '',
-            status: PredictionStatus.COMPLETED,
-            previewApproved: true,
-          })
-          .where('id = :id', { id: lockRow.id })
-          .execute();
-        const created = await this.predictionRepo.findOneOrFail({
-          where: { id: lockRow.id },
-        });
-
-        // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
-        const horseScores =
-          (scoresToSave as { horseScores?: Array<{ winProb?: number }> })
-            ?.horseScores ?? [];
-        const maxWinProb = horseScores.length
-          ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
-          : 0;
-        const confidencePercent = Math.round(maxWinProb);
-        if (confidencePercent >= 70) {
-          try {
-            await this.notificationsService.notifyHighConfidencePrediction({
+        if (cachedScores) {
+          cachedScores.dataHash = scoreHash;
+          cachedScores.result = {
+            scores: horseScoreResult,
+          } as unknown as Record<string, unknown>;
+          await this.analysisCacheRepo.save(cachedScores);
+        } else {
+          await this.analysisCacheRepo.save(
+            this.analysisCacheRepo.create({
               raceId,
-              predictionId: created.id,
-              meet: (race as { meet?: string }).meet,
-              rcNo: (race as { rcNo?: string }).rcNo,
-              rcDate: (race as { rcDate?: string }).rcDate,
-              confidencePercent,
-            });
-          } catch (alertErr) {
-            this.logger.warn(
-              `notifyHighConfidencePrediction failed: ${alertErr instanceof Error ? alertErr.message : alertErr}`,
-            );
-          }
-        }
-
-        // Fire-and-forget pre-race commentary generation
-        this.generateRaceCommentary(raceId, 'pre-race').catch((err: unknown) => {
-          this.logger.warn(
-            `Failed to generate pre-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+              analysisType: 'scores',
+              dataHash: scoreHash,
+              result: { scores: horseScoreResult } as unknown as Record<
+                string,
+                unknown
+              >,
+            }),
           );
-        });
-
-        return created;
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        const status = (err as { status?: number })?.status;
-        const msg = String((err as Error).message);
-        const is404 =
-          status === 404 ||
-          msg.includes('404') ||
-          msg.toLowerCase().includes('not found');
-        if (is404) {
-          this.logger.warn(
-            `Gemini model "${modelName}" not found (404), trying next...`,
-          );
-          continue;
         }
-        this.logger.error(`Gemini generation failed (${modelName}): ${lastError}`);
-        await this.predictionRepo.update(lockRow.id, {
-          status: PredictionStatus.FAILED,
-        });
-        throw new Error(
-          `Failed to generate prediction via Gemini: ${lastError.message}`,
-        );
+      } catch {
+        // Cache failure should not block prediction generation
       }
-    }
-    await this.predictionRepo.update(lockRow.id, {
-      status: PredictionStatus.FAILED,
-    });
-    throw new Error(
-      `Failed to generate prediction: no usable model. Last error: ${lastError?.message ?? 'unknown'}`,
-    );
+
+      let jockeyAnalysis: {
+        entriesWithScores?: Array<{
+          hrName: string;
+          jockeyScore: number;
+          combinedScore: number;
+        }>;
+        weightRatio?: { horse: number; jockey: number };
+        topPickByJockey?: {
+          hrName: string;
+          jkName: string;
+          jockeyScore: number;
+        } | null;
+      } | null = null;
+      try {
+        jockeyAnalysis = await this.analysisService.analyzeJockey(raceId);
+      } catch (e) {
+        this.logger.warn(`Jockey analysis skipped: ${(e as Error).message}`);
+      }
+
+      // 4. Apply odds blend to horseScoreResult so saved winProb reflects market odds when available.
+      //    Uses same 80% model / 20% odds-implied logic as constructPrompt, but applied to the
+      //    Python output before saving — keeps DB winProb consistent with Gemini context.
+      const oddsMap = (
+        race as RaceForPython & { oddsByHrNo?: Record<string, number> }
+      ).oddsByHrNo;
+      const patchedHorseScoreResult = this.applyOddsBlendToHorseScores(
+        horseScoreResult,
+        jockeyAnalysis,
+        oddsMap,
+      );
+
+      // 5. Construct Prompt (훈련 요약, 구간별 성적 태깅 포함)
+      const prompt = this.constructPrompt(
+        raceWithSectional,
+        patchedHorseScoreResult,
+        jockeyAnalysis,
+        sectionalByHorse,
+        cascadeFallRisk,
+        opts?.realtime,
+      );
+
+      // 6. Call Gemini (404 시 fallback 모델로 재시도)
+      const generationConfig = {
+        temperature,
+        maxOutputTokens: maxTokens,
+      };
+      let lastError: Error | null = null;
+      for (const modelName of modelsToTry) {
+        try {
+          const model = genAI.getGenerativeModel({
+            model: modelName,
+            generationConfig,
+          });
+          const result = await model.generateContent(prompt);
+          const response = result.response;
+          const text = response.text();
+
+          // 7. Parse and Save (예측 성공 시 관련 데이터 DB 저장)
+          const predictionData = this.parseGeminiResponse(text);
+          const geminiScores = predictionData?.scores ?? predictionData;
+
+          const scoresToSave = this.buildScoresForSave(
+            geminiScores,
+            patchedHorseScoreResult,
+            jockeyAnalysis,
+            (race as { entries?: Array<{ hrNo?: string; chulNo?: string }> })
+              .entries ?? [],
+          );
+
+          lastWorkingGeminiModel = modelName;
+          lastWorkingGeminiModelAt = Date.now();
+
+          // Update lock row to COMPLETED (same row, preserving id for referential integrity).
+          await this.predictionRepo
+            .createQueryBuilder()
+            .update()
+            .set({
+              scores: () => `'${JSON.stringify(scoresToSave)}'::jsonb`,
+              analysis: predictionData?.analysis ?? '',
+              preview: predictionData?.preview ?? '',
+              status: PredictionStatus.COMPLETED,
+              previewApproved: true,
+            })
+            .where('id = :id', { id: lockRow.id })
+            .execute();
+          const created = await this.predictionRepo.findOneOrFail({
+            where: { id: lockRow.id },
+          });
+
+          // Smart Race Alert: high-confidence prediction → notify users with predictionEnabled
+          const horseScores =
+            (scoresToSave as { horseScores?: Array<{ winProb?: number }> })
+              ?.horseScores ?? [];
+          const maxWinProb = horseScores.length
+            ? Math.max(0, ...horseScores.map((h) => h.winProb ?? 0))
+            : 0;
+          const confidencePercent = Math.round(maxWinProb);
+          if (confidencePercent >= 70) {
+            try {
+              await this.notificationsService.notifyHighConfidencePrediction({
+                raceId,
+                predictionId: created.id,
+                meet: (race as { meet?: string }).meet,
+                rcNo: (race as { rcNo?: string }).rcNo,
+                rcDate: (race as { rcDate?: string }).rcDate,
+                confidencePercent,
+              });
+            } catch (alertErr) {
+              this.logger.warn(
+                `notifyHighConfidencePrediction failed: ${alertErr instanceof Error ? alertErr.message : alertErr}`,
+              );
+            }
+          }
+
+          // Fire-and-forget pre-race commentary generation
+          this.generateRaceCommentary(raceId, 'pre-race').catch(
+            (err: unknown) => {
+              this.logger.warn(
+                `Failed to generate pre-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            },
+          );
+
+          return created;
+        } catch (err) {
+          lastError = err instanceof Error ? err : new Error(String(err));
+          const status = (err as { status?: number })?.status;
+          const msg = String((err as Error).message);
+          const is404 =
+            status === 404 ||
+            msg.includes('404') ||
+            msg.toLowerCase().includes('not found');
+          if (is404) {
+            this.logger.warn(
+              `Gemini model "${modelName}" not found (404), trying next...`,
+            );
+            continue;
+          }
+          this.logger.error(
+            `Gemini generation failed (${modelName}): ${lastError}`,
+          );
+          await this.predictionRepo.update(lockRow.id, {
+            status: PredictionStatus.FAILED,
+          });
+          throw new Error(
+            `Failed to generate prediction via Gemini: ${lastError.message}`,
+          );
+        }
+      }
+      await this.predictionRepo.update(lockRow.id, {
+        status: PredictionStatus.FAILED,
+      });
+      throw new Error(
+        `Failed to generate prediction: no usable model. Last error: ${lastError?.message ?? 'unknown'}`,
+      );
     } catch (err) {
       // Ensure lock row is set to FAILED if still PROCESSING (prevents permanent lock)
       try {
@@ -1865,10 +1990,17 @@ export class PredictionsService {
       if (!pythonBin) {
         const candidates = ['/usr/bin/python3', '/usr/local/bin/python3'];
         for (const p of candidates) {
-          if (fs.existsSync(p)) { pythonBin = p; break; }
+          if (fs.existsSync(p)) {
+            pythonBin = p;
+            break;
+          }
         }
         if (!pythonBin) {
-          try { pythonBin = execSync('which python3', { encoding: 'utf8' }).trim(); } catch { pythonBin = 'python3'; }
+          try {
+            pythonBin = execSync('which python3', { encoding: 'utf8' }).trim();
+          } catch {
+            pythonBin = 'python3';
+          }
         }
       }
       const pythonProcess = spawn(pythonBin, [scriptPath]);
@@ -1918,10 +2050,18 @@ export class PredictionsService {
       });
 
       // Strip fields that Python analysis.py never reads to reduce IPC payload
-      const STRIP_KEYS = new Set(['trainings', 'trainingData', 'prd', 'isScratched', 'trNo']);
+      const STRIP_KEYS = new Set([
+        'trainings',
+        'trainingData',
+        'prd',
+        'isScratched',
+        'trNo',
+      ]);
       const slimEntries = (raceData.entries ?? []).map((e) =>
         Object.fromEntries(
-          Object.entries(e as unknown as Record<string, unknown>).filter(([k]) => !STRIP_KEYS.has(k)),
+          Object.entries(e as unknown as Record<string, unknown>).filter(
+            ([k]) => !STRIP_KEYS.has(k),
+          ),
         ),
       );
       const slimRaceData = { ...raceData, entries: slimEntries };
@@ -2137,12 +2277,17 @@ export class PredictionsService {
       .andWhere('e.horseWeight IS NOT NULL')
       .orderBy('r.rcDate', 'DESC')
       .limit(hrNos.length * 3)
-      .getRawMany<{ e_hrNo: string; e_horseWeight: string; r_rcDate: string }>();
+      .getRawMany<{
+        e_hrNo: string;
+        e_horseWeight: string;
+        r_rcDate: string;
+      }>();
 
     const prevWeightMap = new Map<string, string>();
     for (const row of rows) {
       const hrNo = row.e_hrNo ?? (row as Record<string, unknown>).hrNo;
-      const hw = row.e_horseWeight ?? (row as Record<string, unknown>).horseWeight;
+      const hw =
+        row.e_horseWeight ?? (row as Record<string, unknown>).horseWeight;
       if (hrNo && hw && !prevWeightMap.has(String(hrNo))) {
         // Extract numeric weight from "480(+2)" or "482" format
         const numMatch = String(hw).match(/^(\d+)/);
@@ -2191,7 +2336,8 @@ export class PredictionsService {
     const threeYearsAgo = String(
       parseInt(beforeRcDate, 10) - 30000, // YYYYMMDD arithmetic: subtract ~3 years worth of days
     ).padStart(8, '0');
-    const lookbackDate = threeYearsAgo.length === 8 ? threeYearsAgo : '20220101';
+    const lookbackDate =
+      threeYearsAgo.length === 8 ? threeYearsAgo : '20220101';
 
     // Fetch race_results joined to races for track condition info
     // rcTrackCondition on race_results is the most reliable source (set during result sync)
@@ -2290,8 +2436,7 @@ export class PredictionsService {
       const toRateOrNull = (
         numerator: number,
         denominator: number,
-      ): number | null =>
-        denominator > 0 ? numerator / denominator : null;
+      ): number | null => (denominator > 0 ? numerator / denominator : null);
 
       return {
         ...e,
@@ -2428,7 +2573,10 @@ export class PredictionsService {
           .filter(Boolean),
       ),
     ];
-    const byTrName = new Map<string, { winRateTsum: number; quRateTsum: number }>();
+    const byTrName = new Map<
+      string,
+      { winRateTsum: number; quRateTsum: number }
+    >();
     if (missingTrNames.length) {
       const nameResults = await this.trainerResultRepo
         .createQueryBuilder('t')
@@ -2438,15 +2586,19 @@ export class PredictionsService {
         .getMany();
       for (const t of nameResults) {
         if (t.trName && !byTrName.has(t.trName)) {
-          byTrName.set(t.trName, { winRateTsum: t.winRateTsum, quRateTsum: t.quRateTsum });
+          byTrName.set(t.trName, {
+            winRateTsum: t.winRateTsum,
+            quRateTsum: t.quRateTsum,
+          });
         }
       }
     }
 
     const enrichedEntries = entries.map((e) => {
       // Try trNo first, then trName fallback
-      const t = (e.trNo ? byTrNo.get(e.trNo) : null)
-        ?? (e.trName ? byTrName.get(e.trName) : null);
+      const t =
+        (e.trNo ? byTrNo.get(e.trNo) : null) ??
+        (e.trName ? byTrName.get(e.trName) : null);
       if (!t) return e;
       return {
         ...e,
@@ -2488,7 +2640,12 @@ export class PredictionsService {
     const byJkNo = new Map(
       meetJockeys.map((j) => [
         j.jkNo,
-        { winRateTsum: j.winRateTsum, quRateTsum: j.quRateTsum, rcCntT: j.rcCntT, fallback: false },
+        {
+          winRateTsum: j.winRateTsum,
+          quRateTsum: j.quRateTsum,
+          rcCntT: j.rcCntT,
+          fallback: false,
+        },
       ]),
     );
 
@@ -2712,7 +2869,9 @@ export class PredictionsService {
 
     const raceDateObj = this.parseYyyymmddToDate(raceDate);
     if (!raceDateObj) return race;
-    const fourteenDaysAgo = new Date(raceDateObj.getTime() - 14 * 24 * 60 * 60 * 1000);
+    const fourteenDaysAgo = new Date(
+      raceDateObj.getTime() - 14 * 24 * 60 * 60 * 1000,
+    );
     const fourteenDaysAgoStr = this.dateToYyyymmdd(fourteenDaysAgo);
 
     const trainings = await this.trainingRepo
@@ -2746,7 +2905,8 @@ export class PredictionsService {
         const lastDate = this.parseYyyymmddToDate(lastTrainingDate);
         if (lastDate) {
           daysSinceLastTraining = Math.round(
-            (raceDateObj.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24),
+            (raceDateObj.getTime() - lastDate.getTime()) /
+              (1000 * 60 * 60 * 24),
           );
         }
       }
@@ -2799,7 +2959,10 @@ export class PredictionsService {
     if (!earlierEntries.length) return race;
 
     // Group by hrNo: count + latest stTime
-    const byHorse = new Map<string, { count: number; lastStTime: string | null }>();
+    const byHorse = new Map<
+      string,
+      { count: number; lastStTime: string | null }
+    >();
     for (const row of earlierEntries) {
       const hrNo = row.e_hrNo ?? row.hrNo;
       const stTime = row.r_stTime ?? row.stTime ?? null;
@@ -2816,7 +2979,7 @@ export class PredictionsService {
       return h * 60 + m;
     };
 
-    const currentStMinutes = parseTime(race.stTime as string | null ?? null);
+    const currentStMinutes = parseTime((race.stTime as string | null) ?? null);
 
     const enrichedEntries = entries.map((e) => {
       const info = byHorse.get(e.hrNo);
@@ -2826,9 +2989,8 @@ export class PredictionsService {
       if (currentStMinutes != null) {
         const lastMinutes = parseTime(info.lastStTime);
         if (lastMinutes != null && currentStMinutes > lastMinutes) {
-          hoursSinceLastSameDayRace = Math.round(
-            ((currentStMinutes - lastMinutes) / 60) * 10,
-          ) / 10;
+          hoursSinceLastSameDayRace =
+            Math.round(((currentStMinutes - lastMinutes) / 60) * 10) / 10;
         }
       }
 
@@ -3059,7 +3221,11 @@ export class PredictionsService {
           if (invOdds[i]! <= 0) return cs;
           const impliedPct = (invOdds[i]! / sumInv) * 100;
           oddsImpliedByIdx[i] = Math.round(impliedPct * 100) / 100;
-          return Math.round(((1 - ODDS_WEIGHT) * cs + ODDS_WEIGHT * impliedPct) * 100) / 100;
+          return (
+            Math.round(
+              ((1 - ODDS_WEIGHT) * cs + ODDS_WEIGHT * impliedPct) * 100,
+            ) / 100
+          );
         });
       }
     }
@@ -3246,10 +3412,14 @@ export class PredictionsService {
 
     return buildRacePredictionPrompt({
       raceCtx: raceCtxForPrompt,
-      compactEntries: compactEntries as unknown as import('./prompts/race-prediction.prompts').HorseCompactEntry[],
+      compactEntries:
+        compactEntries as unknown as import('./prompts/race-prediction.prompts').HorseCompactEntry[],
       weightH,
       weightJ,
-      topJockey: topJ as { hrName: string; jkName: string; jockeyScore: number } | null | undefined,
+      topJockey: topJ as
+        | { hrName: string; jkName: string; jockeyScore: number }
+        | null
+        | undefined,
       realtime,
     });
   }
@@ -3583,10 +3753,11 @@ export class PredictionsService {
     // Python determines score ordering; Gemini provides qualitative analysis text
     const geminiByHrNo = new Map<string, Record<string, unknown>>();
     for (const h of hsRaw) {
-      const id = String(h.hrNo ?? (h as { chulNo?: string }).chulNo ?? '').trim();
-      const resolved = entries.length && id
-        ? (this.resolveToHrNo(id, entries) ?? id)
-        : id;
+      const id = String(
+        h.hrNo ?? (h as { chulNo?: string }).chulNo ?? '',
+      ).trim();
+      const resolved =
+        entries.length && id ? (this.resolveToHrNo(id, entries) ?? id) : id;
       if (resolved) geminiByHrNo.set(resolved, h);
     }
 
@@ -3610,7 +3781,8 @@ export class PredictionsService {
           ...(Array.isArray(gemini.keyFactors) && gemini.keyFactors.length
             ? { keyFactors: gemini.keyFactors }
             : {}),
-          ...(typeof gemini.confidenceExplanation === 'string' && gemini.confidenceExplanation
+          ...(typeof gemini.confidenceExplanation === 'string' &&
+          gemini.confidenceExplanation
             ? { confidenceExplanation: gemini.confidenceExplanation }
             : {}),
         };
@@ -3621,17 +3793,19 @@ export class PredictionsService {
         const rawId = (h.hrNo ?? (h as { chulNo?: string }).chulNo)
           ?.toString()
           .trim();
-        const resolved = rawId && entries.length
-          ? (this.resolveToHrNo(rawId, entries) ?? rawId)
-          : rawId;
+        const resolved =
+          rawId && entries.length
+            ? (this.resolveToHrNo(rawId, entries) ?? rawId)
+            : rawId;
         return { ...h, hrNo: resolved ?? h.hrNo };
       });
     }
 
     // Preserve top-level reasoning from CoT prompt (race-level, not per horse)
-    const geminiReasoning = typeof (base as GeminiPredictionJson).reasoning === 'string'
-      ? (base as GeminiPredictionJson).reasoning
-      : undefined;
+    const geminiReasoning =
+      typeof (base as GeminiPredictionJson).reasoning === 'string'
+        ? (base as GeminiPredictionJson).reasoning
+        : undefined;
 
     return {
       ...base,

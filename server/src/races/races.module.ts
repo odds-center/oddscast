@@ -12,7 +12,13 @@ import { KraModule } from '../kra/kra.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Race, RaceEntry, RaceResult, RaceDividend, Prediction]),
+    TypeOrmModule.forFeature([
+      Race,
+      RaceEntry,
+      RaceResult,
+      RaceDividend,
+      Prediction,
+    ]),
     CacheModule,
     KraModule,
   ],

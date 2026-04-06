@@ -37,7 +37,9 @@ describe('AdminPredictionsController', () => {
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller = module.get<AdminPredictionsController>(AdminPredictionsController);
+    controller = module.get<AdminPredictionsController>(
+      AdminPredictionsController,
+    );
   });
 
   it('should be defined', () => {
@@ -83,7 +85,9 @@ describe('AdminPredictionsController', () => {
     });
 
     it('should pass undefined dates when not provided', () => {
-      mockPredictionsService.getAnalyticsFailures.mockReturnValue({ failures: [] });
+      mockPredictionsService.getAnalyticsFailures.mockReturnValue({
+        failures: [],
+      });
 
       controller.getAnalyticsFailures();
 
@@ -119,7 +123,9 @@ describe('AdminPredictionsController', () => {
 
   describe('getTodayCount', () => {
     it('should delegate to predictionsService.getTodayCreatedCount', () => {
-      mockPredictionsService.getTodayCreatedCount.mockReturnValue({ count: 12 });
+      mockPredictionsService.getTodayCreatedCount.mockReturnValue({
+        count: 12,
+      });
 
       const result = controller.getTodayCount();
 
@@ -199,7 +205,9 @@ describe('AdminPredictionsController', () => {
 
       const result = controller.generateForRace(42);
 
-      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(42);
+      expect(mockPredictionsService.generatePrediction).toHaveBeenCalledWith(
+        42,
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -207,14 +215,18 @@ describe('AdminPredictionsController', () => {
   describe('generateForDate', () => {
     it('should delegate to predictionsService.generatePredictionsForDate', () => {
       const expected = { generated: 10 };
-      mockPredictionsService.generatePredictionsForDate.mockReturnValue(expected);
-
-      const result = controller.generateForDate({ date: '20250301', meet: 'SEOUL' });
-
-      expect(mockPredictionsService.generatePredictionsForDate).toHaveBeenCalledWith(
-        '20250301',
-        'SEOUL',
+      mockPredictionsService.generatePredictionsForDate.mockReturnValue(
+        expected,
       );
+
+      const result = controller.generateForDate({
+        date: '20250301',
+        meet: 'SEOUL',
+      });
+
+      expect(
+        mockPredictionsService.generatePredictionsForDate,
+      ).toHaveBeenCalledWith('20250301', 'SEOUL');
       expect(result).toEqual(expected);
     });
   });
@@ -253,10 +265,21 @@ describe('AdminPredictionsController', () => {
 
       await controller.generateBatchStream('20250101', '20250131', mockRes);
 
-      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
-      expect(mockRes.setHeader).toHaveBeenCalledWith('Cache-Control', 'no-cache');
-      expect(mockRes.setHeader).toHaveBeenCalledWith('Connection', 'keep-alive');
-      expect(mockPredictionsService.generateBatchWithProgress).toHaveBeenCalledWith(
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/event-stream',
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Cache-Control',
+        'no-cache',
+      );
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Connection',
+        'keep-alive',
+      );
+      expect(
+        mockPredictionsService.generateBatchWithProgress,
+      ).toHaveBeenCalledWith(
         { dateFrom: '20250101', dateTo: '20250131' },
         expect.any(Function),
       );

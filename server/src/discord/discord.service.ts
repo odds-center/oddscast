@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 const DISCORD_API = 'https://discord.com/api/v10';
-const NOTIFICATION_WEBHOOK_URL = 'https://discord.com/api/webhooks/1489147195264467054/8HZYzgNrVznP5cxoVw42v4LIPbrQTxmjCoT6h0Rjr3k6xMpeljmQX6-M9eotnVGaUYeX';
+const NOTIFICATION_WEBHOOK_URL =
+  'https://discord.com/api/webhooks/1489147195264467054/8HZYzgNrVznP5cxoVw42v4LIPbrQTxmjCoT6h0Rjr3k6xMpeljmQX6-M9eotnVGaUYeX';
 
 interface DiscordEmbed {
   title: string;
@@ -41,7 +42,11 @@ export class DevServerError extends DevNotification {
       description: desc,
       color: 0xb91c1c,
       fields: [
-        { name: '요청', value: `\`${this.method} ${this.url}\``, inline: false },
+        {
+          name: '요청',
+          value: `\`${this.method} ${this.url}\``,
+          inline: false,
+        },
       ],
       timestamp: new Date().toISOString(),
       footer: { text: 'OddsCast DEV' },
@@ -70,7 +75,8 @@ export class DevClientError extends DevNotification {
 
   toEmbed(): DiscordEmbed {
     const title =
-      DevClientError.STATUS_LABELS[this.status] ?? `⚠️ [DEV] Client Error (${this.status})`;
+      DevClientError.STATUS_LABELS[this.status] ??
+      `⚠️ [DEV] Client Error (${this.status})`;
     const color = this.status === 429 ? 0xea580c : 0xd97706;
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
@@ -81,7 +87,13 @@ export class DevClientError extends DevNotification {
       fields.push({ name: 'IP', value: `\`${this.ip}\``, inline: true });
     }
 
-    return { title, color, fields, timestamp: new Date().toISOString(), footer: { text: 'OddsCast DEV' } };
+    return {
+      title,
+      color,
+      fields,
+      timestamp: new Date().toISOString(),
+      footer: { text: 'OddsCast DEV' },
+    };
   }
 }
 
@@ -99,7 +111,9 @@ export class DevSignupNotification extends DevNotification {
       color: 0x16a34a,
       fields: [
         { name: '이메일', value: this.email, inline: true },
-        ...(this.nickname ? [{ name: '닉네임', value: this.nickname, inline: true }] : []),
+        ...(this.nickname
+          ? [{ name: '닉네임', value: this.nickname, inline: true }]
+          : []),
       ],
       timestamp: new Date().toISOString(),
       footer: { text: 'OddsCast DEV' },
@@ -121,11 +135,21 @@ export class DiscordService {
 
   constructor(private readonly config: ConfigService) {
     this.botToken = this.config.get<string>('DISCORD_BOT_TOKEN', '');
-    this.signupChannelId = this.config.get<string>('DISCORD_SIGNUP_CHANNEL_ID', '');
-    this.errorChannelId = this.config.get<string>('DISCORD_ERROR_CHANNEL_ID', '');
-    this.errorWebhookUrl = this.config.get<string>('DISCORD_ERROR_WEBHOOK_URL', '');
+    this.signupChannelId = this.config.get<string>(
+      'DISCORD_SIGNUP_CHANNEL_ID',
+      '',
+    );
+    this.errorChannelId = this.config.get<string>(
+      'DISCORD_ERROR_CHANNEL_ID',
+      '',
+    );
+    this.errorWebhookUrl = this.config.get<string>(
+      'DISCORD_ERROR_WEBHOOK_URL',
+      '',
+    );
     this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
-    this.isProduction = this.config.get<string>('NODE_ENV', '') === 'production';
+    this.isProduction =
+      this.config.get<string>('NODE_ENV', '') === 'production';
   }
 
   private get botEnabled(): boolean {
@@ -139,7 +163,10 @@ export class DiscordService {
   /**
    * Send embed message to a Discord channel via Bot API (production).
    */
-  private async sendToChannel(channelId: string, embeds: DiscordEmbed[]): Promise<void> {
+  private async sendToChannel(
+    channelId: string,
+    embeds: DiscordEmbed[],
+  ): Promise<void> {
     if (!this.botEnabled || !channelId) return;
     try {
       await axios.post(
@@ -159,7 +186,10 @@ export class DiscordService {
   /**
    * Send embed message via webhook URL.
    */
-  private async sendToWebhook(webhookUrl: string, embeds: DiscordEmbed[]): Promise<void> {
+  private async sendToWebhook(
+    webhookUrl: string,
+    embeds: DiscordEmbed[],
+  ): Promise<void> {
     if (!webhookUrl) return;
     try {
       await axios.post(webhookUrl, { embeds }, { timeout: 5000 });
@@ -187,7 +217,9 @@ export class DiscordService {
         color: 0x16a34a,
         fields: [
           { name: '이메일', value: email, inline: true },
-          ...(nickname ? [{ name: '닉네임', value: nickname, inline: true }] : []),
+          ...(nickname
+            ? [{ name: '닉네임', value: nickname, inline: true }]
+            : []),
         ],
         timestamp: new Date().toISOString(),
         footer: { text: 'OddsCast' },
@@ -207,9 +239,7 @@ export class DiscordService {
     message: string,
     stack?: string,
   ): Promise<void> {
-    const desc = stack
-      ? `\`\`\`\n${stack.slice(0, 1000)}\n\`\`\``
-      : message;
+    const desc = stack ? `\`\`\`\n${stack.slice(0, 1000)}\n\`\`\`` : message;
 
     const embeds: DiscordEmbed[] = [
       {
@@ -225,7 +255,9 @@ export class DiscordService {
     ];
     await this.sendToChannel(this.errorChannelId, embeds);
     await this.sendToWebhook(this.errorWebhookUrl, embeds);
-    await this.sendDevNotification(new DevServerError(method, url, status, message, stack));
+    await this.sendDevNotification(
+      new DevServerError(method, url, status, message, stack),
+    );
   }
 
   /**
@@ -245,12 +277,24 @@ export class DiscordService {
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
       { name: '분류', value: report.category, inline: true },
-      { name: '사용자', value: report.userId ? `#${report.userId}` : '비로그인', inline: true },
+      {
+        name: '사용자',
+        value: report.userId ? `#${report.userId}` : '비로그인',
+        inline: true,
+      },
     ];
     if (report.pageUrl) {
-      fields.push({ name: '페이지', value: report.pageUrl.substring(0, 200), inline: false });
+      fields.push({
+        name: '페이지',
+        value: report.pageUrl.substring(0, 200),
+        inline: false,
+      });
     }
-    fields.push({ name: '내용', value: report.description.substring(0, 500), inline: false });
+    fields.push({
+      name: '내용',
+      value: report.description.substring(0, 500),
+      inline: false,
+    });
 
     const embeds: DiscordEmbed[] = [
       {
@@ -288,9 +332,17 @@ export class DiscordService {
         title: '💳 구독 결제 완료',
         color: 0x16a34a,
         fields: [
-          { name: '사용자', value: `#${data.userId} ${data.email}`, inline: true },
+          {
+            name: '사용자',
+            value: `#${data.userId} ${data.email}`,
+            inline: true,
+          },
           { name: '플랜', value: data.planName, inline: true },
-          { name: '금액', value: `${data.amount.toLocaleString()}원`, inline: true },
+          {
+            name: '금액',
+            value: `${data.amount.toLocaleString()}원`,
+            inline: true,
+          },
           { name: 'OrderId', value: data.orderId, inline: false },
         ],
         timestamp: new Date().toISOString(),
@@ -315,7 +367,11 @@ export class DiscordService {
         fields: [
           { name: '사용자', value: `#${data.userId}`, inline: true },
           { name: '플랜', value: data.planName, inline: true },
-          { name: '금액', value: `${data.amount.toLocaleString()}원`, inline: true },
+          {
+            name: '금액',
+            value: `${data.amount.toLocaleString()}원`,
+            inline: true,
+          },
           { name: '구독 ID', value: String(data.subscriptionId), inline: true },
         ],
         timestamp: new Date().toISOString(),
@@ -340,9 +396,19 @@ export class DiscordService {
         fields: [
           { name: '사용자', value: `#${data.userId}`, inline: true },
           { name: '수량', value: `${data.quantity}장`, inline: true },
-          { name: '결제금액', value: `${data.totalAmount.toLocaleString()}원`, inline: true },
+          {
+            name: '결제금액',
+            value: `${data.totalAmount.toLocaleString()}원`,
+            inline: true,
+          },
           ...(data.pgTransactionId
-            ? [{ name: 'PG 거래ID', value: data.pgTransactionId, inline: false }]
+            ? [
+                {
+                  name: 'PG 거래ID',
+                  value: data.pgTransactionId,
+                  inline: false,
+                },
+              ]
             : []),
         ],
         timestamp: new Date().toISOString(),
@@ -367,7 +433,13 @@ export class DiscordService {
           { name: '사용자', value: `#${data.userId}`, inline: true },
           { name: '경주 ID', value: String(data.raceId), inline: true },
           ...(data.predictionId != null
-            ? [{ name: '예측 ID', value: String(data.predictionId), inline: true }]
+            ? [
+                {
+                  name: '예측 ID',
+                  value: String(data.predictionId),
+                  inline: true,
+                },
+              ]
             : []),
         ],
         timestamp: new Date().toISOString(),
@@ -419,11 +491,25 @@ export class DiscordService {
         color: 0xf59e0b,
         fields: [
           { name: '사용자', value: `#${data.userId}`, inline: true },
-          { name: '원 결제금액', value: `${data.originalAmount.toLocaleString()}원`, inline: true },
-          { name: '요청금액', value: `${data.requestedAmount.toLocaleString()}원`, inline: true },
+          {
+            name: '원 결제금액',
+            value: `${data.originalAmount.toLocaleString()}원`,
+            inline: true,
+          },
+          {
+            name: '요청금액',
+            value: `${data.requestedAmount.toLocaleString()}원`,
+            inline: true,
+          },
           { name: '자격 여부', value: eligibilityText, inline: false },
           ...(data.userReason
-            ? [{ name: '사용자 사유', value: data.userReason.substring(0, 300), inline: false }]
+            ? [
+                {
+                  name: '사용자 사유',
+                  value: data.userReason.substring(0, 300),
+                  inline: false,
+                },
+              ]
             : []),
           { name: '요청 ID', value: data.requestId, inline: false },
         ],
@@ -451,10 +537,22 @@ export class DiscordService {
         fields: [
           { name: '사용자', value: `#${data.userId}`, inline: true },
           ...(isApproved && data.approvedAmount != null
-            ? [{ name: '승인금액', value: `${data.approvedAmount.toLocaleString()}원`, inline: true }]
+            ? [
+                {
+                  name: '승인금액',
+                  value: `${data.approvedAmount.toLocaleString()}원`,
+                  inline: true,
+                },
+              ]
             : []),
           ...(data.adminNote
-            ? [{ name: '관리자 메모', value: data.adminNote.substring(0, 300), inline: false }]
+            ? [
+                {
+                  name: '관리자 메모',
+                  value: data.adminNote.substring(0, 300),
+                  inline: false,
+                },
+              ]
             : []),
           { name: '요청 ID', value: data.requestId, inline: false },
         ],
@@ -503,6 +601,8 @@ export class DiscordService {
     ];
     await this.sendToChannel(this.errorChannelId, embeds);
     await this.sendToWebhook(this.errorWebhookUrl, embeds);
-    await this.sendDevNotification(new DevClientError(method, url, status, message, ip));
+    await this.sendDevNotification(
+      new DevClientError(method, url, status, message, ip),
+    );
   }
 }

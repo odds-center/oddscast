@@ -13,7 +13,9 @@ export class MailService {
     if (apiKey) {
       this.resend = new Resend(apiKey);
     } else {
-      this.logger.warn('RESEND_API_KEY not configured — email sending disabled');
+      this.logger.warn(
+        'RESEND_API_KEY not configured — email sending disabled',
+      );
     }
     this.fromAddress = this.config.get<string>(
       'MAIL_FROM',

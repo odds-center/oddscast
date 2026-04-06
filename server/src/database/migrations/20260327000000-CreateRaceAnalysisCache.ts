@@ -4,9 +4,7 @@
  */
 import type { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class CreateRaceAnalysisCache20260327000000
-  implements MigrationInterface
-{
+export class CreateRaceAnalysisCache20260327000000 implements MigrationInterface {
   name = 'CreateRaceAnalysisCache20260327000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

@@ -36,7 +36,10 @@ describe('KraController', () => {
       controllers: [KraController],
       providers: [
         { provide: KraService, useValue: mockKraService },
-        { provide: getRepositoryToken(KraSyncLog), useValue: mockKraSyncLogRepo },
+        {
+          provide: getRepositoryToken(KraSyncLog),
+          useValue: mockKraSyncLogRepo,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -86,7 +89,10 @@ describe('KraController', () => {
       const result = await controller.getSyncLogs();
 
       expect(mockKraSyncLogRepo.createQueryBuilder).toHaveBeenCalledWith('k');
-      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith('k.createdAt', 'DESC');
+      expect(mockQueryBuilder.orderBy).toHaveBeenCalledWith(
+        'k.createdAt',
+        'DESC',
+      );
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(50);
       expect(result).toEqual({ logs, total: 1 });
     });
@@ -165,7 +171,9 @@ describe('KraController', () => {
 
       const result = await controller.syncJockeys('SEOUL');
 
-      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith('SEOUL');
+      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith(
+        'SEOUL',
+      );
       expect(result).toEqual(expected);
     });
 
@@ -174,7 +182,9 @@ describe('KraController', () => {
 
       await controller.syncJockeys();
 
-      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith(undefined);
+      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith(
+        undefined,
+      );
     });
   });
 

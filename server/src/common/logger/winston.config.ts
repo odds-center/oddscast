@@ -47,7 +47,10 @@ if (!isProduction) {
 
 export const winstonConfig: winston.LoggerOptions = {
   level: isProduction ? 'info' : 'debug',
-  transports: [new winston.transports.Console({ format: consoleFormat }), ...fileTransports],
+  transports: [
+    new winston.transports.Console({ format: consoleFormat }),
+    ...fileTransports,
+  ],
 };
 
 export const appLogger = winston.createLogger(winstonConfig);

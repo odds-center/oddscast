@@ -116,7 +116,9 @@ export class AdminPredictionsController {
    * generateBatch와 달리 기존 예측을 덮어씀, 경주 간 지연 없음.
    */
   @Post('generate-for-date')
-  @ApiOperation({ summary: '[Admin] 특정 날짜 전체 경주 예측 일괄 생성 (매트릭스 배치)' })
+  @ApiOperation({
+    summary: '[Admin] 특정 날짜 전체 경주 예측 일괄 생성 (매트릭스 배치)',
+  })
   generateForDate(
     @Body()
     body: {

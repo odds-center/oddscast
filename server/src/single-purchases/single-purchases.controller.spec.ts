@@ -27,16 +27,15 @@ describe('SinglePurchasesController', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SinglePurchasesController],
-      providers: [
-        { provide: SinglePurchasesService, useValue: mockService },
-      ],
+      providers: [{ provide: SinglePurchasesService, useValue: mockService }],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
-    controller =
-      module.get<SinglePurchasesController>(SinglePurchasesController);
+    controller = module.get<SinglePurchasesController>(
+      SinglePurchasesController,
+    );
   });
 
   describe('purchase', () => {

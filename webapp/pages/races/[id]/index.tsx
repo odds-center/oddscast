@@ -158,11 +158,13 @@ export default function RaceDetailPage() {
   );
 
   // Reset local state when race id changes (prevents stale data across navigation)
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     setFullPredictionFromUse(null);
     setTicketConsumedForRace(false);
     setSelectedPredictionId(null);
   }, [id]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const hasUsedTicketForRace = raceTicketCheck?.used === true || ticketConsumedForRace;
 

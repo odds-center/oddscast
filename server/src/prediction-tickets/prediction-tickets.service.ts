@@ -25,7 +25,12 @@ import { DiscordService } from '../discord/discord.service';
 
 export type UseTicketResult =
   | { status: 'LINKED'; ticket: PredictionTicket; prediction: Prediction }
-  | { status: 'PREPARING'; retryAfterSeconds: number; ticket: null; prediction: null };
+  | {
+      status: 'PREPARING';
+      retryAfterSeconds: number;
+      ticket: null;
+      prediction: null;
+    };
 
 @Injectable()
 export class PredictionTicketsService {
@@ -117,7 +122,9 @@ export class PredictionTicketsService {
         : await this.predictionRepo
             .createQueryBuilder('p')
             .where('p.raceId = :raceId', { raceId })
-            .andWhere('p.status = :status', { status: PredictionStatus.COMPLETED })
+            .andWhere('p.status = :status', {
+              status: PredictionStatus.COMPLETED,
+            })
             .andWhere('p.createdAt > :cutoff', {
               cutoff: new Date(Date.now() - REALTIME_CACHE_TTL_MS),
             })
@@ -364,7 +371,10 @@ export class PredictionTicketsService {
       where: { id: ticketEntity.id },
     });
 
-    void this.discordService.notifyMatrixTicketUsed({ userId, date: normalized });
+    void this.discordService.notifyMatrixTicketUsed({
+      userId,
+      date: normalized,
+    });
 
     return { ticket: updated, alreadyUsed: false };
   }
@@ -426,8 +436,15 @@ export class PredictionTicketsService {
    * Get matrix ticket price info for purchase page.
    */
   async getMatrixTicketPrice() {
-    const PRICE_PER_TICKET = parseInt(await this.globalConfig.get('matrix_ticket_price') ?? '1000', 10);
-    return { pricePerTicket: PRICE_PER_TICKET, currency: 'KRW', maxPerPurchase: 10 };
+    const PRICE_PER_TICKET = parseInt(
+      (await this.globalConfig.get('matrix_ticket_price')) ?? '1000',
+      10,
+    );
+    return {
+      pricePerTicket: PRICE_PER_TICKET,
+      currency: 'KRW',
+      maxPerPurchase: 10,
+    };
   }
 
   async grantTickets(

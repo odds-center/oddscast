@@ -46,10 +46,13 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     // Log 5xx errors as error, 4xx as warn (client errors are expected)
     if (status >= 500) {
-      appLogger.error(`[${request.method}] ${request.url} → ${status} ${errorMessage}`, {
-        ...logMeta,
-        stack: exception instanceof Error ? exception.stack : undefined,
-      });
+      appLogger.error(
+        `[${request.method}] ${request.url} → ${status} ${errorMessage}`,
+        {
+          ...logMeta,
+          stack: exception instanceof Error ? exception.stack : undefined,
+        },
+      );
 
       // Capture to Sentry only for server errors
       if (process.env.SENTRY_DSN) {
@@ -69,7 +72,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
         )
         .catch(() => {});
     } else if (status >= 400) {
-      appLogger.warn(`[${request.method}] ${request.url} → ${status} ${errorMessage}`);
+      appLogger.warn(
+        `[${request.method}] ${request.url} → ${status} ${errorMessage}`,
+      );
 
       // Discord notification for client errors (fire-and-forget)
       this.discordService

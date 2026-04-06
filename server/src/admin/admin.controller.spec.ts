@@ -102,8 +102,14 @@ describe('AdminController', () => {
         { provide: AdminService, useValue: mockAdminService },
         { provide: SubscriptionsService, useValue: mockSubscriptionsService },
         { provide: NotificationsService, useValue: mockNotificationsService },
-        { provide: SinglePurchasesService, useValue: mockSinglePurchasesService },
-        { provide: PredictionTicketsService, useValue: mockPredictionTicketsService },
+        {
+          provide: SinglePurchasesService,
+          useValue: mockSinglePurchasesService,
+        },
+        {
+          provide: PredictionTicketsService,
+          useValue: mockPredictionTicketsService,
+        },
         { provide: ActivityLogsService, useValue: mockActivityLogsService },
         { provide: WeeklyPreviewService, useValue: mockWeeklyPreviewService },
       ],
@@ -113,7 +119,10 @@ describe('AdminController', () => {
       .overrideGuard(RolesGuard)
       .useValue({ canActivate: () => true })
       .overrideInterceptor(AdminActivityInterceptor)
-      .useValue({ intercept: (_ctx: unknown, next: { handle: () => unknown }) => next.handle() })
+      .useValue({
+        intercept: (_ctx: unknown, next: { handle: () => unknown }) =>
+          next.handle(),
+      })
       .compile();
 
     controller = module.get<AdminController>(AdminController);
@@ -132,7 +141,9 @@ describe('AdminController', () => {
 
       const result = await controller.syncSchedule('20250301');
 
-      expect(mockKraService.syncScheduleForDate).toHaveBeenCalledWith('20250301');
+      expect(mockKraService.syncScheduleForDate).toHaveBeenCalledWith(
+        '20250301',
+      );
       expect(result).toEqual(expected);
     });
 
@@ -142,7 +153,9 @@ describe('AdminController', () => {
 
       const result = await controller.syncSchedule(undefined, '2025');
 
-      expect(mockKraService.fetchRacePlanScheduleForYear).toHaveBeenCalledWith(2025);
+      expect(mockKraService.fetchRacePlanScheduleForYear).toHaveBeenCalledWith(
+        2025,
+      );
       expect(result).toEqual(expected);
     });
 
@@ -163,11 +176,17 @@ describe('AdminController', () => {
         message: '10 results',
         totalResults: 10,
       });
-      mockKraService.syncEntrySheet.mockResolvedValue({ races: 5, entries: 40 });
+      mockKraService.syncEntrySheet.mockResolvedValue({
+        races: 5,
+        entries: 40,
+      });
 
       const result = await controller.syncResults('20250301');
 
-      expect(mockKraService.fetchRaceResults).toHaveBeenCalledWith('20250301', true);
+      expect(mockKraService.fetchRaceResults).toHaveBeenCalledWith(
+        '20250301',
+        true,
+      );
       expect(mockKraService.syncEntrySheet).toHaveBeenCalledWith('20250301');
       expect(result).toMatchObject({ totalResults: 10, entries: 40 });
     });
@@ -181,7 +200,10 @@ describe('AdminController', () => {
 
       const result = await controller.syncResults('20250301');
 
-      expect(result).toMatchObject({ totalResults: 10, entrySheetWarning: 'No data' });
+      expect(result).toMatchObject({
+        totalResults: 10,
+        entrySheetWarning: 'No data',
+      });
     });
   });
 
@@ -216,7 +238,11 @@ describe('AdminController', () => {
 
       const result = await controller.getKraSyncLogs('sync', '20250301', 50);
 
-      expect(mockAdminService.getKraSyncLogs).toHaveBeenCalledWith('sync', '20250301', 50);
+      expect(mockAdminService.getKraSyncLogs).toHaveBeenCalledWith(
+        'sync',
+        '20250301',
+        50,
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -253,7 +279,9 @@ describe('AdminController', () => {
 
       const result = await controller.syncJockeys('SEOUL');
 
-      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith('SEOUL');
+      expect(mockKraService.fetchJockeyTotalResults).toHaveBeenCalledWith(
+        'SEOUL',
+      );
       expect(result).toEqual({ jockeys: 20 });
     });
   });
@@ -277,7 +305,9 @@ describe('AdminController', () => {
 
       const result = await controller.generatePredictionsForDate('20250301');
 
-      expect(mockKraService.generatePredictionsForDate).toHaveBeenCalledWith('20250301');
+      expect(mockKraService.generatePredictionsForDate).toHaveBeenCalledWith(
+        '20250301',
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -289,14 +319,15 @@ describe('AdminController', () => {
 
       const result = await controller.syncHistorical('20240101', '20240131');
 
-      expect(mockKraService.syncHistoricalBackfill).toHaveBeenCalledWith('20240101', '20240131');
+      expect(mockKraService.syncHistoricalBackfill).toHaveBeenCalledWith(
+        '20240101',
+        '20240131',
+      );
       expect(result).toEqual(expected);
     });
 
     it('should throw when dateFrom or dateTo is missing', async () => {
-      await expect(
-        controller.syncHistorical('', '20240131'),
-      ).rejects.toThrow();
+      await expect(controller.syncHistorical('', '20240131')).rejects.toThrow();
     });
   });
 
@@ -314,11 +345,17 @@ describe('AdminController', () => {
       } as unknown as import('express').Response;
 
       mockKraService.fetchRaceResults.mockResolvedValue({ totalResults: 5 });
-      mockKraService.syncEntrySheet.mockResolvedValue({ races: 3, entries: 20 });
+      mockKraService.syncEntrySheet.mockResolvedValue({
+        races: 3,
+        entries: 20,
+      });
 
       await controller.syncResultsStream('20250301', mockRes);
 
-      expect(mockRes.setHeader).toHaveBeenCalledWith('Content-Type', 'text/event-stream');
+      expect(mockRes.setHeader).toHaveBeenCalledWith(
+        'Content-Type',
+        'text/event-stream',
+      );
       expect(mockRes.end).toHaveBeenCalled();
     });
 
@@ -441,12 +478,19 @@ describe('AdminController', () => {
         type: 'RACE',
       });
 
-      expect(mockPredictionTicketsService.grantTickets).toHaveBeenCalledWith(1, 5, 30, 'RACE');
+      expect(mockPredictionTicketsService.grantTickets).toHaveBeenCalledWith(
+        1,
+        5,
+        30,
+        'RACE',
+      );
       expect(result).toEqual(expected);
     });
 
     it('should default to RACE type when MATRIX not specified', async () => {
-      mockPredictionTicketsService.grantTickets.mockResolvedValue({ granted: 1 });
+      mockPredictionTicketsService.grantTickets.mockResolvedValue({
+        granted: 1,
+      });
 
       await controller.grantTickets(1, { count: 1 });
 
@@ -459,7 +503,9 @@ describe('AdminController', () => {
     });
 
     it('should cap count at 100', async () => {
-      mockPredictionTicketsService.grantTickets.mockResolvedValue({ granted: 100 });
+      mockPredictionTicketsService.grantTickets.mockResolvedValue({
+        granted: 100,
+      });
 
       await controller.grantTickets(1, { count: 999 });
 
@@ -560,7 +606,10 @@ describe('AdminController', () => {
   describe('estimateCost', () => {
     it('should return cost estimate based on config', async () => {
       mockConfigService.get.mockResolvedValue(
-        JSON.stringify({ primaryModel: 'gemini-2.5-flash', enableCaching: true }),
+        JSON.stringify({
+          primaryModel: 'gemini-2.5-flash',
+          enableCaching: true,
+        }),
       );
 
       const result = await controller.estimateCost();
@@ -625,9 +674,13 @@ describe('AdminController', () => {
     it('should delegate to subscriptionsService.updatePlan', async () => {
       mockSubscriptionsService.updatePlan.mockResolvedValue({ id: 1 });
 
-      const result = await controller.updateSubscriptionPlan(1, { totalPrice: 5000 });
+      const result = await controller.updateSubscriptionPlan(1, {
+        totalPrice: 5000,
+      });
 
-      expect(mockSubscriptionsService.updatePlan).toHaveBeenCalledWith(1, { totalPrice: 5000 });
+      expect(mockSubscriptionsService.updatePlan).toHaveBeenCalledWith(1, {
+        totalPrice: 5000,
+      });
       expect(result).toEqual({ id: 1 });
     });
   });
@@ -652,7 +705,10 @@ describe('AdminController', () => {
 
       const result = await controller.getNotifications(1, 20);
 
-      expect(mockNotificationsService.findAllAdmin).toHaveBeenCalledWith({ page: 1, limit: 20 });
+      expect(mockNotificationsService.findAllAdmin).toHaveBeenCalledWith({
+        page: 1,
+        limit: 20,
+      });
       expect(result).toEqual(expected);
     });
   });
@@ -690,14 +746,18 @@ describe('AdminController', () => {
 
       const result = await controller.updateSinglePurchaseConfig(body);
 
-      expect(mockSinglePurchasesService.updateConfig).toHaveBeenCalledWith(body);
+      expect(mockSinglePurchasesService.updateConfig).toHaveBeenCalledWith(
+        body,
+      );
       expect(result).toEqual(body);
     });
   });
 
   describe('calculateSinglePurchasePrice', () => {
     it('should delegate to singlePurchasesService.calculatePrice', async () => {
-      mockSinglePurchasesService.calculatePrice.mockResolvedValue({ total: 5000 });
+      mockSinglePurchasesService.calculatePrice.mockResolvedValue({
+        total: 5000,
+      });
 
       const result = await controller.calculateSinglePurchasePrice(5);
 
@@ -706,7 +766,9 @@ describe('AdminController', () => {
     });
 
     it('should default to quantity 1 when not provided', async () => {
-      mockSinglePurchasesService.calculatePrice.mockResolvedValue({ total: 1000 });
+      mockSinglePurchasesService.calculatePrice.mockResolvedValue({
+        total: 1000,
+      });
 
       await controller.calculateSinglePurchasePrice();
 
@@ -765,7 +827,11 @@ describe('AdminController', () => {
 
       const result = await controller.getPredictionTicketUsage(1, 20, '5');
 
-      expect(mockAdminService.getPredictionTicketUsage).toHaveBeenCalledWith(1, 20, 5);
+      expect(mockAdminService.getPredictionTicketUsage).toHaveBeenCalledWith(
+        1,
+        20,
+        5,
+      );
       expect(result).toEqual(expected);
     });
   });
@@ -787,7 +853,12 @@ describe('AdminController', () => {
       const expected = { data: [], total: 0 };
       mockActivityLogsService.getAdminLogs.mockResolvedValue(expected);
 
-      const result = await controller.getAdminActivityLogs(1, 20, 'LOGIN', '99');
+      const result = await controller.getAdminActivityLogs(
+        1,
+        20,
+        'LOGIN',
+        '99',
+      );
 
       expect(mockActivityLogsService.getAdminLogs).toHaveBeenCalledWith({
         page: 1,
@@ -806,7 +877,12 @@ describe('AdminController', () => {
       const expected = { data: [], total: 0 };
       mockActivityLogsService.getUserLogs.mockResolvedValue(expected);
 
-      const result = await controller.getUserActivityLogs(1, 20, 'PAGE_VIEW', '5');
+      const result = await controller.getUserActivityLogs(
+        1,
+        20,
+        'PAGE_VIEW',
+        '5',
+      );
 
       expect(mockActivityLogsService.getUserLogs).toHaveBeenCalledWith({
         page: 1,
@@ -823,11 +899,15 @@ describe('AdminController', () => {
   describe('getUserActivitySummary', () => {
     it('should delegate to activityLogsService.getUserActivitySummary', async () => {
       const expected = { totalEvents: 100 };
-      mockActivityLogsService.getUserActivitySummary.mockResolvedValue(expected);
+      mockActivityLogsService.getUserActivitySummary.mockResolvedValue(
+        expected,
+      );
 
       const result = await controller.getUserActivitySummary(5);
 
-      expect(mockActivityLogsService.getUserActivitySummary).toHaveBeenCalledWith(5);
+      expect(
+        mockActivityLogsService.getUserActivitySummary,
+      ).toHaveBeenCalledWith(5);
       expect(result).toEqual(expected);
     });
   });

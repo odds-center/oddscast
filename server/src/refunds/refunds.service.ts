@@ -7,7 +7,11 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { RefundRequest, RefundRequestStatus, RefundRequestType } from '../database/entities/refund-request.entity';
+import {
+  RefundRequest,
+  RefundRequestStatus,
+  RefundRequestType,
+} from '../database/entities/refund-request.entity';
 import { BillingHistory } from '../database/entities/billing-history.entity';
 import { Subscription } from '../database/entities/subscription.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
@@ -59,7 +63,8 @@ export class RefundsService {
     subscription: Subscription | null,
   ): Promise<RefundCalculation> {
     const daysSincePayment = Math.floor(
-      (Date.now() - new Date(billingHistory.billingDate).getTime()) / (1000 * 60 * 60 * 24),
+      (Date.now() - new Date(billingHistory.billingDate).getTime()) /
+        (1000 * 60 * 60 * 24),
     );
 
     // Already refunded
@@ -98,7 +103,9 @@ export class RefundsService {
         .createQueryBuilder('t')
         .where('t.subscriptionId = :subId', { subId: subscription.id })
         .andWhere('t.status = :status', { status: TicketStatus.USED })
-        .andWhere('t.issuedAt >= :billingDate', { billingDate: billingHistory.billingDate })
+        .andWhere('t.issuedAt >= :billingDate', {
+          billingDate: billingHistory.billingDate,
+        })
         .getCount();
     }
 
@@ -107,7 +114,8 @@ export class RefundsService {
     if (daysSincePayment > 7 && unusedTickets === 0) {
       return {
         isEligible: false,
-        ineligibilityReason: '환불 가능 기간(7일)이 경과하였고 이용 가능한 티켓이 없습니다.',
+        ineligibilityReason:
+          '환불 가능 기간(7일)이 경과하였고 이용 가능한 티켓이 없습니다.',
         requestedAmount: 0,
         usedTickets,
         totalTickets,
@@ -133,7 +141,10 @@ export class RefundsService {
    * User submits a refund request for a billing history entry.
    * Validates eligibility and prevents duplicate PENDING requests.
    */
-  async requestRefund(userId: number, dto: CreateRefundRequestDto): Promise<RefundRequest> {
+  async requestRefund(
+    userId: number,
+    dto: CreateRefundRequestDto,
+  ): Promise<RefundRequest> {
     const billing = await this.billingRepo.findOne({
       where: { id: dto.billingHistoryId, userId },
     });
@@ -143,7 +154,10 @@ export class RefundsService {
 
     // Prevent duplicate pending requests for the same billing entry
     const existing = await this.refundRepo.findOne({
-      where: { billingHistoryId: dto.billingHistoryId, status: RefundRequestStatus.PENDING },
+      where: {
+        billingHistoryId: dto.billingHistoryId,
+        status: RefundRequestStatus.PENDING,
+      },
     });
     if (existing) {
       throw new ConflictException('이미 환불 심사 중인 요청이 있습니다.');
@@ -181,7 +195,9 @@ export class RefundsService {
     });
 
     const saved = await this.refundRepo.save(refundRequest);
-    this.logger.log(`[RefundRequest] Created id=${saved.id} userId=${userId} amount=${calc.requestedAmount}`);
+    this.logger.log(
+      `[RefundRequest] Created id=${saved.id} userId=${userId} amount=${calc.requestedAmount}`,
+    );
 
     void this.discordService.notifyRefundRequest({
       requestId: saved.id,
@@ -216,7 +232,9 @@ export class RefundsService {
       throw new NotFoundException('환불 요청을 찾을 수 없습니다.');
     }
     if (request.status !== RefundRequestStatus.PENDING) {
-      throw new BadRequestException(`이미 ${request.status} 처리된 요청입니다.`);
+      throw new BadRequestException(
+        `이미 ${request.status} 처리된 요청입니다.`,
+      );
     }
 
     const finalAmount = dto.approvedAmount ?? request.requestedAmount;
@@ -237,7 +255,9 @@ export class RefundsService {
         );
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : String(err);
-        this.logger.error(`[RefundRequest] Toss cancel failed id=${refundRequestId}: ${msg}`);
+        this.logger.error(
+          `[RefundRequest] Toss cancel failed id=${refundRequestId}: ${msg}`,
+        );
         throw new BadRequestException(`PG 환불 처리 실패: ${msg}`);
       }
     } else {
@@ -277,7 +297,9 @@ export class RefundsService {
       pgRefundResponse: pgResponse ? JSON.stringify(pgResponse) : null,
     });
 
-    const updated = await this.refundRepo.findOne({ where: { id: refundRequestId } });
+    const updated = await this.refundRepo.findOne({
+      where: { id: refundRequestId },
+    });
 
     void this.discordService.notifyRefundProcessed({
       requestId: refundRequestId,
@@ -298,12 +320,16 @@ export class RefundsService {
     refundRequestId: string,
     dto: ProcessRefundDto,
   ): Promise<RefundRequest> {
-    const request = await this.refundRepo.findOne({ where: { id: refundRequestId } });
+    const request = await this.refundRepo.findOne({
+      where: { id: refundRequestId },
+    });
     if (!request) {
       throw new NotFoundException('환불 요청을 찾을 수 없습니다.');
     }
     if (request.status !== RefundRequestStatus.PENDING) {
-      throw new BadRequestException(`이미 ${request.status} 처리된 요청입니다.`);
+      throw new BadRequestException(
+        `이미 ${request.status} 처리된 요청입니다.`,
+      );
     }
 
     const now = new Date();
@@ -314,8 +340,12 @@ export class RefundsService {
       processedAt: now,
     });
 
-    const updated = await this.refundRepo.findOne({ where: { id: refundRequestId } });
-    this.logger.log(`[RefundRequest] Rejected id=${refundRequestId} by adminId=${adminId}`);
+    const updated = await this.refundRepo.findOne({
+      where: { id: refundRequestId },
+    });
+    this.logger.log(
+      `[RefundRequest] Rejected id=${refundRequestId} by adminId=${adminId}`,
+    );
 
     void this.discordService.notifyRefundProcessed({
       requestId: refundRequestId,

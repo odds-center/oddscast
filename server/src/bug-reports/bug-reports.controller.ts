@@ -41,7 +41,10 @@ export class BugReportsController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ short: { limit: 5, ttl: 60000 } })
   @ApiOperation({ summary: 'Submit a bug report (public)' })
-  async create(@Body() dto: CreateBugReportDto, @Req() req: RequestWithOptionalUser) {
+  async create(
+    @Body() dto: CreateBugReportDto,
+    @Req() req: RequestWithOptionalUser,
+  ) {
     // Capture user-agent from request headers if not provided in body
     if (!dto.userAgent) {
       const ua = req.headers['user-agent'];

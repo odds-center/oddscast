@@ -49,7 +49,10 @@ describe('RankingsController', () => {
 
       await controller.getRankings();
 
-      expect(mockService.getRankings).toHaveBeenCalledWith(undefined, undefined);
+      expect(mockService.getRankings).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+      );
     });
   });
 

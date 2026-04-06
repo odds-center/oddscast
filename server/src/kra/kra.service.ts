@@ -229,7 +229,10 @@ export class KraService {
       try {
         await this.syncAnalysisData(date);
       } catch (err) {
-        this.logger.warn(`[syncWeeklySchedule] Analysis data not yet available for ${date}`, err);
+        this.logger.warn(
+          `[syncWeeklySchedule] Analysis data not yet available for ${date}`,
+          err,
+        );
       }
       // 5s gap between dates to avoid KRA rate limit accumulation
       await this.delay(5000);
@@ -262,11 +265,10 @@ export class KraService {
   async generatePreRacePredictions() {
     if (!this.ensureServiceKey()) return;
     const today = todayKstYyyymmdd();
-    this.logger.log(
-      `Running Pre-Race Prediction Generation for ${today}`,
-    );
+    this.logger.log(`Running Pre-Race Prediction Generation for ${today}`);
     try {
-      const result = await this.predictionsService.generatePredictionsForDate(today);
+      const result =
+        await this.predictionsService.generatePredictionsForDate(today);
       this.logger.log(
         `Pre-Race Predictions: ${result.generated}/${result.requested} generated, ${result.failed} failed`,
       );
@@ -550,7 +552,10 @@ export class KraService {
           errorMessage: msg.slice(0, 1000),
           updatedAt: new Date(),
         });
-        this.logger.warn(`[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`, err);
+        this.logger.warn(
+          `[BatchSchedule] FAILED KRA_RESULT_FETCH ${rcDate}`,
+          err,
+        );
       }
     }
   }
@@ -570,9 +575,21 @@ export class KraService {
       // Check for active or completed jobs
       const activeOrDone = await this.batchScheduleRepo.findOne({
         where: [
-          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.PENDING },
-          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.RUNNING },
-          { jobType, targetRcDate: rcDate, status: BatchScheduleStatus.COMPLETED },
+          {
+            jobType,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.PENDING,
+          },
+          {
+            jobType,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.RUNNING,
+          },
+          {
+            jobType,
+            targetRcDate: rcDate,
+            status: BatchScheduleStatus.COMPLETED,
+          },
         ],
       });
       if (activeOrDone) continue;
@@ -1229,9 +1246,8 @@ export class KraService {
       const predMsg = out.predictions
         ? `, ${out.predictions.generated} predictions`
         : '';
-      const warnMsg = out.warnings!.length > 0
-        ? ` (${out.warnings!.length} warning(s))`
-        : '';
+      const warnMsg =
+        out.warnings!.length > 0 ? ` (${out.warnings!.length} warning(s))` : '';
       out.message = `Full sync complete: ${out.entrySheet?.races ?? 0} races, ${out.entrySheet?.entries ?? 0} entries, ${out.results?.totalResults ?? 0} results${predMsg}${warnMsg}`;
     } catch (err) {
       this.logger.error('[syncAll] Failed', err);
@@ -1388,7 +1404,9 @@ export class KraService {
     try {
       await this.fetchJockeyTotalResults();
     } catch (e) {
-      this.logger.warn(`Jockey sync after historical failed: ${e instanceof Error ? e.message : String(e)}`);
+      this.logger.warn(
+        `Jockey sync after historical failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
     }
     opts?.onProgress?.(100, '완료');
 
@@ -1797,15 +1815,21 @@ export class KraService {
    * Wrap an axios call with automatic retry on 429 (Too Many Requests).
    * Waits progressively longer between retries: 2s, 4s, 8s.
    */
-  private async withRateRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  private async withRateRetry<T>(
+    fn: () => Promise<T>,
+    maxRetries = 3,
+  ): Promise<T> {
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
         return await fn();
       } catch (err: unknown) {
-        const status = (err as { response?: { status?: number } })?.response?.status;
+        const status = (err as { response?: { status?: number } })?.response
+          ?.status;
         if (status === 429 && attempt < maxRetries) {
           const wait = 2000 * Math.pow(2, attempt); // 2s, 4s, 8s
-          this.logger.warn(`KRA 429 rate limit hit, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`);
+          this.logger.warn(
+            `KRA 429 rate limit hit, retrying in ${wait}ms (attempt ${attempt + 1}/${maxRetries})`,
+          );
           await this.delay(wait);
           continue;
         }
@@ -2102,16 +2126,48 @@ export class KraService {
               const jkNameVal = sv(item.jkName ?? item.jk_name);
               await this.entryRepo.update(existingEntry.id, {
                 ...(hrNameVal != null && { hrName: hrNameVal }),
-                ...(sv(item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en) != null && { hrNameEn: sv(item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en) }),
-                ...(sv(item.jkNo ?? item.jk_no) != null && { jkNo: sv(item.jkNo ?? item.jk_no) }),
+                ...(sv(
+                  item.hrNameEn ?? (item as Record<string, unknown>).hr_name_en,
+                ) != null && {
+                  hrNameEn: sv(
+                    item.hrNameEn ??
+                      (item as Record<string, unknown>).hr_name_en,
+                  ),
+                }),
+                ...(sv(item.jkNo ?? item.jk_no) != null && {
+                  jkNo: sv(item.jkNo ?? item.jk_no),
+                }),
                 ...(jkNameVal != null && { jkName: jkNameVal }),
-                ...(sv(item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en) != null && { jkNameEn: sv(item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en) }),
-                ...(sv(item.trNo ?? (item as Record<string, unknown>).tr_no) != null && { trNo: sv(item.trNo ?? (item as Record<string, unknown>).tr_no) }),
-                ...(sv(item.trName ?? item.tr_name) != null && { trName: sv(item.trName ?? item.tr_name) }),
-                ...(sv(item.owNo ?? (item as Record<string, unknown>).ow_no) != null && { owNo: sv(item.owNo ?? (item as Record<string, unknown>).ow_no) }),
-                ...(sv(item.owName ?? item.ow_name) != null && { owName: sv(item.owName ?? item.ow_name) }),
+                ...(sv(
+                  item.jkNameEn ?? (item as Record<string, unknown>).jk_name_en,
+                ) != null && {
+                  jkNameEn: sv(
+                    item.jkNameEn ??
+                      (item as Record<string, unknown>).jk_name_en,
+                  ),
+                }),
+                ...(sv(item.trNo ?? (item as Record<string, unknown>).tr_no) !=
+                  null && {
+                  trNo: sv(
+                    item.trNo ?? (item as Record<string, unknown>).tr_no,
+                  ),
+                }),
+                ...(sv(item.trName ?? item.tr_name) != null && {
+                  trName: sv(item.trName ?? item.tr_name),
+                }),
+                ...(sv(item.owNo ?? (item as Record<string, unknown>).ow_no) !=
+                  null && {
+                  owNo: sv(
+                    item.owNo ?? (item as Record<string, unknown>).ow_no,
+                  ),
+                }),
+                ...(sv(item.owName ?? item.ow_name) != null && {
+                  owName: sv(item.owName ?? item.ow_name),
+                }),
                 ...(wgBudam != null && { wgBudam }),
-                ...(sv(item.chulNo ?? item.chul_no) != null && { chulNo: sv(item.chulNo ?? item.chul_no) }),
+                ...(sv(item.chulNo ?? item.chul_no) != null && {
+                  chulNo: sv(item.chulNo ?? item.chul_no),
+                }),
                 ...(ageVal != null && { age: ageVal }),
                 ...(sv(item.sex) != null && { sex: sv(item.sex) }),
                 ...(sv(item.prd) != null && { prd: sv(item.prd) }),
@@ -2307,7 +2363,9 @@ export class KraService {
    * Endpoint: KRA API160/integratedInfo
    * Called after fetchRaceResults — upserts into race_dividends table.
    */
-  async fetchDividends(date: string): Promise<{ message: string; total: number }> {
+  async fetchDividends(
+    date: string,
+  ): Promise<{ message: string; total: number }> {
     this.ensureServiceKeyOrThrow();
     const normalizedDate = this.normalizeToYyyyMmDd(date);
     const baseUrl = await this.resolveBaseUrl();
@@ -2366,22 +2424,42 @@ export class KraService {
           const chulNo2 = String(item.chulNo2 ?? item.chul_no2 ?? '0').trim();
           const chulNo3 = String(item.chulNo3 ?? item.chul_no3 ?? '0').trim();
 
-          if (!rcNo || !chulNo || !poolCode || Number.isNaN(oddsVal) || oddsVal <= 0) continue;
+          if (
+            !rcNo ||
+            !chulNo ||
+            !poolCode ||
+            Number.isNaN(oddsVal) ||
+            oddsVal <= 0
+          )
+            continue;
 
           // Normalize "0" → empty string for unused horse slots
           const cn2 = chulNo2 === '0' ? '' : chulNo2;
           const cn3 = chulNo3 === '0' ? '' : chulNo3;
 
-          const race = await this.findRaceByMeetDateNo(meet.name, normalizedDate, rcNo);
+          const race = await this.findRaceByMeetDateNo(
+            meet.name,
+            normalizedDate,
+            rcNo,
+          );
           if (!race) continue;
 
           const existing = await this.dividendRepo.findOne({
-            where: { raceId: race.id, pool: poolCode, chulNo, chulNo2: cn2, chulNo3: cn3 },
+            where: {
+              raceId: race.id,
+              pool: poolCode,
+              chulNo,
+              chulNo2: cn2,
+              chulNo3: cn3,
+            },
             select: ['id'],
           });
 
           if (existing) {
-            await this.dividendRepo.update(existing.id, { odds: oddsVal, poolName: poolNameRaw });
+            await this.dividendRepo.update(existing.id, {
+              odds: oddsVal,
+              poolName: poolNameRaw,
+            });
           } else {
             await this.dividendRepo.save(
               this.dividendRepo.create({
@@ -2408,7 +2486,10 @@ export class KraService {
       }
     }
 
-    return { message: `Synced ${total} dividend records for ${normalizedDate}`, total };
+    return {
+      message: `Synced ${total} dividend records for ${normalizedDate}`,
+      total,
+    };
   }
 
   /**
@@ -2622,12 +2703,16 @@ export class KraService {
           ...(chaksunTStr != null && { chaksunT: chaksunTStr }),
           ...(vs('sex') != null && { sex: vs('sex') }),
           ...(vi('age') != null && { age: vi('age') }),
-          ...((vs('prd') ?? vs('name')) != null && { prd: vs('prd') ?? vs('name') }),
+          ...((vs('prd') ?? vs('name')) != null && {
+            prd: vs('prd') ?? vs('name'),
+          }),
         });
 
         await this.delay(1000);
       } catch (e) {
-        this.logger.warn(`Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
+        this.logger.warn(
+          `Horse details fetch failed for ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
 
@@ -2741,7 +2826,9 @@ export class KraService {
 
         await this.delay(1000);
       } catch (e) {
-        this.logger.warn(`Training fetch failed for horse ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`);
+        this.logger.warn(
+          `Training fetch failed for horse ${entry.hrNo}: ${e instanceof Error ? e.message : String(e)}`,
+        );
       }
     }
 
@@ -3218,13 +3305,13 @@ export class KraService {
 
           const ratingVal = rating1 ?? null;
           const ratingHistoryForDb: number[] | null =
-            ratingHistory.length > 0
-              ? ratingHistory
-              : null;
+            ratingHistory.length > 0 ? ratingHistory : null;
           // Only update fields that have values to prevent overwriting enriched data
           await this.entryRepo.update(entry.id, {
             ...(ratingVal != null && { rating: ratingVal }),
-            ...(ratingHistoryForDb != null && { ratingHistory: ratingHistoryForDb }),
+            ...(ratingHistoryForDb != null && {
+              ratingHistory: ratingHistoryForDb,
+            }),
           } as Parameters<Repository<RaceEntry>['update']>[1]);
           needKeys.delete(key);
           updated++;
@@ -3558,9 +3645,13 @@ export class KraService {
             // Only update fields that have values
             const equipUpdate: Record<string, unknown> = {};
             if (equipment != null) equipUpdate.equipment = equipment;
-            if (bleedingInfoObj != null) equipUpdate.bleedingInfo = bleedingInfoObj;
+            if (bleedingInfoObj != null)
+              equipUpdate.bleedingInfo = bleedingInfoObj;
             if (Object.keys(equipUpdate).length > 0) {
-              await this.entryRepo.update(entry.id, equipUpdate as Parameters<Repository<RaceEntry>['update']>[1]);
+              await this.entryRepo.update(
+                entry.id,
+                equipUpdate as Parameters<Repository<RaceEntry>['update']>[1],
+              );
             }
           }
         }
@@ -3666,7 +3757,9 @@ export class KraService {
    */
   async refreshRaceDayRealtime(date: string) {
     if (!this.serviceKey) {
-      this.logger.warn('[refreshRaceDayRealtime] No KRA service key — skipping');
+      this.logger.warn(
+        '[refreshRaceDayRealtime] No KRA service key — skipping',
+      );
       return { refreshed: false };
     }
     const normalizedDate = this.normalizeToYyyyMmDd(date);
@@ -3774,17 +3867,25 @@ export class KraService {
     // This is the heaviest step: ~10-16 horses × 2 API calls × N races = 200-500+ requests.
     // Only run once per date — check kra_sync_logs for previous success.
     const alreadySynced = await this.kraSyncLogRepo.findOne({
-      where: { endpoint: 'analysisTrainingDetails', rcDate: normalizedDate, status: 'SUCCESS' },
+      where: {
+        endpoint: 'analysisTrainingDetails',
+        rcDate: normalizedDate,
+        status: 'SUCCESS',
+      },
       select: ['id'],
     });
 
     let processedCount = 0;
     if (alreadySynced) {
-      this.logger.log(`[syncAnalysisData] Training/details already synced for ${normalizedDate}, skipping`);
+      this.logger.log(
+        `[syncAnalysisData] Training/details already synced for ${normalizedDate}, skipping`,
+      );
       processedCount = races.length;
     } else {
       for (const race of races) {
-        reportProgress(`훈련·마필정보 (${processedCount + 1}/${races.length})…`);
+        reportProgress(
+          `훈련·마필정보 (${processedCount + 1}/${races.length})…`,
+        );
         await this.fetchTrainingData(race.meet, race.rcDate, race.rcNo);
         await this.delay(2000); // 2s gap between training and details
         await this.fetchHorseDetails(race.meet, race.rcDate, race.rcNo);

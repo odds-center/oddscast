@@ -223,7 +223,12 @@ describe('PredictionsController', () => {
     it('should use default limit and offset when not provided', async () => {
       mockPredictionsService.getCommentary.mockResolvedValue({ items: [] });
 
-      await controller.getCommentary('20250301', undefined, undefined, undefined);
+      await controller.getCommentary(
+        '20250301',
+        undefined,
+        undefined,
+        undefined,
+      );
 
       expect(mockPredictionsService.getCommentary).toHaveBeenCalledWith(
         '20250301',

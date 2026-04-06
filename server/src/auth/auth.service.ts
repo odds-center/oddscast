@@ -56,14 +56,19 @@ export class AuthService {
 
   // In-memory login attempt tracker: email -> { count, lockedUntil }
   // Resets on successful login or after lock expires
-  private readonly loginAttempts = new Map<string, { count: number; lockedUntil?: Date }>();
+  private readonly loginAttempts = new Map<
+    string,
+    { count: number; lockedUntil?: Date }
+  >();
   private static readonly MAX_LOGIN_ATTEMPTS = 5;
   private static readonly LOCK_DURATION_MS = 15 * 60 * 1000; // 15 minutes
 
   private checkLoginLock(key: string): void {
     const entry = this.loginAttempts.get(key);
     if (entry?.lockedUntil && entry.lockedUntil > new Date()) {
-      const minutesLeft = Math.ceil((entry.lockedUntil.getTime() - Date.now()) / 60000);
+      const minutesLeft = Math.ceil(
+        (entry.lockedUntil.getTime() - Date.now()) / 60000,
+      );
       throw new HttpException(
         `로그인 시도 횟수를 초과했습니다. ${minutesLeft}분 후 다시 시도해주세요.`,
         HttpStatus.TOO_MANY_REQUESTS,
@@ -81,7 +86,9 @@ export class AuthService {
     if (entry.count >= AuthService.MAX_LOGIN_ATTEMPTS) {
       entry.lockedUntil = new Date(Date.now() + AuthService.LOCK_DURATION_MS);
       entry.count = 0;
-      this.logger.warn(`Login locked for ${key} after ${AuthService.MAX_LOGIN_ATTEMPTS} failed attempts`);
+      this.logger.warn(
+        `Login locked for ${key} after ${AuthService.MAX_LOGIN_ATTEMPTS} failed attempts`,
+      );
     }
     this.loginAttempts.set(key, entry);
   }
@@ -182,7 +189,9 @@ export class AuthService {
 
     const result = await this.mailService.sendVerificationCode(email, code);
     if (!result.success) {
-      this.logger.error(`Failed to send verification email to ${email}: ${result.error}`);
+      this.logger.error(
+        `Failed to send verification email to ${email}: ${result.error}`,
+      );
     }
   }
 
@@ -197,7 +206,9 @@ export class AuthService {
     await this.grantSignupBonus(userId);
 
     // Discord notification (fire-and-forget)
-    this.discordService.notifySignup(user.email, user.nickname ?? undefined).catch(() => {});
+    this.discordService
+      .notifySignup(user.email, user.nickname ?? undefined)
+      .catch(() => {});
   }
 
   async login(email: string, password: string) {
@@ -221,9 +232,13 @@ export class AuthService {
     }
 
     if (!user.isActive)
-      throw new UnauthorizedException('비활성화된 계정입니다. 고객센터에 문의하세요.');
+      throw new UnauthorizedException(
+        '비활성화된 계정입니다. 고객센터에 문의하세요.',
+      );
     if (!user.isEmailVerified)
-      throw new UnauthorizedException('이메일 인증이 필요합니다. 이메일을 확인해 주세요.');
+      throw new UnauthorizedException(
+        '이메일 인증이 필요합니다. 이메일을 확인해 주세요.',
+      );
 
     this.clearLoginAttempts(email);
     const now = new Date();
@@ -314,11 +329,22 @@ export class AuthService {
     if (!user) throw new UnauthorizedException();
 
     let changed = false;
-    if (dto.name !== undefined) { user.name = dto.name; changed = true; }
-    if (dto.nickname !== undefined) { user.nickname = dto.nickname; changed = true; }
-    if (dto.hasSeenOnboarding !== undefined) { user.hasSeenOnboarding = dto.hasSeenOnboarding; changed = true; }
+    if (dto.name !== undefined) {
+      user.name = dto.name;
+      changed = true;
+    }
+    if (dto.nickname !== undefined) {
+      user.nickname = dto.nickname;
+      changed = true;
+    }
+    if (dto.hasSeenOnboarding !== undefined) {
+      user.hasSeenOnboarding = dto.hasSeenOnboarding;
+      changed = true;
+    }
     if ((dto as Record<string, unknown>).favoriteMeet !== undefined) {
-      user.favoriteMeet = (dto as Record<string, unknown>).favoriteMeet as string | null;
+      user.favoriteMeet = (dto as Record<string, unknown>).favoriteMeet as
+        | string
+        | null;
       changed = true;
     }
     if (dto.completedTour !== undefined) {
@@ -379,10 +405,14 @@ export class AuthService {
     }
     const now = new Date();
     await this.dataSource.transaction(async (manager) => {
-      await manager.update(User, { id: userId }, {
-        isActive: false,
-        updatedAt: now,
-      });
+      await manager.update(
+        User,
+        { id: userId },
+        {
+          isActive: false,
+          updatedAt: now,
+        },
+      );
       // Expire all available tickets
       await manager
         .createQueryBuilder()
@@ -533,9 +563,7 @@ export class AuthService {
     };
   }
 
-  async resendVerification(
-    email: string,
-  ): Promise<{ message: string }> {
+  async resendVerification(email: string): Promise<{ message: string }> {
     const user = await this.userRepo.findOne({
       where: { email, isActive: true },
       select: ['id', 'isEmailVerified'],
@@ -612,8 +640,7 @@ export class AuthService {
     }
 
     // 3. Create a brand-new user
-    const email =
-      profile.email ?? `kakao_${profile.kakaoId}@oddscast.local`;
+    const email = profile.email ?? `kakao_${profile.kakaoId}@oddscast.local`;
     const newUser = this.userRepo.create({
       email,
       password: null,
@@ -691,7 +718,9 @@ export class AuthService {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (this.config.get('NODE_ENV') !== 'test') {
-        this.logger.warn(`Signup bonus grant failed for user ${userId}: ${msg}`);
+        this.logger.warn(
+          `Signup bonus grant failed for user ${userId}: ${msg}`,
+        );
       }
     }
   }
@@ -703,8 +732,6 @@ export class AuthService {
 
   /** Return the configured webapp base URL for redirect after OAuth. */
   getWebappUrl(): string {
-    return (
-      this.config.get<string>('WEBAPP_URL') ?? 'http://localhost:3000'
-    );
+    return this.config.get<string>('WEBAPP_URL') ?? 'http://localhost:3000';
   }
 }

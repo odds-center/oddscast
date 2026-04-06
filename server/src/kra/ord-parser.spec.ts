@@ -17,7 +17,10 @@ describe('parseOrd', () => {
     it('should detect 낙마', () => {
       expect(parseOrd('낙마')).toEqual({ ordInt: undefined, ordType: 'FALL' });
       expect(parseOrd('낙')).toEqual({ ordInt: undefined, ordType: 'FALL' });
-      expect(parseOrd('낙마(기권)')).toEqual({ ordInt: undefined, ordType: 'FALL' });
+      expect(parseOrd('낙마(기권)')).toEqual({
+        ordInt: undefined,
+        ordType: 'FALL',
+      });
     });
   });
 
@@ -25,9 +28,15 @@ describe('parseOrd', () => {
     it('should detect 실격', () => {
       expect(parseOrd('실격')).toEqual({ ordInt: undefined, ordType: 'DQ' });
       // '실격(낙마)' contains '낙' → matched as FALL first (ORD_TYPE_MAP order)
-      expect(parseOrd('실격(낙마)')).toEqual({ ordInt: undefined, ordType: 'FALL' });
+      expect(parseOrd('실격(낙마)')).toEqual({
+        ordInt: undefined,
+        ordType: 'FALL',
+      });
       // '실격(기권)' → '실격' matches DQ pattern first (before WITHDRAWN '기권')
-      expect(parseOrd('실격(기권)')).toEqual({ ordInt: undefined, ordType: 'DQ' });
+      expect(parseOrd('실격(기권)')).toEqual({
+        ordInt: undefined,
+        ordType: 'DQ',
+      });
     });
 
     it('should treat 90+ as DQ', () => {
@@ -38,10 +47,22 @@ describe('parseOrd', () => {
 
   describe('withdrawal detection', () => {
     it('should detect 기권/취소', () => {
-      expect(parseOrd('기권')).toEqual({ ordInt: undefined, ordType: 'WITHDRAWN' });
-      expect(parseOrd('출전취소')).toEqual({ ordInt: undefined, ordType: 'WITHDRAWN' });
-      expect(parseOrd('취소')).toEqual({ ordInt: undefined, ordType: 'WITHDRAWN' });
-      expect(parseOrd('선제')).toEqual({ ordInt: undefined, ordType: 'WITHDRAWN' });
+      expect(parseOrd('기권')).toEqual({
+        ordInt: undefined,
+        ordType: 'WITHDRAWN',
+      });
+      expect(parseOrd('출전취소')).toEqual({
+        ordInt: undefined,
+        ordType: 'WITHDRAWN',
+      });
+      expect(parseOrd('취소')).toEqual({
+        ordInt: undefined,
+        ordType: 'WITHDRAWN',
+      });
+      expect(parseOrd('선제')).toEqual({
+        ordInt: undefined,
+        ordType: 'WITHDRAWN',
+      });
     });
   });
 

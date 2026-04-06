@@ -62,6 +62,13 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     return () => window.removeEventListener('resize', check);
   }, []);
 
+  // Apply data-native-app attribute to enable native-mode CSS rules
+  useEffect(() => {
+    if (bridge.isNativeApp()) {
+      document.documentElement.setAttribute('data-native-app', 'true');
+    }
+  }, []);
+
   // Post-mount initialization: accessibility
   const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
   useEffect(() => {
@@ -148,12 +155,17 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
     }
   }, [clientMounted, token, pathname, router]);
 
-  // Native app: notify route changes (for native status bar, analytics, etc.)
+  // Native app: notify route changes + haptic feedback on navigation
   useEffect(() => {
-    if (bridge.isNativeApp()) {
-      bridge.send('ROUTE_CHANGED', { path: router.asPath });
-    }
-  }, [router.asPath]);
+    if (!bridge.isNativeApp()) return;
+    const handleRouteChange = (url: string) => {
+      bridge.send('ROUTE_CHANGED', { path: url });
+      bridge.haptic('light');
+    };
+    router.events.on('routeChangeComplete', handleRouteChange);
+    return () => router.events.off('routeChangeComplete', handleRouteChange);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- router.events is stable
+  }, []);
 
   // Native app: listen for NAVIGATE messages from native (deep links, notifications)
   useEffect(() => {

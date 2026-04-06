@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import Icon, { type IconName } from "./icons";
 import { routes } from "@/lib/routes";
 import { CONFIG } from "@/lib/config";
+import { useNativeApp } from "@/lib/hooks/useNativeApp";
 
 const NAV_POSITION_STORAGE_KEY = "oddscast_nav_bar_position";
 const NAV_ORIENTATION_STORAGE_KEY = "oddscast_nav_orientation";
@@ -59,6 +60,7 @@ function FloatingAppBar({
   asPath: string;
   isMobile: boolean;
 }) {
+  const { haptic } = useNativeApp();
   const [navPosition, setNavPosition] =
     useState<NavPosition>(readStoredPosition);
   const [navOrientation, setNavOrientation] = useState<
@@ -279,6 +281,7 @@ function FloatingAppBar({
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => haptic('light')}
                   className={`nav-mobile-item ${active ? "nav-mobile-item-active" : ""}`}
                 >
                   <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
@@ -367,6 +370,7 @@ function FloatingAppBar({
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => haptic('light')}
                   className={`nav-mobile-item ${vertical ? "nav-mobile-item-vertical" : ""} ${active ? "nav-mobile-item-active" : ""}`}
                 >
                   <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">

@@ -23,6 +23,7 @@ import Animated, {
   runOnJS,
   Easing,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { WebView, type WebViewNavigation } from 'react-native-webview';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import { config } from '../config';
@@ -103,6 +104,13 @@ export default function WebAppScreen() {
   // Network error
   const [loadError, setLoadError] = useState<string | null>(null);
 
+  // Load progress bar
+  const loadProgress = useSharedValue(0);
+  const loadProgressOpacity = useSharedValue(0);
+
+  // Android swipe-back edge glow
+  const swipeEdgeOpacity = useSharedValue(0);
+
   // Status bar
   const [statusBarStyle, setStatusBarStyle] = useState<'light-content' | 'dark-content'>('light-content');
 
@@ -123,6 +131,17 @@ export default function WebAppScreen() {
   const exitToastAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: exitToastTranslateY.value }],
     opacity: exitToastOpacity.value,
+  }));
+
+  // Progress bar animated style
+  const progressBarAnimatedStyle = useAnimatedStyle(() => ({
+    width: `${loadProgress.value * 100}%` as unknown as number,
+    opacity: loadProgressOpacity.value,
+  }));
+
+  // Android swipe-back edge glow animated style
+  const swipeEdgeAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: swipeEdgeOpacity.value,
   }));
 
   // Show exit toast with auto-dismiss animation
@@ -415,6 +434,8 @@ export default function WebAppScreen() {
 
   const handleWebViewError = (event: { nativeEvent: { description: string } }) => {
     setLoadError(event.nativeEvent.description || 'Failed to load page');
+    // Hide progress bar on error
+    loadProgressOpacity.value = withTiming(0, { duration: 200 });
   };
 
   const handleRetry = () => {
@@ -422,55 +443,135 @@ export default function WebAppScreen() {
     webViewRef.current?.reload();
   };
 
+  const handleHomePress = () => {
+    setLoadError(null);
+    webViewRef.current?.injectJavaScript(`window.location.href='${WEBAPP_URL}';true;`);
+  };
+
+  // --- Progress bar handlers ---
+  const handleLoadStart = useCallback(() => {
+    loadProgress.value = 0;
+    loadProgressOpacity.value = withTiming(1, { duration: 150 });
+    loadProgress.value = withTiming(0.3, { duration: 400, easing: Easing.out(Easing.cubic) });
+  }, [loadProgress, loadProgressOpacity]);
+
+  const handleLoadProgress = useCallback(
+    (event: { nativeEvent: { progress: number } }) => {
+      const p = event.nativeEvent.progress;
+      if (p > loadProgress.value) {
+        loadProgress.value = withTiming(p, { duration: 200 });
+      }
+    },
+    [loadProgress],
+  );
+
+  const handleLoadEnd = useCallback(() => {
+    setWebViewLoaded(true);
+    loadProgress.value = withTiming(1, { duration: 200 }, (finished) => {
+      'worklet';
+      if (finished) {
+        loadProgressOpacity.value = withDelay(300, withTiming(0, { duration: 300 }));
+        loadProgress.value = withDelay(600, withTiming(0, { duration: 0 }));
+      }
+    });
+  }, [loadProgress, loadProgressOpacity]);
+
+  // --- Android swipe-back gesture ---
+  const goBackInWebView = useCallback(() => {
+    webViewRef.current?.goBack();
+  }, []);
+
+  const swipeBackGesture = Gesture.Pan()
+    .enabled(Platform.OS === 'android')
+    .activeOffsetX([10, 999]) // Only activate for rightward swipes, avoid conflicting with horizontal scroll
+    .onUpdate((e) => {
+      if (e.translationX > 0) {
+        // Show edge glow proportional to swipe distance (max at 120px)
+        const intensity = Math.min(e.translationX / 120, 1) * 0.6;
+        swipeEdgeOpacity.value = intensity;
+      }
+    })
+    .onEnd((e) => {
+      swipeEdgeOpacity.value = withTiming(0, { duration: 200 });
+      if (e.translationX > 80 && e.velocityX > 300 && canGoBack) {
+        runOnJS(goBackInWebView)();
+      }
+    });
+
   return (
     <SafeAreaView style={styles.container}>
       <StatusBar barStyle={statusBarStyle} backgroundColor="#0c0c0c" />
 
-      <WebView
-        ref={webViewRef}
-        source={{ uri: initialUri }}
-        style={styles.webview}
-        startInLoadingState={false}
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        injectedJavaScriptBeforeContentLoaded="window.__IS_NATIVE_APP__=true;"
-        onNavigationStateChange={onNavStateChange}
-        onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
-        onMessage={handleMessage}
-        onLoadEnd={() => setWebViewLoaded(true)}
-        onError={handleWebViewError}
-        scrollEnabled={true}
-        bounces={Platform.OS === 'ios'}
-        overScrollMode={Platform.OS === 'android' ? 'never' : 'always'}
-        keyboardDisplayRequiresUserAction={false}
-        cacheEnabled={true}
-        allowsInlineMediaPlayback={true}
-        pullToRefreshEnabled={true}
-        allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
-        mediaPlaybackRequiresUserAction={false}
-        allowFileAccess={true}
-        mixedContentMode="compatibility"
-        originWhitelist={['https://*', 'http://*']}
-        setSupportMultipleWindows={false}
-        allowsLinkPreview={false}
-        sharedCookiesEnabled={true}
-        automaticallyAdjustContentInsets={true}
-        contentInsetAdjustmentBehavior="automatic"
-        // Android: hardware-accelerated rendering for smoother scrolling
-        androidLayerType={Platform.OS === 'android' ? 'hardware' : undefined}
-        // Prevent text selection in WebView for native feel
-        textInteractionEnabled={false}
-      />
+      {/* Navigation progress bar */}
+      <Animated.View style={[styles.progressBarTrack]} pointerEvents="none">
+        <Animated.View style={[styles.progressBar, progressBarAnimatedStyle]} />
+      </Animated.View>
+
+      <GestureDetector gesture={swipeBackGesture}>
+        <View style={styles.webviewContainer}>
+          <WebView
+            ref={webViewRef}
+            source={{ uri: initialUri }}
+            style={styles.webview}
+            startInLoadingState={false}
+            javaScriptEnabled={true}
+            domStorageEnabled={true}
+            injectedJavaScriptBeforeContentLoaded="window.__IS_NATIVE_APP__=true;"
+            onNavigationStateChange={onNavStateChange}
+            onShouldStartLoadWithRequest={onShouldStartLoadWithRequest}
+            onMessage={handleMessage}
+            onLoadStart={handleLoadStart}
+            onLoadProgress={handleLoadProgress}
+            onLoadEnd={handleLoadEnd}
+            onError={handleWebViewError}
+            scrollEnabled={true}
+            bounces={Platform.OS === 'ios'}
+            overScrollMode={Platform.OS === 'android' ? 'never' : 'always'}
+            keyboardDisplayRequiresUserAction={false}
+            cacheEnabled={true}
+            allowsInlineMediaPlayback={true}
+            pullToRefreshEnabled={true}
+            allowsBackForwardNavigationGestures={Platform.OS === 'ios'}
+            mediaPlaybackRequiresUserAction={false}
+            allowFileAccess={true}
+            mixedContentMode="compatibility"
+            originWhitelist={['https://*', 'http://*']}
+            setSupportMultipleWindows={false}
+            allowsLinkPreview={false}
+            sharedCookiesEnabled={true}
+            automaticallyAdjustContentInsets={true}
+            contentInsetAdjustmentBehavior="automatic"
+            // Android: hardware-accelerated rendering for smoother scrolling
+            androidLayerType={Platform.OS === 'android' ? 'hardware' : undefined}
+            // Prevent text selection in WebView for native feel
+            textInteractionEnabled={false}
+          />
+
+          {/* Android swipe-back edge glow */}
+          {Platform.OS === 'android' && (
+            <Animated.View style={[styles.swipeEdgeGlow, swipeEdgeAnimatedStyle]} pointerEvents="none" />
+          )}
+        </View>
+      </GestureDetector>
 
       {/* Network error overlay */}
       {loadError && (
         <View style={styles.errorOverlay}>
-          <Text style={styles.errorIcon}>!</Text>
-          <Text style={styles.errorTitle}>Connection Error</Text>
-          <Text style={styles.errorMessage}>{loadError}</Text>
-          <TouchableOpacity onPress={handleRetry} style={styles.retryButton} activeOpacity={0.7}>
-            <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
+          <View style={styles.errorIconCircle}>
+            <Text style={styles.errorIconText}>!</Text>
+          </View>
+          <Text style={styles.errorTitle}>페이지를 불러올 수 없습니다</Text>
+          <Text style={styles.errorMessage}>
+            네트워크 연결을 확인하거나{'\n'}잠시 후 다시 시도해주세요
+          </Text>
+          <View style={styles.errorButtonRow}>
+            <TouchableOpacity onPress={handleHomePress} style={styles.homeButton} activeOpacity={0.7}>
+              <Text style={styles.homeButtonText}>홈으로</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={handleRetry} style={styles.retryButton} activeOpacity={0.7}>
+              <Text style={styles.retryButtonText}>다시 시도</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       )}
 
@@ -505,7 +606,38 @@ export default function WebAppScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#0c0c0c' },
+  webviewContainer: { flex: 1 },
   webview: { flex: 1, backgroundColor: 'transparent' },
+  // Navigation progress bar
+  progressBarTrack: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+    backgroundColor: 'transparent',
+    zIndex: 30,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: 3,
+    backgroundColor: '#16a34a',
+    borderRadius: 1.5,
+  },
+  // Android swipe-back edge glow
+  swipeEdgeGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
+    width: 24,
+    backgroundColor: 'rgba(22, 163, 74, 0.35)',
+    shadowColor: '#16a34a',
+    shadowOffset: { width: 8, height: 0 },
+    shadowOpacity: 0.6,
+    shadowRadius: 16,
+    elevation: 8,
+  },
   splashOverlay: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: '#0c0c0c',
@@ -522,18 +654,61 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
     zIndex: 5,
   },
-  errorIcon: {
-    fontSize: 48, color: '#FFD700', fontWeight: 'bold', marginBottom: 16,
-    width: 64, height: 64, lineHeight: 64, textAlign: 'center',
-    borderRadius: 32, borderWidth: 3, borderColor: '#FFD700', overflow: 'hidden',
+  errorIconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    borderWidth: 2,
+    borderColor: '#d97706',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  errorTitle: { color: '#ffffff', fontSize: 20, fontWeight: '600', marginBottom: 8 },
-  errorMessage: { color: '#999999', fontSize: 14, textAlign: 'center', marginBottom: 24, lineHeight: 20 },
+  errorIconText: {
+    fontSize: 28,
+    color: '#d97706',
+    fontWeight: 'bold',
+    lineHeight: 32,
+  },
+  errorTitle: {
+    color: '#ffffff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 10,
+    textAlign: 'center',
+    letterSpacing: -0.3,
+  },
+  errorMessage: {
+    color: '#888888',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 32,
+    lineHeight: 22,
+  },
+  errorButtonRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  homeButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#444444',
+    paddingVertical: 13,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    minWidth: 110,
+    alignItems: 'center',
+  },
+  homeButtonText: { color: '#aaaaaa', fontSize: 15, fontWeight: '600' },
   retryButton: {
-    backgroundColor: '#FFD700', paddingVertical: 12, paddingHorizontal: 32,
-    borderRadius: 8, minWidth: 120, alignItems: 'center',
+    backgroundColor: '#16a34a',
+    paddingVertical: 13,
+    paddingHorizontal: 28,
+    borderRadius: 10,
+    minWidth: 110,
+    alignItems: 'center',
   },
-  retryButtonText: { color: '#0c0c0c', fontSize: 16, fontWeight: '600' },
+  retryButtonText: { color: '#ffffff', fontSize: 15, fontWeight: '600' },
   exitToast: {
     position: 'absolute',
     bottom: Platform.OS === 'ios' ? 100 : 80,

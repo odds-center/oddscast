@@ -90,6 +90,97 @@
   --accent: #d97706;
 }
 
+/* === NATIVE APP MODE ===
+   Applied when running inside React Native WebView
+   html[data-native-app] is set by _app.tsx on mount
+*/
+
+html[data-native-app] {
+  /* Smooth scrolling + momentum (iOS) */
+  -webkit-overflow-scrolling: touch;
+  /* Prevent rubber-band bounce on the root html element (only content should bounce) */
+  overscroll-behavior: none;
+}
+
+html[data-native-app] body {
+  /* No text selection (feels native) */
+  -webkit-user-select: none;
+  user-select: none;
+  /* Smooth font rendering */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Hide scrollbar */
+  scrollbar-width: none;
+}
+
+html[data-native-app] body::-webkit-scrollbar {
+  display: none;
+}
+
+/* Touch tap highlight: transparent (no blue flash on tap) */
+html[data-native-app] * {
+  -webkit-tap-highlight-color: transparent;
+  tap-highlight-color: transparent;
+}
+
+/* Native-feel active press state for buttons/links */
+html[data-native-app] button:active,
+html[data-native-app] a:active,
+html[data-native-app] [role='button']:active {
+  opacity: 0.7;
+  transition: opacity 60ms ease;
+}
+
+/* Page transition animations */
+html[data-native-app] .page-enter {
+  animation: slide-in-from-right 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+html[data-native-app] .page-exit {
+  animation: slide-out-to-left 250ms cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+@keyframes slide-in-from-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-to-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-30%);
+    opacity: 0;
+  }
+}
+
+/* Modal slide-up animation (for pages that should feel like modals) */
+html[data-native-app] .modal-enter {
+  animation: slide-up-modal 300ms cubic-bezier(0.32, 0.72, 0, 1) forwards;
+}
+
+@keyframes slide-up-modal {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* iOS home indicator safe area */
+html[data-native-app] .bottom-nav-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 @import './accessibility.css';
 @import './base.css';
 @import './tables.css';

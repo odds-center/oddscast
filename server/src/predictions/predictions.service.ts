@@ -779,18 +779,19 @@ export class PredictionsService {
     const results = raceIdsForBetType.length
       ? await this.resultRepo.find({
           where: { raceId: In(raceIdsForBetType) },
-          select: ['raceId', 'hrNo', 'chulNo', 'ord'],
+          select: ['raceId', 'hrNo', 'ord'],
         })
       : [];
+    // Use hrNo as the canonical identifier — consistent with how accuracy is stored in results.service
     const resultsByRace = new Map<
       number,
-      Array<{ chulNo: string; ord: number }>
+      Array<{ hrNo: string; ord: number }>
     >();
     for (const r of results) {
       const ord = parseInt(String(r.ord ?? ''), 10);
-      if (!Number.isFinite(ord) || !r.chulNo) continue;
+      if (!Number.isFinite(ord) || !r.hrNo) continue;
       const arr = resultsByRace.get(r.raceId) ?? [];
-      arr.push({ chulNo: String(r.chulNo), ord });
+      arr.push({ hrNo: String(r.hrNo), ord });
       resultsByRace.set(r.raceId, arr);
     }
 
@@ -803,14 +804,15 @@ export class PredictionsService {
     };
 
     for (const pred of predsWithScores) {
-      const picks = this.extractTopPickChulNos(pred.scores, 3);
+      // Extract top hrNos sorted by score descending — matches results.service accuracy logic
+      const picks = this.extractTopPickHrNos(pred.scores, 3);
       if (picks.length < 2) continue;
       const actuals = resultsByRace.get(pred.raceId);
       if (!actuals?.length) continue;
       const sorted = [...actuals].sort((a, b) => a.ord - b.ord);
-      const actual1 = sorted[0]?.chulNo;
-      const actual2 = sorted[1]?.chulNo;
-      const actual3 = sorted[2]?.chulNo;
+      const actual1 = sorted[0]?.hrNo;
+      const actual2 = sorted[1]?.hrNo;
+      const actual3 = sorted[2]?.hrNo;
       if (!actual1) continue;
 
       // Win (단승): AI's #1 pick = actual 1st
@@ -1561,6 +1563,22 @@ export class PredictionsService {
     return hs
       .slice(0, topN)
       .map((h: Record<string, unknown>) => String(h?.['chulNo'] ?? ''))
+      .filter(Boolean);
+  }
+
+  /** Extract top-N hrNos sorted by score descending.
+   *  Consistent with how results.service stores accuracy (hrNo-based matching). */
+  private extractTopPickHrNos(
+    scores: Record<string, unknown> | null,
+    topN: number,
+  ): string[] {
+    if (!scores) return [];
+    const hs = scores['horseScores'];
+    if (!Array.isArray(hs)) return [];
+    return [...(hs as Array<Record<string, unknown>>)]
+      .sort((a, b) => ((b['score'] as number) ?? 0) - ((a['score'] as number) ?? 0))
+      .slice(0, topN)
+      .map((h) => String(h['hrNo'] ?? ''))
       .filter(Boolean);
   }
 

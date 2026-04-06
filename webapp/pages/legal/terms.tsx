@@ -10,7 +10,7 @@ export default function TermsPage() {
         <CompactPageTitle title='서비스 이용 약관' backHref={routes.home} />
         <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-6 text-sm text-foreground leading-relaxed'>
           <p className='text-text-tertiary text-xs'>
-            시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
+            시행일: 2026년 4월 6일 | 최종 수정일: 2026년 4월 6일
           </p>
           <p className='text-text-secondary text-xs'>
             본 약관은 「전자상거래 등에서의 소비자보호에 관한 법률」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」, 「콘텐츠산업 진흥법」 등 관련 법령을 준수합니다.
@@ -82,6 +82,25 @@ export default function TermsPage() {
               <li>역공학, 디컴파일, 디스어셈블리 등 서비스를 부정하게 분석하는 행위</li>
               <li>관련 법령 또는 약관을 위반하는 행위</li>
             </ul>
+          </section>
+
+          {/* Article 5-3: Gambling Prohibition and Addiction Prevention */}
+          <section>
+            <h2 className='text-base font-semibold mb-2'>제5조의3 (사행행위 금지 및 중독 예방)</h2>
+            <div className='rounded-lg border border-amber-200 bg-amber-50 p-3 mb-3'>
+              <p className='text-xs font-semibold text-amber-800 mb-1'>⚠ 중요 안내</p>
+              <p className='text-xs text-amber-700'>
+                본 서비스는 AI 경주 분석 정보 제공 서비스입니다. 마권 구매·베팅을 중개하거나 권유하지 않으며,
+                정보 이용 결과에 따른 실제 베팅은 이용자의 자유의사에 따른 것입니다.
+                과도한 도박은 중독을 유발할 수 있으며, 도박 중독이 우려되시는 분은 한국도박문제예방치유원(1336)에 문의하시기 바랍니다.
+              </p>
+            </div>
+            <ol className='list-decimal list-inside text-text-secondary space-y-1'>
+              <li>본 서비스는 「사행산업통합감독위원회법」, 「마사회법」 등 관련 법령에서 금지하는 사행행위를 조장하거나 관여하지 않습니다.</li>
+              <li>이용자는 본 서비스를 통해 제공된 AI 예측 정보를 타인의 마권 구매 대리, 불법 내기, 기타 사행행위에 이용하여서는 아니 됩니다.</li>
+              <li>마권 구매는 한국마사회 공식 채널(경마장, KRA 공식 앱·사이트)을 통해서만 합법적으로 이용 가능합니다. 이용자가 비공식·불법 경로로 베팅하여 발생한 손해에 대해 회사는 일체의 책임을 지지 않습니다.</li>
+              <li>도박 중독 예방을 위한 안내: 한국도박문제예방치유원 상담전화 1336 (24시간 운영)</li>
+            </ol>
           </section>
 
           {/* Article 6: Service Usage */}
@@ -211,7 +230,7 @@ export default function TermsPage() {
           <section>
             <h2 className='text-base font-semibold mb-2'>부칙</h2>
             <ol className='list-decimal list-inside text-text-secondary space-y-1'>
-              <li>본 약관은 2025년 1월 1일부터 시행합니다.</li>
+              <li>본 약관은 2026년 4월 6일부터 시행합니다.</li>
               <li>본 약관 시행 이전에 가입한 회원에 대해서도 본 약관을 적용합니다. 다만, 시행일 이전에 발생한 사항에 대해서는 종전 약관에 따릅니다.</li>
             </ol>
           </section>

@@ -24,7 +24,7 @@ jobs:
           cache-dependency-path: server/scripts/requirements.txt
 
       - name: Install dependencies
-        run: pip install lightgbm psycopg2-binary scikit-learn numpy
+        run: pip install lightgbm xgboost psycopg2-binary scikit-learn numpy
 
       - name: Train model
         env:

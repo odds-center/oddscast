@@ -6,7 +6,7 @@
 >
 > **클라이언트:** WebApp (`webapp/lib/api/`) — 메인 클라이언트. Mobile은 WebView로 WebApp 로드. Admin (`admin/src/lib/api/`).
 
-**Last updated:** 2026-03-26
+**Last updated:** 2026-04-06
 
 ### Admin 전용 Base URL
 
@@ -634,6 +634,17 @@ PUT /notifications/preferences → body: { pushEnabled?, raceEnabled?, predictio
 | `GET`  | `/admin/statistics/users-growth` | 사용자 증가 추이   | 🔐 Admin    |
 | `GET`  | `/admin/statistics/ticket-usage-trend` | 예측권 사용량 추이 | 🔐 Admin    |
 | `GET`  | `/admin/ai/estimate-cost`      | AI 예상 비용        | 🔐 Admin    |
+
+### Analytics
+
+| Method | Route                              | 설명                    | Auth     |
+| ------ | ---------------------------------- | ----------------------- | -------- |
+| `GET`  | `/admin/analytics/dashboard`       | BI 대시보드 KPI 집계    | 🔐 Admin |
+
+**GET /api/admin/analytics/dashboard**
+- Auth: Admin JWT required
+- Response: `BIDashboardAnalytics { users, revenue, predictions, operations, tickets }`
+- Description: Aggregated KPI metrics for BI dashboard. Real-time, no cache.
 
 ---
 

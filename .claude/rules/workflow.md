@@ -23,6 +23,11 @@ When changing features/API/schema/business logic, update ALL relevant docs:
 | KRA data change | `docs/DATA_LOADING.md` + relevant `docs/specs/KRA_*.md` |
 | Server module added | `docs/architecture/PROJECT_STRUCTURE.md` |
 | New shared type | `shared/types/` + update barrel export in `index.ts` |
+| New admin analytics endpoint | `docs/architecture/API_SPECIFICATION.md` §Admin |
+| AI prediction prompt change | `docs/architecture/ANALYSIS_FACTORS.md` + prompts/ comments |
+| Python factor change | `docs/architecture/ANALYSIS_FACTORS.md` + `analysis.py` docstring |
+| Security fix | `docs/SECURITY_AUDIT.md` |
+| Marketing material | `docs/marketing/` |
 
 ### Docs Update Checklist After Any Change
 - [ ] Status updated (completed/in-progress)
@@ -143,3 +148,18 @@ NEXT_PUBLIC_TOSSPAYMENTS_CLIENT_KEY
 ```
 NEXT_PUBLIC_ADMIN_API_URL (proxied via next.config.js rewrites)
 ```
+
+## Agent Harness System (.claude/agents/ + .claude/skills/)
+
+80개의 전문 에이전트와 51개의 스킬이 제공된다. 자연어 또는 `/skill-name`으로 호출.
+
+OddsCast 개발에서 주요하게 사용하는 하네스:
+- `/llm-app-builder` — Gemini 프롬프트 재설계, RAG, eval 프레임워크
+- `/code-reviewer` — 보안, 성능, 아키텍처 리뷰
+- `/data-analysis` — 예측 정확도, 요소 상관관계 분석
+- `/bi-dashboard` — admin KPI 대시보드 기능
+- `/fullstack-webapp` — 신규 기능 개발
+- `/advertising-campaign`, `/social-media-manager` — 마케팅
+
+에이전트 파일: `.claude/agents/{harness}--{role}.md`
+스킬 파일: `.claude/skills/{skill-name}/skill.md`

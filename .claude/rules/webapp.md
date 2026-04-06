@@ -391,3 +391,70 @@ export const CONFIG = {
 - Removed from Layout (conflicts with app bar)
 - `LegalFooter` component: terms/privacy/refund links
 - Only placed on profile page (`/profile`)
+
+## Native App Integration (WebView Bridge)
+
+### useNativeApp Hook (새 코드에서는 useIsNativeApp 대신 이것을 사용)
+```typescript
+import { useNativeApp } from '@/lib/hooks/useNativeApp';
+
+const { isNative, haptic, share, toast, copyToClipboard } = useNativeApp();
+// haptic: no-op on web, fires bridge.haptic() in native
+// share: uses Web Share API fallback on web
+// copyToClipboard: uses navigator.clipboard fallback on web
+```
+
+### data-native-app CSS Attribute
+- `_app.tsx` mount 시 `bridge.isNativeApp()`가 true면 자동으로 설정됨
+- `html[data-native-app]` CSS 규칙을 globals.css에서 활성화:
+  - 스크롤바 숨김, tap highlight 비활성화, overscroll-behavior: none
+  - 페이지 전환 클래스: `.page-enter`, `.page-exit`, `.modal-enter`
+  - 하단 안전 영역: `.bottom-nav-safe` (env(safe-area-inset-bottom))
+- 수동 설정 금지 — `_app.tsx`가 처리함
+
+### Bridge Direct Usage
+```typescript
+import bridge from '@/lib/bridge';
+// For auth: bridge.sendAuth(token), bridge.sendLogout()
+// For navigation: bridge.send('ROUTE_CHANGED', { path })
+// For native actions: bridge.fire('haptic', { pattern: 'light' }) or bridge.call('share', {...})
+```
+
+### Route Change Reporting
+- `_app.tsx`에서 `router.events.on('routeChangeComplete')`로 전역 처리
+- 모든 navigation 시 haptic('light') + ROUTE_CHANGED 발송
+- 페이지별 route reporting 추가 금지 — 전역으로 처리됨
+
+### Mobile-Specific Rendering
+- 조건부 렌더링 시 `useNativeApp()`의 `isNative` 사용
+- 푸시 알림 토글: mobile 전용 (이미 구현됨)
+- 하단 안전 영역: 하단 네비게이션 요소에 `className="bottom-nav-safe"` 적용
+
+## DataFetchState — Standard Loading/Error/Empty Pattern
+
+모든 목록 페이지와 섹션은 반드시 DataFetchState를 사용한다. 커스텀 loading/error/empty를 인라인으로 구현하지 않는다.
+
+```typescript
+import { DataFetchState } from '@/components/page/DataFetchState';
+
+<DataFetchState
+  isLoading={isLoading}
+  error={error}
+  isEmpty={items.length === 0}
+  emptyMessage="데이터가 없습니다"
+  emptyDescription="설명 (optional)"
+  errorDescription="에러 설명 (optional)"
+>
+  {/* actual content */}
+</DataFetchState>
+```
+
+**Anti-pattern (사용 금지):**
+```tsx
+// ❌ Wrong
+{isLoading ? <LoadingSpinner /> : error ? <p>에러</p> : items.length === 0 ? <p>없음</p> : <List />}
+```
+
+이미 마이그레이션 완료된 컴포넌트: TodayRacesSection, AIPredictionSection, AccuracyPreviewSection,
+RecentResultsSection, WeekRacesSection, PredictionMatrixPreviewSection, RacePredictionsPreviewSection,
+horses/[hrNo].tsx, jockeys/[jkNo].tsx, trainers/[trName].tsx

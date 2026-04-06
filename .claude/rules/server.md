@@ -316,3 +316,34 @@ DEV_RETURN_RESET_TOKEN=       # Dev: return password reset token in response
 - Consecutive login: 7 days = 1 RACE ticket, streak resets to 0
 - MATRIX ticket: 1 per day per date, `matrixDate` in YYYYMMDD
 - Favorites: type restricted to RACE only via DTO `@IsIn(['RACE'])`
+
+## Gemini Prediction Prompts
+
+### 프롬프트 템플릿 위치
+모든 Gemini 프롬프트 템플릿은 `server/src/predictions/prompts/`에 위치:
+- `race-prediction.prompts.ts` — 메인 예측, 경주 후 분석
+- 서비스 파일에 프롬프트 문자열을 인라인으로 작성하지 않는다
+
+### 프롬프트 설계 표준
+- Chain-of-Thought: JSON 출력 전 5단계 추론
+- Few-shot examples: 2개 내장 예시 (명확한 우승 후보 + 이변 시나리오)
+- Output schema: strict JSON — `reasoning`, `scores[]` with `keyFactors`, `confidenceExplanation`
+- 별도 프롬프트: 배치 예측, 실시간(skipCache) 모드, 경주 후 분석
+
+### Eval 로깅
+- `results.service.ts`는 결과 동기화 시 `[EVAL] Race {id}: predicted [{top3}], actual [{top3}], match={n}/{N}` 로그를 남김
+- eval 로그 제거 금지 — AI 정확도 모니터링 기준선임
+
+### Python 분석 요소 (v5 — 16개 요소)
+전체 표는 `docs/architecture/ANALYSIS_FACTORS.md` 참조.
+핵심: `analysis.py`의 `W_HORSE` 가중치 합은 항상 1.0이어야 함.
+신규 요소: `tch` (track_condition_history) — 현재 주로 상태에서 말의 승/연 비율.
+가중치 검증: 데이터 축적 후 프로덕션 DB 대상으로 `server/scripts/validate_weights.py` 실행.
+
+## Admin Analytics API
+
+`GET /api/admin/analytics/dashboard` → `BIDashboardAnalytics`
+- `admin.service.ts`의 `getDashboardAnalytics()`에서 구현
+- 반환값: users, revenue, predictions, operations, tickets 지표
+- 캐시 없음 — TypeORM QueryBuilder 기반 실시간 집계
+- Admin JWT 필수 (클래스 레벨 RolesGuard)

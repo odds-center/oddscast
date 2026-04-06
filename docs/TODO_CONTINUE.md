@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-04-01 (Railway startCommand 명시로 배포 오류 수정, storybook-static gitignore 추가, BatchSchedule retryCount + 자동 재시도, RaceAnalysisCache Python 분석 캐싱, DB 문서 동기화)
+**Last updated:** 2026-04-06 (Gemini CoT 프롬프트, Python 16번째 팩터, 보안 감사, Admin BI 대시보드, 마케팅 자료, Mobile WebView 개선, Webapp 버그 수정 21건, 에이전트 하네스 16종)
 
 ---
 
@@ -89,6 +89,14 @@
 | **Python 분석 결과 캐싱** | ✅ 완료 | `race_analysis_cache` 테이블. raceId+analysisType+dataHash로 캐시 키 구성. 동일 데이터 해시면 Python 재실행 없이 캐시 반환. |
 | **Railway 배포 오류 수정** | ✅ 완료 | `railway.toml`에 `startCommand` 명시. pnpm 자동 감지로 `pnpm start` 실행 → "No projects found" 오류 방지. |
 | **Storybook gitignore** | ✅ 완료 | `webapp/.gitignore`에 `/storybook-static` 추가. 빌드 결과물 레포 제외. |
+| **Gemini AI 프롬프트 개선** | ✅ 완료 | CoT 5단계 추론 + 2개 few-shot 예시. `server/src/predictions/prompts/race-prediction.prompts.ts` 신규. eval logger 추가 (`[EVAL]` 로그). |
+| **Python 16번째 팩터 (tch)** | ✅ 완료 | track_condition_history 팩터 추가. W_HORSE 가중치 재조정(합=1.0). `validate_weights.py` 통계 검증 스크립트 추가. `docs/architecture/ANALYSIS_FACTORS.md` 신규. |
+| **보안 감사** | ✅ 완료 | IDOR 3건(notifications/favorites) + 어드민 brute-force 잠금 + bcrypt 12라운드 수정. HIGH 4건, MEDIUM 1건. `docs/SECURITY_AUDIT.md` 신규. |
+| **Admin BI 대시보드** | ✅ 완료 | `GET /api/admin/analytics/dashboard` 추가. `admin/src/pages/bi-dashboard.tsx` 신규. 사용자/수익/예측/운영/티켓 5개 섹션, 60초 자동갱신. |
+| **마케팅 자료** | ✅ 완료 | `docs/marketing/` — Google Play/App Store 리스팅, SNS 캘린더(4주 16포스팅), 뉴스레터 템플릿, 앱 스토어 출시 체크리스트 5종. |
+| **Mobile WebView 네이티브 개선** | ✅ 완료 | 네비게이션 프로그레스바(그린), Android 스와이프 뒤로가기(GestureDetector), 에러화면 한국어. WebApp: `html[data-native-app]` CSS, `useNativeApp` 훅, 라우트 햅틱, iOS safe area. |
+| **Webapp 버그 수정 21건** | ✅ 완료 | 비밀번호 폼 에러 메시지, 예측권 소비 후 자동 리패치, 경주 결과집계중 상태, 홈 섹션 7개+프로필 페이지 DataFetchState 통일, 순위색상 헬퍼 추출, 글자수 카운터 애니메이션 등. |
+| **에이전트 하네스 16종** | ✅ 완료 | `.claude/agents/` 80개, `.claude/skills/` 51개. 개발/AI/분석/교육/마케팅 카테고리. `agents/` 디렉토리 소스 레포 추가. |
 
 **관련 문서:** [TYPEORM_MIGRATION.md](TYPEORM_MIGRATION.md), [FEATURE_ROADMAP.md](FEATURE_ROADMAP.md), [features/RACE_STATUS_AND_KRA.md](features/RACE_STATUS_AND_KRA.md)
 
@@ -163,11 +171,10 @@
 > 핵심 인프라(Railway server, Vercel webapp/admin, Sentry, CD, DB 백업)는 모두 완료 ✅
 > 남은 선택 작업 기준으로 우선순위 정렬:
 
-1. **Gemini API 키 확인** — 유출 차단 여부 확인 후 필요시 교체 (Google AI Studio → Railway GEMINI_API_KEY)
-2. **앱 스토어 출시** — Android APK 빌드 완료, iOS 빌드 후 iOS/Google Play 배포
-3. **업타임 모니터링** — BetterUptime / UptimeRobot 등 `/health` 엔드포인트 등록
-4. **E2E·통합 테스트 보강** — 중요 플로우 추가 (구독 결제, 매트릭스 잠금/해제)
-5. **Phase 3 기능** — 커뮤니티 예측, 고급 분석 대시보드 (장기)
+1. **앱 스토어 출시** — Google Play (AAB 빌드) → Play Console 제출. iOS Xcode Archive → App Store Connect. `docs/marketing/APP_STORE_LAUNCH_CHECKLIST.md` 참고.
+2. **업타임 모니터링** — BetterUptime / UptimeRobot에 `/health` 등록 (5분 내).
+3. **validate_weights.py 실행** — 프로덕션 DB에서 팩터 상관분석 실행 후 W_HORSE 가중치 업데이트.
+4. **Phase 3 기능** — 커뮤니티 예측, 고급 분석 대시보드 (장기).
 
 ---
 

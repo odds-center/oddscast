@@ -6,7 +6,7 @@
 > overall product direction. It must be read before any planning/development
 > session via `CLAUDE.md` and `.claude/rules/`.
 >
-> **Last updated:** 2026-03-19
+> **Last updated:** 2026-04-06
 
 ---
 
@@ -393,6 +393,8 @@
 | CI/CD pipeline | ⭐⭐ MEDIUM | GitHub Actions for test + build + deploy |
 | Rate limiting | ⭐⭐ MEDIUM | Prevent API abuse, protect KRA sync endpoints |
 | Database backups | ⭐⭐ MEDIUM | Automated daily PostgreSQL backups |
+| 보안 감사 | ✅ Done | OWASP 감사 완료. IDOR 3건, brute-force 잠금, bcrypt 강화. `docs/SECURITY_AUDIT.md` 참고. |
+| Admin BI 대시보드 | ✅ Done | `GET /api/admin/analytics/dashboard` + `admin/src/pages/bi-dashboard.tsx`. 5개 섹션, 60초 자동갱신. |
 | Load testing | ⭐ LOW | Simulate race day traffic spikes |
 | CDN for static assets | ⭐ LOW | CloudFront / Vercel Edge for webapp |
 

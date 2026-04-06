@@ -203,13 +203,13 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
               <Component {...restPageProps} />
             </TooltipProvider>
           </HydrationBoundary>
+          {clientMounted && pathname !== '/welcome' && (
+            <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
+          )}
+          {clientMounted && pathname !== '/welcome' && <BugReportButton />}
         </QueryClientProvider>
       </Sentry.ErrorBoundary>
       {clientMounted && <NetworkStatusBanner />}
-      {clientMounted && pathname !== '/welcome' && (
-        <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
-      )}
-      {clientMounted && pathname !== '/welcome' && <BugReportButton />}
     </>
   );
 }

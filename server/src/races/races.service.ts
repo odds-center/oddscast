@@ -166,8 +166,18 @@ export class RacesService {
     }
     if (q?.trim()) {
       const term = `%${q.trim()}%`;
+      // Search race-level fields (rcName, meet, rcNo) as well as entries by horse/jockey name
       qb.andWhere(
-        '(r.rcName ILIKE :term OR r.meet ILIKE :term OR r.rcNo ILIKE :term)',
+        `(
+          r.rcName ILIKE :term
+          OR r.meet ILIKE :term
+          OR r.rcNo ILIKE :term
+          OR EXISTS (
+            SELECT 1 FROM oddscast.race_entries re
+            WHERE re."raceId" = r.id
+              AND (re."hrName" ILIKE :term OR re."jkName" ILIKE :term)
+          )
+        )`,
         { term },
       );
     }

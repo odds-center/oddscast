@@ -118,6 +118,8 @@ export interface DividendRate {
 }
 
 export interface RaceFilters {
+  /** Search by horse name or jockey name in entries, or by race name/meet/number */
+  q?: string;
   meet?: string;
   date?: string;
   dateFrom?: string;

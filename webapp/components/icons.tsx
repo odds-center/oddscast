@@ -65,6 +65,8 @@ import {
   Droplets,     // Track condition / weather
   Mic2,         // AI race commentary
   Eye,          // Pre-race watch points
+  Share2,       // Social sharing
+  Search,       // Search input
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -134,6 +136,8 @@ export const Icons = {
   Droplets,
   Mic2,
   Eye,
+  Share2,
+  Search,
 } as const;
 
 export type IconName = keyof typeof Icons;

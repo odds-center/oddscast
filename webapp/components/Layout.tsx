@@ -6,6 +6,7 @@ import Icon, { type IconName } from "./icons";
 import { routes } from "@/lib/routes";
 import { CONFIG } from "@/lib/config";
 import { useNativeApp } from "@/lib/hooks/useNativeApp";
+import { useUnreadNotifications } from "@/lib/hooks/useUnreadNotifications";
 
 const NAV_POSITION_STORAGE_KEY = "oddscast_nav_bar_position";
 const NAV_ORIENTATION_STORAGE_KEY = "oddscast_nav_orientation";
@@ -61,6 +62,7 @@ function FloatingAppBar({
   isMobile: boolean;
 }) {
   const { haptic } = useNativeApp();
+  const unreadCount = useUnreadNotifications();
   const [navPosition, setNavPosition] =
     useState<NavPosition>(readStoredPosition);
   const [navOrientation, setNavOrientation] = useState<
@@ -286,11 +288,25 @@ function FloatingAppBar({
                   className={`nav-mobile-item ${active ? "nav-mobile-item-active" : ""}`}
                 >
                   <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
-                    <Icon
-                      name={icon}
-                      size={22}
-                      strokeWidth={active ? 2.5 : 2}
-                    />
+                    {isProfile && unreadCount > 0 ? (
+                      <span className="relative inline-flex">
+                        <Icon
+                          name={icon}
+                          size={22}
+                          strokeWidth={active ? 2.5 : 2}
+                        />
+                        {/* Unread notification badge on profile icon */}
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      </span>
+                    ) : (
+                      <Icon
+                        name={icon}
+                        size={22}
+                        strokeWidth={active ? 2.5 : 2}
+                      />
+                    )}
                   </span>
                   <span className="nav-mobile-label font-medium w-full text-center text-xs truncate">
                     {label}
@@ -375,11 +391,25 @@ function FloatingAppBar({
                   className={`nav-mobile-item ${vertical ? "nav-mobile-item-vertical" : ""} ${active ? "nav-mobile-item-active" : ""}`}
                 >
                   <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
-                    <Icon
-                      name={icon}
-                      size={22}
-                      strokeWidth={active ? 2.5 : 2}
-                    />
+                    {isProfile && unreadCount > 0 ? (
+                      <span className="relative inline-flex">
+                        <Icon
+                          name={icon}
+                          size={22}
+                          strokeWidth={active ? 2.5 : 2}
+                        />
+                        {/* Unread notification badge on profile icon */}
+                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      </span>
+                    ) : (
+                      <Icon
+                        name={icon}
+                        size={22}
+                        strokeWidth={active ? 2.5 : 2}
+                      />
+                    )}
                   </span>
                   <span
                     className={`nav-mobile-label font-medium w-full text-center ${vertical ? "text-xs leading-tight" : "text-xs truncate"}`}

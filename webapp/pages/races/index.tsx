@@ -8,6 +8,7 @@ import { useRouter } from 'next/router';
 import Layout from '@/components/Layout';
 import CompactPageTitle from '@/components/page/CompactPageTitle';
 import FilterDateBar from '@/components/page/FilterDateBar';
+import SearchBar from '@/components/page/SearchBar';
 import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
@@ -78,6 +79,7 @@ export default function RacesPage() {
   const qDate = router.query?.date as string | undefined;
   const qMeet = (router.query?.meet as string) || '';
   const qStatus = (router.query?.status as string) || '';
+  const qSearch = (router.query?.q as string) || '';
   const dateFilter = parseDateFilter(qDate);
   const page = Math.max(1, parseInt(String(router.query?.page ?? 1), 10) || 1);
   const hasAppliedFavoriteMeet = useRef(false);
@@ -125,7 +127,7 @@ export default function RacesPage() {
 
   // Primary: paginated races list
   const { data: scheduleData, isLoading, error, refetch } = useQuery({
-    queryKey: ['races', 'list', dateFilter, qMeet, qStatus, page],
+    queryKey: ['races', 'list', dateFilter, qMeet, qStatus, qSearch, page],
     placeholderData: keepPreviousData,
     refetchInterval: isTodayRaceDay ? LIVE_REFETCH_MS : false,
     queryFn: () => {
@@ -136,6 +138,7 @@ export default function RacesPage() {
         ...(date && { date }),
         ...(qMeet && { meet: qMeet }),
         ...(qStatus && { status: qStatus }),
+        ...(qSearch && { q: qSearch }),
       });
     },
   });
@@ -197,6 +200,11 @@ export default function RacesPage() {
     <Layout title='경주 | OddsCast' description='서울, 부산, 제주 경마장 경주 일정과 출전마 정보를 확인하세요.'>
       <CompactPageTitle title='경주' backHref={routes.home} />
       <div>
+      <SearchBar
+        value={qSearch}
+        onChange={(v) => updateQuery({ q: v || undefined, page: 1 })}
+        className='mb-2'
+      />
       <FilterDateBar
         filterOptions={[
           { value: 'all', label: '전체' },
@@ -235,7 +243,7 @@ export default function RacesPage() {
         isEmpty={!races.length}
         emptyIcon='Flag'
         emptyTitle='경주가 없습니다'
-        emptyDescription='다른 날짜나 조건을 선택해보세요.'
+        emptyDescription={qSearch ? `"${qSearch}"에 해당하는 경주가 없습니다. 다른 검색어나 날짜를 시도해보세요.` : '다른 날짜나 조건을 선택해보세요.'}
         loadingLabel='경주 정보 준비 중...'
         errorTitle='경주 정보를 확인할 수 없습니다'
       >

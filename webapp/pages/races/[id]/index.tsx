@@ -40,6 +40,7 @@ import type { PredictionDetailDto } from '@/lib/types/predictions';
 import { getErrorMessage } from '@/lib/utils/error';
 import { formatTime, isRaceActuallyEnded, formatRaceTime, formatDiffUnit } from '@/lib/utils/format';
 import { pushRecentRaceId } from '@/lib/utils/recentRaces';
+import ShareButton from '@/components/ui/ShareButton';
 
 /** ordType → 비고 라벨 (낙마/실격/기권). NORMAL·null이면 빈 문자열 */
 function formatOrdTypeLabel(ordType: string | null | undefined): string {
@@ -420,10 +421,19 @@ export default function RaceDetailPage() {
     <Layout title='경주 상세 | OddsCast' description='경주 출전마 정보, AI 예측 분석, 경주 결과를 상세히 확인하세요.'>
       <div className='max-w-4xl mx-auto'>
         <div className='space-y-4'>
-          <CompactPageTitle
-            title={r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : '경주 상세'}
-            backHref={routes.races.list}
-          />
+          <div className='flex items-center gap-2'>
+            <CompactPageTitle
+              title={r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : '경주 상세'}
+              backHref={routes.races.list}
+              className='flex-1 mb-0'
+            />
+            <ShareButton
+              title={`${r.meetName && r.rcNo ? `${r.meetName} ${r.rcNo}경주` : (r.rcName ?? '경주')} | OddsCast`}
+              text={`AI가 분석한 ${r.meetName ?? ''} ${r.rcNo ?? ''}경주 예측을 확인해보세요.`}
+              url={`${CONFIG.webapp.baseURL}/races/${id as string}`}
+              size='sm'
+            />
+          </div>
 
           {/* ── Race header ── */}
           <RaceHeaderCard
@@ -1417,6 +1427,15 @@ function PredictionFullView({
             <span className='text-text-tertiary text-xs'>· {list.length}건 예측</span>
           )}
           <div className='flex-1' />
+          {/* Share prediction result */}
+          {horseScores.length > 0 && (
+            <ShareButton
+              title='AI 경주 예측 결과 | OddsCast'
+              text={`${top3Names[0]}이(가) 1위 예상! AI 분석 결과를 확인해보세요.`}
+              url={`${CONFIG.webapp.baseURL}/races/${raceId}`}
+              size='sm'
+            />
+          )}
           {!isRaceCompleted && availableTickets > 0 && (
             <Button
               type='button'

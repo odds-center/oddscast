@@ -47,6 +47,7 @@ export default class RaceApi {
     try {
       const params = new URLSearchParams();
 
+      if (filters?.q) params.append('q', filters.q);
       if (filters?.meet) params.append('meet', filters.meet);
       if (filters?.date) params.append('date', filters.date);
       if (filters?.dateFrom) params.append('dateFrom', filters.dateFrom);

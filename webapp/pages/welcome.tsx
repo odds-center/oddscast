@@ -271,12 +271,12 @@ export default function LandingPage() {
         }}
       >
         {/* ─── NAV ─── */}
-        <header className="fixed top-0 left-0 right-0 z-50 transition-all duration-300 pointer-events-none">
+        <header className="fixed top-0 left-0 right-0 z-50 px-4 sm:px-8 pt-3 transition-all duration-300 pointer-events-none">
           <div
-            className={`pointer-events-auto mx-auto transition-all duration-300 ease-in-out ${
+            className={`pointer-events-auto rounded-2xl transition-all duration-300 ease-in-out ${
               scrolled
-                ? 'mt-3 mx-4 sm:mx-8 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100'
-                : 'mt-3 mx-4 sm:mx-8 rounded-2xl bg-white/90 backdrop-blur-md shadow-sm border border-white/60'
+                ? 'bg-white shadow-lg shadow-stone-900/10 border border-stone-100'
+                : 'bg-white/90 backdrop-blur-md shadow-sm border border-white/60'
             }`}
           >
             <div className="px-5 sm:px-6 h-14 flex items-center justify-between">

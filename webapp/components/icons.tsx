@@ -60,8 +60,7 @@ import {
   Copy,
   HelpCircle,
   Bug,
-  Users,      // Community / leaderboard
-  ListChecks, // My predictions list
+  Users,      // Jockey-trainer combos / group icon
   Hash,       // Gate/post position number
   Droplets,   // Track condition / weather
 } from 'lucide-react';
@@ -129,7 +128,6 @@ export const Icons = {
   HelpCircle,
   Bug,
   Users,
-  ListChecks,
   Hash,
   Droplets,
 } as const;

@@ -252,12 +252,7 @@ function FloatingAppBar({
       isActive: (p) => p === "/races" || p.startsWith("/races/"),
     },
     { href: routes.predictions.matrix, icon: "BarChart2", label: "종합" },
-    {
-      href: routes.community.index,
-      icon: "Users",
-      label: "커뮤니티",
-      isActive: (p) => p === "/community" || p.startsWith("/community/"),
-    },
+    { href: routes.results, icon: "TrendingUp", label: "결과" },
     { href: routes.profile.index, icon: "User", label: "정보" },
   ];
 

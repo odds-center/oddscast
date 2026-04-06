@@ -68,11 +68,6 @@ detail: (id: string) => `/races/${id}`,
     ai: '/about/ai',
   },
 
-  community: {
-    index: '/community',
-    myPredictions: '/community/my-predictions',
-  },
-
   welcome: '/welcome',
   weeklyPreview: '/weekly-preview',
   updateLog: '/update-log',

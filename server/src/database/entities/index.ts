@@ -34,4 +34,3 @@ export { RaceDividend } from './race-dividend.entity';
 export { RaceAnalysisCache } from './race-analysis-cache.entity';
 export { BugReport, BugReportStatus, BugReportCategory } from './bug-report.entity';
 export { RefundRequest, RefundRequestStatus, RefundRequestType } from './refund-request.entity';
-export { CommunityPrediction } from './community-prediction.entity';

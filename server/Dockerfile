@@ -6,7 +6,7 @@
 # Stage 3 (prod):  copy compiled output + prod deps + python
 
 # ── Stage 1: Build ──
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN pnpm --filter @oddscast/shared build && \
     pnpm --filter server build
 
 # ── Stage 2: Production deps only ──
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -29,7 +29,7 @@ COPY shared/package.json shared/
 RUN pnpm install --frozen-lockfile --prod
 
 # ── Stage 3: Production runtime ──
-FROM node:20-alpine AS prod
+FROM node:24-alpine AS prod
 
 # pnpm required by Railway (reads packageManager from package.json)
 RUN corepack enable && corepack prepare pnpm@latest --activate

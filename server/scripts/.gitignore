@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+# model.pkl is intentionally committed so Railway deploys include the trained model.
+# To update: run train_model.py locally, then commit the new model.pkl.

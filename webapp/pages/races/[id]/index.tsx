@@ -144,6 +144,11 @@ export default function RaceDetailPage() {
 
   // Optimistic lock: prevent double ticket consumption between mutation settle and query refetch
   const [ticketConsumedForRace, setTicketConsumedForRace] = useState(false);
+  const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
+  const [oddsExplainOpen, setOddsExplainOpen] = useState(false);
+  const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(
+    null,
+  );
 
   // Reset local state when race id changes (prevents stale data across navigation)
   useEffect(() => {
@@ -168,19 +173,12 @@ export default function RaceDetailPage() {
     placeholderData: keepPreviousData,
   });
 
-  const [selectedPredictionId, setSelectedPredictionId] = useState<number | null>(null);
-  const [oddsExplainOpen, setOddsExplainOpen] = useState(false);
-
   const { data: predictionPreview } = useQuery({
     queryKey: ['prediction', 'preview', id],
     queryFn: () => PredictionApi.getPreview(id as string),
     enabled: !!id && !isRaceCompleted && !hasUsedTicketForRace,
     placeholderData: keepPreviousData,
   });
-
-  const [fullPredictionFromUse, setFullPredictionFromUse] = useState<PredictionDetailDto | null>(
-    null,
-  );
 
   const useTicketMutation = useMutation({
     mutationFn: ({ raceId, regenerate }: { raceId: string; regenerate?: boolean }) =>

@@ -14,7 +14,6 @@
  */
 import { test, expect, type Page } from '@playwright/test';
 import {
-  mockLogin,
   mockAuthMe,
   mockRaceList,
   mockRaceDetail,
@@ -28,12 +27,7 @@ import {
   mockHitRecords,
   mockAccuracyStats,
   mockGroupedResults,
-  mockNotifications,
-  mockNotificationPrefs,
-  mockPredictionHistory,
-  mockTicketHistory,
   mockHorseProfile,
-  mockJockeyProfile,
   seedAuth,
   stubRace,
   stubRaceEntry,

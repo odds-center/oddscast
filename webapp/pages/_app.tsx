@@ -64,7 +64,6 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
 
   // Post-mount initialization: accessibility
   const hydrateAccessibility = useAccessibilityStore((s) => s.hydrate);
-  const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
   useEffect(() => {
     if (!clientMounted) return;
     hydrateAccessibility();

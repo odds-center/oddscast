@@ -80,6 +80,14 @@ export default function PredictionMatrixTable({
   const [viewMode, setViewMode] = useState<ViewMode>('detail');
   const [lazyCount, setLazyCount] = useState(LAZY_INITIAL_ROWS);
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const prevRaceMatrixRef = useRef(raceMatrix);
+
+  // Reset lazy count during render when raceMatrix reference changes (date/meet filter switch).
+  // Render-time state update avoids the effect-cascade anti-pattern.
+  if (prevRaceMatrixRef.current !== raceMatrix) {
+    prevRaceMatrixRef.current = raceMatrix;
+    setLazyCount(LAZY_INITIAL_ROWS);
+  }
 
   // Always show all rows — race info is public
   const visibleRows = useMemo(() => {
@@ -88,11 +96,6 @@ export default function PredictionMatrixTable({
   }, [locked, raceMatrix, lazyCount]);
 
   const hasMoreLazy = !locked && lazyCount < raceMatrix.length;
-
-  // Reset lazy count when data changes (date/meet filter switch)
-  useEffect(() => {
-    setLazyCount(LAZY_INITIAL_ROWS);
-  }, [raceMatrix]);
 
   useEffect(() => {
     if (locked || viewMode !== 'detail' || raceMatrix.length <= LAZY_INITIAL_ROWS) return;

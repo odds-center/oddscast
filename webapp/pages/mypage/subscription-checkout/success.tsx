@@ -31,22 +31,21 @@ export default function SubscriptionCheckoutSuccessPage() {
     if (!router.isReady) return;
     // Prevent duplicate API calls on re-render or back/forward navigation
     if (hasCalledRef.current) return;
-
-    const subId =
-      typeof subscriptionId === 'string' ? subscriptionId : Array.isArray(subscriptionId) ? subscriptionId[0] : '';
-    const cKey =
-      typeof customerKey === 'string' ? customerKey : Array.isArray(customerKey) ? customerKey[0] : '';
-    const aKey = typeof authKey === 'string' ? authKey : Array.isArray(authKey) ? authKey[0] : '';
-
-    if (!subId || !cKey || !aKey) {
-      setStatus('error');
-      setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
-      return;
-    }
-
     hasCalledRef.current = true;
 
-    (async () => {
+    void (async () => {
+      const subId =
+        typeof subscriptionId === 'string' ? subscriptionId : Array.isArray(subscriptionId) ? subscriptionId[0] : '';
+      const cKey =
+        typeof customerKey === 'string' ? customerKey : Array.isArray(customerKey) ? customerKey[0] : '';
+      const aKey = typeof authKey === 'string' ? authKey : Array.isArray(authKey) ? authKey[0] : '';
+
+      if (!subId || !cKey || !aKey) {
+        setStatus('error');
+        setErrorMsg('결제 정보가 없습니다. 구독 플랜에서 다시 시도해 주세요.');
+        return;
+      }
+
       try {
         await PaymentsApi.billingKeyAndConfirm({
           subscriptionId: subId,

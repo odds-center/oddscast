@@ -1718,10 +1718,12 @@ AI 예측 순위: ${predictedTop || '-'}
       });
 
       // Strip fields that Python analysis.py never reads to reduce IPC payload
-      const slimEntries = (raceData.entries ?? []).map((e) => {
-        const { trainings: _trainings, trainingData: _trainingData, prd: _prd, isScratched: _isScratched, trNo: _trNo, ...rest } = e as unknown as Record<string, unknown>;
-        return rest;
-      });
+      const STRIP_KEYS = new Set(['trainings', 'trainingData', 'prd', 'isScratched', 'trNo']);
+      const slimEntries = (raceData.entries ?? []).map((e) =>
+        Object.fromEntries(
+          Object.entries(e as unknown as Record<string, unknown>).filter(([k]) => !STRIP_KEYS.has(k)),
+        ),
+      );
       const slimRaceData = { ...raceData, entries: slimEntries };
       pythonProcess.stdin.write(
         JSON.stringify(slimRaceData, (_, value) =>

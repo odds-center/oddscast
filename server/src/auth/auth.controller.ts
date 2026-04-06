@@ -6,11 +6,15 @@ import {
   Put,
   Delete,
   UseGuards,
+  Req,
+  Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { KakaoAuthGuard } from './guards/kakao-auth.guard';
 import {
   RegisterDto,
   LoginDto,
@@ -23,6 +27,7 @@ import {
   ResendVerificationDto,
   DeleteAccountDto,
 } from './dto/auth.dto';
+import { User } from '../database/entities/user.entity';
 import {
   CurrentUser,
   JwtPayload,
@@ -170,5 +175,32 @@ export class AuthController {
   @ApiOperation({ summary: '인증 상태 확인' })
   checkAuth(@CurrentUser() user: JwtPayload) {
     return { authenticated: true, userId: user.sub };
+  }
+
+  // ── Kakao OAuth ──────────────────────────────────────────────────────────
+
+  @Get('kakao')
+  @ApiOperation({ summary: 'Start Kakao OAuth login' })
+  @UseGuards(KakaoAuthGuard)
+  kakaoLogin() {
+    // Passport redirects the browser to Kakao — this handler is never reached
+  }
+
+  @Get('kakao/callback')
+  @ApiOperation({ summary: 'Kakao OAuth callback' })
+  @UseGuards(KakaoAuthGuard)
+  async kakaoCallback(
+    @Req() req: Request & { user: User },
+    @Res() res: Response,
+  ): Promise<void> {
+    const user = req.user;
+    const { accessToken, refreshToken } = this.authService.generateTokens(user);
+    const webappUrl = this.authService.getWebappUrl();
+
+    const params = new URLSearchParams({
+      token: accessToken,
+      refreshToken: refreshToken ?? '',
+    });
+    res.redirect(`${webappUrl}/auth/kakao/success?${params.toString()}`);
   }
 }

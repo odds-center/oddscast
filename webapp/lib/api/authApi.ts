@@ -74,6 +74,21 @@ export default class AuthApi {
     }
   }
 
+  /**
+   * Fetch the current user profile using an explicit token.
+   * Used by the Kakao OAuth success page before the token is stored in axios defaults.
+   */
+  static async getMe(token: string): Promise<User> {
+    try {
+      const response = await axiosInstance.get<ApiResponse<User>>('/auth/me', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+
   static async updateProfile(updateData: Partial<User>): Promise<User> {
     try {
       const response = await axiosInstance.put<ApiResponse<User>>('/auth/profile', updateData);

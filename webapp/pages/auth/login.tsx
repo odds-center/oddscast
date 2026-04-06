@@ -11,15 +11,21 @@ import { Button } from '@/components/ui/button';
 import AuthApi from '@/lib/api/authApi';
 import { getErrorMessage } from '@/lib/utils/error';
 import { useAuthStore } from '@/lib/store/authStore';
+import CONFIG from '@/lib/config';
 
 type LoginForm = {
   email: string;
   password: string;
 };
 
+// Derive server root from NEXT_PUBLIC_API_URL (strip trailing /api)
+const serverBaseUrl = CONFIG.api.server.baseURL.replace(/\/api$/, '');
+
 export default function Login() {
   const router = useRouter();
   const setAuth = useAuthStore((s) => s.setAuth);
+
+  const kakaoError = router.query.error === 'kakao_failed';
 
   const {
     register,
@@ -48,6 +54,11 @@ export default function Login() {
           title='로그인'
           description='OddsCast 계정으로 로그인하세요.'
         >
+          {kakaoError && (
+            <p className='text-error text-sm mb-2'>
+              카카오 로그인에 실패했습니다. 다시 시도해주세요.
+            </p>
+          )}
           <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
             <FormInput
               label='이메일'
@@ -94,6 +105,27 @@ export default function Login() {
             </Button>
           </form>
         </AuthCard>
+
+        {/* Social login divider */}
+        <div className='relative my-6'>
+          <div className='absolute inset-0 flex items-center'>
+            <div className='w-full border-t border-stone-200' />
+          </div>
+          <div className='relative flex justify-center text-sm'>
+            <span className='bg-[#f8faf8] px-3 text-text-secondary'>또는</span>
+          </div>
+        </div>
+
+        {/* Kakao login button */}
+        <a
+          href={`${serverBaseUrl}/api/auth/kakao`}
+          className='flex items-center justify-center gap-2 w-full py-3 rounded-lg bg-[#FEE500] hover:bg-[#F0D800] active:bg-[#E0C900] text-[#191919] font-semibold text-[15px] transition-colors touch-manipulation min-h-[44px]'
+        >
+          <svg width='20' height='20' viewBox='0 0 24 24' fill='#191919' aria-hidden='true'>
+            <path d='M12 3C6.477 3 2 6.477 2 10.5c0 2.526 1.412 4.742 3.527 6.094L4.43 20.078a.5.5 0 0 0 .7.576l4.9-2.876A11.4 11.4 0 0 0 12 18c5.523 0 10-3.477 10-7.5S17.523 3 12 3z' />
+          </svg>
+          카카오로 계속하기
+        </a>
 
         <p className='mt-6 text-center text-text-secondary text-sm'>
           계정이 없으신가요?{' '}

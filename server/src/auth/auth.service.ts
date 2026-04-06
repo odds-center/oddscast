@@ -188,51 +188,13 @@ export class AuthService {
 
   /**
    * Complete registration after email verification.
-   * Grants signup bonus and returns JWT.
+   * Grants signup bonus and fires Discord notification.
    */
   private async completeRegistration(userId: number) {
     const user = await this.userRepo.findOne({ where: { id: userId } });
     if (!user) return;
 
-    // Anti-abuse: check if this email has ever received signup bonus before
-    // (covers re-registration after soft-delete / account deactivation)
-    const previousAccount = await this.userRepo
-      .createQueryBuilder('u')
-      .where('u.email = :email', { email: user.email })
-      .andWhere('u.id != :id', { id: userId })
-      .getOne();
-    const hasReceivedBonusBefore = !!previousAccount;
-
-    // Also check if this user already has any tickets (re-verification guard)
-    const existingTickets = await this.predictionTicketsService.getBalance(userId);
-    const alreadyHasTickets = (existingTickets?.available ?? 0) > 0;
-
-    if (!hasReceivedBonusBefore && !alreadyHasTickets) {
-      try {
-        const raceCount = parseInt(await this.globalConfig.get('signup_bonus_race_tickets') ?? '5', 10);
-        const matrixCount = parseInt(await this.globalConfig.get('signup_bonus_matrix_tickets') ?? '1', 10);
-        const bonusDays = parseInt(await this.globalConfig.get('signup_bonus_expires_days') ?? '30', 10);
-
-        // Grant RACE tickets
-        if (raceCount > 0) {
-          await this.predictionTicketsService.grantTickets(userId, raceCount, bonusDays, 'RACE');
-        }
-        // Grant MATRIX tickets
-        if (matrixCount > 0) {
-          await this.predictionTicketsService.grantTickets(userId, matrixCount, bonusDays, 'MATRIX');
-        }
-        this.logger.log(`Signup bonus granted to user ${userId}: ${raceCount} RACE + ${matrixCount} MATRIX`);
-      } catch (err: unknown) {
-        const msg = err instanceof Error ? err.message : String(err);
-        if (this.config.get('NODE_ENV') !== 'test') {
-          this.logger.warn(`Signup bonus grant failed for user ${userId}: ${msg}`);
-        }
-      }
-    } else {
-      this.logger.log(
-        `Signup bonus skipped for user ${userId}: ${hasReceivedBonusBefore ? 'previous account exists' : 'already has tickets'}`,
-      );
-    }
+    await this.grantSignupBonus(userId);
 
     // Discord notification (fire-and-forget)
     this.discordService.notifySignup(user.email, user.nickname ?? undefined).catch(() => {});
@@ -247,6 +209,11 @@ export class AuthService {
       throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
     }
 
+    // Kakao-only accounts have no password
+    if (!user.password) {
+      this.recordFailedAttempt(email);
+      throw new UnauthorizedException('이메일 또는 비밀번호가 잘못되었습니다');
+    }
     const valid = await bcrypt.compare(password, user.password);
     if (!valid) {
       this.recordFailedAttempt(email);
@@ -374,9 +341,14 @@ export class AuthService {
   ) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: ['id', 'password'],
+      select: ['id', 'password', 'provider'],
     });
     if (!user) throw new UnauthorizedException();
+    if (user.provider === 'kakao' || !user.password) {
+      throw new BadRequestException(
+        '카카오 로그인 사용자는 비밀번호를 변경할 수 없습니다',
+      );
+    }
     const valid = await bcrypt.compare(oldPassword, user.password);
     if (!valid)
       throw new UnauthorizedException('현재 비밀번호가 일치하지 않습니다');
@@ -392,12 +364,18 @@ export class AuthService {
   async deleteAccount(userId: number, password: string) {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: ['id', 'password'],
+      select: ['id', 'password', 'provider'],
     });
     if (!user) throw new UnauthorizedException();
-    const valid = await bcrypt.compare(password, user.password);
-    if (!valid) {
-      throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
+    // Kakao-only users have no password — skip verification
+    if (user.provider !== 'kakao') {
+      if (!user.password) {
+        throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
+      }
+      const valid = await bcrypt.compare(password, user.password);
+      if (!valid) {
+        throw new UnauthorizedException('비밀번호가 일치하지 않습니다.');
+      }
     }
     const now = new Date();
     await this.dataSource.transaction(async (manager) => {
@@ -604,5 +582,129 @@ export class AuthService {
       createdAt: admin.createdAt,
       updatedAt: admin.updatedAt,
     };
+  }
+
+  /**
+   * Find an existing user by kakaoId, link by email, or create a new one.
+   * Called by KakaoStrategy.validate() during OAuth callback.
+   */
+  async findOrCreateKakaoUser(profile: {
+    kakaoId: string;
+    email?: string;
+    nickname: string;
+  }): Promise<User> {
+    // 1. Look up by kakaoId first
+    const byKakaoId = await this.userRepo.findOne({
+      where: { kakaoId: profile.kakaoId },
+    });
+    if (byKakaoId) return byKakaoId;
+
+    // 2. If email is provided, try to link an existing account
+    if (profile.email) {
+      const byEmail = await this.userRepo.findOne({
+        where: { email: profile.email },
+      });
+      if (byEmail) {
+        byEmail.kakaoId = profile.kakaoId;
+        byEmail.provider = 'kakao';
+        return this.userRepo.save(byEmail);
+      }
+    }
+
+    // 3. Create a brand-new user
+    const email =
+      profile.email ?? `kakao_${profile.kakaoId}@oddscast.local`;
+    const newUser = this.userRepo.create({
+      email,
+      password: null,
+      name: profile.nickname,
+      nickname: profile.nickname,
+      provider: 'kakao',
+      kakaoId: profile.kakaoId,
+      isEmailVerified: true, // Kakao verifies identity
+      isActive: true,
+    });
+    const saved = await this.userRepo.save(newUser);
+
+    // Grant signup bonus (fire-and-forget, same as email registration)
+    await this.grantSignupBonus(saved.id).catch(() => {});
+
+    // Discord signup notification (fire-and-forget)
+    this.discordService
+      .notifySignup(saved.email, saved.nickname ?? undefined)
+      .catch(() => {});
+
+    return saved;
+  }
+
+  /**
+   * Reusable signup bonus grant extracted so it can be called from both
+   * completeRegistration() and findOrCreateKakaoUser().
+   */
+  private async grantSignupBonus(userId: number): Promise<void> {
+    const user = await this.userRepo.findOne({ where: { id: userId } });
+    if (!user) return;
+
+    const previousAccount = await this.userRepo
+      .createQueryBuilder('u')
+      .where('u.email = :email', { email: user.email })
+      .andWhere('u.id != :id', { id: userId })
+      .getOne();
+    if (previousAccount) return;
+
+    const existingTickets =
+      await this.predictionTicketsService.getBalance(userId);
+    if ((existingTickets?.available ?? 0) > 0) return;
+
+    try {
+      const raceCount = parseInt(
+        (await this.globalConfig.get('signup_bonus_race_tickets')) ?? '5',
+        10,
+      );
+      const matrixCount = parseInt(
+        (await this.globalConfig.get('signup_bonus_matrix_tickets')) ?? '1',
+        10,
+      );
+      const bonusDays = parseInt(
+        (await this.globalConfig.get('signup_bonus_expires_days')) ?? '30',
+        10,
+      );
+      if (raceCount > 0) {
+        await this.predictionTicketsService.grantTickets(
+          userId,
+          raceCount,
+          bonusDays,
+          'RACE',
+        );
+      }
+      if (matrixCount > 0) {
+        await this.predictionTicketsService.grantTickets(
+          userId,
+          matrixCount,
+          bonusDays,
+          'MATRIX',
+        );
+      }
+      this.logger.log(
+        `Signup bonus granted to user ${userId}: ${raceCount} RACE + ${matrixCount} MATRIX`,
+      );
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (this.config.get('NODE_ENV') !== 'test') {
+        this.logger.warn(`Signup bonus grant failed for user ${userId}: ${msg}`);
+      }
+    }
+  }
+
+  /** Generate access + refresh tokens for a user (used by Kakao OAuth callback). */
+  generateTokens(user: User): { accessToken: string; refreshToken: string } {
+    return this.generateToken(user.id, user.email, user.role);
+  }
+
+  /** Return the configured webapp base URL for redirect after OAuth. */
+  getWebappUrl(): string {
+    return (
+      this.config.get<string>('WEBAPP_URL') ?? 'http://localhost:3000'
+    );
   }
 }

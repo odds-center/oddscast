@@ -32,7 +32,9 @@ DO $$ BEGIN CREATE TYPE "BatchScheduleStatus" AS ENUM ('PENDING', 'RUNNING', 'CO
 CREATE TABLE IF NOT EXISTS "users" (
     "id" SERIAL NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
+    "provider" TEXT NOT NULL DEFAULT 'email',
+    "kakaoId" TEXT,
     "name" TEXT NOT NULL,
     "nickname" TEXT,
     "avatar" TEXT,
@@ -48,8 +50,12 @@ CREATE TABLE IF NOT EXISTS "users" (
     CONSTRAINT "users_pkey" PRIMARY KEY ("id"),
     CONSTRAINT "users_email_key" UNIQUE ("email")
 );
--- Migration helper: add completedTours if upgrading from older schema
+-- Migration helpers: add new columns if upgrading from older schema
 ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "completedTours" TEXT[] NOT NULL DEFAULT '{}';
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "provider" TEXT NOT NULL DEFAULT 'email';
+ALTER TABLE "users" ADD COLUMN IF NOT EXISTS "kakaoId" TEXT;
+ALTER TABLE "users" ALTER COLUMN "password" DROP NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS "UQ_users_kakaoId" ON "users" ("kakaoId") WHERE "kakaoId" IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS "weekly_previews" (
     "id" SERIAL NOT NULL,

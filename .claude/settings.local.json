@@ -106,7 +106,13 @@
       "mcp__postgres__query",
       "Bash(docker compose:*)",
       "Bash(docker stop:*)",
-      "Bash(find /Users/risingcore/Desktop/work/oddscast/node_modules -name *.js)"
+      "Bash(find /Users/risingcore/Desktop/work/oddscast/node_modules -name *.js)",
+      "Bash(for d:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $d ===\")",
+      "Read(//Users/risingcore/Desktop/work/oddscast/agents/$d/.claude/**)",
+      "Skill(commit-commands:commit)",
+      "WebFetch(domain:developers.kakao.com)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

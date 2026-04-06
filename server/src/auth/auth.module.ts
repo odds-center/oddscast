@@ -10,6 +10,7 @@ import { EmailVerificationToken } from '../database/entities/email-verification-
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { KakaoStrategy } from './strategies/kakao.strategy';
 import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
 import { GlobalConfigModule } from '../config/config.module';
 
@@ -34,7 +35,7 @@ import { GlobalConfigModule } from '../config/config.module';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, KakaoStrategy],
   exports: [AuthService, JwtModule],
 })
 export class AuthModule {}

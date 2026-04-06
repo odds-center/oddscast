@@ -15,8 +15,14 @@ export class User {
   @Column({ type: 'text' })
   email!: string;
 
-  @Column({ type: 'text' })
-  password!: string;
+  @Column({ type: 'text', nullable: true })
+  password!: string | null;
+
+  @Column({ type: 'text', default: 'email' })
+  provider!: string;
+
+  @Column({ type: 'text', nullable: true })
+  kakaoId!: string | null;
 
   @Column({ type: 'text' })
   name!: string;

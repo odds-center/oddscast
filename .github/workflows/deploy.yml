@@ -70,9 +70,11 @@ jobs:
     needs: [migrate]
     runs-on: ubuntu-latest
     if: always()
+    env:
+      DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
     steps:
       - name: Notify deploy triggered
-        if: secrets.DISCORD_WEBHOOK_DEPLOY != ''
+        if: env.DISCORD_WEBHOOK != ''
         env:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_DEPLOY }}
           COMMIT_SHA: ${{ github.sha }}

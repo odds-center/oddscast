@@ -13,5 +13,12 @@
     "build:webapp": "pnpm --filter webapp build",
     "build:admin": "pnpm --filter oddscast-admin build"
   },
-  "description": "Golden Race monorepo — pnpm 워크스페이스"
+  "description": "Golden Race monorepo — pnpm 워크스페이스",
+  "pnpm": {
+    "overrides": {
+      "handlebars": ">=4.7.9",
+      "minimatch": ">=10.2.5",
+      "multer": ">=2.1.1"
+    }
+  }
 }

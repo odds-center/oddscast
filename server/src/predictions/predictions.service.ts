@@ -1749,6 +1749,13 @@ export class PredictionsService {
           }
         }
 
+        // Fire-and-forget pre-race commentary generation
+        this.generateRaceCommentary(raceId, 'pre-race').catch((err: unknown) => {
+          this.logger.warn(
+            `Failed to generate pre-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        });
+
         return created;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));

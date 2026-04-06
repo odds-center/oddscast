@@ -1,4 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from '@nestjs/cache-manager';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Race } from '../database/entities/race.entity';
@@ -6,6 +8,8 @@ import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionStatus } from '../database/db-enums';
+
+const ANALYTICS_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
 export interface TrackConditionStat {
   track: string;
@@ -54,6 +58,7 @@ export class AnalyticsService {
     private readonly resultRepo: Repository<RaceResult>,
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
+    @Inject(CACHE_MANAGER) private readonly cache: Cache,
   ) {}
 
   /**
@@ -61,6 +66,10 @@ export class AnalyticsService {
    * Uses race_results track column (carried from KRA result payload).
    */
   async getTrackConditionStats(meet?: string): Promise<TrackConditionStat[]> {
+    const cacheKey = `analytics:trackCondition:${meet ?? 'all'}`;
+    const cached = await this.cache.get<TrackConditionStat[]>(cacheKey);
+    if (cached) return cached;
+
     const qb = this.resultRepo
       .createQueryBuilder('rr')
       .innerJoin(Race, 'r', 'r.id = rr.raceId')
@@ -84,7 +93,7 @@ export class AnalyticsService {
       winnerCount: string;
     }>();
 
-    return rows.map((row) => {
+    const result = rows.map((row) => {
       const totalRaces = parseInt(row.totalRaces, 10);
       const winnerCount = parseInt(row.winnerCount, 10);
       return {
@@ -97,6 +106,9 @@ export class AnalyticsService {
             : 0,
       };
     });
+
+    await this.cache.set(cacheKey, result, ANALYTICS_TTL_MS);
+    return result;
   }
 
   /**
@@ -104,6 +116,10 @@ export class AnalyticsService {
    * Joins race_entries to race_results on raceId+hrNo to match starts with outcomes.
    */
   async getPostPositionStats(meet?: string): Promise<PostPositionStat[]> {
+    const cacheKey = `analytics:postPosition:${meet ?? 'all'}`;
+    const cached = await this.cache.get<PostPositionStat[]>(cacheKey);
+    if (cached) return cached;
+
     const qb = this.entryRepo
       .createQueryBuilder('re')
       .innerJoin(Race, 'r', 'r.id = re.raceId')
@@ -133,7 +149,7 @@ export class AnalyticsService {
       wins: string;
     }>();
 
-    return rows.map((row) => {
+    const result = rows.map((row) => {
       const totalStarts = parseInt(row.totalStarts, 10);
       const wins = parseInt(row.wins, 10);
       return {
@@ -146,6 +162,9 @@ export class AnalyticsService {
             : 0,
       };
     });
+
+    await this.cache.set(cacheKey, result, ANALYTICS_TTL_MS);
+    return result;
   }
 
   /**
@@ -155,6 +174,10 @@ export class AnalyticsService {
   async getJockeyTrainerComboStats(
     meet?: string,
   ): Promise<JockeyTrainerComboStat[]> {
+    const cacheKey = `analytics:jockeyTrainerCombo:${meet ?? 'all'}`;
+    const cached = await this.cache.get<JockeyTrainerComboStat[]>(cacheKey);
+    if (cached) return cached;
+
     const qb = this.entryRepo
       .createQueryBuilder('re')
       .innerJoin(Race, 'r', 'r.id = re.raceId')
@@ -196,7 +219,7 @@ export class AnalyticsService {
       wins: string;
     }>();
 
-    return rows.map((row) => {
+    const result = rows.map((row) => {
       const totalStarts = parseInt(row.totalStarts, 10);
       const wins = parseInt(row.wins, 10);
       return {
@@ -211,6 +234,9 @@ export class AnalyticsService {
             : 0,
       };
     });
+
+    await this.cache.set(cacheKey, result, ANALYTICS_TTL_MS);
+    return result;
   }
 
   /**
@@ -218,6 +244,10 @@ export class AnalyticsService {
    * Only includes COMPLETED predictions with a non-null accuracy value.
    */
   async getPredictionAccuracyByMeet(): Promise<PredictionAccuracyByMeet[]> {
+    const cacheKey = `analytics:predictionAccuracy:all`;
+    const cached = await this.cache.get<PredictionAccuracyByMeet[]>(cacheKey);
+    if (cached) return cached;
+
     const rows = await this.predictionRepo
       .createQueryBuilder('pred')
       .innerJoin(Race, 'r', 'r.id = pred.raceId')
@@ -234,11 +264,14 @@ export class AnalyticsService {
         totalPredictions: string;
       }>();
 
-    return rows.map((row) => ({
+    const result = rows.map((row) => ({
       meet: row.meet,
       avgAccuracy: parseFloat(row.avgAccuracy),
       totalPredictions: parseInt(row.totalPredictions, 10),
     }));
+
+    await this.cache.set(cacheKey, result, ANALYTICS_TTL_MS);
+    return result;
   }
 
   /**
@@ -247,6 +280,10 @@ export class AnalyticsService {
    * rcDist is stored as text (e.g. "1200") in the races table.
    */
   async getDistanceWinRates(meet?: string): Promise<DistanceWinRate[]> {
+    const cacheKey = `analytics:distanceWinRates:${meet ?? 'all'}`;
+    const cached = await this.cache.get<DistanceWinRate[]>(cacheKey);
+    if (cached) return cached;
+
     const qb = this.entryRepo
       .createQueryBuilder('re')
       .innerJoin(Race, 'r', 'r.id = re.raceId')
@@ -292,7 +329,7 @@ export class AnalyticsService {
       wins: string;
     }>();
 
-    return rows.map((row) => {
+    const result = rows.map((row) => {
       const totalStarts = parseInt(row.totalStarts, 10);
       const wins = parseInt(row.wins, 10);
       return {
@@ -305,5 +342,8 @@ export class AnalyticsService {
             : 0,
       };
     });
+
+    await this.cache.set(cacheKey, result, ANALYTICS_TTL_MS);
+    return result;
   }
 }

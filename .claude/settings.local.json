@@ -112,7 +112,8 @@
       "Bash(echo \"=== $d ===\")",
       "Read(//Users/risingcore/Desktop/work/oddscast/agents/$d/.claude/**)",
       "Skill(commit-commands:commit)",
-      "WebFetch(domain:developers.kakao.com)"
+      "WebFetch(domain:developers.kakao.com)",
+      "Bash(npm show:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

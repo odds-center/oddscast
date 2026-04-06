@@ -419,7 +419,7 @@ export default function LandingPage() {
                 <span className="text-primary">패턴을 발견합니다</span>
               </h2>
               <p className="text-stone-300 text-base leading-relaxed mb-6 break-keep break-words">
-                12가지 수학적 지표로 말의 컨디션을 수치화하고, AI가
+                12가지 수학적 지표로 말의 컨디션을 수치화하고,
                 AI가 기수 궁합·페이스 전개·주로 바이어스까지 정성적으로
                 분석합니다.
               </p>

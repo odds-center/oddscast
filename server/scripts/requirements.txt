@@ -1,5 +1,6 @@
 pandas
 numpy
 scikit-learn
+lightgbm
 psycopg2-binary
 python-dotenv

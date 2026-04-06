@@ -11,6 +11,19 @@ KRA 경마 예측 분석 v3 — 정규화·변수 보강·토큰 최적화
 import sys
 import json
 import math
+import os
+import pickle as _pickle
+
+# ─── LightGBM model (optional) ───
+# Loaded once at module level. If model.pkl does not exist, scoring falls back to rule-based only.
+_MODEL_PATH = os.path.join(os.path.dirname(__file__), "model.pkl")
+_lgb_bundle = None
+if os.path.exists(_MODEL_PATH):
+    try:
+        with open(_MODEL_PATH, "rb") as _f:
+            _lgb_bundle = _pickle.load(_f)
+    except Exception:
+        _lgb_bundle = None
 
 # ─── 말+기수 통합 가중치 (합 = 1.0) ───
 # v4: 15 factors (v3.1 + gate_bias, field_size, pace_scenario)
@@ -869,6 +882,29 @@ def calculate_score(data):
                     pass
 
             composite = round(min(100, max(0, composite)), 2)
+
+            # ─── LightGBM blend (when model.pkl is available) ───
+            # Blend: 60% rule score + 40% model score.
+            # The model was trained on these same 15 sub-scores, so it captures
+            # non-linear interactions (e.g. high rating + bad form = different from low rating + great form).
+            if _lgb_bundle is not None:
+                try:
+                    _model = _lgb_bundle["model"]
+                    _feat_keys = _lgb_bundle.get("feature_keys", [
+                        "rat", "frm", "cnd", "exp", "suit", "trn", "jky",
+                        "rest", "dist", "cls", "trng", "sdf", "gate", "fsz", "pace",
+                    ])
+                    _sub = {"rat": rat, "frm": frm, "cnd": cnd, "exp": exp, "suit": suit,
+                            "trn": trn, "jky": jky, "rest": rst, "dist": dst, "cls": cls,
+                            "trng": trng, "sdf": sdf, "gate": gate, "fsz": fsz, "pace": pace}
+                    _feat_vec = [[float(_sub.get(k, 50.0)) for k in _feat_keys]]
+                    _model_prob = float(_model.predict_proba(_feat_vec)[0][1])  # win probability
+                    _model_score = _model_prob * 100  # scale to 0-100
+                    composite = round(composite * 0.60 + _model_score * 0.40, 2)
+                    composite = round(min(100, max(0, composite)), 2)
+                except Exception:
+                    pass  # silently fall back to rule-based score
+
             composite_list.append(composite)
 
             tags = _build_tags(e, rating, recent_ranks, total_runs, total_wins,

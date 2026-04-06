@@ -624,3 +624,212 @@ export async function seedAuth(page: Page) {
     { token: stubToken, user: stubUser },
   );
 }
+
+// ------------------------------------------------------------------
+// Auth extension mocks
+// ------------------------------------------------------------------
+
+/** Mock POST /api/auth/forgot-password — success (email sent). */
+export async function mockForgotPassword(page: Page) {
+  await page.route(`${API}/auth/forgot-password`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse({ sent: true })),
+    });
+  });
+}
+
+/** Mock POST /api/auth/forgot-password — failure (email not found). */
+export async function mockForgotPasswordFail(page: Page) {
+  await page.route(`${API}/auth/forgot-password`, async (route) => {
+    await route.fulfill({
+      status: 404,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: '등록되지 않은 이메일입니다.' }),
+    });
+  });
+}
+
+/** Mock POST /api/auth/reset-password — success. */
+export async function mockResetPassword(page: Page) {
+  await page.route(`${API}/auth/reset-password`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse({ success: true })),
+    });
+  });
+}
+
+/** Mock POST /api/auth/reset-password — invalid/expired token. */
+export async function mockResetPasswordInvalid(page: Page) {
+  await page.route(`${API}/auth/reset-password`, async (route) => {
+    await route.fulfill({
+      status: 400,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: '유효하지 않거나 만료된 토큰입니다.' }),
+    });
+  });
+}
+
+/** Mock GET /api/auth/me after Kakao OAuth success page. */
+export async function mockKakaoAuthMe(page: Page) {
+  const kakaoUser = { ...stubUser, id: 99, email: 'kakao_user@kakao.com', name: '카카오유저', provider: 'kakao' };
+  await page.route(`${API}/auth/me`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(kakaoUser)),
+    });
+  });
+}
+
+// ------------------------------------------------------------------
+// Bug report mocks
+// ------------------------------------------------------------------
+
+export const stubBugReport = {
+  id: 'bug-1',
+  category: 'UI',
+  title: '버튼이 클릭되지 않습니다',
+  description: '위치: /races\n재현: 경주 목록 접속 후 버튼 클릭\n실제: 아무 반응 없음\n기대: 경주 상세로 이동',
+  status: 'OPEN',
+  createdAt: '2026-04-07T09:00:00.000Z',
+  pageUrl: 'http://localhost:3000/races',
+};
+
+/** Mock POST /api/bug-reports — successful submission. */
+export async function mockBugReportSubmit(page: Page) {
+  await page.route(`${API}/bug-reports`, async (route) => {
+    if (route.request().method() !== 'POST') { await route.continue(); return; }
+    await route.fulfill({
+      status: 201,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubBugReport)),
+    });
+  });
+}
+
+// ------------------------------------------------------------------
+// Analytics mocks
+// ------------------------------------------------------------------
+
+export const stubTrackConditionStats = {
+  meet: '서울' as const,
+  stats: [
+    { condition: '양', conditionLabel: '良', totalStarts: 300, wins: 60, winRate: 20 },
+    { condition: '다소양', conditionLabel: '稍良', totalStarts: 120, wins: 22, winRate: 18.3 },
+  ],
+};
+
+export const stubPostPositionStats = {
+  meet: '서울' as const,
+  stats: [
+    { chulNo: 1, totalStarts: 80, wins: 18, winRate: 22.5 },
+    { chulNo: 2, totalStarts: 80, wins: 14, winRate: 17.5 },
+    { chulNo: 3, totalStarts: 80, wins: 12, winRate: 15.0 },
+  ],
+};
+
+export const stubJockeyTrainerCombos = {
+  meet: '서울' as const,
+  combos: [
+    { jockeyName: '김철수', trainerName: '박감독', totalStarts: 20, wins: 8, winRate: 40 },
+    { jockeyName: '이기수', trainerName: '최감독', totalStarts: 15, wins: 5, winRate: 33.3 },
+  ],
+};
+
+export const stubPredictionAccuracyByMeet = {
+  meet: '서울' as const,
+  byMeet: [
+    { meet: 'SEOUL', meetLabel: '서울', totalPredictions: 100, hitCount: 72, accuracy: 72 },
+    { meet: 'JEJU', meetLabel: '제주', totalPredictions: 50, hitCount: 32, accuracy: 64 },
+  ],
+};
+
+export const stubDistanceWinRates = {
+  meet: '서울' as const,
+  stats: [
+    { rangeLabel: '1000–1200m', minDist: 1000, maxDist: 1200, totalStarts: 200, wins: 40, winRate: 20 },
+    { rangeLabel: '1400–1600m', minDist: 1400, maxDist: 1600, totalStarts: 180, wins: 32, winRate: 17.8 },
+  ],
+};
+
+/** Mock all analytics endpoints. */
+export async function mockAnalytics(page: Page) {
+  await page.route(`${API}/analytics/track-condition**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubTrackConditionStats)),
+    });
+  });
+  await page.route(`${API}/analytics/post-position**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubPostPositionStats)),
+    });
+  });
+  await page.route(`${API}/analytics/jockey-trainer-combos**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubJockeyTrainerCombos)),
+    });
+  });
+  await page.route(`${API}/analytics/prediction-accuracy**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubPredictionAccuracyByMeet)),
+    });
+  });
+  await page.route(`${API}/analytics/distance-win-rates**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubDistanceWinRates)),
+    });
+  });
+}
+
+/** Mock analytics with 401 for auth-gated endpoints. */
+export async function mockAnalyticsUnauth(page: Page) {
+  await page.route(`${API}/analytics/track-condition**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubTrackConditionStats)),
+    });
+  });
+  await page.route(`${API}/analytics/prediction-accuracy**`, async (route) => {
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify(apiResponse(stubPredictionAccuracyByMeet)),
+    });
+  });
+  await page.route(`${API}/analytics/post-position**`, async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: '로그인이 필요합니다.' }),
+    });
+  });
+  await page.route(`${API}/analytics/jockey-trainer-combos**`, async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: '로그인이 필요합니다.' }),
+    });
+  });
+  await page.route(`${API}/analytics/distance-win-rates**`, async (route) => {
+    await route.fulfill({
+      status: 401,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: '로그인이 필요합니다.' }),
+    });
+  });
+}

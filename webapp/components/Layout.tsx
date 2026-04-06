@@ -258,8 +258,8 @@ function FloatingAppBar({
     return (
       <div
         data-tour="home-appbar"
-        className={`fixed bottom-0 left-0 right-0 z-10 px-4 transition-transform duration-300 ease-in-out ${isAppBarHidden ? "translate-y-full" : "translate-y-0"}`}
-        style={{ paddingBottom: `max(0.5rem, env(safe-area-inset-bottom))` }}
+        className={`fixed bottom-0 left-0 right-0 z-10 px-3 transition-transform duration-300 ease-in-out ${isAppBarHidden ? "translate-y-full" : "translate-y-0"}`}
+        style={{ paddingBottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + 0.25rem)` }}
       >
         <nav
           aria-label="메뉴"

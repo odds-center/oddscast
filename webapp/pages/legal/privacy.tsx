@@ -10,7 +10,7 @@ export default function PrivacyPage() {
         <CompactPageTitle title='개인정보 처리방침' backHref={routes.home} />
         <div className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-6 text-sm text-foreground leading-relaxed'>
           <p className='text-text-tertiary text-xs'>
-            시행일: 2025년 1월 1일 | 최종 수정일: 2025년 1월 1일
+            시행일: 2026년 4월 6일 | 최종 수정일: 2026년 4월 6일
           </p>
           <p className='text-text-secondary text-xs'>
             OddsCast(이하 &quot;회사&quot;)는 「개인정보 보호법」, 「정보통신망 이용촉진 및 정보보호 등에 관한 법률」 등 관련 법령을 준수하며, 이용자의 개인정보를 보호하고 있습니다.
@@ -234,7 +234,7 @@ export default function PrivacyPage() {
           </section>
 
           <p className='text-text-tertiary text-xs pt-4 border-t border-border'>
-            본 개인정보처리방침은 2025년 1월 1일부터 시행됩니다. 이용약관은 <Link href={routes.legal.terms} className='text-primary underline'>서비스 이용 약관</Link>을 참고하세요.
+            본 개인정보처리방침은 2026년 4월 6일부터 시행됩니다. 이용약관은 <Link href={routes.legal.terms} className='text-primary underline'>서비스 이용 약관</Link>을 참고하세요.
           </p>
         </div>
       </div>

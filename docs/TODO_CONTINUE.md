@@ -150,10 +150,12 @@
 
 ### 장기 (Phase 3)
 
-- 커뮤니티 예측 (사용자 예측 제출·리더보드)
-- 고급 분석 대시보드
-- 다국어 (영/일)
-- AI 경주 해설
+| 항목 | 상태 | 비고 |
+|------|------|------|
+| **커뮤니티 예측** | ✅ 완료 | community_predictions 테이블. POST /api/community-predictions. 리더보드(주간/월간/전체). 자동 채점(결과 동기화 후 fire-and-forget). WebApp /community + /community/my-predictions |
+| **고급 분석 대시보드** | ✅ 완료 | AnalyticsModule. 5개 엔드포인트(트랙 조건/포스트 포지션/기수-조교사 콤보/거리별 승률/AI 정확도). WebApp /analytics (CSS 차트, 로그인 필요 섹션 잠금) |
+| **AI 경주 해설** | ✅ 완료 | race-commentary.prompts.ts. Race.commentary JSONB 컬럼(migration 20260406000003). PredictionsService.generateRaceCommentary(). 결과 동기화 후 자동 생성. GET /api/races/:id 응답에 포함 |
+| **다국어 (영/일)** | 선택 | next-intl 기반. 모든 컴포넌트 번역 필요 — 범위 큼 |
 
 ---
 

@@ -26,6 +26,8 @@ import RaceApi from '@/lib/api/raceApi';
 import BetTypePredictionsSection from '@/components/predictions/BetTypePredictionsSection';
 import HorseScoresBarChart from '@/components/predictions/HorseScoresBarChart';
 import PredictionResultComparison from '@/components/predictions/PredictionResultComparison';
+import RaceCommentarySection from '@/components/race/RaceCommentarySection';
+import type { RaceCommentary } from '@/components/race/RaceCommentarySection';
 import { CONFIG } from '@/lib/config';
 import PredictionApi from '@/lib/api/predictionApi';
 import PredictionTicketApi from '@/lib/api/predictionTicketApi';
@@ -116,6 +118,7 @@ export default function RaceDetailPage() {
   const rcDate = (race as { rcDate?: string })?.rcDate;
   const stTime = (race as { stTime?: string })?.stTime;
   const raceStatus = (race as { status?: string })?.status;
+  const raceCommentary = (race as { commentary?: RaceCommentary | null })?.commentary ?? null;
   // Race is over only when time has actually elapsed (stTime + buffer passed).
   // Server COMPLETED alone is not trusted — it may be set prematurely if results were synced early.
   const isTimeElapsed = isRaceActuallyEnded(rcDate, stTime);
@@ -987,6 +990,14 @@ export default function RaceDetailPage() {
                 </div>
               </div>
             </section>
+          )}
+
+          {/* ── AI Race Commentary ── */}
+          {raceCommentary && (
+            <RaceCommentarySection
+              commentary={raceCommentary}
+              isCompleted={isRaceCompleted}
+            />
           )}
         </div>
 

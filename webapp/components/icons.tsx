@@ -60,9 +60,11 @@ import {
   Copy,
   HelpCircle,
   Bug,
-  Users,      // Jockey-trainer combos / group icon
-  Hash,       // Gate/post position number
-  Droplets,   // Track condition / weather
+  Users,        // Jockey-trainer combos / group icon
+  Hash,         // Gate/post position number
+  Droplets,     // Track condition / weather
+  Mic2,         // AI race commentary
+  Eye,          // Pre-race watch points
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -130,6 +132,8 @@ export const Icons = {
   Users,
   Hash,
   Droplets,
+  Mic2,
+  Eye,
 } as const;
 
 export type IconName = keyof typeof Icons;

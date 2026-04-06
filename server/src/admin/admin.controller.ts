@@ -681,6 +681,12 @@ export class AdminController {
     return this.adminService.getDashboardStats();
   }
 
+  @Get('analytics/dashboard')
+  @ApiOperation({ summary: '[Admin] BI 대시보드 종합 지표' })
+  async getBIDashboardAnalytics() {
+    return this.adminService.getDashboardAnalytics();
+  }
+
   @Get('statistics/revenue')
   @ApiOperation({ summary: '[Admin] 수익 통계' })
   async getRevenueStats(@Query('period') period?: string) {

@@ -36,8 +36,10 @@ export class FavoritesService {
     };
   }
 
-  async findOne(id: number) {
-    const fav = await this.favoriteRepo.findOne({ where: { id } });
+  async findOne(id: number, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const fav = await this.favoriteRepo.findOne({ where });
     if (!fav) throw new NotFoundException('즐겨찾기를 찾을 수 없습니다');
     return fav;
   }

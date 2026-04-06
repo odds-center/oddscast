@@ -7,6 +7,8 @@ import { User } from '../database/entities/user.entity';
 import { Race } from '../database/entities/race.entity';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
+import { Prediction } from '../database/entities/prediction.entity';
+import { BatchSchedule } from '../database/entities/batch-schedule.entity';
 import { AdminController } from './admin.controller';
 import { AdminAuthController } from './admin-auth.controller';
 import { AdminRacesController } from './admin-races.controller';
@@ -37,6 +39,8 @@ import { WeeklyPreviewModule } from '../weekly-preview/weekly-preview.module';
       Race,
       SinglePurchase,
       PredictionTicket,
+      Prediction,
+      BatchSchedule,
     ]),
     AuthModule,
     KraModule,

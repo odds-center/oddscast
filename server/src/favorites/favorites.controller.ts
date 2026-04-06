@@ -71,8 +71,12 @@ export class FavoritesController {
 
   @Get(':id')
   @ApiOperation({ summary: '즐겨찾기 상세 조회' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.favoritesService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    // Enforce ownership — users can only view their own favorites
+    return this.favoritesService.findOne(id, user.sub);
   }
 
   @Post()

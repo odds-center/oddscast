@@ -267,16 +267,25 @@ export class AuthService {
   }
 
   async adminLogin(loginId: string, password: string) {
+    // Reuse same brute-force lockout for admin using a namespaced key
+    const lockKey = `admin:${loginId}`;
+    this.checkLoginLock(lockKey);
+
     const admin = await this.adminRepo.findOne({ where: { loginId } });
-    if (!admin)
+    if (!admin) {
+      this.recordFailedAttempt(lockKey);
       throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
+    }
     if (!admin.isActive)
       throw new UnauthorizedException('비활성화된 계정입니다');
 
     const valid = await bcrypt.compare(password, admin.password);
-    if (!valid)
+    if (!valid) {
+      this.recordFailedAttempt(lockKey);
       throw new UnauthorizedException('아이디 또는 비밀번호가 잘못되었습니다');
+    }
 
+    this.clearLoginAttempts(lockKey);
     const now = new Date();
     await this.adminRepo.update(admin.id, { lastLoginAt: now, updatedAt: now });
 
@@ -372,7 +381,7 @@ export class AuthService {
     if (!valid)
       throw new UnauthorizedException('현재 비밀번호가 일치하지 않습니다');
 
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 12);
     await this.userRepo.update(userId, {
       password: hashed,
       updatedAt: new Date(),
@@ -488,7 +497,7 @@ export class AuthService {
       throw new BadRequestException('유효하지 않거나 만료된 토큰입니다.');
     }
 
-    const hashed = await bcrypt.hash(newPassword, 10);
+    const hashed = await bcrypt.hash(newPassword, 12);
     await this.dataSource.transaction(async (manager) => {
       await manager.update(
         User,

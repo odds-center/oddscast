@@ -111,10 +111,10 @@ describe('NotificationsController', () => {
       const result = { id: 5, title: 'Test' };
       mockService.findOne.mockResolvedValue(result);
 
-      const response = await controller.findOne(5);
+      const response = await controller.findOne(5, mockUser);
 
       expect(response).toEqual(result);
-      expect(mockService.findOne).toHaveBeenCalledWith(5);
+      expect(mockService.findOne).toHaveBeenCalledWith(5, 1);
     });
   });
 
@@ -171,10 +171,10 @@ describe('NotificationsController', () => {
     it('should delegate to service with id', async () => {
       mockService.markAsRead.mockResolvedValue({ success: true });
 
-      const response = await controller.markAsRead(10);
+      const response = await controller.markAsRead(10, mockUser);
 
       expect(response).toEqual({ success: true });
-      expect(mockService.markAsRead).toHaveBeenCalledWith(10);
+      expect(mockService.markAsRead).toHaveBeenCalledWith(10, 1);
     });
   });
 
@@ -195,10 +195,10 @@ describe('NotificationsController', () => {
       const result = { id: 3, title: 'Updated' };
       mockService.update.mockResolvedValue(result);
 
-      const response = await controller.update(3, dto);
+      const response = await controller.update(3, dto, mockUser);
 
       expect(response).toEqual(result);
-      expect(mockService.update).toHaveBeenCalledWith(3, dto);
+      expect(mockService.update).toHaveBeenCalledWith(3, dto, 1);
     });
   });
 
@@ -217,9 +217,9 @@ describe('NotificationsController', () => {
     it('should delegate to service with id', async () => {
       mockService.remove.mockResolvedValue(undefined);
 
-      await controller.remove(8);
+      await controller.remove(8, mockUser);
 
-      expect(mockService.remove).toHaveBeenCalledWith(8);
+      expect(mockService.remove).toHaveBeenCalledWith(8, 1);
     });
   });
 });

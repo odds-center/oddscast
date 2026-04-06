@@ -117,8 +117,10 @@ export class NotificationsService {
     };
   }
 
-  async findOne(id: number) {
-    const row = await this.notificationRepo.findOne({ where: { id } });
+  async findOne(id: number, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const row = await this.notificationRepo.findOne({ where });
     if (!row) throw new NotFoundException('알림을 찾을 수 없습니다');
     return row;
   }
@@ -141,8 +143,10 @@ export class NotificationsService {
     return this.notificationRepo.save(notification);
   }
 
-  async update(id: number, dto: UpdateNotificationDto) {
-    const notification = await this.notificationRepo.findOne({ where: { id } });
+  async update(id: number, dto: UpdateNotificationDto, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const notification = await this.notificationRepo.findOne({ where });
     if (!notification) throw new NotFoundException('알림을 찾을 수 없습니다');
     if (dto.title !== undefined) notification.title = dto.title;
     if (dto.message !== undefined) notification.message = dto.message;
@@ -154,12 +158,19 @@ export class NotificationsService {
     return this.findOne(id);
   }
 
-  async remove(id: number) {
-    await this.notificationRepo.delete(id);
+  async remove(id: number, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const result = await this.notificationRepo.delete(where);
+    if (!result.affected) throw new NotFoundException('알림을 찾을 수 없습니다');
     return { message: '알림이 삭제되었습니다' };
   }
 
-  async markAsRead(id: number) {
+  async markAsRead(id: number, userId?: number) {
+    const where: Record<string, unknown> = { id };
+    if (userId !== undefined) where.userId = userId;
+    const notification = await this.notificationRepo.findOne({ where });
+    if (!notification) throw new NotFoundException('알림을 찾을 수 없습니다');
     const now = new Date();
     await this.notificationRepo.update(id, {
       isRead: true,

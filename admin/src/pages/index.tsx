@@ -7,7 +7,7 @@ import Button from '@/components/common/Button';
 import { adminDashboardApi, adminAIApi } from '@/lib/api/admin';
 import {
   Users, CalendarDays, TrendingUp, Database,
-  BarChart3, CreditCard, Settings, Bell, Award, Crown, Ticket, Target,
+  BarChart3, CreditCard, Settings, Bell, Award, Crown, Ticket, Target, LayoutGrid,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 import { formatNumber } from '@/lib/utils';
@@ -76,6 +76,7 @@ export default function DashboardPage() {
     { href: '/ticket-usage', icon: Ticket, color: 'text-amber-600', bg: 'bg-amber-50', name: '예측권 사용', desc: '유저별 예측권 사용 내역' },
     { href: '/kra', icon: Database, color: 'text-indigo-600', bg: 'bg-indigo-50', name: 'KRA 데이터', desc: '출전표·결과 동기화' },
     { href: '/analytics', icon: BarChart3, color: 'text-cyan-600', bg: 'bg-cyan-50', name: 'AI 분석', desc: '예측 정확도·성능 분석' },
+    { href: '/bi-dashboard', icon: LayoutGrid, color: 'text-rose-600', bg: 'bg-rose-50', name: 'BI 대시보드', desc: '사용자·수익·운영 종합 지표' },
     { href: '/notifications', icon: Bell, color: 'text-pink-600', bg: 'bg-pink-50', name: '알림 관리', desc: '푸시 알림 전송 및 내역' },
     { href: '/statistics', icon: TrendingUp, color: 'text-orange-600', bg: 'bg-orange-50', name: '통계', desc: '사용자·예측권 트렌드' },
     { href: '/settings', icon: Settings, color: 'text-slate-600', bg: 'bg-slate-50', name: '설정', desc: '시스템·AI·구독 설정' },

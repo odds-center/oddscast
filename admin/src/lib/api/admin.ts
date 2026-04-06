@@ -28,6 +28,7 @@ import type {
   UsersGrowth,
   TicketUsageTrend,
   Revenue,
+  BIDashboardAnalytics,
 } from '../types/admin';
 
 /**
@@ -1351,3 +1352,19 @@ export const adminNotificationsApi = AdminNotificationsApi;
 export const adminRevenueApi = AdminRevenueApi;
 export const adminBugReportsApi = AdminBugReportsApi;
 export const adminStatisticsApi = AdminStatisticsApi;
+
+/**
+ * BI Dashboard Analytics API
+ */
+export class AdminBIApi {
+  static async getDashboardAnalytics(): Promise<BIDashboardAnalytics> {
+    try {
+      const response = await axiosInstance.get<BIDashboardAnalytics>('/analytics/dashboard');
+      return handleApiResponse(response);
+    } catch (err: unknown) {
+      throw handleApiError(err);
+    }
+  }
+}
+
+export const adminBIApi = AdminBIApi;

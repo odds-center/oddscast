@@ -119,10 +119,10 @@ describe('FavoritesController', () => {
       const result = { id: 5, type: 'RACE' };
       mockService.findOne.mockResolvedValue(result);
 
-      const response = await controller.findOne(5);
+      const response = await controller.findOne(5, mockUser);
 
       expect(response).toEqual(result);
-      expect(mockService.findOne).toHaveBeenCalledWith(5);
+      expect(mockService.findOne).toHaveBeenCalledWith(5, 1);
     });
   });
 

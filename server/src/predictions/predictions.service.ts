@@ -1445,14 +1445,15 @@ export class PredictionsService {
     }));
     const raceAfterGroup2 = { ...raceWithRecentRanks, entries: mergedEntries };
 
-    // Group 3: trainer, jockey, training, fatigue, prevWeight (independent tables)
-    const [raceWithTrainer, raceWithJockey, raceWithTraining, raceWithFatigue, raceWithPrevWeight] =
+    // Group 3: trainer, jockey, training, fatigue, prevWeight, trackConditionHistory (independent tables)
+    const [raceWithTrainer, raceWithJockey, raceWithTraining, raceWithFatigue, raceWithPrevWeight, raceWithTch] =
       await Promise.all([
         this.enrichEntriesWithTrainerResults(raceAfterGroup2),
         this.enrichEntriesWithJockeyResults(raceAfterGroup2),
         this.enrichEntriesWithTrainingMetrics(raceAfterGroup2),
         this.enrichEntriesWithSameDayFatigue(raceAfterGroup2),
         this.enrichEntriesWithPrevHorseWeight(raceAfterGroup2),
+        this.enrichEntriesWithTrackConditionHistory(raceAfterGroup2),
       ]);
 
     // Merge results from parallel group 3
@@ -1463,6 +1464,7 @@ export class PredictionsService {
       ...(raceWithTraining.entries?.[i] ?? {}),
       ...(raceWithFatigue.entries?.[i] ?? {}),
       ...(raceWithPrevWeight.entries?.[i] ?? {}),
+      ...(raceWithTch.entries?.[i] ?? {}),
     }));
     const raceEnriched = { ...raceAfterGroup2, entries: finalEntries };
 
@@ -1821,6 +1823,8 @@ export class PredictionsService {
     if (entry.classChangeLevel != null)
       base.classChangeLevel = entry.classChangeLevel;
     if (entry.trainingMetrics) base.trainingMetrics = entry.trainingMetrics;
+    if (entry.trackConditionHistory != null)
+      base.trackConditionHistory = entry.trackConditionHistory;
     if (trainSummary) base.trainingSummary = trainSummary;
     if (sectionalTag) base.sectionalTag = sectionalTag;
     return base;
@@ -1962,6 +1966,165 @@ export class PredictionsService {
         return { ...e, prevHorseWeight: prevWg };
       }),
     } as RaceForPython;
+  }
+
+  /**
+   * Track condition history enrichment — fetches per-horse win/place rate
+   * broken down by track condition (wet vs dry) from historical race_results + races.
+   *
+   * Wet conditions: 불(불량), 습(습윤), 중(중간) → rcTrackCondition or race.track contains these.
+   * Dry conditions: 양호, good, firm → anything not matching wet keywords.
+   *
+   * This data is consumed by Python _track_condition_history_score().
+   * If the current track condition is unknown, neutral 50 is returned by Python.
+   *
+   * Query cost: 1 DB round-trip for all horses in the race (IN clause).
+   * Lookback: last 3 years of results (sufficient for stable statistics).
+   */
+  private async enrichEntriesWithTrackConditionHistory(
+    race: RaceForPython,
+  ): Promise<RaceForPython> {
+    const entries = race.entries ?? [];
+    if (!entries.length) return race;
+
+    const hrNos = [...new Set(entries.map((e) => e.hrNo).filter(Boolean))];
+    if (!hrNos.length) return race;
+
+    const beforeRcDate = race.rcDate ?? '';
+    if (!beforeRcDate) return race;
+
+    // Look back 3 years (~1095 days) for sufficient sample per horse
+    const threeYearsAgo = String(
+      parseInt(beforeRcDate, 10) - 30000, // YYYYMMDD arithmetic: subtract ~3 years worth of days
+    ).padStart(8, '0');
+    const lookbackDate = threeYearsAgo.length === 8 ? threeYearsAgo : '20220101';
+
+    // Fetch race_results joined to races for track condition info
+    // rcTrackCondition on race_results is the most reliable source (set during result sync)
+    // Fallback: race.track if rcTrackCondition is null
+    const rows = await this.resultRepo
+      .createQueryBuilder('rr')
+      .innerJoin('rr.race', 'r')
+      .select('rr.hrNo', 'hrNo')
+      .addSelect('rr.ordInt', 'ordInt')
+      .addSelect('rr.ordType', 'ordType')
+      .addSelect(
+        "COALESCE(rr.rc_track_condition, r.track, '')",
+        'trackCondition',
+      )
+      .where('rr.hrNo IN (:...hrNos)', { hrNos })
+      .andWhere('r.rcDate < :beforeRcDate', { beforeRcDate })
+      .andWhere('r.rcDate >= :lookbackDate', { lookbackDate })
+      .andWhere('(rr.ordInt IS NOT NULL OR rr.ordType IS NOT NULL)')
+      .limit(5000)
+      .getRawMany<{
+        hrNo: string;
+        ordInt: number | null;
+        ordType: string | null;
+        trackCondition: string;
+      }>();
+
+    // Wet track condition keywords (KRA: 불량/습윤/중간)
+    const WET_KEYWORDS = ['불', '습', '중'];
+    const isWetCondition = (tc: string): boolean =>
+      WET_KEYWORDS.some((k) => tc.includes(k));
+
+    // Current race track condition
+    const currentTrack = (race.track ?? '').toLowerCase();
+    const currentIsWet = isWetCondition(currentTrack);
+
+    // Aggregate per-horse stats
+    type CondStats = { wins: number; places: number; starts: number };
+    const statsMap = new Map<
+      string,
+      {
+        currentCondition: CondStats;
+        wet: CondStats;
+        dry: CondStats;
+      }
+    >();
+
+    for (const hrNo of hrNos) {
+      statsMap.set(hrNo, {
+        currentCondition: { wins: 0, places: 0, starts: 0 },
+        wet: { wins: 0, places: 0, starts: 0 },
+        dry: { wins: 0, places: 0, starts: 0 },
+      });
+    }
+
+    for (const row of rows) {
+      const hrNo = row.hrNo;
+      const stat = statsMap.get(hrNo);
+      if (!stat) continue;
+
+      // Skip incomplete/DNF results (FALL, DQ, WITHDRAWN have null ordInt)
+      const ordType = row.ordType ?? '';
+      if (row.ordInt === null && ordType !== '') continue;
+      if (row.ordInt === null) continue;
+
+      const ord = row.ordInt;
+      const tc = (row.trackCondition ?? '').toLowerCase();
+      const rowIsWet = isWetCondition(tc);
+
+      // Determine which condition bucket matches the current race
+      const matchesCurrentCondition =
+        (currentIsWet && rowIsWet) || (!currentIsWet && !rowIsWet);
+
+      // Update current-condition stats
+      if (matchesCurrentCondition) {
+        stat.currentCondition.starts++;
+        if (ord === 1) stat.currentCondition.wins++;
+        if (ord <= 3) stat.currentCondition.places++;
+      }
+
+      // Update wet/dry aggregate stats
+      if (rowIsWet) {
+        stat.wet.starts++;
+        if (ord === 1) stat.wet.wins++;
+        if (ord <= 3) stat.wet.places++;
+      } else {
+        stat.dry.starts++;
+        if (ord === 1) stat.dry.wins++;
+        if (ord <= 3) stat.dry.places++;
+      }
+    }
+
+    const enrichedEntries = entries.map((e) => {
+      const stat = statsMap.get(e.hrNo);
+      if (!stat) return e;
+
+      const toRateOrNull = (
+        numerator: number,
+        denominator: number,
+      ): number | null =>
+        denominator > 0 ? numerator / denominator : null;
+
+      return {
+        ...e,
+        trackConditionHistory: {
+          currentConditionWinRate: toRateOrNull(
+            stat.currentCondition.wins,
+            stat.currentCondition.starts,
+          ),
+          currentConditionPlaceRate: toRateOrNull(
+            stat.currentCondition.places,
+            stat.currentCondition.starts,
+          ),
+          currentConditionStarts:
+            stat.currentCondition.starts > 0
+              ? stat.currentCondition.starts
+              : null,
+          wetWinRate: toRateOrNull(stat.wet.wins, stat.wet.starts),
+          wetPlaceRate: toRateOrNull(stat.wet.places, stat.wet.starts),
+          wetStarts: stat.wet.starts > 0 ? stat.wet.starts : null,
+          dryWinRate: toRateOrNull(stat.dry.wins, stat.dry.starts),
+          dryPlaceRate: toRateOrNull(stat.dry.places, stat.dry.starts),
+          dryStarts: stat.dry.starts > 0 ? stat.dry.starts : null,
+        },
+      };
+    });
+
+    return { ...race, entries: enrichedEntries };
   }
 
   /**

@@ -1,22 +1,24 @@
 """
-KRA 경마 예측 분석 v4 — 15요소 정규화·LightGBM 블렌드
+KRA 경마 예측 분석 v5 — 16요소 정규화·LightGBM 블렌드
 
-Factor inventory (15 total, all normalized 0-100):
-  1.  rating          — KRA 공식 레이팅 (sigmoid relative + log absolute blend)
-  2.  form            — 최근 5경주 착순 가중평균 + 기세(추이) + 레이팅 추이
-  3.  condition       — 마체중 변화 + 연령 + 부담중량 + 성별 보정
-  4.  experience      — 총 출전 횟수(log scale) + 통산 승률
-  5.  suitability     — 각질(선행/추입)×거리×주로상태 적합도
-  6.  trainer         — 조교사 통산 승률 + 복승률 (TrainerResult API)
-  7.  jockey          — 경마장별 기수 승률/복승률 (meet-specific preferred over career-wide)
-  8.  rest            — 최종 출전일로부터 경과일수 (21-42일 최적 구간)
-  9.  distance        — 현재 경주 거리 브래킷에서의 과거 성적(승률+복승률)
-  10. class_change    — 등급 변동 (하향: 유리, 상향: 불리)
-  11. training_readiness — 조교 세션수·강도·최신성 (Training 테이블)
-  12. same_day_fatigue   — 당일 다경주 누적 피로 (sameDayRacesBefore)
-  13. gate_bias          — 출발 게이트 위치 편향 (경마장·거리·출전두수 가중)
-  14. field_size         — 출전두수에 따른 혼잡도·레이팅 우위 효과
-  15. pace_scenario      — 선행마 비율 기반 페이스 전개 예측 (선행/추입 유불리)
+Factor inventory (16 total, all normalized 0-100):
+  1.  rating                  — KRA 공식 레이팅 (sigmoid relative + log absolute blend)
+  2.  form                    — 최근 5경주 착순 가중평균 + 기세(추이) + 레이팅 추이
+  3.  condition               — 마체중 변화 + 연령 + 부담중량 + 성별 보정
+  4.  experience              — 총 출전 횟수(log scale) + 통산 승률
+  5.  suitability             — 각질(선행/추입)×거리×주로상태 적합도
+  6.  trainer                 — 조교사 통산 승률 + 복승률 (TrainerResult API)
+  7.  jockey                  — 경마장별 기수 승률/복승률 (meet-specific preferred over career-wide)
+  8.  rest                    — 최종 출전일로부터 경과일수 (21-42일 최적 구간)
+  9.  distance                — 현재 경주 거리 브래킷에서의 과거 성적(승률+복승률)
+  10. class_change            — 등급 변동 (하향: 유리, 상향: 불리)
+  11. training_readiness      — 조교 세션수·강도·최신성 (Training 테이블)
+  12. same_day_fatigue        — 당일 다경주 누적 피로 (sameDayRacesBefore)
+  13. gate_bias               — 출발 게이트 위치 편향 (경마장·거리·출전두수 가중)
+  14. field_size              — 출전두수에 따른 혼잡도·레이팅 우위 효과
+  15. pace_scenario           — 선행마 비율 기반 페이스 전개 예측 (선행/추입 유불리)
+  16. track_condition_history — 말의 주로 상태(양호/불/습/중) 별 과거 승률·복승률 이력
+                                (min 3 starts required; neutral fallback if insufficient data)
 
 WEIGHT CALIBRATION NOTE:
   W_HORSE values below are heuristic starting points, not statistically-derived coefficients.
@@ -27,14 +29,13 @@ WEIGHT CALIBRATION NOTE:
     - Walk-forward validation: train on past seasons, evaluate on most recent season
   The LightGBM blend (60% rule-based + 40% model) partially compensates, but the
   rule-based weights still dominate when model.pkl is absent (Railway/Docker default).
+  Run server/scripts/validate_weights.py to compute Spearman/point-biserial correlations
+  and get data-driven weight suggestions.
 
-MISSING FACTOR (identified gap, not yet implemented):
-  track_condition_history — per-horse win/place rate on wet (불·습·중) vs dry (양호) track.
-  Currently _suitability_score uses only the running-style × track bias (선행 loses on wet).
-  A dedicated factor using historical results filtered by rcCondition would capture horses
-  that consistently outperform on off-track conditions, independent of running style.
-  Data source: race_results JOIN races WHERE races.track IN ('불','습','중').
-  Suggested weight: 0.03 (shift 0.01 each from condition and suitability).
+Changes in v5 (2026):
+  - Added track_condition_history factor (tch, weight 0.03)
+  - Rebalanced: condition 0.07→0.06, suitability 0.06→0.05, experience 0.05→0.04
+  - W_HORSE sum remains 1.0
 
 Changes in v4 (2026):
   - Added gate_bias (0.05), field_size (0.02), pace_scenario (0.02)
@@ -61,25 +62,27 @@ if os.path.exists(_MODEL_PATH):
         _lgb_bundle = None
 
 # ─── Horse factor weights (sum = 1.0) ───
-# v4: 15 factors. See module docstring for factor descriptions and calibration notes.
+# v5: 16 factors. See module docstring for factor descriptions and calibration notes.
 # IMPORTANT: These weights are heuristic, not statistically validated.
 # See WEIGHT CALIBRATION NOTE in the module docstring for validation approach.
+# Run server/scripts/validate_weights.py for data-driven weight suggestions.
 W_HORSE = {
     'rating': 0.17,
-    'form': 0.18,       # 0.20 → 0.18: form alone can be noisy over 1 race
-    'condition': 0.07,  # 0.09 → 0.07: weight change signal is weaker than jockey/class
-    'experience': 0.05,
-    'suitability': 0.06,
+    'form': 0.18,                   # 0.20 → 0.18: form alone can be noisy over 1 race
+    'condition': 0.06,              # 0.09 → 0.07 → 0.06: shifted 0.01 to tch (v5)
+    'experience': 0.04,             # 0.05 → 0.04: shifted 0.01 to tch (v5)
+    'suitability': 0.05,            # 0.06 → 0.05: shifted 0.01 to tch (v5)
     'trainer': 0.06,
-    'jockey': 0.13,     # 0.11 → 0.13: meet-specific jockey record is strong predictor
+    'jockey': 0.13,                 # 0.11 → 0.13: meet-specific jockey record is strong predictor
     'rest': 0.04,
     'distance': 0.05,
-    'class_change': 0.05,  # 0.03 → 0.05: dropping class is one of the strongest signals
+    'class_change': 0.05,           # 0.03 → 0.05: dropping class is one of the strongest signals
     'training_readiness': 0.03,
     'same_day_fatigue': 0.02,
     'gate_bias': 0.05,
     'field_size': 0.02,
     'pace_scenario': 0.02,
+    'track_condition_history': 0.03,  # v5 new: per-horse win/place rate on current track condition
 }
 
 
@@ -639,6 +642,88 @@ def _pace_scenario_score(entry, entries, rc_dist):
     return round(min(100, max(0, score)), 2)
 
 
+def _track_condition_history_score(entry, current_track):
+    """Track condition history → 0~100.
+
+    Scores a horse's historical performance on the current track condition (wet vs dry).
+    Captures horses that systematically outperform (or underperform) on off-track surfaces,
+    independent of their running style — a dimension not captured by _suitability_score.
+
+    Input (from entry dict, populated by enrichEntriesWithTrackConditionHistory in predictions.service.ts):
+        trackConditionHistory: {
+            "currentConditionWinRate":   float | None,  # wins / starts on same condition
+            "currentConditionPlaceRate": float | None,  # top-3 / starts on same condition
+            "currentConditionStarts":    int | None,    # number of starts on same condition
+            "wetWinRate":                float | None,  # wins / starts on wet (불/습/중) conditions
+            "wetPlaceRate":              float | None,
+            "wetStarts":                 int | None,
+            "dryWinRate":                float | None,  # wins / starts on dry (양호/good) conditions
+            "dryPlaceRate":              float | None,
+            "dryStarts":                 int | None,
+        }
+
+    Scoring:
+        - Primary: currentConditionWinRate + currentConditionPlaceRate on the exact condition.
+        - Fallback: wet aggregate (불/습/중) if exact condition data is sparse.
+        - Minimum 3 starts required for primary; 3 starts for fallback.
+        - If neither threshold is met → neutral 50.0 (insufficient data).
+    """
+    history = entry.get("trackConditionHistory")
+    if not history or not isinstance(history, dict):
+        return 50.0  # No data → neutral
+
+    track_lower = str(current_track or "").lower()
+    is_wet = any(x in track_lower for x in ("습", "불", "중", "soft", "heavy", "wet"))
+
+    def _score_from_rates(win_rate, place_rate, starts):
+        """Compute 0-100 score from win/place rates with confidence adjustment."""
+        if starts is None or int(starts) < 3:
+            return None  # Insufficient data
+
+        starts = int(starts)
+        win_rate = float(win_rate or 0)
+        place_rate = float(place_rate or 0)
+
+        # Base: win rate (capped at 50) + place rate (capped at 50, with lower weight)
+        base = min(50, win_rate * 100 * 2.0) + min(50, place_rate * 100 * 0.5)
+
+        # Confidence adjustment: fewer starts → regress toward mean (50)
+        if starts < 5:
+            base = base * 0.55 + 50 * 0.45
+        elif starts < 10:
+            base = base * 0.75 + 50 * 0.25
+
+        return round(min(100, max(0, base)), 2)
+
+    # --- Primary: exact current condition match ---
+    exact_score = _score_from_rates(
+        history.get("currentConditionWinRate"),
+        history.get("currentConditionPlaceRate"),
+        history.get("currentConditionStarts"),
+    )
+    if exact_score is not None:
+        return exact_score
+
+    # --- Fallback: wet aggregate for wet surfaces, dry aggregate for dry surfaces ---
+    if is_wet:
+        fallback_score = _score_from_rates(
+            history.get("wetWinRate"),
+            history.get("wetPlaceRate"),
+            history.get("wetStarts"),
+        )
+    else:
+        fallback_score = _score_from_rates(
+            history.get("dryWinRate"),
+            history.get("dryPlaceRate"),
+            history.get("dryStarts"),
+        )
+
+    if fallback_score is not None:
+        return fallback_score
+
+    return 50.0  # Neither threshold met → neutral
+
+
 def _fall_risk_score(entry, jockey_rc_cnt=0):
     """낙마 리스크 (0~100)."""
     risk = 0.0
@@ -881,6 +966,7 @@ def calculate_score(data):
             gate = _gate_bias_score(chul_no, meet, rc_dist, field_size)
             fsz = _field_size_score(e, field_size, max_rating)
             pace = _pace_scenario_score(e, entries, rc_dist)
+            tch = _track_condition_history_score(e, track)
 
             composite = (
                 rat * W_HORSE['rating']
@@ -898,6 +984,7 @@ def calculate_score(data):
                 + gate * W_HORSE['gate_bias']
                 + fsz * W_HORSE['field_size']
                 + pace * W_HORSE['pace_scenario']
+                + tch * W_HORSE['track_condition_history']
             )
 
             fall_risk = _fall_risk_score(e)
@@ -928,11 +1015,12 @@ def calculate_score(data):
                     _model = _lgb_bundle["model"]
                     _feat_keys = _lgb_bundle.get("feature_keys", [
                         "rat", "frm", "cnd", "exp", "suit", "trn", "jky",
-                        "rest", "dist", "cls", "trng", "sdf", "gate", "fsz", "pace",
+                        "rest", "dist", "cls", "trng", "sdf", "gate", "fsz", "pace", "tch",
                     ])
                     _sub = {"rat": rat, "frm": frm, "cnd": cnd, "exp": exp, "suit": suit,
                             "trn": trn, "jky": jky, "rest": rst, "dist": dst, "cls": cls,
-                            "trng": trng, "sdf": sdf, "gate": gate, "fsz": fsz, "pace": pace}
+                            "trng": trng, "sdf": sdf, "gate": gate, "fsz": fsz, "pace": pace,
+                            "tch": tch}
                     _feat_vec = [[float(_sub.get(k, 50.0)) for k in _feat_keys]]
                     _model_prob = float(_model.predict_proba(_feat_vec)[0][1])  # win probability
                     _model_score = _model_prob * 100  # scale to 0-100
@@ -956,6 +1044,7 @@ def calculate_score(data):
                     'exp': exp, 'trn': trn, 'suit': suit, 'jky': jky,
                     'rest': rst, 'dist': dst, 'cls': cls, 'trng': trng,
                     'sdf': sdf, 'gate': gate, 'fsz': fsz, 'pace': pace,
+                    'tch': tch,
                 },
                 'risk': fall_risk,
                 'recentRanks': recent_ranks[:5],

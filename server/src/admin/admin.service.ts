@@ -8,7 +8,14 @@ import { User } from '../database/entities/user.entity';
 import { Race } from '../database/entities/race.entity';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
-import { SubscriptionStatus, TicketStatus } from '../database/db-enums';
+import { Prediction } from '../database/entities/prediction.entity';
+import { BatchSchedule } from '../database/entities/batch-schedule.entity';
+import {
+  BatchScheduleStatus,
+  PredictionStatus,
+  SubscriptionStatus,
+  TicketStatus,
+} from '../database/db-enums';
 import { todayKstYyyymmdd, kst, dateToKstDash } from '../common/utils/kst';
 
 @Injectable()
@@ -26,6 +33,10 @@ export class AdminService {
     private readonly singlePurchaseRepo: Repository<SinglePurchase>,
     @InjectRepository(PredictionTicket)
     private readonly predictionTicketRepo: Repository<PredictionTicket>,
+    @InjectRepository(Prediction)
+    private readonly predictionRepo: Repository<Prediction>,
+    @InjectRepository(BatchSchedule)
+    private readonly batchScheduleRepo: Repository<BatchSchedule>,
   ) {}
 
   async getKraSyncLogs(endpoint?: string, rcDate?: string, limit = 50) {
@@ -302,5 +313,193 @@ export class AdminService {
     return Object.entries(byDate)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
+  }
+
+  /** Aggregate BI dashboard metrics for the admin analytics page. */
+  async getDashboardAnalytics() {
+    const today = todayKstYyyymmdd();
+    const now = kst();
+    const weekAgo = now.subtract(7, 'day').toDate();
+    const monthStart = now.startOf('month').toDate();
+    const monthEnd = now.endOf('month').toDate();
+
+    // --- User metrics ---
+    const [totalUsers, newToday, newThisWeek, newThisMonth, activeSubscribers] =
+      await Promise.all([
+        this.userRepo.count(),
+        this.userRepo.count({
+          where: { createdAt: Between(now.startOf('day').toDate(), now.endOf('day').toDate()) },
+        }),
+        this.userRepo.count({ where: { createdAt: Between(weekAgo, new Date()) } }),
+        this.userRepo.count({ where: { createdAt: Between(monthStart, monthEnd) } }),
+        this.subscriptionRepo.count({ where: { status: SubscriptionStatus.ACTIVE } }),
+      ]);
+
+    // Subscriptions by plan (active only)
+    const activeSubs = await this.subscriptionRepo.find({
+      where: { status: SubscriptionStatus.ACTIVE },
+      relations: ['plan'],
+    });
+    const subscriptionsByPlan = { LIGHT: 0, STANDARD: 0, PREMIUM: 0 };
+    for (const sub of activeSubs) {
+      const name = (sub.plan?.planName ?? '').toUpperCase();
+      if (name === 'LIGHT') subscriptionsByPlan.LIGHT++;
+      else if (name === 'STANDARD') subscriptionsByPlan.STANDARD++;
+      else if (name === 'PREMIUM') subscriptionsByPlan.PREMIUM++;
+    }
+
+    // --- Revenue metrics ---
+    const mrr = activeSubs.reduce((s, sub) => s + (sub.price ?? 0), 0);
+
+    const thisMonthSingleAgg = await this.singlePurchaseRepo
+      .createQueryBuilder('sp')
+      .select('COALESCE(SUM(sp.totalAmount), 0)', 'sum')
+      .where('sp.purchasedAt >= :start', { start: monthStart })
+      .andWhere('sp.purchasedAt <= :end', { end: monthEnd })
+      .getRawOne<{ sum: string }>();
+    const thisMonthSingle = parseInt(thisMonthSingleAgg?.sum ?? '0', 10);
+    const thisMonthTotal = mrr + thisMonthSingle;
+
+    const cancelledThisMonth = await this.subscriptionRepo
+      .createQueryBuilder('sub')
+      .where('sub.status = :status', { status: SubscriptionStatus.CANCELLED })
+      .andWhere('sub.updatedAt >= :start', { start: monthStart })
+      .andWhere('sub.updatedAt <= :end', { end: monthEnd })
+      .getCount();
+
+    const totalActivePlusCancelled = activeSubscribers + cancelledThisMonth;
+    const churnRate =
+      totalActivePlusCancelled > 0
+        ? Math.round((cancelledThisMonth / totalActivePlusCancelled) * 10000) / 100
+        : 0;
+
+    // --- Prediction metrics ---
+    const [totalGenerated, completedPredictions] = await Promise.all([
+      this.predictionRepo.count(),
+      this.predictionRepo.find({
+        where: { status: PredictionStatus.COMPLETED },
+        select: ['accuracy'],
+      }),
+    ]);
+
+    const accuracyValues = completedPredictions
+      .map((p) => p.accuracy)
+      .filter((a): a is number => a != null);
+    const avgAccuracy =
+      accuracyValues.length > 0
+        ? Math.round(
+            (accuracyValues.reduce((s, v) => s + v, 0) / accuracyValues.length) * 100,
+          ) / 100
+        : 0;
+
+    // Accuracy this month (predictions where the race completed this month)
+    const monthPredictions = await this.predictionRepo
+      .createQueryBuilder('pred')
+      .select('pred.accuracy', 'accuracy')
+      .where('pred.status = :status', { status: PredictionStatus.COMPLETED })
+      .andWhere('pred.updatedAt >= :start', { start: monthStart })
+      .andWhere('pred.updatedAt <= :end', { end: monthEnd })
+      .andWhere('pred.accuracy IS NOT NULL')
+      .getRawMany<{ accuracy: string }>();
+    const monthAccVals = monthPredictions.map((p) => parseFloat(p.accuracy));
+    const accuracyThisMonth =
+      monthAccVals.length > 0
+        ? Math.round((monthAccVals.reduce((s, v) => s + v, 0) / monthAccVals.length) * 100) / 100
+        : 0;
+
+    // High-confidence predictions: winProb >= 70 in scores JSONB
+    const highConfidenceCount = await this.predictionRepo
+      .createQueryBuilder('pred')
+      .where(
+        `pred.scores IS NOT NULL AND (pred.scores->>'winProb')::numeric >= 70`,
+      )
+      .getCount();
+
+    // --- Operations metrics ---
+    const [totalBatch, completedBatch, failedToday] = await Promise.all([
+      this.batchScheduleRepo.count(),
+      this.batchScheduleRepo.count({ where: { status: BatchScheduleStatus.COMPLETED } }),
+      this.batchScheduleRepo
+        .createQueryBuilder('bs')
+        .where('bs.status = :status', { status: BatchScheduleStatus.FAILED })
+        .andWhere('bs.updatedAt >= :start', { start: now.startOf('day').toDate() })
+        .getCount(),
+    ]);
+    const batchSuccessRate =
+      totalBatch > 0
+        ? Math.round((completedBatch / totalBatch) * 10000) / 100
+        : 0;
+
+    // KRA last sync timestamp
+    const lastSyncLog = await this.kraSyncLogRepo.findOne({
+      order: { createdAt: 'DESC' },
+      select: ['createdAt'],
+    });
+    const kraLastSyncAt = lastSyncLog?.createdAt?.toISOString() ?? null;
+
+    const [racesToday, racesCompleted] = await Promise.all([
+      this.raceRepo.count({ where: { rcDate: today } }),
+      this.raceRepo
+        .createQueryBuilder('r')
+        .where('r.rcDate = :today', { today })
+        .andWhere('r.status = :status', { status: 'COMPLETED' })
+        .getCount(),
+    ]);
+
+    // --- Ticket metrics ---
+    const [raceTicketsActive, matrixTicketsActive, ticketsUsedThisMonth] =
+      await Promise.all([
+        this.predictionTicketRepo
+          .createQueryBuilder('t')
+          .where('t.status = :status', { status: TicketStatus.AVAILABLE })
+          .andWhere("t.type = 'RACE'")
+          .getCount(),
+        this.predictionTicketRepo
+          .createQueryBuilder('t')
+          .where('t.status = :status', { status: TicketStatus.AVAILABLE })
+          .andWhere("t.type = 'MATRIX'")
+          .getCount(),
+        this.predictionTicketRepo
+          .createQueryBuilder('t')
+          .where('t.status = :status', { status: TicketStatus.USED })
+          .andWhere('t.usedAt >= :start', { start: monthStart })
+          .andWhere('t.usedAt <= :end', { end: monthEnd })
+          .getCount(),
+      ]);
+
+    return {
+      users: {
+        total: totalUsers,
+        newToday,
+        newThisWeek,
+        newThisMonth,
+        activeSubscribers,
+        subscriptionsByPlan,
+      },
+      revenue: {
+        mrr,
+        thisMonthTotal,
+        cancelledThisMonth,
+        churnRate,
+      },
+      predictions: {
+        totalGenerated,
+        avgAccuracy,
+        accuracyThisMonth,
+        highConfidenceCount,
+      },
+      operations: {
+        batchSuccessRate,
+        batchFailedToday: failedToday,
+        kraLastSyncAt,
+        racesToday,
+        racesCompleted,
+      },
+      tickets: {
+        raceTicketsActive,
+        matrixTicketsActive,
+        ticketsUsedThisMonth,
+      },
+    };
   }
 }

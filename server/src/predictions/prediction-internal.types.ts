@@ -77,6 +77,27 @@ export interface RaceEntryForAnalysis {
   sameDayRacesBefore?: number | null;
   /** Approximate hours since the horse's last same-day race */
   hoursSinceLastSameDayRace?: number | null;
+  /** Per-horse win/place rate on current vs alternate track conditions (wet vs dry). */
+  trackConditionHistory?: {
+    /** Win rate on the exact current track condition (wins / starts) */
+    currentConditionWinRate: number | null;
+    /** Place rate (top-3) on the exact current track condition */
+    currentConditionPlaceRate: number | null;
+    /** Number of starts on the exact current track condition */
+    currentConditionStarts: number | null;
+    /** Aggregate win rate on wet conditions (불/습/중 combined) */
+    wetWinRate: number | null;
+    /** Aggregate place rate on wet conditions */
+    wetPlaceRate: number | null;
+    /** Number of starts on wet conditions */
+    wetStarts: number | null;
+    /** Aggregate win rate on dry conditions (양호/good) */
+    dryWinRate: number | null;
+    /** Aggregate place rate on dry conditions */
+    dryPlaceRate: number | null;
+    /** Number of starts on dry conditions */
+    dryStarts: number | null;
+  } | null;
   /** Structured training metrics from trainings table */
   trainingMetrics?: {
     sessionCount: number;
@@ -116,6 +137,8 @@ export interface HorseAnalysisItem {
     gate?: number;
     fsz?: number;
     pace?: number;
+    /** track_condition_history: per-horse win/place rate on current track condition */
+    tch?: number;
   };
   /** 낙마 리스크 (0~100) */
   risk?: number;

@@ -224,3 +224,39 @@ export interface Revenue {
   payout: number;
   profit: number;
 }
+
+// BI Dashboard Analytics
+export interface BIDashboardAnalytics {
+  users: {
+    total: number;
+    newToday: number;
+    newThisWeek: number;
+    newThisMonth: number;
+    activeSubscribers: number;
+    subscriptionsByPlan: { LIGHT: number; STANDARD: number; PREMIUM: number };
+  };
+  revenue: {
+    mrr: number;
+    thisMonthTotal: number;
+    cancelledThisMonth: number;
+    churnRate: number;
+  };
+  predictions: {
+    totalGenerated: number;
+    avgAccuracy: number;
+    accuracyThisMonth: number;
+    highConfidenceCount: number;
+  };
+  operations: {
+    batchSuccessRate: number;
+    batchFailedToday: number;
+    kraLastSyncAt: string | null;
+    racesToday: number;
+    racesCompleted: number;
+  };
+  tickets: {
+    raceTicketsActive: number;
+    matrixTicketsActive: number;
+    ticketsUsedThisMonth: number;
+  };
+}

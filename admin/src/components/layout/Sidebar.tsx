@@ -18,6 +18,7 @@ import {
   Newspaper,
   Bug,
   RefreshCcw,
+  LayoutGrid,
 } from 'lucide-react';
 import { AdminIcon } from '@/components/common/AdminIcon';
 
@@ -33,6 +34,7 @@ const navigation = [
   { name: '주간 프리뷰', href: '/weekly-preview', icon: Newspaper },
   { name: 'AI 설정', href: '/ai-config', icon: Bot },
   { name: 'AI 분석', href: '/analytics', icon: BarChart3 },
+  { name: 'BI 대시보드', href: '/bi-dashboard', icon: LayoutGrid },
   { name: '수익 대시보드', href: '/revenue', icon: TrendingUp },
   { name: '통계', href: '/statistics', icon: PieChart },
   { name: '알림 관리', href: '/notifications', icon: Bell },

@@ -1,4 +1,5 @@
 import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthService } from '../auth/auth.service';
 import { AdminLoginDto } from '../auth/dto/auth.dto';
@@ -22,6 +23,7 @@ export class AdminAuthController {
 
   @Post('login')
   @ApiOperation({ summary: '[Admin] 로그인 (아이디/비밀번호)' })
+  @Throttle({ short: { limit: 10, ttl: 60000 } })
   login(@Body() dto: AdminLoginDto) {
     return this.authService.adminLogin(dto.loginId, dto.password);
   }

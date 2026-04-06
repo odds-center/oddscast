@@ -14,6 +14,9 @@ import {
 import { NotificationsService } from './notifications.service';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../database/db-enums';
 import {
   CurrentUser,
   JwtPayload,
@@ -84,14 +87,19 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 상세 조회' })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationsService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    // Pass userId so service enforces ownership — users can only view their own notifications
+    return this.notificationsService.findOne(id, user.sub);
   }
 
   @Post()
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '알림 생성' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: '알림 생성 (admin only)' })
   create(@Body() dto: CreateNotificationDto) {
     return this.notificationsService.create(dto);
   }
@@ -120,8 +128,9 @@ export class NotificationsController {
 
   @Post('bulk-send')
   @ApiBearerAuth()
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({ summary: '알림 일괄 발송' })
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  @ApiOperation({ summary: '알림 일괄 발송 (admin only)' })
   bulkSend(@Body() dto: BulkSendDto) {
     return this.notificationsService.bulkSend(dto);
   }
@@ -130,8 +139,12 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 읽음 처리' })
-  markAsRead(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationsService.markAsRead(id);
+  markAsRead(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    // Pass userId so only the notification owner can mark it read
+    return this.notificationsService.markAsRead(id, user.sub);
   }
 
   @Patch('read-all')
@@ -149,8 +162,10 @@ export class NotificationsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateNotificationDto,
+    @CurrentUser() user: JwtPayload,
   ) {
-    return this.notificationsService.update(id, dto);
+    // Pass userId to enforce ownership — users can only update their own notifications
+    return this.notificationsService.update(id, dto, user.sub);
   }
 
   @Delete('all')
@@ -165,7 +180,11 @@ export class NotificationsController {
   @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @ApiOperation({ summary: '알림 삭제' })
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.notificationsService.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    // Pass userId to enforce ownership — users can only delete their own notifications
+    return this.notificationsService.remove(id, user.sub);
   }
 }

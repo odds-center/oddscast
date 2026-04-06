@@ -38,6 +38,7 @@ import {
   RaceAnalysisCache,
   BugReport,
   RefundRequest,
+  CommunityPrediction,
 } from './database/entities';
 import { ResponseInterceptor } from './common/interceptors/response.interceptor';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
@@ -73,6 +74,8 @@ import { MailModule } from './mail/mail.module';
 import { DiscordModule } from './discord/discord.module';
 import { BugReportsModule } from './bug-reports/bug-reports.module';
 import { RefundsModule } from './refunds/refunds.module';
+import { CommunityPredictionsModule } from './community-predictions/community-predictions.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 
 @Module({
   imports: [
@@ -120,6 +123,7 @@ import { RefundsModule } from './refunds/refunds.module';
           RaceAnalysisCache,
           BugReport,
           RefundRequest,
+          CommunityPrediction,
         ],
         logging: false,
         synchronize: false,
@@ -169,6 +173,12 @@ import { RefundsModule } from './refunds/refunds.module';
     ActivityLogsModule,
     BugReportsModule,
     RefundsModule,
+
+    // P3 — Community & Social
+    CommunityPredictionsModule,
+
+    // Analytics — advanced stats for subscribed users
+    AnalyticsModule,
   ],
   providers: [
     {

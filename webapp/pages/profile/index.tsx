@@ -124,7 +124,8 @@ export default function Profile() {
                 { href: routes.mypage.ticketHistory, icon: 'Ticket', label: '예측권 이력' },
                 { href: routes.mypage.predictionHistory, icon: 'ClipboardList', label: '내가 본 예측' },
                 { href: routes.mypage.matrixTicketPurchase, icon: 'CreditCard', label: '종합예측권 구매' },
-{ href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
+                { href: routes.mypage.notifications, icon: 'Bell', label: '알림' },
+                { href: routes.analytics, icon: 'BarChart2', label: '고급 분석' },
                 { href: routes.settings, icon: 'Settings', label: '설정' },
               ]}
             />

@@ -124,6 +124,27 @@ ChangePasswordDto { oldPassword, newPassword }
 → { message }
 ```
 
+### Kakao OAuth
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| GET | /auth/kakao | 🔓 | Start Kakao OAuth login (redirects to Kakao) |
+| GET | /auth/kakao/callback | 🔓 | Kakao OAuth callback (redirects to webapp) |
+
+**Flow:**
+1. Client navigates to `GET /api/auth/kakao`
+2. Server redirects browser to Kakao OAuth consent page
+3. Kakao redirects to `GET /api/auth/kakao/callback?code=...`
+4. Server exchanges code for tokens, calls `/v2/user/me`, finds or creates user
+5. Server redirects to `{WEBAPP_URL}/auth/kakao/success?token=...&refreshToken=...`
+6. Webapp reads tokens, calls `GET /auth/me`, sets auth state
+
+**Required env vars:**
+- `KAKAO_CLIENT_ID` — REST API key from Kakao Developers Console
+- `KAKAO_CLIENT_SECRET` — Secret key (enabled by default in Kakao console)
+- `KAKAO_CALLBACK_URL` — Must be registered in Kakao Developers Console
+- `WEBAPP_URL` — Webapp base URL for redirect
+
 ---
 
 ## Config (글로벌 설정) — `/api/config`

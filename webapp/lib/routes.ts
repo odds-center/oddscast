@@ -62,8 +62,15 @@ detail: (id: string) => `/races/${id}`,
     accuracy: '/predictions/accuracy',
   },
 
+  analytics: '/analytics',
+
   about: {
     ai: '/about/ai',
+  },
+
+  community: {
+    index: '/community',
+    myPredictions: '/community/my-predictions',
   },
 
   welcome: '/welcome',

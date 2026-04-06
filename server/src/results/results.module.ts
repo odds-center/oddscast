@@ -6,11 +6,13 @@ import { Prediction } from '../database/entities/prediction.entity';
 import { ResultsService } from './results.service';
 import { ResultsController } from './results.controller';
 import { PredictionsModule } from '../predictions/predictions.module';
+import { CommunityPredictionsModule } from '../community-predictions/community-predictions.module';
 
 @Module({
   imports: [
     TypeOrmModule.forFeature([Race, RaceResult, Prediction]),
     PredictionsModule,
+    CommunityPredictionsModule,
   ],
   controllers: [ResultsController],
   providers: [ResultsService],

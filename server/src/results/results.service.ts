@@ -6,6 +6,7 @@ import { Race } from '../database/entities/race.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { Prediction } from '../database/entities/prediction.entity';
 import { PredictionsService } from '../predictions/predictions.service';
+import { CommunityPredictionsService } from '../community-predictions/community-predictions.service';
 import { toKraMeetName } from '../kra/constants';
 import { isEligibleForAccuracy } from '../kra/ord-parser';
 import { serializeRaceResults } from '../common/serializers/kra.serializer';
@@ -54,6 +55,7 @@ export class ResultsService {
     @InjectRepository(Prediction)
     private readonly predictionRepo: Repository<Prediction>,
     private readonly predictionsService: PredictionsService,
+    private readonly communityPredictionsService: CommunityPredictionsService,
   ) {}
 
   async findAll(filters: ResultFilterDto) {
@@ -291,6 +293,16 @@ export class ResultsService {
       });
       await this.updatePredictionAccuracy(raceId);
       this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
+      this.predictionsService.generateRaceCommentary(raceId, 'post-race').catch((err: unknown) => {
+        this.logger.warn(
+          `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
+      this.communityPredictionsService.scoreRacePredictions(raceId).catch((err: unknown) => {
+        this.logger.warn(
+          `Failed to score community predictions for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+        );
+      });
     }
     return { count };
   }
@@ -298,6 +310,11 @@ export class ResultsService {
   async onResultsSyncedForRace(raceId: number): Promise<void> {
     await this.updatePredictionAccuracy(raceId);
     this.predictionsService.generatePostRaceSummary(raceId).catch(() => {});
+    this.predictionsService.generateRaceCommentary(raceId, 'post-race').catch((err: unknown) => {
+      this.logger.warn(
+        `Failed to generate post-race commentary for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    });
   }
 
   /** Update prediction accuracy only, without triggering Gemini post-race summary. */

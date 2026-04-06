@@ -39,6 +39,12 @@ import {
   buildRacePredictionPrompt,
   buildPostRacePrompt,
 } from './prompts/race-prediction.prompts';
+import {
+  buildRaceCommentaryPrompt,
+  type RaceCommentaryEntry,
+  type RaceCommentaryResult,
+} from './prompts/race-commentary.prompts';
+import type { RaceCommentary } from '../database/entities/race.entity';
 
 /** Thrown when a generatePrediction call finds a PROCESSING row for the same race+entriesHash. */
 export class PredictionInProgressException extends Error {
@@ -517,6 +523,154 @@ export class PredictionsService {
     } catch (err) {
       this.logger.warn(
         `Post-race summary failed for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+
+  /**
+   * Generate AI race commentary for a given race.
+   * Pre-race: called before race starts to generate watch points.
+   * Post-race: called after results arrive to narrate the outcome.
+   *
+   * Stores the result in races.commentary JSONB column.
+   * Failures are logged but not thrown — safe for fire-and-forget.
+   */
+  async generateRaceCommentary(
+    raceId: number,
+    type: 'pre-race' | 'post-race',
+  ): Promise<void> {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) return;
+
+    const race = await this.raceRepo.findOne({ where: { id: raceId } });
+    if (!race) return;
+
+    // Skip if commentary of this type already exists
+    const existingCommentary = race.commentary;
+    if (type === 'pre-race' && existingCommentary?.preRace) {
+      this.logger.log(
+        `Pre-race commentary already exists for race ${raceId}, skipping`,
+      );
+      return;
+    }
+    if (type === 'post-race' && existingCommentary?.postRace) {
+      this.logger.log(
+        `Post-race commentary already exists for race ${raceId}, skipping`,
+      );
+      return;
+    }
+
+    // Check daily Gemini call limit
+    const withinLimit = await this.checkAndIncrementGeminiDailyLimit();
+    if (!withinLimit) {
+      this.logger.warn(
+        `Daily Gemini call limit reached, skipping race commentary for race ${raceId}`,
+      );
+      return;
+    }
+
+    // Load entries
+    const allEntries = await this.entryRepo.find({
+      where: { raceId },
+      order: { id: 'ASC' },
+    });
+    if (allEntries.length === 0) return;
+
+    const entries: RaceCommentaryEntry[] = allEntries.map((e) => ({
+      hrName: e.hrName,
+      hrNo: e.hrNo,
+      jkName: e.jkName,
+      rating: Number(e.rating ?? 0),
+    }));
+
+    // Load results for post-race
+    let results: RaceCommentaryResult[] | undefined;
+    if (type === 'post-race') {
+      const rawResults = await this.resultRepo
+        .createQueryBuilder('rr')
+        .select(['rr.hrName', 'rr.hrNo', 'rr.ordInt', 'rr.rcTime'])
+        .where('rr.raceId = :raceId', { raceId })
+        .andWhere('rr.ordInt IS NOT NULL')
+        .orderBy('rr.ordInt', 'ASC')
+        .getMany();
+
+      if (rawResults.length === 0) return;
+
+      results = rawResults.map((r) => ({
+        hrName: r.hrName,
+        hrNo: r.hrNo,
+        ordInt: r.ordInt ?? 0,
+        recTime: r.rcTime ?? undefined,
+      }));
+    }
+
+    const raceName = race.rcName ?? `${race.meet} ${race.rcNo}경주`;
+    const distance = Number(race.rcDist ?? 0);
+
+    const prompt = buildRaceCommentaryPrompt({
+      raceName,
+      meet: race.meet,
+      distance,
+      entries,
+      results,
+      type,
+    });
+
+    try {
+      const { GoogleGenerativeAI } = await import('@google/generative-ai');
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({
+        model: 'gemini-2.0-flash',
+        generationConfig: { temperature: 0.7, maxOutputTokens: 512 },
+      });
+
+      const result = await model.generateContent(prompt);
+      const text = result.response?.text()?.trim();
+      if (!text) return;
+
+      let parsed: {
+        headline?: string;
+        commentary?: string;
+        keyPoints?: string[];
+        mood?: string;
+      };
+      try {
+        parsed = parseGeminiResponseText(text) as typeof parsed;
+      } catch {
+        this.logger.warn(
+          `Race commentary JSON parse failed for race ${raceId}: ${text.slice(0, 100)}`,
+        );
+        return;
+      }
+
+      if (!parsed.headline || !parsed.commentary) return;
+
+      const block = {
+        headline: parsed.headline,
+        commentary: parsed.commentary,
+        keyPoints: Array.isArray(parsed.keyPoints) ? parsed.keyPoints : [],
+        mood: (['exciting', 'normal', 'upset'].includes(parsed.mood ?? '')
+          ? parsed.mood
+          : 'normal') as 'exciting' | 'normal' | 'upset',
+        generatedAt: new Date().toISOString(),
+      };
+
+      const updatedCommentary: RaceCommentary = {
+        ...(existingCommentary ?? {}),
+        ...(type === 'pre-race' ? { preRace: block } : { postRace: block }),
+      };
+
+      await this.raceRepo.update(raceId, {
+        commentary: updatedCommentary,
+        updatedAt: new Date(),
+      });
+
+      this.logger.log(
+        `Race commentary (${type}) generated for race ${raceId}: "${block.headline}"`,
+      );
+    } catch (err) {
+      this.logger.warn(
+        `Race commentary (${type}) failed for race ${raceId}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
   }

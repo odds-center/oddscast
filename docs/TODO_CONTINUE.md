@@ -4,7 +4,7 @@
 > 우선순위와 순서는 팀 상황에 맞게 조정해서 사용하세요.  
 > **규칙:** Planning 시 이 문서 참조, 작업 완료/추가 시 이 문서 갱신. (`CLAUDE.md`, `.claude/rules/` 반영)
 
-**Last updated:** 2026-04-06 (Gemini CoT 프롬프트, Python 16번째 팩터, 보안 감사, Admin BI 대시보드, 마케팅 자료, Mobile WebView 개선, Webapp 버그 수정 21건, 에이전트 하네스 16종)
+**Last updated:** 2026-04-06 (카카오 소셜 로그인 추가, Kakao OAuth 2.0 구현)
 
 ---
 
@@ -89,6 +89,7 @@
 | **Python 분석 결과 캐싱** | ✅ 완료 | `race_analysis_cache` 테이블. raceId+analysisType+dataHash로 캐시 키 구성. 동일 데이터 해시면 Python 재실행 없이 캐시 반환. |
 | **Railway 배포 오류 수정** | ✅ 완료 | `railway.toml`에 `startCommand` 명시. pnpm 자동 감지로 `pnpm start` 실행 → "No projects found" 오류 방지. |
 | **Storybook gitignore** | ✅ 완료 | `webapp/.gitignore`에 `/storybook-static` 추가. 빌드 결과물 레포 제외. |
+| **카카오 소셜 로그인** | ✅ 완료 | passport-kakao OAuth 2.0. User entity에 kakaoId/provider 컬럼 추가. Migration 20260406000001-AddKakaoAuth. /auth/kakao + /auth/kakao/callback 엔드포인트. WebApp /auth/kakao/success 페이지. 로그인/회원가입 화면에 카카오 버튼 추가. |
 | **Gemini AI 프롬프트 개선** | ✅ 완료 | CoT 5단계 추론 + 2개 few-shot 예시. `server/src/predictions/prompts/race-prediction.prompts.ts` 신규. eval logger 추가 (`[EVAL]` 로그). |
 | **Python 16번째 팩터 (tch)** | ✅ 완료 | track_condition_history 팩터 추가. W_HORSE 가중치 재조정(합=1.0). `validate_weights.py` 통계 검증 스크립트 추가. `docs/architecture/ANALYSIS_FACTORS.md` 신규. |
 | **보안 감사** | ✅ 완료 | IDOR 3건(notifications/favorites) + 어드민 brute-force 잠금 + bcrypt 12라운드 수정. HIGH 4건, MEDIUM 1건. `docs/SECURITY_AUDIT.md` 신규. |

@@ -60,6 +60,10 @@ import {
   Copy,
   HelpCircle,
   Bug,
+  Users,      // Community / leaderboard
+  ListChecks, // My predictions list
+  Hash,       // Gate/post position number
+  Droplets,   // Track condition / weather
 } from 'lucide-react';
 
 /** Race icon — uses Flag (race start signal) */
@@ -124,6 +128,10 @@ export const Icons = {
   Copy,
   HelpCircle,
   Bug,
+  Users,
+  ListChecks,
+  Hash,
+  Droplets,
 } as const;
 
 export type IconName = keyof typeof Icons;

@@ -61,6 +61,7 @@
 | 32 | On-demand KRA 결과 조회 | ✅ Done | 경주 상세에서 결과 없으면 KRA API on-demand fetch. Gemini 디커플링 |
 | 33 | 이메일 발송 (Resend) | ✅ Done | 비밀번호 리셋·이메일 인증 Resend API 기반 |
 | 34 | 온보딩 DB 저장 | ✅ Done | User.hasSeenOnboarding — localStorage에서 DB 기반으로 변경 |
+| 35 | 카카오 소셜 로그인 | ✅ Done | `/auth/kakao` OAuth 2.0. passport-kakao. DB: kakaoId/provider. WebApp: 로그인·회원가입에 카카오 버튼. 회원가입 보너스 자동 지급. |
 
 ---
 

@@ -48,10 +48,11 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
       showSkipButton
       showProgress
       disableOverlayClose
-      scrollToFirstStep
-      scrollOffset={150}
+      scrollToFirstStep={false}
+      disableScrolling
+      disableScrollParentFix
       spotlightClicks={false}
-      spotlightPadding={4}
+      spotlightPadding={6}
       callback={handleCallback}
       floaterProps={{ disableAnimation: true, offset: 12 }}
       locale={{

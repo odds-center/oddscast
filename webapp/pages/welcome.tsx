@@ -5,7 +5,7 @@
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import Icon from "@/components/icons";
 import { routes } from "@/lib/routes";
@@ -148,11 +148,14 @@ function PlanCard({
 
 export default function LandingPage() {
   const [scrolled, setScrolled] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => setScrolled(el.scrollTop > 40);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
   const { data: accuracyData } = useQuery({
@@ -224,7 +227,8 @@ export default function LandingPage() {
       </Head>
 
       <div
-        className="min-h-screen bg-white text-stone-900"
+        ref={scrollContainerRef}
+        className="h-dvh overflow-y-auto bg-white text-stone-900"
         style={{
           fontFamily:
             "'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif",
@@ -235,8 +239,8 @@ export default function LandingPage() {
           <div
             className={`mx-auto transition-all duration-300 ease-in-out ${
               scrolled
-                ? 'mt-3 mx-4 sm:mx-6 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100'
-                : 'mt-0 mx-0 rounded-none bg-white border-b border-stone-100'
+                ? 'mt-3 mx-3 sm:mx-6 rounded-2xl bg-white shadow-lg shadow-stone-900/10 border border-stone-100'
+                : 'mt-2 mx-3 sm:mx-6 rounded-2xl bg-white/95 backdrop-blur-sm shadow-sm border border-stone-100'
             }`}
           >
             <div className="px-5 sm:px-6 h-14 flex items-center justify-between">

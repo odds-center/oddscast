@@ -4,6 +4,7 @@
  * Loaded via dynamic({ ssr: false }) from each page.
  * Uses `any` cast because react-joyride v3 types are incompatible with runtime API.
  */
+import { useEffect } from 'react';
 import { Joyride, STATUS } from 'react-joyride';
 import { useCoachMarkStore } from '@/lib/coachMark/coachMarkStore';
 import type { CoachMarkStep, TourId } from '@/lib/coachMark/coachMarkTypes';
@@ -23,6 +24,16 @@ export default function CoachMarkTour({ tourId, steps }: CoachMarkTourProps) {
   const completeTour = useCoachMarkStore((s) => s.completeTour);
   const skipTour = useCoachMarkStore((s) => s.skipTour);
   const isLoggedIn = useAuthStore((s) => s.isLoggedIn);
+
+  // Reset running state when navigating away mid-tour so it doesn't auto-resume on remount
+  useEffect(() => {
+    return () => {
+      const state = useCoachMarkStore.getState();
+      if (state.running && state.activeTourId === tourId) {
+        state.skipTour(tourId);
+      }
+    };
+  }, [tourId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const syncToServer = (id: TourId) => {
     if (!isLoggedIn) return;

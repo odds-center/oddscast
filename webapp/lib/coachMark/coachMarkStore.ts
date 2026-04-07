@@ -40,7 +40,11 @@ export const useCoachMarkStore = create<CoachMarkState>((set) => ({
   activeTourId: null,
   running: false,
 
-  startTour: (id) => set({ activeTourId: id, running: true }),
+  startTour: (id) => {
+    // Mark as seen immediately so navigation mid-tour won't retrigger on remount
+    markTourComplete(id);
+    set({ activeTourId: id, running: true });
+  },
 
   completeTour: (id) => {
     markTourComplete(id);

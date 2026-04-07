@@ -116,7 +116,11 @@
       "Bash(npm show:*)",
       "Bash(find webapp/pages -name update-log* 2)",
       "Bash(/dev/null grep:*)",
-      "Bash(find /Users/risingcore/Desktop/work/oddscast/webapp/pages -name \"update-log*\" grep -rn \"localStorage\\\\|window\\\\.\" /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/login.tsx /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/register.tsx)"
+      "Bash(find /Users/risingcore/Desktop/work/oddscast/webapp/pages -name \"update-log*\" grep -rn \"localStorage\\\\|window\\\\.\" /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/login.tsx /Users/risingcore/Desktop/work/oddscast/webapp/pages/auth/register.tsx)",
+      "Bash(/tmp/summary.txt:*)",
+      "Read(//tmp/**)",
+      "Bash(kill 46590)",
+      "Bash(kill 43583)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

@@ -6,6 +6,20 @@ html[data-high-contrast='true'] {
   --color-text-secondary: #1c1917;
   --color-text-tertiary: #44403c;
   --color-background: #fafaf9;
+  /* Sync plain CSS variables used by non-Tailwind stylesheets */
+  --border: #1c1917;
+  --text-secondary: #1c1917;
+  --text-tertiary: #44403c;
+  --background: #fafaf9;
+}
+
+/* Fix border-radius corner clipping on elements with overflow:hidden and a visible border.
+   WebKit/Blink can render antialiased border-radius corners incorrectly when overflow:hidden
+   is applied. Forcing a GPU compositing layer fixes the artifact. Scoped to high-contrast
+   only (where borders become visible) to avoid unnecessary compositing in normal mode. */
+html[data-high-contrast='true'] [class*='rounded'] {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
 }
 
 /* Font size: scale base (body/html) */

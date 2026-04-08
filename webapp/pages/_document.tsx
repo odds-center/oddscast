@@ -7,8 +7,8 @@ export default function Document() {
         <link rel='icon' type='image/png' href='/oddscast-logo.png' />
         <link rel='apple-touch-icon' href='/oddscast-logo.png' />
         <link rel='manifest' href='/manifest.json' />
-        <meta name='application-name' content='OddsCast' />
-        <meta name='apple-mobile-web-app-title' content='OddsCast' />
+        <meta name='application-name' content='오즈캐스트 OddsCast' />
+        <meta name='apple-mobile-web-app-title' content='오즈캐스트 OddsCast' />
         <meta name='format-detection' content='telephone=no' />
         <meta name='mobile-web-app-capable' content='yes' />
       </Head>

@@ -448,7 +448,7 @@ interface LayoutProps {
 }
 
 const DEFAULT_DESCRIPTION =
-  "AI 기반 경마 승부 예측 서비스 - 공공데이터 분석과 인공지능으로 경마를 더 스마트하게. 서울, 부산, 제주 경마장 경주 분석, 출전마 데이터, AI 예측 제공.";
+  "오즈캐스트(OddsCast) - AI 기반 경마 승부 예측 서비스. 공공데이터 분석과 인공지능으로 경마를 더 스마트하게. 서울, 부산, 제주 경마장 경주 분석, 출전마 데이터, AI 예측 제공.";
 const DEFAULT_KEYWORDS =
   "경마 예측, AI 경마, 경마 분석, 경마 승부 예측, 말 경주, 경마장, 서울경마, 부산경마, 제주경마, OddsCast, 오즈캐스트, 경마 데이터, 경마 AI, 경주 분석, 출전마 분석, 기수 분석, 경마 순위, 경마 결과, KRA, 한국경마";
 
@@ -520,7 +520,7 @@ const Layout: React.FC<LayoutProps> = ({
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:type" content="website" />
         <meta property="og:locale" content="ko_KR" />
-        <meta property="og:site_name" content="OddsCast" />
+        <meta property="og:site_name" content="오즈캐스트 OddsCast" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={title} />
         <meta name="twitter:description" content={description} />

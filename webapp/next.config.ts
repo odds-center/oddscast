@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from '@sentry/nextjs';
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   transpilePackages: ['@oddscast/shared'],
   images: {
     formats: ['image/avif', 'image/webp'],

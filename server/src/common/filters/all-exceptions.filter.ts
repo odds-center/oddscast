@@ -76,16 +76,18 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `[${request.method}] ${request.url} → ${status} ${errorMessage}`,
       );
 
-      // Discord notification for client errors (fire-and-forget)
-      this.discordService
-        .notifyClientError(
-          request.method,
-          request.url,
-          status,
-          errorMessage,
-          (request.headers['x-forwarded-for'] as string) ?? request.ip,
-        )
-        .catch(() => {});
+      // Skip Discord for 404 (mostly bot/scanner noise) and 405
+      if (status !== 404 && status !== 405) {
+        this.discordService
+          .notifyClientError(
+            request.method,
+            request.url,
+            status,
+            errorMessage,
+            (request.headers['x-forwarded-for'] as string) ?? request.ip,
+          )
+          .catch(() => {});
+      }
     }
 
     response.status(status).json({

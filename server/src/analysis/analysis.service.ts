@@ -349,20 +349,38 @@ export class AnalysisService {
         null,
     };
 
-    // Step 5: Upsert cache
+    // Step 5: Upsert cache (conflict-safe for concurrent calls)
+    const cachePayload = {
+      raceId,
+      analysisType: 'jockey' as const,
+      dataHash,
+      result: result as unknown as Record<string, unknown>,
+    };
+
     if (cached) {
       cached.dataHash = dataHash;
-      cached.result = result as unknown as Record<string, unknown>;
+      cached.result = cachePayload.result;
       await this.cacheRepo.save(cached);
     } else {
-      await this.cacheRepo.save(
-        this.cacheRepo.create({
-          raceId,
-          analysisType: 'jockey',
-          dataHash,
-          result: result as unknown as Record<string, unknown>,
-        }),
-      );
+      try {
+        const entity = this.cacheRepo.create(cachePayload);
+        await this.cacheRepo.save(entity);
+      } catch (err: unknown) {
+        // Race condition: another request inserted first — update instead
+        const msg = err instanceof Error ? err.message : '';
+        if (msg.includes('duplicate key')) {
+          const fallback = await this.cacheRepo.findOne({
+            where: { raceId, analysisType: 'jockey' },
+          });
+          if (fallback) {
+            fallback.dataHash = dataHash;
+            fallback.result = cachePayload.result;
+            await this.cacheRepo.save(fallback);
+          }
+        } else {
+          throw err;
+        }
+      }
     }
 
     return result;

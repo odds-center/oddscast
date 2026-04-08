@@ -5,6 +5,10 @@ import axios from 'axios';
 const DISCORD_API = 'https://discord.com/api/v10';
 const NOTIFICATION_WEBHOOK_URL =
   'https://discord.com/api/webhooks/1489147195264467054/8HZYzgNrVznP5cxoVw42v4LIPbrQTxmjCoT6h0Rjr3k6xMpeljmQX6-M9eotnVGaUYeX';
+const PROD_ERROR_WEBHOOK_URL =
+  'https://discord.com/api/webhooks/1480146385008594944/S8-3F_oRx3aIux2eprKtri8aq-gRuqRCbi-RTBRlZLmItLmTtBjG7M32NztsRSLg6T6X';
+const DEV_ERROR_WEBHOOK_URL =
+  'https://discord.com/api/webhooks/1485520539350073364/8QtL-Uyc2OQqGV2FPK7ox-OIrU6wVCKRIyPorDBcaroT3GxtL5j8yUNAgaOTA5zdb29h';
 
 interface DiscordEmbed {
   title: string;
@@ -129,8 +133,6 @@ export class DiscordService {
   private readonly botToken: string;
   private readonly signupChannelId: string;
   private readonly errorChannelId: string;
-  private readonly errorWebhookUrl: string;
-  private readonly devWebhookUrl: string;
   private readonly isProduction: boolean;
 
   constructor(private readonly config: ConfigService) {
@@ -143,11 +145,6 @@ export class DiscordService {
       'DISCORD_ERROR_CHANNEL_ID',
       '',
     );
-    this.errorWebhookUrl = this.config.get<string>(
-      'DISCORD_ERROR_WEBHOOK_URL',
-      '',
-    );
-    this.devWebhookUrl = this.config.get<string>('DISCORD_DEV_WEBHOOK_URL', '');
     this.isProduction =
       this.config.get<string>('NODE_ENV', '') === 'production';
   }
@@ -156,8 +153,8 @@ export class DiscordService {
     return this.botToken.length > 0;
   }
 
-  private get devEnabled(): boolean {
-    return !this.isProduction && this.devWebhookUrl.length > 0;
+  private get errorWebhookUrl(): string {
+    return this.isProduction ? PROD_ERROR_WEBHOOK_URL : DEV_ERROR_WEBHOOK_URL;
   }
 
   /**
@@ -200,11 +197,10 @@ export class DiscordService {
   }
 
   /**
-   * Send dev notification via webhook (non-production only).
+   * Send error notification to the environment-appropriate webhook.
    */
-  async sendDevNotification(notification: DevNotification): Promise<void> {
-    if (!this.devEnabled) return;
-    await this.sendToWebhook(this.devWebhookUrl, [notification.toEmbed()]);
+  private async sendErrorToWebhook(embeds: DiscordEmbed[]): Promise<void> {
+    await this.sendToWebhook(this.errorWebhookUrl, embeds);
   }
 
   /**
@@ -226,11 +222,11 @@ export class DiscordService {
       },
     ];
     await this.sendToChannel(this.signupChannelId, embeds);
-    await this.sendDevNotification(new DevSignupNotification(email, nickname));
   }
 
   /**
    * Notify server error (5xx).
+   * Production → prod error webhook, Dev → dev error webhook.
    */
   async notifyError(
     method: string,
@@ -240,24 +236,25 @@ export class DiscordService {
     stack?: string,
   ): Promise<void> {
     const desc = stack ? `\`\`\`\n${stack.slice(0, 1000)}\n\`\`\`` : message;
+    const env = this.isProduction ? 'PROD' : 'DEV';
 
     const embeds: DiscordEmbed[] = [
       {
-        title: `🚨 서버 에러 (${status})`,
+        title: `🚨 [${env}] 서버 에러 (${status})`,
         description: desc,
         color: 0xb91c1c,
         fields: [
           { name: '요청', value: `\`${method} ${url}\``, inline: false },
         ],
         timestamp: new Date().toISOString(),
-        footer: { text: 'OddsCast' },
+        footer: { text: `OddsCast ${env}` },
       },
     ];
-    await this.sendToChannel(this.errorChannelId, embeds);
-    await this.sendToWebhook(this.errorWebhookUrl, embeds);
-    await this.sendDevNotification(
-      new DevServerError(method, url, status, message, stack),
-    );
+
+    if (this.isProduction) {
+      await this.sendToChannel(this.errorChannelId, embeds);
+    }
+    await this.sendErrorToWebhook(embeds);
   }
 
   /**
@@ -564,6 +561,7 @@ export class DiscordService {
 
   /**
    * Notify client error (4xx).
+   * Production → prod error webhook, Dev → dev error webhook.
    */
   async notifyClientError(
     method: string,
@@ -579,7 +577,9 @@ export class DiscordService {
       400: '❌ Bad Request (400)',
       404: '🔍 Not Found (404)',
     };
-    const title = STATUS_LABELS[status] ?? `⚠️ Client Error (${status})`;
+    const env = this.isProduction ? 'PROD' : 'DEV';
+    const baseTitle = STATUS_LABELS[status] ?? `⚠️ Client Error (${status})`;
+    const title = `[${env}] ${baseTitle}`;
     const color = status === 429 ? 0xea580c : 0xd97706;
 
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
@@ -596,13 +596,13 @@ export class DiscordService {
         color,
         fields,
         timestamp: new Date().toISOString(),
-        footer: { text: 'OddsCast' },
+        footer: { text: `OddsCast ${env}` },
       },
     ];
-    await this.sendToChannel(this.errorChannelId, embeds);
-    await this.sendToWebhook(this.errorWebhookUrl, embeds);
-    await this.sendDevNotification(
-      new DevClientError(method, url, status, message, ip),
-    );
+
+    if (this.isProduction) {
+      await this.sendToChannel(this.errorChannelId, embeds);
+    }
+    await this.sendErrorToWebhook(embeds);
   }
 }

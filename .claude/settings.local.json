@@ -124,7 +124,12 @@
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git add server/Dockerfile && GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfix: add pnpm to prod stage for Railway container init\n\nRailway reads packageManager from package.json and expects pnpm\nto be available in the container, even though only node is used\nat runtime.\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\" && GIT_CONFIG_GLOBAL=/dev/null git push origin master && GIT_CONFIG_GLOBAL=/dev/null git checkout develop && GIT_CONFIG_GLOBAL=/dev/null git merge master --no-edit && GIT_CONFIG_GLOBAL=/dev/null git push origin develop && GIT_CONFIG_GLOBAL=/dev/null git checkout master)",
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git add server/src/kra/kra.service.ts server/src/database/entities/batch-schedule.entity.ts server/src/database/migrations/20260329000000-AddBatchScheduleRetryCount.ts docs/db/schema.sql && GIT_CONFIG_GLOBAL=/dev/null git commit -m \"$\\(cat <<'EOF'\nfix: auto-retry failed batch schedules and extend cron window\n\n- Add retryCount column to batch_schedules \\(migration + entity + schema\\)\n- processDueBatchSchedules now also picks up FAILED jobs with\n  retryCount < 3 for automatic retry\n- ensureResultFetchJobsForEndedRaces skips dates where all retries\n  are exhausted \\(prevents infinite job creation\\)\n- Extend cron window from 9-19 to 9-21 KST \\(covers late races\\)\n\nCo-Authored-By: Claude Opus 4.6 \\(1M context\\) <noreply@anthropic.com>\nEOF\n\\)\" && GIT_CONFIG_GLOBAL=/dev/null git push origin master && GIT_CONFIG_GLOBAL=/dev/null git checkout develop && GIT_CONFIG_GLOBAL=/dev/null git merge master --no-edit && GIT_CONFIG_GLOBAL=/dev/null git push origin develop && GIT_CONFIG_GLOBAL=/dev/null git checkout master)",
       "Bash(GIT_CONFIG_GLOBAL=/dev/null git push --force origin develop && GIT_CONFIG_GLOBAL=/dev/null git checkout master)",
-      "Bash(docker run:*)"
+      "Bash(docker run:*)",
+      "Bash(ssh:*)",
+      "Bash(ssh-add -l)",
+      "Bash(ssh-keygen:*)",
+      "Bash(ssh-add -D)",
+      "Bash(ssh-add:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

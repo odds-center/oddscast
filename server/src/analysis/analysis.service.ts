@@ -357,30 +357,16 @@ export class AnalysisService {
       result: result as unknown as Record<string, unknown>,
     };
 
-    if (cached) {
-      cached.dataHash = dataHash;
-      cached.result = cachePayload.result;
-      await this.cacheRepo.save(cached);
+    // Upsert: insert or update on conflict (raceId + analysisType)
+    const existing = cached ?? await this.cacheRepo.findOne({
+      where: { raceId, analysisType: 'jockey' },
+    });
+    if (existing) {
+      existing.dataHash = dataHash;
+      existing.result = cachePayload.result;
+      await this.cacheRepo.save(existing);
     } else {
-      try {
-        const entity = this.cacheRepo.create(cachePayload);
-        await this.cacheRepo.save(entity);
-      } catch (err: unknown) {
-        // Race condition: another request inserted first — update instead
-        const msg = err instanceof Error ? err.message : '';
-        if (msg.includes('duplicate key')) {
-          const fallback = await this.cacheRepo.findOne({
-            where: { raceId, analysisType: 'jockey' },
-          });
-          if (fallback) {
-            fallback.dataHash = dataHash;
-            fallback.result = cachePayload.result;
-            await this.cacheRepo.save(fallback);
-          }
-        } else {
-          throw err;
-        }
-      }
+      await this.cacheRepo.save(this.cacheRepo.create(cachePayload));
     }
 
     return result;

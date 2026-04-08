@@ -45,6 +45,7 @@ async function bootstrap() {
     // Custom domains
     'https://oddscast.bet',
     'https://www.oddscast.bet',
+    'https://server.oddscast.bet',
     'https://admin.oddscast.bet',
     'https://www.admin.oddscast.bet',
     // Railway
@@ -88,7 +89,8 @@ async function bootstrap() {
     if (VERCEL_PREVIEW_RE.test(origin) || RAILWAY_PREVIEW_RE.test(origin)) {
       return callback(null, true);
     }
-    callback(new Error(`CORS: origin ${origin} not allowed`));
+    // Reject silently — throwing causes 500 + Discord noise from bot scans
+    callback(null, false);
   };
 
   app.enableCors({

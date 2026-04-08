@@ -43,6 +43,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     pip3 install --no-cache-dir --break-system-packages lightgbm
 WORKDIR /app
 
+# pnpm workspace config (required for `pnpm --filter server start` used by Railway)
+COPY pnpm-workspace.yaml package.json pnpm-lock.yaml ./
+COPY server/package.json server/package.json
+
 # Production node_modules from deps stage
 COPY --from=deps /app/node_modules node_modules
 COPY --from=deps /app/server/node_modules server/node_modules
@@ -61,10 +65,10 @@ RUN mkdir -p /app/server/node_modules/@oddscast && \
     rm -rf /app/server/node_modules/@oddscast/shared && \
     ln -s /app/shared /app/server/node_modules/@oddscast/shared
 
-WORKDIR /app/server
+# WORKDIR stays at /app (repo root) so `pnpm --filter server` can find workspace
 ENV NODE_ENV=production
 ENV PYTHON_BIN=/usr/bin/python3
 ENV NODE_OPTIONS="--max-old-space-size=512"
 EXPOSE 3000
 
-CMD ["node", "dist/main"]
+CMD ["node", "server/dist/main"]

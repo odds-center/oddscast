@@ -13,7 +13,7 @@ import Pagination from '@/components/page/Pagination';
 import DataFetchState from '@/components/page/DataFetchState';
 import { DataTable, LinkBadge, StatusBadge } from '@/components/ui';
 import RaceApi from '@/lib/api/raceApi';
-import ResultApi from '@/lib/api/resultApi';
+import ResultApi, { type RaceResult } from '@/lib/api/resultApi';
 import AuthApi from '@/lib/api/authApi';
 import { routes } from '@/lib/routes';
 import { TODAY_ALL_ENDED_MESSAGE } from '@/lib/utils/dateHeaderMessages';
@@ -56,21 +56,6 @@ function dateToScheduleParam(dateFilter: string): string | undefined {
   return undefined;
 }
 
-function dateToResultParam(dateFilter: string): string | undefined {
-  if (dateFilter === 'today') {
-    const kst = getTodayKstDate();
-    return `${kst.year}${String(kst.month).padStart(2, '0')}${String(kst.day).padStart(2, '0')}`;
-  }
-  if (dateFilter === 'yesterday') {
-    const kst = getTodayKstDate();
-    // Use Date with UTC to correctly handle month boundaries
-    const d = new Date(Date.UTC(kst.year, kst.month - 1, kst.day));
-    d.setUTCDate(d.getUTCDate() - 1);
-    return `${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, '0')}${String(d.getUTCDate()).padStart(2, '0')}`;
-  }
-  if (dateFilter) return dateFilter.replace(/-/g, '');
-  return undefined;
-}
 
 export default function RacesPage() {
   const router = useRouter();
@@ -143,29 +128,51 @@ export default function RacesPage() {
     },
   });
 
-  // Secondary: results for same filter — used to show inline results on completed races
+  const races = scheduleData?.races ?? [];
+
+  // Extract unique dates from current page's completed races for result lookup
+  const completedDates = useMemo(() => {
+    const dates = new Set<string>();
+    for (const race of races) {
+      const status = race.status ?? (race as RaceDto & { raceStatus?: string }).raceStatus ?? '';
+      if (status === 'COMPLETED' && race.rcDate) {
+        dates.add(race.rcDate.replace(/-/g, ''));
+      }
+    }
+    return Array.from(dates);
+  }, [races]);
+
+  // Secondary: results for current page's dates — used to show inline results on completed races
   const { data: resultsData } = useQuery({
-    queryKey: ['results', 'grouped', 'inline', dateFilter, qMeet],
+    queryKey: ['results', 'grouped', 'inline', completedDates, qMeet],
     placeholderData: keepPreviousData,
-    queryFn: () => {
-      const date = dateToResultParam(dateFilter);
-      return ResultApi.getResultsGroupedByRace({
-        limit: 100,
-        page: 1,
-        ...(date && { date }),
-        ...(qMeet && { meet: qMeet }),
-      });
+    enabled: completedDates.length > 0,
+    queryFn: async () => {
+      const allGroups: Array<{
+        race: { id: string; meet?: string; meetName?: string; rcDate: string; rcNo?: string; rcDist?: string };
+        results: RaceResult[];
+      }> = [];
+      await Promise.all(
+        completedDates.map(async (date) => {
+          const res = await ResultApi.getResultsGroupedByRace({
+            limit: 100,
+            page: 1,
+            date,
+            ...(qMeet && { meet: qMeet }),
+          });
+          allGroups.push(...(res.raceGroups ?? []));
+        }),
+      );
+      return { raceGroups: allGroups };
     },
   });
 
-  const races = scheduleData?.races ?? [];
-
-  // Map raceId → top3 results for quick lookup
+  // Map raceId → top3 results for quick lookup (String key to handle number/string mismatch)
   const resultsByRaceId = useMemo(() => {
     const map = new Map<string, InlineResult[]>();
     for (const g of resultsData?.raceGroups ?? []) {
       map.set(
-        g.race.id,
+        String(g.race.id),
         (g.results ?? [])
           .filter((r) => ['1', '2', '3'].includes(r.ord ?? ''))
           .map((r) => ({
@@ -258,7 +265,7 @@ export default function RacesPage() {
         <div className='block lg:hidden space-y-2'>
           {races.map((race) => {
             const completed = raceIsCompleted(race);
-            const raceResults = resultsByRaceId.get(race.id) ?? [];
+            const raceResults = resultsByRaceId.get(String(race.id)) ?? [];
             const showResults = completed && raceResults.length > 0;
             const raceStatus = getRaceStatus(race);
             return (
@@ -282,6 +289,7 @@ export default function RacesPage() {
                       return (
                         <span key={ord} className='inline-flex items-center gap-1 text-sm'>
                           <span className={`text-xs font-bold w-5 shrink-0 ${rankCls}`}>{ord}위</span>
+                          {r.chulNo && <span className='w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold flex items-center justify-center shrink-0'>{r.chulNo}</span>}
                           <span className={nameCls}>{r.hrName}</span>
                           {r.jkName && (
                             <span className='text-xs text-text-tertiary'>({r.jkName})</span>
@@ -362,7 +370,7 @@ export default function RacesPage() {
                 headerClassName: 'min-w-[220px]',
                 render: (race) => {
                   const completed = raceIsCompleted(race);
-                  const raceResults = resultsByRaceId.get(race.id) ?? [];
+                  const raceResults = resultsByRaceId.get(String(race.id)) ?? [];
                   if (completed && raceResults.length > 0) {
                     return (
                       <span className='inline-flex items-center gap-4 text-sm'>
@@ -372,6 +380,7 @@ export default function RacesPage() {
                           return (
                             <span key={ord} className='inline-flex items-center gap-1 whitespace-nowrap'>
                               <span className='text-text-tertiary text-xs'>{ord}위</span>
+                              {r.chulNo && <span className='w-5 h-5 rounded-full bg-stone-800 text-white text-[10px] font-bold inline-flex items-center justify-center shrink-0'>{r.chulNo}</span>}
                               <span className='font-medium text-foreground'>{r.hrName}</span>
                               <span className='text-text-tertiary text-xs'>({r.jkName})</span>
                             </span>

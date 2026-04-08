@@ -157,24 +157,24 @@ function MockPredictionCard({ compact = false }: { compact?: boolean }) {
   return (
     <div className="rounded-2xl bg-white border border-stone-200 shadow-xl shadow-stone-900/12 overflow-hidden">
       {/* Header */}
-      <div className="bg-[#0d1f0d] px-4 py-3.5">
-        <div className="flex items-start justify-between gap-2">
+      <div className="bg-[#0d1f0d] px-5 py-4">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] text-stone-400 font-medium tracking-wide">서울경마공원 · 제5경주</p>
-            <p className="text-white text-sm font-bold mt-0.5">AI 예측 결과</p>
-            <p className="text-stone-400 text-[10px] mt-1">1,800m · 잔디 · 4세 이상 오픈</p>
+            <p className="text-xs text-stone-400 font-medium tracking-wide">서울경마공원 · 제5경주</p>
+            <p className="text-white text-base font-bold mt-1">AI 예측 결과</p>
+            <p className="text-stone-400 text-xs mt-1.5">1,800m · 잔디 · 4세 이상 오픈</p>
           </div>
           <div className="text-right shrink-0">
-            <span className="inline-block text-[10px] font-bold px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+            <span className="inline-block text-xs font-bold px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
               신뢰도 높음
             </span>
-            <p className="text-[10px] text-stone-500 mt-1.5">출전 {horses.length}두</p>
+            <p className="text-xs text-stone-500 mt-2">출전 {horses.length}두</p>
           </div>
         </div>
       </div>
 
       {/* Horse list */}
-      <div className={`${compact ? "p-3.5 space-y-2.5" : "p-4 space-y-3"}`}>
+      <div className={`${compact ? "p-4 space-y-3.5" : "p-5 space-y-4"}`}>
         {displayHorses.map((h) => {
           const rankStyle =
             h.rank === 1 ? "bg-amber-100 text-amber-700 ring-1 ring-amber-200" :
@@ -182,31 +182,31 @@ function MockPredictionCard({ compact = false }: { compact?: boolean }) {
             h.rank === 3 ? "bg-orange-50 text-orange-500" :
             "bg-stone-50 text-stone-400";
           return (
-            <div key={h.no} className="flex items-center gap-2.5">
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 ${rankStyle}`}>
+            <div key={h.no} className="flex items-center gap-3">
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${rankStyle}`}>
                 {h.rank}
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className={`text-xs font-bold ${h.rank <= 3 ? "text-stone-900" : "text-stone-500"}`}>
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={`text-sm font-bold ${h.rank <= 3 ? "text-stone-900" : "text-stone-500"}`}>
                       {h.no}번 {h.name}
                     </span>
                     {!compact && (
-                      <span className="text-[10px] text-stone-400 truncate">({h.jockey})</span>
+                      <span className="text-xs text-stone-400 truncate">({h.jockey})</span>
                     )}
                   </div>
-                  <span className={`text-xs font-bold shrink-0 ml-2 ${h.rank === 1 ? "text-primary" : h.rank <= 3 ? "text-emerald-600" : "text-stone-400"}`}>
+                  <span className={`text-sm font-bold shrink-0 ml-2 ${h.rank === 1 ? "text-primary" : h.rank <= 3 ? "text-emerald-600" : "text-stone-400"}`}>
                     {h.prob}%
                   </span>
                 </div>
-                <div className="h-1.5 bg-stone-100 rounded-full overflow-hidden">
+                <div className="h-2 bg-stone-100 rounded-full overflow-hidden">
                   <div className={`h-full rounded-full ${h.color} ${h.pct}`} />
                 </div>
               </div>
               {!compact && (
-                <div className="shrink-0 w-8 text-right">
-                  <span className="text-[10px] font-semibold text-stone-400">{h.score}점</span>
+                <div className="shrink-0 w-10 text-right">
+                  <span className="text-xs font-semibold text-stone-400">{h.score}점</span>
                 </div>
               )}
             </div>
@@ -216,18 +216,18 @@ function MockPredictionCard({ compact = false }: { compact?: boolean }) {
 
       {/* Bet types */}
       {!compact && (
-        <div className="border-t border-stone-100 px-4 py-3 bg-stone-50/60">
-          <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-2">베팅 타입 추천</p>
-          <div className="grid grid-cols-3 gap-2">
+        <div className="border-t border-stone-100 px-5 py-4 bg-stone-50/60">
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2.5">베팅 타입 추천</p>
+          <div className="grid grid-cols-3 gap-2.5">
             {[
               { type: "단승", pick: "3번", desc: "청풍대로" },
               { type: "연승", pick: "3-7", desc: "1·2위권" },
               { type: "복승", pick: "3·7", desc: "조합 추천" },
             ].map((b) => (
-              <div key={b.type} className="rounded-lg bg-white border border-stone-200 p-2 text-center">
-                <p className="text-[10px] font-bold text-stone-400 mb-0.5">{b.type}</p>
-                <p className="text-sm font-extrabold text-primary leading-none">{b.pick}</p>
-                <p className="text-[9px] text-stone-400 mt-0.5">{b.desc}</p>
+              <div key={b.type} className="rounded-lg bg-white border border-stone-200 p-2.5 text-center">
+                <p className="text-xs font-bold text-stone-400 mb-0.5">{b.type}</p>
+                <p className="text-base font-extrabold text-primary leading-none">{b.pick}</p>
+                <p className="text-[10px] text-stone-400 mt-1">{b.desc}</p>
               </div>
             ))}
           </div>
@@ -236,21 +236,21 @@ function MockPredictionCard({ compact = false }: { compact?: boolean }) {
 
       {/* AI Commentary */}
       {!compact && (
-        <div className="border-t border-stone-100 px-4 py-3">
-          <p className="text-[10px] font-semibold text-stone-500 uppercase tracking-wide mb-1.5">AI 종합 분석</p>
-          <p className="text-xs text-stone-600 leading-relaxed">
+        <div className="border-t border-stone-100 px-5 py-4">
+          <p className="text-xs font-semibold text-stone-500 uppercase tracking-wide mb-2">AI 종합 분석</p>
+          <p className="text-sm text-stone-600 leading-relaxed">
             3번 청풍대로는 최근 3전 2승으로 폼이 최고조입니다. 기수 문세영과의 궁합도 우수하며, 1,800m 잔디 코스에서 특히 강한 면모를 보여왔습니다.
           </p>
         </div>
       )}
 
       {/* Footer */}
-      <div className="border-t border-stone-100 px-4 py-2.5 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <Icon name="Sparkles" size={11} className="text-primary" />
-          <p className="text-[10px] text-stone-400">AI 추론 · 15요소 수학 분석</p>
+      <div className="border-t border-stone-100 px-5 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Icon name="Sparkles" size={14} className="text-primary" />
+          <p className="text-xs text-stone-400">AI 추론 · 15요소 수학 분석</p>
         </div>
-        <p className="text-[10px] text-stone-300">샘플 데이터</p>
+        <p className="text-xs text-stone-300">샘플 데이터</p>
       </div>
     </div>
   );
@@ -454,8 +454,8 @@ export default function LandingPage() {
 
               {/* Right: mock prediction card (desktop only) */}
               <div className="hidden lg:flex justify-center items-center">
-                <div className="w-full max-w-[360px]">
-                  <MockPredictionCard compact />
+                <div className="w-full max-w-[440px]">
+                  <MockPredictionCard />
                 </div>
               </div>
             </div>

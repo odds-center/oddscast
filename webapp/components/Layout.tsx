@@ -7,6 +7,7 @@ import { routes } from "@/lib/routes";
 import { CONFIG } from "@/lib/config";
 import { useNativeApp } from "@/lib/hooks/useNativeApp";
 import { useUnreadNotifications } from "@/lib/hooks/useUnreadNotifications";
+import { useTicketBalance } from "@/lib/hooks/useTicketBalance";
 
 const NAV_POSITION_STORAGE_KEY = "oddscast_nav_bar_position";
 const NAV_ORIENTATION_STORAGE_KEY = "oddscast_nav_orientation";
@@ -63,6 +64,7 @@ function FloatingAppBar({
 }) {
   const { haptic } = useNativeApp();
   const unreadCount = useUnreadNotifications();
+  const { raceTickets, matrixTickets } = useTicketBalance();
   const [navPosition, setNavPosition] =
     useState<NavPosition>(readStoredPosition);
   const [navOrientation, setNavOrientation] = useState<
@@ -244,6 +246,7 @@ function FloatingAppBar({
     href: string;
     icon: IconName;
     label: string;
+    badge?: number;
     isActive?: (p: string, a: string) => boolean;
   }[] = [
     { href: routes.home, icon: "Flag", label: "홈" },
@@ -251,9 +254,10 @@ function FloatingAppBar({
       href: routes.races.list,
       icon: "ClipboardList",
       label: "경주",
+      badge: raceTickets,
       isActive: (p) => p === "/races" || p.startsWith("/races/"),
     },
-    { href: routes.predictions.matrix, icon: "BarChart2", label: "종합" },
+    { href: routes.predictions.matrix, icon: "BarChart2", label: "종합", badge: matrixTickets },
     { href: routes.results, icon: "TrendingUp", label: "결과" },
     { href: routes.profile.index, icon: "User", label: "정보" },
   ];
@@ -271,7 +275,7 @@ function FloatingAppBar({
           className="nav-mobile-bar nav-mobile-bar-fixed rounded-2xl w-full"
         >
           <div className="flex flex-row justify-between w-full px-2">
-            {navLinks.map(({ href, icon, label, isActive }) => {
+            {navLinks.map(({ href, icon, label, badge, isActive }) => {
               const isProfile = href === routes.profile.index;
               const active = isActive
                 ? isActive(pathname, asPath)
@@ -280,6 +284,7 @@ function FloatingAppBar({
                     pathname.startsWith("/profile") ||
                     pathname.startsWith("/mypage")
                   : pathname === href;
+              const hasTickets = !isProfile && (badge ?? 0) > 0;
               return (
                 <Link
                   key={href}
@@ -295,7 +300,6 @@ function FloatingAppBar({
                           size={22}
                           strokeWidth={active ? 2.5 : 2}
                         />
-                        {/* Unread notification badge on profile icon */}
                         <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
@@ -311,6 +315,11 @@ function FloatingAppBar({
                   <span className="nav-mobile-label font-medium w-full text-center text-xs truncate">
                     {label}
                   </span>
+                  {hasTickets && (
+                    <span className="text-[9px] font-semibold text-emerald-600 leading-none -mt-0.5">
+                      {badge}장
+                    </span>
+                  )}
                 </Link>
               );
             })}
@@ -373,7 +382,7 @@ function FloatingAppBar({
                 : "flex flex-col gap-0 py-1.5"
             }
           >
-            {navLinks.map(({ href, icon, label, isActive }) => {
+            {navLinks.map(({ href, icon, label, badge, isActive }) => {
               const isProfile = href === routes.profile.index;
               const active = isActive
                 ? isActive(pathname, asPath)
@@ -383,6 +392,7 @@ function FloatingAppBar({
                     pathname.startsWith("/mypage")
                   : pathname === href;
               const vertical = navOrientation === "vertical";
+              const hasTickets = !isProfile && (badge ?? 0) > 0;
               return (
                 <Link
                   key={href}
@@ -398,7 +408,6 @@ function FloatingAppBar({
                           size={22}
                           strokeWidth={active ? 2.5 : 2}
                         />
-                        {/* Unread notification badge on profile icon */}
                         <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </span>
@@ -416,6 +425,11 @@ function FloatingAppBar({
                   >
                     {label}
                   </span>
+                  {hasTickets && (
+                    <span className="text-[9px] font-semibold text-emerald-600 leading-none -mt-0.5">
+                      {badge}장
+                    </span>
+                  )}
                 </Link>
               );
             })}

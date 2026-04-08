@@ -17,7 +17,15 @@ RUN mkdir -p /app/webapp/node_modules/@oddscast && \
     rm -rf /app/webapp/node_modules/@oddscast/shared && \
     ln -s /app/shared /app/webapp/node_modules/@oddscast/shared
 
-# Build webapp
+# Build webapp — Railway injects service env vars as Docker build args.
+# NEXT_PUBLIC_* must be available at build time for Next.js to inline them.
+ARG NEXT_PUBLIC_API_URL
+ARG NEXT_PUBLIC_WEBAPP_URL
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
+ARG NEXT_PUBLIC_APP_ENV
+ARG NEXT_PUBLIC_SENTRY_DSN
+ARG SENTRY_AUTH_TOKEN
+
 WORKDIR /app/webapp
 RUN pnpm run build
 

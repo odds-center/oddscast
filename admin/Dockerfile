@@ -2,7 +2,7 @@
 # Build from repo root: docker build -f admin/Dockerfile .
 
 # ── Stage 1: Install deps ──
-FROM node:20-alpine AS deps
+FROM node:24-alpine AS deps
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY shared/package.json shared/
 RUN pnpm install --frozen-lockfile
 
 # ── Stage 2: Build ──
-FROM node:20-alpine AS build
+FROM node:24-alpine AS build
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
@@ -44,7 +44,7 @@ WORKDIR /app/admin
 RUN pnpm run build
 
 # ── Stage 3: Production runtime ──
-FROM node:20-alpine AS prod
+FROM node:24-alpine AS prod
 WORKDIR /app/admin
 
 # Copy only what's needed to run

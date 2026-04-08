@@ -38,3 +38,5 @@ server/logs/
 webapp/playwright-report/
 webapp/test-results/
 webapp/.playwright/
+.vercel
+.env.vercel.*

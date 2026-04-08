@@ -41,7 +41,12 @@ async function bootstrap() {
   const env = process.env.NODE_ENV ?? 'development';
   const CORS_ORIGINS_BY_ENV: Record<string, string[] | true> = {
     production: [
+      'https://oddscast.bet',
+      'https://admin.oddscast.bet',
       'https://oddscast.up.railway.app',
+      'https://oddscast-admin.up.railway.app',
+      'https://webapp-production-75e0.up.railway.app',
+      'https://admin-production-8e90.up.railway.app',
       'https://oddscast-webapp.vercel.app',
       'https://oddscast-admin.vercel.app',
     ],

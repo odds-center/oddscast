@@ -120,7 +120,12 @@
       "Bash(/tmp/summary.txt:*)",
       "Read(//tmp/**)",
       "Bash(kill 46590)",
-      "Bash(kill 43583)"
+      "Bash(kill 43583)",
+      "Bash(vercel --version)",
+      "Bash(vercel whoami:*)",
+      "Bash(vercel project:*)",
+      "Bash(vercel link:*)",
+      "Bash(vercel env:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

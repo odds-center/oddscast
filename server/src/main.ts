@@ -39,38 +39,60 @@ async function bootstrap() {
 
   // CORS — environment-aware origin whitelist
   const env = process.env.NODE_ENV ?? 'development';
-  const CORS_ORIGINS_BY_ENV: Record<string, string[] | true> = {
-    production: [
-      'https://oddscast.bet',
-      'https://admin.oddscast.bet',
-      'https://oddscast.up.railway.app',
-      'https://oddscast-admin.up.railway.app',
-      'https://webapp-production-75e0.up.railway.app',
-      'https://admin-production-8e90.up.railway.app',
-      'https://oddscast-webapp.vercel.app',
-      'https://oddscast-admin.vercel.app',
-    ],
-    development: [
-      'http://localhost:3000', // webapp
-      'http://localhost:3002', // admin
-      'http://10.0.2.2:3000', // Android emulator → host webapp
-    ],
-  };
-  // Additional origins via CORS_ADDITIONAL_ORIGINS env var (comma-separated)
-  // Used to add Railway webapp/admin URLs without code changes
+
+  // Static production origins (exact match)
+  const PRODUCTION_ORIGINS = [
+    // Custom domains
+    'https://oddscast.bet',
+    'https://www.oddscast.bet',
+    'https://admin.oddscast.bet',
+    'https://www.admin.oddscast.bet',
+    // Railway
+    'https://oddscast.up.railway.app',
+    'https://oddscast-admin.up.railway.app',
+    'https://server-production-aee6.up.railway.app',
+    'https://webapp-production-75e0.up.railway.app',
+    'https://admin-production-8e90.up.railway.app',
+    // Vercel
+    'https://oddscast-webapp.vercel.app',
+    'https://oddscast-admin.vercel.app',
+  ];
+
+  // Dynamic origins via env var (comma-separated)
   const additionalOrigins = process.env.CORS_ADDITIONAL_ORIGINS
     ? process.env.CORS_ADDITIONAL_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
     : [];
-  // Mobile WebView: file:// and capacitor:// origins
+
+  // Mobile WebView origins
   const mobileOrigins = ['file://', 'capacitor://localhost'];
-  const envOrigins = CORS_ORIGINS_BY_ENV[env];
-  const allowedOrigins =
-    envOrigins === true
-      ? true
-      : [...(envOrigins ?? []), ...additionalOrigins, ...mobileOrigins];
+
+  // Vercel preview deployments follow pattern: *-<team>.vercel.app
+  const VERCEL_PREVIEW_RE = /^https:\/\/oddscast-[\w-]+\.vercel\.app$/;
+  // Railway preview deployments follow pattern: *-production-*.up.railway.app
+  const RAILWAY_PREVIEW_RE = /^https:\/\/[\w-]+-production-[\w]+\.up\.railway\.app$/;
+
+  const allStaticOrigins = new Set([
+    ...PRODUCTION_ORIGINS,
+    ...additionalOrigins,
+    ...mobileOrigins,
+  ]);
+
+  const corsOriginHandler = (
+    origin: string | undefined,
+    callback: (err: Error | null, allow?: boolean) => void,
+  ) => {
+    // Allow requests with no origin (server-to-server, curl, mobile)
+    if (!origin) return callback(null, true);
+    if (allStaticOrigins.has(origin)) return callback(null, true);
+    // Allow Vercel/Railway preview deployments
+    if (VERCEL_PREVIEW_RE.test(origin) || RAILWAY_PREVIEW_RE.test(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error(`CORS: origin ${origin} not allowed`));
+  };
 
   app.enableCors({
-    origin: env === 'development' ? true : allowedOrigins,
+    origin: env === 'development' ? true : corsOriginHandler,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],

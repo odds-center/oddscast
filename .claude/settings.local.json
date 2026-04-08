@@ -125,7 +125,22 @@
       "Bash(vercel whoami:*)",
       "Bash(vercel project:*)",
       "Bash(vercel link:*)",
-      "Bash(vercel env:*)"
+      "Bash(vercel env:*)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(read js:*)",
+      "Bash(dig oddscast.bet +short)",
+      "Bash(dig server.oddscast.bet +short)",
+      "Bash(dig admin.oddscast.bet +short)",
+      "Bash(dig oddscast.bet CNAME +short)",
+      "Bash(dig oddscast.bet A +short)",
+      "Bash(openssl s_client -connect server.oddscast.bet:443 -servername server.oddscast.bet)",
+      "Bash(openssl x509:*)",
+      "Bash(dig server.oddscast.bet CNAME +short)",
+      "Bash(dig admin.oddscast.bet CNAME +short)",
+      "Bash(dig @8.8.8.8 oddscast.bet A +short)",
+      "Bash(dig @1.1.1.1 oddscast.bet A +short)",
+      "Bash(sudo dscacheutil:*)",
+      "Bash(sudo killall:*)"
     ],
     "additionalDirectories": [
       "/Users/risingcore/.docker"

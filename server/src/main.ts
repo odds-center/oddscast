@@ -51,11 +51,18 @@ async function bootstrap() {
       'http://10.0.2.2:3000', // Android emulator → host webapp
     ],
   };
+  // Additional origins via CORS_ADDITIONAL_ORIGINS env var (comma-separated)
+  // Used to add Railway webapp/admin URLs without code changes
+  const additionalOrigins = process.env.CORS_ADDITIONAL_ORIGINS
+    ? process.env.CORS_ADDITIONAL_ORIGINS.split(',').map((o) => o.trim()).filter(Boolean)
+    : [];
   // Mobile WebView: file:// and capacitor:// origins
   const mobileOrigins = ['file://', 'capacitor://localhost'];
   const envOrigins = CORS_ORIGINS_BY_ENV[env];
   const allowedOrigins =
-    envOrigins === true ? true : [...(envOrigins ?? []), ...mobileOrigins];
+    envOrigins === true
+      ? true
+      : [...(envOrigins ?? []), ...additionalOrigins, ...mobileOrigins];
 
   app.enableCors({
     origin: env === 'development' ? true : allowedOrigins,

@@ -21,7 +21,7 @@ RUN mkdir -p /app/webapp/node_modules/@oddscast && \
 WORKDIR /app/webapp
 RUN pnpm run build
 
-# Run production webapp (PORT from env; Railway injects PORT)
+# Run production webapp (PORT injected by Railway, defaults to 3000)
 ENV NODE_ENV=production
 EXPOSE 3000
-CMD ["pnpm", "start"]
+CMD ["sh", "-c", "node_modules/.bin/next start -p ${PORT:-3000}"]

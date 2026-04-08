@@ -22,6 +22,14 @@ html[data-high-contrast='true'] [class*='rounded'] {
   transform: translateZ(0);
 }
 
+/* In high-contrast mode, divide-y creates dark visible border-top on each child.
+   When children have border-radius (e.g. rounded-xl), the border arcs around the
+   rounded corners making dividers look like tabs instead of clean lines. Reset radius
+   on divide-y children so dividers render as straight horizontal rules. */
+html[data-high-contrast='true'] .divide-y > * {
+  border-radius: 0;
+}
+
 /* Font size: scale base (body/html) */
 html[data-font-size='small'] {
   font-size: 14px;

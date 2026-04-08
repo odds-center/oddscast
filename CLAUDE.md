@@ -12,7 +12,7 @@ pnpm 모노레포 구조. 패키지 매니저는 반드시 pnpm 사용.
 - 새 기능, 버그픽스, 리팩토링 등 모든 변경은 `develop` 브랜치에 커밋/푸시
 - `master` 브랜치에는 절대 직접 푸시하지 않는다
 - `master` 업데이트는 사용자가 명시적으로 "master에 머지해줘" 요청할 때만 `develop → master` 머지
-- `master`는 프로덕션 배포 브랜치 (Railway: server/DB, Vercel: webapp/admin) — 함부로 변경 금지
+- `master`는 프로덕션 배포 브랜치 (Railway: server/DB/webapp/admin) — 함부로 변경 금지
 
 ## 필수 원칙 (Documentation First)
 
@@ -85,7 +85,7 @@ oddscast/
 6. **사행성 제거**: 베팅/배팅 없음. AI 분석 콘텐츠 제공 서비스
 7. **TypeORM**: `synchronize: false`, DDL은 `docs/db/schema.sql`
 8. **Rate Limiting**: @nestjs/throttler (120 req/min, 2000 req/hour)
-9. **CORS**: production 환경에서 명시적 origin 화이트리스트 (Railway URL + Vercel webapp/admin URL + mobile file://)
+9. **CORS**: production 환경에서 명시적 origin 화이트리스트 (Railway URL + mobile file://). 추가 origin은 `CORS_ADDITIONAL_ORIGINS` env (comma-separated)
 
 ## 코드 규칙 (필수)
 
@@ -130,11 +130,11 @@ oddscast/
 |------|--------|--------|-----|
 | Server (NestJS) | Railway | master | https://oddscast.up.railway.app |
 | PostgreSQL | Railway | — | Railway 내부 연결 |
-| WebApp (Next.js) | Vercel (무료) | master | https://oddscast-webapp.vercel.app |
-| Admin (Next.js) | Vercel (무료) | master | https://oddscast-admin.vercel.app |
+| WebApp (Next.js) | Railway | master | https://webapp-production-75e0.up.railway.app |
+| Admin (Next.js) | Railway | master | https://admin-production-8e90.up.railway.app |
 | Mobile | 앱 스토어 (미출시) | — | React Native CLI |
 
-> CD: master push → Railway 자동 배포 (server), Vercel 자동 배포 (webapp/admin)
+> CD: master push → Railway 자동 배포 (server/webapp/admin)
 
 ## 빌드/실행
 

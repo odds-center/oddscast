@@ -2,7 +2,7 @@
 export interface User {
   id: string;
   email: string;
-  name?: string;
+  nickname?: string;
   avatar?: string;
   authProvider: string;
   providerId?: string;
@@ -137,14 +137,14 @@ export interface User {
 
 export interface CreateUserRequest {
   email: string;
-  name?: string;
+  nickname?: string;
   authProvider: string;
   providerId?: string;
   avatar?: string;
 }
 
 export interface UpdateUserRequest {
-  name?: string;
+  nickname?: string;
   avatar?: string;
   profileBio?: string;
   preferences?: User['preferences'];
@@ -153,7 +153,7 @@ export interface UpdateUserRequest {
 export interface UserProfile {
   id: string;
   email: string;
-  name?: string;
+  nickname?: string;
   avatar?: string;
   profileBio?: string;
   bettingLevel?: string;

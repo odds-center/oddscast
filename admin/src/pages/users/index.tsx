@@ -240,8 +240,8 @@ export default function UsersPage() {
                   <div className='text-gray-900'>{selectedUser.email}</div>
                 </div>
                 <div>
-                  <label className='block text-sm font-medium text-gray-700 mb-1'>이름</label>
-                  <div className='text-gray-900'>{selectedUser.name}</div>
+                  <label className='block text-sm font-medium text-gray-700 mb-1'>닉네임</label>
+                  <div className='text-gray-900'>{selectedUser.nickname}</div>
                 </div>
                 <div>
                   <label className='block text-sm font-medium text-gray-700 mb-1'>역할</label>
@@ -345,7 +345,7 @@ export default function UsersPage() {
           <Modal
             open
             onClose={() => setGrantModalUser(null)}
-            title={`예측권 지급 — ${grantModalUser.name || grantModalUser.email}`}
+            title={`예측권 지급 — ${grantModalUser.nickname || grantModalUser.email}`}
             maxWidth='sm'
           >
             <div className='space-y-4'>

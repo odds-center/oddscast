@@ -467,7 +467,7 @@ const JSON_LD_WEBSITE = JSON.stringify({
     name: "OddsCast",
     logo: {
       "@type": "ImageObject",
-      url: `${WEBAPP_URL}/oddscast-logo.png`,
+      url: `${WEBAPP_URL}/logo.png`,
     },
   },
 });

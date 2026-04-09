@@ -69,7 +69,7 @@ export default function TicketUsagePage() {
       render: (row: UsageItem) => (
         <div className='leading-tight'>
           <div className='font-medium text-gray-900 truncate max-w-[140px]'>
-            {row.user?.name || row.user?.email || '-'}
+            {row.user?.nickname || row.user?.email || '-'}
           </div>
           <div className='text-[11px] text-gray-400 truncate max-w-[140px]'>{row.user?.email}</div>
         </div>

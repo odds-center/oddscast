@@ -9,7 +9,7 @@
 export interface User {
   id: string;
   email: string;
-  name: string;
+  nickname: string;
   avatar?: string;
 
   // 인증
@@ -45,7 +45,7 @@ export interface User {
 export interface UserProfile {
   id: string;
   email: string;
-  name: string;
+  nickname: string;
   avatar?: string;
   role: string;
 }
@@ -68,7 +68,7 @@ export interface UserStats {
  */
 export interface RegisterUserRequest {
   email: string;
-  name: string;
+  nickname: string;
   authProvider: 'google';
   providerId: string;
   avatar?: string;
@@ -78,7 +78,7 @@ export interface RegisterUserRequest {
  * 사용자 업데이트 요청
  */
 export interface UpdateUserRequest {
-  name?: string;
+  nickname?: string;
   avatar?: string;
   deviceToken?: string;
 }

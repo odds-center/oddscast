@@ -24,11 +24,8 @@ export class User {
   @Column({ type: 'text', nullable: true })
   kakaoId!: string | null;
 
-  @Column({ type: 'text' })
-  name!: string;
-
-  @Column({ type: 'text', nullable: true })
-  nickname!: string | null;
+  @Column({ type: 'text', default: '사용자' })
+  nickname!: string;
 
   @Column({ type: 'text', nullable: true })
   avatar!: string | null;

@@ -15,8 +15,7 @@ import toast from 'react-hot-toast';
 interface User {
   id: number | string;
   email: string;
-  name: string;
-  nickname?: string;
+  nickname: string;
   role: string;
   isActive: boolean;
   availableTickets?: number;
@@ -86,8 +85,8 @@ export default function UsersPage() {
       header: '이메일',
     },
     {
-      key: 'name',
-      header: '이름',
+      key: 'nickname',
+      header: '닉네임',
     },
     {
       key: 'role',

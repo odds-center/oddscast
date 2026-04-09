@@ -557,7 +557,7 @@ export class AdminPredictionTicketsApi {
     items: Array<{
       id: number;
       userId: number;
-      user: { id: number; email: string; name: string; nickname?: string };
+      user: { id: number; email: string; nickname: string };
       raceId: number | null;
       race: { id: number; rcNo: string; meet: string; meetName?: string; rcDate: string; rcName?: string } | null;
       predictionId: number | null;

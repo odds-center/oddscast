@@ -16,7 +16,7 @@ const LIMIT = 20;
 type UsageItem = {
   id: number;
   userId: number;
-  user: { id: number; email: string; name: string; nickname?: string };
+  user: { id: number; email: string; nickname: string };
   raceId: number | null;
   race: {
     id: number;

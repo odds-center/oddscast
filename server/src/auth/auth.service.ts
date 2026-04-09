@@ -28,8 +28,7 @@ import { DiscordService } from '../discord/discord.service';
 export interface SanitizedUser {
   id: number;
   email: string;
-  name: string;
-  nickname: string | null;
+  nickname: string;
   avatar: string | null;
   role: string;
   isActive: boolean;
@@ -124,8 +123,7 @@ export class AuthService {
         const hashed = await bcrypt.hash(dto.password, 12);
         await this.userRepo.update(existing.id, {
           password: hashed,
-          name: dto.name,
-          nickname: dto.nickname ?? existing.nickname,
+          nickname: dto.nickname,
           isActive: true,
           isEmailVerified: false,
           updatedAt: new Date(),
@@ -154,8 +152,7 @@ export class AuthService {
     const user = this.userRepo.create({
       email: dto.email,
       password: hashed,
-      name: dto.name,
-      nickname: dto.nickname ?? null,
+      nickname: dto.nickname,
       isEmailVerified: false,
       updatedAt: now,
     });
@@ -292,7 +289,6 @@ export class AuthService {
       select: [
         'id',
         'email',
-        'name',
         'nickname',
         'avatar',
         'role',
@@ -314,7 +310,6 @@ export class AuthService {
       select: [
         'id',
         'email',
-        'name',
         'nickname',
         'avatar',
         'role',
@@ -329,10 +324,6 @@ export class AuthService {
     if (!user) throw new UnauthorizedException();
 
     let changed = false;
-    if (dto.name !== undefined) {
-      user.name = dto.name;
-      changed = true;
-    }
     if (dto.nickname !== undefined) {
       user.nickname = dto.nickname;
       changed = true;
@@ -587,7 +578,6 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      name: user.name,
       nickname: user.nickname,
       avatar: user.avatar,
       role: user.role,
@@ -644,7 +634,6 @@ export class AuthService {
     const newUser = this.userRepo.create({
       email,
       password: null,
-      name: profile.nickname,
       nickname: profile.nickname,
       provider: 'kakao',
       kakaoId: profile.kakaoId,
@@ -658,7 +647,7 @@ export class AuthService {
 
     // Discord signup notification (fire-and-forget)
     this.discordService
-      .notifySignup(saved.email, saved.nickname ?? undefined)
+      .notifySignup(saved.email, saved.nickname)
       .catch(() => {});
 
     return saved;

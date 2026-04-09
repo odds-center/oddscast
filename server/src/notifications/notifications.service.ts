@@ -289,7 +289,7 @@ export class NotificationsService {
     const mapped = data.map((n) => ({
       ...n,
       user: n.user
-        ? { id: n.user.id, email: n.user.email, name: n.user.name }
+        ? { id: n.user.id, email: n.user.email, nickname: n.user.nickname }
         : null,
     }));
     return {

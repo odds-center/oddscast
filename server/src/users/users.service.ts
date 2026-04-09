@@ -32,7 +32,6 @@ export class UsersService {
       .select([
         'u.id',
         'u.email',
-        'u.name',
         'u.nickname',
         'u.avatar',
         'u.role',
@@ -49,7 +48,7 @@ export class UsersService {
     if (search) {
       const term = `%${search}%`;
       qb.andWhere(
-        '(u.email ILIKE :term OR u.name ILIKE :term OR u.nickname ILIKE :term)',
+        '(u.email ILIKE :term OR u.nickname ILIKE :term)',
         { term },
       );
     }
@@ -85,7 +84,6 @@ export class UsersService {
     const users = usersRaw.map((u) => ({
       id: u.id,
       email: u.email,
-      name: u.name,
       nickname: u.nickname,
       avatar: u.avatar,
       role: u.role,
@@ -109,7 +107,6 @@ export class UsersService {
       select: [
         'id',
         'email',
-        'name',
         'nickname',
         'avatar',
         'role',
@@ -126,7 +123,6 @@ export class UsersService {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('사용자를 찾을 수 없습니다');
 
-    if (dto.name !== undefined) user.name = dto.name;
     if (dto.nickname !== undefined) user.nickname = dto.nickname;
     if (dto.avatar !== undefined) user.avatar = dto.avatar;
     if (dto.isActive !== undefined) user.isActive = dto.isActive;
@@ -134,12 +130,11 @@ export class UsersService {
     await this.userRepo.save(user);
     return this.userRepo.findOne({
       where: { id },
-      select: ['id', 'email', 'name', 'nickname', 'avatar', 'role', 'isActive'],
+      select: ['id', 'email', 'nickname', 'avatar', 'role', 'isActive'],
     }) as Promise<{
       id: number;
       email: string;
-      name: string;
-      nickname: string | null;
+      nickname: string;
       avatar: string | null;
       role: string;
       isActive: boolean;

@@ -23,7 +23,7 @@ export interface DashboardStats {
 export interface User {
   id: number | string;
   email: string;
-  name: string;
+  nickname: string;
   role: string;
   isActive: boolean;
   createdAt: string;

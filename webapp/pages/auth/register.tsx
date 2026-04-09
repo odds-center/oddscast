@@ -18,7 +18,6 @@ type RegisterForm = {
   email: string;
   password: string;
   confirmPassword: string;
-  name: string;
   nickname: string;
 };
 
@@ -47,7 +46,6 @@ export default function Register() {
       const res = await AuthApi.register({
         email: data.email,
         password: data.password,
-        name: data.name,
         nickname: data.nickname,
       });
       if ('requireVerification' in res && res.requireVerification) {
@@ -123,27 +121,17 @@ export default function Register() {
 
             {/* Email registration form */}
             <form onSubmit={handleSubmit(onSubmit)} className='space-y-3'>
-              <div className='grid grid-cols-2 gap-3'>
-                <FormInput
-                  label='이름'
-                  type='text'
-                  autoComplete='name'
-                  placeholder='홍길동'
-                  {...register('name', { required: '이름을 입력하세요.' })}
-                  error={errors.name?.message}
-                />
-                <FormInput
-                  label='닉네임'
-                  type='text'
-                  autoComplete='username'
-                  placeholder='2자 이상'
-                  {...register('nickname', {
-                    required: '닉네임을 입력하세요.',
-                    minLength: { value: 2, message: '2자 이상 입력하세요.' },
-                  })}
-                  error={errors.nickname?.message}
-                />
-              </div>
+              <FormInput
+                label='닉네임'
+                type='text'
+                autoComplete='username'
+                placeholder='2자 이상'
+                {...register('nickname', {
+                  required: '닉네임을 입력하세요.',
+                  minLength: { value: 2, message: '2자 이상 입력하세요.' },
+                })}
+                error={errors.nickname?.message}
+              />
               <FormInput
                 label='이메일'
                 type='email'

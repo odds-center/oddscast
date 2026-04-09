@@ -47,7 +47,6 @@ export interface ResendVerificationRequest {
 }
 
 export interface UpdateProfileRequest {
-  name?: string;
   nickname?: string;
   avatar?: string;
   profileBio?: string;

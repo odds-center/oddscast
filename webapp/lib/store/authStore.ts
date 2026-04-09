@@ -10,8 +10,7 @@ const USER_KEY = 'jwt_user';
 interface User {
   id: string;
   email: string;
-  name?: string;
-  nickname?: string | null;
+  nickname?: string;
   avatar?: string | null;
 }
 

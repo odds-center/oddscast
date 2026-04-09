@@ -20,13 +20,13 @@ export class RankingsService {
 
     const users = await this.userRepo.find({
       where: { id: In(userIds), isActive: true },
-      select: ['id', 'name', 'nickname', 'avatar'],
+      select: ['id', 'nickname', 'avatar'],
     });
 
     const rankings = users
       .map((user) => ({
         id: user.id,
-        name: user.nickname || user.name,
+        name: user.nickname,
         avatar: user.avatar || '',
         correctCount: correctCountMap.get(user.id) || 0,
         isCurrentUser: false,
@@ -42,7 +42,7 @@ export class RankingsService {
   async getMyRanking(userId: number, _type: string = 'overall') {
     const user = await this.userRepo.findOne({
       where: { id: userId },
-      select: ['id', 'name', 'nickname', 'avatar'],
+      select: ['id', 'nickname', 'avatar'],
     });
     const correctCount = await this.picksService.getCorrectCount(userId);
 
@@ -50,7 +50,7 @@ export class RankingsService {
       data: {
         id: userId,
         rank: 0,
-        name: user?.nickname || user?.name || '',
+        name: user?.nickname || '',
         avatar: user?.avatar || '',
         correctCount,
         isCurrentUser: true,

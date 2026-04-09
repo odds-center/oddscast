@@ -15,7 +15,6 @@ import { useMutation, useQuery, useQueryClient, keepPreviousData } from '@tansta
 import { getErrorMessage } from '@/lib/utils/error';
 
 type ProfileForm = {
-  name: string;
   nickname: string;
 };
 
@@ -31,7 +30,7 @@ export default function ProfileEditPage() {
   const user = useAuthStore((s) => s.user);
   const setAuth = useAuthStore((s) => s.setAuth);
 
-  const profileForm = useForm<ProfileForm>({ defaultValues: { name: '', nickname: '' } });
+  const profileForm = useForm<ProfileForm>({ defaultValues: { nickname: '' } });
   const passwordForm = useForm<PasswordForm>({
     defaultValues: { currentPassword: '', newPassword: '', newPasswordConfirm: '' },
   });
@@ -46,19 +45,19 @@ export default function ProfileEditPage() {
   useEffect(() => {
     const u = currentUser ?? user;
     if (u) {
-      const uExt = u as { name?: string; nickname?: string; avatar?: string };
-      profileForm.reset({ name: uExt.name ?? '', nickname: uExt.nickname ?? '' });
+      const uExt = u as { nickname?: string; avatar?: string };
+      profileForm.reset({ nickname: uExt.nickname ?? '' });
     }
     // profileForm.reset is only called when currentUser/user changes
     // eslint-disable-next-line react-hooks/exhaustive-deps -- profileForm is intentionally excluded
   }, [currentUser, user]);
 
   const profileMutation = useMutation({
-    mutationFn: (data: { name?: string; nickname?: string }) => AuthApi.updateProfile(data),
+    mutationFn: (data: { nickname?: string }) => AuthApi.updateProfile(data),
     onSuccess: (updated) => {
       const token = useAuthStore.getState().token;
       if (token)
-        setAuth(token, updated as { id: string; email: string; name: string; nickname?: string });
+        setAuth(token, updated as { id: string; email: string; nickname?: string });
       queryClient.invalidateQueries({ queryKey: ['auth', 'me'] });
     },
   });
@@ -74,7 +73,7 @@ export default function ProfileEditPage() {
   const [activeTab, setActiveTab] = useState<'profile' | 'password'>('profile');
 
   const onProfileSubmit = (data: ProfileForm) => {
-    profileMutation.mutate({ name: data.name, nickname: data.nickname });
+    profileMutation.mutate({ nickname: data.nickname });
   };
 
   const onPasswordSubmit = (data: PasswordForm) => {
@@ -120,12 +119,6 @@ export default function ProfileEditPage() {
 
         {activeTab === 'profile' && (
           <form onSubmit={profileForm.handleSubmit(onProfileSubmit)} className='rounded-[10px] border border-border bg-card p-4 md:px-5 md:py-[1.125rem] space-y-4'>
-            <FormInput
-              label='이름'
-              type='text'
-              {...profileForm.register('name', { required: '이름을 입력하세요.' })}
-              error={profileForm.formState.errors.name?.message}
-            />
             <FormInput
               label='닉네임'
               type='text'

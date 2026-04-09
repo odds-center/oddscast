@@ -21,10 +21,10 @@ export default function Profile() {
     enabled: isLoggedIn,
     placeholderData: keepPreviousData,
   });
-  const userObj = (currentUser ?? storeUser) as { nickname?: string; name?: string } | undefined;
+  const userObj = (currentUser ?? storeUser) as { nickname?: string } | undefined;
   const displayName =
     userObj && typeof userObj === 'object'
-      ? userObj.nickname || userObj.name || '회원'
+      ? userObj.nickname || '회원'
       : '회원';
 
   const { data: ticketBalance, isLoading: ticketBalanceLoading } = useQuery({

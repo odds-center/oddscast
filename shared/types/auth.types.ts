@@ -27,8 +27,7 @@ export interface LoginRequest {
 export interface RegisterRequest {
   email: string;
   password: string;
-  name: string;
-  nickname?: string;
+  nickname: string;
 }
 
 export interface ForgotPasswordRequest {

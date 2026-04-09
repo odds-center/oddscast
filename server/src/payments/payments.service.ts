@@ -108,7 +108,7 @@ export class PaymentsService {
     const orderName = plan.displayName || plan.planName;
     const amount = plan.totalPrice;
     const customerEmail = sub.user?.email ?? '';
-    const customerName = sub.user?.name ?? sub.user?.nickname ?? '회원';
+    const customerName = sub.user?.nickname ?? '회원';
 
     const paymentBody: TossBillingPaymentRequest = {
       customerKey: dto.customerKey,
@@ -252,7 +252,7 @@ export class PaymentsService {
     const orderName = plan.displayName || plan.planName;
     const amount = plan.totalPrice;
     const customerEmail = sub.user?.email ?? '';
-    const customerName = sub.user?.name ?? sub.user?.nickname ?? '회원';
+    const customerName = sub.user?.nickname ?? '회원';
 
     try {
       const result = await this.tossClient.requestBillingPayment(

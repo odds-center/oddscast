@@ -264,7 +264,6 @@ export class AdminService {
         ? {
             id: t.user.id,
             email: t.user.email,
-            name: t.user.name,
             nickname: t.user.nickname,
           }
         : null,

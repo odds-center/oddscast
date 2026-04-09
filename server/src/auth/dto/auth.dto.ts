@@ -17,10 +17,6 @@ export class RegisterDto {
   @MinLength(6, { message: '비밀번호는 6자 이상이어야 합니다' })
   password: string;
 
-  @ApiProperty({ example: '홍길동' })
-  @IsString()
-  name: string;
-
   @ApiProperty({ example: '경마왕', description: '닉네임 (필수)' })
   @IsString({ message: '닉네임을 입력하세요' })
   @MinLength(2, { message: '닉네임은 2자 이상이어야 합니다' })
@@ -57,11 +53,6 @@ export class DeleteAccountDto {
 }
 
 export class UpdateProfileDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  name?: string;
-
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

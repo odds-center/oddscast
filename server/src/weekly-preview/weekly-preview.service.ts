@@ -12,12 +12,30 @@ export interface WeeklyPreviewContent {
   raceDates?: string[];
 }
 
-/** Returns next Fri/Sat/Sun as YYYYMMDD strings, computed in KST. */
-function getNextFriSatSun(from: Date): [string, string, string] {
+/**
+ * Returns the Fri/Sat/Sun of the relevant weekend as YYYYMMDD strings in KST.
+ * - Mon–Thu: returns the upcoming (next) Fri/Sat/Sun
+ * - Fri/Sat/Sun: returns the current (this) Fri/Sat/Sun
+ */
+function getWeekendDates(from: Date): [string, string, string] {
   const d = kst(from);
-  let daysUntilFri = 5 - d.day(); // 0=Sun … 5=Fri
-  if (daysUntilFri <= 0) daysUntilFri += 7;
-  const fri = d.add(daysUntilFri, 'day');
+  const day = d.day(); // 0=Sun, 1=Mon, ..., 5=Fri, 6=Sat
+
+  let fri;
+  if (day === 5) {
+    // Friday → this Friday
+    fri = d;
+  } else if (day === 6) {
+    // Saturday → yesterday (Friday)
+    fri = d.subtract(1, 'day');
+  } else if (day === 0) {
+    // Sunday → 2 days ago (Friday)
+    fri = d.subtract(2, 'day');
+  } else {
+    // Mon–Thu → next Friday
+    fri = d.add(5 - day, 'day');
+  }
+
   return [
     fri.format('YYYYMMDD'),
     fri.add(1, 'day').format('YYYYMMDD'),
@@ -78,7 +96,7 @@ export class WeeklyPreviewService {
     fromDate?: Date;
   }): Promise<{ weekLabel: string; content: WeeklyPreviewContent }> {
     const from = opts?.fromDate ?? new Date();
-    const [fri, sat, sun] = getNextFriSatSun(from);
+    const [fri, sat, sun] = getWeekendDates(from);
     const weekLabel = getThursdayLabel(from);
 
     const races = await this.raceRepo.find({

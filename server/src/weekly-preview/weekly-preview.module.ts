@@ -2,12 +2,13 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { WeeklyPreview } from '../database/entities/weekly-preview.entity';
 import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
 import { WeeklyPreviewService } from './weekly-preview.service';
 import { WeeklyPreviewController } from './weekly-preview.controller';
 import { WeeklyPreviewScheduler } from './weekly-preview.scheduler';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([WeeklyPreview, Race])],
+  imports: [TypeOrmModule.forFeature([WeeklyPreview, Race, RaceEntry])],
   controllers: [WeeklyPreviewController],
   providers: [WeeklyPreviewService, WeeklyPreviewScheduler],
   exports: [WeeklyPreviewService],

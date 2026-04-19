@@ -3,12 +3,14 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { WeeklyPreviewService } from './weekly-preview.service';
 import { WeeklyPreview } from '../database/entities/weekly-preview.entity';
 import { Race } from '../database/entities/race.entity';
+import { RaceEntry } from '../database/entities/race-entry.entity';
 import { createMockRepository } from '../test/mock-factories';
 
 describe('WeeklyPreviewService', () => {
   let service: WeeklyPreviewService;
   let previewRepo: ReturnType<typeof createMockRepository>;
   let raceRepo: ReturnType<typeof createMockRepository>;
+  let entryRepo: ReturnType<typeof createMockRepository>;
 
   const mockPreview = {
     weekLabel: '2025-02-27',
@@ -23,12 +25,14 @@ describe('WeeklyPreviewService', () => {
   beforeEach(async () => {
     previewRepo = createMockRepository();
     raceRepo = createMockRepository();
+    entryRepo = createMockRepository();
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         WeeklyPreviewService,
         { provide: getRepositoryToken(WeeklyPreview), useValue: previewRepo },
         { provide: getRepositoryToken(Race), useValue: raceRepo },
+        { provide: getRepositoryToken(RaceEntry), useValue: entryRepo },
       ],
     }).compile();
 

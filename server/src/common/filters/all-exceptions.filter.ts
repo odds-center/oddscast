@@ -76,8 +76,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
         `[${request.method}] ${request.url} → ${status} ${errorMessage}`,
       );
 
-      // Skip Discord for 404 (mostly bot/scanner noise) and 405
-      if (status !== 404 && status !== 405) {
+      // Skip Discord for 400 (validation failures from crawlers), 404, 405
+      if (status !== 400 && status !== 404 && status !== 405) {
         this.discordService
           .notifyClientError(
             request.method,

@@ -189,7 +189,7 @@ export default function UsersPage() {
                 type='text'
                 placeholder='이메일 또는 사용자명으로 검색...'
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                 className='w-full max-w-md px-3 py-1.5 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary-500'
               />
             </div>

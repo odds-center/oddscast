@@ -89,11 +89,13 @@ export default function SubscriptionsPage() {
   });
 
   const refundMutation = useMutation({
-    mutationFn: () =>
-      RefundApi.requestRefund({
-        billingHistoryId: Number(latestBilling!.id),
+    mutationFn: () => {
+      if (!latestBilling) throw new Error('결제 내역이 없습니다.');
+      return RefundApi.requestRefund({
+        billingHistoryId: Number(latestBilling.id),
         userReason: refundReason,
-      }),
+      });
+    },
     onSuccess: () => {
       setRefundDialogOpen(false);
       setRefundReason('');

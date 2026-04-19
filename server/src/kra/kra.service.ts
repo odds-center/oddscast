@@ -749,7 +749,8 @@ export class KraService {
 
   private getUpcomingWeekendDates(): string[] {
     const today = kst();
-    const day = today.day(); // 0=Sun, 1=Mon, ..., 3=Wed, 4=Thu
+    // Treat Sunday (0) as 7 so diffToFri becomes -2 (current weekend, not next)
+    const day = today.day() === 0 ? 7 : today.day();
     const dates: string[] = [];
 
     const diffToFri = 5 - day;

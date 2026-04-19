@@ -2025,6 +2025,15 @@ export class PredictionsService {
       let dataString = '';
       let errorString = '';
 
+      pythonProcess.on('error', (err: NodeJS.ErrnoException) => {
+        this.logger.error(
+          `Python spawn error: ${err.message} (code: ${err.code ?? 'unknown'})`,
+        );
+        resolve({
+          horseScores: this.fallbackHorseScoresFromEntries(entries),
+        });
+      });
+
       pythonProcess.stdout.on('data', (data: Buffer) => {
         dataString += data.toString();
       });

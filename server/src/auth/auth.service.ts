@@ -477,6 +477,13 @@ export class AuthService {
       );
     });
 
+    // Send password reset email (fire-and-forget — never reveal whether user exists)
+    this.mailService
+      .sendPasswordResetEmail(email, token)
+      .catch((err) =>
+        this.logger.error(`Failed to send password reset email: ${err}`),
+      );
+
     const devReturnToken = this.config.get('DEV_RETURN_RESET_TOKEN') === 'true';
     return {
       message: '비밀번호 재설정 이메일이 발송되었습니다.',

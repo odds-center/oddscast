@@ -45,6 +45,11 @@ export default function Login() {
       if ('accessToken' in res && res.accessToken) {
         setAuth(res.accessToken, res.user, res.refreshToken);
         router.push(routes.home);
+      } else if ('requireVerification' in res && res.requireVerification) {
+        router.push({
+          pathname: routes.auth.verifyEmail,
+          query: { email: data.email },
+        });
       }
     } catch (err: unknown) {
       setError('root', { message: getErrorMessage(err) });

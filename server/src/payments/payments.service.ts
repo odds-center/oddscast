@@ -300,7 +300,10 @@ export class PaymentsService {
         }),
       );
 
-      const nextBillingDate = new Date(sub.nextBillingDate!);
+      const baseBillingDate = sub.nextBillingDate
+        ? new Date(sub.nextBillingDate)
+        : now;
+      const nextBillingDate = new Date(baseBillingDate);
       nextBillingDate.setDate(nextBillingDate.getDate() + 30);
 
       await this.subscriptionRepo.update(subscriptionId, {

@@ -20,14 +20,20 @@ export class SubscriptionBillingScheduler {
   ) {}
 
   /**
-   * Every day at 09:00 KST (00:00 UTC), charge ACTIVE subscriptions with nextBillingDate <= today.
+   * Every day at 00:00 KST, charge ACTIVE subscriptions with nextBillingDate in KST today.
    */
   @Cron('0 0 * * *', { timeZone: 'Asia/Seoul' })
   async runRecurringBilling() {
-    const todayStart = new Date();
-    todayStart.setUTCHours(0, 0, 0, 0);
-    const tomorrowStart = new Date(todayStart);
-    tomorrowStart.setUTCDate(tomorrowStart.getUTCDate() + 1);
+    // Compute KST today boundaries in UTC
+    const nowKst = new Date(
+      new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }),
+    );
+    const yyyy = nowKst.getFullYear();
+    const mm = String(nowKst.getMonth() + 1).padStart(2, '0');
+    const dd = String(nowKst.getDate()).padStart(2, '0');
+    // KST midnight = UTC previous day 15:00
+    const todayStart = new Date(`${yyyy}-${mm}-${dd}T00:00:00+09:00`);
+    const tomorrowStart = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
 
     const subs = await this.subscriptionRepo
       .createQueryBuilder('s')

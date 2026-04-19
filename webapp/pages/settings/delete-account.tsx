@@ -70,7 +70,7 @@ export default function DeleteAccountPage() {
           icon='UserMinus'
           description={'비밀번호를 입력하면 계정이 비활성화됩니다.\n복구할 수 없습니다.'}
         >
-          <form onSubmit={handleSubmit(onSubmit)} className='space-y-4'>
+          <form onSubmit={(e) => e.preventDefault()} className='space-y-4'>
             <FormInput
               label='비밀번호 확인'
               type='password'

@@ -89,19 +89,23 @@ describe('WeeklyPreviewService', () => {
     it('generates placeholder when GEMINI_API_KEY is not set', async () => {
       delete process.env.GEMINI_API_KEY;
       raceRepo.find.mockResolvedValue([]);
-      previewRepo.upsert.mockResolvedValue(undefined);
+      previewRepo.findOne.mockResolvedValue(null);
+      previewRepo.create.mockImplementation((d: unknown) => d);
+      previewRepo.save.mockResolvedValue(undefined);
 
       const result = await service.generate();
       expect(result.weekLabel).toBeDefined();
       expect(result.content.horsesToWatch).toEqual([]);
       expect(result.content.highlights).toContain('AI 요약');
-      expect(previewRepo.upsert).toHaveBeenCalled();
+      expect(previewRepo.save).toHaveBeenCalled();
     });
 
     it('uses fromDate option when provided', async () => {
       delete process.env.GEMINI_API_KEY;
       raceRepo.find.mockResolvedValue([]);
-      previewRepo.upsert.mockResolvedValue(undefined);
+      previewRepo.findOne.mockResolvedValue(null);
+      previewRepo.create.mockImplementation((d: unknown) => d);
+      previewRepo.save.mockResolvedValue(undefined);
 
       // Monday 2025-02-24 → next fri = 2025-02-28
       const fromDate = new Date('2025-02-24');
@@ -134,7 +138,10 @@ describe('WeeklyPreviewService', () => {
         },
       ];
       raceRepo.find.mockResolvedValue(mockRaces);
-      previewRepo.upsert.mockResolvedValue(undefined);
+      entryRepo.find.mockResolvedValue([]);
+      previewRepo.findOne.mockResolvedValue(null);
+      previewRepo.create.mockImplementation((d: unknown) => d);
+      previewRepo.save.mockResolvedValue(undefined);
 
       const result = await service.generate({
         fromDate: new Date('2025-02-24'),

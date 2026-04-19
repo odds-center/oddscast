@@ -290,14 +290,20 @@ Example:
     content: WeeklyPreviewContent,
   ): Promise<void> {
     const now = new Date();
-    await this.previewRepo.upsert(
-      {
-        weekLabel,
-        content: content as unknown as Record<string, unknown>,
-        createdAt: now,
-        updatedAt: now,
-      } as Parameters<Repository<WeeklyPreview>['upsert']>[0],
-      { conflictPaths: ['weekLabel'] },
-    );
+    const existing = await this.previewRepo.findOne({ where: { weekLabel } });
+    if (existing) {
+      existing.content = content as unknown as Record<string, unknown>;
+      existing.updatedAt = now;
+      await this.previewRepo.save(existing);
+    } else {
+      await this.previewRepo.save(
+        this.previewRepo.create({
+          weekLabel,
+          content: content as unknown as Record<string, unknown>,
+          createdAt: now,
+          updatedAt: now,
+        }),
+      );
+    }
   }
 }

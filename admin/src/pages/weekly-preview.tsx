@@ -67,7 +67,7 @@ export default function WeeklyPreviewPage() {
               </Button>
             </div>
             <p className='mt-2 text-xs text-gray-400'>
-              기준 날짜로부터 다음 금·토·일 경주를 분석하여 생성합니다.
+              금·토·일 선택 시 해당 주말, 월~목 선택 시 다음 주말 경주를 분석합니다.
             </p>
           </Card>
 

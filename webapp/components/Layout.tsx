@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Head from "next/head";
 import Link from "next/link";
 import { useRouter } from "next/router";
@@ -9,89 +9,23 @@ import { useNativeApp } from "@/lib/hooks/useNativeApp";
 import { useUnreadNotifications } from "@/lib/hooks/useUnreadNotifications";
 import { useTicketBalance } from "@/lib/hooks/useTicketBalance";
 
-const NAV_POSITION_STORAGE_KEY = "oddscast_nav_bar_position";
-const NAV_ORIENTATION_STORAGE_KEY = "oddscast_nav_orientation";
-const SNAP_THRESHOLD = 32;
-const SNAP_INSET = 8;
-const DEFAULT_BOTTOM = 80;
-const DEFAULT_LEFT = 16;
-
-type NavPosition = { left: number; bottom: number };
-
-function readStoredPosition(): NavPosition {
-  if (typeof window === "undefined")
-    return { left: DEFAULT_LEFT, bottom: DEFAULT_BOTTOM };
-  try {
-    const raw = localStorage.getItem(NAV_POSITION_STORAGE_KEY);
-    if (!raw) return { left: DEFAULT_LEFT, bottom: DEFAULT_BOTTOM };
-    const parsed = JSON.parse(raw) as { left?: number; bottom?: number };
-    if (typeof parsed?.left === "number" && typeof parsed?.bottom === "number")
-      return { left: parsed.left, bottom: parsed.bottom };
-  } catch {
-    // ignore
-  }
-  return { left: DEFAULT_LEFT, bottom: DEFAULT_BOTTOM };
-}
-
-function readStoredOrientation(): "horizontal" | "vertical" {
-  if (typeof window === "undefined") return "horizontal";
-  const o = localStorage.getItem(NAV_ORIENTATION_STORAGE_KEY);
-  return o === "vertical" || o === "horizontal" ? o : "horizontal";
-}
-
-/** Returns env(safe-area-inset-bottom) as a pixel number */
-function getSafeAreaBottomPx(): number {
-  if (typeof document === "undefined") return 0;
-  const el = document.createElement("div");
-  el.style.cssText =
-    "position:fixed;bottom:0;left:0;height:0;padding-bottom:env(safe-area-inset-bottom);visibility:hidden;pointer-events:none;";
-  document.body.appendChild(el);
-  const px = getComputedStyle(el).paddingBottom;
-  el.remove();
-  const n = parseFloat(px);
-  return Number.isFinite(n) ? n : 0;
-}
-
-/** Client-only mount. Reads initial position from localStorage to avoid flicker. Fixed bottom bar on mobile, no drag. */
+/** Client-only mount. Fixed bottom bar on all screen sizes. */
 function FloatingAppBar({
   pathname,
   asPath,
-  isMobile,
 }: {
   pathname: string;
   asPath: string;
-  isMobile: boolean;
 }) {
   const { haptic } = useNativeApp();
   const unreadCount = useUnreadNotifications();
   const { raceTickets, matrixTickets } = useTicketBalance();
-  const [navPosition, setNavPosition] =
-    useState<NavPosition>(readStoredPosition);
-  const [navOrientation, setNavOrientation] = useState<
-    "horizontal" | "vertical"
-  >(readStoredOrientation);
-  const [isDragging, setIsDragging] = useState(false);
-  const [safeAreaBottom, setSafeAreaBottom] = useState(0);
   const [isAppBarHidden, setIsAppBarHidden] = useState(false);
-  const safeAreaBottomRef = useRef(0);
-  const barRef = useRef<HTMLDivElement>(null);
-  const dragStart = useRef({ clientX: 0, clientY: 0, left: 0, bottom: 0 });
-  const dragCurrent = useRef<NavPosition>({
-    left: DEFAULT_LEFT,
-    bottom: DEFAULT_BOTTOM,
-  });
   const lastScrollY = useRef(0);
   const scrollTicking = useRef(false);
 
+  // Scroll-based hide/show for appbar
   useEffect(() => {
-    const value = getSafeAreaBottomPx();
-    safeAreaBottomRef.current = value;
-    queueMicrotask(() => setSafeAreaBottom(value));
-  }, []);
-
-  // Scroll-based hide/show for mobile appbar
-  useEffect(() => {
-    if (!isMobile) return;
     const scrollEl = document.getElementById("main-content");
     if (!scrollEl) return;
     lastScrollY.current = scrollEl.scrollTop;
@@ -114,133 +48,7 @@ function FloatingAppBar({
 
     scrollEl.addEventListener("scroll", handleScroll, { passive: true });
     return () => scrollEl.removeEventListener("scroll", handleScroll);
-  }, [isMobile]);
-
-  const savePosition = useCallback((pos: NavPosition) => {
-    try {
-      localStorage.setItem(NAV_POSITION_STORAGE_KEY, JSON.stringify(pos));
-    } catch {
-      // ignore
-    }
   }, []);
-
-  const toggleNavOrientation = () => {
-    setNavOrientation((prev) => {
-      const next = prev === "horizontal" ? "vertical" : "horizontal";
-      try {
-        localStorage.setItem(NAV_ORIENTATION_STORAGE_KEY, next);
-      } catch {
-        // ignore
-      }
-      return next;
-    });
-  };
-
-  /** Snap to nearest corner/edge if close enough (bottom accounts for safe area) */
-  const snapToEdges = useCallback(
-    (left: number, bottom: number, barW: number, barH: number): NavPosition => {
-      const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
-      const vh = typeof window !== "undefined" ? window.innerHeight : 768;
-      const safe = safeAreaBottomRef.current;
-      const minBottom = SNAP_INSET + safe;
-      const maxLeft = Math.max(SNAP_INSET, vw - barW - SNAP_INSET);
-      const maxBottom = Math.max(minBottom, vh - barH - SNAP_INSET);
-
-      const corners: NavPosition[] = [
-        { left: SNAP_INSET, bottom: minBottom },
-        { left: maxLeft, bottom: minBottom },
-        { left: SNAP_INSET, bottom: maxBottom },
-        { left: maxLeft, bottom: maxBottom },
-      ];
-      let best = { left, bottom };
-      let bestDist = SNAP_THRESHOLD + 1;
-      for (const c of corners) {
-        const dist = Math.hypot(left - c.left, bottom - c.bottom);
-        if (dist < bestDist) {
-          bestDist = dist;
-          best = c;
-        }
-      }
-      return best;
-    },
-    [],
-  );
-
-  const clampPosition = useCallback(
-    (left: number, bottom: number, barW: number, barH: number): NavPosition => {
-      const vw = typeof window !== "undefined" ? window.innerWidth : 1024;
-      const vh = typeof window !== "undefined" ? window.innerHeight : 768;
-      const minBottom = SNAP_INSET + safeAreaBottomRef.current;
-      const maxLeft = Math.max(0, vw - barW - SNAP_INSET);
-      const maxBottom = Math.max(0, vh - barH - SNAP_INSET);
-      return {
-        left: Math.max(SNAP_INSET, Math.min(maxLeft, left)),
-        bottom: Math.max(minBottom, Math.min(maxBottom, bottom)),
-      };
-    },
-    [],
-  );
-
-  useEffect(() => {
-    if (!isDragging) return;
-    const onMove = (e: PointerEvent) => {
-      const el = barRef.current;
-      if (!el) return;
-      const rect = el.getBoundingClientRect();
-      const dx = e.clientX - dragStart.current.clientX;
-      const dy = dragStart.current.clientY - e.clientY;
-      const next = clampPosition(
-        dragStart.current.left + dx,
-        dragStart.current.bottom + dy,
-        rect.width,
-        rect.height,
-      );
-      dragCurrent.current = next;
-      setNavPosition(next);
-    };
-    const onUp = () => {
-      const el = barRef.current;
-      const current = dragCurrent.current;
-      if (el) {
-        const rect = el.getBoundingClientRect();
-        const snapped = snapToEdges(
-          current.left,
-          current.bottom,
-          rect.width,
-          rect.height,
-        );
-        setNavPosition(snapped);
-        savePosition(snapped);
-      } else {
-        savePosition(current);
-      }
-      setIsDragging(false);
-    };
-    window.addEventListener("pointermove", onMove, { passive: true });
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
-    };
-  }, [isDragging, clampPosition, savePosition, snapToEdges]);
-
-  const onDragHandlePointerDown = (e: React.PointerEvent) => {
-    e.preventDefault();
-    dragStart.current = {
-      clientX: e.clientX,
-      clientY: e.clientY,
-      left: navPosition.left,
-      bottom: navPosition.bottom,
-    };
-    dragCurrent.current = {
-      left: navPosition.left,
-      bottom: navPosition.bottom,
-    };
-    setIsDragging(true);
-    (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
-  };
 
   const navLinks: {
     href: string;
@@ -262,181 +70,69 @@ function FloatingAppBar({
     { href: routes.profile.index, icon: "User", label: "정보" },
   ];
 
-  /* ── Mobile: fixed at screen bottom, no drag/toggle ── */
-  if (isMobile) {
-    return (
-      <div
-        data-tour="home-appbar"
-        className={`fixed bottom-0 left-0 right-0 z-10 px-3 transition-transform duration-300 ease-in-out ${isAppBarHidden ? "translate-y-full" : "translate-y-0"}`}
-        style={{ paddingBottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + 0.25rem)` }}
-      >
-        <nav
-          aria-label="메뉴"
-          className="nav-mobile-bar nav-mobile-bar-fixed rounded-2xl w-full"
-        >
-          <div className="flex flex-row justify-between w-full px-2">
-            {navLinks.map(({ href, icon, label, badge, isActive }) => {
-              const isProfile = href === routes.profile.index;
-              const active = isActive
-                ? isActive(pathname, asPath)
-                : isProfile
-                  ? pathname === href ||
-                    pathname.startsWith("/profile") ||
-                    pathname.startsWith("/mypage")
-                  : pathname === href;
-              const hasTickets = !isProfile && (badge ?? 0) > 0;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => haptic('light')}
-                  className={`nav-mobile-item ${active ? "nav-mobile-item-active" : ""}`}
-                >
-                  <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
-                    {isProfile && unreadCount > 0 ? (
-                      <span className="relative inline-flex">
-                        <Icon
-                          name={icon}
-                          size={22}
-                          strokeWidth={active ? 2.5 : 2}
-                        />
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      </span>
-                    ) : (
-                      <Icon
-                        name={icon}
-                        size={22}
-                        strokeWidth={active ? 2.5 : 2}
-                      />
-                    )}
-                  </span>
-                  <span className="nav-mobile-label font-medium w-full text-center text-xs truncate">
-                    {label}
-                  </span>
-                  {hasTickets && (
-                    <span className="text-[9px] font-semibold text-emerald-600 leading-none -mt-0.5">
-                      {badge}장
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
-        </nav>
-      </div>
-    );
-  }
-
-  /* ── Desktop: floating app bar (drag/toggle) ── */
+  /* ── Fixed bottom bar on all screen sizes ── */
   return (
-    <nav aria-label="메뉴" className="pointer-events-none fixed inset-0 z-10">
-      <div
-        ref={barRef}
-        data-tour="home-appbar"
-        className={`pointer-events-auto fixed z-10 ${navOrientation === "vertical" ? "w-[72px] px-1.5 pb-1.5 pt-1" : "max-w-[400px] px-2 pb-2 pt-1.5"} ${isDragging ? "transition-none" : "transition-[left,bottom] duration-150 ease-out"}`}
-        style={{
-          left: navPosition.left,
-          bottom: navPosition.bottom + safeAreaBottom,
-        }}
+    <div
+      data-tour="home-appbar"
+      className={`fixed bottom-0 left-0 right-0 z-10 px-3 transition-transform duration-300 ease-in-out ${isAppBarHidden ? "translate-y-full" : "translate-y-0"}`}
+      style={{ paddingBottom: `calc(max(0.75rem, env(safe-area-inset-bottom)) + 0.25rem)` }}
+    >
+      <nav
+        aria-label="메뉴"
+        className="nav-mobile-bar nav-mobile-bar-fixed rounded-2xl w-full max-w-[600px] mx-auto"
       >
-        <div
-          className={`nav-mobile-bar pl-[env(safe-area-inset-left)] pr-[env(safe-area-inset-right)] ${navOrientation === "vertical" ? "nav-mobile-bar-vertical flex flex-col w-full rounded-lg" : "w-full max-w-[400px]"}`}
-        >
-          <div
-            className={
-              navOrientation === "vertical"
-                ? "flex flex-col items-center gap-0 py-1 border-b border-stone-100"
-                : "flex items-center justify-between gap-0.5 border-r border-stone-100 mb-0 -mx-0.5 px-1 rounded-t-md"
-            }
-          >
-            <button
-              type="button"
-              aria-label="메뉴 바 이동"
-              className={`flex items-center justify-center py-1.5 px-1.5 cursor-grab active:cursor-grabbing touch-none select-none hover:bg-stone-50/80 rounded ${navOrientation === "vertical" ? "w-full" : "flex-1"} ${isDragging ? "cursor-grabbing bg-primary-muted" : ""}`}
-              onPointerDown={onDragHandlePointerDown}
-            >
-              <Icon name="Grip" size={20} className="text-stone-500" />
-            </button>
-            <button
-              type="button"
-              onClick={toggleNavOrientation}
-              aria-label={
-                navOrientation === "horizontal" ? "세로로 전환" : "가로로 전환"
-              }
-              className="p-1.5 rounded text-stone-500 hover:text-stone-700 hover:bg-stone-100 touch-manipulation shrink-0"
-            >
-              <Icon
-                name={
-                  navOrientation === "horizontal" ? "PanelLeft" : "PanelBottom"
-                }
-                size={20}
-              />
-            </button>
-          </div>
-          <div
-            className={
-              navOrientation === "horizontal"
-                ? "flex flex-1 flex-row justify-around gap-2 px-2"
-                : "flex flex-col gap-0 py-1.5"
-            }
-          >
-            {navLinks.map(({ href, icon, label, badge, isActive }) => {
-              const isProfile = href === routes.profile.index;
-              const active = isActive
-                ? isActive(pathname, asPath)
-                : isProfile
-                  ? pathname === href ||
-                    pathname.startsWith("/profile") ||
-                    pathname.startsWith("/mypage")
-                  : pathname === href;
-              const vertical = navOrientation === "vertical";
-              const hasTickets = !isProfile && (badge ?? 0) > 0;
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => haptic('light')}
-                  className={`nav-mobile-item ${vertical ? "nav-mobile-item-vertical" : ""} ${active ? "nav-mobile-item-active" : ""}`}
-                >
-                  <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
-                    {isProfile && unreadCount > 0 ? (
-                      <span className="relative inline-flex">
-                        <Icon
-                          name={icon}
-                          size={22}
-                          strokeWidth={active ? 2.5 : 2}
-                        />
-                        <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
-                          {unreadCount > 99 ? '99+' : unreadCount}
-                        </span>
-                      </span>
-                    ) : (
+        <div className="flex flex-row justify-between w-full px-2">
+          {navLinks.map(({ href, icon, label, badge, isActive }) => {
+            const isProfile = href === routes.profile.index;
+            const active = isActive
+              ? isActive(pathname, asPath)
+              : isProfile
+                ? pathname === href ||
+                  pathname.startsWith("/profile") ||
+                  pathname.startsWith("/mypage")
+                : pathname === href;
+            const hasTickets = !isProfile && (badge ?? 0) > 0;
+            return (
+              <Link
+                key={href}
+                href={href}
+                onClick={() => haptic('light')}
+                className={`nav-mobile-item ${active ? "nav-mobile-item-active" : ""}`}
+              >
+                <span className="nav-mobile-icon-wrap inline-flex items-center justify-center shrink-0">
+                  {isProfile && unreadCount > 0 ? (
+                    <span className="relative inline-flex">
                       <Icon
                         name={icon}
                         size={22}
                         strokeWidth={active ? 2.5 : 2}
                       />
-                    )}
-                  </span>
-                  <span
-                    className={`nav-mobile-label font-medium w-full text-center ${vertical ? "text-xs leading-tight" : "text-xs truncate"}`}
-                  >
-                    {label}
-                  </span>
-                  {hasTickets && (
-                    <span className="text-[9px] font-semibold text-emerald-600 leading-none -mt-0.5">
-                      {badge}장
+                      <span className="absolute -top-1 -right-1 min-w-[16px] h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-0.5 leading-none">
+                        {unreadCount > 99 ? '99+' : unreadCount}
+                      </span>
                     </span>
+                  ) : (
+                    <Icon
+                      name={icon}
+                      size={22}
+                      strokeWidth={active ? 2.5 : 2}
+                    />
                   )}
-                </Link>
-              );
-            })}
-          </div>
+                </span>
+                <span className="nav-mobile-label font-medium w-full text-center text-xs truncate">
+                  {label}
+                </span>
+                {hasTickets && (
+                  <span className="text-[9px] font-semibold text-emerald-600 leading-none -mt-0.5">
+                    {badge}장
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }
 

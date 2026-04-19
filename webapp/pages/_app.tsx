@@ -44,7 +44,7 @@ const NetworkStatusBanner = dynamic(
 );
 import { trackActivity, ACTIVITY_EVENTS } from '@/lib/api/activityApi';
 
-const MOBILE_BREAKPOINT = 768;
+
 
 export default function App({ Component, pageProps }: AppProps<{ dehydratedState?: DehydratedState }>) {
   const router = useRouter();
@@ -52,14 +52,8 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
   const { dehydratedState, ...restPageProps } = pageProps;
 
   const [clientMounted, setClientMounted] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
-
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < MOBILE_BREAKPOINT);
-    check();
-    window.addEventListener('resize', check);
     queueMicrotask(() => setClientMounted(true));
-    return () => window.removeEventListener('resize', check);
   }, []);
 
   // Apply data-native-app attribute to enable native-mode CSS rules
@@ -204,7 +198,7 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
             </TooltipProvider>
           </HydrationBoundary>
           {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && (
-            <FloatingAppBar pathname={pathname} asPath={router.asPath} isMobile={isMobile} />
+            <FloatingAppBar pathname={pathname} asPath={router.asPath} />
           )}
           {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && <BugReportButton />}
         </QueryClientProvider>

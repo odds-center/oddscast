@@ -122,45 +122,63 @@ Reply with ONLY a valid JSON object (no markdown, no extra text) with exactly th
 
 Example: {"highlights":"...", "horsesToWatch":["...","..."], "trackConditions":"..."}`;
 
-    try {
-      const { GoogleGenerativeAI } = await import('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({
-        model: 'gemini-2.5-flash',
-        generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
-      });
-      const result = await model.generateContent(prompt);
-      const text = result.response.text();
-      const parsed = this.parseJsonResponse(text);
-      const defaultHighlights = `${fri}~${sun} 주말 ${races.length}경주 예정입니다.`;
-      const content: WeeklyPreviewContent = {
-        highlights:
-          typeof parsed?.highlights === 'string'
-            ? parsed.highlights
-            : defaultHighlights,
-        horsesToWatch: Array.isArray(parsed?.horsesToWatch)
-          ? parsed.horsesToWatch
-          : [],
-        trackConditions:
-          typeof parsed?.trackConditions === 'string'
-            ? parsed.trackConditions
-            : '—',
-        raceDates: [fri, sat, sun],
-      };
-      await this.upsert(weekLabel, content);
-      this.logger.log(`[WeeklyPreview] Generated for week ${weekLabel}`);
-      return { weekLabel, content };
-    } catch (err: unknown) {
-      this.logger.error('[WeeklyPreview] Gemini failed', err);
-      const fallback: WeeklyPreviewContent = {
-        highlights: `${fri}~${sun} 주말 ${races.length}경주 예정. (AI 요약 생성에 실패했습니다.)`,
-        horsesToWatch: [],
-        trackConditions: '—',
-        raceDates: [fri, sat, sun],
-      };
-      await this.upsert(weekLabel, fallback);
-      return { weekLabel, content: fallback };
+    const modelsToTry = [
+      'gemini-2.5-flash',
+      'gemini-2.0-flash',
+      'gemini-1.5-flash',
+    ];
+
+    const { GoogleGenerativeAI } = await import('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(apiKey);
+
+    let lastError: unknown;
+    for (const modelName of modelsToTry) {
+      try {
+        const model = genAI.getGenerativeModel({
+          model: modelName,
+          generationConfig: { temperature: 0.6, maxOutputTokens: 1024 },
+        });
+        const result = await model.generateContent(prompt);
+        const text = result.response.text();
+        const parsed = this.parseJsonResponse(text);
+        const defaultHighlights = `${fri}~${sun} 주말 ${races.length}경주 예정입니다.`;
+        const content: WeeklyPreviewContent = {
+          highlights:
+            typeof parsed?.highlights === 'string'
+              ? parsed.highlights
+              : defaultHighlights,
+          horsesToWatch: Array.isArray(parsed?.horsesToWatch)
+            ? parsed.horsesToWatch
+            : [],
+          trackConditions:
+            typeof parsed?.trackConditions === 'string'
+              ? parsed.trackConditions
+              : '—',
+          raceDates: [fri, sat, sun],
+        };
+        await this.upsert(weekLabel, content);
+        this.logger.log(
+          `[WeeklyPreview] Generated for week ${weekLabel} using ${modelName}`,
+        );
+        return { weekLabel, content };
+      } catch (err: unknown) {
+        lastError = err;
+        const msg = err instanceof Error ? err.message : String(err);
+        this.logger.warn(
+          `[WeeklyPreview] ${modelName} failed: ${msg}. Trying next model...`,
+        );
+      }
     }
+
+    this.logger.error('[WeeklyPreview] All Gemini models failed', lastError);
+    const fallback: WeeklyPreviewContent = {
+      highlights: `${fri}~${sun} 주말 ${races.length}경주 예정. (AI 요약 생성에 실패했습니다.)`,
+      horsesToWatch: [],
+      trackConditions: '—',
+      raceDates: [fri, sat, sun],
+    };
+    await this.upsert(weekLabel, fallback);
+    return { weekLabel, content: fallback };
   }
 
   private parseJsonResponse(text: string): Record<string, unknown> | null {

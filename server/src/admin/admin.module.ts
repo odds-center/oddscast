@@ -28,6 +28,7 @@ import { PredictionsModule } from '../predictions/predictions.module';
 import { PredictionTicketsModule } from '../prediction-tickets/prediction-tickets.module';
 import { ActivityLogsModule } from '../activity-logs/activity-logs.module';
 import { WeeklyPreviewModule } from '../weekly-preview/weekly-preview.module';
+import { AnalysisModule } from '../analysis/analysis.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { WeeklyPreviewModule } from '../weekly-preview/weekly-preview.module';
     PredictionTicketsModule,
     ActivityLogsModule,
     WeeklyPreviewModule,
+    AnalysisModule,
   ],
   controllers: [
     AdminController,

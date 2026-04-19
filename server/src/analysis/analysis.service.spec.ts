@@ -7,6 +7,7 @@ import { RaceEntry } from '../database/entities/race-entry.entity';
 import { RaceResult } from '../database/entities/race-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
+import { RaceAnalysisCache } from '../database/entities/race-analysis-cache.entity';
 
 const mockRaceRepo = { findOne: jest.fn() };
 const mockEntryRepo = { find: jest.fn() };
@@ -15,6 +16,7 @@ const mockResultRepo = {
 };
 const mockJockeyResultRepo = { find: jest.fn() };
 const mockTrainerResultRepo = { find: jest.fn() };
+const mockCacheRepo = { findOne: jest.fn(), save: jest.fn(), create: jest.fn() };
 
 // QueryBuilder chain mock
 function buildQbMock(results: unknown[]) {
@@ -47,6 +49,10 @@ describe('AnalysisService', () => {
         {
           provide: getRepositoryToken(TrainerResult),
           useValue: mockTrainerResultRepo,
+        },
+        {
+          provide: getRepositoryToken(RaceAnalysisCache),
+          useValue: mockCacheRepo,
         },
       ],
     }).compile();

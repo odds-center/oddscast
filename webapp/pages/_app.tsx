@@ -43,13 +43,16 @@ const NetworkStatusBanner = dynamic(
   { ssr: false }
 );
 import { trackActivity, ACTIVITY_EVENTS } from '@/lib/api/activityApi';
+import { NextIntlClientProvider } from 'next-intl';
+import { defaultLocale } from '@/i18n';
 
 
 
-export default function App({ Component, pageProps }: AppProps<{ dehydratedState?: DehydratedState }>) {
+export default function App({ Component, pageProps }: AppProps<{ dehydratedState?: DehydratedState; messages?: Record<string, unknown> }>) {
   const router = useRouter();
   const pathname = router.pathname;
-  const { dehydratedState, ...restPageProps } = pageProps;
+  const { dehydratedState, messages, ...restPageProps } = pageProps;
+  const locale = router.locale || defaultLocale;
 
   const [clientMounted, setClientMounted] = useState(false);
   useEffect(() => {
@@ -190,18 +193,20 @@ export default function App({ Component, pageProps }: AppProps<{ dehydratedState
         </>
       )}
       <Sentry.ErrorBoundary fallback={<p>An error occurred. Please refresh the page.</p>}>
-        <QueryClientProvider client={queryClient}>
-          <CoachMarkHydration />
-          <HydrationBoundary state={dehydratedState ?? undefined}>
-            <TooltipProvider>
-              <Component {...restPageProps} />
-            </TooltipProvider>
-          </HydrationBoundary>
-          {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && (
-            <FloatingAppBar pathname={pathname} asPath={router.asPath} />
-          )}
-          {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && <BugReportButton />}
-        </QueryClientProvider>
+        <NextIntlClientProvider locale={locale} messages={messages} timeZone="Asia/Seoul">
+          <QueryClientProvider client={queryClient}>
+            <CoachMarkHydration />
+            <HydrationBoundary state={dehydratedState ?? undefined}>
+              <TooltipProvider>
+                <Component {...restPageProps} />
+              </TooltipProvider>
+            </HydrationBoundary>
+            {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && (
+              <FloatingAppBar pathname={pathname} asPath={router.asPath} />
+            )}
+            {clientMounted && !pathname.startsWith('/auth') && pathname !== '/welcome' && <BugReportButton />}
+          </QueryClientProvider>
+        </NextIntlClientProvider>
       </Sentry.ErrorBoundary>
       {clientMounted && <NetworkStatusBanner />}
     </>

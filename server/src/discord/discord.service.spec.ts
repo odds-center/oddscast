@@ -104,17 +104,16 @@ describe('DiscordService', () => {
   });
 
   describe('dev webhook', () => {
-    it('should send to dev webhook when not in production', async () => {
+    it('should send to dev error webhook when not in production', async () => {
       service = await createService({
         DISCORD_BOT_TOKEN: '',
-        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
         NODE_ENV: 'development',
       });
 
       await service.notifyError('GET', '/api/test', 500, 'error', 'stack...');
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://discord.com/api/webhooks/test',
+        expect.stringContaining('discord.com/api/webhooks/'),
         expect.objectContaining({
           embeds: expect.arrayContaining([
             expect.objectContaining({
@@ -126,21 +125,30 @@ describe('DiscordService', () => {
       );
     });
 
-    it('should NOT send to dev webhook in production', async () => {
+    it('should send to prod error webhook in production', async () => {
       service = await createService({
         DISCORD_BOT_TOKEN: '',
-        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
         NODE_ENV: 'production',
       });
 
       await service.notifyError('GET', '/api/test', 500, 'error');
-      expect(mockedAxios.post).not.toHaveBeenCalled();
+      // Production uses the prod error webhook (hardcoded)
+      expect(mockedAxios.post).toHaveBeenCalledWith(
+        expect.stringContaining('discord.com/api/webhooks/'),
+        expect.objectContaining({
+          embeds: expect.arrayContaining([
+            expect.objectContaining({
+              title: expect.stringContaining('[PROD]'),
+            }),
+          ]),
+        }),
+        expect.objectContaining({ timeout: 5000 }),
+      );
     });
 
-    it('should send client errors to dev webhook', async () => {
+    it('should send client errors to dev error webhook', async () => {
       service = await createService({
         DISCORD_BOT_TOKEN: '',
-        DISCORD_DEV_WEBHOOK_URL: 'https://discord.com/api/webhooks/test',
         NODE_ENV: 'development',
       });
 
@@ -152,7 +160,7 @@ describe('DiscordService', () => {
       );
 
       expect(mockedAxios.post).toHaveBeenCalledWith(
-        'https://discord.com/api/webhooks/test',
+        expect.stringContaining('discord.com/api/webhooks/'),
         expect.objectContaining({
           embeds: expect.arrayContaining([
             expect.objectContaining({

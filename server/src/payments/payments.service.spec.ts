@@ -12,7 +12,14 @@ import { SubscriptionPlan } from '../database/entities/subscription-plan.entity'
 import { BillingHistory } from '../database/entities/billing-history.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { SubscriptionsService } from '../subscriptions/subscriptions.service';
+import { DiscordService } from '../discord/discord.service';
 import { SubscriptionStatus, PaymentStatus } from '../database/db-enums';
+
+const mockDiscordService = {
+  notifySubscriptionPayment: jest.fn().mockResolvedValue(undefined),
+  notifyRecurringBilling: jest.fn().mockResolvedValue(undefined),
+  notifyTicketPurchase: jest.fn().mockResolvedValue(undefined),
+};
 
 const mockSubscriptionRepo = {
   findOne: jest.fn(),
@@ -49,6 +56,7 @@ async function buildService(configMock: object): Promise<PaymentsService> {
       },
       { provide: ConfigService, useValue: configMock },
       { provide: SubscriptionsService, useValue: mockSubscriptionsService },
+      { provide: DiscordService, useValue: mockDiscordService },
     ],
   }).compile();
   return module.get<PaymentsService>(PaymentsService);

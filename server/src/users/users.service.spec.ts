@@ -107,24 +107,24 @@ describe('UsersService', () => {
 
   describe('update', () => {
     it('updates allowed fields and returns updated user', async () => {
-      const mockUser = createTestUser({ id: 1, name: 'Old Name' });
-      const updatedUser = { ...mockUser, name: 'New Name' };
+      const mockUser = createTestUser({ id: 1, nickname: 'OldNick' });
+      const updatedUser = { ...mockUser, nickname: 'NewNick' };
       userRepo.findOne
         .mockResolvedValueOnce(mockUser)
         .mockResolvedValueOnce(updatedUser);
       userRepo.save.mockResolvedValue(updatedUser);
 
-      const result = await service.update(1, { name: 'New Name' });
-      expect(result.name).toBe('New Name');
+      const result = await service.update(1, { nickname: 'NewNick' });
+      expect(result.nickname).toBe('NewNick');
       expect(userRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ name: 'New Name' }),
+        expect.objectContaining({ nickname: 'NewNick' }),
       );
     });
 
     it('throws NotFoundException when user not found', async () => {
       userRepo.findOne.mockResolvedValue(null);
 
-      await expect(service.update(999, { name: 'Test' })).rejects.toThrow(
+      await expect(service.update(999, { nickname: 'Test' })).rejects.toThrow(
         NotFoundException,
       );
     });

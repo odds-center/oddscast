@@ -9,10 +9,15 @@ import { RaceResult } from '../database/entities/race-result.entity';
 import { TrainerResult } from '../database/entities/trainer-result.entity';
 import { JockeyResult } from '../database/entities/jockey-result.entity';
 import { Training } from '../database/entities/training.entity';
+import { RaceDividend } from '../database/entities/race-dividend.entity';
+import { RaceAnalysisCache } from '../database/entities/race-analysis-cache.entity';
 import { AnalysisService } from '../analysis/analysis.service';
 import { GlobalConfigService } from '../config/config.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PredictionStatus } from '../database/db-enums';
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type EnrichedRace = { entries: Record<string, any>[] } & Record<string, any>;
 import {
   createMockRepository,
   createMockQueryBuilder,
@@ -32,6 +37,8 @@ describe('PredictionsService', () => {
   const trainerResultRepo = createMockRepository();
   const jockeyResultRepo = createMockRepository();
   const trainingRepo = createMockRepository();
+  const dividendRepo = createMockRepository();
+  const cacheRepo = createMockRepository();
 
   const mockAnalysisService = {
     calculateScore: jest.fn().mockResolvedValue({ scores: [] }),
@@ -66,6 +73,14 @@ describe('PredictionsService', () => {
         {
           provide: getRepositoryToken(Training),
           useValue: trainingRepo,
+        },
+        {
+          provide: getRepositoryToken(RaceDividend),
+          useValue: dividendRepo,
+        },
+        {
+          provide: getRepositoryToken(RaceAnalysisCache),
+          useValue: cacheRepo,
         },
         { provide: AnalysisService, useValue: mockAnalysisService },
         { provide: GlobalConfigService, useValue: mockConfigService },
@@ -217,7 +232,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithRecentRanks (+ rest period)', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+      (service as unknown as Record<string, (...args: unknown[]) => Promise<EnrichedRace>>)[
         'enrichEntriesWithRecentRanks'
       ](race);
 
@@ -248,22 +263,22 @@ describe('PredictionsService', () => {
 
       // H001: last race 20260220 → 9 days ago
       const h1 = result.entries.find(
-        (e: Record<string, unknown>) => e.hrNo === 'H001',
-      );
+        (e) => e.hrNo === 'H001',
+      )!;
       expect(h1.recentRanks).toEqual([1, 3]);
       expect(h1.daysSinceLastRace).toBe(9);
 
       // H002: last race 20260215 → 14 days ago
       const h2 = result.entries.find(
-        (e: Record<string, unknown>) => e.hrNo === 'H002',
-      );
+        (e) => e.hrNo === 'H002',
+      )!;
       expect(h2.recentRanks).toEqual([2]);
       expect(h2.daysSinceLastRace).toBe(14);
 
       // H003: no past results
       const h3 = result.entries.find(
-        (e: Record<string, unknown>) => e.hrNo === 'H003',
-      );
+        (e) => e.hrNo === 'H003',
+      )!;
       expect(h3.daysSinceLastRace).toBeUndefined();
     });
 
@@ -308,7 +323,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithDistanceStats', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+      (service as unknown as Record<string, (...args: unknown[]) => Promise<EnrichedRace>>)[
         'enrichEntriesWithDistanceStats'
       ](race);
 
@@ -364,7 +379,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithClassChange', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+      (service as unknown as Record<string, (...args: unknown[]) => Promise<EnrichedRace>>)[
         'enrichEntriesWithClassChange'
       ](race);
 
@@ -428,7 +443,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithTrainingMetrics', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+      (service as unknown as Record<string, (...args: unknown[]) => Promise<EnrichedRace>>)[
         'enrichEntriesWithTrainingMetrics'
       ](race);
 
@@ -492,7 +507,7 @@ describe('PredictionsService', () => {
 
   describe('enrichEntriesWithSameDayFatigue', () => {
     const callEnrich = (race: Record<string, unknown>) =>
-      (service as unknown as Record<string, (...args: unknown[]) => unknown>)[
+      (service as unknown as Record<string, (...args: unknown[]) => Promise<EnrichedRace>>)[
         'enrichEntriesWithSameDayFatigue'
       ](race);
 

@@ -9,6 +9,7 @@ import { Race } from '../database/entities/race.entity';
 import { PredictionsService } from '../predictions/predictions.service';
 import { KraService } from '../kra/kra.service';
 import { GlobalConfigService } from '../config/config.service';
+import { DiscordService } from '../discord/discord.service';
 import { TicketStatus, TicketType } from '../database/db-enums';
 import {
   createMockRepository,
@@ -58,6 +59,13 @@ describe('PredictionTicketsService', () => {
         {
           provide: GlobalConfigService,
           useValue: { get: jest.fn().mockResolvedValue('1000') },
+        },
+        {
+          provide: DiscordService,
+          useValue: {
+            notifyRaceTicketUsed: jest.fn().mockResolvedValue(undefined),
+            notifyMatrixTicketUsed: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

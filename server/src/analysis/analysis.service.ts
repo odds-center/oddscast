@@ -371,4 +371,68 @@ export class AnalysisService {
 
     return result;
   }
+
+  /**
+   * Run validate_weights.py against the database and return JSON results.
+   * Requires scipy, pandas, numpy, psycopg2-binary installed in the Python env.
+   */
+  async validateWeights(): Promise<Record<string, unknown>> {
+    const pythonBin = AnalysisService.resolvePythonBin();
+    const scriptPath = path.resolve(__dirname, '../../scripts/validate_weights.py');
+
+    if (!fs.existsSync(scriptPath)) {
+      throw new NotFoundException(
+        `validate_weights.py not found at ${scriptPath}`,
+      );
+    }
+
+    const databaseUrl = process.env.DATABASE_URL;
+    if (!databaseUrl) {
+      throw new Error('DATABASE_URL not configured');
+    }
+
+    return new Promise((resolve, reject) => {
+      const proc = spawn(pythonBin, [scriptPath], {
+        env: { ...process.env, DATABASE_URL: databaseUrl },
+        stdio: ['pipe', 'pipe', 'pipe'],
+      });
+
+      let stdout = '';
+      let stderr = '';
+
+      proc.on('error', (err) => {
+        reject(new Error(`Python spawn error: ${err.message}`));
+      });
+
+      proc.stdout.on('data', (data: Buffer) => {
+        stdout += data.toString();
+      });
+
+      proc.stderr.on('data', (data: Buffer) => {
+        stderr += data.toString();
+      });
+
+      proc.on('close', (code) => {
+        // Read results JSON file if it exists
+        const resultsPath = path.resolve(
+          __dirname,
+          '../../scripts/weight_analysis_results.json',
+        );
+        if (code === 0 && fs.existsSync(resultsPath)) {
+          try {
+            const raw = fs.readFileSync(resultsPath, 'utf-8');
+            resolve(JSON.parse(raw) as Record<string, unknown>);
+          } catch {
+            resolve({ stdout, stderr, exitCode: code });
+          }
+        } else {
+          reject(
+            new Error(
+              `validate_weights.py exited with code ${code}: ${stderr || stdout}`,
+            ),
+          );
+        }
+      });
+    });
+  }
 }

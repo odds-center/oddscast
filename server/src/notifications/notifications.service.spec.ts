@@ -212,7 +212,7 @@ describe('NotificationsService', () => {
 
       const result = await service.remove(1);
       expect(result.message).toBe('알림이 삭제되었습니다');
-      expect(notifRepo.delete).toHaveBeenCalledWith(1);
+      expect(notifRepo.delete).toHaveBeenCalledWith({ id: 1 });
     });
   });
 

@@ -4,6 +4,10 @@ import { withSentryConfig } from '@sentry/nextjs';
 const nextConfig: NextConfig = {
   output: 'standalone',
   transpilePackages: ['@oddscast/shared'],
+  i18n: {
+    locales: ['ko', 'en', 'ja'],
+    defaultLocale: 'ko',
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60,

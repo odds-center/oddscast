@@ -1385,3 +1385,14 @@ export class AdminBIApi {
 }
 
 export const adminBIApi = AdminBIApi;
+
+// ─── Weight Validation API ───
+
+export class AdminWeightValidationApi {
+  static async validate(): Promise<Record<string, unknown>> {
+    const response = await axiosInstance.post('/analysis/validate-weights', {}, {
+      timeout: 120000, // Python script can take up to ~60s
+    });
+    return handleApiResponse(response) as Record<string, unknown>;
+  }
+}

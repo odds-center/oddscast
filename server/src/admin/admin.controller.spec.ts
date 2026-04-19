@@ -11,6 +11,8 @@ import { PredictionTicketsService } from '../prediction-tickets/prediction-ticke
 import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { WeeklyPreviewService } from '../weekly-preview/weekly-preview.service';
+import { PredictionsService } from '../predictions/predictions.service';
+import { AnalysisService } from '../analysis/analysis.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
@@ -87,6 +89,17 @@ const mockWeeklyPreviewService = {
   getLatest: jest.fn(),
 };
 
+const mockPredictionsService = {
+  generatePrediction: jest.fn(),
+  generateForDate: jest.fn(),
+  findByRaceId: jest.fn(),
+};
+
+const mockAnalysisService = {
+  analyzeRace: jest.fn(),
+  getAnalysisData: jest.fn(),
+};
+
 describe('AdminController', () => {
   let controller: AdminController;
 
@@ -112,6 +125,8 @@ describe('AdminController', () => {
         },
         { provide: ActivityLogsService, useValue: mockActivityLogsService },
         { provide: WeeklyPreviewService, useValue: mockWeeklyPreviewService },
+        { provide: PredictionsService, useValue: mockPredictionsService },
+        { provide: AnalysisService, useValue: mockAnalysisService },
       ],
     })
       .overrideGuard(JwtAuthGuard)

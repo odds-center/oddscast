@@ -49,6 +49,7 @@ describe('AuthService', () => {
   };
   const mockMailService = {
     sendVerificationCode: jest.fn().mockResolvedValue({ success: true }),
+    sendPasswordResetEmail: jest.fn().mockResolvedValue({ success: true }),
   };
   const mockDiscordService = {
     notifySignup: jest.fn().mockResolvedValue(undefined),
@@ -98,11 +99,10 @@ describe('AuthService', () => {
       const result = await service.register({
         email: 'test@example.com',
         password: 'password123',
-        name: 'Test User',
         nickname: 'tester',
       });
 
-      expect(mockedBcrypt.hash).toHaveBeenCalledWith('password123', 10);
+      expect(mockedBcrypt.hash).toHaveBeenCalledWith('password123', 12);
       expect(userRepo.save).toHaveBeenCalled();
       expect(result.requireVerification).toBe(true);
       expect(result.email).toBe('test@example.com');
@@ -118,7 +118,6 @@ describe('AuthService', () => {
         service.register({
           email: 'test@example.com',
           password: 'pass123',
-          name: 'N',
           nickname: 'nn',
         }),
       ).rejects.toThrow(ConflictException);
@@ -133,7 +132,6 @@ describe('AuthService', () => {
       const result = await service.register({
         email: 'test@example.com',
         password: 'pass123',
-        name: 'N',
         nickname: 'nn',
       });
 
@@ -229,7 +227,7 @@ describe('AuthService', () => {
 
       const result = await service.changePassword(1, 'oldpass', 'newpass');
 
-      expect(mockedBcrypt.hash).toHaveBeenCalledWith('newpass', 10);
+      expect(mockedBcrypt.hash).toHaveBeenCalledWith('newpass', 12);
       expect(userRepo.update).toHaveBeenCalledWith(
         1,
         expect.objectContaining({ password: 'hashed-password' }),
@@ -322,19 +320,17 @@ describe('AuthService', () => {
       expect(userRepo.save).not.toHaveBeenCalled();
     });
 
-    it('should update name and nickname', async () => {
+    it('should update nickname', async () => {
       const user = createTestUser();
       userRepo.findOne.mockResolvedValue({ ...user });
       userRepo.save.mockImplementation((u) => Promise.resolve(u));
 
       const result = await service.updateProfile(1, {
-        name: 'New Name',
         nickname: 'newNick',
       });
 
       expect(userRepo.save).toHaveBeenCalledWith(
         expect.objectContaining({
-          name: 'New Name',
           nickname: 'newNick',
         }),
       );
@@ -345,7 +341,7 @@ describe('AuthService', () => {
       userRepo.findOne.mockResolvedValue(null);
 
       await expect(
-        service.updateProfile(999, { name: 'test' }),
+        service.updateProfile(999, { nickname: 'test' }),
       ).rejects.toThrow(UnauthorizedException);
     });
   });

@@ -8,6 +8,8 @@ import { User } from '../database/entities/user.entity';
 import { Race } from '../database/entities/race.entity';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
+import { Prediction } from '../database/entities/prediction.entity';
+import { BatchSchedule } from '../database/entities/batch-schedule.entity';
 import { TicketStatus } from '../database/db-enums';
 
 const mockKraSyncLogRepo = { find: jest.fn() };
@@ -23,6 +25,14 @@ const mockSinglePurchaseRepo = { createQueryBuilder: jest.fn() };
 const mockPredictionTicketRepo = {
   findAndCount: jest.fn(),
   find: jest.fn(),
+};
+const mockPredictionRepo = {
+  count: jest.fn(),
+  createQueryBuilder: jest.fn(),
+};
+const mockBatchScheduleRepo = {
+  find: jest.fn(),
+  count: jest.fn(),
 };
 
 describe('AdminService', () => {
@@ -54,6 +64,14 @@ describe('AdminService', () => {
         {
           provide: getRepositoryToken(PredictionTicket),
           useValue: mockPredictionTicketRepo,
+        },
+        {
+          provide: getRepositoryToken(Prediction),
+          useValue: mockPredictionRepo,
+        },
+        {
+          provide: getRepositoryToken(BatchSchedule),
+          useValue: mockBatchScheduleRepo,
         },
       ],
     }).compile();

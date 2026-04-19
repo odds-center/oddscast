@@ -30,6 +30,7 @@ import { ActivityLogsService } from '../activity-logs/activity-logs.service';
 import { AdminActivityInterceptor } from '../activity-logs/admin-activity.interceptor';
 import { WeeklyPreviewService } from '../weekly-preview/weekly-preview.service';
 import { PredictionsService } from '../predictions/predictions.service';
+import { AnalysisService } from '../analysis/analysis.service';
 import { UpdateUserDto } from '../users/dto/user.dto';
 import { todayKstYyyymmdd, kst } from '../common/utils/kst';
 
@@ -52,6 +53,7 @@ export class AdminController {
     private readonly activityLogsService: ActivityLogsService,
     private readonly weeklyPreviewService: WeeklyPreviewService,
     private readonly predictionsService: PredictionsService,
+    private readonly analysisService: AnalysisService,
   ) {}
 
   /** Write SSE event (progress or done). */
@@ -790,6 +792,17 @@ export class AdminController {
   @ApiOperation({ summary: '[Admin] Get latest weekly preview' })
   async getLatestWeeklyPreview() {
     return this.weeklyPreviewService.getLatest();
+  }
+
+  // --- Weight Validation ---
+
+  @Post('analysis/validate-weights')
+  @ApiOperation({
+    summary:
+      '[Admin] Run Python weight validation against production race data',
+  })
+  async validateWeights() {
+    return this.analysisService.validateWeights();
   }
 
   // --- AI Commentary ---

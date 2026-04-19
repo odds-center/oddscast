@@ -25,6 +25,7 @@ describe('ResultsService', () => {
 
   const mockPredictionsService = {
     generatePostRaceSummary: jest.fn().mockResolvedValue(undefined),
+    generateRaceCommentary: jest.fn().mockResolvedValue(undefined),
   };
 
   beforeEach(async () => {

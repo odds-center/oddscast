@@ -4,6 +4,7 @@ import { SinglePurchasesService } from './single-purchases.service';
 import { SinglePurchase } from '../database/entities/single-purchase.entity';
 import { PredictionTicket } from '../database/entities/prediction-ticket.entity';
 import { GlobalConfigService } from '../config/config.service';
+import { DiscordService } from '../discord/discord.service';
 import { TicketStatus, TicketType } from '../database/db-enums';
 import {
   createMockRepository,
@@ -33,6 +34,12 @@ describe('SinglePurchasesService', () => {
           useValue: predictionTicketRepo,
         },
         { provide: GlobalConfigService, useValue: configService },
+        {
+          provide: DiscordService,
+          useValue: {
+            notifyTicketPurchase: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

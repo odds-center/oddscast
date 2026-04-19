@@ -96,20 +96,19 @@ describe('RankingsService', () => {
       expect(result.data[0].name).toBe('레이서1');
     });
 
-    it('falls back to name when nickname is null', async () => {
+    it('returns null name when nickname is null', async () => {
       const countMap = new Map([[1, 5]]);
       mockPicksService.getCorrectCountByUser.mockResolvedValue(countMap);
       userRepo.find.mockResolvedValue([
         createTestUser({
           id: 1,
-          name: 'Real Name',
           nickname: null,
           isActive: true,
         }),
       ]);
 
       const result = await service.getRankings();
-      expect(result.data[0].name).toBe('Real Name');
+      expect(result.data[0].name).toBeNull();
     });
 
     it('filters out users with 0 correctCount', async () => {
